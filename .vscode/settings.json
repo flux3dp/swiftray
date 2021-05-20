@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "exception": "cpp",
+        "*.inc": "cpp",
+        "*.dict": "cpp",
+        "numeric": "cpp"
+    }
+}

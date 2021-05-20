@@ -1,0 +1,4 @@
+svgpp/bin
+*.o
+*.o.d
+.DS_Store
