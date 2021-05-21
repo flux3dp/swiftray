@@ -3,6 +3,8 @@
         "exception": "cpp",
         "*.inc": "cpp",
         "*.dict": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "__tree": "cpp",
+        "set": "cpp"
     }
 }
