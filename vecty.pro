@@ -1,6 +1,8 @@
 QT += quick
+QT += opengl
 
 CONFIG += c++11
+CONFIG += optimize_full
 LIBS += -L"/usr/local/lib"
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += /usr/local/include/
@@ -13,7 +15,8 @@ SOURCES += \
         main.cpp \
         vcontext.cpp \
         vdoc.cpp \
-        vcanvas.cpp
+        vcanvas.cpp \
+        svgpp_impl.cpp
 
 RESOURCES += qml.qrc
 
@@ -36,4 +39,12 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     vcanvas.h \
     vcontext.h \
-    vdoc.h
+    vdoc.h \
+    svgpp_common.h \
+    color_factory.h
+
+win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
+else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
+
+INCLUDEPATH += C:/cygwin64/usr/include
+DEPENDPATH += C:/cygwin64/usr/include

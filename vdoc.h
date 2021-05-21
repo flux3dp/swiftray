@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QTextCursor>
 #include <QUrl>
+#include "svgpp_common.h"
 #include "vcanvas.h"
 
 QT_BEGIN_NAMESPACE
