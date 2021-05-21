@@ -30,12 +30,18 @@ void VCanvas::loadSvg(QByteArray data) {
 
         m_data = (char *) malloc(data.length() + 1);
         strncpy(m_data, data.constData(), data.length() + 1);
-        qInfo() << "File contents" << m_data;
         m_xml_doc.parse<0>(m_data);
 
         if (rapidxml_ns::xml_node<> *svg_element = m_xml_doc.first_node("svg")) {
             qInfo() << "SVG Element " << svg_element;
             m_xml_root_element = svg_element;
+            m_context.clear();
+            document_traversal < processed_elements<processed_elements_t>,
+                               processed_attributes<traits::shapes_attributes_by_element>,
+                               transform_events_policy<policy::transform_events::forward_to_method<VContext>>
+                               >::load_document(m_xml_root_element, m_context);
+            qInfo() << "Loaded SVG " << m_context.getPathCount();
+            m_xml_doc.clear();
         }
     } catch (std::exception const &e) {
         qWarning() << "Error loading SVG: " << e.what();
@@ -49,11 +55,13 @@ void VCanvas::loadSvg(QByteArray data) {
 
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent), rightAligned(false) {
-    this->setRenderTarget(QQuickPaintedItem::FramebufferObject);
-    this->setAntialiasing(false);
+    //((QQuickWindow *)parent)->setGraphicsApi(QSGRendererInterface::Metal);
+    setRenderTarget(QQuickPaintedItem::FramebufferObject);
+    setAntialiasing(false);
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
-    timer->start(50);
+    timer->start(30);
+    qInfo() << "Rendering target = " << this->renderTarget();
 }
 
 void VCanvas::loop() {
@@ -62,17 +70,19 @@ void VCanvas::loop() {
 }
 
 void VCanvas::paint(QPainter *painter) {
+    if (m_context.painter() == nullptr) {
+        qInfo() << "Rendering engine = " << painter->paintEngine()->type();
+    }
+
     m_context.setPainter(painter);
-    QPen pen = QPen(Qt::blue, 1, Qt::DashLine);
-    pen.setDashOffset(counter / 2.0);
+    painter->setBackgroundMode(Qt::BGMode::OpaqueMode);
+    painter->scale(0.5, 0.5);
+    QPen pen = QPen(Qt::cyan, 1, Qt::DashLine);
+    pen.setCosmetic(true);
+    pen.setDashPattern(QVector<qreal>(10, 3));
+    pen.setDashOffset(counter);
     painter->setPen(pen);
-    qInfo() << "Paint Event";
-
-    if (!ready) return;
-
-    document_traversal <processed_elements<processed_elements_t>,
-                       processed_attributes<traits::shapes_attributes_by_element>
-                       >::load_document(m_xml_root_element, m_context);
+    m_context.render();
 }
 
 bool VCanvas::isRightAligned() {

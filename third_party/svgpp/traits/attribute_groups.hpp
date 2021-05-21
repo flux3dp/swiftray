@@ -82,13 +82,13 @@ typedef boost::mpl::set3<
   > animation_event_attributes;
 
 typedef boost::mpl::set<
+  tag::attribute::transform,
   boost::mpl::pair<tag::element::path, tag::attribute::d>,
   boost::mpl::pair<tag::element::rect, tag::attribute::x>,
   boost::mpl::pair<tag::element::rect, tag::attribute::y>,
   boost::mpl::pair<tag::element::rect, tag::attribute::width>, 
   boost::mpl::pair<tag::element::rect, tag::attribute::height>,
   boost::mpl::pair<tag::element::rect, tag::attribute::rx>,
-  boost::mpl::pair<tag::element::rect, tag::attribute::ry>,
   boost::mpl::pair<tag::element::circle, tag::attribute::cx>,
   boost::mpl::pair<tag::element::circle, tag::attribute::cy>,
   boost::mpl::pair<tag::element::circle, tag::attribute::r>,

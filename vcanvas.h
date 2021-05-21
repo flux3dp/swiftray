@@ -1,6 +1,6 @@
+#include "svgpp_common.h"
 #ifndef VCANVAS_H
 #define VCANVAS_H
-#include <svgpp/detail/attribute_id.hpp>
 #include <QtQuick>
 #include <rapidxml_ns/rapidxml_ns.hpp>
 #include <svgpp/policy/xml/rapidxml_ns.hpp>
