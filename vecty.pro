@@ -1,11 +1,14 @@
 QT += quick
 QT += opengl
 
-CONFIG += c++11
+CONFIG += c++17
 CONFIG += optimize_full
 LIBS += -L"/usr/local/lib"
+LIBS += -L"/usr/local/opt/libxml2/lib"
+LIBS += -lxml2
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += /usr/local/include/
+INCLUDEPATH += /usr/local/opt/libxml2/include
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
