@@ -1,8 +1,8 @@
 #include "vcanvas.h"
 #include <QDebug>
 #include <QPainter>
-#include <rapidxml_ns/rapidxml_ns.hpp>
-#include <svgpp/policy/xml/rapidxml_ns.hpp>
+#include <libxml/parser.h>
+#include <svgpp/policy/xml/libxml2.hpp>
 #include <svgpp/svgpp.hpp>
 #include <cstring>
 #include <iostream>
@@ -30,18 +30,18 @@ void VCanvas::loadSvg(QByteArray data) {
 
         m_data = (char *) malloc(data.length() + 1);
         strncpy(m_data, data.constData(), data.length() + 1);
-        m_xml_doc.parse<0>(m_data);
+        m_xml_doc = xmlParseDoc((xmlChar *)m_data);
 
-        if (rapidxml_ns::xml_node<> *svg_element = m_xml_doc.first_node("svg")) {
+        if (xmlNode *svg_element = xmlDocGetRootElement(m_xml_doc)) {
             qInfo() << "SVG Element " << svg_element;
             m_xml_root_element = svg_element;
             m_context.clear();
             document_traversal < processed_elements<processed_elements_t>,
                                processed_attributes<traits::shapes_attributes_by_element>,
-                               transform_events_policy<policy::transform_events::forward_to_method<VContext>>
+                               transform_events_policy<policy::transform_events::forward_to_method<VContext>>,
+                               svgpp::error_policy<svgpp::policy::error::default_policy<VContext>>
                                >::load_document(m_xml_root_element, m_context);
             qInfo() << "Loaded SVG " << m_context.getPathCount();
-            m_xml_doc.clear();
         }
     } catch (std::exception const &e) {
         qWarning() << "Error loading SVG: " << e.what();
@@ -55,9 +55,8 @@ void VCanvas::loadSvg(QByteArray data) {
 
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent), rightAligned(false) {
-    //((QQuickWindow *)parent)->setGraphicsApi(QSGRendererInterface::Metal);
     setRenderTarget(QQuickPaintedItem::FramebufferObject);
-    setAntialiasing(false);
+    setAntialiasing(true);
     QTimer *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(30);
@@ -75,10 +74,8 @@ void VCanvas::paint(QPainter *painter) {
     }
 
     m_context.setPainter(painter);
-    painter->setBackgroundMode(Qt::BGMode::OpaqueMode);
-    painter->scale(0.5, 0.5);
-    QPen pen = QPen(Qt::cyan, 1, Qt::DashLine);
-    pen.setCosmetic(true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    QPen pen = QPen(Qt::blue, 1, Qt::DashLine);
     pen.setDashPattern(QVector<qreal>(10, 3));
     pen.setDashOffset(counter);
     painter->setPen(pen);

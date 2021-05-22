@@ -2,8 +2,8 @@
 #ifndef VCANVAS_H
 #define VCANVAS_H
 #include <QtQuick>
-#include <rapidxml_ns/rapidxml_ns.hpp>
-#include <svgpp/policy/xml/rapidxml_ns.hpp>
+#include <libxml/parser.h>
+#include <svgpp/policy/xml/libxml2.hpp>
 #include "vcontext.h"
 
 class VCanvas : public QQuickPaintedItem {
@@ -25,9 +25,9 @@ class VCanvas : public QQuickPaintedItem {
         bool ready;
         int counter;
         char *m_data;
-        rapidxml_ns::xml_document<> m_xml_doc;
+        xmlDoc *m_xml_doc;
         VContext m_context;
-        rapidxml_ns::xml_node<> const *m_xml_root_element;
+        xmlNode *m_xml_root_element;
 
     signals:
         void rightAlignedChanged();
