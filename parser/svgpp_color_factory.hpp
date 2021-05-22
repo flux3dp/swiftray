@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/preprocessor/tuple/elem.hpp>
 #include <svgpp/factory/integer_color.hpp>
 
 typedef boost::tuple<unsigned char, unsigned char, unsigned char> color_t;

@@ -19,7 +19,7 @@ SOURCES += \
         vcontext.cpp \
         vdoc.cpp \
         vcanvas.cpp \
-        svgpp_impl.cpp
+        parser/svgpp_impl.cpp
 
 RESOURCES += qml.qrc
 
@@ -43,11 +43,18 @@ HEADERS += \
     vcanvas.h \
     vcontext.h \
     vdoc.h \
-    svgpp_common.h \
-    color_factory.h
+    parser/svgpp_common.hpp \
+    parser/svgpp_impl.hpp \
+    parser/svgpp_color_factory.hpp
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
 
 INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
+
+DESTDIR = build/vecty/
+OBJECTS_DIR = build/vecty/.obj
+MOC_DIR = build/vecty/.moc
+RCC_DIR = build/vecty/.rcc
+UI_DIR = build/vecty/.ui

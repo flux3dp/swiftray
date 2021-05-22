@@ -10,7 +10,8 @@
                 "/Users/simon/Qt/5.15.1/clang_64/lib/QtCore.framework/Headers",
                 "/Users/simon/Qt/5.15.1/clang_64/lib/QtQuick.framework/Headers",
                 "/Users/simon/Qt/5.15.1/clang_64/lib/QtGui.framework/Headers",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQml.framework/Headers"
+                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQml.framework/Headers",
+                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQuick.framework/Versions/5/Headers"
             ],
             "defines": [],
             "macFrameworkPath": [

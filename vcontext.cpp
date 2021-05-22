@@ -2,8 +2,6 @@
 #include <QPainter>
 #include <QPainterPath>
 
-using namespace svgpp;
-
 VContext::VContext() noexcept {
     polygons << QPolygonF();
     polygons.last() << QPointF(0, 0);

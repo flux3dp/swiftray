@@ -14,7 +14,7 @@
 #include <svgpp/definitions.hpp>
 #include <svgpp/detail/attribute_name.hpp>
 #include <svgpp/detail/namespace.hpp>
-#include <String>
+#include <string>
 #include <stdexcept>
 
 // BOOST_NORETURN was introduced in Boost 1.56

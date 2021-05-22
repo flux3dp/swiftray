@@ -1,10 +1,10 @@
-#include "svgpp_common.h"
+#include "parser/svgpp_common.hpp"
 #ifndef VCONTEXT_H
 #define VCONTEXT_H
 #include <svgpp/svgpp.hpp>
 #include <QDebug>
 #include <QPainter>
-#include <String>
+#include <string>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
