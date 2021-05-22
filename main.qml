@@ -15,7 +15,7 @@ Window {
         anchors.fill: parent
         anchors.margins: 20
         anchors.topMargin: 75
-        contentsScale: 1.2
+        contentsScale: 1
         rightAligned: true
     }
 
