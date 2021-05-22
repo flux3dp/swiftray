@@ -5,6 +5,10 @@
         "*.dict": "cpp",
         "numeric": "cpp",
         "__tree": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "*.ipp": "cpp",
+        "qguiapplication": "cpp",
+        "qqmlapplicationengine": "cpp",
+        "string": "cpp"
     }
 }
