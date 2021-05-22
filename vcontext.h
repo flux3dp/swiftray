@@ -4,6 +4,7 @@
 #include <svgpp/svgpp.hpp>
 #include <QDebug>
 #include <QPainter>
+#include <String>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
@@ -77,6 +78,12 @@ class VContext {
 
         void render();
         void clear();
+
+        static bool unknown_attribute_error(std::string name) {
+            qInfo() << "Unknown attribute" << QString::fromStdString(name);
+            return true;
+        }
+
         QPointF getTransformedPos(double x, double y);
 
         QPainter *painter() {

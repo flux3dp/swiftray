@@ -6,6 +6,7 @@
 // See http://github.com/svgpp/svgpp for library home page.
 
 #pragma once
+#pragma GCC diagnostic ignored "-Wreorder"
 
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
@@ -13,6 +14,7 @@
 #include <svgpp/definitions.hpp>
 #include <svgpp/detail/attribute_name.hpp>
 #include <svgpp/detail/namespace.hpp>
+#include <String>
 #include <stdexcept>
 
 // BOOST_NORETURN was introduced in Boost 1.56
@@ -256,13 +258,14 @@ struct raise_exception
   }
 
   template<class XMLAttribute, class AttributeName>
-  static bool unknown_attribute(Context const &, 
+  static bool unknown_attribute(Context const &context,
     XMLAttribute const & attribute, 
     AttributeName const & name,
     BOOST_SCOPED_ENUM(detail::namespace_id) namespace_id,
     tag::source::attribute,
     typename boost::enable_if<typename detail::is_char_range<AttributeName>::type>::type * = NULL)
   {
+    return context.unknown_attribute_error(std::string(name.begin(), name.end()));
     if (namespace_id == detail::namespace_id::svg)
       throw unknown_attribute_error(name) 
         << boost::error_info<tag::error_info::xml_attribute, XMLAttribute>(attribute);
