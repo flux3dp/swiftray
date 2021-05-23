@@ -5,24 +5,37 @@
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
-        Q_PROPERTY(bool rightAligned READ isRightAligned WRITE setRightAligned NOTIFY rightAlignedChanged)
         QML_ELEMENT
 
     public:
         VCanvas(QQuickItem *parent = 0);
         void paint(QPainter *painter);
         void loop();
-
-        bool isRightAligned();
-        void setRightAligned(bool rightAligned);
         void loadSvg(QByteArray &data);
+
+
+        void mousePressEvent(QMouseEvent *e) override;
+        void mouseMoveEvent(QMouseEvent *e) override;
+        void mouseReleaseEvent(QMouseEvent *e) override;
+        void wheelEvent(QWheelEvent *e) override;
+        bool event(QEvent *e) override;
 
     private:
         bool rightAligned;
         bool ready;
+        float scrollX;
+        float scrollY;
+        float scale;
         int counter;
-        char *m_data;
         VContext m_context;
+
+
+        QTimer *timer;
+        bool m_smallScreen;
+        QPoint m_mousePress;
+        bool m_mouseDrag;
+
+        QHash<int, int> m_fingerPointMapping;
 
     signals:
         void rightAlignedChanged();
