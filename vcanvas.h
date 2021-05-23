@@ -1,7 +1,8 @@
 #ifndef VCANVAS_H
 #define VCANVAS_H
 #include <QtQuick>
-#include "vcontext.h"
+#include "shape/shape.hpp"
+#include "parser/svgpp_parser.hpp"
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
@@ -27,7 +28,7 @@ class VCanvas : public QQuickPaintedItem {
         float scrollY;
         float scale;
         int counter;
-        VContext m_context;
+        SVGPPParser svgppParser;
 
 
         QTimer *timer;

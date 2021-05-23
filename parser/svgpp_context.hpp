@@ -1,6 +1,6 @@
-#include "parser/svgpp_common.hpp"
-#ifndef VCONTEXT_H
-#define VCONTEXT_H
+#include <parser/svgpp_common.hpp>
+#ifndef SVGPPCONTEXT_H
+#define SVGPPCONTEXT_H
 #include <svgpp/svgpp.hpp>
 #include <QDebug>
 #include <QPainter>
@@ -15,9 +15,9 @@ typedef ublas::matrix<double> matrix_t;
 
 using namespace svgpp;
 
-class VContext {
+class SVGPPContext {
     public:
-        VContext() noexcept;
+        SVGPPContext(QList<QPainterPath> *paths);
 
         void on_enter_element(tag::element::any)
         {}
@@ -68,17 +68,6 @@ class VContext {
 
         void path_exit();
 
-        qsizetype getPathCount() {
-            return paths.size();
-        }
-
-        void setPainter(QPainter *painter) {
-            m_painter = painter;
-        }
-
-        void render();
-        void clear();
-
         static bool unknown_attribute_error(std::string name) {
             qInfo() << "Unknown attribute" << QString::fromStdString(name);
             return true;
@@ -86,15 +75,9 @@ class VContext {
 
         QPointF getTransformedPos(double x, double y);
 
-        QPainter *painter() {
-            return m_painter;
-        }
     private:
-        QPainter *m_painter;
-        QList<QPointF> points;
-        QList<QPainterPath> paths;
-        QList<QPolygonF> polygons;
+        QList<QPainterPath> *paths;
         matrix_t transform;
 };
 
-#endif // VCONTEXT_H
+#endif // SVGPPCONTEXT_H

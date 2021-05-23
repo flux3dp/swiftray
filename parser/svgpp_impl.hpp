@@ -1,4 +1,4 @@
 #include <QByteArray>
-#include "../vcontext.h"
+#include <parser/svgpp_context.hpp>
 
-bool svgpp_parse(QByteArray &data, VContext &context);
+bool svgpp_parse(QByteArray &data, SVGPPContext &context);

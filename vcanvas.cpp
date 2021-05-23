@@ -1,5 +1,4 @@
 #include "vcanvas.h"
-#include "parser/svgpp_impl.hpp"
 #include <QDebug>
 #include <QPainter>
 #include <QWidget>
@@ -7,9 +6,9 @@
 #include <iostream>
 
 void VCanvas::loadSvg(QByteArray &data) {
-    bool success = svgpp_parse(data, m_context);
+    bool success = svgppParser.parse(data);
 
-    if (m_context.getPathCount() > 5000) {
+    if (svgppParser.paths.length() > 5000) {
         setAntialiasing(false);
     }
 
@@ -36,18 +35,16 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent) {
 }
 
 void VCanvas::paint(QPainter *painter) {
-    if (m_context.painter() == nullptr) {
-        qInfo() << "Rendering engine = " << painter->paintEngine()->type();
-    }
-
-    m_context.setPainter(painter);
     painter->translate(scrollX, scrollY);
     painter->scale(scale, scale);
     QPen pen = QPen(Qt::blue, 0, Qt::DashLine);
     pen.setDashPattern(QVector<qreal>(10, 3));
     pen.setDashOffset(counter);
     painter->setPen(pen);
-    m_context.render();
+    
+    for (int i = 0; i < svgppParser.paths.size(); i++) {
+        painter->drawPath(svgppParser.paths[i]);
+    }
 }
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
@@ -70,8 +67,8 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void VCanvas::wheelEvent(QWheelEvent *e) {
-    scrollX += e->pixelDelta().x() / 5;
-    scrollY += e->pixelDelta().y() / 5;
+    scrollX += e->pixelDelta().x() / 2.5;
+    scrollY += e->pixelDelta().y() / 2.5;
     qInfo() << "Wheel Event" << e->pixelDelta();
 }
 
@@ -84,12 +81,12 @@ void VCanvas::loop() {
 
 
 bool VCanvas::event(QEvent *e) {
-    qInfo() << "QEvent" << e;
+    //qInfo() << "QEvent" << e;
     QNativeGestureEvent *nge;
 
     switch (e->type()) {
     case QEvent::NativeGesture:
-        qInfo() << "Native Gesture!";
+        //qInfo() << "Native Gesture!";
         nge = static_cast<QNativeGestureEvent *>(e);
 
         if (nge->gestureType() == Qt::ZoomNativeGesture) {

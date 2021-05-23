@@ -7,6 +7,7 @@
 #include "svgpp_common.hpp"
 #include "svgpp_color_factory.hpp"
 #include "svgpp_impl.hpp"
+#include "svgpp_context.hpp"
 
 using namespace svgpp;
 
@@ -35,7 +36,7 @@ tag::element::svg,
     tag::element::rect
     >::type processed_elements_t;
 
-bool svgpp_parse(QByteArray &data, VContext &context) {
+bool svgpp_parse(QByteArray &data, SVGPPContext &context) {
     try {
         // TODO: Support UTF8
         xmlDoc *doc = xmlParseDoc((const unsigned char *)data.constData());
@@ -43,13 +44,12 @@ bool svgpp_parse(QByteArray &data, VContext &context) {
 
         if (root) {
             qInfo() << "SVG Element " << root;
-            context.clear();
             document_traversal < processed_elements<processed_elements_t>,
                                processed_attributes<traits::shapes_attributes_by_element>,
-                               transform_events_policy<policy::transform_events::forward_to_method<VContext>>,
-                               svgpp::error_policy<svgpp::policy::error::default_policy<VContext>>
+                               transform_events_policy<policy::transform_events::forward_to_method<SVGPPContext>>,
+                               svgpp::error_policy<svgpp::policy::error::default_policy<SVGPPContext>>
                                >::load_document(root, context);
-            qInfo() << "Loaded SVG " << context.getPathCount();
+            qInfo() << "Loaded SVG";
             return true;
         }
     } catch (std::exception const &e) {
