@@ -6,9 +6,10 @@
 #include <iostream>
 
 void VCanvas::loadSvg(QByteArray &data) {
+    shapes.clear();
     bool success = svgppParser.parse(data);
 
-    if (paths.length() > 5000) {
+    if (shapes.length() > 5000) {
         setAntialiasing(false);
     }
 
@@ -20,7 +21,7 @@ void VCanvas::loadSvg(QByteArray &data) {
 
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
-    svgppParser { SVGPPParser(&this->paths) } {
+    svgppParser { SVGPPParser(&this->shapes) } {
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setAcceptTouchEvents(true);
@@ -38,21 +39,74 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
 void VCanvas::paint(QPainter *painter) {
     painter->translate(scrollX, scrollY);
     painter->scale(scale, scale);
-    QPen pen = QPen(Qt::blue, 0, Qt::DashLine);
+    QPen pen = QPen(Qt::blue, 2, Qt::DashLine);
     pen.setDashPattern(QVector<qreal>(10, 3));
     pen.setDashOffset(counter);
+    pen.setCosmetic(true);
     painter->setPen(pen);
+    bool dashed = true;
 
-    for (int i = 0; i < paths.size(); i++) {
-        painter->drawPath(paths[i]);
+    for (int i = 0; i < shapes.size(); i++) {
+        if (shapes[i].selected && !dashed) {
+            pen.setStyle(Qt::PenStyle::DashLine);
+            pen.setWidth(2);
+            pen.setCosmetic(true);
+            pen.setDashPattern(QVector<qreal>(10, 3));
+            pen.setDashOffset(counter);
+            painter->setPen(pen);
+            dashed = true;
+        } else if (!shapes[i].selected && dashed) {
+            pen.setStyle(Qt::PenStyle::SolidLine);
+            pen.setWidth(0);
+            painter->setPen(pen);
+            dashed = false;
+        }
+
+        painter->save();
+        pen.setColor(Qt::blue);
+        painter->setPen(pen);
+        painter->translate(shapes[i].x, shapes[i].y);
+        painter->drawPath(shapes[i].path);
+        painter->restore();
+        /*// Draw cache poly
+        pen.setColor(Qt::red);
+        painter->setPen(pen);
+        painter->drawPolyline(shapes[i].polyCache.toVector().data(), shapes[i].polyCache.size());
+        // Draw bounding box
+        QRectF bbox = shapes[i].path.boundingRect();
+        QRectF newBBox(bbox.x() + shapes[i].x - 10, bbox.y() + shapes[i].y - 10, bbox.width() + 20, bbox.height() + 20);
+        pen.setColor(Qt::green);
+        painter->setPen(pen);
+        painter->drawRect(newBBox);*/
     }
+
+    //qInfo() << "Offset" << scrollX << scrollY << "Scale" << scale;
 }
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
-    // If we're not running in small screen mode, always assume we're dragging
+    qInfo() << "Mouse Press" << e->pos();
     m_mouseDrag = true;
     m_mousePress = e->pos();
-    qInfo() << "Mouse Press" << e->pos();
+    QList<Shape *> boundingShapes;
+    QPointF clickPoint = (e->pos() - QPointF(scrollX, scrollY)) / scale;
+    qInfo() << "Click point" << clickPoint;
+
+    for (int i = 0; i < shapes.size(); i++) {
+        QRectF bbox = shapes[i].path.boundingRect();
+        QRectF newBBox(bbox.x() + shapes[i].x - 10, bbox.y() + shapes[i].y - 10, bbox.width() + 20, bbox.height() + 20);
+
+        if (newBBox.contains(clickPoint)) {
+            boundingShapes.push_back(&shapes[i]);
+        }
+    }
+
+    qInfo() << "Bounding shapes" << boundingShapes.size();
+
+    for (int i = 0; i < boundingShapes.size(); i++) {
+        if (boundingShapes[i]->testHit(clickPoint)) {
+            boundingShapes[i]->selected = !boundingShapes[i]->selected;
+        }
+    }
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {

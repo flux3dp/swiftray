@@ -10,7 +10,7 @@ class VCanvas : public QQuickPaintedItem {
 
     public:
         VCanvas(QQuickItem *parent = 0);
-        void paint(QPainter *painter);
+        void paint(QPainter *painter) override;
         void loop();
         void loadSvg(QByteArray &data);
 
@@ -28,7 +28,7 @@ class VCanvas : public QQuickPaintedItem {
         float scale;
         int counter;
         SVGPPParser svgppParser;
-        QList<QPainterPath> paths;
+        QList<Shape> shapes;
 
 
         QTimer *timer;

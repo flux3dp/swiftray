@@ -6,8 +6,8 @@
 
 class SVGPPParser {
     public:
-        SVGPPParser(QList<QPainterPath> *pathsRef);
-        QList<QPainterPath> *pathsRef;
+        SVGPPParser(QList<Shape> *shapes);
+        QList<Shape> *shapes;
         bool parse(QByteArray &data);
 };
 
