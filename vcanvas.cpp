@@ -8,7 +8,7 @@
 void VCanvas::loadSvg(QByteArray &data) {
     bool success = svgppParser.parse(data);
 
-    if (svgppParser.paths.length() > 5000) {
+    if (paths.length() > 5000) {
         setAntialiasing(false);
     }
 
@@ -19,7 +19,8 @@ void VCanvas::loadSvg(QByteArray &data) {
 }
 
 
-VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent) {
+VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
+    svgppParser { SVGPPParser(&this->paths) } {
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setAcceptTouchEvents(true);
@@ -41,9 +42,9 @@ void VCanvas::paint(QPainter *painter) {
     pen.setDashPattern(QVector<qreal>(10, 3));
     pen.setDashOffset(counter);
     painter->setPen(pen);
-    
-    for (int i = 0; i < svgppParser.paths.size(); i++) {
-        painter->drawPath(svgppParser.paths[i]);
+
+    for (int i = 0; i < paths.size(); i++) {
+        painter->drawPath(paths[i]);
     }
 }
 

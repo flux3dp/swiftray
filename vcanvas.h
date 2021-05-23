@@ -22,13 +22,13 @@ class VCanvas : public QQuickPaintedItem {
         bool event(QEvent *e) override;
 
     private:
-        bool rightAligned;
         bool ready;
         float scrollX;
         float scrollY;
         float scale;
         int counter;
         SVGPPParser svgppParser;
+        QList<QPainterPath> paths;
 
 
         QTimer *timer;

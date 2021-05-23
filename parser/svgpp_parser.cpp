@@ -2,10 +2,11 @@
 #include "svgpp_context.hpp"
 #include "svgpp_parser.hpp"
 
-SVGPPParser::SVGPPParser() noexcept {
+SVGPPParser::SVGPPParser(QList<QPainterPath> *pathsRef) {
+    this->pathsRef = pathsRef;
 }
 
 bool SVGPPParser::parse(QByteArray &data) {
-    SVGPPContext context(&paths);
+    SVGPPContext context(pathsRef);
     return svgpp_parse(data, context);
 }
