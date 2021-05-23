@@ -10,6 +10,7 @@
 
 using namespace svgpp;
 
+/* Building external parsing function (meant to accelerate compiling process) */
 SVGPP_PARSE_PATH_DATA_IMPL(const char *, double)
 SVGPP_PARSE_TRANSFORM_IMPL(const char *, double)
 SVGPP_PARSE_PAINT_IMPL(const char *, ColorFactory, factory::icc_color::default_factory)

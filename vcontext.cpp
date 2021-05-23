@@ -101,31 +101,12 @@ void VContext::path_elliptical_arc_to(
 }
 
 void VContext::path_close_subpath() {
-    //paths[paths.length() - 1] = paths.last().simplified();
-    /*QList<QPolygonF> polies = paths.last().toSubpathPolygons(QTransform());
-
-    for (int i = 0; i < polies.size(); i++) {
-        polygons << polies[i];
-
-        if (polies[i].size() < 2) continue;
-
-        for (int j = 0; j < polies[i].size() - 1; j++) {
-            points << polies[i][j];
-            points << polies[i][j + 1];
-        }
-    }*/
-    paths << QPainterPath();
+    paths.last().closeSubpath();
 }
 
 void VContext::path_exit() {
-    //paths[paths.length() - 1] = paths.last().simplified();
-    /*QList<QPolygonF> polies = paths.last().toSubpathPolygons(QTransform());
-
-    for (int i = 0; i < polies.size(); i++) {
-        polygons << polies[i];
-    }
-
-    paths << QPainterPath();*/
+    paths << QPainterPath();
+    transform = ublas::identity_matrix<double>(3, 3);
 }
 
 void VContext::clear() {
