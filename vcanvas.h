@@ -3,6 +3,7 @@
 #include <QtQuick>
 #include <shape/shape.hpp>
 #include <parser/svgpp_parser.hpp>
+#include <canvas/canvas_data.hpp>
 #include <canvas/transform_box.hpp>
 
 class VCanvas : public QQuickPaintedItem {
@@ -24,20 +25,18 @@ class VCanvas : public QQuickPaintedItem {
 
     private:
         bool ready;
-        float scroll_x;
-        float scroll_y;
-        float scale;
         int counter;
+        CanvasData canvas_data;
         SVGPPParser svgpp_parser;
         QList<Shape> shapes;
         TransformBox transform_box;
-
 
         QTimer *timer;
         bool small_screen;
         QPoint mouse_press;
         bool mouse_drag;
-
+        QRectF selection_box;
+        QPointF selection_start;
         QHash<int, int> m_fingerPointMapping;
 
     signals:

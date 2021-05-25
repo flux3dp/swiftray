@@ -4,20 +4,18 @@
 #define SELECTION_TOLERANCE 15
 
 Shape::Shape() noexcept {
-    x = 0;
-    y = 0;
-    rot = 0;
-    scale_x = 1;
-    scale_y = 1;
+    transform_ = QTransform();
     selected = false;
 }
 // todo: add setPath and avoid externally changing the paths.
 void Shape::simplify() {
-    //Realign object bounding box;
+    // Realign object bounding box;
     QRectF bbox = path.boundingRect();
-    x = x + bbox.x() + bbox.width() / 2;
-    y = y + bbox.y() + bbox.height() / 2;
-    path.translate(-bbox.x() - bbox.width() / 2, -bbox.y() - bbox.height() / 2);
+    path = QTransform()
+           .translate(-bbox.center().x(), -bbox.center().y())
+           .map(path);
+    // Set x,y
+    transform_ = transform_.translate(bbox.center().x(), bbox.center().y());
     // Caching paths to points for selection testing
     cacheSelectionTestingData();
 }
@@ -25,40 +23,70 @@ void Shape::simplify() {
 // only calls this when the path is different
 void Shape::cacheSelectionTestingData() {
     QRectF bbox = path.boundingRect();
-    float path_length = path.length();
-    float seg_step = 15 / path_length; // 15 units per segments
 
-    for (float percent = 0; percent < 1; percent += seg_step) {
-        selection_testing_points << path.pointAtPercent(percent);
+    if (path.elementCount() < 200) {
+        float path_length = path.length();
+        float seg_step = 15 / path_length; // 15 units per segments
+
+        for (float percent = 0; percent < 1; percent += seg_step) {
+            selection_testing_points << path.pointAtPercent(percent);
+        }
+
+        selection_testing_points << path.pointAtPercent(1);
+    } else {
+        QList<QPolygonF> polygons = path.toSubpathPolygons();
+
+        for (int i = 0; i < polygons.size(); i++) {
+            selection_testing_points.append(polygons[i].toList());
+        }
     }
 
-    selection_testing_points << path.pointAtPercent(1);
     selection_testing_rect = QRectF(bbox.x() - SELECTION_TOLERANCE, bbox.y() - SELECTION_TOLERANCE, bbox.width() + SELECTION_TOLERANCE * 2, bbox.height() + SELECTION_TOLERANCE * 2);
     // qInfo() << "Selection box" << selectionTestingRect;
 }
 
-QPointF Shape::pos() {
-    return QPointF(x, y);
+qreal Shape::x() {
+    return transform_.dx();
 }
 
+qreal Shape::y() {
+    return transform_.dy();
+}
+
+qreal Shape::scaleX() {
+    return transform_.m22();
+}
+
+qreal Shape::scaleY() {
+    return transform_.m23();
+}
+
+QPointF Shape::pos() {
+    return QPointF(x(), y());
+}
+
+void Shape::transform(QTransform transform) {
+    transform_ = transform_ * transform;
+}
+
+void Shape::pretransform(QTransform transform) {
+    transform_ =  transform * transform_;
+}
+
+void Shape::translate(qreal x, qreal y) {
+    transform_.translate(x, y);
+}
 
 bool Shape::testHit(QPointF global_coord) {
     //Rotate and scale global coord to local coord
-    QPointF d = global_coord - this->pos();
-    float newTheta = atan2(d.y(), d.x()) - this->rot * 3.1415926 / 180;
-    QPointF local_coord = sqrt(d.x() * d.x() + d.y() * d.y()) * QPointF(cos(newTheta), sin(newTheta));
-    local_coord = QPointF(local_coord.x() * this->scale_x, local_coord.y() * this->scale_y);
-    qInfo() << "Local coord" << local_coord;
+    QPointF local_coord = transform_.inverted().map(global_coord);
 
     if (!selection_testing_rect.contains(local_coord)) {
         return false;
     }
 
-    qInfo() << "Hit bbox" << local_coord;
-
     for (int i = 0; i < selection_testing_points.size(); i++) {
         if ((selection_testing_points[i] - local_coord).manhattanLength() < SELECTION_TOLERANCE) {
-            qInfo() << "Selected";
             return true;
         }
     }
@@ -66,13 +94,19 @@ bool Shape::testHit(QPointF global_coord) {
     return false;
 }
 
+QTransform Shape::globalTransform() {
+    return transform_;
+}
+
+bool Shape::testHit(QRectF global_coord_rect) {
+    QPainterPath new_path = transform_.map(path);
+    // TODO:: Logic still has bug when the path is not closed
+    return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);
+}
+
 QRectF Shape::boundingRect() {
     QRectF origRect = path.boundingRect();
     QPolygonF orig;
-    orig << origRect.topLeft() << origRect.topRight() << origRect.bottomLeft() << origRect.bottomRight();
-    return QTransform()
-           .translate(x, y)
-           .rotate(this->rot)
-           .scale(this->scale_x, this->scale_y)
-           .map(orig).boundingRect();
+    orig << origRect.topLeft() << origRect.topRight() << origRect.bottomRight() << origRect.bottomLeft();
+    return transform_.map(path).boundingRect();
 }
