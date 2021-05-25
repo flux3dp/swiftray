@@ -1,8 +1,9 @@
 #ifndef VCANVAS_H
 #define VCANVAS_H
 #include <QtQuick>
-#include "shape/shape.hpp"
-#include "parser/svgpp_parser.hpp"
+#include <shape/shape.hpp>
+#include <parser/svgpp_parser.hpp>
+#include <canvas/transform_box.hpp>
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
@@ -29,6 +30,7 @@ class VCanvas : public QQuickPaintedItem {
         int counter;
         SVGPPParser svgppParser;
         QList<Shape> shapes;
+        TransformBox transformBox;
 
 
         QTimer *timer;
