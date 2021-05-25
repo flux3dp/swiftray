@@ -12,18 +12,15 @@ class Shape {
         double x;
         double y;
         double rot;
-        double scaleX;
-        double scaleY;
+        double scale_x;
+        double scale_y;
         void simplify();
-        void setCenter(QPointF newCenterPos);
         QPointF pos();
         QRectF boundingRect();
         bool testHit(QPointF point);
     private:
         void cacheSelectionTestingData();
-        QRectF transformedBBox;
-        QPainterPath transformedPath;
-        QList<QPointF> selectionTestingPoints;
-        QRectF selectionTestingRect;
+        QList<QPointF> selection_testing_points;
+        QRectF selection_testing_rect;
 };
 #endif //SHAPE_H

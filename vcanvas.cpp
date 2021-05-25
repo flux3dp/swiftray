@@ -6,9 +6,9 @@
 #include <iostream>
 
 void VCanvas::loadSvg(QByteArray &data) {
-    transformBox.clear();
+    transform_box.clear();
     shapes.clear();
-    bool success = svgppParser.parse(data);
+    bool success = svgpp_parser.parse(data);
 
     if (shapes.length() > 5000) {
         setAntialiasing(false);
@@ -22,7 +22,7 @@ void VCanvas::loadSvg(QByteArray &data) {
 
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
-    svgppParser { SVGPPParser(&this->shapes) } {
+    svgpp_parser { SVGPPParser(&this->shapes) } {
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
     setAcceptTouchEvents(true);
@@ -31,22 +31,22 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
-    scrollX = 0;
-    scrollY = 0;
+    scroll_x = 0;
+    scroll_y = 0;
     scale = 1;
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
 void VCanvas::paint(QPainter *painter) {
-    painter->translate(scrollX, scrollY);
+    painter->translate(scroll_x, scroll_y);
     painter->scale(scale, scale);
     //Test selection box
-    //1transformBox.rotate(0.2);
+    //transformBox.rotate(0.2);
     QPen dashPen = QPen(Qt::blue, 2, Qt::DashLine);
     dashPen.setDashPattern(QVector<qreal>(10, 3));
     dashPen.setCosmetic(true);
     dashPen.setDashOffset(counter);
-    QPen solidPen = QPen(Qt::blue, 0, Qt::SolidLine);
+    QPen solidPen = QPen(Qt::black, 0, Qt::SolidLine);
     QPen greenPen = QPen(Qt::green, 0, Qt::DashLine);
 
     for (int i = 0; i < shapes.size(); i++) {
@@ -62,7 +62,7 @@ void VCanvas::paint(QPainter *painter) {
         // scaleX = shapes[i].scaleY = 1.0 + sin(0.01 * counter)
         painter->translate(shapes[i].x, shapes[i].y);
         painter->rotate(shapes[i].rot);
-        painter->scale(shapes[i].scaleX, shapes[i].scaleY);
+        painter->scale(shapes[i].scale_x, shapes[i].scale_y);
         painter->drawPath(shapes[i].path);
         painter->restore();
 
@@ -74,36 +74,38 @@ void VCanvas::paint(QPainter *painter) {
         }
     }
 
+    //Draw transform box
+    painter->drawPoints(transform_box.controlPoints(), 8);
     //qInfo() << "Offset" << scrollX << scrollY << "Scale" << scale;
 }
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
     qInfo() << "Mouse Press" << e->pos();
-    m_mousePress = e->pos();
-    QPointF clickPoint = (e->pos() - QPointF(scrollX, scrollY)) / scale;
+    mouse_press = e->pos();
+    QPointF clickPoint = (e->pos() - QPointF(scroll_x, scroll_y)) / scale;
     qInfo() << "Click point" << clickPoint;
     bool selectedObject = false;
 
     for (int i = 0; i < shapes.size(); i++) {
         if (shapes[i].testHit(clickPoint)) {
-            transformBox.setTarget(&shapes[i]);
+            transform_box.setTarget(&shapes[i]);
             selectedObject = true;
             break;
         }
     }
 
     if (selectedObject) {
-        m_mouseDrag = true;
+        mouse_drag = true;
     } else {
-        transformBox.clear();
+        transform_box.clear();
     }
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     // If we've moved more then 25 pixels, assume user is dragging
-    if (m_mouseDrag) {
-        transformBox.move((e->pos() - m_mousePress) / scale);
-        m_mousePress = e->pos();
+    if (mouse_drag) {
+        transform_box.move((e->pos() - mouse_press) / scale);
+        mouse_press = e->pos();
     }
 
     qInfo() << "Mouse Move" << e->pos();
@@ -114,8 +116,8 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void VCanvas::wheelEvent(QWheelEvent *e) {
-    scrollX += e->pixelDelta().x() / 2.5;
-    scrollY += e->pixelDelta().y() / 2.5;
+    scroll_x += e->pixelDelta().x() / 2.5;
+    scroll_y += e->pixelDelta().y() / 2.5;
     qInfo() << "Wheel Event" << e->pixelDelta();
 }
 

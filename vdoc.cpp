@@ -11,13 +11,13 @@ VDoc::VDoc(QObject *parent) : QObject(parent) {
 }
 
 QString VDoc::fileName() const {
-    const QString filePath = QQmlFile::urlToLocalFileOrQrc(m_fileUrl);
-    const QString fileName = QFileInfo(filePath).fileName();
+    const QString file_path = QQmlFile::urlToLocalFileOrQrc(this->file_url_);
+    const QString file_name = QFileInfo(file_path).fileName();
 
-    if (fileName.isEmpty())
+    if (file_name.isEmpty())
         return QStringLiteral("untitled.txt");
 
-    return fileName;
+    return file_name;
 }
 
 QString VDoc::fileType() const {
@@ -25,11 +25,11 @@ QString VDoc::fileType() const {
 }
 
 QUrl VDoc::fileUrl() const {
-    return m_fileUrl;
+    return this->file_url_;
 }
 
-void VDoc::load(const QUrl &fileUrl) {
-    if (fileUrl == m_fileUrl)
+void VDoc::load(const QUrl &file_url) {
+    if (file_url == this->file_url_)
         return;
 
     QQmlEngine *engine = qmlEngine(this);
@@ -39,7 +39,7 @@ void VDoc::load(const QUrl &fileUrl) {
         return;
     }
 
-    const QUrl path = QQmlFileSelector::get(engine)->selector()->select(fileUrl);
+    const QUrl path = QQmlFileSelector::get(engine)->selector()->select(file_url);
     const QString fileName = QQmlFile::urlToLocalFileOrQrc(path);
     qInfo("Loading file ");
     qInfo() << fileName;
@@ -55,12 +55,12 @@ void VDoc::load(const QUrl &fileUrl) {
         }
     }
 
-    m_fileUrl = fileUrl;
+    this->file_url_ = file_url;
     emit fileUrlChanged();
 }
 
-void VDoc::saveAs(const QUrl &fileUrl) {
-    const QString filePath = fileUrl.toLocalFile();
+void VDoc::saveAs(const QUrl &file_url) {
+    const QString filePath = file_url.toLocalFile();
     const bool isHtml = QFileInfo(filePath).suffix().contains(QLatin1String("htm"));
     QFile file(filePath);
     QString data = "Random";
@@ -73,18 +73,18 @@ void VDoc::saveAs(const QUrl &fileUrl) {
     file.write(data.toUtf8());
     file.close();
 
-    if (fileUrl == m_fileUrl)
+    if (file_url == this->file_url_)
         return;
 
-    m_fileUrl = fileUrl;
+    this->file_url_ = file_url;
     emit fileUrlChanged();
 }
 
 VCanvas *VDoc::canvas() const {
-    return m_canvas;
+    return this->canvas_;
 }
 
-void VDoc::setCanvas(VCanvas *_canvas) {
-    m_canvas = _canvas;
-    qInfo() << "Setting canvas " << _canvas;
+void VDoc::setCanvas(VCanvas *canvas) {
+    this->canvas_ = canvas;
+    qInfo() << "Setting canvas " << this->canvas_;
 }

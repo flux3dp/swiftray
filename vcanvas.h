@@ -24,19 +24,19 @@ class VCanvas : public QQuickPaintedItem {
 
     private:
         bool ready;
-        float scrollX;
-        float scrollY;
+        float scroll_x;
+        float scroll_y;
         float scale;
         int counter;
-        SVGPPParser svgppParser;
+        SVGPPParser svgpp_parser;
         QList<Shape> shapes;
-        TransformBox transformBox;
+        TransformBox transform_box;
 
 
         QTimer *timer;
-        bool m_smallScreen;
-        QPoint m_mousePress;
-        bool m_mouseDrag;
+        bool small_screen;
+        QPoint mouse_press;
+        bool mouse_drag;
 
         QHash<int, int> m_fingerPointMapping;
 
