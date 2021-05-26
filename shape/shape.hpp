@@ -12,7 +12,7 @@ class Shape {
         void simplify();
         QPointF pos();
         QRectF boundingRect();
-        bool testHit(QPointF global_coord);
+        bool testHit(QPointF global_coord, qreal tolerance);
         bool testHit(QRectF global_coord_rect);
         void cacheSelectionTestingData();
         qreal x();

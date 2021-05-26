@@ -77,7 +77,7 @@ void Shape::translate(qreal x, qreal y) {
     transform_.translate(x, y);
 }
 
-bool Shape::testHit(QPointF global_coord) {
+bool Shape::testHit(QPointF global_coord, qreal tolerance) {
     //Rotate and scale global coord to local coord
     QPointF local_coord = transform_.inverted().map(global_coord);
 
@@ -86,7 +86,7 @@ bool Shape::testHit(QPointF global_coord) {
     }
 
     for (int i = 0; i < selection_testing_points.size(); i++) {
-        if ((selection_testing_points[i] - local_coord).manhattanLength() < SELECTION_TOLERANCE) {
+        if ((selection_testing_points[i] - local_coord).manhattanLength() < tolerance) {
             return true;
         }
     }

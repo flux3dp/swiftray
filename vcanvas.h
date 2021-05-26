@@ -15,13 +15,17 @@ class VCanvas : public QQuickPaintedItem {
         void paint(QPainter *painter) override;
         void loop();
         void loadSvg(QByteArray &data);
-
-
         void mousePressEvent(QMouseEvent *e) override;
         void mouseMoveEvent(QMouseEvent *e) override;
         void mouseReleaseEvent(QMouseEvent *e) override;
         void wheelEvent(QWheelEvent *e) override;
         bool event(QEvent *e) override;
+
+    public Q_SLOTS:
+        void editCut();
+        void editCopy();
+        void editPaste();
+        void editDelete();
 
     private:
         bool ready;
@@ -38,6 +42,8 @@ class VCanvas : public QQuickPaintedItem {
         QRectF selection_box;
         QPointF selection_start;
         QHash<int, int> m_fingerPointMapping;
+
+        QList<Shape> shape_clipboard;
 
     signals:
         void rightAlignedChanged();

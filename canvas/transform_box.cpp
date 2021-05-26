@@ -1,49 +1,37 @@
 #include <canvas/transform_box.hpp>
 #include <QDebug>
 
-TransformBox::TransformBox() noexcept {
+TransformBox::TransformBox(CanvasData &canvas_data) noexcept : canvas_ {
+    canvas_data
+} {
+    connect(this, SIGNAL(transformChanged()), this, SLOT(updateBoundingRect()));
+    connect(&((QObject &)canvas_), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
 }
 
-QList<Shape *> *TransformBox::targets() {
-    return &this->targets_;
+QList<Shape *> &TransformBox::selections() {
+    return selections_;
 }
 
-void TransformBox::setTarget(Shape *target) {
-    QList<Shape *> list;
-    list << target;
-    setTargets(list);
-}
-
-void TransformBox::setTargets(QList<Shape *> &new_targets) {
-    clear();
-
-    for (int i = 0; i < new_targets.size(); i++) {
-        this->targets_ << new_targets[i];
-        new_targets[i]->selected = true;
+void TransformBox::updateSelections() {
+    for (int i = 0; i < selections().size() ; i ++) {
+        // Recalculate the click testing points
+        selections().at(i)->simplify();
     }
 
-    if (targets_.size() > 0) {
-        qInfo() << "Targets" << targets_.size();
-    }
+    selections().clear();
+    qInfo() << "Update selections" << canvas().selections().size();
+    selections().append(canvas().selections());
+    updateBoundingRect();
 }
 
-void TransformBox::clear() {
-    for (int i = 0; i < targets()->size(); i++) {
-        targets()->at(i)->simplify();
-        targets()->at(i)->selected = false;
-    }
-
-    targets()->clear();
-}
-
-QRectF TransformBox::boundingRect() {
+void TransformBox::updateBoundingRect() {
     float top = std::numeric_limits<float>::max();
     float bottom = std::numeric_limits<float>::min();
     float left = std::numeric_limits<float>::max();
     float right = std::numeric_limits<float>::min();
 
-    for (int i = 0; i < targets()->size(); i++) {
-        QRectF bb = targets()->at(i)->boundingRect();
+    for (int i = 0; i < selections().size(); i++) {
+        QRectF bb = selections().at(i)->boundingRect();
 
         if (bb.left() < left) {
             left = bb.left();
@@ -62,51 +50,56 @@ QRectF TransformBox::boundingRect() {
         }
     }
 
-    return QRectF(left, top, right - left, bottom - top);
+    bounding_rect_ = QRectF(left, top, right - left, bottom - top);
 }
 
-bool TransformBox::hasTargets() {
-    return targets()->size() > 0;
+QRectF TransformBox::boundingRect() {
+    return bounding_rect_;
 }
 
-bool TransformBox::containsTarget(Shape *shape) {
-    return targets()->contains(shape);
+CanvasData &TransformBox::canvas() {
+    return canvas_;
 }
 
 void TransformBox::rotate(double rotation) {
-    if (targets()->size() == 0) return;
+    if (selections().size() == 0) return;
 
-    QRectF bbox = this->boundingRect();
-    QTransform groupTransform = QTransform().translate(bbox.center().x(), bbox.center().y())
+    QTransform groupTransform = QTransform().translate(action_center_.x(), action_center_.y())
                                 .rotate(rotation)
-                                .translate(-bbox.center().x(), -bbox.center().y());
+                                .translate(-action_center_.x(), -action_center_.y());
     qInfo() << "Transform =" << groupTransform;
 
-    for (int i = 0; i < targets()->size(); i++) {
-        targets()->at(i)->transform(groupTransform);
+    for (int i = 0; i < selections().size(); i++) {
+        selections().at(i)->transform(groupTransform);
     }
+
+    emit transformChanged();
 }
 
 void TransformBox::scale(QPointF scale_center, float scale_x, float scale_y) {
-    if (targets()->size() == 0) return;
+    if (selections().size() == 0) return;
 
     QTransform groupTransform = QTransform().translate(scale_center.x(), scale_center.y())
                                 .scale(scale_x, scale_y)
                                 .translate(-scale_center.x(), -scale_center.y());
 
-    for (int i = 0; i < targets()->size(); i++) {
-        targets()->at(i)->transform(groupTransform);
+    for (int i = 0; i < selections().size(); i++) {
+        selections().at(i)->transform(groupTransform);
     }
+
+    emit transformChanged();
 }
 
 void TransformBox::move(QPointF offset) {
-    if (targets()->size() == 0) return;
+    if (selections().size() == 0) return;
 
     QTransform trans = QTransform().translate(offset.x(), offset.y());
 
-    for (int i = 0; i < targets_.size(); i++) {
-        targets()->at(i)->transform(trans);
+    for (int i = 0; i < selections().size(); i++) {
+        selections().at(i)->transform(trans);
     }
+
+    emit transformChanged();
 }
 
 const QPointF *TransformBox::controlPoints() {
@@ -168,102 +161,119 @@ TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float toler
     return ControlPoint::NONE;
 }
 
-bool TransformBox::mousePressEvent(QMouseEvent *e, CanvasData &canvas) {
+bool TransformBox::mousePressEvent(QMouseEvent *e) {
     pressed_at_ = e->pos();
-    QPointF canvas_coord = canvas.getCanvasCoord(e->pos());
-    activating_control_ = testHit(canvas_coord, 10 / canvas.scale);
+    QPointF canvas_coord = canvas().getCanvasCoord(e->pos());
+    activating_control_ = testHit(canvas_coord, 10 / canvas().scale);
     QPointF d;
+    QRectF bbox = boundingRect();
 
     switch (activating_control_) {
     case ControlPoint::ROTATION:
-        d  = QPointF(canvas_coord - boundingRect().center());
+        action_center_ = bbox.center();
+        d  = QPointF(canvas_coord - action_center_);
         transform_rotation = atan2(d.y(), d.x());
+        init_rotation_rect_ = boundingRect().translated(-action_center_);
+        cumulated_rotation_ = 0;
         qInfo() << "Transform rotation" << transform_rotation;
-        canvas.mode = CanvasData::Mode::TRANSFORMING;
+        canvas().setMode(CanvasData::Mode::TRANSFORMING);
         return true;
 
     case ControlPoint::NW:
+        action_center_ = bbox.bottomRight();
+        break;
+
     case ControlPoint::NE:
+        action_center_ = bbox.bottomLeft();
+        break;
+
     case ControlPoint::SW:
+        action_center_ = bbox.topRight();
+        break;
+
     case ControlPoint::SE:
+        action_center_ = bbox.topLeft();
+        break;
+
     case ControlPoint::N:
+    case ControlPoint::W:
+        action_center_ = bbox.bottomRight();
+        break;
+
     case ControlPoint::S:
     case ControlPoint::E:
-    case ControlPoint::W:
-        transform_scaler = QSizeF(boundingRect().size());
-        qInfo() << "Transform scaling" << d;
-        canvas.mode = CanvasData::Mode::TRANSFORMING;
-        return true;
+        action_center_ = bbox.topLeft();
+        break;
 
     default:
         qInfo() << "Transform point" << (int)activating_control_;
         return false;
     }
+
+    transform_scaler = QSizeF(boundingRect().size());
+    flipped_x = false;
+    flipped_y = false;
+    qInfo() << "Transform scaling" << d;
+    canvas().setMode(CanvasData::Mode::TRANSFORMING);
+    return true;
 }
-bool TransformBox::mouseReleaseEvent(QMouseEvent *e, const CanvasData &canvas) {
+
+bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
+    if (activating_control_ != ControlPoint::NONE) {
+        activating_control_ = ControlPoint::NONE;
+        flipped_x = false;
+        flipped_y = false;
+        return true;
+    }
+
     return false;
 }
-bool TransformBox::mouseMoveEvent(QMouseEvent *e, const CanvasData &canvas) {
-    QPointF canvas_coord = canvas.getCanvasCoord(e->pos());
 
-    if (canvas.mode == CanvasData::Mode::SELECTING) {
-        move((e->pos() - pressed_at_) / canvas.scale);
+bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
+    QPointF canvas_coord = canvas().getCanvasCoord(e->pos());
+
+    if (canvas().mode() == CanvasData::Mode::SELECTING) {
+        move((e->pos() - pressed_at_) / canvas().scale);
         pressed_at_ = e->pos();
         return true;
     }
 
-    if (canvas.mode != CanvasData::Mode::TRANSFORMING) return false;
-
-    QRectF bbox = boundingRect();
+    if (canvas().mode() != CanvasData::Mode::TRANSFORMING) return false;
 
     if (activating_control_ == ControlPoint::ROTATION) {
-        QPointF d(canvas_coord - bbox.center());
+        QPointF d(canvas_coord - action_center_);
         float new_transform_rotation = atan2(d.y(), d.x());
         qInfo() << "Transform rotation" << new_transform_rotation;
+        cumulated_rotation_ += (new_transform_rotation - transform_rotation) * 180 / 3.1415926;
         rotate((new_transform_rotation - transform_rotation) * 180 / 3.1415926);
-        transform_rotation = new_transform_rotation;
+        transform_rotation = atan2(d.y(), d.x());
+        return true;
     }
 
-    QPointF scaling_center;
-
-    switch (activating_control_) {
-    case ControlPoint::NW:
-        scaling_center = bbox.bottomRight();
-        break;
-
-    case ControlPoint::NE:
-        scaling_center = bbox.bottomLeft();
-        break;
-
-    case ControlPoint::SW:
-        scaling_center = bbox.topRight();
-        break;
-
-    case ControlPoint::SE:
-        scaling_center = bbox.topLeft();
-        break;
-
-    case ControlPoint::N:
-    case ControlPoint::W:
-        scaling_center = bbox.bottomRight();
-        break;
-
-    case ControlPoint::S:
-    case ControlPoint::E:
-        scaling_center = bbox.topLeft();
-        break;
-
-    default:
-        return false;
-    }
-
-    QPointF d(canvas_coord - scaling_center);
-
+    // Scaling
     //TODO: improve logic
+    QPointF d(canvas_coord - action_center_);
+
     if (d.x() == 0 || d.y() == 0) return true;
 
-    qreal sx = abs(d.x() / transform_scaler.width());
-    qreal sy = abs(d.y() / transform_scaler.height());
+    switch (activating_control_) {
+    case ControlPoint::N:
+    case ControlPoint::NE:
+        d.setY(-d.y());
+        break;
+
+    case ControlPoint::NW:
+        d.setY(-d.y());
+        d.setX(-d.x());
+        break;
+
+    case ControlPoint::W:
+        d.setX(-d.x());
+        break;
+    }
+
+    qreal sx = d.x() / transform_scaler.width();
+    qreal sy = d.y() / transform_scaler.height();
 
     if (activating_control_ == ControlPoint::N || activating_control_ == ControlPoint::S) {
         sx = 1;
@@ -271,14 +281,34 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e, const CanvasData &canvas) {
         sy = 1;
     }
 
-    qInfo() << "Transform scaler" << sx << sy;
-    scale(scaling_center, sx, sy);
+    // TODO:: BUG from Grabbing N flip
+
+    if (d.x() > 0 && flipped_x) {
+        flipped_x = false;
+        sx = -sx;
+    }
+
+    if (d.y() > 0 && flipped_y) {
+        flipped_y = false;
+        sy = -sy;
+    }
+
+    if (flipped_x) sx = abs(sx);
+
+    if (flipped_y) sy = abs(sy);
+
+    if (d.x() < 0) flipped_x = true;
+
+    if (d.y() < 0) flipped_y = true;
+
+    qInfo() << "Transforming scaler" << sx << sy << d.x() << d.y() << flipped_x << flipped_y;
+    scale(action_center_, sx, sy);
     transform_scaler = QSizeF(boundingRect().size());
     return true;
 }
 
-bool TransformBox::hoverEvent(QHoverEvent *e, const CanvasData &canvas, Qt::CursorShape *cursor) {
-    ControlPoint cp = testHit(canvas.getCanvasCoord(e->pos()), 10 / canvas.scale);
+bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
+    ControlPoint cp = testHit(canvas().getCanvasCoord(e->pos()), 10 / canvas().scale);
 
     switch (cp) {
     case ControlPoint::ROTATION:
@@ -310,4 +340,28 @@ bool TransformBox::hoverEvent(QHoverEvent *e, const CanvasData &canvas, Qt::Curs
     }
 
     return false;
+}
+
+void TransformBox::paint(QPainter *painter) {
+    QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
+    QPen bluePen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
+    QPen ptPen(sky_blue, 10 / canvas().scale, Qt::PenStyle::SolidLine, Qt::RoundCap);
+
+    if (selections().size() > 0) {
+        if (activating_control_ == ControlPoint::ROTATION) {
+            painter->save();
+            painter->translate(action_center_);
+            painter->setPen(bluePen);
+            painter->rotate(cumulated_rotation_);
+            painter->drawRect(init_rotation_rect_);
+            painter->restore();
+        } else {
+            painter->setPen(bluePen);
+            painter->drawPolyline(controlPoints(), 8);
+            painter->drawLine(controlPoints()[7], controlPoints()[0]);
+            painter->setPen(ptPen);
+            painter->drawPoints(controlPoints(), 8);
+            painter->drawPoint(boundingRect().center());
+        }
+    }
 }

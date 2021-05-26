@@ -8,7 +8,8 @@
 #ifndef TRANSFORM_BOX_H
 #define TRANSFORM_BOX_H
 
-class TransformBox {
+class TransformBox : QObject {
+        Q_OBJECT
     public:
         enum class ControlPoint {
             NONE,
@@ -22,31 +23,41 @@ class TransformBox {
             W,
             ROTATION
         };
-        TransformBox() noexcept;
-        bool hasTargets();
-        void setTarget(Shape *target);
-        void setTargets(QList<Shape *> &targets);
-        bool containsTarget(Shape *target);
-        void clear();
+        TransformBox(CanvasData &canvas_data) noexcept;
         const QPointF *controlPoints();
         QRectF boundingRect();
-        bool mousePressEvent(QMouseEvent *e, CanvasData &canvas_data);
-        bool mouseReleaseEvent(QMouseEvent *e, const CanvasData &canvas_data);
-        bool mouseMoveEvent(QMouseEvent *e, const CanvasData &canvas_data);
-        bool hoverEvent(QHoverEvent *e, const CanvasData &canvas, Qt::CursorShape *cursor);
+        bool mousePressEvent(QMouseEvent *e);
+        bool mouseReleaseEvent(QMouseEvent *e);
+        bool mouseMoveEvent(QMouseEvent *e);
+        bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
+        void paint(QPainter *painter);
+        QList<Shape *> &selections();
+        CanvasData &canvas();
+
     private:
         void rotate(double rotation);
         void move(QPointF offset);
         void scale(QPointF scaleCenter, float scaleX, float scaleY);
         ControlPoint testHit(QPointF clickPoint, float tolerance);
-        QList<Shape *> *targets();
-        QList<Shape *> targets_;
         QPointF control_points_[8];
         ControlPoint activating_control_;
         QPointF pressed_at_;
+        CanvasData &canvas_;
+        QPointF action_center_;
+        float cumulated_rotation_;
+        bool flipped_x;
+        bool flipped_y;
+        QRectF init_rotation_rect_;
+        QRectF bounding_rect_;
+        QList<Shape *> selections_;
 
         float transform_rotation;
         QSizeF transform_scaler;
+    public slots:
+        void updateSelections();
+        void updateBoundingRect();
+    signals:
+        void transformChanged();
 };
 
 #endif

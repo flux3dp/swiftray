@@ -1,7 +1,9 @@
 #include <QPoint>
+#include <shape/shape.hpp>
 #ifndef CANVAS_DATA_HPP
 #define CANVAS_DATA_HPP
-class CanvasData {
+class CanvasData : QObject {
+        Q_OBJECT
     public:
         enum class Mode {
             SELECTING,
@@ -11,10 +13,19 @@ class CanvasData {
         qreal scroll_x;
         qreal scroll_y;
         qreal scale;
-        Mode mode;
+        bool isSelected(Shape *shape);
+        QList<Shape *> &selections();
 
         CanvasData() noexcept {
-            mode = Mode::SELECTING;
+            mode_ = Mode::SELECTING;
+        }
+
+        Mode mode() {
+            return mode_;
+        }
+
+        void setMode(Mode mode) {
+            mode_ = mode;
         }
 
         QPointF getCanvasCoord(QPointF window_coord) const {
@@ -23,6 +34,15 @@ class CanvasData {
         QPointF scroll() const {
             return QPointF(scroll_x, scroll_y);
         }
+        void setSelection(Shape *shape);
+        void setSelections(QList<Shape *> &shape);
+        void clearSelection();
+        void clearSelectionNoFlag();
+    signals:
+        void selectionsChanged();
+    private:
+        QList<Shape *> selections_;
+        Mode mode_;
 };
 
 #endif // CANVAS_DATA_HPP
