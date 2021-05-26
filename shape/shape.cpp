@@ -45,23 +45,23 @@ void Shape::cacheSelectionTestingData() {
     // qInfo() << "Selection box" << selectionTestingRect;
 }
 
-qreal Shape::x() {
+qreal Shape::x() const {
     return transform_.dx();
 }
 
-qreal Shape::y() {
+qreal Shape::y() const {
     return transform_.dy();
 }
 
-qreal Shape::scaleX() {
+qreal Shape::scaleX() const {
     return transform_.m22();
 }
 
-qreal Shape::scaleY() {
+qreal Shape::scaleY() const {
     return transform_.m23();
 }
 
-QPointF Shape::pos() {
+QPointF Shape::pos() const {
     return QPointF(x(), y());
 }
 
@@ -77,7 +77,7 @@ void Shape::translate(qreal x, qreal y) {
     transform_.translate(x, y);
 }
 
-bool Shape::testHit(QPointF global_coord, qreal tolerance) {
+bool Shape::testHit(QPointF global_coord, qreal tolerance) const {
     //Rotate and scale global coord to local coord
     QPointF local_coord = transform_.inverted().map(global_coord);
 
@@ -94,17 +94,17 @@ bool Shape::testHit(QPointF global_coord, qreal tolerance) {
     return false;
 }
 
-QTransform Shape::globalTransform() {
+QTransform Shape::globalTransform() const {
     return transform_;
 }
 
-bool Shape::testHit(QRectF global_coord_rect) {
+bool Shape::testHit(QRectF global_coord_rect) const {
     QPainterPath new_path = transform_.map(path);
     // TODO:: Logic still has bug when the path is not closed
     return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);
 }
 
-QRectF Shape::boundingRect() {
+QRectF Shape::boundingRect() const {
     QRectF origRect = path.boundingRect();
     QPolygonF orig;
     orig << origRect.topLeft() << origRect.topRight() << origRect.bottomRight() << origRect.bottomLeft();

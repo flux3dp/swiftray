@@ -7,6 +7,7 @@ class CanvasData : QObject {
     public:
         enum class Mode {
             SELECTING,
+            MOVING,
             MULTI_SELECTING,
             TRANSFORMING
         };
@@ -36,8 +37,17 @@ class CanvasData : QObject {
         }
         void setSelection(Shape *shape);
         void setSelections(QList<Shape *> &shape);
+        void clear();
         void clearSelection();
         void clearSelectionNoFlag();
+        void stackStep();
+        void undo();
+        void redo();
+        Shape *shapesAt(int index);
+        QList<QList<Shape>> undo_stack;
+        QList<QList<Shape>> redo_stack;
+        QList<Shape> shapes_;
+        QList<Shape> shape_clipboard;
     signals:
         void selectionsChanged();
     private:

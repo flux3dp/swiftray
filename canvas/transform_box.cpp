@@ -96,7 +96,7 @@ void TransformBox::move(QPointF offset) {
     QTransform trans = QTransform().translate(offset.x(), offset.y());
 
     for (int i = 0; i < selections().size(); i++) {
-        selections().at(i)->transform(trans);
+        selections()[i]->transform(trans);
     }
 
     emit transformChanged();
@@ -176,6 +176,7 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
         init_rotation_rect_ = boundingRect().translated(-action_center_);
         cumulated_rotation_ = 0;
         qInfo() << "Transform rotation" << transform_rotation;
+        canvas().stackStep();
         canvas().setMode(CanvasData::Mode::TRANSFORMING);
         return true;
 
@@ -214,6 +215,7 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
     flipped_x = false;
     flipped_y = false;
     qInfo() << "Transform scaling" << d;
+    canvas().stackStep();
     canvas().setMode(CanvasData::Mode::TRANSFORMING);
     return true;
 }
@@ -223,6 +225,13 @@ bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
         activating_control_ = ControlPoint::NONE;
         flipped_x = false;
         flipped_y = false;
+        canvas().stackStep();
+        return true;
+    }
+
+    if (canvas().mode() == CanvasData::Mode::MOVING) {
+        canvas().setMode(CanvasData::Mode::SELECTING);
+        canvas().stackStep();
         return true;
     }
 
@@ -230,9 +239,16 @@ bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
+    if (canvas().selections().size() == 0) return false;
+
     QPointF canvas_coord = canvas().getCanvasCoord(e->pos());
 
     if (canvas().mode() == CanvasData::Mode::SELECTING) {
+        qInfo() << "Stack moving";
+        canvas().setMode(CanvasData::Mode::MOVING);
+    }
+
+    if (canvas().mode() == CanvasData::Mode::MOVING) {
         move((e->pos() - pressed_at_) / canvas().scale);
         pressed_at_ = e->pos();
         return true;

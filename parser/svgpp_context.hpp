@@ -18,7 +18,7 @@ using namespace svgpp;
 
 class SVGPPContext {
     public:
-        SVGPPContext(QList<Shape> *shapes);
+        SVGPPContext(QList<Shape> &shapes);
 
         void on_enter_element(tag::element::any)
         {}
@@ -77,7 +77,7 @@ class SVGPPContext {
         QPointF getTransformedPos(double x, double y);
 
     private:
-        QList<Shape> *shapes;
+        QList<Shape> &shapes_;
         matrix_t transform;
 };
 
