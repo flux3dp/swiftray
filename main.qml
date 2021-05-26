@@ -39,10 +39,12 @@ Window {
             MenuItem {
                 text: "Undo"
                 shortcut: StandardKey.Undo
+                onTriggered: vcanvas.editUndo()
             }
             MenuItem {
                 text: "Redo"
                 shortcut: StandardKey.Redo
+                onTriggered: vcanvas.editRedo()
             }
             MenuItem {
                 separator: true
