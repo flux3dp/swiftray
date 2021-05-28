@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
             this, &MainWindow::quickWidgetStatusChanged);
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,
             this, &MainWindow::sceneGraphError);
-    QUrl source("qrc:/main.qml");
+    QUrl source("qrc:/src/window/main.qml");
     ui->quickWidget->setSource(source);
     ui->quickWidget->show();
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);

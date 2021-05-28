@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QTextCursor>
 #include <QUrl>
-#include "vcanvas.h"
+#include <canvas/vcanvas.h>
 
 QT_BEGIN_NAMESPACE
 class QTextDocument;

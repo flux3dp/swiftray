@@ -5,10 +5,10 @@
 
 #include <QLocale>
 #include <QTranslator>
-#include "vcanvas.h"
+#include <canvas/vcanvas.h>
 #include "vdoc.h"
-#include "osxwindow.h"
-#include "mainwindow.h"
+#include <window/osxwindow.h>
+#include <window/mainwindow.h>
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);

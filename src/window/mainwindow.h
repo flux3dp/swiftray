@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QQuickWindow>
 #include <QQuickWidget>
-#include "vcanvas.h"
+#include <canvas/vcanvas.h>
 #include "vdoc.h"
 
 namespace Ui {
