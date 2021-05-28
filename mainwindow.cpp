@@ -54,6 +54,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
     connect(ui->actionUndo, &QAction::triggered, canvas_, &VCanvas::editUndo);
     connect(ui->actionRedo, &QAction::triggered, canvas_, &VCanvas::editRedo);
+    connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
 }
 
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
