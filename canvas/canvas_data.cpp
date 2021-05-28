@@ -1,12 +1,12 @@
 #include <canvas/canvas_data.hpp>
 #include <QDebug>
 
-void CanvasData::setSelection(Shape *shape) {
-    QList<Shape *> list;
-    list << shape;
+void CanvasData::setSelection(ShapePtr shape) {
+    QList<ShapePtr> list;
+    list.push_back(shape);
     setSelections(list);
 }
-void CanvasData::setSelections(QList<Shape *> &shapes) {
+void CanvasData::setSelections(QList<ShapePtr> &shapes) {
     clearSelection();
     selections().append(shapes);
 
@@ -31,11 +31,11 @@ void CanvasData::clearSelectionNoFlag() {
     emit selectionsChanged();
 }
 
-bool CanvasData::isSelected(Shape *shape) {
+bool CanvasData::isSelected(ShapePtr shape) {
     return selections().contains(shape);
 }
 
-QList<Shape *> &CanvasData::selections() {
+QList<ShapePtr> &CanvasData::selections() {
     return selections_;
 }
 
@@ -51,11 +51,16 @@ void CanvasData::stackStep() {
         undo_stack.pop_front();
     }
 
-    QList<Shape> clone;
-    std::copy(shapes_.begin(), shapes_.end(), std::back_inserter(clone));
-    undo_stack.push_back(clone);
+    QList<ShapePtr> cloned;
+
+    for (int i = 0 ; i < shapes_.length(); i++) {
+        cloned.push_back(shapes_[i]->clone());
+    }
+
+    undo_stack.push_back(cloned);
 }
 
+// TODO: fix gc and deconstructor
 void CanvasData::undo() {
     qInfo() << "Undo";
 
@@ -66,11 +71,11 @@ void CanvasData::undo() {
     clear();
     shapes_.append(undo_stack.last());
     redo_stack.push_back(undo_stack.last());
-    QList<Shape *> selected;
+    QList<shared_ptr<Shape>> selected;
 
     for (int i = 0; i < shapes_.length(); i++) {
-        if (shapes_[i].selected) {
-            selected << &shapes_[i];
+        if (shapes_.at(i)->selected) {
+            selected << shapes_.at(i);
         }
     }
 
@@ -89,11 +94,11 @@ void CanvasData::redo() {
     clear();
     shapes_.append(redo_stack.last());
     undo_stack.push_back(redo_stack.last());
-    QList<Shape *> selected;
+    QList<ShapePtr> selected;
 
     for (int i = 0; i < shapes_.length(); i++) {
-        if (shapes_[i].selected) {
-            selected << &shapes_[i];
+        if (shapes_.at(i)->selected) {
+            selected << shapes_.at(i);
         }
     }
 
@@ -101,6 +106,6 @@ void CanvasData::redo() {
     redo_stack.pop_back();
 }
 
-Shape *CanvasData::shapesAt(int i) {
-    return &shapes_[i];
+ShapeCollection &CanvasData::shapes() {
+    return shapes_;
 }

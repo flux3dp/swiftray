@@ -2,22 +2,20 @@
 #include <QPainter>
 #include <QPainterPath>
 
-SVGPPContext::SVGPPContext(QList<Shape> &shapes): shapes_ { shapes } {
+SVGPPContext::SVGPPContext(ShapeCollection &shapes): shapes_ { shapes } {
     transform = ublas::identity_matrix<double>(3, 3);
 }
 
 void SVGPPContext::path_move_to(double x, double y, tag::coordinate::absolute) {
     // qInfo() << "Move to " << x << "," << y;
-    if (shapes_.length() == 0) shapes_.push_back(Shape());
-
     QPointF newPos = getTransformedPos(x, y);
-    shapes_.last().path.moveTo(newPos.x(), newPos.y());
+    working_path_.moveTo(newPos.x(), newPos.y());
 }
 
 void SVGPPContext::path_line_to(double x, double y, tag::coordinate::absolute) {
     // qInfo() << "Line to " << x << "," << y;
     QPointF newPos = getTransformedPos(x, y);
-    shapes_.last().path.lineTo(newPos.x(), newPos.y());
+    working_path_.lineTo(newPos.x(), newPos.y());
 }
 
 void SVGPPContext::path_cubic_bezier_to(
@@ -29,7 +27,7 @@ void SVGPPContext::path_cubic_bezier_to(
     QPointF newPos2 = getTransformedPos(x2, y2);
     QPointF newPos1 = getTransformedPos(x1, y1);
     QPointF newPos = getTransformedPos(x, y);
-    shapes_.last().path.cubicTo(newPos1.x(), newPos1.y(), newPos2.x(), newPos2.y(), newPos.x(), newPos.y());
+    working_path_.cubicTo(newPos1.x(), newPos1.y(), newPos2.x(), newPos2.y(), newPos.x(), newPos.y());
 }
 
 void SVGPPContext::path_quadratic_bezier_to(
@@ -39,7 +37,7 @@ void SVGPPContext::path_quadratic_bezier_to(
     // qInfo() << "Q bezier to " << x << "," << y;
     QPointF newPos1 = getTransformedPos(x1, y1);
     QPointF newPos = getTransformedPos(x, y);
-    shapes_.last().path.quadTo(newPos1.x(), newPos1.y(), newPos.x(), newPos.y());
+    working_path_.quadTo(newPos1.x(), newPos1.y(), newPos.x(), newPos.y());
 }
 
 void SVGPPContext::path_elliptical_arc_to(
@@ -51,7 +49,7 @@ void SVGPPContext::path_elliptical_arc_to(
     x2 = newPos2.x();
     y2 = newPos2.y();
     // qInfo() << "E bezier to " << x << "," << y;
-    QPointF currentPos = shapes_.last().path.currentPosition();
+    QPointF currentPos = working_path_.currentPosition();
     // TODO support rotated arc https://github.com/inkcut/inkcut/blob/ab27cf57ce5a5bd3bcaeef77bac28e4d6f92895a/inkcut/core/svg.py
     const double x1 = currentPos.x(),
                  y1 = currentPos.y(),
@@ -90,18 +88,20 @@ void SVGPPContext::path_elliptical_arc_to(
         sweep_length -= 2 * 3.1415926;
     }
 
-    shapes_.last().path.arcTo(cx - rx, cy - ry, rx * 2, ry * 2,
-                              start_theta * 360 / 2 / 3.1415926, sweep_length * 360 / 2 / 3.1415926);
+    working_path_.arcTo(cx - rx, cy - ry, rx * 2, ry * 2,
+                        start_theta * 360 / 2 / 3.1415926, sweep_length * 360 / 2 / 3.1415926);
 }
 
 void SVGPPContext::path_close_subpath() {
-    shapes_.last().path.closeSubpath();
+    working_path_.closeSubpath();
 }
 
 void SVGPPContext::path_exit() {
-    shapes_.last().simplify();
-    shapes_.push_back(Shape());
+    ShapePtr shape(new PathShape(working_path_));
+    shape->simplify();
+    shapes_.push_back(shape);
     transform = ublas::identity_matrix<double>(3, 3);
+    working_path_ = QPainterPath();
 }
 
 QPointF SVGPPContext::getTransformedPos(double x, double y) {

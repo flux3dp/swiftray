@@ -1,13 +1,14 @@
 #include <QPainterPath>
 #include <shape/shape.hpp>
+#include <container/shape_collection.h>
 
 #ifndef SVGPP_PARSER_H
 #define SVGPP_PARSER_H
 
 class SVGPPParser {
     public:
-        SVGPPParser(QList<Shape> &shapes);
-        QList<Shape> &shapes_;
+        SVGPPParser(ShapeCollection &shapes);
+        ShapeCollection &shapes_;
         bool parse(QByteArray &data);
 };
 

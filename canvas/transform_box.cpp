@@ -8,7 +8,7 @@ TransformBox::TransformBox(CanvasData &canvas_data) noexcept : canvas_ {
     connect(&((QObject &)canvas_), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
 }
 
-QList<Shape *> &TransformBox::selections() {
+QList<ShapePtr> &TransformBox::selections() {
     return selections_;
 }
 
@@ -19,7 +19,6 @@ void TransformBox::updateSelections() {
     }
 
     selections().clear();
-    qInfo() << "Update selections" << canvas().selections().size();
     selections().append(canvas().selections());
     updateBoundingRect();
 }
@@ -67,10 +66,9 @@ void TransformBox::rotate(double rotation) {
     QTransform groupTransform = QTransform().translate(action_center_.x(), action_center_.y())
                                 .rotate(rotation)
                                 .translate(-action_center_.x(), -action_center_.y());
-    qInfo() << "Transform =" << groupTransform;
 
     for (int i = 0; i < selections().size(); i++) {
-        selections().at(i)->transform(groupTransform);
+        selections().at(i)->applyTransform(groupTransform);
     }
 
     emit transformChanged();
@@ -84,7 +82,7 @@ void TransformBox::scale(QPointF scale_center, float scale_x, float scale_y) {
                                 .translate(-scale_center.x(), -scale_center.y());
 
     for (int i = 0; i < selections().size(); i++) {
-        selections().at(i)->transform(groupTransform);
+        selections().at(i)->applyTransform(groupTransform);
     }
 
     emit transformChanged();
@@ -96,7 +94,7 @@ void TransformBox::move(QPointF offset) {
     QTransform trans = QTransform().translate(offset.x(), offset.y());
 
     for (int i = 0; i < selections().size(); i++) {
-        selections()[i]->transform(trans);
+        selections()[i]->applyTransform(trans);
     }
 
     emit transformChanged();

@@ -1,4 +1,5 @@
 QT += quick
+QT += quickwidgets
 QT += opengl
 
 CONFIG += c++17
@@ -15,10 +16,19 @@ INCLUDEPATH += /usr/local/opt/libxml2/include
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+        canvas/canvas_data.cpp \
+        canvas/layer.cpp \
+        canvas/transform_box.cpp \
+        container/shape_collection.cpp \
         main.cpp \
-        vcontext.cpp \
+        mainwindow.cpp \
+        shape/group_shape.cpp \
+        shape/path_shape.cpp \
         vdoc.cpp \
         vcanvas.cpp \
+        shape/shape.cpp \
+        parser/svgpp_parser.cpp \
+        parser/svgpp_context.cpp \
         parser/svgpp_impl.cpp
 
 RESOURCES += qml.qrc
@@ -40,10 +50,20 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    canvas/canvas_data.hpp \
+    canvas/layer.h \
+    canvas/transform_box.hpp \
+    container/shape_collection.h \
+    mainwindow.h \
+    osxwindow.h \
+    shape/group_shape.h \
+    shape/path_shape.h \
     vcanvas.h \
-    vcontext.h \
     vdoc.h \
+    shape/shape.hpp \
     parser/svgpp_common.hpp \
+    parser/svgpp_parser.hpp \
+    parser/svgpp_context.hpp \
     parser/svgpp_impl.hpp \
     parser/svgpp_color_factory.hpp
 
@@ -53,8 +73,17 @@ else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_syst
 INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
-DESTDIR = build/vecty/
-OBJECTS_DIR = build/vecty/.obj
-MOC_DIR = build/vecty/.moc
-RCC_DIR = build/vecty/.rcc
-UI_DIR = build/vecty/.ui
+DESTDIR = /Users/simon/Dev/vecty/build
+OBJECTS_DIR = /Users/simon/build/vecty/.obj
+MOC_DIR = /Users/simon/build/vecty/.moc
+RCC_DIR = /Users/simon/build/vecty/.rcc
+UI_DIR = /Users/simon/build/vecty/.ui
+
+FORMS += \
+    mainwindow.ui
+
+DISTFILES += \
+    ../../Downloads/icons8-cursor-48.png \
+    images/select.png
+
+OBJECTIVE_SOURCES += osxwindow.mm

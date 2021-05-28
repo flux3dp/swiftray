@@ -3,47 +3,19 @@
 
 #define SELECTION_TOLERANCE 15
 
+using namespace std;
+
 Shape::Shape() noexcept {
     transform_ = QTransform();
     selected = false;
+    qInfo() << "New Shape" << this;
 }
-// todo: add setPath and avoid externally changing the paths.
-void Shape::simplify() {
-    // Realign object bounding box;
-    QRectF bbox = path.boundingRect();
-    path = QTransform()
-           .translate(-bbox.center().x(), -bbox.center().y())
-           .map(path);
-    // Set x,y
-    transform_ = transform_.translate(bbox.center().x(), bbox.center().y());
-    // Caching paths to points for selection testing
-    cacheSelectionTestingData();
+
+Shape::~Shape() {
+    qInfo() << "Shape::Deconstruct" << this;
 }
 
 // only calls this when the path is different
-void Shape::cacheSelectionTestingData() {
-    QRectF bbox = path.boundingRect();
-
-    if (path.elementCount() < 200) {
-        float path_length = path.length();
-        float seg_step = 15 / path_length; // 15 units per segments
-
-        for (float percent = 0; percent < 1; percent += seg_step) {
-            selection_testing_points << path.pointAtPercent(percent);
-        }
-
-        selection_testing_points << path.pointAtPercent(1);
-    } else {
-        QList<QPolygonF> polygons = path.toSubpathPolygons();
-
-        for (int i = 0; i < polygons.size(); i++) {
-            selection_testing_points.append(polygons[i].toList());
-        }
-    }
-
-    selection_testing_rect = QRectF(bbox.x() - SELECTION_TOLERANCE, bbox.y() - SELECTION_TOLERANCE, bbox.width() + SELECTION_TOLERANCE * 2, bbox.height() + SELECTION_TOLERANCE * 2);
-    // qInfo() << "Selection box" << selectionTestingRect;
-}
 
 qreal Shape::x() const {
     return transform_.dx();
@@ -65,48 +37,50 @@ QPointF Shape::pos() const {
     return QPointF(x(), y());
 }
 
-void Shape::transform(QTransform transform) {
+void Shape::applyTransform(QTransform transform) {
     transform_ = transform_ * transform;
 }
 
-void Shape::pretransform(QTransform transform) {
-    transform_ =  transform * transform_;
+void Shape::setTransform(QTransform transform) {
+    transform_ = transform;
 }
 
-void Shape::translate(qreal x, qreal y) {
-    transform_.translate(x, y);
-}
-
-bool Shape::testHit(QPointF global_coord, qreal tolerance) const {
-    //Rotate and scale global coord to local coord
-    QPointF local_coord = transform_.inverted().map(global_coord);
-
-    if (!selection_testing_rect.contains(local_coord)) {
-        return false;
-    }
-
-    for (int i = 0; i < selection_testing_points.size(); i++) {
-        if ((selection_testing_points[i] - local_coord).manhattanLength() < tolerance) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-QTransform Shape::globalTransform() const {
+QTransform Shape::transform() const {
     return transform_;
 }
 
-bool Shape::testHit(QRectF global_coord_rect) const {
-    QPainterPath new_path = transform_.map(path);
-    // TODO:: Logic still has bug when the path is not closed
-    return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);
+
+void Shape::cacheSelectionTestingData() {
+    qWarning() << "Shape::CacheSelection not implemented" << this;
+}
+
+
+void Shape::simplify() {
+    qWarning() << "Shape::Simplify not implemented" << this;
+    return;
+}
+
+bool Shape::testHit(QPointF, qreal) const {
+    qWarning() << "Shape::TestHit Point not implemented" << this;
+    return false;
+}
+
+bool Shape::testHit(QRectF) const {
+    qWarning() << "Shape::TestHit Rect not implemented" << this;
+    return false;
 }
 
 QRectF Shape::boundingRect() const {
-    QRectF origRect = path.boundingRect();
-    QPolygonF orig;
-    orig << origRect.topLeft() << origRect.topRight() << origRect.bottomRight() << origRect.bottomLeft();
-    return transform_.map(path).boundingRect();
+    qWarning() << "Shape::Bounding rect not implemented" << this;
+    return QRectF();
+}
+
+void Shape::paint(QPainter *) const {
+    qWarning() << "Shape::Paint not implemented" << this;
+}
+
+shared_ptr<Shape> Shape::clone() const {
+    shared_ptr<Shape> shape(new Shape(*this));
+    qInfo() << "Clone Shape" << shape.get();
+    return shape;
 }

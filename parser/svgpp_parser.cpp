@@ -2,7 +2,7 @@
 #include "svgpp_context.hpp"
 #include "svgpp_parser.hpp"
 
-SVGPPParser::SVGPPParser(QList<Shape> &shapes): shapes_ { shapes } {
+SVGPPParser::SVGPPParser(ShapeCollection &shapes): shapes_ { shapes } {
 }
 
 bool SVGPPParser::parse(QByteArray &data) {

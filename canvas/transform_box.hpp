@@ -31,7 +31,7 @@ class TransformBox : QObject {
         bool mouseMoveEvent(QMouseEvent *e);
         bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
         void paint(QPainter *painter);
-        QList<Shape *> &selections();
+        QList<ShapePtr> &selections();
         CanvasData &canvas();
 
     private:
@@ -49,7 +49,7 @@ class TransformBox : QObject {
         bool flipped_y;
         QRectF init_rotation_rect_;
         QRectF bounding_rect_;
-        QList<Shape *> selections_;
+        QList<ShapePtr> selections_;
 
         float transform_rotation;
         QSizeF transform_scaler;

@@ -6,6 +6,8 @@
 #include <QPainter>
 #include <string>
 #include <shape/shape.hpp>
+#include <shape/path_shape.h>
+#include <container/shape_collection.h>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
@@ -18,7 +20,7 @@ using namespace svgpp;
 
 class SVGPPContext {
     public:
-        SVGPPContext(QList<Shape> &shapes);
+        SVGPPContext(ShapeCollection &shapes);
 
         void on_enter_element(tag::element::any)
         {}
@@ -77,7 +79,8 @@ class SVGPPContext {
         QPointF getTransformedPos(double x, double y);
 
     private:
-        QList<Shape> &shapes_;
+        ShapeCollection &shapes_;
+        QPainterPath working_path_;
         matrix_t transform;
 };
 

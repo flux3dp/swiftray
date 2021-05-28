@@ -1,5 +1,6 @@
 #include <QPoint>
 #include <shape/shape.hpp>
+#include <container/shape_collection.h>
 #ifndef CANVAS_DATA_HPP
 #define CANVAS_DATA_HPP
 class CanvasData : QObject {
@@ -14,8 +15,8 @@ class CanvasData : QObject {
         qreal scroll_x;
         qreal scroll_y;
         qreal scale;
-        bool isSelected(Shape *shape);
-        QList<Shape *> &selections();
+        bool isSelected(ShapePtr shape);
+        QList<ShapePtr> &selections();
 
         CanvasData() noexcept {
             mode_ = Mode::SELECTING;
@@ -35,23 +36,23 @@ class CanvasData : QObject {
         QPointF scroll() const {
             return QPointF(scroll_x, scroll_y);
         }
-        void setSelection(Shape *shape);
-        void setSelections(QList<Shape *> &shape);
+        void setSelection(ShapePtr shape);
+        void setSelections(QList<ShapePtr> &shapes);
         void clear();
         void clearSelection();
         void clearSelectionNoFlag();
         void stackStep();
+        ShapeCollection &shapes();
         void undo();
         void redo();
-        Shape *shapesAt(int index);
-        QList<QList<Shape>> undo_stack;
-        QList<QList<Shape>> redo_stack;
-        QList<Shape> shapes_;
-        QList<Shape> shape_clipboard;
+        QList<ShapeCollection> undo_stack;
+        QList<ShapeCollection> redo_stack;
+        ShapeCollection shape_clipboard;
     signals:
         void selectionsChanged();
     private:
-        QList<Shape *> selections_;
+        ShapeCollection shapes_;
+        QList<ShapePtr> selections_;
         Mode mode_;
 };
 

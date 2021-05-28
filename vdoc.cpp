@@ -32,17 +32,9 @@ void VDoc::load(const QUrl &file_url) {
     if (file_url == this->file_url_)
         return;
 
-    QQmlEngine *engine = qmlEngine(this);
-
-    if (!engine) {
-        qWarning() << "load() called before VDoc has QQmlEngine";
-        return;
-    }
-
-    const QUrl path = QQmlFileSelector::get(engine)->selector()->select(file_url);
-    const QString fileName = QQmlFile::urlToLocalFileOrQrc(path);
-    qInfo("Loading file ");
-    qInfo() << fileName;
+    qInfo() << "Loading file" << file_url;
+    const QString fileName = file_url.toString();
+    qInfo() << "File name" << fileName;
 
     if (QFile::exists(fileName)) {
         QMimeType mime = QMimeDatabase().mimeTypeForFile(fileName);
