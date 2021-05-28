@@ -2,7 +2,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-SVGPPContext::SVGPPContext(ShapeCollection &shapes): shapes_ { shapes } {
+SVGPPContext::SVGPPContext(QList<ShapePtr> &shapes): shapes_ { shapes } {
     transform = ublas::identity_matrix<double>(3, 3);
 }
 

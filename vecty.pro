@@ -19,7 +19,6 @@ SOURCES += \
         canvas/canvas_data.cpp \
         canvas/layer.cpp \
         canvas/transform_box.cpp \
-        container/shape_collection.cpp \
         main.cpp \
         mainwindow.cpp \
         shape/group_shape.cpp \
@@ -53,7 +52,6 @@ HEADERS += \
     canvas/canvas_data.hpp \
     canvas/layer.h \
     canvas/transform_box.hpp \
-    container/shape_collection.h \
     mainwindow.h \
     osxwindow.h \
     shape/group_shape.h \

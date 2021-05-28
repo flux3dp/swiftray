@@ -3,8 +3,6 @@ import QtQuick.Window 2.15
 import QtQuick.Controls 2.12
 import Vecty 1.0
 
-import "core"
-
 Item {
     id: mainWindow
     visible: true

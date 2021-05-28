@@ -106,6 +106,6 @@ void CanvasData::redo() {
     redo_stack.pop_back();
 }
 
-ShapeCollection &CanvasData::shapes() {
+QList<ShapePtr> &CanvasData::shapes() {
     return shapes_;
 }

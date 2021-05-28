@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
-        <file>core/LeftPanel.qml</file>
         <file>images/icon-cursor-01.png</file>
         <file>images/icon-oval-01.png</file>
         <file>images/icon-rect-01.png</file>

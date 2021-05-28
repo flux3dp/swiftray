@@ -21,7 +21,7 @@ class VCanvas : public QQuickPaintedItem {
         void mouseReleaseEvent(QMouseEvent *e) override;
         void wheelEvent(QWheelEvent *e) override;
         bool event(QEvent *e) override;
-        ShapeCollection &shapes();
+        QList<ShapePtr> &shapes();
         void removeSelection();
 
     public Q_SLOTS:

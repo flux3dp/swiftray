@@ -39,4 +39,7 @@ class Shape {
         QTransform transform_;
         int ref_count_;
 };
+
+typedef shared_ptr<Shape> ShapePtr;
+
 #endif //SHAPE_H

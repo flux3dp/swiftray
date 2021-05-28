@@ -1,6 +1,5 @@
 #include <QPoint>
 #include <shape/shape.hpp>
-#include <container/shape_collection.h>
 #ifndef CANVAS_DATA_HPP
 #define CANVAS_DATA_HPP
 class CanvasData : QObject {
@@ -42,16 +41,16 @@ class CanvasData : QObject {
         void clearSelection();
         void clearSelectionNoFlag();
         void stackStep();
-        ShapeCollection &shapes();
+        QList<ShapePtr> &shapes();
         void undo();
         void redo();
-        QList<ShapeCollection> undo_stack;
-        QList<ShapeCollection> redo_stack;
-        ShapeCollection shape_clipboard;
+        QList<QList<ShapePtr>> undo_stack;
+        QList<QList<ShapePtr>> redo_stack;
+        QList<ShapePtr> shape_clipboard;
     signals:
         void selectionsChanged();
     private:
-        ShapeCollection shapes_;
+        QList<ShapePtr> shapes_;
         QList<ShapePtr> selections_;
         Mode mode_;
 };

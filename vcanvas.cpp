@@ -41,7 +41,7 @@ void VCanvas::loadSvg(QByteArray &svg_data) {
     }
 }
 
-ShapeCollection &VCanvas::shapes() {
+QList<ShapePtr> &VCanvas::shapes() {
     return data.shapes();
 }
 
