@@ -1,3 +1,5 @@
+#include <QApplication>
+#include <QWidget>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 
@@ -5,12 +7,13 @@
 #include <QTranslator>
 #include "vcanvas.h"
 #include "vdoc.h"
+#include "osxwindow.h"
+#include "mainwindow.h"
 
 int main(int argc, char *argv[]) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif    
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
+    app.setAttribute(Qt::AA_EnableHighDpiScaling);
+    app.setAttribute(Qt::AA_UseHighDpiPixmaps);
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
 
@@ -25,6 +28,8 @@ int main(int argc, char *argv[]) {
 
     qmlRegisterType<VCanvas>("Vecty", 1, 0, "VCanvas");
     qmlRegisterType<VDoc>("Vecty", 1, 0, "VDoc");
+    /*QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
@@ -32,6 +37,12 @@ int main(int argc, char *argv[]) {
         if (!obj && url == objUrl)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
-    engine.load(url);
+    engine.load(url);*/
+    QCoreApplication::setOrganizationName("QtProject");
+    QCoreApplication::setApplicationName("Application Example");
+    QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+    MainWindow win;
+    win.show();
+    setOSXWindowTitleColor(&win);
     return app.exec();
 }

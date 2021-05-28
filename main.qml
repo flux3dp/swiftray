@@ -2,85 +2,23 @@ import QtQuick 2.15
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.12
 import Vecty 1.0
-import Qt.labs.platform 1.1
 
-Window {
+import "core"
+
+Item {
     id: mainWindow
+    visible: true
     width: 1280
     height: 720
-    visible: true
-    title: qsTr("Vecty")
-
-    MenuBar {
-        Menu {
-            id: fileMenu
-            title: "File"
-            MenuItem {
-                text: "Open"
-                shortcut: StandardKey.Open
-                onTriggered: openDialog.open()
-            }
-            MenuItem {
-                text: "Save"
-                shortcut: StandardKey.Save
-            }
-            MenuItem {
-                separator: true
-            }
-            MenuItem {
-                text: "Close"
-                shortcut: StandardKey.Close
-                onTriggered: mainWindow.close()
-            }
-        }
-        Menu {
-            id: editMenu
-            title: "Edit"
-            MenuItem {
-                text: "Undo"
-                shortcut: StandardKey.Undo
-                onTriggered: vcanvas.editUndo()
-            }
-            MenuItem {
-                text: "Redo"
-                shortcut: StandardKey.Redo
-                onTriggered: vcanvas.editRedo()
-            }
-            MenuItem {
-                separator: true
-            }
-            MenuItem {
-                text: "Cut"
-                shortcut: StandardKey.Cut
-                onTriggered: vcanvas.editCut()
-            }
-            MenuItem {
-                text: "Copy"
-                shortcut: StandardKey.Copy
-                onTriggered: vcanvas.editCopy()
-            }
-            MenuItem {
-                text: "Paste"
-                shortcut: StandardKey.Paste
-                onTriggered: vcanvas.editPaste()
-            }
-            MenuItem {
-                text: "Delete"
-                shortcut: StandardKey.Delete
-                onTriggered: vcanvas.editDelete()
-            }
-        }
-    }
 
     VCanvas {
         id: vcanvas
         anchors.fill: parent
-        anchors.margins: 20
-        anchors.topMargin: 75
         contentsScale: 1
     }
 
-    Button {
+
+    /*Button {
         id: button
         x: 15
         width: 120
@@ -118,17 +56,12 @@ Window {
         selectedNameFilter.index: document.fileType === "svg" ? 0 : 1
         folder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         onAccepted: document.saveAs(file)
-    }
-
-    VDoc {
-        id: document
-        canvas: vcanvas
-    }
+    }*/
 }
 
 /*##^##
 Designer {
-    D{i:0;formeditorZoom:0.66}D{i:4}
+    D{i:0;formeditorZoom:0.9}
 }
 ##^##*/
 

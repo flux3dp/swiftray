@@ -10,14 +10,16 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    QUrl source("qrc:/main.qml");
+    //((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     connect(ui->quickWidget, &QQuickWidget::statusChanged,
             this, &MainWindow::quickWidgetStatusChanged);
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,
             this, &MainWindow::sceneGraphError);
-    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
+    QUrl source("qrc:/main.qml");
     ui->quickWidget->setSource(source);
-    ui->quickWidget->setResizeMode(QQuickWidget::SizeViewToRootObject);
+    ui->quickWidget->show();
+    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
+    connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
 }
 
 void MainWindow::openFile() {
@@ -43,7 +45,15 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 
     qInfo() << "Children " << ui->quickWidget->rootObject()->children();
     canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-    doc_ = ui->quickWidget->rootObject()->findChildren<VDoc *>().first();
+    qInfo() << canvas_;
+    doc_ = new VDoc(ui->quickWidget->rootObject());
+    doc_->setCanvas(canvas_);
+    qInfo() << doc_;
+    connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
+    connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
+    connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
+    connect(ui->actionUndo, &QAction::triggered, canvas_, &VCanvas::editUndo);
+    connect(ui->actionRedo, &QAction::triggered, canvas_, &VCanvas::editRedo);
 }
 
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
