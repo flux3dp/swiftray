@@ -10,6 +10,7 @@ class Layer {
         void addShape(ShapePtr shape);
         void removeShape(ShapePtr shape);
         void clear();
+        Layer clone();
         QList<ShapePtr> &children();
 
         QColor color();

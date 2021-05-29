@@ -3,7 +3,7 @@
 #include <QtQuick>
 #include <shape/shape.hpp>
 #include <parser/svgpp_parser.hpp>
-#include <canvas/canvas_data.hpp>
+#include <canvas/scene.hpp>
 #include <canvas/transform_box.hpp>
 
 class VCanvas : public QQuickPaintedItem {
@@ -37,7 +37,7 @@ class VCanvas : public QQuickPaintedItem {
     private:
         bool ready;
         int counter;
-        CanvasData data;
+        Scene scene_;
         SVGPPParser svgpp_parser;
         TransformBox transform_box;
 

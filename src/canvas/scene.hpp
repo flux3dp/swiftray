@@ -2,8 +2,8 @@
 #include <canvas/layer.hpp>
 #include <shape/shape.hpp>
 
-#ifndef CANVAS_DATA_HPP
-#define CANVAS_DATA_HPP
+#ifndef SCENE_H
+#define SCENE_H
 
 class Scene : QObject {
         Q_OBJECT
@@ -67,4 +67,4 @@ class Scene : QObject {
         Mode mode_;
 };
 
-#endif // CANVAS_DATA_HPP
+#endif // SCENE_H

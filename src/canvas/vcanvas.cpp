@@ -10,7 +10,7 @@
 #include <canvas/layer.hpp>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
-    svgpp_parser { SVGPPParser(data) }, transform_box { TransformBox(data) } {
+    svgpp_parser { SVGPPParser(scene_) }, transform_box { TransformBox(scene_) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -19,20 +19,20 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
-    data.scroll_x = 0;
-    data.scroll_y = 0;
-    data.scale = 1;
-    data.setMode(CanvasData::Mode::SELECTING);
+    scene_.scroll_x = 0;
+    scene_.scroll_y = 0;
+    scene_.scale = 1;
+    scene_.setMode(Scene::Mode::SELECTING);
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
 void VCanvas::loadSvg(QByteArray &svg_data) {
-    data.clear();
+    scene_.clear();
     bool success = svgpp_parser.parse(svg_data);
     setAntialiasing(false);
 
     if (success) {
-        data.stackStep();
+        scene_.stackStep();
         editSelectAll();
         forceActiveFocus();
         ready = true;
@@ -41,8 +41,8 @@ void VCanvas::loadSvg(QByteArray &svg_data) {
 }
 
 void VCanvas::paint(QPainter *painter) {
-    painter->translate(data.scroll());
-    painter->scale(data.scale, data.scale);
+    painter->translate(scene_.scroll());
+    painter->scale(scene_.scale, scene_.scale);
     //qInfo() << "Rendering engine = " << painter->paintEngine()->type();
     QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     QColor sky_blue_alpha = QColor::fromRgb(0x00, 0x99, 0xCC, 30);
@@ -50,14 +50,14 @@ void VCanvas::paint(QPainter *painter) {
     QBrush multi_select_brush = QBrush(sky_blue_alpha);
 
     // Draw layers
-    for (const Layer &layer : data.layers()) {
+    for (const Layer &layer : scene_.layers()) {
         layer.paint(painter, counter);
     }
 
     // Draw transform box
     transform_box.paint(painter);
 
-    if (data.mode() == CanvasData::Mode::MULTI_SELECTING) {
+    if (scene_.mode() == Scene::Mode::MULTI_SELECTING) {
         painter->setBrush(multi_select_brush);
         painter->setPen(multi_select_pen);
         painter->fillRect(selection_box, multi_select_brush);
@@ -76,7 +76,7 @@ void VCanvas::keyPressEvent(QKeyEvent *e) {
 }
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
-    QPointF canvas_coord = data.getCanvasCoord(e->pos());
+    QPointF canvas_coord = scene_.getCanvasCoord(e->pos());
     qInfo() << "Mouse Press" << e->pos();
     mouse_press = e->pos();
     qInfo() << "Click point" << canvas_coord;
@@ -87,18 +87,18 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     // Test object selection in reverse
     bool selectedObject = false;
 
-    for (Layer &layer : data.layers()) {
+    for (Layer &layer : scene_.layers()) {
         for (ShapePtr &shape : layer.children()) {
-            if (shape->testHit(canvas_coord, 15 / data.scale)) {
+            if (shape->testHit(canvas_coord, 15 / scene_.scale)) {
                 selectedObject = true;
 
                 // Do not reset selection if it's already selected
-                if (data.isSelected(shape)) {
+                if (scene_.isSelected(shape)) {
                     break;
                 }
 
                 // Reset selection
-                data.setSelection(shape);
+                scene_.setSelection(shape);
                 break;
             }
         }
@@ -110,25 +110,25 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
 
     if (selectedObject) {
         mouse_drag = true;
-        data.setMode(CanvasData::Mode::SELECTING);
+        scene_.setMode(Scene::Mode::SELECTING);
         return;
     }
 
-    data.clearSelection();
+    scene_.clearSelection();
     // Multi Select
     mouse_drag = true;
-    data.setMode(CanvasData::Mode::MULTI_SELECTING);
+    scene_.setMode(Scene::Mode::MULTI_SELECTING);
     selection_box = QRectF(0, 0, 0, 0);
     selection_start = canvas_coord;
     return;
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
-    QPointF canvas_coord = data.getCanvasCoord(e->pos());
+    QPointF canvas_coord = scene_.getCanvasCoord(e->pos());
 
     if (transform_box.mouseMoveEvent(e)) return;
 
-    if (data.mode() == CanvasData::Mode::MULTI_SELECTING) {
+    if (scene_.mode() == Scene::Mode::MULTI_SELECTING) {
         //QRectF a()
         //QSizeF rsize(abs(e->pos().x() - mouse_press.x()), abs(e->pos().y() - mouse_press.y()));
         selection_box = QRectF(selection_start, canvas_coord);
@@ -139,12 +139,12 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     if (transform_box.mouseReleaseEvent(e)) return;
 
-    if (data.mode() == CanvasData::Mode::MULTI_SELECTING &&
+    if (scene_.mode() == Scene::Mode::MULTI_SELECTING &&
         (selection_box.width() != 0 || selection_box.height() != 0)) {
         QList<ShapePtr> selected;
         qInfo() << "Selection Box" << selection_box;
 
-        for (Layer &layer : data.layers()) {
+        for (Layer &layer : scene_.layers()) {
             for (ShapePtr &shape : layer.children()) {
                 if (shape->testHit(selection_box)) {
                     selected << shape;
@@ -153,15 +153,15 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
         }
 
         qInfo() << "Mouse Release Selected" << selected.size();
-        data.setSelections(selected);
+        scene_.setSelections(selected);
     }
 
-    data.setMode(CanvasData::Mode::SELECTING);
+    scene_.setMode(Scene::Mode::SELECTING);
     qInfo() << "Mouse Release" << e->pos();
 }
 void VCanvas::wheelEvent(QWheelEvent *e) {
-    data.scroll_x += e->pixelDelta().x() / 2.5;
-    data.scroll_y += e->pixelDelta().y() / 2.5;
+    scene_.scroll_x += e->pixelDelta().x() / 2.5;
+    scene_.scroll_y += e->pixelDelta().y() / 2.5;
     qInfo() << "Wheel Event" << e->pixelDelta();
 }
 void VCanvas::loop() {
@@ -189,10 +189,10 @@ bool VCanvas::event(QEvent *e) {
 
         if (nge->gestureType() == Qt::ZoomNativeGesture) {
             double v = nge->value();
-            data.scale += v;
+            scene_.scale += v;
 
-            if (data.scale <= 0.01) {
-                data.scale = 0.01;
+            if (scene_.scale <= 0.01) {
+                scene_.scale = 0.01;
             }
         }
 
@@ -206,101 +206,101 @@ bool VCanvas::event(QEvent *e) {
     return QQuickPaintedItem::event(e);
 }
 void VCanvas::editCut() {
-    data.stackStep();
+    scene_.stackStep();
     qInfo() << "Edit Cut";
     editCopy();
     removeSelection();
 }
 void VCanvas::editCopy() {
     qInfo() << "Edit Copy";
-    data.clipboard().clear();
-    data.setClipboard(data.selections());
-    data.pasting_shift = QPointF(0, 0);
+    scene_.clipboard().clear();
+    scene_.setClipboard(scene_.selections());
+    scene_.pasting_shift = QPointF(0, 0);
 }
 void VCanvas::editPaste() {
-    data.stackStep();
+    scene_.stackStep();
     qInfo() << "Edit Paste";
-    int index_clip_begin = data.activeLayer().children().length();
-    data.pasting_shift += QPointF(10, 10);
-    QTransform shift = QTransform().translate(data.pasting_shift.x(), data.pasting_shift.y());
+    int index_clip_begin = scene_.activeLayer().children().length();
+    scene_.pasting_shift += QPointF(10, 10);
+    QTransform shift = QTransform().translate(scene_.pasting_shift.x(), scene_.pasting_shift.y());
 
-    for (int i = 0; i < data.clipboard().length() ; i++) {
-        ShapePtr shape = data.clipboard().at(i)->clone();
+    for (int i = 0; i < scene_.clipboard().length() ; i++) {
+        ShapePtr shape = scene_.clipboard().at(i)->clone();
         shape->applyTransform(shift);
-        data.activeLayer().children().push_back(shape);
+        scene_.activeLayer().children().push_back(shape);
     }
 
     QList<ShapePtr> selected;
 
-    for (int i = index_clip_begin; i < data.activeLayer().children().length(); i++) {
-        selected << data.activeLayer().children().at(i);
+    for (int i = index_clip_begin; i < scene_.activeLayer().children().length(); i++) {
+        selected << scene_.activeLayer().children().at(i);
     }
 
-    data.setSelections(selected);
+    scene_.setSelections(selected);
 }
 void VCanvas::editDelete() {
-    data.stackStep();
+    scene_.stackStep();
     qInfo() << "Edit Delete";
     removeSelection();
 }
 void VCanvas::removeSelection() {
-    data.stackStep();
+    scene_.stackStep();
     // Need to clean up all selection pointer reference first
-    data.clearSelectionNoFlag();
+    scene_.clearSelectionNoFlag();
 
-    for (Layer &layer : data.layers()) {
+    for (Layer &layer : scene_.layers()) {
         layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
             return s->selected;
         }), layer.children().end());
     }
 }
 void VCanvas::editUndo() {
-    data.undo();
+    scene_.undo();
 }
 void VCanvas::editRedo() {
-    data.redo();
+    scene_.redo();
 }
 void VCanvas::editSelectAll() {
     QList<ShapePtr> all_shapes;
 
-    for (Layer &layer : data.layers()) {
+    for (Layer &layer : scene_.layers()) {
         all_shapes.append(layer.children());
     }
 
-    data.setSelections(all_shapes);
+    scene_.setSelections(all_shapes);
 }
 void VCanvas::editGroup() {
-    if (data.selections().size() == 0) return;
+    if (scene_.selections().size() == 0) return;
 
     qInfo() << "Groupping";
     GroupShape *group = new GroupShape(transform_box.selections());
 
-    for (Layer &layer : data.layers()) {
+    for (Layer &layer : scene_.layers()) {
         layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
             return s->selected;
         }), layer.children().end());
     }
 
     const ShapePtr group_ptr(group);
-    data.activeLayer().children().push_back(group_ptr);
-    data.setSelection(group_ptr);
-    data.stackStep();
+    scene_.activeLayer().children().push_back(group_ptr);
+    scene_.setSelection(group_ptr);
+    scene_.stackStep();
 }
 void VCanvas::editUngroup() {
     qInfo() << "Groupping";
-    ShapePtr group_ptr = data.selections().first();
+    ShapePtr group_ptr = scene_.selections().first();
     GroupShape *group = (GroupShape *) group_ptr.get();
 
     for (const ShapePtr &shape : group->children()) {
         shape->applyTransform(group->transform());
-        data.activeLayer().children().push_back(shape);
+        scene_.activeLayer().children().push_back(shape);
     }
 
-    data.setSelections(group->children());
+    scene_.setSelections(group->children());
 
-    for (Layer &layer : data.layers()) {
+    for (Layer &layer : scene_.layers()) {
         layer.children().removeOne(group_ptr);
     }
 
-    data.stackStep();
+    scene_.stackStep();
 }

@@ -7,7 +7,7 @@
 #include <string>
 #include <shape/shape.hpp>
 #include <shape/path_shape.h>
-#include <canvas/canvas_data.hpp>
+#include <canvas/scene.hpp>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>
@@ -20,7 +20,7 @@ using namespace svgpp;
 
 class SVGPPContext {
     public:
-        SVGPPContext(CanvasData &canvas);
+        SVGPPContext(Scene &canvas);
 
         void on_enter_element(tag::element::any)
         {}
@@ -79,7 +79,7 @@ class SVGPPContext {
         QPointF getTransformedPos(double x, double y);
 
     private:
-        CanvasData &canvas_;
+        Scene &scene_;
         QPainterPath working_path_;
         matrix_t transform;
 };

@@ -17,15 +17,14 @@ INCLUDEPATH += /usr/local/opt/libxml2/include
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        src/canvas/canvas_data.cpp \
         src/canvas/layer.cpp \
+        src/canvas/scene.cpp \
         src/canvas/transform_box.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
         src/shape/shape.cpp \
         src/shape/group_shape.cpp \
         src/shape/path_shape.cpp \
-        src/vdoc.cpp \
         src/canvas/vcanvas.cpp \
         src/parser/svgpp_parser.cpp \
         src/parser/svgpp_context.cpp \
@@ -50,15 +49,14 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    src/canvas/canvas_data.hpp \
     src/canvas/layer.hpp \
+    src/canvas/scene.hpp \
     src/canvas/transform_box.hpp \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
     src/shape/group_shape.h \
     src/shape/path_shape.h \
     src/canvas/vcanvas.h \
-    src/vdoc.h \
     src/shape/shape.hpp \
     src/parser/svgpp_common.hpp \
     src/parser/svgpp_parser.hpp \

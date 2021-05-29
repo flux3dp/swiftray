@@ -1,13 +1,13 @@
 #include <QPainterPath>
-#include <canvas/canvas_data.hpp>
+#include <canvas/scene.hpp>
 
 #ifndef SVGPP_PARSER_H
 #define SVGPP_PARSER_H
 
 class SVGPPParser {
     public:
-        SVGPPParser(CanvasData &canvas);
-        CanvasData &canvas_;
+        SVGPPParser(Scene &scene);
+        Scene &scene_;
         bool parse(QByteArray &data);
 };
 

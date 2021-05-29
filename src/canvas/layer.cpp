@@ -49,3 +49,13 @@ void Layer::setColor(QColor color) {
 QList<ShapePtr> &Layer::children() {
     return children_;
 }
+
+Layer Layer::clone() {
+    Layer layer;
+
+    for (ShapePtr &shape : children_) {
+        layer.children() << shape->clone();
+    }
+
+    return layer;
+}

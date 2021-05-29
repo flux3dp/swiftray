@@ -2,7 +2,7 @@
 #include <cmath>
 #include <QMouseEvent>
 #include <QHoverEvent>
-#include <canvas/canvas_data.hpp>
+#include <canvas/scene.hpp>
 #include <shape/shape.hpp>
 
 #ifndef TRANSFORM_BOX_H
@@ -23,7 +23,7 @@ class TransformBox : QObject {
             W,
             ROTATION
         };
-        TransformBox(CanvasData &canvas_data) noexcept;
+        TransformBox(Scene &scene) noexcept;
         const QPointF *controlPoints();
         QRectF boundingRect();
         bool mousePressEvent(QMouseEvent *e);
@@ -32,7 +32,7 @@ class TransformBox : QObject {
         bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
         void paint(QPainter *painter);
         QList<ShapePtr> &selections();
-        CanvasData &canvas();
+        Scene &scene();
         void move(QPointF offset);
 
     private:
@@ -42,7 +42,7 @@ class TransformBox : QObject {
         QPointF control_points_[8];
         ControlPoint activating_control_;
         QPointF pressed_at_;
-        CanvasData &canvas_;
+        Scene &scene_;
         QPointF action_center_;
         float cumulated_rotation_;
         bool flipped_x;

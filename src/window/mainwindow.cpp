@@ -25,7 +25,19 @@ MainWindow::MainWindow(QWidget *parent) :
 void MainWindow::openFile() {
     qInfo() << "Open file";
     QString file_name = QFileDialog::getOpenFileName(this);
-    qInfo() << doc_ << "loading" << file_name;
+    qInfo() << "Loading" << file_name;
+
+    if (QFile::exists(file_name)) {
+        QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
+        QFile file(file_name);
+
+        if (file.open(QFile::ReadOnly)) {
+            QByteArray data = file.readAll();
+            qInfo() << "File size:" << data.size();
+            canvas_->loadSvg(data);
+        }
+    }
+
     doc_->load(file_name);
 }
 
