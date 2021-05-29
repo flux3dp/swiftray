@@ -51,7 +51,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     src/canvas/canvas_data.hpp \
-    src/canvas/layer.h \
+    src/canvas/layer.hpp \
     src/canvas/transform_box.hpp \
     src/window/mainwindow.h \
     src/window/osxwindow.h \

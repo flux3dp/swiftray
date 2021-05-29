@@ -7,9 +7,10 @@
 #include <cstring>
 #include <iostream>
 #include <shape/group_shape.h>
+#include <canvas/layer.hpp>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
-    svgpp_parser { SVGPPParser(shapes()) }, transform_box { TransformBox(data) } {
+    svgpp_parser { SVGPPParser(data) }, transform_box { TransformBox(data) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -28,10 +29,7 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
 void VCanvas::loadSvg(QByteArray &svg_data) {
     data.clear();
     bool success = svgpp_parser.parse(svg_data);
-
-    if (shapes().length() > 5000) {
-        setAntialiasing(false);
-    }
+    setAntialiasing(false);
 
     if (success) {
         data.stackStep();
@@ -42,38 +40,21 @@ void VCanvas::loadSvg(QByteArray &svg_data) {
     }
 }
 
-QList<ShapePtr> &VCanvas::shapes() {
-    return data.shapes();
-}
-
 void VCanvas::paint(QPainter *painter) {
-    //qInfo() << "Rendering engine = " << painter->paintEngine()->type();
-    QPen dash_pen = QPen(Qt::black, 2, Qt::DashLine);
-    dash_pen.setDashPattern(QVector<qreal>(10, 3));
-    dash_pen.setCosmetic(true);
-    dash_pen.setDashOffset(counter);
     painter->translate(data.scroll());
     painter->scale(data.scale, data.scale);
-    //Test selection box
-    //transformBox.rotate(0.2);
-    QPen solid_pen = QPen(Qt::black, 0, Qt::SolidLine);
+    //qInfo() << "Rendering engine = " << painter->paintEngine()->type();
     QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     QColor sky_blue_alpha = QColor::fromRgb(0x00, 0x99, 0xCC, 30);
     QPen multi_select_pen = QPen(sky_blue, 0, Qt::DashLine);
     QBrush multi_select_brush = QBrush(sky_blue_alpha);
 
-    // Draw shapes
-    for (int i = 0; i < shapes().size(); i++) {
-        if (shapes().at(i)->selected) {
-            painter->setPen(dash_pen);
-        } else {
-            painter->setPen(solid_pen);
-        }
-
-        shapes().at(i)->paint(painter);
+    // Draw layers
+    for (const Layer &layer : data.layers()) {
+        layer.paint(painter, counter);
     }
 
-    //Draw transform box
+    // Draw transform box
     transform_box.paint(painter);
 
     if (data.mode() == CanvasData::Mode::MULTI_SELECTING) {
@@ -106,17 +87,23 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     // Test object selection in reverse
     bool selectedObject = false;
 
-    for (int i = shapes().size() - 1 ; i >= 0; i--) {
-        if (shapes().at(i)->testHit(canvas_coord, 15 / data.scale)) {
-            selectedObject = true;
+    for (Layer &layer : data.layers()) {
+        for (ShapePtr &shape : layer.children()) {
+            if (shape->testHit(canvas_coord, 15 / data.scale)) {
+                selectedObject = true;
 
-            // Do not reset transform box if it's already selected
-            if (data.isSelected(shapes().at(i))) {
+                // Do not reset selection if it's already selected
+                if (data.isSelected(shape)) {
+                    break;
+                }
+
+                // Reset selection
+                data.setSelection(shape);
                 break;
             }
+        }
 
-            // Reset transform box's target
-            data.setSelection(shapes().at(i));
+        if (selectedObject) {
             break;
         }
     }
@@ -149,7 +136,6 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 
     qInfo() << "Mouse Move" << e->pos();
 }
-
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     if (transform_box.mouseReleaseEvent(e)) return;
 
@@ -158,9 +144,11 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
         QList<ShapePtr> selected;
         qInfo() << "Selection Box" << selection_box;
 
-        for (int i = 0 ; i < shapes().length(); i++) {
-            if (shapes().at(i)->testHit(selection_box)) {
-                selected << shapes().at(i);
+        for (Layer &layer : data.layers()) {
+            for (ShapePtr &shape : layer.children()) {
+                if (shape->testHit(selection_box)) {
+                    selected << shape;
+                }
             }
         }
 
@@ -171,21 +159,17 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     data.setMode(CanvasData::Mode::SELECTING);
     qInfo() << "Mouse Release" << e->pos();
 }
-
 void VCanvas::wheelEvent(QWheelEvent *e) {
     data.scroll_x += e->pixelDelta().x() / 2.5;
     data.scroll_y += e->pixelDelta().y() / 2.5;
     qInfo() << "Wheel Event" << e->pixelDelta();
 }
-
 void VCanvas::loop() {
     counter++;
     update();
 }
-
-
 bool VCanvas::event(QEvent *e) {
-    qInfo() << "QEvent" << e;
+    //qInfo() << "QEvent" << e;
     QNativeGestureEvent *nge;
     Qt::CursorShape cursor;
 
@@ -229,29 +213,27 @@ void VCanvas::editCut() {
 }
 void VCanvas::editCopy() {
     qInfo() << "Edit Copy";
-    data.shape_clipboard.clear();
-
-    for (int i = 0; i < shapes().length() ; i++) {
-        if (shapes().at(i)->selected) {
-            ShapePtr shape = shapes().at(i)->clone();
-            shape->selected = false;
-            data.shape_clipboard.push_back(shape);
-        }
-    }
+    data.clipboard().clear();
+    data.setClipboard(data.selections());
+    data.pasting_shift = QPointF(0, 0);
 }
 void VCanvas::editPaste() {
     data.stackStep();
     qInfo() << "Edit Paste";
-    int index_clip_begin = shapes().length();
+    int index_clip_begin = data.activeLayer().children().length();
+    data.pasting_shift += QPointF(10, 10);
+    QTransform shift = QTransform().translate(data.pasting_shift.x(), data.pasting_shift.y());
 
-    for (int i = 0; i < data.shape_clipboard.length() ; i++) {
-        shapes().push_back(data.shape_clipboard.at(i)->clone());
+    for (int i = 0; i < data.clipboard().length() ; i++) {
+        ShapePtr shape = data.clipboard().at(i)->clone();
+        shape->applyTransform(shift);
+        data.activeLayer().children().push_back(shape);
     }
 
     QList<ShapePtr> selected;
 
-    for (int i = index_clip_begin; i < shapes().length(); i++) {
-        selected << shapes().at(i);
+    for (int i = index_clip_begin; i < data.activeLayer().children().length(); i++) {
+        selected << data.activeLayer().children().at(i);
     }
 
     data.setSelections(selected);
@@ -261,42 +243,49 @@ void VCanvas::editDelete() {
     qInfo() << "Edit Delete";
     removeSelection();
 }
-
 void VCanvas::removeSelection() {
     data.stackStep();
     // Need to clean up all selection pointer reference first
     data.clearSelectionNoFlag();
-    shapes().erase(std::remove_if(shapes().begin(), shapes().end(), [](ShapePtr & s) {
-        return s->selected;
-    }), shapes().end());
-}
 
+    for (Layer &layer : data.layers()) {
+        layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
+            return s->selected;
+        }), layer.children().end());
+    }
+}
 void VCanvas::editUndo() {
     data.undo();
 }
-
 void VCanvas::editRedo() {
     data.redo();
 }
-
 void VCanvas::editSelectAll() {
-    data.setSelections(shapes());
-}
+    QList<ShapePtr> all_shapes;
 
+    for (Layer &layer : data.layers()) {
+        all_shapes.append(layer.children());
+    }
+
+    data.setSelections(all_shapes);
+}
 void VCanvas::editGroup() {
     if (data.selections().size() == 0) return;
 
     qInfo() << "Groupping";
     GroupShape *group = new GroupShape(transform_box.selections());
-    shapes().erase(std::remove_if(shapes().begin(), shapes().end(), [](ShapePtr & s) {
-        return s->selected;
-    }), shapes().end());
+
+    for (Layer &layer : data.layers()) {
+        layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
+            return s->selected;
+        }), layer.children().end());
+    }
+
     const ShapePtr group_ptr(group);
-    shapes().push_back(group_ptr);
+    data.activeLayer().children().push_back(group_ptr);
     data.setSelection(group_ptr);
     data.stackStep();
 }
-
 void VCanvas::editUngroup() {
     qInfo() << "Groupping";
     ShapePtr group_ptr = data.selections().first();
@@ -304,10 +293,14 @@ void VCanvas::editUngroup() {
 
     for (const ShapePtr &shape : group->children()) {
         shape->applyTransform(group->transform());
-        shapes().push_back(shape);
+        data.activeLayer().children().push_back(shape);
     }
 
     data.setSelections(group->children());
-    shapes().removeOne(group_ptr);
+
+    for (Layer &layer : data.layers()) {
+        layer.children().removeOne(group_ptr);
+    }
+
     data.stackStep();
 }

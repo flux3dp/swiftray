@@ -2,10 +2,10 @@
 #include "svgpp_context.hpp"
 #include "svgpp_parser.hpp"
 
-SVGPPParser::SVGPPParser(QList<ShapePtr> &shapes): shapes_ { shapes } {
+SVGPPParser::SVGPPParser(CanvasData &canvas): canvas_ { canvas } {
 }
 
 bool SVGPPParser::parse(QByteArray &data) {
-    SVGPPContext context(shapes_);
+    SVGPPContext context(canvas_);
     return svgpp_parse(data, context);
 }

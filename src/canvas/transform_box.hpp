@@ -33,10 +33,10 @@ class TransformBox : QObject {
         void paint(QPainter *painter);
         QList<ShapePtr> &selections();
         CanvasData &canvas();
+        void move(QPointF offset);
 
     private:
         void rotate(double rotation);
-        void move(QPointF offset);
         void scale(QPointF scaleCenter, float scaleX, float scaleY);
         ControlPoint testHit(QPointF clickPoint, float tolerance);
         QPointF control_points_[8];

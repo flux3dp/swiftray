@@ -1,6 +1,12 @@
 #include <canvas/canvas_data.hpp>
 #include <QDebug>
 
+CanvasData::CanvasData() noexcept {
+    mode_ = Mode::SELECTING;
+    layers_ << Layer();
+    pasting_shift = QPointF();
+}
+
 void CanvasData::setSelection(ShapePtr shape) {
     QList<ShapePtr> list;
     list.push_back(shape);
@@ -108,4 +114,15 @@ void CanvasData::redo() {
 
 QList<ShapePtr> &CanvasData::shapes() {
     return shapes_;
+}
+
+QList<ShapePtr> &CanvasData::clipboard() {
+    return shape_clipboard_;
+}
+
+
+void CanvasData::setClipboard(QList<ShapePtr> &items) {
+    for (ShapePtr &item : items) {
+        shape_clipboard_.push_back(item->clone());
+    }
 }

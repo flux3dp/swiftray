@@ -47,7 +47,8 @@ QRectF GroupShape::boundingRect() const {
     float right = std::numeric_limits<float>::min();
 
     for (const ShapePtr &shape : children_) {
-        QRectF bb = shape->boundingRect();
+        // TODO: improve bounding box algorithm (draft logic)
+        QRectF bb = transform().mapRect(shape->boundingRect());
 
         if (bb.left() < left) {
             left = bb.left();
@@ -67,7 +68,7 @@ QRectF GroupShape::boundingRect() const {
     }
 
     // TODO: cache this;
-    return transform().mapRect(QRectF(left, top, right - left, bottom - top));
+    return QRectF(left, top, right - left, bottom - top);
 }
 void GroupShape::paint(QPainter *painter) const {
     painter->save();
@@ -83,6 +84,7 @@ void GroupShape::paint(QPainter *painter) const {
 
 ShapePtr GroupShape::clone() const {
     GroupShape *group = new GroupShape();
+    group->setTransform(transform());
 
     for (const ShapePtr &shape : children_) {
         group->children_.push_back(shape->clone());

@@ -2,7 +2,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-SVGPPContext::SVGPPContext(QList<ShapePtr> &shapes): shapes_ { shapes } {
+SVGPPContext::SVGPPContext(CanvasData &canvas): canvas_ { canvas } {
     transform = ublas::identity_matrix<double>(3, 3);
 }
 
@@ -99,7 +99,7 @@ void SVGPPContext::path_close_subpath() {
 void SVGPPContext::path_exit() {
     ShapePtr shape(new PathShape(working_path_));
     shape->simplify();
-    shapes_.push_back(shape);
+    canvas_.activeLayer().children().push_back(shape);
     transform = ublas::identity_matrix<double>(3, 3);
     working_path_ = QPainterPath();
 }

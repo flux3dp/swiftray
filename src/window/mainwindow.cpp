@@ -59,6 +59,21 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
 }
 
+
+bool MainWindow::event(QEvent *e)  {
+    switch (e->type()) {
+    case QEvent::NativeGesture:
+        qInfo() << "Native Gesture!";
+        canvas_->event(e);
+        return true;
+
+    default:
+        break;
+    }
+
+    return QMainWindow::event(e);
+}
+
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
     //statusBar()->showMessage(message);
 }

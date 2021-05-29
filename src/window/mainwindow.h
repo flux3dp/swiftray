@@ -17,6 +17,7 @@ class MainWindow : public QMainWindow {
     public:
         explicit MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
+        bool event(QEvent *e) override;
 
     private slots:
         void quickWidgetStatusChanged(QQuickWidget::Status);

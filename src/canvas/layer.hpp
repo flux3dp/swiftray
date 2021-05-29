@@ -2,22 +2,21 @@
 #define LAYER_H
 
 #include <shape/shape.hpp>
-#include <canvas/canvas_data.hpp>
 
 class Layer {
     public:
-        Layer(CanvasData &canvas);
-        void paint(QPainter *painter);
-        void addShape(Shape shape);
+        Layer();
+        void paint(QPainter *painter, int counter) const;
+        void addShape(ShapePtr shape);
         void removeShape(ShapePtr shape);
         void clear();
+        QList<ShapePtr> &children();
 
-        void color();
+        QColor color();
         void setColor(QColor color);
     private:
         QColor color_;
-        CanvasData &canvas_;
-        QList<ShapePtr> shapes_;
+        QList<ShapePtr> children_;
 };
 
 #endif // LAYER_H
