@@ -83,7 +83,10 @@ QRectF PathShape::boundingRect() const {
 }
 
 void PathShape::paint(QPainter *painter) const {
+    painter->save();
+    painter->setTransform(transform(), true);
     painter->drawPath(path_);
+    painter->restore();
 }
 
 shared_ptr<Shape> PathShape::clone() const {

@@ -265,6 +265,8 @@
     <addaction name="separator"/>
     <addaction name="actionSelect_All"/>
     <addaction name="actionClear"/>
+    <addaction name="actionGroup"/>
+    <addaction name="actionUngroup"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -392,7 +394,7 @@ spacing: 8px;</string>
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset resource="qml.qrc">
+    <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-cursor-01.png</normaloff>
      <normalon>:/images/select.png</normalon>:/images/icon-cursor-01.png</iconset>
    </property>
@@ -405,7 +407,7 @@ spacing: 8px;</string>
   </action>
   <action name="actionRectangle">
    <property name="icon">
-    <iconset resource="qml.qrc">
+    <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-rect-01.png</normaloff>:/images/icon-rect-01.png</iconset>
    </property>
    <property name="text">
@@ -417,7 +419,7 @@ spacing: 8px;</string>
   </action>
   <action name="actionOval">
    <property name="icon">
-    <iconset resource="qml.qrc">
+    <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-oval-01.png</normaloff>:/images/icon-oval-01.png</iconset>
    </property>
    <property name="text">
@@ -434,7 +436,7 @@ spacing: 8px;</string>
   </action>
   <action name="actionPhoto">
    <property name="icon">
-    <iconset resource="qml.qrc">
+    <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-photo-01.png</normaloff>:/images/icon-photo-01.png</iconset>
    </property>
    <property name="text">
@@ -446,7 +448,7 @@ spacing: 8px;</string>
   </action>
   <action name="actionText">
    <property name="icon">
-    <iconset resource="qml.qrc">
+    <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-text-01.png</normaloff>:/images/icon-text-01.png</iconset>
    </property>
    <property name="text">
@@ -464,6 +466,22 @@ spacing: 8px;</string>
     <string>Ctrl+A</string>
    </property>
   </action>
+  <action name="actionGroup">
+   <property name="text">
+    <string>Group</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
+   </property>
+  </action>
+  <action name="actionUngroup">
+   <property name="text">
+    <string>Ungroup</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+G</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -473,7 +491,7 @@ spacing: 8px;</string>
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="qml.qrc"/>
+  <include location="../../qml.qrc"/>
  </resources>
  <connections/>
 </ui>

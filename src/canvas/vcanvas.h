@@ -32,6 +32,8 @@ class VCanvas : public QQuickPaintedItem {
         void editUndo();
         void editRedo();
         void editSelectAll();
+        void editGroup();
+        void editUngroup();
 
     private:
         bool ready;

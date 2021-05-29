@@ -6,6 +6,7 @@
 #include <QHoverEvent>
 #include <cstring>
 #include <iostream>
+#include <shape/group_shape.h>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     svgpp_parser { SVGPPParser(shapes()) }, transform_box { TransformBox(data) } {
@@ -61,26 +62,15 @@ void VCanvas::paint(QPainter *painter) {
     QPen multi_select_pen = QPen(sky_blue, 0, Qt::DashLine);
     QBrush multi_select_brush = QBrush(sky_blue_alpha);
 
+    // Draw shapes
     for (int i = 0; i < shapes().size(); i++) {
-        painter->save();
-
         if (shapes().at(i)->selected) {
             painter->setPen(dash_pen);
         } else {
             painter->setPen(solid_pen);
         }
 
-        // shapes[i].rot += 0.01;
-        // scaleX = shapes[i].scaleY = 1.0 + sin(0.01 * counter)
-        painter->setTransform(shapes().at(i)->transform(), true);
         shapes().at(i)->paint(painter);
-        painter->restore();
-        //Draw bounding box
-        /*if (shapes[i].selected) {
-            QRectF bbox = shapes[i].boundingRect();
-            painter->setPen(greenPen);
-            painter->drawRect(bbox);
-        }*/
     }
 
     //Draw transform box
@@ -195,7 +185,7 @@ void VCanvas::loop() {
 
 
 bool VCanvas::event(QEvent *e) {
-    // qInfo() << "QEvent" << e;
+    qInfo() << "QEvent" << e;
     QNativeGestureEvent *nge;
     Qt::CursorShape cursor;
 
@@ -273,6 +263,7 @@ void VCanvas::editDelete() {
 }
 
 void VCanvas::removeSelection() {
+    data.stackStep();
     // Need to clean up all selection pointer reference first
     data.clearSelectionNoFlag();
     shapes().erase(std::remove_if(shapes().begin(), shapes().end(), [](ShapePtr & s) {
@@ -290,4 +281,33 @@ void VCanvas::editRedo() {
 
 void VCanvas::editSelectAll() {
     data.setSelections(shapes());
+}
+
+void VCanvas::editGroup() {
+    if (data.selections().size() == 0) return;
+
+    qInfo() << "Groupping";
+    GroupShape *group = new GroupShape(transform_box.selections());
+    shapes().erase(std::remove_if(shapes().begin(), shapes().end(), [](ShapePtr & s) {
+        return s->selected;
+    }), shapes().end());
+    const ShapePtr group_ptr(group);
+    shapes().push_back(group_ptr);
+    data.setSelection(group_ptr);
+    data.stackStep();
+}
+
+void VCanvas::editUngroup() {
+    qInfo() << "Groupping";
+    ShapePtr group_ptr = data.selections().first();
+    GroupShape *group = (GroupShape *) group_ptr.get();
+
+    for (const ShapePtr &shape : group->children()) {
+        shape->applyTransform(group->transform());
+        shapes().push_back(shape);
+    }
+
+    data.setSelections(group->children());
+    shapes().removeOne(group_ptr);
+    data.stackStep();
 }
