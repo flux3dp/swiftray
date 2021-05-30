@@ -4,8 +4,8 @@
 #include <QMainWindow>
 #include <QQuickWindow>
 #include <QQuickWidget>
+#include <QListWidget>
 #include <canvas/vcanvas.h>
-#include "vdoc.h"
 
 namespace Ui {
     class MainWindow;
@@ -18,17 +18,17 @@ class MainWindow : public QMainWindow {
         explicit MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
         bool event(QEvent *e) override;
-
     private slots:
         void quickWidgetStatusChanged(QQuickWidget::Status);
         void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
+        void updateLayers();
         void openFile();
-
+        void on_addLayer_clicked();
 
     private:
         Ui::MainWindow *ui;
-        VDoc *doc_;
         VCanvas *canvas_;
+        QListWidget *layer_list_;
 };
 
 #endif // MAINWINDOW_H

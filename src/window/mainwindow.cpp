@@ -2,9 +2,11 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QFileDialog>
+#include <QListWidget>
 #include <QDebug>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <widgets/layer_widget.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -34,11 +36,9 @@ void MainWindow::openFile() {
         if (file.open(QFile::ReadOnly)) {
             QByteArray data = file.readAll();
             qInfo() << "File size:" << data.size();
-            canvas_->loadSvg(data);
+            canvas_->loadSVG(data);
         }
     }
-
-    doc_->load(file_name);
 }
 
 void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
@@ -58,9 +58,6 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     qInfo() << "Children " << ui->quickWidget->rootObject()->children();
     canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
     qInfo() << canvas_;
-    doc_ = new VDoc(ui->quickWidget->rootObject());
-    doc_->setCanvas(canvas_);
-    qInfo() << doc_;
     connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
     connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
     connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
@@ -69,6 +66,22 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
     connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
     connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+    connect((QObject *)canvas_->scenePtr(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
+    ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
+    // Enable drag & drop ordering of items.
+    updateLayers();
+}
+
+void MainWindow::updateLayers() {
+    ui->layerList->clear();
+
+    for (Layer &layer : canvas_->scene().layers()) {
+        LayerWidget *list_widget = new LayerWidget(ui->layerList->parentWidget(), layer);
+        QListWidgetItem *list_item = new QListWidgetItem(ui->layerList);
+        QSize size = list_widget->size();
+        list_item->setSizeHint(size);
+        ui->layerList->setItemWidget(list_item, list_widget);
+    }
 }
 
 
@@ -93,4 +106,8 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 
 MainWindow::~MainWindow() {
     delete ui;
+}
+
+void MainWindow::on_addLayer_clicked() {
+    canvas_->scene().addLayer();
 }

@@ -14,7 +14,7 @@ class VCanvas : public QQuickPaintedItem {
         VCanvas(QQuickItem *parent = 0);
         void paint(QPainter *painter) override;
         void loop();
-        void loadSvg(QByteArray &data);
+        void loadSVG(QByteArray &data);
         void keyPressEvent(QKeyEvent *e) override;
         void mousePressEvent(QMouseEvent *e) override;
         void mouseMoveEvent(QMouseEvent *e) override;
@@ -22,6 +22,8 @@ class VCanvas : public QQuickPaintedItem {
         void wheelEvent(QWheelEvent *e) override;
         bool event(QEvent *e) override;
         void removeSelection();
+        Scene &scene();
+        Scene *scenePtr();
 
     public Q_SLOTS:
         void editCut();

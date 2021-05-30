@@ -3,8 +3,9 @@
 
 Scene::Scene() noexcept {
     mode_ = Mode::SELECTING;
-    layers_ << Layer();
     pasting_shift = QPointF();
+    new_layer_id_ = 1;
+    addLayer();
 }
 
 void Scene::setSelection(ShapePtr shape) {
@@ -12,6 +13,7 @@ void Scene::setSelection(ShapePtr shape) {
     list.push_back(shape);
     setSelections(list);
 }
+
 void Scene::setSelections(QList<ShapePtr> &shapes) {
     clearSelection();
     selections().append(shapes);
@@ -45,9 +47,12 @@ QList<ShapePtr> &Scene::selections() {
     return selections_;
 }
 
-void Scene::clear() {
+void Scene::clearAll() {
     clearSelection();
     layers().clear();
+    new_layer_id_ = 1;
+    active_layer_ = nullptr;
+    emit layerChanged();
 }
 
 void Scene::stackStep() {
@@ -66,7 +71,6 @@ void Scene::stackStep() {
     undo_stack_.push_back(cloned);
 }
 
-// TODO: fix gc and deconstructor
 void Scene::undo() {
     qInfo() << "Undo";
 
@@ -74,7 +78,7 @@ void Scene::undo() {
         return;
     }
 
-    clear();
+    clearAll();
     layers().append(undo_stack_.last());
     // redo stack doesn't clone the pointers... should be fixed
     redo_stack_.push_back(undo_stack_.last());
@@ -87,6 +91,7 @@ void Scene::undo() {
     }
 
     setSelections(selected);
+    emit layerChanged();
     undo_stack_.pop_back();
 }
 
@@ -98,7 +103,7 @@ void Scene::redo() {
         return;
     }
 
-    clear();
+    clearAll();
     // redo stack doesn't
     layers().append(undo_stack_.last());
     // undoo stack doesn't clone the pointers... should be fixed
@@ -112,6 +117,7 @@ void Scene::redo() {
     }
 
     setSelections(selected);
+    emit layerChanged();
     redo_stack_.pop_back();
 }
 
@@ -124,4 +130,37 @@ void Scene::setClipboard(QList<ShapePtr> &items) {
     for (ShapePtr &item : items) {
         shape_clipboard_.push_back(item->clone());
     }
+}
+
+void Scene::addLayer() {
+    qDebug() << "Add layer";
+    layers() << Layer();
+    layers().last().name = "Layer " + QString::number(new_layer_id_++);
+    active_layer_ = &layers().last();
+    stackStep();
+    emit layerChanged();
+}
+
+Scene::Mode Scene::mode() {
+    return mode_;
+}
+
+void Scene::setMode(Mode mode) {
+    mode_ = mode;
+}
+
+QPointF Scene::getCanvasCoord(QPointF window_coord) const {
+    return (window_coord - QPointF(scroll_x, scroll_y)) / scale;
+}
+QPointF Scene::scroll() const {
+    return QPointF(scroll_x, scroll_y);
+}
+Layer &Scene::activeLayer() {
+    Q_ASSERT_X(layers_.size() != 0, "Active Layer", "Access to active layer when there is no layer");
+    Q_ASSERT_X(active_layer_ != nullptr, "Active Layer", "Access to active layer is cleaned");
+    return *active_layer_;
+}
+
+QList<Layer> &Scene::layers() {
+    return layers_;
 }

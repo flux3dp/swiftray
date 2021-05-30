@@ -26,8 +26,9 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
-void VCanvas::loadSvg(QByteArray &svg_data) {
-    scene_.clear();
+void VCanvas::loadSVG(QByteArray &svg_data) {
+    //scene_.clearAll();
+    //scene_.addLayer();
     bool success = svgpp_parser.parse(svg_data);
     setAntialiasing(false);
 
@@ -84,6 +85,8 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     // Test transform_box control point
     if (transform_box.mousePressEvent(e)) return;
 
+    if (rect_drawer.mouseReleaseEvent(e)) return;
+
     // Test object selection in reverse
     bool selectedObject = false;
 
@@ -128,6 +131,8 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 
     if (transform_box.mouseMoveEvent(e)) return;
 
+    if (rect_drawer.mouseReleaseEvent(e)) return;
+
     if (scene_.mode() == Scene::Mode::MULTI_SELECTING) {
         //QRectF a()
         //QSizeF rsize(abs(e->pos().x() - mouse_press.x()), abs(e->pos().y() - mouse_press.y()));
@@ -138,6 +143,8 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 }
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     if (transform_box.mouseReleaseEvent(e)) return;
+
+    if (rect_drawer.mouseReleaseEvent(e)) return;
 
     if (scene_.mode() == Scene::Mode::MULTI_SELECTING &&
         (selection_box.width() != 0 || selection_box.height() != 0)) {
@@ -303,4 +310,12 @@ void VCanvas::editUngroup() {
     }
 
     scene_.stackStep();
+}
+
+Scene &VCanvas::scene() {
+    return scene_;
+}
+
+Scene *VCanvas::scenePtr() {
+    return &scene_;
 }

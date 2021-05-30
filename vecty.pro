@@ -18,8 +18,10 @@ INCLUDEPATH += /usr/local/opt/libxml2/include
 
 SOURCES += \
         src/canvas/layer.cpp \
+        src/canvas/rect_drawer.cpp \
         src/canvas/scene.cpp \
         src/canvas/transform_box.cpp \
+        src/widgets/layer_widget.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
         src/shape/shape.cpp \
@@ -50,8 +52,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     src/canvas/layer.hpp \
+    src/canvas/rect_drawer.h \
     src/canvas/scene.hpp \
     src/canvas/transform_box.hpp \
+    src/widgets/layer_widget.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
     src/shape/group_shape.h \
@@ -77,6 +81,7 @@ RCC_DIR = /Users/simon/build/vecty/.rcc
 UI_DIR = /Users/simon/build/vecty/.ui
 
 FORMS += \
+    src/widgets/layer_widget.ui \
     src/window/mainwindow.ui
 
 DISTFILES += \

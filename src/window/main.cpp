@@ -6,7 +6,6 @@
 #include <QLocale>
 #include <QTranslator>
 #include <canvas/vcanvas.h>
-#include "vdoc.h"
 #include <window/osxwindow.h>
 #include <window/mainwindow.h>
 
@@ -27,7 +26,6 @@ int main(int argc, char *argv[]) {
     }
 
     qmlRegisterType<VCanvas>("Vecty", 1, 0, "VCanvas");
-    qmlRegisterType<VDoc>("Vecty", 1, 0, "VDoc");
     /*QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;

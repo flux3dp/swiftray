@@ -2,7 +2,8 @@
 #include "layer.hpp"
 
 Layer::Layer() {
-    color_ = QColor::fromRgb(0xCC, 0x99, 0x00, 255);
+    color_ = QColor::fromRgb(rand() % 256, rand() % 256, rand() % 256, 255);
+    name = "Layer 1";
 }
 
 void Layer::paint(QPainter *painter, int counter) const {
@@ -57,5 +58,7 @@ Layer Layer::clone() {
         layer.children() << shape->clone();
     }
 
+    layer.name = name;
+    layer.setColor(color());
     return layer;
 }

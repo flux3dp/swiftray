@@ -12,41 +12,24 @@ class Scene : QObject {
             SELECTING,
             MOVING,
             MULTI_SELECTING,
-            TRANSFORMING
+            TRANSFORMING,
+            DRAWING_SQUARE,
+            DRAWING_LINE,
+            DRAWING_OVAL,
+            DRAWING_PATH,
         };
         Scene() noexcept;
-        qreal scroll_x;
-        qreal scroll_y;
-        qreal scale;
         bool isSelected(ShapePtr shape);
         QList<ShapePtr> &selections();
 
-        Mode mode() {
-            return mode_;
-        }
-
-        void setMode(Mode mode) {
-            mode_ = mode;
-        }
-
-        QPointF getCanvasCoord(QPointF window_coord) const {
-            return (window_coord - QPointF(scroll_x, scroll_y)) / scale;
-        }
-        QPointF scroll() const {
-            return QPointF(scroll_x, scroll_y);
-        }
-        Layer &activeLayer() {
-            if (layers_.size() == 0) layers_ << Layer();
-
-            return layers_.first();
-        }
-
-        QList<Layer> &layers() {
-            return layers_;
-        }
+        Mode mode();
+        void setMode(Mode mode);
+        QPointF getCanvasCoord(QPointF window_coord) const;
+        QPointF scroll() const;
+        QList<Layer> &layers();
         void setSelection(ShapePtr shape);
         void setSelections(QList<ShapePtr> &shapes);
-        void clear();
+        void clearAll();
         void clearSelection();
         void clearSelectionNoFlag();
         void stackStep();
@@ -55,16 +38,27 @@ class Scene : QObject {
         void setClipboard(QList<ShapePtr> &items);
         void undo();
         void redo();
+        void addLayer();
+        void removeLayer(QString name);
+        Layer &activeLayer();
+
+        qreal scroll_x;
+        qreal scroll_y;
+        qreal scale;
+
         QList<ShapePtr> shape_clipboard_;
         QPointF pasting_shift;
     signals:
         void selectionsChanged();
+        void layerChanged();
     private:
         QList<QList<Layer>> undo_stack_;
         QList<QList<Layer>> redo_stack_;
         QList<Layer> layers_;
         QList<ShapePtr> selections_;
         Mode mode_;
+        int new_layer_id_;
+        Layer *active_layer_;
 };
 
 #endif // SCENE_H

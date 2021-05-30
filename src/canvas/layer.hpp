@@ -15,6 +15,8 @@ class Layer {
 
         QColor color();
         void setColor(QColor color);
+
+        QString name;
     private:
         QColor color_;
         QList<ShapePtr> children_;
