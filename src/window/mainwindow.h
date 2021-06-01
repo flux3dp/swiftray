@@ -23,6 +23,7 @@ class MainWindow : public QMainWindow {
         void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
         void updateLayers();
         void updateMode();
+        void updateSidePanel();
         void openFile();
         void on_addLayer_clicked();
 

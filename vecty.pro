@@ -76,10 +76,10 @@ INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
 DESTDIR = /Users/simon/Dev/vecty/build
-OBJECTS_DIR = /Users/simon/build/vecty/.obj
-MOC_DIR = /Users/simon/build/vecty/.moc
-RCC_DIR = /Users/simon/build/vecty/.rcc
-UI_DIR = /Users/simon/build/vecty/.ui
+OBJECTS_DIR = /Users/simon/Dev/vecty/build/.obj
+MOC_DIR = /Users/simon/Dev/vecty/build/.moc
+RCC_DIR = /Users/simon/Dev/vecty/build/.rcc
+UI_DIR = /Users/simon/Dev/vecty/build/.ui
 
 FORMS += \
     src/widgets/layer_widget.ui \

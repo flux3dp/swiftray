@@ -28,7 +28,7 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
 void LineDrawer::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::DRAWING_LINE) return;
     if (cursor_ == QPointF(0,0)) return;
-    QPen pen(scene().activeLayer().color(), 3, Qt::DashDotLine);
+    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawLine(dragged_from_canvas_, cursor_);

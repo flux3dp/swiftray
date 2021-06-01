@@ -27,7 +27,7 @@ bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
 
 void OvalDrawer::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::DRAWING_OVAL) return;
-    QPen pen(scene().activeLayer().color(), 3, Qt::DashDotLine);
+    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawArc(rect_, 0, 360 * 16);

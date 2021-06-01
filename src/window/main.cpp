@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setAttribute(Qt::AA_EnableHighDpiScaling);
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
+    app.setStyle("fusion");
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
 

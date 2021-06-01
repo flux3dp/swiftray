@@ -35,7 +35,9 @@
         "bitset": "cpp",
         "memory": "cpp",
         "optional": "cpp",
-        "numbers": "cpp"
+        "numbers": "cpp",
+        "typeindex": "cpp",
+        "typeinfo": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

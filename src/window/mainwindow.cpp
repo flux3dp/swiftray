@@ -7,6 +7,7 @@
 #include <window/mainwindow.h>
 #include <widgets/layer_widget.h>
 #include "ui_mainwindow.h"
+#include <window/osxwindow.h>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -15,7 +16,6 @@ MainWindow::MainWindow(QWidget *parent) :
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
     //QPaintedItem in Qt6 does not support Metal rendering yet
     ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
-
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,
             this, &MainWindow::sceneGraphError);
 #endif
@@ -28,6 +28,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
     this->setStyleSheet(
         "QToolBar { background-color: #F0F0F0; border-width: 0px; spacing: 8px; }"
+        "#scrollAreaWidgetContent { background: #F8F8F8 }"
+        "#objectFrame1 { border: 0; background: #F8F8F8;}"
+        "#objectFrame2 { border: 0; }"
+        "#objectFrame3 { border: 0; }"
+        "#objectFrame4 { border: 0; }"
+        "Line { border: 1px solid #555 }" 
     );
     ui->toolBar->setStyleSheet(
         "QToolButton{ border-width:0px; border-radius: 0px; }"
@@ -82,9 +88,11 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
     connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
     connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this, SLOT(updateMode()));
+    connect((QObject *)&canvas_->scene(), SIGNAL(selectionsChanged()), this, SLOT(updateSidePanel()));
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
-    // Enable drag & drop ordering of items.
     updateLayers();
+    updateMode();
+    updateSidePanel();
 }
 
 void MainWindow::updateLayers() {
@@ -137,19 +145,41 @@ void MainWindow::updateMode() {
     ui->actionDrawRect->setChecked(false);
     ui->actionDrawLine->setChecked(false);
     ui->actionDrawOval->setChecked(false);
-    switch(canvas_->scene().mode()) {
-        case Scene::Mode::SELECTING:
-        case Scene::Mode::MULTI_SELECTING:
-            ui->actionSelect->setChecked(true);
-            break;
-        case Scene::Mode::DRAWING_LINE:
-            ui->actionDrawLine->setChecked(true);
-            break;
-        case Scene::Mode::DRAWING_RECT:
-            ui->actionDrawRect->setChecked(true);
-            break;
-        case Scene::Mode::DRAWING_OVAL:
-            ui->actionDrawOval->setChecked(true);
-            break;
+
+    switch (canvas_->scene().mode()) {
+    case Scene::Mode::SELECTING:
+    case Scene::Mode::MULTI_SELECTING:
+        ui->actionSelect->setChecked(true);
+        break;
+
+    case Scene::Mode::DRAWING_LINE:
+        ui->actionDrawLine->setChecked(true);
+        break;
+
+    case Scene::Mode::DRAWING_RECT:
+        ui->actionDrawRect->setChecked(true);
+        break;
+
+    case Scene::Mode::DRAWING_OVAL:
+        ui->actionDrawOval->setChecked(true);
+        break;
     }
+}
+
+void MainWindow::updateSidePanel() {
+    qInfo() << "Update side panel";
+    QList<ShapePtr> &items = canvas_->scene().selections();
+
+    if (items.length() > 1) {
+        ui->tabWidget->setTabText(1, "Multiple Objects");
+        ui->tabWidget->setCurrentIndex(1);
+    } else if (items.length() == 1) {
+        ui->tabWidget->setTabText(1, "Object");
+        ui->tabWidget->setCurrentIndex(1);
+    } else {
+        ui->tabWidget->setTabText(1, "-");
+        ui->tabWidget->setCurrentIndex(0);
+    }
+
+    setOSXWindowTitleColor(this);
 }

@@ -25,7 +25,7 @@ bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
 
 void RectDrawer::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::DRAWING_RECT) return;
-    QPen pen(scene().activeLayer().color(), 3, Qt::DashDotLine);
+    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawRect(rect_);
