@@ -63,6 +63,7 @@ class Scene : QObject {
     signals:
         void selectionsChanged();
         void layerChanged();
+        void modeChanged();
     private:
         qreal scroll_x_;
         qreal scroll_y_;

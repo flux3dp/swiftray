@@ -12,19 +12,31 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-        //QPaintedItem in Qt6 does not support Metal rendering yet
-        ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
-    #endif
-    connect(ui->quickWidget, &QQuickWidget::statusChanged,
-            this, &MainWindow::quickWidgetStatusChanged);
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    //QPaintedItem in Qt6 does not support Metal rendering yet
+    ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,
             this, &MainWindow::sceneGraphError);
+#endif
+    connect(ui->quickWidget, &QQuickWidget::statusChanged,
+            this, &MainWindow::quickWidgetStatusChanged);
     QUrl source("qrc:/src/window/main.qml");
     ui->quickWidget->setSource(source);
     ui->quickWidget->show();
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
     connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
+    this->setStyleSheet(
+        "QToolBar { background-color: #F0F0F0; border-width: 0px; spacing: 8px; }"
+    );
+    ui->toolBar->setStyleSheet(
+        "QToolButton{ border-width:0px; border-radius: 0px; }"
+        "QToolButton:hover { background:#CCC; }"
+        "QToolButton:pressed { background:#BBB; }"
+        "QToolButton:focused { background:#555; }"
+        "QToolButton:checked { background:#BBB; }"
+    );
+    updateMode();
 }
 
 void MainWindow::openFile() {
@@ -55,6 +67,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
         //statusBar()->showMessage(errors.join(QStringLiteral(", ")));
     } else {
     }
+
     canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
     connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
     connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
@@ -66,7 +79,9 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
     connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
     connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
+    connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
     connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
+    connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this, SLOT(updateMode()));
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     // Enable drag & drop ordering of items.
     updateLayers();
@@ -92,6 +107,11 @@ bool MainWindow::event(QEvent *e)  {
         canvas_->event(e);
         return true;
 
+    case QEvent::KeyPress:
+        //qInfo() << "Key event" << e;
+        canvas_->event(e);
+        return true;
+
     default:
         break;
     }
@@ -110,4 +130,26 @@ MainWindow::~MainWindow() {
 
 void MainWindow::on_addLayer_clicked() {
     canvas_->scene().addLayer();
+}
+
+void MainWindow::updateMode() {
+    ui->actionSelect->setChecked(false);
+    ui->actionDrawRect->setChecked(false);
+    ui->actionDrawLine->setChecked(false);
+    ui->actionDrawOval->setChecked(false);
+    switch(canvas_->scene().mode()) {
+        case Scene::Mode::SELECTING:
+        case Scene::Mode::MULTI_SELECTING:
+            ui->actionSelect->setChecked(true);
+            break;
+        case Scene::Mode::DRAWING_LINE:
+            ui->actionDrawLine->setChecked(true);
+            break;
+        case Scene::Mode::DRAWING_RECT:
+            ui->actionDrawRect->setChecked(true);
+            break;
+        case Scene::Mode::DRAWING_OVAL:
+            ui->actionDrawOval->setChecked(true);
+            break;
+    }
 }

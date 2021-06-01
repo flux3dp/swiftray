@@ -8,6 +8,8 @@
 #include <canvas/controls/multi_selection_box.h>
 #include <canvas/controls/rect_drawer.h>
 #include <canvas/controls/oval_drawer.h>
+#include <canvas/controls/line_drawer.h>
+#include <canvas/controls/canvas_control.h>
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
@@ -38,6 +40,7 @@ class VCanvas : public QQuickPaintedItem {
         void editUngroup();
         void editDrawRect();
         void editDrawOval();
+        void editDrawLine();
 
     private:
         bool ready;
@@ -48,6 +51,8 @@ class VCanvas : public QQuickPaintedItem {
         MultiSelectionBox multi_selection_box_;
         RectDrawer rect_drawer_;
         OvalDrawer oval_drawer_;
+        LineDrawer line_drawer_;
+        QList<CanvasControl*> controls_;
 
         QTimer *timer;
         QHash<int, int> m_fingerPointMapping;

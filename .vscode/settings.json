@@ -34,7 +34,8 @@
         "qvector": "cpp",
         "bitset": "cpp",
         "memory": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "numbers": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

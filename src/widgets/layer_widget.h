@@ -2,7 +2,7 @@
 #define LAYER_WIDGET_H
 
 #include <QWidget>
-#include <src/canvas/layer.h>
+#include <canvas/layer.h>
 
 namespace Ui {
     class LayerWidget;

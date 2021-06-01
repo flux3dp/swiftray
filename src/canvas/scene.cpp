@@ -150,6 +150,7 @@ Scene::Mode Scene::mode() {
 
 void Scene::setMode(Mode mode) {
     mode_ = mode;
+    emit modeChanged();
 }
 
 QPointF Scene::getCanvasCoord(QPointF window_coord) const {

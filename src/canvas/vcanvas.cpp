@@ -12,9 +12,10 @@
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     svgpp_parser { SVGPPParser(scene()) },
     transform_box_ { TransformBox(scene()) },
+    multi_selection_box_ { MultiSelectionBox(scene()) },
     rect_drawer_ { RectDrawer(scene()) },
     oval_drawer_ { OvalDrawer(scene()) },
-    multi_selection_box_ { MultiSelectionBox(scene()) } {
+    line_drawer_ { LineDrawer(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -24,6 +25,13 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
     scene().setMode(Scene::Mode::SELECTING);
+
+    controls_ << &transform_box_ 
+              << &multi_selection_box_
+              << &rect_drawer_
+              << &oval_drawer_
+              << &line_drawer_;
+
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -46,11 +54,10 @@ void VCanvas::paint(QPainter *painter) {
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
     
-    transform_box_.paint(painter);
-    multi_selection_box_.paint(painter);
-    rect_drawer_.paint(painter);
-    oval_drawer_.paint(painter);
-
+    for(CanvasControl *control : controls_) {
+        control->paint(painter);
+    }
+    
     for (const Layer &layer : scene().layers()) {
         layer.paint(painter, counter);
     }
@@ -58,6 +65,7 @@ void VCanvas::paint(QPainter *painter) {
 }
 
 void VCanvas::keyPressEvent(QKeyEvent *e) {
+    // qInfo() << "Key press" << e;
     if (e->key() == Qt::Key::Key_Delete || e->key() == Qt::Key::Key_Backspace || e->key() == Qt::Key::Key_Back) {
         editDelete();
     }
@@ -67,14 +75,9 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    // Test transform_box control point
-    if (transform_box_.mousePressEvent(e)) return;
-
-    if (multi_selection_box_.mousePressEvent(e)) return;
-
-    if (rect_drawer_.mousePressEvent(e)) return;
-
-    if (oval_drawer_.mousePressEvent(e)) return;
+    for(CanvasControl *control : controls_) {
+        if (control->mousePressEvent(e)) return;
+    }
 
     if (scene().mode() == Scene::Mode::SELECTING) {
         ShapePtr hit = scene().hitTest(canvas_coord);
@@ -93,28 +96,18 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    if (transform_box_.mouseMoveEvent(e)) return;
-
-    if (multi_selection_box_.mouseMoveEvent(e)) return;
-
-    if (rect_drawer_.mouseMoveEvent(e)) return;
-
-    if (oval_drawer_.mouseMoveEvent(e)) return;
-
+    for(CanvasControl *control : controls_) {
+        if (control->mouseMoveEvent(e)) return;
+    }
 }
 
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    if (transform_box_.mouseReleaseEvent(e)) return;
-
-    if (multi_selection_box_.mouseReleaseEvent(e)) return;
-
-    if (rect_drawer_.mouseReleaseEvent(e)) return;
-
-    if (oval_drawer_.mouseReleaseEvent(e)) return;
-
+    for(CanvasControl *control : controls_) {
+        if (control->mouseReleaseEvent(e)) return;
+    }
     scene().setMode(Scene::Mode::SELECTING);
 }
 
@@ -218,6 +211,12 @@ void VCanvas::editDrawOval() {
     oval_drawer_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_OVAL);
+}
+
+void VCanvas::editDrawLine() {
+    line_drawer_.reset();
+    scene().clearSelections();
+    scene().setMode(Scene::Mode::DRAWING_LINE);
 }
 
 void VCanvas::editSelectAll() {

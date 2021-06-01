@@ -22,6 +22,7 @@ class MainWindow : public QMainWindow {
         void quickWidgetStatusChanged(QQuickWidget::Status);
         void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
         void updateLayers();
+        void updateMode();
         void openFile();
         void on_addLayer_clicked();
 

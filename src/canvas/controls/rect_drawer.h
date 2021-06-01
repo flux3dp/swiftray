@@ -4,7 +4,7 @@
 #ifndef RECTDRAWER_H
 #define RECTDRAWER_H
 
-class RectDrawer : CanvasControl {
+class RectDrawer : public CanvasControl {
     public:
         RectDrawer(Scene &scene_) noexcept: CanvasControl(scene_) {}
         bool mousePressEvent(QMouseEvent *e) override;

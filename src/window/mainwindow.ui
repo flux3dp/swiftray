@@ -140,7 +140,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>258</width>
+             <width>254</width>
              <height>210</height>
             </rect>
            </property>
@@ -327,9 +327,7 @@
     <string>toolBar</string>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: #F0F0F0;
-border-width: 0px;
-spacing: 8px;</string>
+    <string notr="true"/>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
@@ -351,6 +349,9 @@ spacing: 8px;</string>
    <addaction name="actionText"/>
    <addaction name="actionDrawRect"/>
    <addaction name="actionDrawOval"/>
+   <addaction name="actionDrawPolygon"/>
+   <addaction name="actionDrawLine"/>
+   <addaction name="actionDraw"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -426,7 +427,7 @@ spacing: 8px;</string>
   </action>
   <action name="actionSelect">
    <property name="checkable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="checked">
     <bool>false</bool>
@@ -442,8 +443,14 @@ spacing: 8px;</string>
    <property name="toolTip">
     <string>Select (&amp;V)</string>
    </property>
+   <property name="shortcut">
+    <string>V</string>
+   </property>
   </action>
   <action name="actionDrawRect">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-rect-01.png</normaloff>:/images/icon-rect-01.png</iconset>
@@ -454,8 +461,14 @@ spacing: 8px;</string>
    <property name="toolTip">
     <string>Draw rectangles</string>
    </property>
+   <property name="shortcut">
+    <string>R</string>
+   </property>
   </action>
   <action name="actionDrawOval">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-oval-01.png</normaloff>:/images/icon-oval-01.png</iconset>
@@ -465,6 +478,9 @@ spacing: 8px;</string>
    </property>
    <property name="toolTip">
     <string>Draw ovals</string>
+   </property>
+   <property name="shortcut">
+    <string>O</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -483,8 +499,14 @@ spacing: 8px;</string>
    <property name="toolTip">
     <string>Image</string>
    </property>
+   <property name="shortcut">
+    <string>P</string>
+   </property>
   </action>
   <action name="actionText">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-text-01.png</normaloff>:/images/icon-text-01.png</iconset>
@@ -494,6 +516,9 @@ spacing: 8px;</string>
    </property>
    <property name="toolTip">
     <string>Text</string>
+   </property>
+   <property name="shortcut">
+    <string>T</string>
    </property>
   </action>
   <action name="actionSelect_All">
@@ -518,6 +543,51 @@ spacing: 8px;</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+G</string>
+   </property>
+  </action>
+  <action name="actionDrawLine">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-line-01.png</normaloff>:/images/icon-line-01.png</iconset>
+   </property>
+   <property name="text">
+    <string>DrawLine</string>
+   </property>
+   <property name="shortcut">
+    <string>L</string>
+   </property>
+  </action>
+  <action name="actionDraw">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-draw-01.png</normaloff>:/images/icon-draw-01.png</iconset>
+   </property>
+   <property name="text">
+    <string>Draw</string>
+   </property>
+   <property name="shortcut">
+    <string>D</string>
+   </property>
+  </action>
+  <action name="actionDrawPolygon">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-polygon-01.png</normaloff>:/images/icon-polygon-01.png</iconset>
+   </property>
+   <property name="text">
+    <string>DrawPolygon</string>
+   </property>
+   <property name="shortcut">
+    <string>P</string>
    </property>
   </action>
  </widget>

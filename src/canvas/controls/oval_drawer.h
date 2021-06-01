@@ -4,7 +4,7 @@
 #ifndef OVALDRAWER_H
 #define OVALDRAWER_H
 
-class OvalDrawer : CanvasControl {
+class OvalDrawer : public CanvasControl {
     public:
         OvalDrawer(Scene &scene_) noexcept: CanvasControl(scene_) {}
         bool mousePressEvent(QMouseEvent *e) override;

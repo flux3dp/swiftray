@@ -9,7 +9,7 @@
 #ifndef TRANSFORM_BOX_H
 #define TRANSFORM_BOX_H
 
-class TransformBox : CanvasControl {
+class TransformBox : public CanvasControl {
         Q_OBJECT
     public:
         enum class ControlPoint {
