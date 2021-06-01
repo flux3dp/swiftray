@@ -3,6 +3,7 @@
 #include <QObject>
 
 TransformBox::TransformBox(Scene &scene) noexcept : CanvasControl(scene) {
+    activating_control_ = ControlPoint::NONE;
     connect(this, SIGNAL(transformChanged()), this, SLOT(updateBoundingRect()));
     connect(&((QObject &)scene_), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
 }
@@ -128,7 +129,7 @@ TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float toler
 }
 
 bool TransformBox::mousePressEvent(QMouseEvent *e) {
-    pressed_at_ = e->pos();
+    CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     QRectF bbox = boundingRect();
     QPointF d;
@@ -186,16 +187,12 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
-    if (activating_control_ != ControlPoint::NONE) {
-        activating_control_ = ControlPoint::NONE;
-        flipped_x = flipped_y = false;
-    } else if (scene().mode() == Scene::Mode::MOVING) {
-        scene().setMode(Scene::Mode::SELECTING);
-        scene().stackStep();
-    } else {
-        return false;
-    }
+    if (activating_control_ == ControlPoint::NONE && scene().mode() != Scene::Mode::MOVING) return false;
 
+    activating_control_ = ControlPoint::NONE;
+    flipped_x = flipped_y = false;
+
+    scene().setMode(Scene::Mode::SELECTING);
     scene().stackStep();
     return true;
 }
@@ -206,8 +203,8 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
     if (scene().mode() == Scene::Mode::MOVING) {
-        move((e->pos() - pressed_at_) / scene().scale());
-        pressed_at_ = e->pos();
+        move(canvas_coord - dragged_from_canvas_);
+        dragged_from_canvas_ = canvas_coord;
         return true;
     }
 

@@ -13,6 +13,7 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     svgpp_parser { SVGPPParser(scene()) },
     transform_box_ { TransformBox(scene()) },
     rect_drawer_ { RectDrawer(scene()) },
+    oval_drawer_ { OvalDrawer(scene()) },
     multi_selection_box_ { MultiSelectionBox(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
@@ -44,16 +45,16 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 void VCanvas::paint(QPainter *painter) {
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
-    //qInfo() << "Rendering engine = " << painter->paintEngine()->type();
+    
+    transform_box_.paint(painter);
+    multi_selection_box_.paint(painter);
+    rect_drawer_.paint(painter);
+    oval_drawer_.paint(painter);
 
-    // Draw layers
     for (const Layer &layer : scene().layers()) {
         layer.paint(painter, counter);
     }
-
-    // Draw transform box
-    transform_box_.paint(painter);
-    multi_selection_box_.paint(painter);
+    
 }
 
 void VCanvas::keyPressEvent(QKeyEvent *e) {
@@ -72,6 +73,8 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     if (multi_selection_box_.mousePressEvent(e)) return;
 
     if (rect_drawer_.mousePressEvent(e)) return;
+
+    if (oval_drawer_.mousePressEvent(e)) return;
 
     if (scene().mode() == Scene::Mode::SELECTING) {
         ShapePtr hit = scene().hitTest(canvas_coord);
@@ -92,9 +95,12 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 
     if (transform_box_.mouseMoveEvent(e)) return;
 
+    if (multi_selection_box_.mouseMoveEvent(e)) return;
+
     if (rect_drawer_.mouseMoveEvent(e)) return;
 
-    if (multi_selection_box_.mouseMoveEvent(e)) return;
+    if (oval_drawer_.mouseMoveEvent(e)) return;
+
 }
 
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
@@ -103,9 +109,12 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
 
     if (transform_box_.mouseReleaseEvent(e)) return;
 
+    if (multi_selection_box_.mouseReleaseEvent(e)) return;
+
     if (rect_drawer_.mouseReleaseEvent(e)) return;
 
-    if (multi_selection_box_.mouseReleaseEvent(e)) return;
+    if (oval_drawer_.mouseReleaseEvent(e)) return;
+
     scene().setMode(Scene::Mode::SELECTING);
 }
 
@@ -194,9 +203,23 @@ void VCanvas::editDelete() {
 void VCanvas::editUndo() {
     scene().undo();
 }
+
 void VCanvas::editRedo() {
     scene().redo();
 }
+
+void VCanvas::editDrawRect() {
+    rect_drawer_.reset();
+    scene().clearSelections();
+    scene().setMode(Scene::Mode::DRAWING_RECT);
+}
+
+void VCanvas::editDrawOval() {
+    oval_drawer_.reset();
+    scene().clearSelections();
+    scene().setMode(Scene::Mode::DRAWING_OVAL);
+}
+
 void VCanvas::editSelectAll() {
     QList<ShapePtr> all_shapes;
 

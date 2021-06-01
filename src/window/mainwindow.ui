@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ui version="5.0">
+<ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
@@ -349,8 +349,8 @@ spacing: 8px;</string>
    <addaction name="actionSelect"/>
    <addaction name="actionPhoto"/>
    <addaction name="actionText"/>
-   <addaction name="actionRectangle"/>
-   <addaction name="actionOval"/>
+   <addaction name="actionDrawRect"/>
+   <addaction name="actionDrawOval"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -443,7 +443,7 @@ spacing: 8px;</string>
     <string>Select (&amp;V)</string>
    </property>
   </action>
-  <action name="actionRectangle">
+  <action name="actionDrawRect">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-rect-01.png</normaloff>:/images/icon-rect-01.png</iconset>
@@ -455,7 +455,7 @@ spacing: 8px;</string>
     <string>Draw rectangles</string>
    </property>
   </action>
-  <action name="actionOval">
+  <action name="actionDrawOval">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-oval-01.png</normaloff>:/images/icon-oval-01.png</iconset>

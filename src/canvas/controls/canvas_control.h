@@ -20,6 +20,8 @@ class CanvasControl : public QObject {
             return scene_;
         }
         Scene &scene_;
+        QPointF dragged_from_screen_;
+        QPointF dragged_from_canvas_;
 };
 
 #endif // CANVAS_CONTROL_H

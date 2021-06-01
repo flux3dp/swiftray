@@ -31,7 +31,10 @@
         "__bit_reference": "cpp",
         "cmath": "cpp",
         "qlist": "cpp",
-        "qvector": "cpp"
+        "qvector": "cpp",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "optional": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

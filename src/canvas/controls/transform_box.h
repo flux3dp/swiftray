@@ -41,7 +41,6 @@ class TransformBox : CanvasControl {
         ControlPoint testHit(QPointF clickPoint, float tolerance);
         QPointF control_points_[8];
         ControlPoint activating_control_;
-        QPointF pressed_at_;
         QPointF action_center_;
         float cumulated_rotation_;
         bool flipped_x;

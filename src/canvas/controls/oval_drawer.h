@@ -1,20 +1,19 @@
-#ifndef MULTISELECTIONBOX_H
-#define MULTISELECTIONBOX_H
-
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
+#ifndef OVALDRAWER_H
+#define OVALDRAWER_H
 
-class MultiSelectionBox : CanvasControl {
+class OvalDrawer : CanvasControl {
     public:
-        MultiSelectionBox(Scene &scene_) noexcept: CanvasControl(scene_) {}
+        OvalDrawer(Scene &scene_) noexcept: CanvasControl(scene_) {}
         bool mousePressEvent(QMouseEvent *e) override;
         bool mouseMoveEvent(QMouseEvent *e) override;
         bool mouseReleaseEvent(QMouseEvent *e) override;
         void paint(QPainter *painter) override;
-
+        void reset();
     private:
-        QRectF selection_box_;
+        QRectF rect_;
 };
 
-#endif // MULTISELECTIONBOX_H
+#endif // OVALDRAWER_H

@@ -1,14 +1,14 @@
 #include <canvas/controls/multi_selection_box.h>
 
 bool MultiSelectionBox::mousePressEvent(QMouseEvent *e) {
+    CanvasControl::mousePressEvent(e);
     selection_box_ = QRectF(0, 0, 0, 0);
-    selection_start_ = scene_.getCanvasCoord(e->pos());
     return false;
 }
 
 bool MultiSelectionBox::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::MULTI_SELECTING) return false;
-    selection_box_ = QRectF(selection_start_, scene_.getCanvasCoord(e->pos()));
+    selection_box_ = QRectF(dragged_from_canvas_, scene_.getCanvasCoord(e->pos()));
     return true;
 }
 
