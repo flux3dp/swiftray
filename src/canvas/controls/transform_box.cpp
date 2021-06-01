@@ -1,4 +1,4 @@
-#include <canvas/transform_box.h>
+#include <canvas/controls/transform_box.h>
 #include <QDebug>
 #include <QObject>
 

@@ -1,4 +1,4 @@
-#include <canvas/canvas_control.h>
+#include <canvas/controls/canvas_control.h>
 bool CanvasControl::mousePressEvent(QMouseEvent *e) {}
 bool CanvasControl::mouseMoveEvent(QMouseEvent *e) {}
 bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) {}

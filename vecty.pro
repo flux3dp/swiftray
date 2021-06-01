@@ -52,8 +52,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    src/canvas/layer.hpp \
-    src/canvas/scene.hpp \
+    src/canvas/layer.h \
+    src/canvas/scene.h \
     src/canvas/controls/canvas_control.h \
     src/canvas/controls/rect_drawer.h \
     src/canvas/controls/transform_box.h \
@@ -64,11 +64,11 @@ HEADERS += \
     src/shape/path_shape.h \
     src/canvas/vcanvas.h \
     src/shape/shape.hpp \
-    src/parser/svgpp_common.hpp \
-    src/parser/svgpp_parser.hpp \
-    src/parser/svgpp_context.hpp \
-    src/parser/svgpp_impl.hpp \
-    src/parser/svgpp_color_factory.hpp
+    src/parser/svgpp_common.h \
+    src/parser/svgpp_parser.h \
+    src/parser/svgpp_context.h \
+    src/parser/svgpp_impl.h \
+    src/parser/svgpp_color_factory.h
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd

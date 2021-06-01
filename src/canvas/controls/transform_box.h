@@ -3,7 +3,7 @@
 #include <QMouseEvent>
 #include <QHoverEvent>
 #include <canvas/scene.h>
-#include <canvas/canvas_control.h>
+#include <canvas/controls/canvas_control.h>
 #include <shape/shape.h>
 
 #ifndef TRANSFORM_BOX_H

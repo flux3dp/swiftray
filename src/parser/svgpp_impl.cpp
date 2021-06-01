@@ -1,9 +1,9 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
-#include <svgpp/policy/xml/libxml2.h>
-#include <svgpp/svgpp.h>
-#include <svgpp/parser/external_function/parse_all_impl.h>
-#include <svgpp/factory/color.h>
+#include <svgpp/policy/xml/libxml2.hpp>
+#include <svgpp/svgpp.hpp>
+#include <svgpp/parser/external_function/parse_all_impl.hpp>
+#include <svgpp/factory/color.hpp>
 #include <parser/svgpp_common.h>
 #include <parser/svgpp_color_factory.h>
 #include <parser/svgpp_impl.h>
@@ -19,7 +19,7 @@ SVGPP_PARSE_COLOR_IMPL(const char *, ColorFactory, factory::icc_color::default_f
 SVGPP_PARSE_PRESERVE_ASPECT_RATIO_IMPL(const char *)
 SVGPP_PARSE_MISC_IMPL(const char *, double)
 
-#include <boost/mpl/set.h>
+#include <boost/mpl/set.hpp>
 #include <QByteArray>
 #include <QDebug>
 

@@ -10,7 +10,9 @@
 #include <canvas/layer.h>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
-    svgpp_parser { SVGPPParser(scene_) }, transform_box { TransformBox(scene_) } {
+    svgpp_parser { SVGPPParser(scene_) },
+    transform_box { TransformBox(scene_) },
+    rect_drawer {RectDrawer(scene_)} {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);

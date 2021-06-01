@@ -5,7 +5,7 @@
 #include <QListWidget>
 #include <QDebug>
 #include <window/mainwindow.h>
-#include <window/ui_mainwindow.h>
+#include "ui_mainwindow.h"
 #include <widgets/layer_widget.h>
 
 MainWindow::MainWindow(QWidget *parent) :

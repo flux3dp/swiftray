@@ -4,8 +4,8 @@
 #include <shape/shape.h>
 #include <parser/svgpp_parser.h>
 #include <canvas/scene.h>
-#include <canvas/transform_box.h>
-#include <canvas/rect_drawer.h>
+#include <canvas/controls/transform_box.h>
+#include <canvas/controls/rect_drawer.h>
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
