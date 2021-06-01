@@ -110,37 +110,10 @@ const QPointF *TransformBox::controlPoints() {
 
 TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float tolerance) {
     controlPoints();
-
-    if ((control_points_[0] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::NW;
-    }
-
-    if ((control_points_[1] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::N;
-    }
-
-    if ((control_points_[2] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::NE;
-    }
-
-    if ((control_points_[3] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::E;
-    }
-
-    if ((control_points_[4] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::SE;
-    }
-
-    if ((control_points_[5] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::S;
-    }
-
-    if ((control_points_[6] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::SW;
-    }
-
-    if ((control_points_[7] - clickPoint).manhattanLength() < tolerance) {
-        return ControlPoint::W;
+    for (int i = (int)ControlPoint::NW ; i != (int)ControlPoint::ROTATION; i++) {
+        if ((control_points_[i] - clickPoint).manhattanLength() < tolerance) {
+            return (ControlPoint)i;
+        }
     }
 
     if (!this->boundingRect().contains(clickPoint)) {
@@ -157,9 +130,9 @@ TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float toler
 bool TransformBox::mousePressEvent(QMouseEvent *e) {
     pressed_at_ = e->pos();
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
-    activating_control_ = testHit(canvas_coord, 10 / scene().scale);
-    QPointF d;
     QRectF bbox = boundingRect();
+    QPointF d;
+    activating_control_ = testHit(canvas_coord, 10 / scene().scale());
 
     switch (activating_control_) {
     case ControlPoint::ROTATION:
@@ -205,8 +178,7 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
     }
 
     transform_scaler = QSizeF(boundingRect().size());
-    flipped_x = false;
-    flipped_y = false;
+    flipped_x = flipped_y = false;
     qInfo() << "Transform scaling" << d;
     scene().stackStep();
     scene().setMode(Scene::Mode::TRANSFORMING);
@@ -216,19 +188,16 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
 bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
     if (activating_control_ != ControlPoint::NONE) {
         activating_control_ = ControlPoint::NONE;
-        flipped_x = false;
-        flipped_y = false;
-        scene().stackStep();
-        return true;
-    }
-
-    if (scene().mode() == Scene::Mode::MOVING) {
+        flipped_x = flipped_y = false;
+    } else if (scene().mode() == Scene::Mode::MOVING) {
         scene().setMode(Scene::Mode::SELECTING);
         scene().stackStep();
-        return true;
+    } else {
+        return false;
     }
 
-    return false;
+    scene().stackStep();
+    return true;
 }
 
 bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
@@ -236,13 +205,8 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
-    if (scene().mode() == Scene::Mode::SELECTING) {
-        qInfo() << "Stack moving";
-        scene().setMode(Scene::Mode::MOVING);
-    }
-
     if (scene().mode() == Scene::Mode::MOVING) {
-        move((e->pos() - pressed_at_) / scene().scale);
+        move((e->pos() - pressed_at_) / scene().scale());
         pressed_at_ = e->pos();
         return true;
     }
@@ -290,8 +254,6 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
         sy = 1;
     }
 
-    // TODO:: BUG from Grabbing N flip
-
     if (d.x() > 0 && flipped_x) {
         flipped_x = false;
         sx = -sx;
@@ -317,7 +279,7 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    ControlPoint cp = testHit(scene().getCanvasCoord(e->pos()), 10 / scene().scale);
+    ControlPoint cp = testHit(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
 
     switch (cp) {
     case ControlPoint::ROTATION:
@@ -354,7 +316,7 @@ bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 void TransformBox::paint(QPainter *painter) {
     QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     QPen bluePen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
-    QPen ptPen(sky_blue, 10 / scene().scale, Qt::PenStyle::SolidLine, Qt::RoundCap);
+    QPen ptPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine, Qt::RoundCap);
 
     if (selections().size() > 0) {
         if (activating_control_ == ControlPoint::ROTATION) {

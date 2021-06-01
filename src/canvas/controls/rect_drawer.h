@@ -1,9 +1,8 @@
-#ifndef RECTDRAWER_H
-#define RECTDRAWER_H
-
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
+#ifndef RECTDRAWER_H
+#define RECTDRAWER_H
 
 class RectDrawer : CanvasControl {
     public:

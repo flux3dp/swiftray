@@ -5,6 +5,7 @@
 #include <parser/svgpp_parser.h>
 #include <canvas/scene.h>
 #include <canvas/controls/transform_box.h>
+#include <canvas/controls/multi_selection_box.h>
 #include <canvas/controls/rect_drawer.h>
 
 class VCanvas : public QQuickPaintedItem {
@@ -22,9 +23,7 @@ class VCanvas : public QQuickPaintedItem {
         void mouseReleaseEvent(QMouseEvent *e) override;
         void wheelEvent(QWheelEvent *e) override;
         bool event(QEvent *e) override;
-        void removeSelection();
         Scene &scene();
-        Scene *scenePtr();
 
     public Q_SLOTS:
         void editCut();
@@ -42,15 +41,11 @@ class VCanvas : public QQuickPaintedItem {
         int counter;
         Scene scene_;
         SVGPPParser svgpp_parser;
-        TransformBox transform_box;
-        RectDrawer rect_drawer;
+        TransformBox transform_box_;
+        MultiSelectionBox multi_selection_box_;
+        RectDrawer rect_drawer_;
 
         QTimer *timer;
-        bool small_screen;
-        QPoint mouse_press;
-        bool mouse_drag;
-        QRectF selection_box;
-        QPointF selection_start;
         QHash<int, int> m_fingerPointMapping;
 
 

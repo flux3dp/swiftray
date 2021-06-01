@@ -5,6 +5,9 @@ Scene::Scene() noexcept {
     mode_ = Mode::SELECTING;
     pasting_shift = QPointF();
     new_layer_id_ = 1;
+    scroll_x_ = 0;
+    scroll_y_ = 0;
+    scale_ = 1;
     addLayer();
 }
 
@@ -15,7 +18,7 @@ void Scene::setSelection(ShapePtr shape) {
 }
 
 void Scene::setSelections(QList<ShapePtr> &shapes) {
-    clearSelection();
+    clearSelections();
     selections().append(shapes);
 
     for (int i = 0; i < selections().size(); i++) {
@@ -25,7 +28,7 @@ void Scene::setSelections(QList<ShapePtr> &shapes) {
     emit selectionsChanged();
 }
 
-void Scene::clearSelection() {
+void Scene::clearSelections() {
     for (int i = 0; i < selections().size(); i++) {
         selections().at(i)->selected = false;
     }
@@ -34,7 +37,7 @@ void Scene::clearSelection() {
     emit selectionsChanged();
 }
 
-void Scene::clearSelectionNoFlag() {
+void Scene::clearSelectionsNoFlag() {
     selections().clear();
     emit selectionsChanged();
 }
@@ -48,7 +51,7 @@ QList<ShapePtr> &Scene::selections() {
 }
 
 void Scene::clearAll() {
-    clearSelection();
+    clearSelections();
     layers().clear();
     new_layer_id_ = 1;
     active_layer_ = nullptr;
@@ -150,11 +153,46 @@ void Scene::setMode(Mode mode) {
 }
 
 QPointF Scene::getCanvasCoord(QPointF window_coord) const {
-    return (window_coord - QPointF(scroll_x, scroll_y)) / scale;
+    return (window_coord - scroll()) / scale();
 }
+
 QPointF Scene::scroll() const {
-    return QPointF(scroll_x, scroll_y);
+    return QPointF(scroll_x_, scroll_y_);
 }
+
+
+qreal Scene::scrollX() const {
+    return scroll_x_;
+}
+
+qreal Scene::scrollY() const {
+    return scroll_y_;
+}
+
+qreal Scene::scale() const {
+    return scale_;
+}
+
+
+void Scene::setScroll(QPointF scroll) {
+    scroll_x_ = scroll.x();
+    scroll_y_ = scroll.y();
+}
+
+void Scene::setScrollX(qreal scroll_x) {
+    scroll_x_ = scroll_x;
+
+}
+
+void Scene::setScrollY(qreal scroll_y) {
+    scroll_y_ = scroll_y;
+
+}
+
+void Scene::setScale(qreal scale) {
+    scale_ = scale;
+}
+
 Layer &Scene::activeLayer() {
     Q_ASSERT_X(layers_.size() != 0, "Active Layer", "Access to active layer when there is no layer");
     Q_ASSERT_X(active_layer_ != nullptr, "Active Layer", "Access to active layer is cleaned");
@@ -163,4 +201,26 @@ Layer &Scene::activeLayer() {
 
 QList<Layer> &Scene::layers() {
     return layers_;
+}
+
+void Scene::removeSelections() {
+    // Need to clean up all selection pointer reference first
+    clearSelectionsNoFlag();
+
+    for (Layer &layer : layers()) {
+        layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
+            return s->selected;
+        }), layer.children().end());
+    }
+}
+
+ShapePtr Scene::hitTest(QPointF canvas_coord) {
+    for (Layer &layer : layers()) {
+        for (ShapePtr &shape : layer.children()) {
+            if (shape->testHit(canvas_coord, 10 / scale())) {
+                return shape;
+            }
+        }
+    }
+    return nullptr;
 }

@@ -13,16 +13,16 @@ class TransformBox : CanvasControl {
         Q_OBJECT
     public:
         enum class ControlPoint {
-            NONE,
-            NW,
-            N,
-            NE,
-            E,
-            SE,
-            S,
-            SW,
-            W,
-            ROTATION
+            NONE = -1,
+            NW = 0,
+            N = 1,
+            NE = 2,
+            E = 3,
+            SE = 4,
+            S = 5,
+            SW= 6,
+            W = 7,
+            ROTATION = 8
         };
         TransformBox(Scene &scene) noexcept;
         bool mousePressEvent(QMouseEvent *e) override;

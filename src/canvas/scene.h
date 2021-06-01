@@ -19,43 +19,62 @@ class Scene : QObject {
             DRAWING_PATH,
         };
         Scene() noexcept;
+        // Selection
         bool isSelected(ShapePtr shape);
         QList<ShapePtr> &selections();
-
-        Mode mode();
-        void setMode(Mode mode);
-        QPointF getCanvasCoord(QPointF window_coord) const;
-        QPointF scroll() const;
-        QList<Layer> &layers();
         void setSelection(ShapePtr shape);
         void setSelections(QList<ShapePtr> &shapes);
         void clearAll();
-        void clearSelection();
-        void clearSelectionNoFlag();
-        void stackStep();
-        QList<ShapePtr> &shapes();
+        void clearSelections();
+        void clearSelectionsNoFlag();
+        void removeSelections();
+        ShapePtr hitTest(QPointF canvas_coord);
+        // Mode
+        Mode mode();
+        void setMode(Mode mode);
+        // Clipboard
         QList<ShapePtr> &clipboard();
         void setClipboard(QList<ShapePtr> &items);
-        void undo();
-        void redo();
+        // Layer
+        QList<Layer> &layers();
+        Layer &activeLayer();
         void addLayer();
         void removeLayer(QString name);
-        Layer &activeLayer();
+        // Undo
+        void stackStep();
+        void undo();
+        void redo();
 
-        qreal scroll_x;
-        qreal scroll_y;
-        qreal scale;
+        // View
+        QPointF getCanvasCoord(QPointF window_coord) const;
+        QPointF scroll() const;
+        qreal scrollX() const;
+        qreal scrollY() const;
+        qreal scale() const;
 
-        QList<ShapePtr> shape_clipboard_;
+        void setScroll(QPointF scroll);
+        void setScrollX(qreal scroll_x);
+        void setScrollY(qreal scroll_y);
+        void setScale(qreal scale);
+
+        QList<ShapePtr> &shapes();
+
         QPointF pasting_shift;
     signals:
         void selectionsChanged();
         void layerChanged();
     private:
+        qreal scroll_x_;
+        qreal scroll_y_;
+        qreal scale_;
+
+        QList<ShapePtr> shape_clipboard_;
+
         QList<QList<Layer>> undo_stack_;
         QList<QList<Layer>> redo_stack_;
         QList<Layer> layers_;
         QList<ShapePtr> selections_;
+        
         Mode mode_;
         int new_layer_id_;
         Layer *active_layer_;

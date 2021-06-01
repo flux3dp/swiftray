@@ -20,9 +20,7 @@ INCLUDEPATH += /usr/local/opt/libxml2/include
 SOURCES += \
         src/canvas/layer.cpp \
         src/canvas/scene.cpp \
-        src/canvas/controls/canvas_control.cpp \
-        src/canvas/controls/rect_drawer.cpp \
-        src/canvas/controls/transform_box.cpp \
+        $$files(src/canvas/controls/*.cpp) \
         src/widgets/layer_widget.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \

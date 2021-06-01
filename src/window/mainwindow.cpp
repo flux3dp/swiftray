@@ -64,7 +64,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
     connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
     connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
-    connect((QObject *)canvas_->scenePtr(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
+    connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     // Enable drag & drop ordering of items.
     updateLayers();
