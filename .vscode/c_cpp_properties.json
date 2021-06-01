@@ -7,7 +7,13 @@
                 "${workspaceFolder}/third_party",
                 "/usr/local/include/",
                 "/usr/local/opt/libxml2/include",
-                "/Users/simon/Dev/qt5-build/qtbase/include/**"
+                "/Users/simon/Dev/qt5-build/qtbase/include/",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtCore",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtQML",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtQuick",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtOpenGL",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtGui",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtWidgets"
             ],
             "defines": [],
             "macFrameworkPath": [
@@ -15,7 +21,7 @@
             ],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
-            "cppStandard": "c++98",
+            "cppStandard": "c++17",
             "intelliSenseMode": "macos-clang-x64"
         }
     ],

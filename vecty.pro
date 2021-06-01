@@ -1,5 +1,6 @@
 QT += quick
 QT += quickwidgets
+QT += widgets 
 QT += opengl
 
 CONFIG += c++17
@@ -63,7 +64,7 @@ HEADERS += \
     src/shape/group_shape.h \
     src/shape/path_shape.h \
     src/canvas/vcanvas.h \
-    src/shape/shape.hpp \
+    src/shape/shape.h \
     src/parser/svgpp_common.h \
     src/parser/svgpp_parser.h \
     src/parser/svgpp_context.h \

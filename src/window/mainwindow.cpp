@@ -5,15 +5,17 @@
 #include <QListWidget>
 #include <QDebug>
 #include <window/mainwindow.h>
-#include "ui_mainwindow.h"
 #include <widgets/layer_widget.h>
+#include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    //QPaintedItem does not support Metal rendering yet
-    ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+    #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+        //QPaintedItem in Qt6 does not support Metal rendering yet
+        ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+    #endif
     connect(ui->quickWidget, &QQuickWidget::statusChanged,
             this, &MainWindow::quickWidgetStatusChanged);
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,
@@ -26,9 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::openFile() {
-    qInfo() << "Open file";
     QString file_name = QFileDialog::getOpenFileName(this);
-    qInfo() << "Loading" << file_name;
 
     if (QFile::exists(file_name)) {
         QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
@@ -55,10 +55,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
         //statusBar()->showMessage(errors.join(QStringLiteral(", ")));
     } else {
     }
-
-    qInfo() << "Children " << ui->quickWidget->rootObject()->children();
     canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-    qInfo() << canvas_;
     connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
     connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
     connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);

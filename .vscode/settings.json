@@ -29,7 +29,9 @@
         "qpainterpath": "cpp",
         "limits": "cpp",
         "__bit_reference": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "qlist": "cpp",
+        "qvector": "cpp"
     },
     "files.exclude": {
         "**/.git": true,
