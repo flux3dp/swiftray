@@ -1,10 +1,10 @@
 #ifndef VCANVAS_H
 #define VCANVAS_H
 #include <QtQuick>
-#include <shape/shape.hpp>
-#include <parser/svgpp_parser.hpp>
-#include <canvas/scene.hpp>
-#include <canvas/transform_box.hpp>
+#include <shape/shape.h>
+#include <parser/svgpp_parser.h>
+#include <canvas/scene.h>
+#include <canvas/transform_box.h>
 #include <canvas/rect_drawer.h>
 
 class VCanvas : public QQuickPaintedItem {

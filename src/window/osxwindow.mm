@@ -1,4 +1,4 @@
-#include "osxwindow.h"
+#include <window/osxwindow.h>
 #include <AppKit/AppKit.h>
 
 void setOSXWindowTitleColor(QMainWindow *w) {

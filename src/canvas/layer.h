@@ -1,7 +1,7 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include <shape/shape.hpp>
+#include <shape/shape.h>
 
 class Layer {
     public:

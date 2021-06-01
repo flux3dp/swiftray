@@ -2,9 +2,9 @@
 #include <cmath>
 #include <QMouseEvent>
 #include <QHoverEvent>
-#include <canvas/scene.hpp>
+#include <canvas/scene.h>
 #include <canvas/canvas_control.h>
-#include <shape/shape.hpp>
+#include <shape/shape.h>
 
 #ifndef TRANSFORM_BOX_H
 #define TRANSFORM_BOX_H

@@ -1,4 +1,4 @@
-#include "shape.hpp"
+#include <shape/shape.h>
 #include <QDebug>
 
 #define SELECTION_TOLERANCE 15

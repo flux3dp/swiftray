@@ -1,5 +1,5 @@
-#include <shape/shape.hpp>
-#include "layer.hpp"
+#include <shape/shape.h>
+#include <canvas/layer.h>
 
 Layer::Layer() {
     color_ = QColor::fromRgb(rand() % 256, rand() % 256, rand() % 256, 255);

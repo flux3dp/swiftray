@@ -1,4 +1,4 @@
-#include "rect_drawer.h"
+#include <canvas/controls/rect_drawer.h>
 
 bool RectDrawer::mousePressEvent(QMouseEvent *e) {
     return false;

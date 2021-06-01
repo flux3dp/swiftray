@@ -1,4 +1,4 @@
-#include "path_shape.h"
+#include <shape/path_shape.h>
 #include <QDebug>
 
 #define SELECTION_TOLERANCE 10

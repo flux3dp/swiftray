@@ -1,18 +1,18 @@
-#include <parser/svgpp_common.hpp>
+#include <parser/svgpp_common.h>
 #ifndef SVGPPCONTEXT_H
 #define SVGPPCONTEXT_H
-#include <svgpp/svgpp.hpp>
+#include <svgpp/svgpp.h>
 #include <QDebug>
 #include <QPainter>
 #include <string>
-#include <shape/shape.hpp>
+#include <shape/shape.h>
 #include <shape/path_shape.h>
-#include <canvas/scene.hpp>
+#include <canvas/scene.h>
 
-#include <boost/math/constants/constants.hpp>
-#include <boost/numeric/ublas/assignment.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#include <boost/math/constants/constants.h>
+#include <boost/numeric/ublas/assignment.h>
+#include <boost/numeric/ublas/matrix.h>
+#include <boost/numeric/ublas/io.h>
 namespace ublas = boost::numeric::ublas;
 typedef ublas::matrix<double> matrix_t;
 

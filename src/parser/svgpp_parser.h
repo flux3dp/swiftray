@@ -1,5 +1,5 @@
 #include <QPainterPath>
-#include <canvas/scene.hpp>
+#include <canvas/scene.h>
 
 #ifndef SVGPP_PARSER_H
 #define SVGPP_PARSER_H

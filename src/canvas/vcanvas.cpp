@@ -1,4 +1,4 @@
-#include "vcanvas.h"
+#include <canvas/vcanvas.h>
 #include <QDebug>
 #include <QPainter>
 #include <QWidget>
@@ -7,7 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <shape/group_shape.h>
-#include <canvas/layer.hpp>
+#include <canvas/layer.h>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     svgpp_parser { SVGPPParser(scene_) }, transform_box { TransformBox(scene_) } {

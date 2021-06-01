@@ -1,6 +1,6 @@
-#include "svgpp_impl.hpp"
-#include "svgpp_context.hpp"
-#include "svgpp_parser.hpp"
+#include <parser/svgpp_impl.h>
+#include <parser/svgpp_context.h>
+#include <parser/svgpp_parser.h>
 
 SVGPPParser::SVGPPParser(Scene &canvas): scene_ { canvas } {
 }

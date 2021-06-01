@@ -1,7 +1,7 @@
 #ifndef GROUPSHAPE_H
 #define GROUPSHAPE_H
 
-#include <shape/shape.hpp>
+#include <shape/shape.h>
 
 class GroupShape : public Shape {
     public:

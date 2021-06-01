@@ -1,6 +1,6 @@
 #include <QPoint>
-#include <canvas/layer.hpp>
-#include <shape/shape.hpp>
+#include <canvas/layer.h>
+#include <shape/shape.h>
 
 #ifndef SCENE_H
 #define SCENE_H

@@ -1,4 +1,4 @@
-#include "svgpp_context.hpp"
+#include <parser/svgpp_context.h>
 #include <QPainter>
 #include <QPainterPath>
 

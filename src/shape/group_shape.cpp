@@ -1,4 +1,4 @@
-#include "group_shape.h"
+#include <shape/group_shape.h>
 
 GroupShape::GroupShape() {
 }

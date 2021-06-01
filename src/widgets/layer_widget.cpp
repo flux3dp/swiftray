@@ -1,5 +1,5 @@
-#include "layer_widget.h"
-#include "ui_layer_widget.h"
+#include <widgets/layer_widget.h>
+#include <widgets/ui_layer_widget.h>
 
 /*LayerWidget::LayerWidget(QWidget *parent) :
     QWidget(parent),

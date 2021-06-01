@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QPainter>
 #include <QMouseEvent>
-#include <canvas/scene.hpp>
+#include <canvas/scene.h>
 
 class CanvasControl : public QObject {
         Q_OBJECT

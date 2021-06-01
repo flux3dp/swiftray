@@ -1,4 +1,4 @@
-#include <canvas/scene.hpp>
+#include <canvas/scene.h>
 #include <QDebug>
 
 Scene::Scene() noexcept {

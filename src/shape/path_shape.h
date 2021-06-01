@@ -1,7 +1,7 @@
 #ifndef PATHSHAPE_H
 #define PATHSHAPE_H
 
-#include <shape/shape.hpp>
+#include <shape/shape.h>
 
 using namespace std;
 

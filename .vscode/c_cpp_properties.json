@@ -3,15 +3,11 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**",
+                "${workspaceFolder}/src",
                 "${workspaceFolder}/third_party",
                 "/usr/local/include/",
                 "/usr/local/opt/libxml2/include",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtCore.framework/Headers",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQuick.framework/Headers",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtGui.framework/Headers",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQml.framework/Headers",
-                "/Users/simon/Qt/5.15.1/clang_64/lib/QtQuick.framework/Versions/5/Headers"
+                "/Users/simon/Dev/qt5-build/qtbase/include/**"
             ],
             "defines": [],
             "macFrameworkPath": [
