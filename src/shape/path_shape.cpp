@@ -11,7 +11,6 @@ PathShape::PathShape(QPainterPath path) : Shape() {
 
 
 PathShape::~PathShape() {
-    qInfo() << "PathShape::Deconstruct" << this;
 }
 
 // todo: add setPath and avoid externally changing the paths.
@@ -30,25 +29,6 @@ void PathShape::simplify() {
 // only calls this when the path is different
 void PathShape::cacheSelectionTestingData() {
     QRectF bbox = path_.boundingRect();
-
-    if (path_.elementCount() < 200) {
-        float path_length = path_.length();
-        float seg_step = 15 / path_length; // 15 units per segments
-
-        for (float percent = 0; percent < 1; percent += seg_step) {
-            selection_testing_points_ << path_.pointAtPercent(percent);
-        }
-
-        selection_testing_points_ << path_.pointAtPercent(1);
-    } else {
-        QList<QPolygonF> polygons = path_.toSubpathPolygons();
-
-        for (int i = 0; i < polygons.size(); i++) {
-            selection_testing_points_.append(polygons[i].toList());
-        }
-    }
-
-    // Todo:: Add tolerance here
     selection_testing_rect_ = QRectF(bbox.x() - SELECTION_TOLERANCE, bbox.y() - SELECTION_TOLERANCE, bbox.width() + SELECTION_TOLERANCE * 2, bbox.height() + SELECTION_TOLERANCE * 2);
 }
 
@@ -60,13 +40,7 @@ bool PathShape::testHit(QPointF global_coord, qreal tolerance) const {
         return false;
     }
 
-    for (int i = 0; i < selection_testing_points_.size(); i++) {
-        if ((selection_testing_points_[i] - local_coord).manhattanLength() < tolerance) {
-            return true;
-        }
-    }
-
-    return false;
+    return testHit(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
 bool PathShape::testHit(QRectF global_coord_rect) const {
@@ -91,7 +65,6 @@ void PathShape::paint(QPainter *painter) const {
 
 shared_ptr<Shape> PathShape::clone() const {
     shared_ptr<PathShape> shape(new PathShape(*this));
-    qInfo() << "Clone PathShape: ref=" << shape.use_count();
     return shape;
 }
 

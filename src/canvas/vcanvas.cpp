@@ -92,7 +92,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
 
     for (Layer &layer : scene_.layers()) {
         for (ShapePtr &shape : layer.children()) {
-            if (shape->testHit(canvas_coord, 15 / scene_.scale)) {
+            if (shape->testHit(canvas_coord, 10 / scene_.scale)) {
                 selectedObject = true;
 
                 // Do not reset selection if it's already selected

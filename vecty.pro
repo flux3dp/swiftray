@@ -18,9 +18,10 @@ INCLUDEPATH += /usr/local/opt/libxml2/include
 
 SOURCES += \
         src/canvas/layer.cpp \
-        src/canvas/rect_drawer.cpp \
         src/canvas/scene.cpp \
-        src/canvas/transform_box.cpp \
+        src/canvas/controls/canvas_control.cpp \
+        src/canvas/controls/rect_drawer.cpp \
+        src/canvas/controls/transform_box.cpp \
         src/widgets/layer_widget.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
@@ -52,9 +53,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     src/canvas/layer.hpp \
-    src/canvas/rect_drawer.h \
     src/canvas/scene.hpp \
-    src/canvas/transform_box.hpp \
+    src/canvas/controls/canvas_control.h \
+    src/canvas/controls/rect_drawer.h \
+    src/canvas/controls/transform_box.h \
     src/widgets/layer_widget.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \

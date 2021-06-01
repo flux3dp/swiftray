@@ -1,9 +1,8 @@
 #include <canvas/transform_box.hpp>
 #include <QDebug>
+#include <QObject>
 
-TransformBox::TransformBox(Scene &scene) noexcept : scene_ {
-    scene
-} {
+TransformBox::TransformBox(Scene &scene) noexcept : CanvasControl(scene) {
     connect(this, SIGNAL(transformChanged()), this, SLOT(updateBoundingRect()));
     connect(&((QObject &)scene_), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
 }
@@ -54,10 +53,6 @@ void TransformBox::updateBoundingRect() {
 
 QRectF TransformBox::boundingRect() {
     return bounding_rect_;
-}
-
-Scene &TransformBox::scene() {
-    return scene_;
 }
 
 void TransformBox::rotate(double rotation) {

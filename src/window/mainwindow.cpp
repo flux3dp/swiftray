@@ -12,7 +12,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    //((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+    //QPaintedItem does not support Metal rendering yet
+    ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
     connect(ui->quickWidget, &QQuickWidget::statusChanged,
             this, &MainWindow::quickWidgetStatusChanged);
     connect(ui->quickWidget, &QQuickWidget::sceneGraphError,

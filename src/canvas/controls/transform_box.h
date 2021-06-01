@@ -3,12 +3,13 @@
 #include <QMouseEvent>
 #include <QHoverEvent>
 #include <canvas/scene.hpp>
+#include <canvas/canvas_control.h>
 #include <shape/shape.hpp>
 
 #ifndef TRANSFORM_BOX_H
 #define TRANSFORM_BOX_H
 
-class TransformBox : QObject {
+class TransformBox : CanvasControl {
         Q_OBJECT
     public:
         enum class ControlPoint {
@@ -24,15 +25,14 @@ class TransformBox : QObject {
             ROTATION
         };
         TransformBox(Scene &scene) noexcept;
+        bool mousePressEvent(QMouseEvent *e) override;
+        bool mouseReleaseEvent(QMouseEvent *e) override;
+        bool mouseMoveEvent(QMouseEvent *e) override;
+        bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
+        void paint(QPainter *painter) override;
         const QPointF *controlPoints();
         QRectF boundingRect();
-        bool mousePressEvent(QMouseEvent *e);
-        bool mouseReleaseEvent(QMouseEvent *e);
-        bool mouseMoveEvent(QMouseEvent *e);
-        bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
-        void paint(QPainter *painter);
         QList<ShapePtr> &selections();
-        Scene &scene();
         void move(QPointF offset);
 
     private:
@@ -42,7 +42,6 @@ class TransformBox : QObject {
         QPointF control_points_[8];
         ControlPoint activating_control_;
         QPointF pressed_at_;
-        Scene &scene_;
         QPointF action_center_;
         float cumulated_rotation_;
         bool flipped_x;

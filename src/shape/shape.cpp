@@ -8,11 +8,9 @@ using namespace std;
 Shape::Shape() noexcept {
     transform_ = QTransform();
     selected = false;
-    qInfo() << "New Shape" << this;
 }
 
 Shape::~Shape() {
-    qInfo() << "Shape::Deconstruct" << this;
 }
 
 // only calls this when the path is different

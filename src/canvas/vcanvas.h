@@ -5,6 +5,7 @@
 #include <parser/svgpp_parser.hpp>
 #include <canvas/scene.hpp>
 #include <canvas/transform_box.hpp>
+#include <canvas/rect_drawer.h>
 
 class VCanvas : public QQuickPaintedItem {
         Q_OBJECT
@@ -42,6 +43,7 @@ class VCanvas : public QQuickPaintedItem {
         Scene scene_;
         SVGPPParser svgpp_parser;
         TransformBox transform_box;
+        RectDrawer rect_drawer;
 
         QTimer *timer;
         bool small_screen;
