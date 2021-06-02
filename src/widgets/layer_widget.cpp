@@ -12,13 +12,14 @@ LayerWidget::LayerWidget(QWidget *parent, Layer &layer) :
     ui(new Ui::LayerWidget),
     layer_ {layer} {
     ui->setupUi(this);
-    QPixmap pix(128, 96);
+    QPixmap pix(96, 96);
     pix.fill(QColor::fromRgba64(0, 0, 0, 0));
     QPainter paint(&pix);
+    paint.setRenderHint(QPainter::Antialiasing, true);
     QPen pen(QColor(0, 0, 0, 255), 5);
     paint.setPen(pen);
-    paint.fillRect(QRectF(12, 12, 72, 72), QBrush(layer.color()));
-    paint.drawRoundedRect(QRectF(10, 10, 76, 76), 5, 5);
+    paint.setBrush(QBrush(layer.color()));
+    paint.drawRoundedRect(QRectF(20, 20, 56, 56), 10, 10);
     paint.end();
     ui->labelIcon->setPixmap(pix);
     ui->labelName->setText(layer.name);

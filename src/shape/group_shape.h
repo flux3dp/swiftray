@@ -14,6 +14,7 @@ class GroupShape : public Shape {
         QRectF boundingRect() const override;
         void paint(QPainter *painter) const override;
         ShapePtr clone() const override;
+        Shape::Type type() const override;
         QList<ShapePtr> &children() ;
     private:
         QList<ShapePtr> children_;

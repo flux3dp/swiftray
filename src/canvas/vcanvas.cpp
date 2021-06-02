@@ -6,6 +6,7 @@
 #include <QHoverEvent>
 #include <cstring>
 #include <iostream>
+#include <shape/path_shape.h>
 #include <shape/group_shape.h>
 #include <canvas/layer.h>
 
@@ -15,7 +16,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     multi_selection_box_ { MultiSelectionBox(scene()) },
     rect_drawer_ { RectDrawer(scene()) },
     oval_drawer_ { OvalDrawer(scene()) },
-    line_drawer_ { LineDrawer(scene()) } {
+    line_drawer_ { LineDrawer(scene()) },
+    path_drawer_ { PathDrawer(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -25,13 +27,12 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
     scene().setMode(Scene::Mode::SELECTING);
-
-    controls_ << &transform_box_ 
+    controls_ << &transform_box_
               << &multi_selection_box_
               << &rect_drawer_
               << &oval_drawer_
-              << &line_drawer_;
-
+              << &line_drawer_
+              << &path_drawer_;
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -53,15 +54,14 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 void VCanvas::paint(QPainter *painter) {
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
-    
-    for(CanvasControl *control : controls_) {
+
+    for (CanvasControl *control : controls_) {
         control->paint(painter);
     }
-    
+
     for (const Layer &layer : scene().layers()) {
         layer.paint(painter, counter);
     }
-    
 }
 
 void VCanvas::keyPressEvent(QKeyEvent *e) {
@@ -75,20 +75,23 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for(CanvasControl *control : controls_) {
+    for (CanvasControl *control : controls_) {
         if (control->mousePressEvent(e)) return;
     }
 
     if (scene().mode() == Scene::Mode::SELECTING) {
         ShapePtr hit = scene().hitTest(canvas_coord);
+
         if (hit != nullptr) {
             if (!hit->selected) scene().setSelection(hit);
+
             scene().setMode(Scene::Mode::MOVING);
         } else {
             scene().clearSelections();
             scene().setMode(Scene::Mode::MULTI_SELECTING);
         }
     }
+
     return;
 }
 
@@ -96,7 +99,7 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for(CanvasControl *control : controls_) {
+    for (CanvasControl *control : controls_) {
         if (control->mouseMoveEvent(e)) return;
     }
 }
@@ -105,9 +108,10 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for(CanvasControl *control : controls_) {
+    for (CanvasControl *control : controls_) {
         if (control->mouseReleaseEvent(e)) return;
     }
+
     scene().setMode(Scene::Mode::SELECTING);
 }
 
@@ -130,6 +134,8 @@ bool VCanvas::event(QEvent *e) {
     case QEvent::HoverMove:
         if (transform_box_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
             setCursor(cursor);
+        } else if (path_drawer_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
+            setCursor(cursor);
         } else {
             unsetCursor();
         }
@@ -146,6 +152,7 @@ bool VCanvas::event(QEvent *e) {
         }
 
         break;
+
     default:
         break;
     }
@@ -219,6 +226,12 @@ void VCanvas::editDrawLine() {
     scene().setMode(Scene::Mode::DRAWING_LINE);
 }
 
+void VCanvas::editDrawPath() {
+    path_drawer_.reset();
+    scene().clearSelections();
+    scene().setMode(Scene::Mode::DRAWING_PATH);
+}
+
 void VCanvas::editSelectAll() {
     QList<ShapePtr> all_shapes;
 
@@ -233,9 +246,7 @@ void VCanvas::editGroup() {
 
     qInfo() << "Groupping";
     GroupShape *group = new GroupShape(transform_box_.selections());
-
     scene().removeSelections();
-
     const ShapePtr group_ptr(group);
     scene().activeLayer().children().push_back(group_ptr);
     scene().setSelection(group_ptr);
@@ -262,4 +273,53 @@ void VCanvas::editUngroup() {
 
 Scene &VCanvas::scene() {
     return scene_;
+}
+
+void VCanvas::editUnion() {
+    if (scene().selections().size() != 2) return;
+
+    if (scene().selections().at(0)->type() != Shape::Type::Path ||
+        scene().selections().at(1)->type() !=  Shape::Type::Path) return;
+
+    scene().stackStep();
+    PathShape *a = (PathShape *)scene().selections().at(0).get();
+    PathShape *b = (PathShape *)scene().selections().at(1).get();
+    QPainterPath newPath(a->transform().map(a->path_).united(b->transform().map(b->path_)));
+    ShapePtr newShape(new PathShape(newPath));
+    scene().removeSelections();
+    scene().activeLayer().addShape(newShape);
+    scene().setSelection(newShape);
+}
+void VCanvas::editSubtract() {
+    if (scene().selections().size() != 2) return;
+
+    if (scene().selections().at(0)->type() != Shape::Type::Path ||
+        scene().selections().at(1)->type() !=  Shape::Type::Path) return;
+
+    scene().stackStep();
+    PathShape *a = (PathShape *)scene().selections().at(0).get();
+    PathShape *b = (PathShape *)scene().selections().at(1).get();
+    QPainterPath newPath(a->transform().map(a->path_).subtracted(b->transform().map(b->path_)));
+    ShapePtr newShape(new PathShape(newPath));
+    scene().removeSelections();
+    scene().activeLayer().addShape(newShape);
+    scene().setSelection(newShape);
+}
+void VCanvas::editIntersect() {
+    if (scene().selections().size() != 2) return;
+
+    if (scene().selections().at(0)->type() != Shape::Type::Path ||
+        scene().selections().at(1)->type() !=  Shape::Type::Path) return;
+
+    scene().stackStep();
+    PathShape *a = (PathShape *)scene().selections().at(0).get();
+    PathShape *b = (PathShape *)scene().selections().at(1).get();
+    QPainterPath newPath(a->transform().map(a->path_).intersected(b->transform().map(b->path_)));
+    newPath.closeSubpath();
+    ShapePtr newShape(new PathShape(newPath));
+    scene().removeSelections();
+    scene().activeLayer().addShape(newShape);
+    scene().setSelection(newShape);
+}
+void VCanvas::editDifference() {
 }

@@ -96,3 +96,7 @@ ShapePtr GroupShape::clone() const {
 QList<ShapePtr> &GroupShape::children() {
     return children_;
 }
+
+Shape::Type GroupShape::type() const {
+    return Shape::Type::Group;
+}

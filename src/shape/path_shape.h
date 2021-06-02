@@ -16,6 +16,7 @@ class PathShape : public Shape {
         QRectF boundingRect() const override;
         void paint(QPainter *painter) const override;
         shared_ptr<Shape> clone() const override;
+        Shape::Type type() const override;
         QPainterPath path_;
     private:
         QList<QPointF> selection_testing_points_;

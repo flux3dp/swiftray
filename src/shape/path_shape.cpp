@@ -60,11 +60,36 @@ void PathShape::paint(QPainter *painter) const {
     painter->save();
     painter->setTransform(transform(), true);
     painter->drawPath(path_);
+    int x = 0, y = 0;
+    for(int i = 0; i < path_.elementCount() ; i++ ) {
+        QPainterPath::Element ele = path_.elementAt(i);
+        if (ele.isMoveTo()) {
+            x = ele.x;
+            y = ele.y;
+            painter->drawRect(QRectF(ele.x - 5, ele.y - 5, 10, 10));
+        } else if (ele.isLineTo()) {
+            //i += 1;
+            painter->drawRect(QRectF(ele.x - 5, ele.y - 5, 10, 10));
+            x = ele.x;
+            y = ele.y;
+        } else if (ele.isCurveTo()) {
+            //i += 2;
+            painter->drawRect(QRectF(ele.x - 4, ele.y - 4, 8, 8));
+            painter->drawRect(QRectF(path_.elementAt(i+1).x - 3, path_.elementAt(i+1).y - 3, 6, 6));
+            painter->drawRect(QRectF(path_.elementAt(i+2).x - 5, path_.elementAt(i+2).y - 5, 10, 10));
+            x = ele.x;
+            y = ele.y;
+        }
+    }
     painter->restore();
 }
 
 shared_ptr<Shape> PathShape::clone() const {
     shared_ptr<PathShape> shape(new PathShape(*this));
     return shape;
+}
+
+Shape::Type PathShape::type() const {
+    return Shape::Type::Path;
 }
 

@@ -8,6 +8,12 @@ using namespace std;
 // Use like struct first (can run faster..)
 class Shape {
     public:
+        enum class Type {
+            None,
+            Path,
+            Bitmap,
+            Group
+        };
         Shape() noexcept;
         virtual ~Shape();
         // Common members
@@ -34,6 +40,7 @@ class Shape {
         virtual void simplify();
         virtual void paint(QPainter *painter) const;
         virtual shared_ptr<Shape> clone() const;
+        virtual Type type() const;
 
     private:
         QTransform transform_;

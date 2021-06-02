@@ -27,13 +27,21 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
     connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
     this->setStyleSheet(
-        "QToolBar { background-color: #F0F0F0; border-width: 0px; spacing: 8px; }"
+        "QToolBar { background-color: #F0F0F0; spacing: 8px; border-right: 1px solid #CCC; }"
+        "#tabWidget { border: 0; }"
+        "#layerTab { border: 0; border-left: 1px solid #CCC;  }"
+        "#objectTab { border: 0; border-left: 1px solid #CCC; }"
         "#scrollAreaWidgetContent { background: #F8F8F8 }"
         "#objectFrame1 { border: 0; background: #F8F8F8;}"
         "#objectFrame2 { border: 0; }"
         "#objectFrame3 { border: 0; }"
         "#objectFrame4 { border: 0; }"
-        "Line { border: 1px solid #555 }" 
+        "#parameterLabelFrame { border: 0; border-top: 1px solid #CCC; border-bottom: 1px solid #CCC; background: #F0F0F0; }"
+        "#parameterFrame { border: 0; }"
+        "#addLayerFrame { border: 0; background: white; }"
+    );
+    ui->layerList->setStyleSheet(
+        "border: 0"
     );
     ui->toolBar->setStyleSheet(
         "QToolButton{ border-width:0px; border-radius: 0px; }"
@@ -86,6 +94,11 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
     connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
     connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
+    connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
+    connect(ui->btnUnion, SIGNAL(clicked()), canvas_, SLOT(editUnion()));
+    connect(ui->btnSubtract, SIGNAL(clicked()), canvas_, SLOT(editSubtract()));
+    connect(ui->btnIntersect, SIGNAL(clicked()), canvas_, SLOT(editIntersect()));
+    connect(ui->btnDiff, SIGNAL(clicked()), canvas_, SLOT(editDifference()));
     connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
     connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this, SLOT(updateMode()));
     connect((QObject *)&canvas_->scene(), SIGNAL(selectionsChanged()), this, SLOT(updateSidePanel()));
@@ -172,13 +185,16 @@ void MainWindow::updateSidePanel() {
 
     if (items.length() > 1) {
         ui->tabWidget->setTabText(1, "Multiple Objects");
+        ui->tabWidget->setTabEnabled(1, true);
         ui->tabWidget->setCurrentIndex(1);
     } else if (items.length() == 1) {
         ui->tabWidget->setTabText(1, "Object");
+        ui->tabWidget->setTabEnabled(1, true);
         ui->tabWidget->setCurrentIndex(1);
     } else {
         ui->tabWidget->setTabText(1, "-");
         ui->tabWidget->setCurrentIndex(0);
+        ui->tabWidget->setTabEnabled(1, false);
     }
 
     setOSXWindowTitleColor(this);

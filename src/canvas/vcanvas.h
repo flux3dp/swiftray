@@ -9,6 +9,7 @@
 #include <canvas/controls/rect_drawer.h>
 #include <canvas/controls/oval_drawer.h>
 #include <canvas/controls/line_drawer.h>
+#include <canvas/controls/path_drawer.h>
 #include <canvas/controls/canvas_control.h>
 
 class VCanvas : public QQuickPaintedItem {
@@ -41,6 +42,12 @@ class VCanvas : public QQuickPaintedItem {
         void editDrawRect();
         void editDrawOval();
         void editDrawLine();
+        void editDrawPath();
+
+        void editUnion();
+        void editSubtract();
+        void editIntersect();
+        void editDifference();
 
     private:
         bool ready;
@@ -52,7 +59,8 @@ class VCanvas : public QQuickPaintedItem {
         RectDrawer rect_drawer_;
         OvalDrawer oval_drawer_;
         LineDrawer line_drawer_;
-        QList<CanvasControl*> controls_;
+        PathDrawer path_drawer_;
+        QList<CanvasControl *> controls_;
 
         QTimer *timer;
         QHash<int, int> m_fingerPointMapping;

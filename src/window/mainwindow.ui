@@ -71,12 +71,15 @@
        <attribute name="title">
         <string>Layer</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0">
         <property name="spacing">
          <number>0</number>
         </property>
+        <property name="sizeConstraint">
+         <enum>QLayout::SetMaximumSize</enum>
+        </property>
         <property name="leftMargin">
-         <number>0</number>
+         <number>1</number>
         </property>
         <property name="topMargin">
          <number>0</number>
@@ -89,6 +92,15 @@
         </property>
         <item>
          <widget class="QListWidget" name="layerList">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
           <property name="movement">
            <enum>QListView::Free</enum>
           </property>
@@ -98,50 +110,91 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <property name="spacing">
-           <number>0</number>
+         <widget class="QFrame" name="addLayerFrame">
+          <property name="enabled">
+           <bool>true</bool>
           </property>
-          <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="addLayer">
-            <property name="text">
-             <string>Add Layer</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFrame" name="frame_4">
           <property name="styleSheet">
-           <string notr="true">background: #EEE</string>
+           <string notr="true"/>
           </property>
           <property name="frameShape">
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="addLayer">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>+</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QFrame" name="parameterLabelFrame">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
@@ -155,12 +208,15 @@
          </widget>
         </item>
         <item>
-         <widget class="QScrollArea" name="parameterArea">
+         <widget class="QScrollArea" name="parameterFrame">
           <property name="autoFillBackground">
            <bool>false</bool>
           </property>
           <property name="styleSheet">
            <string notr="true">background: #F8F8F8;</string>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
           </property>
           <property name="verticalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOn</enum>
@@ -176,8 +232,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>275</width>
-             <height>222</height>
+             <width>274</width>
+             <height>223</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -494,7 +550,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QToolButton" name="btnInterset">
+              <widget class="QToolButton" name="btnIntersect">
                <property name="text">
                 <string>...</string>
                </property>
@@ -779,7 +835,7 @@
    <addaction name="actionDrawOval"/>
    <addaction name="actionDrawPolygon"/>
    <addaction name="actionDrawLine"/>
-   <addaction name="actionDraw"/>
+   <addaction name="actionDrawPath"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -988,7 +1044,7 @@
     <string>L</string>
    </property>
   </action>
-  <action name="actionDraw">
+  <action name="actionDrawPath">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -997,7 +1053,7 @@
      <normaloff>:/images/icon-draw-01.png</normaloff>:/images/icon-draw-01.png</iconset>
    </property>
    <property name="text">
-    <string>Draw</string>
+    <string>Path</string>
    </property>
    <property name="shortcut">
     <string>D</string>
@@ -1016,6 +1072,11 @@
    </property>
    <property name="shortcut">
     <string>P</string>
+   </property>
+  </action>
+  <action name="actionactionUnion">
+   <property name="text">
+    <string>actionUnion</string>
    </property>
   </action>
  </widget>

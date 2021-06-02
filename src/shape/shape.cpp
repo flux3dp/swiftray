@@ -82,3 +82,7 @@ shared_ptr<Shape> Shape::clone() const {
     qInfo() << "Clone Shape" << shape.get();
     return shape;
 }
+
+Shape::Type Shape::type() const {
+    return Shape::Type::None;
+}
