@@ -17,7 +17,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     rect_drawer_ { RectDrawer(scene()) },
     oval_drawer_ { OvalDrawer(scene()) },
     line_drawer_ { LineDrawer(scene()) },
-    path_drawer_ { PathDrawer(scene()) } {
+    path_drawer_ { PathDrawer(scene()) },
+    path_editor_ { PathEditor(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -32,7 +33,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
               << &rect_drawer_
               << &oval_drawer_
               << &line_drawer_
-              << &path_drawer_;
+              << &path_drawer_
+              << &path_editor_;
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -43,8 +45,8 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
     setAntialiasing(false);
 
     if (success) {
-        scene().stackStep();
         editSelectAll();
+        scene().stackStep();
         forceActiveFocus();
         ready = true;
         update();
@@ -83,8 +85,11 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
         ShapePtr hit = scene().hitTest(canvas_coord);
 
         if (hit != nullptr) {
-            if (!hit->selected) scene().setSelection(hit);
-
+            if (!hit->selected) {
+                scene().setSelection(hit);
+                path_editor_.setTarget(hit);
+            }
+            scene().stackStep();
             scene().setMode(Scene::Mode::MOVING);
         } else {
             scene().clearSelections();
@@ -135,6 +140,8 @@ bool VCanvas::event(QEvent *e) {
         if (transform_box_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
             setCursor(cursor);
         } else if (path_drawer_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
+            setCursor(cursor);
+        } else if (path_editor_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
             setCursor(cursor);
         } else {
             unsetCursor();
@@ -245,15 +252,16 @@ void VCanvas::editGroup() {
     if (scene().selections().size() == 0) return;
 
     qInfo() << "Groupping";
+    scene().stackStep();
     GroupShape *group = new GroupShape(transform_box_.selections());
     scene().removeSelections();
     const ShapePtr group_ptr(group);
     scene().activeLayer().children().push_back(group_ptr);
     scene().setSelection(group_ptr);
-    scene().stackStep();
 }
 void VCanvas::editUngroup() {
     qInfo() << "Groupping";
+    scene().stackStep();
     ShapePtr group_ptr = scene().selections().first();
     GroupShape *group = (GroupShape *) group_ptr.get();
 
@@ -268,7 +276,6 @@ void VCanvas::editUngroup() {
         layer.children().removeOne(group_ptr);
     }
 
-    scene().stackStep();
 }
 
 Scene &VCanvas::scene() {

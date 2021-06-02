@@ -11,7 +11,7 @@ bool OvalDrawer::mousePressEvent(QMouseEvent *e) {
 bool OvalDrawer::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_OVAL) return false;
     rect_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
-    return false;
+    return true;
 }
 
 bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
@@ -22,7 +22,8 @@ bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
     ShapePtr newRect(new PathShape(path));
     scene().activeLayer().addShape(newRect);
     scene().setSelection(newRect);
-    return false;
+    scene().setMode(Scene::Mode::SELECTING);
+    return true;
 }
 
 void OvalDrawer::paint(QPainter *painter){

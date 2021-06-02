@@ -37,11 +37,6 @@ void Scene::clearSelections() {
     emit selectionsChanged();
 }
 
-void Scene::clearSelectionsNoFlag() {
-    selections().clear();
-    emit selectionsChanged();
-}
-
 bool Scene::isSelected(ShapePtr shape) {
     return selections().contains(shape);
 }
@@ -59,32 +54,55 @@ void Scene::clearAll() {
 }
 
 void Scene::stackStep() {
-    qInfo() << "<<<Stack>>";
+    redo_stack_.clear();
+    stackUndo();
+}
 
+void Scene::stackUndo() {
     if (undo_stack_.size() > 19) {
         undo_stack_.pop_front();
     }
+    undo_stack_.push_back(cloneStack(layers_));
+}
 
+void Scene::stackRedo() {
+    if (redo_stack_.size() > 19) {
+        redo_stack_.pop_front();
+    }
+    redo_stack_.push_back(cloneStack(layers_));
+}
+
+QList<Layer> Scene::cloneStack(QList<Layer> &stack) {
     QList<Layer> cloned;
 
-    for (Layer &layer : layers()) {
-        cloned.push_back(layer.clone());
+    for (Layer &layer : stack) {
+        cloned << layer.clone();
     }
 
-    undo_stack_.push_back(cloned);
+    return cloned;
+}
+
+void Scene::dumpStack(QList<Layer> &stack) {
+    qInfo() << "<Stack>";
+    for (Layer &layer : stack) {
+        qInfo() << "  <Layer " << &layer << ">";
+        for (ShapePtr &shape : layer.children()) {
+            qInfo() << "    <Shape "<< shape.get() << " selected =" << shape->selected << " />";
+        }
+        qInfo() << "  </Layer>";
+    }
+    qInfo() << "</Stack>";
 }
 
 void Scene::undo() {
-    qInfo() << "Undo";
-
-    if (undo_stack_.size() == 0) {
+    if (undo_stack_.isEmpty()) {
         return;
     }
-
+    QString active_layer_name = activeLayer().name;
+    stackRedo();
     clearAll();
+    Scene::dumpStack(undo_stack_.last());
     layers().append(undo_stack_.last());
-    // redo stack doesn't clone the pointers... should be fixed
-    redo_stack_.push_back(undo_stack_.last());
     QList<ShapePtr> selected;
 
     for (Layer &layer : layers()) {
@@ -94,23 +112,20 @@ void Scene::undo() {
     }
 
     setSelections(selected);
+    setActiveLayer(active_layer_name);
     emit layerChanged();
     undo_stack_.pop_back();
 }
 
 
 void Scene::redo() {
-    qInfo() << "Redo";
-
-    if (redo_stack_.size() == 0) {
+    if (redo_stack_.isEmpty()) {
         return;
     }
-
+    QString active_layer_name = activeLayer().name;
+    stackUndo();
     clearAll();
-    // redo stack doesn't
-    layers().append(undo_stack_.last());
-    // undoo stack doesn't clone the pointers... should be fixed
-    undo_stack_.push_back(redo_stack_.last());
+    layers().append(redo_stack_.last());
     QList<ShapePtr> selected;
 
     for (Layer &layer : layers()) {
@@ -118,8 +133,9 @@ void Scene::redo() {
             if (shape->selected) selected << shape;
         }
     }
-
+    
     setSelections(selected);
+    setActiveLayer(active_layer_name);
     emit layerChanged();
     redo_stack_.pop_back();
 }
@@ -136,11 +152,11 @@ void Scene::setClipboard(QList<ShapePtr> &items) {
 }
 
 void Scene::addLayer() {
+    if (layers().length() > 0) stackStep();
     qDebug() << "Add layer";
     layers() << Layer();
     layers().last().name = "Layer " + QString::number(new_layer_id_++);
     active_layer_ = &layers().last();
-    stackStep();
     emit layerChanged();
 }
 
@@ -200,14 +216,29 @@ Layer &Scene::activeLayer() {
     return *active_layer_;
 }
 
+bool Scene::setActiveLayer(QString name) {
+    for (Layer &layer : layers()) {
+        if (layer.name == name) {
+            active_layer_ = &layer;
+            return true;
+        }
+    }
+
+    active_layer_ = &layers().last();
+    return false;
+}
+
+
 QList<Layer> &Scene::layers() {
     return layers_;
 }
 
 void Scene::removeSelections() {
-    // Need to clean up all selection pointer reference first
-    clearSelectionsNoFlag();
+    // Clear selection pointers in other componenets
+    selections().clear();
+    emit selectionsChanged();
 
+    // Remove
     for (Layer &layer : layers()) {
         layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
             return s->selected;
@@ -218,7 +249,7 @@ void Scene::removeSelections() {
 ShapePtr Scene::hitTest(QPointF canvas_coord) {
     for (Layer &layer : layers()) {
         for (ShapePtr &shape : layer.children()) {
-            if (shape->testHit(canvas_coord, 10 / scale())) {
+            if (shape->testHit(canvas_coord, 5 / scale())) {
                 return shape;
             }
         }

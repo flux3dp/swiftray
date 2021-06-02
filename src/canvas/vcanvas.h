@@ -10,6 +10,7 @@
 #include <canvas/controls/oval_drawer.h>
 #include <canvas/controls/line_drawer.h>
 #include <canvas/controls/path_drawer.h>
+#include <canvas/controls/path_editor.h>
 #include <canvas/controls/canvas_control.h>
 
 class VCanvas : public QQuickPaintedItem {
@@ -60,6 +61,7 @@ class VCanvas : public QQuickPaintedItem {
         OvalDrawer oval_drawer_;
         LineDrawer line_drawer_;
         PathDrawer path_drawer_;
+        PathEditor path_editor_;
         QList<CanvasControl *> controls_;
 
         QTimer *timer;

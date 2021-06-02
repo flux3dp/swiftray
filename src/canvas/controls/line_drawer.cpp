@@ -11,7 +11,7 @@ bool LineDrawer::mousePressEvent(QMouseEvent *e) {
 bool LineDrawer::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_LINE) return false;
     cursor_ = scene().getCanvasCoord(e->pos());
-    return false;
+    return true;
 }
 
 bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
@@ -22,7 +22,8 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
     ShapePtr newLine(new PathShape(path));
     scene().activeLayer().addShape(newLine);
     scene().setSelection(newLine);
-    return false;
+    scene().setMode(Scene::Mode::SELECTING);
+    return true;
 }
 
 void LineDrawer::paint(QPainter *painter){

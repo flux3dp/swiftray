@@ -193,7 +193,6 @@ bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
     flipped_x = flipped_y = false;
 
     scene().setMode(Scene::Mode::SELECTING);
-    scene().stackStep();
     return true;
 }
 

@@ -158,7 +158,9 @@ void MainWindow::updateMode() {
     ui->actionDrawRect->setChecked(false);
     ui->actionDrawLine->setChecked(false);
     ui->actionDrawOval->setChecked(false);
-
+    ui->actionDrawPath->setChecked(false);
+    ui->actionDrawPolygon->setChecked(false);
+    
     switch (canvas_->scene().mode()) {
     case Scene::Mode::SELECTING:
     case Scene::Mode::MULTI_SELECTING:
@@ -176,11 +178,13 @@ void MainWindow::updateMode() {
     case Scene::Mode::DRAWING_OVAL:
         ui->actionDrawOval->setChecked(true);
         break;
+    case Scene::Mode::DRAWING_PATH:
+        ui->actionDrawPath->setChecked(true);
+        break;
     }
 }
 
 void MainWindow::updateSidePanel() {
-    qInfo() << "Update side panel";
     QList<ShapePtr> &items = canvas_->scene().selections();
 
     if (items.length() > 1) {

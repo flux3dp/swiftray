@@ -17,6 +17,7 @@ class Scene : QObject {
             DRAWING_LINE,
             DRAWING_OVAL,
             DRAWING_PATH,
+            EDITING_PATH
         };
         Scene() noexcept;
         // Selection
@@ -26,7 +27,6 @@ class Scene : QObject {
         void setSelections(QList<ShapePtr> &shapes);
         void clearAll();
         void clearSelections();
-        void clearSelectionsNoFlag();
         void removeSelections();
         ShapePtr hitTest(QPointF canvas_coord);
         // Mode
@@ -38,12 +38,13 @@ class Scene : QObject {
         // Layer
         QList<Layer> &layers();
         Layer &activeLayer();
+        bool setActiveLayer(QString name);
         void addLayer();
         void removeLayer(QString name);
         // Undo
-        void stackStep();
         void undo();
         void redo();
+        void stackStep();
 
         // View
         QPointF getCanvasCoord(QPointF window_coord) const;
@@ -65,6 +66,11 @@ class Scene : QObject {
         void layerChanged();
         void modeChanged();
     private:
+        void stackRedo();
+        void stackUndo();
+        void dumpStack(QList<Layer> &stack);
+        QList<Layer> cloneStack(QList<Layer> &stack);
+
         qreal scroll_x_;
         qreal scroll_y_;
         qreal scale_;

@@ -1,5 +1,6 @@
 #include <shape/shape.h>
 #include <canvas/layer.h>
+#include <QDebug>
 
 Layer::Layer() {
     color_ = QColor::fromRgb(rand() % 256, rand() % 256, rand() % 256, 255);
@@ -53,7 +54,6 @@ QList<ShapePtr> &Layer::children() {
 
 Layer Layer::clone() {
     Layer layer;
-
     for (ShapePtr &shape : children_) {
         layer.children() << shape->clone();
     }

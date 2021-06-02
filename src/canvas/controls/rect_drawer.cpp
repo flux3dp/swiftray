@@ -10,7 +10,7 @@ bool RectDrawer::mousePressEvent(QMouseEvent *e) {
 bool RectDrawer::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_RECT) return false;
     rect_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
-    return false;
+    return true;
 }
 
 bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
@@ -20,7 +20,8 @@ bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
     ShapePtr newRect(new PathShape(path));
     scene().activeLayer().addShape(newRect);
     scene().setSelection(newRect);
-    return false;
+    scene().setMode(Scene::Mode::SELECTING);
+    return true;
 }
 
 void RectDrawer::paint(QPainter *painter){
