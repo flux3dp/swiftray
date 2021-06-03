@@ -18,7 +18,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     oval_drawer_ { OvalDrawer(scene()) },
     line_drawer_ { LineDrawer(scene()) },
     path_drawer_ { PathDrawer(scene()) },
-    path_editor_ { PathEditor(scene()) } {
+    path_editor_ { PathEditor(scene()) },
+    grid_ { Grid(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -54,8 +55,12 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 }
 
 void VCanvas::paint(QPainter *painter) {
+    painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
+
+    grid_.paint(painter);
+
     for (const Layer &layer : scene().layers()) {
         layer.paint(painter, counter);
     }

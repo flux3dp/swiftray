@@ -8,6 +8,8 @@ Scene::Scene() noexcept {
     scroll_x_ = 0;
     scroll_y_ = 0;
     scale_ = 1;
+    width_ = 3000;
+    height_ = 2000;
     addLayer();
 }
 
@@ -190,6 +192,23 @@ qreal Scene::scale() const {
     return scale_;
 }
 
+qreal Scene::width() const{
+    return width_;
+}
+
+qreal Scene::height() const {
+    return height_;
+}
+
+
+void Scene::setWidth(qreal width) {
+    width_ = width;
+}
+
+void Scene::setHeight(qreal height) {
+    height_ = height;
+
+}
 
 void Scene::setScroll(QPointF scroll) {
     scroll_x_ = scroll.x();

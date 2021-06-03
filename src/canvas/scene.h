@@ -52,7 +52,11 @@ class Scene : QObject {
         qreal scrollX() const;
         qreal scrollY() const;
         qreal scale() const;
+        qreal width() const;
+        qreal height() const;
 
+        void setWidth(qreal width);
+        void setHeight(qreal height);
         void setScroll(QPointF scroll);
         void setScrollX(qreal scroll_x);
         void setScrollY(qreal scroll_y);
@@ -74,6 +78,8 @@ class Scene : QObject {
         qreal scroll_x_;
         qreal scroll_y_;
         qreal scale_;
+        qreal width_;
+        qreal height_;
 
         QList<ShapePtr> shape_clipboard_;
 
