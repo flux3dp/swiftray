@@ -56,13 +56,12 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 void VCanvas::paint(QPainter *painter) {
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
+    for (const Layer &layer : scene().layers()) {
+        layer.paint(painter, counter);
+    }
 
     for (CanvasControl *control : controls_) {
         control->paint(painter);
-    }
-
-    for (const Layer &layer : scene().layers()) {
-        layer.paint(painter, counter);
     }
 }
 

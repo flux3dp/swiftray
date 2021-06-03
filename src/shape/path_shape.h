@@ -7,6 +7,15 @@ using namespace std;
 
 class PathShape : public Shape {
     public:
+        enum class NodeType {
+            CURVE_SYMMETRY,
+            CURVE_SMOOTH,
+            CURVE_CORNER,
+            CURVE_CTRL_PREV,
+            CURVE_CTRL_NEXT,
+            LINE_TO,
+            MOVE_TO
+        };
         PathShape(QPainterPath path);
         virtual ~PathShape();
         void simplify() override;
@@ -19,6 +28,7 @@ class PathShape : public Shape {
         Shape::Type type() const override;
         QPainterPath path_;
     private:
+        QHash<int, NodeType> node_types_;
         QList<QPointF> selection_testing_points_;
         QRectF selection_testing_rect_;
 };
