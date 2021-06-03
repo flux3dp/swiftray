@@ -38,7 +38,9 @@
         "numbers": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "qdebug": "cpp"
+        "qdebug": "cpp",
+        "qobject": "cpp",
+        "qmouseevent": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

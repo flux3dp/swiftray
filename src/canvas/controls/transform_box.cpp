@@ -5,7 +5,7 @@
 TransformBox::TransformBox(Scene &scene) noexcept : CanvasControl(scene) {
     activating_control_ = ControlPoint::NONE;
     connect(this, SIGNAL(transformChanged()), this, SLOT(updateBoundingRect()));
-    connect(&((QObject &)scene_), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
+    connect((QObject*)(&this->scene()), SIGNAL(selectionsChanged()), this, SLOT(updateSelections()));
 }
 
 QList<ShapePtr> &TransformBox::selections() {
@@ -19,7 +19,7 @@ void TransformBox::updateSelections() {
     }
 
     selections().clear();
-    selections().append(scene_.selections());
+    selections().append(scene().selections());
     updateBoundingRect();
 }
 
@@ -129,6 +129,7 @@ TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float toler
 }
 
 bool TransformBox::mousePressEvent(QMouseEvent *e) {
+    if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
     CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     QRectF bbox = boundingRect();
@@ -174,7 +175,6 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
         break;
 
     default:
-        qInfo() << "Transform point" << (int)activating_control_;
         return false;
     }
 
@@ -187,6 +187,7 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
+    if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
     if (activating_control_ == ControlPoint::NONE && scene().mode() != Scene::Mode::MOVING) return false;
 
     activating_control_ = ControlPoint::NONE;
@@ -197,9 +198,17 @@ bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
+    if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
     if (scene().selections().size() == 0) return false;
 
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+
+    if (scene().mode() == Scene::Mode::SELECTING) {
+        if ((e->pos() - dragged_from_screen_).manhattanLength() > 3) {
+            scene().stackStep();
+            scene().setMode(Scene::Mode::MOVING);
+        }
+    }
 
     if (scene().mode() == Scene::Mode::MOVING) {
         move(canvas_coord - dragged_from_canvas_);
@@ -275,6 +284,7 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
+    if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
     ControlPoint cp = testHit(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
 
     switch (cp) {
@@ -310,6 +320,7 @@ bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 }
 
 void TransformBox::paint(QPainter *painter) {
+    if (scene().mode() == Scene::Mode::EDITING_PATH) return;
     QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     QPen bluePen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
     QPen ptPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine, Qt::RoundCap);

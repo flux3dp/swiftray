@@ -87,17 +87,12 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
         if (hit != nullptr) {
             if (!hit->selected) {
                 scene().setSelection(hit);
-                path_editor_.setTarget(hit);
             }
-            scene().stackStep();
-            scene().setMode(Scene::Mode::MOVING);
         } else {
             scene().clearSelections();
             scene().setMode(Scene::Mode::MULTI_SELECTING);
         }
     }
-
-    return;
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
@@ -118,6 +113,24 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     }
 
     scene().setMode(Scene::Mode::SELECTING);
+}
+
+void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
+    QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+    qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
+    qInfo() << "Mode" << (int)scene().mode();
+    ShapePtr hit = scene().hitTest(canvas_coord);
+    if (scene().mode() == Scene::Mode::SELECTING) {
+        if (hit != nullptr) {
+            qInfo() << "Set target" << hit.get();
+            scene().setMode(Scene::Mode::EDITING_PATH);
+            path_editor_.setTarget(hit);
+        } 
+    } else if (scene().mode() == Scene::Mode::EDITING_PATH) {
+        scene().setMode(Scene::Mode::SELECTING);
+        scene().clearSelections();
+        path_editor_.reset();
+    }
 }
 
 void VCanvas::wheelEvent(QWheelEvent *e) {

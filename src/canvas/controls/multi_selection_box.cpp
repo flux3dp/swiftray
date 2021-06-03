@@ -8,7 +8,7 @@ bool MultiSelectionBox::mousePressEvent(QMouseEvent *e) {
 
 bool MultiSelectionBox::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::MULTI_SELECTING) return false;
-    selection_box_ = QRectF(dragged_from_canvas_, scene_.getCanvasCoord(e->pos()));
+    selection_box_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
     return true;
 }
 

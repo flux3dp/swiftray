@@ -9,11 +9,12 @@
                 "/usr/local/opt/libxml2/include",
                 "/Users/simon/Dev/qt5-build/qtbase/include/",
                 "/Users/simon/Dev/qt5-build/qtbase/include/QtCore",
-                "/Users/simon/Dev/qt5-build/qtbase/include/QtQML",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtQml",
                 "/Users/simon/Dev/qt5-build/qtbase/include/QtQuick",
                 "/Users/simon/Dev/qt5-build/qtbase/include/QtOpenGL",
                 "/Users/simon/Dev/qt5-build/qtbase/include/QtGui",
-                "/Users/simon/Dev/qt5-build/qtbase/include/QtWidgets"
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtWidgets",
+                "/Users/simon/Dev/qt5-build/qtbase/include/QtQuickWidgets"
             ],
             "defines": [],
             "macFrameworkPath": [

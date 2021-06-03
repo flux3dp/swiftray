@@ -1,9 +1,8 @@
-#ifndef MULTISELECTIONBOX_H
-#define MULTISELECTIONBOX_H
-
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
+#ifndef MULTISELECTIONBOX_H
+#define MULTISELECTIONBOX_H
 
 class MultiSelectionBox : public CanvasControl {
     public:
