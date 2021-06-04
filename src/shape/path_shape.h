@@ -16,6 +16,7 @@ class PathShape : public Shape {
             LINE_TO,
             MOVE_TO
         };
+        PathShape() noexcept;
         PathShape(QPainterPath path);
         virtual ~PathShape();
         void simplify() override;
@@ -26,6 +27,8 @@ class PathShape : public Shape {
         void paint(QPainter *painter) const override;
         shared_ptr<Shape> clone() const override;
         Shape::Type type() const override;
+        QPainterPath& path();
+        void setPath(QPainterPath &path);
         QPainterPath path_;
     private:
         QHash<int, NodeType> node_types_;

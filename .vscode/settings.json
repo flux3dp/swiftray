@@ -40,7 +40,13 @@
         "typeinfo": "cpp",
         "qdebug": "cpp",
         "qobject": "cpp",
-        "qmouseevent": "cpp"
+        "qmouseevent": "cpp",
+        "qinputmethod": "cpp",
+        "qapplication": "cpp",
+        "qplaintextedit": "cpp",
+        "__config": "cpp",
+        "cstdlib": "cpp",
+        "fstream": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

@@ -12,6 +12,7 @@ class Shape {
             None,
             Path,
             Bitmap,
+            Text,
             Group
         };
         Shape() noexcept;

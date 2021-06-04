@@ -21,12 +21,11 @@ SOURCES += \
         src/canvas/layer.cpp \
         src/canvas/scene.cpp \
         $$files(src/canvas/controls/*.cpp) \
+        $$files(src/shape/*.cpp) \
         src/widgets/layer_widget.cpp \
+        src/widgets/canvas_text_edit.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
-        src/shape/shape.cpp \
-        src/shape/group_shape.cpp \
-        src/shape/path_shape.cpp \
         src/canvas/vcanvas.cpp \
         src/parser/svgpp_parser.cpp \
         src/parser/svgpp_context.cpp \
@@ -57,6 +56,7 @@ HEADERS += \
     src/canvas/controls/rect_drawer.h \
     src/canvas/controls/transform_box.h \
     src/widgets/layer_widget.h \
+    src/widgets/canvas_text_edit.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
     src/shape/group_shape.h \

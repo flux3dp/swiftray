@@ -5,23 +5,29 @@
 
 using namespace std;
 
+PathShape::PathShape() noexcept {
+    
+}
+
 PathShape::PathShape(QPainterPath path) : Shape() {
     path_ = path;
+    
+    // Realign object to center
+    QRectF bbox = path_.boundingRect();
+    path_ = QTransform()
+            .translate(-bbox.center().x(), -bbox.center().y())
+            .map(path_);
+    // Set x,y to center
+    setTransform(transform().translate(bbox.center().x(), bbox.center().y()));
+
+    simplify();
 }
 
 
 PathShape::~PathShape() {
 }
 
-// todo: add setPath and avoid externally changing the paths.
 void PathShape::simplify() {
-    // Realign object bounding box;
-    QRectF bbox = path_.boundingRect();
-    path_ = QTransform()
-            .translate(-bbox.center().x(), -bbox.center().y())
-            .map(path_);
-    // Set x,y
-    setTransform(transform().translate(bbox.center().x(), bbox.center().y()));
     // Caching paths to points for selection testing
     cacheSelectionTestingData();
 }
@@ -72,3 +78,11 @@ Shape::Type PathShape::type() const {
     return Shape::Type::Path;
 }
 
+QPainterPath& PathShape::path(){
+    return path_;
+}
+
+void PathShape::setPath(QPainterPath &path) {
+    path_ = path;
+    simplify();
+}

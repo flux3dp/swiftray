@@ -19,7 +19,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     line_drawer_ { LineDrawer(scene()) },
     path_drawer_ { PathDrawer(scene()) },
     path_editor_ { PathEditor(scene()) },
-    grid_ { Grid(scene()) } {
+    grid_ { Grid(scene()) },
+    text_drawer_ { TextDrawer(scene()) } {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -35,7 +36,8 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
               << &oval_drawer_
               << &line_drawer_
               << &path_drawer_
-              << &path_editor_;
+              << &path_editor_
+              << &text_drawer_;
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -72,6 +74,11 @@ void VCanvas::paint(QPainter *painter) {
 
 void VCanvas::keyPressEvent(QKeyEvent *e) {
     // qInfo() << "Key press" << e;
+
+    for (CanvasControl *control : controls_) {
+        if (control->keyPressEvent(e)) return;
+    }
+
     if (e->key() == Qt::Key::Key_Delete || e->key() == Qt::Key::Key_Backspace || e->key() == Qt::Key::Key_Back) {
         editDelete();
     }
@@ -154,14 +161,12 @@ bool VCanvas::event(QEvent *e) {
 
     switch (e->type()) {
     case QEvent::HoverMove:
-        if (transform_box_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
-            setCursor(cursor);
-        } else if (path_drawer_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
-            setCursor(cursor);
-        } else if (path_editor_.hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
-            setCursor(cursor);
-        } else {
-            unsetCursor();
+        unsetCursor();
+        for(CanvasControl *control : controls_) {
+            if(control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)){
+                setCursor(cursor);
+                break;
+            }
         }
 
         break;
@@ -256,6 +261,12 @@ void VCanvas::editDrawPath() {
     scene().setMode(Scene::Mode::DRAWING_PATH);
 }
 
+void VCanvas::editDrawText() {
+    text_drawer_.reset();
+    scene().clearSelections();
+    scene().setMode(Scene::Mode::DRAWING_TEXT);
+}
+
 void VCanvas::editSelectAll() {
     QList<ShapePtr> all_shapes;
 
@@ -308,7 +319,7 @@ void VCanvas::editUnion() {
     scene().stackStep();
     PathShape *a = (PathShape *)scene().selections().at(0).get();
     PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path_).united(b->transform().map(b->path_)));
+    QPainterPath newPath(a->transform().map(a->path()).united(b->transform().map(b->path())));
     ShapePtr newShape(new PathShape(newPath));
     scene().removeSelections();
     scene().activeLayer().addShape(newShape);
@@ -323,7 +334,7 @@ void VCanvas::editSubtract() {
     scene().stackStep();
     PathShape *a = (PathShape *)scene().selections().at(0).get();
     PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path_).subtracted(b->transform().map(b->path_)));
+    QPainterPath newPath(a->transform().map(a->path()).subtracted(b->transform().map(b->path())));
     ShapePtr newShape(new PathShape(newPath));
     scene().removeSelections();
     scene().activeLayer().addShape(newShape);
@@ -338,7 +349,7 @@ void VCanvas::editIntersect() {
     scene().stackStep();
     PathShape *a = (PathShape *)scene().selections().at(0).get();
     PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path_).intersected(b->transform().map(b->path_)));
+    QPainterPath newPath(a->transform().map(a->path()).intersected(b->transform().map(b->path())));
     newPath.closeSubpath();
     ShapePtr newShape(new PathShape(newPath));
     scene().removeSelections();

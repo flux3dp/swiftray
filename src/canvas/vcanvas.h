@@ -11,6 +11,7 @@
 #include <canvas/controls/line_drawer.h>
 #include <canvas/controls/path_drawer.h>
 #include <canvas/controls/path_editor.h>
+#include <canvas/controls/text_drawer.h>
 #include <canvas/controls/grid.h>
 #include <canvas/controls/canvas_control.h>
 
@@ -46,6 +47,7 @@ class VCanvas : public QQuickPaintedItem {
         void editDrawOval();
         void editDrawLine();
         void editDrawPath();
+        void editDrawText();
 
         void editUnion();
         void editSubtract();
@@ -63,6 +65,7 @@ class VCanvas : public QQuickPaintedItem {
         OvalDrawer oval_drawer_;
         LineDrawer line_drawer_;
         PathDrawer path_drawer_;
+        TextDrawer text_drawer_;
         PathEditor path_editor_;
         Grid grid_;
         QList<CanvasControl *> controls_;

@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <window/mainwindow.h>
 #include <widgets/layer_widget.h>
+#include <widgets/canvas_text_edit.h>
 #include "ui_mainwindow.h"
 #include <window/osxwindow.h>
 
@@ -95,6 +96,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
     connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
     connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
+    connect(ui->actionDrawText, &QAction::triggered, canvas_, &VCanvas::editDrawText);
     connect(ui->btnUnion, SIGNAL(clicked()), canvas_, SLOT(editUnion()));
     connect(ui->btnSubtract, SIGNAL(clicked()), canvas_, SLOT(editSubtract()));
     connect(ui->btnIntersect, SIGNAL(clicked()), canvas_, SLOT(editIntersect()));
@@ -102,6 +104,11 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
     connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this, SLOT(updateMode()));
     connect((QObject *)&canvas_->scene(), SIGNAL(selectionsChanged()), this, SLOT(updateSidePanel()));
+    CanvasTextEdit *cte = new CanvasTextEdit(ui->inputFrame);
+    cte->setGeometry(10, 10, 200, 200);
+    canvas_->scene().text_box_ = cte;
+    //canvas_->scene().text_box_->setFixedHeight(0);
+    canvas_->scene().text_box_->setStyleSheet("border:0");
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     updateLayers();
     updateMode();
@@ -120,9 +127,11 @@ void MainWindow::updateLayers() {
     }
 }
 
-
 bool MainWindow::event(QEvent *e)  {
     switch (e->type()) {
+    case QEvent::CursorChange:
+    case QEvent::UpdateRequest:
+        break;
     case QEvent::NativeGesture:
         qInfo() << "Native Gesture!";
         canvas_->event(e);
@@ -134,6 +143,7 @@ bool MainWindow::event(QEvent *e)  {
         return true;
 
     default:
+        qInfo() << "Event" << e;
         break;
     }
 
@@ -159,6 +169,7 @@ void MainWindow::updateMode() {
     ui->actionDrawLine->setChecked(false);
     ui->actionDrawOval->setChecked(false);
     ui->actionDrawPath->setChecked(false);
+    ui->actionDrawText->setChecked(false);
     ui->actionDrawPolygon->setChecked(false);
     
     switch (canvas_->scene().mode()) {
@@ -180,6 +191,9 @@ void MainWindow::updateMode() {
         break;
     case Scene::Mode::DRAWING_PATH:
         ui->actionDrawPath->setChecked(true);
+        break;
+    case Scene::Mode::DRAWING_TEXT:
+        ui->actionDrawText->setChecked(true);
         break;
     }
 }

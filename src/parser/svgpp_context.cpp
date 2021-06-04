@@ -98,7 +98,6 @@ void SVGPPContext::path_close_subpath() {
 
 void SVGPPContext::path_exit() {
     ShapePtr shape(new PathShape(working_path_));
-    shape->simplify();
     scene_.activeLayer().children().push_back(shape);
     transform = ublas::identity_matrix<double>(3, 3);
     working_path_ = QPainterPath();

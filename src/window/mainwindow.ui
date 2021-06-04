@@ -65,13 +65,13 @@
        <string notr="true"/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="layerTab">
        <attribute name="title">
         <string>Layer</string>
        </attribute>
-       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -90,6 +90,16 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
+        <item>
+         <widget class="QFrame" name="inputFrame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QListWidget" name="layerList">
           <property name="sizePolicy">
@@ -233,7 +243,7 @@
              <x>0</x>
              <y>0</y>
              <width>274</width>
-             <height>223</height>
+             <height>218</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -829,8 +839,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSelect"/>
-   <addaction name="actionPhoto"/>
-   <addaction name="actionText"/>
+   <addaction name="actionDrawPhoto"/>
+   <addaction name="actionDrawText"/>
    <addaction name="actionDrawRect"/>
    <addaction name="actionDrawOval"/>
    <addaction name="actionDrawPolygon"/>
@@ -972,7 +982,7 @@
     <string>About</string>
    </property>
   </action>
-  <action name="actionPhoto">
+  <action name="actionDrawPhoto">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-photo-01.png</normaloff>:/images/icon-photo-01.png</iconset>
@@ -987,7 +997,7 @@
     <string>P</string>
    </property>
   </action>
-  <action name="actionText">
+  <action name="actionDrawText">
    <property name="checkable">
     <bool>true</bool>
    </property>

@@ -15,5 +15,7 @@ bool CanvasControl::mousePressEvent(QMouseEvent *e) {
 bool CanvasControl::mouseMoveEvent(QMouseEvent *e) {}
 bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) {}
 bool CanvasControl::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {}
+bool CanvasControl::keyPressEvent(QKeyEvent *e) {}
 void CanvasControl::paint(QPainter *painter) {}
+
 

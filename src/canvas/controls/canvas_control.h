@@ -14,6 +14,7 @@ class CanvasControl : public QObject {
         virtual bool mouseMoveEvent(QMouseEvent *e);
         virtual bool mouseReleaseEvent(QMouseEvent *e);
         virtual bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
+        virtual bool keyPressEvent(QKeyEvent *e);
         virtual void paint(QPainter *painter);
 
         Scene &scene();

@@ -195,7 +195,7 @@ void PathEditor::reset() {
 
 QPainterPath &PathEditor::path() {
     PathShape *path_shape_ = (PathShape*)target_.get();
-    return path_shape_->path_;
+    return path_shape_->path();
 }
 
 

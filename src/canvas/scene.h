@@ -1,4 +1,6 @@
 #include <QPoint>
+#include <QWidget>
+#include <widgets/canvas_text_edit.h>
 #include <canvas/layer.h>
 #include <shape/shape.h>
 
@@ -17,6 +19,7 @@ class Scene : QObject {
             DRAWING_LINE,
             DRAWING_OVAL,
             DRAWING_PATH,
+            DRAWING_TEXT,
             EDITING_PATH
         };
         Scene() noexcept;
@@ -65,6 +68,7 @@ class Scene : QObject {
         QList<ShapePtr> &shapes();
 
         QPointF pasting_shift;
+        CanvasTextEdit *text_box_;
     signals:
         void selectionsChanged();
         void layerChanged();
@@ -87,7 +91,7 @@ class Scene : QObject {
         QList<QList<Layer>> redo_stack_;
         QList<Layer> layers_;
         QList<ShapePtr> selections_;
-        
+
         Mode mode_;
         int new_layer_id_;
         Layer *active_layer_;
