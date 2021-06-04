@@ -79,6 +79,7 @@ bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
 
     if (is_closing_curve_) {
         ShapePtr new_shape(new PathShape(working_path_));
+        scene().stackStep();
         scene().activeLayer().addShape(new_shape);
         scene().setSelection(new_shape);
         scene().setMode(Scene::Mode::SELECTING);

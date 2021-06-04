@@ -5,7 +5,7 @@
 #define SHAPE_H
 
 using namespace std;
-// Use like struct first (can run faster..)
+class Layer;
 class Shape {
     public:
         enum class Type {
@@ -25,10 +25,12 @@ class Shape {
         qreal rotation() const;
         qreal scaleX() const;
         qreal scaleY() const;
-        qreal setX(qreal x);
-        qreal setY(qreal y);
+        Layer* parent();
+        void setParent(Layer* parent);
+        void setX(qreal x);
+        void setY(qreal y);
         void setPos(QPointF pos);
-        qreal setRotation(qreal r);
+        void setRotation(qreal r);
         QTransform transform() const;
         void applyTransform(QTransform transform);
         void setTransform(QTransform transform);
@@ -42,8 +44,8 @@ class Shape {
         virtual void paint(QPainter *painter) const;
         virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
-
     private:
+        Layer* parent_;
         QTransform transform_;
         int ref_count_;
 };

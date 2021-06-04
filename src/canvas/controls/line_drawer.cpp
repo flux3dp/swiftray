@@ -19,9 +19,10 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.moveTo(dragged_from_canvas_);
     path.lineTo(scene().getCanvasCoord(e->pos()));
-    ShapePtr newLine(new PathShape(path));
-    scene().activeLayer().addShape(newLine);
-    scene().setSelection(newLine);
+    ShapePtr new_line(new PathShape(path));
+    scene().stackStep();
+    scene().activeLayer().addShape(new_line);
+    scene().setSelection(new_line);
     scene().setMode(Scene::Mode::SELECTING);
     return true;
 }

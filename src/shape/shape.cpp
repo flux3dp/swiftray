@@ -8,6 +8,7 @@ using namespace std;
 Shape::Shape() noexcept {
     transform_ = QTransform();
     selected = false;
+    parent_ = nullptr;
 }
 
 Shape::~Shape() {
@@ -33,6 +34,14 @@ qreal Shape::scaleY() const {
 
 QPointF Shape::pos() const {
     return QPointF(x(), y());
+}
+
+Layer* Shape::parent() {
+    return parent_;
+}
+
+void Shape::setParent(Layer* parent) {
+    parent_ = parent;
 }
 
 void Shape::applyTransform(QTransform transform) {

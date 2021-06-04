@@ -181,11 +181,15 @@ void PathEditor::paint(QPainter *painter){
     painter->setPen(blue_pen);
     painter->drawRects(large_rects);
     painter->drawRects(small_rects);
+
     painter->save();
+    
     painter->setTransform(transform, true);
     painter->drawLines(lines);
+
     painter->setPen(blue_thin_pen);
     painter->drawPath(path());
+    
     painter->restore();
 }
 
@@ -194,18 +198,15 @@ void PathEditor::reset() {
 }
 
 QPainterPath &PathEditor::path() {
-    PathShape *path_shape_ = (PathShape*)target_.get();
-    return path_shape_->path();
+    return target().path();
 }
-
 
 QPointF PathEditor::getLocalCoord(QPointF canvas_coord) {
-    PathShape *path_shape_ = (PathShape*)target_.get();
-    return path_shape_->transform().inverted().map(canvas_coord);
+    return target_->transform().inverted().map(canvas_coord);
 }
 
-ShapePtr PathEditor::target() {
-    return target_;
+PathShape& PathEditor::target() {
+    return *dynamic_cast<PathShape*>(target_.get());
 }
 
 void PathEditor::setTarget(ShapePtr target) {

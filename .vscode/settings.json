@@ -46,7 +46,12 @@
         "qplaintextedit": "cpp",
         "__config": "cpp",
         "cstdlib": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "__functional_03": "cpp",
+        "functional": "cpp",
+        "complex": "cpp",
+        "array": "cpp",
+        "istream": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

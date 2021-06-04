@@ -39,7 +39,7 @@ class Scene : QObject {
         QList<ShapePtr> &clipboard();
         void setClipboard(QList<ShapePtr> &items);
         // Layer
-        QList<Layer> &layers();
+        QList<LayerPtr> &layers();
         Layer &activeLayer();
         bool setActiveLayer(QString name);
         void addLayer();
@@ -76,8 +76,8 @@ class Scene : QObject {
     private:
         void stackRedo();
         void stackUndo();
-        void dumpStack(QList<Layer> &stack);
-        QList<Layer> cloneStack(QList<Layer> &stack);
+        void dumpStack(QList<LayerPtr> &stack);
+        QList<LayerPtr> cloneStack(QList<LayerPtr> &stack);
 
         qreal scroll_x_;
         qreal scroll_y_;
@@ -87,14 +87,14 @@ class Scene : QObject {
 
         QList<ShapePtr> shape_clipboard_;
 
-        QList<QList<Layer>> undo_stack_;
-        QList<QList<Layer>> redo_stack_;
-        QList<Layer> layers_;
+        QList<QList<LayerPtr>> undo_stack_;
+        QList<QList<LayerPtr>> redo_stack_;
+        QList<LayerPtr> layers_;
         QList<ShapePtr> selections_;
 
         Mode mode_;
         int new_layer_id_;
-        Layer *active_layer_;
+        LayerPtr active_layer_;
 };
 
 #endif // SCENE_H

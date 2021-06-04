@@ -17,7 +17,7 @@ class PathEditor : public CanvasControl {
         void reset();
         int testHit(QPointF canvas_coord);
         qreal distance(QPointF point);
-        ShapePtr target();
+        PathShape& target();
         void setTarget(ShapePtr target);
         QPainterPath &path();
         QPointF getLocalCoord(QPointF canvas_coord);

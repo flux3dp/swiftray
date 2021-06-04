@@ -25,6 +25,10 @@ QFont TextShape::font() {
     return font_;
 }
 
+bool TextShape::isEditing() {
+    return editing_;
+}
+
 float TextShape::lineHeight() {
     return line_height_;
 }
@@ -42,6 +46,10 @@ void TextShape::setText(QString text) {
 void TextShape::setFont(QFont font) {
     font_ = font;
     makePath();
+}
+
+void TextShape::setEditing(bool editing) {
+    editing_ = editing;
 }
 
 void TextShape::makePath() {

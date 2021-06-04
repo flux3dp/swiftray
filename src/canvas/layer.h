@@ -10,7 +10,7 @@ class Layer {
         void addShape(ShapePtr shape);
         void removeShape(ShapePtr shape);
         void clear();
-        Layer clone();
+        shared_ptr<Layer> clone();
         QList<ShapePtr> &children();
 
         QColor color();
@@ -21,5 +21,7 @@ class Layer {
         QColor color_;
         QList<ShapePtr> children_;
 };
+
+typedef shared_ptr<Layer> LayerPtr;
 
 #endif // LAYER_H

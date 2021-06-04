@@ -21,9 +21,9 @@ bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
     origin_ = scene().getCanvasCoord(e->pos());
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
-        // todo:: possible memory leak
-        target_ = new TextShape("TEXT", QFont("Tahoma", 88, QFont::Bold));
-        target_->setTransform(QTransform().translate(origin_.x(), origin_.y()));
+        qInfo() << "Create virtual text shape";
+        setTarget(ShapePtr(new TextShape("", QFont("Tahoma", 88, QFont::Bold))));
+        target().setTransform(QTransform().translate(origin_.x(), origin_.y()));
     }
     return true;
 }
@@ -38,13 +38,14 @@ bool TextDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 bool TextDrawer::keyPressEvent(QKeyEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
     if (e->key() == Qt::Key::Key_Escape) {
-        target_->editing_ = false;
-        if (scene().text_box_->toPlainText().length() > 0) {
-            ShapePtr new_shape(target_);
-            scene().activeLayer().addShape(new_shape);
-            scene().setSelection(new_shape);
+        target().setEditing(false);
+        if (target().parent() == nullptr && scene().text_box_->toPlainText().length() > 0) {
+            qInfo() << "Create new text shape instance";
+            scene().stackStep();
+            scene().activeLayer().addShape(target_);
+            scene().setSelection(target_);
         }
-        target_ = nullptr;
+        setTarget(nullptr);
         scene().setMode(Scene::Mode::SELECTING);
         return true;
     }
@@ -54,9 +55,9 @@ void TextDrawer::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::DRAWING_TEXT) return;
     if (target_ == nullptr) return;
     QString text = scene().text_box_->toPlainText() + scene().text_box_->preeditString();
-    target_->setText(text);
-    target_->makeCursorRect(scene().text_box_->textCursor().position());
-    target_->editing_ = true;
+    target().setText(text);
+    target().makeCursorRect(scene().text_box_->textCursor().position());
+    target().setEditing(true);
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
 
@@ -72,4 +73,16 @@ void TextDrawer::reset() {
     blink_counter = 0;
     target_ = nullptr;
     origin_ = QPointF();
+    scene().text_box_->clear();
+}
+
+TextShape &TextDrawer::target() {
+    return *dynamic_cast<TextShape*>(target_.get());
+}
+
+void TextDrawer::setTarget(ShapePtr new_target) {
+    target_ = new_target;
+    if (target_ != nullptr) {
+        scene().text_box_->setPlainText(target().text());
+    }
 }

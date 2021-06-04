@@ -29,10 +29,12 @@ void Layer::paint(QPainter *painter, int counter) const {
 
 
 void Layer::addShape(ShapePtr shape) {
+    shape->setParent(this);
     children_.push_back(shape);
 }
 
 void Layer::removeShape(ShapePtr shape) {
+    shape->setParent(nullptr);
     children_.removeOne(shape);
 }
 
@@ -52,13 +54,13 @@ QList<ShapePtr> &Layer::children() {
     return children_;
 }
 
-Layer Layer::clone() {
-    Layer layer;
+LayerPtr Layer::clone() {
+    LayerPtr layer(new Layer());
     for (ShapePtr &shape : children_) {
-        layer.children() << shape->clone();
+        layer->addShape(shape->clone());
     }
 
-    layer.name = name;
-    layer.setColor(color());
+    layer->name = name;
+    layer->setColor(color());
     return layer;
 }

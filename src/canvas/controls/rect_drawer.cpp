@@ -18,6 +18,7 @@ bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.addRect(rect_);
     ShapePtr newRect(new PathShape(path));
+    scene().stackStep();
     scene().activeLayer().addShape(newRect);
     scene().setSelection(newRect);
     scene().setMode(Scene::Mode::SELECTING);

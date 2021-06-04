@@ -15,10 +15,11 @@ class TextDrawer : public CanvasControl {
         bool keyPressEvent(QKeyEvent *e) override;
         void paint(QPainter *painter) override;
         void reset();
+        TextShape &target();
+        void setTarget(ShapePtr target);
     private:
-        QString text_;
         QPointF origin_;
-        TextShape *target_;
+        ShapePtr target_;
         int blink_counter;
 };
 

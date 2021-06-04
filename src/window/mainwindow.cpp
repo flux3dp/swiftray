@@ -118,8 +118,8 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 void MainWindow::updateLayers() {
     ui->layerList->clear();
 
-    for (Layer &layer : canvas_->scene().layers()) {
-        LayerWidget *list_widget = new LayerWidget(ui->layerList->parentWidget(), layer);
+    for (LayerPtr &layer : canvas_->scene().layers()) {
+        LayerWidget *list_widget = new LayerWidget(ui->layerList->parentWidget(), *layer);
         QListWidgetItem *list_item = new QListWidgetItem(ui->layerList);
         QSize size = list_widget->size();
         list_item->setSizeHint(size);

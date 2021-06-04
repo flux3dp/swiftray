@@ -130,6 +130,7 @@ TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float toler
 
 bool TransformBox::mousePressEvent(QMouseEvent *e) {
     if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
+    if (scene().mode() == Scene::Mode::DRAWING_TEXT) return false;
     CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     QRectF bbox = boundingRect();
@@ -285,6 +286,7 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 
 bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
+    if (scene().mode() == Scene::Mode::DRAWING_TEXT) return false;
     ControlPoint cp = testHit(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
 
     switch (cp) {
@@ -321,6 +323,7 @@ bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 
 void TransformBox::paint(QPainter *painter) {
     if (scene().mode() == Scene::Mode::EDITING_PATH) return;
+    if (scene().mode() == Scene::Mode::DRAWING_TEXT) return;
     QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     QPen bluePen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
     QPen ptPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine, Qt::RoundCap);

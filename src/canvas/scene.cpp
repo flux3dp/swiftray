@@ -74,21 +74,21 @@ void Scene::stackRedo() {
     redo_stack_.push_back(cloneStack(layers_));
 }
 
-QList<Layer> Scene::cloneStack(QList<Layer> &stack) {
-    QList<Layer> cloned;
+QList<LayerPtr> Scene::cloneStack(QList<LayerPtr> &stack) {
+    QList<LayerPtr> cloned;
 
-    for (Layer &layer : stack) {
-        cloned << layer.clone();
+    for (LayerPtr &layer : stack) {
+        cloned << layer->clone();
     }
 
     return cloned;
 }
 
-void Scene::dumpStack(QList<Layer> &stack) {
+void Scene::dumpStack(QList<LayerPtr> &stack) {
     qInfo() << "<Stack>";
-    for (Layer &layer : stack) {
+    for (LayerPtr &layer : stack) {
         qInfo() << "  <Layer " << &layer << ">";
-        for (ShapePtr &shape : layer.children()) {
+        for (ShapePtr &shape : layer->children()) {
             qInfo() << "    <Shape "<< shape.get() << " selected =" << shape->selected << " />";
         }
         qInfo() << "  </Layer>";
@@ -107,8 +107,8 @@ void Scene::undo() {
     layers().append(undo_stack_.last());
     QList<ShapePtr> selected;
 
-    for (Layer &layer : layers()) {
-        for (ShapePtr &shape : layer.children()) {
+    for (LayerPtr &layer : layers()) {
+        for (ShapePtr &shape : layer->children()) {
             if (shape->selected) selected << shape;
         }
     }
@@ -130,8 +130,8 @@ void Scene::redo() {
     layers().append(redo_stack_.last());
     QList<ShapePtr> selected;
 
-    for (Layer &layer : layers()) {
-        for (ShapePtr &shape : layer.children()) {
+    for (LayerPtr &layer : layers()) {
+        for (ShapePtr &shape : layer->children()) {
             if (shape->selected) selected << shape;
         }
     }
@@ -156,9 +156,9 @@ void Scene::setClipboard(QList<ShapePtr> &items) {
 void Scene::addLayer() {
     if (layers().length() > 0) stackStep();
     qDebug() << "Add layer";
-    layers() << Layer();
-    layers().last().name = "Layer " + QString::number(new_layer_id_++);
-    active_layer_ = &layers().last();
+    layers() << LayerPtr(new Layer());
+    layers().last()->name = "Layer " + QString::number(new_layer_id_++);
+    active_layer_ = layers().last();
     emit layerChanged();
 }
 
@@ -236,19 +236,19 @@ Layer &Scene::activeLayer() {
 }
 
 bool Scene::setActiveLayer(QString name) {
-    for (Layer &layer : layers()) {
-        if (layer.name == name) {
-            active_layer_ = &layer;
+    for (LayerPtr &layer : layers()) {
+        if (layer->name == name) {
+            active_layer_ = layer;
             return true;
         }
     }
 
-    active_layer_ = &layers().last();
+    active_layer_ = layers().last();
     return false;
 }
 
 
-QList<Layer> &Scene::layers() {
+QList<LayerPtr> &Scene::layers() {
     return layers_;
 }
 
@@ -258,16 +258,16 @@ void Scene::removeSelections() {
     emit selectionsChanged();
 
     // Remove
-    for (Layer &layer : layers()) {
-        layer.children().erase(std::remove_if(layer.children().begin(), layer.children().end(), [](ShapePtr & s) {
+    for (LayerPtr &layer : layers()) {
+        layer->children().erase(std::remove_if(layer->children().begin(), layer->children().end(), [](ShapePtr & s) {
             return s->selected;
-        }), layer.children().end());
+        }), layer->children().end());
     }
 }
 
 ShapePtr Scene::testHit(QPointF canvas_coord) {
-    for (Layer &layer : layers()) {
-        for (ShapePtr &shape : layer.children()) {
+    for (LayerPtr &layer : layers()) {
+        for (ShapePtr &shape : layer->children()) {
             if (shape->testHit(canvas_coord, 5 / scale())) {
                 return shape;
             }

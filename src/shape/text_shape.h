@@ -20,6 +20,9 @@ class TextShape : public PathShape {
         void setFont(QFont font);
         void setLineHeight(float line_height);
         void makeCursorRect(int cursor);
+
+        bool isEditing();
+        void setEditing(bool editing);
         bool editing_;
         
     private:
@@ -30,5 +33,7 @@ class TextShape : public PathShape {
 
         void makePath();
 };
+
+typedef shared_ptr<TextShape*> TextShapePtr;
 
 #endif // TEXTSHAPE_H

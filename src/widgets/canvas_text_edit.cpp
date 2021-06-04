@@ -10,11 +10,7 @@ QString CanvasTextEdit::preeditString() const {
 }
 
 void CanvasTextEdit::inputMethodEvent(QInputMethodEvent *event) {
-    if (event->preeditString() != "" ) {
-        preedit_data_ = event->preeditString();
-    }
-    if (event->commitString() != "") {
-        preedit_data_ = "";
-    }
+    qInfo() << "IME Event" << event;
+    preedit_data_ = event->preeditString();
     QPlainTextEdit::inputMethodEvent(event);
 }

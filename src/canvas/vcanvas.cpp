@@ -63,8 +63,8 @@ void VCanvas::paint(QPainter *painter) {
 
     grid_.paint(painter);
 
-    for (const Layer &layer : scene().layers()) {
-        layer.paint(painter, counter);
+    for (const LayerPtr &layer : scene().layers()) {
+        layer->paint(painter, counter);
     }
 
     for (CanvasControl *control : controls_) {
@@ -133,9 +133,21 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
     ShapePtr hit = scene().testHit(canvas_coord);
     if (scene().mode() == Scene::Mode::SELECTING) {
         if (hit != nullptr) {
-            qInfo() << "Set target" << hit.get();
-            scene().setMode(Scene::Mode::EDITING_PATH);
-            path_editor_.setTarget(hit);
+            qInfo() << "Double clicked" << hit.get();
+            switch (hit->type()) {
+                case Shape::Type::Path:
+                    scene().clearSelections();
+                    path_editor_.setTarget(hit);
+                    scene().setMode(Scene::Mode::EDITING_PATH);
+                    break;
+                case Shape::Type::Text:
+                    scene().clearSelections();
+                    text_drawer_.setTarget(hit);
+                    scene().setMode(Scene::Mode::DRAWING_TEXT);
+                    break;
+                default:
+                    break;
+            }
         } 
     } else if (scene().mode() == Scene::Mode::EDITING_PATH) {
         scene().setMode(Scene::Mode::SELECTING);
@@ -190,12 +202,14 @@ bool VCanvas::event(QEvent *e) {
 }
 
 void VCanvas::editCut() {
+    if (scene().mode() != Scene::Mode::SELECTING) return;
     scene().stackStep();
     qInfo() << "Edit Cut";
     editCopy();
     scene().removeSelections();
 }
 void VCanvas::editCopy() {
+    if (scene().mode() != Scene::Mode::SELECTING) return;
     qInfo() << "Edit Copy";
     scene().clipboard().clear();
     scene().setClipboard(scene().selections());
@@ -203,6 +217,7 @@ void VCanvas::editCopy() {
 }
 
 void VCanvas::editPaste() {
+    if (scene().mode() != Scene::Mode::SELECTING) return;
     scene().stackStep();
     qInfo() << "Edit Paste";
     int index_clip_begin = scene().activeLayer().children().length();
@@ -268,10 +283,11 @@ void VCanvas::editDrawText() {
 }
 
 void VCanvas::editSelectAll() {
+    if (scene().mode() != Scene::Mode::SELECTING) return;
     QList<ShapePtr> all_shapes;
 
-    for (Layer &layer : scene().layers()) {
-        all_shapes.append(layer.children());
+    for (LayerPtr &layer : scene().layers()) {
+        all_shapes.append(layer->children());
     }
 
     scene().setSelections(all_shapes);
@@ -300,8 +316,8 @@ void VCanvas::editUngroup() {
 
     scene().setSelections(group->children());
 
-    for (Layer &layer : scene().layers()) {
-        layer.children().removeOne(group_ptr);
+    for (LayerPtr &layer : scene().layers()) {
+        layer->children().removeOne(group_ptr);
     }
 
 }
@@ -311,19 +327,18 @@ Scene &VCanvas::scene() {
 }
 
 void VCanvas::editUnion() {
-    if (scene().selections().size() != 2) return;
+    if (scene().selections().size() < 2) return;
+    QPainterPath result;
 
-    if (scene().selections().at(0)->type() != Shape::Type::Path ||
-        scene().selections().at(1)->type() !=  Shape::Type::Path) return;
-
+    for (ShapePtr &shape : scene().selections()) {
+        if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) return; 
+        result = result.united(shape->transform().map(dynamic_cast<PathShape*>(shape.get())->path()));
+    }
     scene().stackStep();
-    PathShape *a = (PathShape *)scene().selections().at(0).get();
-    PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path()).united(b->transform().map(b->path())));
-    ShapePtr newShape(new PathShape(newPath));
+    ShapePtr new_shape(new PathShape(result));
     scene().removeSelections();
-    scene().activeLayer().addShape(newShape);
-    scene().setSelection(newShape);
+    scene().activeLayer().addShape(new_shape);
+    scene().setSelection(new_shape);
 }
 void VCanvas::editSubtract() {
     if (scene().selections().size() != 2) return;
@@ -332,13 +347,13 @@ void VCanvas::editSubtract() {
         scene().selections().at(1)->type() !=  Shape::Type::Path) return;
 
     scene().stackStep();
-    PathShape *a = (PathShape *)scene().selections().at(0).get();
-    PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path()).subtracted(b->transform().map(b->path())));
-    ShapePtr newShape(new PathShape(newPath));
+    PathShape *a = dynamic_cast<PathShape*>(scene().selections().at(0).get());
+    PathShape *b = dynamic_cast<PathShape*>(scene().selections().at(1).get());
+    QPainterPath new_path(a->transform().map(a->path()).subtracted(b->transform().map(b->path())));
+    ShapePtr new_shape(new PathShape(new_path));
     scene().removeSelections();
-    scene().activeLayer().addShape(newShape);
-    scene().setSelection(newShape);
+    scene().activeLayer().addShape(new_shape);
+    scene().setSelection(new_shape);
 }
 void VCanvas::editIntersect() {
     if (scene().selections().size() != 2) return;
@@ -347,14 +362,14 @@ void VCanvas::editIntersect() {
         scene().selections().at(1)->type() !=  Shape::Type::Path) return;
 
     scene().stackStep();
-    PathShape *a = (PathShape *)scene().selections().at(0).get();
-    PathShape *b = (PathShape *)scene().selections().at(1).get();
-    QPainterPath newPath(a->transform().map(a->path()).intersected(b->transform().map(b->path())));
-    newPath.closeSubpath();
-    ShapePtr newShape(new PathShape(newPath));
+    PathShape *a = dynamic_cast<PathShape*>(scene().selections().at(0).get());
+    PathShape *b = dynamic_cast<PathShape*>(scene().selections().at(1).get());
+    QPainterPath new_path(a->transform().map(a->path()).intersected(b->transform().map(b->path())));
+    new_path.closeSubpath();
+    ShapePtr new_shape(new PathShape(new_path));
     scene().removeSelections();
-    scene().activeLayer().addShape(newShape);
-    scene().setSelection(newShape);
+    scene().activeLayer().addShape(new_shape);
+    scene().setSelection(new_shape);
 }
 void VCanvas::editDifference() {
 }
