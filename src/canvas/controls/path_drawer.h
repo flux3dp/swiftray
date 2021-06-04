@@ -4,6 +4,8 @@
 #ifndef PATHDRAWER_H
 #define PATHDRAWER_H
 
+constexpr QPointF invalid_point(-1, -1);
+
 class PathDrawer : public CanvasControl {
     public:
         PathDrawer(Scene &scene_) noexcept;
@@ -22,7 +24,6 @@ class PathDrawer : public CanvasControl {
         bool is_closing_curve_;
         QPointF curve_target_;
         QPointF last_ctrl_pt_;
-        QPointF invalid_point_;
 };
 
 #endif // PATHDRAWER_H

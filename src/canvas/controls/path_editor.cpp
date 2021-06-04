@@ -145,6 +145,7 @@ void PathEditor::paint(QPainter *painter){
     blue_thin_pen.setCosmetic(true);
     blue_large_pen.setCosmetic(true);
     blue_small_pen.setCosmetic(true);
+
     painter->setPen(blue_pen);
     QTransform transform = target_->transform();
     QPolygonF lines;

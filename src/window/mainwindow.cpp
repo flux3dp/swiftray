@@ -117,9 +117,9 @@ void MainWindow::updateLayers() {
     ui->layerList->clear();
 
     for (auto &layer : canvas_->scene().layers()) {
-        LayerWidget *list_widget = new LayerWidget(ui->layerList->parentWidget(), *layer);
-        QListWidgetItem *list_item = new QListWidgetItem(ui->layerList);
-        QSize size = list_widget->size();
+        auto *list_widget = new LayerWidget(ui->layerList->parentWidget(), *layer);
+        auto *list_item = new QListWidgetItem(ui->layerList);
+        auto size = list_widget->size();
         list_item->setSizeHint(size);
         ui->layerList->setItemWidget(list_item, list_widget);
     }

@@ -2,7 +2,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-SVGPPContext::SVGPPContext(Scene &scene): scene_ { scene } {
+SVGPPContext::SVGPPContext(Scene &scene): scene_(scene) {
     transform = ublas::identity_matrix<double>(3, 3);
 }
 

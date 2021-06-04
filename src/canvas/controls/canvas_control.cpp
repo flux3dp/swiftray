@@ -1,5 +1,5 @@
 #include <canvas/controls/canvas_control.h>
-CanvasControl::CanvasControl(Scene &scene) : scene_ { scene } {
+CanvasControl::CanvasControl(Scene &scene) : scene_(scene) {
 
 };
 

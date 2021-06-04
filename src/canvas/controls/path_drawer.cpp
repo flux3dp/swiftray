@@ -6,9 +6,8 @@
 #include <QDebug>
 
 PathDrawer::PathDrawer(Scene &scene_) noexcept: CanvasControl(scene_) {
-    invalid_point_ = QPointF(-1, -1);
-    curve_target_ = invalid_point_;
-    last_ctrl_pt_ = invalid_point_;
+    curve_target_ = invalid_point;
+    last_ctrl_pt_ = invalid_point;
     is_drawing_curve_ = false;
     is_closing_curve_ = false;
 }
@@ -57,18 +56,18 @@ bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
     
     if (!testHit(canvas_coord) || hitOrigin(canvas_coord)) {
         if (is_drawing_curve_ ) {
-            if (curve_target_ != invalid_point_) {
-                if (last_ctrl_pt_ != invalid_point_) { 
+            if (curve_target_ != invalid_point) {
+                if (last_ctrl_pt_ != invalid_point) { 
                     working_path_.cubicTo(last_ctrl_pt_, curve_target_ * 2 - cursor_, curve_target_);
                 } else {
                     working_path_.cubicTo(curve_target_ * 2 - cursor_, curve_target_ * 2 - cursor_, curve_target_);
                 }
                 last_ctrl_pt_ = cursor_;
-                curve_target_ = invalid_point_;
+                curve_target_ = invalid_point;
             } else {
                 qInfo() << "Release" << "Write Curve Point 2";
                 working_path_.cubicTo(last_ctrl_pt_, cursor_, cursor_);
-                last_ctrl_pt_ = invalid_point_;
+                last_ctrl_pt_ = invalid_point;
                 is_drawing_curve_ = false;
             }
         } else {
@@ -128,7 +127,7 @@ void PathDrawer::paint(QPainter *painter){
     if(working_path_.elementCount() > 0) {
         if (is_drawing_curve_) {
             QPainterPath wp_clone = working_path_;
-            if (curve_target_ != invalid_point_) {
+            if (curve_target_ != invalid_point) {
                 wp_clone.cubicTo(last_ctrl_pt_, curve_target_ * 2 - cursor_, curve_target_);
                 painter->drawPath(wp_clone);
                 painter->setPen(blue_pen);
@@ -165,8 +164,8 @@ void PathDrawer::paint(QPainter *painter){
 
 void PathDrawer::reset() {
     working_path_ = QPainterPath();
-    curve_target_ = invalid_point_;
-    last_ctrl_pt_ = invalid_point_;
+    curve_target_ = invalid_point;
+    last_ctrl_pt_ = invalid_point;
     is_drawing_curve_ = false;
     is_closing_curve_ = false;
 }
