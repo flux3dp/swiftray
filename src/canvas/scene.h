@@ -68,7 +68,7 @@ class Scene : QObject {
         QList<ShapePtr> &shapes();
 
         QPointF pasting_shift;
-        CanvasTextEdit *text_box_;
+        unique_ptr<CanvasTextEdit> text_box_;
     signals:
         void selectionsChanged();
         void layerChanged();

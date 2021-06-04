@@ -297,9 +297,8 @@ void VCanvas::editGroup() {
 
     qInfo() << "Groupping";
     scene().stackStep();
-    GroupShape *group = new GroupShape(transform_box_.selections());
     scene().removeSelections();
-    const ShapePtr group_ptr(group);
+    const ShapePtr group_ptr = make_shared<GroupShape>(transform_box_.selections());
     scene().activeLayer().children().push_back(group_ptr);
     scene().setSelection(group_ptr);
 }
@@ -335,7 +334,7 @@ void VCanvas::editUnion() {
         result = result.united(shape->transform().map(dynamic_cast<PathShape*>(shape.get())->path()));
     }
     scene().stackStep();
-    ShapePtr new_shape(new PathShape(result));
+    ShapePtr new_shape = make_shared<PathShape>(result);
     scene().removeSelections();
     scene().activeLayer().addShape(new_shape);
     scene().setSelection(new_shape);
@@ -350,7 +349,7 @@ void VCanvas::editSubtract() {
     PathShape *a = dynamic_cast<PathShape*>(scene().selections().at(0).get());
     PathShape *b = dynamic_cast<PathShape*>(scene().selections().at(1).get());
     QPainterPath new_path(a->transform().map(a->path()).subtracted(b->transform().map(b->path())));
-    ShapePtr new_shape(new PathShape(new_path));
+    ShapePtr new_shape = make_shared<PathShape>(new_path);
     scene().removeSelections();
     scene().activeLayer().addShape(new_shape);
     scene().setSelection(new_shape);
@@ -366,7 +365,7 @@ void VCanvas::editIntersect() {
     PathShape *b = dynamic_cast<PathShape*>(scene().selections().at(1).get());
     QPainterPath new_path(a->transform().map(a->path()).intersected(b->transform().map(b->path())));
     new_path.closeSubpath();
-    ShapePtr new_shape(new PathShape(new_path));
+    ShapePtr new_shape = make_shared<PathShape>(new_path);
     scene().removeSelections();
     scene().activeLayer().addShape(new_shape);
     scene().setSelection(new_shape);

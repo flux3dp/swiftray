@@ -19,7 +19,7 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.moveTo(dragged_from_canvas_);
     path.lineTo(scene().getCanvasCoord(e->pos()));
-    ShapePtr new_line(new PathShape(path));
+    ShapePtr new_line = make_shared<PathShape>(path);
     scene().stackStep();
     scene().activeLayer().addShape(new_line);
     scene().setSelection(new_line);

@@ -17,10 +17,10 @@ bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_RECT) return false;
     QPainterPath path;
     path.addRect(rect_);
-    ShapePtr newRect(new PathShape(path));
+    ShapePtr new_rect = make_shared<PathShape>(path);
     scene().stackStep();
-    scene().activeLayer().addShape(newRect);
-    scene().setSelection(newRect);
+    scene().activeLayer().addShape(new_rect);
+    scene().setSelection(new_rect);
     scene().setMode(Scene::Mode::SELECTING);
     return true;
 }

@@ -104,10 +104,8 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this, SLOT(updateLayers()));
     connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this, SLOT(updateMode()));
     connect((QObject *)&canvas_->scene(), SIGNAL(selectionsChanged()), this, SLOT(updateSidePanel()));
-    CanvasTextEdit *cte = new CanvasTextEdit(ui->inputFrame);
-    cte->setGeometry(10, 10, 200, 200);
-    canvas_->scene().text_box_ = cte;
-    //canvas_->scene().text_box_->setFixedHeight(0);
+    canvas_->scene().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
+    canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
     canvas_->scene().text_box_->setStyleSheet("border:0");
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     updateLayers();

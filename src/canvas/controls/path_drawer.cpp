@@ -78,7 +78,7 @@ bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
     }
 
     if (is_closing_curve_) {
-        ShapePtr new_shape(new PathShape(working_path_));
+        ShapePtr new_shape = make_shared<PathShape>(working_path_);
         scene().stackStep();
         scene().activeLayer().addShape(new_shape);
         scene().setSelection(new_shape);
@@ -125,7 +125,6 @@ void PathDrawer::paint(QPainter *painter){
     blue_pen.setCosmetic(true);
     black_pen.setCosmetic(true);
     painter->setPen(black_pen);
-    painter->setBrush(QBrush(Qt::white,Qt::SolidPattern));
     if(working_path_.elementCount() > 0) {
         if (is_drawing_curve_) {
             QPainterPath wp_clone = working_path_;
@@ -162,7 +161,6 @@ void PathDrawer::paint(QPainter *painter){
             painter->drawEllipse(ele_end_point, 5, 5);
         }
     }
-    painter->setBrush(Qt::NoBrush);
 }
 
 void PathDrawer::reset() {

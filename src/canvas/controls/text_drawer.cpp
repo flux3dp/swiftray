@@ -22,7 +22,7 @@ bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
         qInfo() << "Create virtual text shape";
-        setTarget(ShapePtr(new TextShape("", QFont("Tahoma", 88, QFont::Bold))));
+        setTarget(make_shared<TextShape>("", QFont("Tahoma", 88, QFont::Bold)));
         target().setTransform(QTransform().translate(origin_.x(), origin_.y()));
     }
     return true;

@@ -19,7 +19,7 @@ bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
     path.arcTo(rect_, 0, 360 * 16);
-    ShapePtr new_oval(new PathShape(path));
+    ShapePtr new_oval = make_shared<PathShape>(path);
     scene().stackStep();
     scene().activeLayer().addShape(new_oval);
     scene().setSelection(new_oval);

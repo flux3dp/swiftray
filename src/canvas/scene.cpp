@@ -156,7 +156,7 @@ void Scene::setClipboard(QList<ShapePtr> &items) {
 void Scene::addLayer() {
     if (layers().length() > 0) stackStep();
     qDebug() << "Add layer";
-    layers() << LayerPtr(new Layer());
+    layers() << make_shared<Layer>();
     layers().last()->name = "Layer " + QString::number(new_layer_id_++);
     active_layer_ = layers().last();
     emit layerChanged();

@@ -70,7 +70,7 @@ void PathShape::paint(QPainter *painter) const {
 }
 
 shared_ptr<Shape> PathShape::clone() const {
-    shared_ptr<PathShape> shape(new PathShape(*this));
+    shared_ptr<PathShape> shape = make_shared<PathShape>(*this);
     return shape;
 }
 
