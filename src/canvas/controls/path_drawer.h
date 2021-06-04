@@ -13,7 +13,7 @@ class PathDrawer : public CanvasControl {
         bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
         void paint(QPainter *painter) override;
         void reset();
-        bool hitTest(QPointF canvas_coord);
+        bool testHit(QPointF canvas_coord);
         bool hitOrigin(QPointF canvas_coord);
     private:
         QPainterPath working_path_;
