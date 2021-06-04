@@ -67,7 +67,7 @@ void VCanvas::paint(QPainter *painter) {
         layer->paint(painter, counter);
     }
 
-    for (CanvasControl *control : controls_) {
+    for (auto &control : controls_) {
         control->paint(painter);
     }
 }
@@ -75,7 +75,7 @@ void VCanvas::paint(QPainter *painter) {
 void VCanvas::keyPressEvent(QKeyEvent *e) {
     // qInfo() << "Key press" << e;
 
-    for (CanvasControl *control : controls_) {
+    for (auto &control : controls_) {
         if (control->keyPressEvent(e)) return;
     }
 
@@ -88,7 +88,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for (CanvasControl *control : controls_) {
+    for (auto &control : controls_) {
         if (control->mousePressEvent(e)) return;
     }
 
@@ -110,7 +110,7 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for (CanvasControl *control : controls_) {
+    for (auto &control : controls_) {
         if (control->mouseMoveEvent(e)) return;
     }
 }
@@ -119,7 +119,7 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
-    for (CanvasControl *control : controls_) {
+    for (auto &control : controls_) {
         if (control->mouseReleaseEvent(e)) return;
     }
 
@@ -174,7 +174,7 @@ bool VCanvas::event(QEvent *e) {
     switch (e->type()) {
     case QEvent::HoverMove:
         unsetCursor();
-        for(CanvasControl *control : controls_) {
+        for (auto &control : controls_) {
             if(control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)){
                 setCursor(cursor);
                 break;
@@ -286,7 +286,7 @@ void VCanvas::editSelectAll() {
     if (scene().mode() != Scene::Mode::SELECTING) return;
     QList<ShapePtr> all_shapes;
 
-    for (LayerPtr &layer : scene().layers()) {
+    for (auto &layer : scene().layers()) {
         all_shapes.append(layer->children());
     }
 
@@ -308,14 +308,14 @@ void VCanvas::editUngroup() {
     ShapePtr group_ptr = scene().selections().first();
     GroupShape *group = (GroupShape *) group_ptr.get();
 
-    for (const ShapePtr &shape : group->children()) {
+    for (auto &shape : group->children()) {
         shape->applyTransform(group->transform());
         scene().activeLayer().children().push_back(shape);
     }
 
     scene().setSelections(group->children());
 
-    for (LayerPtr &layer : scene().layers()) {
+    for (auto &layer : scene().layers()) {
         layer->children().removeOne(group_ptr);
     }
 
@@ -329,10 +329,11 @@ void VCanvas::editUnion() {
     if (scene().selections().size() < 2) return;
     QPainterPath result;
 
-    for (ShapePtr &shape : scene().selections()) {
+    for (auto &shape : scene().selections()) {
         if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) return; 
         result = result.united(shape->transform().map(dynamic_cast<PathShape*>(shape.get())->path()));
     }
+    
     scene().stackStep();
     ShapePtr new_shape = make_shared<PathShape>(result);
     scene().removeSelections();

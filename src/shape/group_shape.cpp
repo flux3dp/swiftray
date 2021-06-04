@@ -8,20 +8,20 @@ GroupShape::GroupShape(QList<ShapePtr> &children) {
 }
 
 void GroupShape::simplify() {
-    for (ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         shape->simplify();
     }
 }
 
 void GroupShape::cacheSelectionTestingData() {
-    for (ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         shape->cacheSelectionTestingData();
     }
 }
 bool GroupShape::testHit(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
 
-    for (const ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         if (shape->testHit(local_coord, tolerance)) {
             return true;
         }
@@ -32,7 +32,7 @@ bool GroupShape::testHit(QPointF global_coord, qreal tolerance) const {
 bool GroupShape::testHit(QRectF global_coord_rect) const {
     QRectF local_coord_rect = transform().inverted().mapRect(global_coord_rect);
 
-    for (const ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         if (shape->testHit(local_coord_rect)) {
             return true;
         }
@@ -46,7 +46,7 @@ QRectF GroupShape::boundingRect() const {
     float left = std::numeric_limits<float>::max();
     float right = std::numeric_limits<float>::min();
 
-    for (const ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         // TODO: improve bounding box algorithm (draft logic)
         QRectF bb = transform().mapRect(shape->boundingRect());
 
@@ -75,7 +75,7 @@ void GroupShape::paint(QPainter *painter) const {
     painter->setTransform(transform(), true);
     painter->drawText(QPointF(), selected ? "Selected" : "Free");
 
-    for (const ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         shape->paint(painter);
     }
 
@@ -86,7 +86,7 @@ ShapePtr GroupShape::clone() const {
     GroupShape *group = new GroupShape();
     group->setTransform(transform());
 
-    for (const ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         group->children_.push_back(shape->clone());
     }
 

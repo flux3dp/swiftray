@@ -17,8 +17,8 @@ bool MultiSelectionBox::mouseReleaseEvent(QMouseEvent *e) {
     
     if (selection_box_.width() != 0 || selection_box_.height() != 0) {
         QList<ShapePtr> selected;
-        for (LayerPtr &layer : scene().layers()) {
-            for (ShapePtr &shape : layer->children()) {
+        for (auto &layer : scene().layers()) {
+            for (auto &shape : layer->children()) {
                 if (shape->testHit(selection_box_)) {
                     selected << shape;
                 }

@@ -119,9 +119,9 @@ bool PathDrawer::testHit(QPointF canvas_coord) {
 
 void PathDrawer::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::DRAWING_PATH) return;
-    QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-    QPen blue_pen(sky_blue, 2, Qt::SolidLine);
-    QPen black_pen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
+    auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
+    auto black_pen = QPen(scene().activeLayer().color(), 3, Qt::SolidLine);
     blue_pen.setCosmetic(true);
     black_pen.setCosmetic(true);
     painter->setPen(black_pen);

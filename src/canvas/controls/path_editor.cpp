@@ -136,11 +136,11 @@ void PathEditor::paint(QPainter *painter){
     if (scene().mode() != Scene::Mode::EDITING_PATH) return;
     if (target_.get() == nullptr) return;
 
-    QColor sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-    QPen blue_pen(sky_blue, 2, Qt::SolidLine);
-    QPen blue_thin_pen(sky_blue, 1, Qt::SolidLine);
-    QPen blue_large_pen(sky_blue, 10, Qt::SolidLine);
-    QPen blue_small_pen(sky_blue, 6, Qt::SolidLine);
+    auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
+    auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
+    auto blue_thin_pen = QPen(sky_blue, 1, Qt::SolidLine);
+    auto blue_large_pen = QPen(sky_blue, 10, Qt::SolidLine);
+    auto blue_small_pen = QPen(sky_blue, 6, Qt::SolidLine);
     blue_pen.setCosmetic(true);
     blue_thin_pen.setCosmetic(true);
     blue_large_pen.setCosmetic(true);
@@ -172,10 +172,10 @@ void PathEditor::paint(QPainter *painter){
     QVector<QRectF> small_rects;
     float large_size = 4 / scene().scale();
     float small_size = 2 / scene().scale();
-    for (QPointF &p : large_points) {
+    for (auto &p : large_points) {
         large_rects << QRectF(p.x() - large_size, p.y() - large_size, large_size * 2, large_size * 2);
     }
-    for (QPointF &p : small_points) {
+    for (auto &p : small_points) {
         small_rects << QRectF(p.x() - small_size, p.y() - small_size, small_size * 2, small_size * 2);
     }
     painter->setPen(blue_pen);
@@ -189,7 +189,7 @@ void PathEditor::paint(QPainter *painter){
 
     painter->setPen(blue_thin_pen);
     painter->drawPath(path());
-    
+
     painter->restore();
 }
 

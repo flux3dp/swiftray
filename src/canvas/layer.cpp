@@ -56,7 +56,7 @@ QList<ShapePtr> &Layer::children() {
 
 LayerPtr Layer::clone() {
     LayerPtr layer = make_shared<Layer>();
-    for (ShapePtr &shape : children_) {
+    for (auto &shape : children_) {
         layer->addShape(shape->clone());
     }
 
