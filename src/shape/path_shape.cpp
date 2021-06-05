@@ -39,7 +39,6 @@ void PathShape::cacheSelectionTestingData() {
 }
 
 bool PathShape::testHit(QPointF global_coord, qreal tolerance) const {
-    //Rotate and scale global coord to local coord
     QPointF local_coord = transform().inverted().map(global_coord);
 
     if (!selection_testing_rect_.contains(local_coord)) {
@@ -56,9 +55,6 @@ bool PathShape::testHit(QRectF global_coord_rect) const {
 }
 
 QRectF PathShape::boundingRect() const {
-    QRectF origRect = path_.boundingRect();
-    QPolygonF orig;
-    orig << origRect.topLeft() << origRect.topRight() << origRect.bottomRight() << origRect.bottomLeft();
     return transform().map(path_).boundingRect();
 }
 

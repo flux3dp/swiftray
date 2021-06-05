@@ -54,6 +54,9 @@ class VCanvas : public QQuickPaintedItem {
         void editIntersect();
         void editDifference();
 
+        void importImage(QImage &image);
+
+        void fitWindow();
     private:
         bool ready;
         int counter;

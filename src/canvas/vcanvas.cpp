@@ -8,6 +8,7 @@
 #include <iostream>
 #include <shape/path_shape.h>
 #include <shape/group_shape.h>
+#include <shape/bitmap_shape.h>
 #include <canvas/layer.h>
 
 VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
@@ -26,6 +27,7 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     setAcceptHoverEvents(true);
     setAcceptTouchEvents(true);
     setAntialiasing(true);
+    setOpaquePainting(true);
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
@@ -188,7 +190,7 @@ bool VCanvas::event(QEvent *e) {
 
         if (nge->gestureType() == Qt::ZoomNativeGesture) {
             scene().setScale(
-                max(0.01, scene().scale() + nge->value())
+                max(0.01, scene().scale() + nge->value() / 2)
             );
         }
 
@@ -372,4 +374,23 @@ void VCanvas::editIntersect() {
     scene().setSelection(new_shape);
 }
 void VCanvas::editDifference() {
+}
+
+void VCanvas::fitWindow() {
+    qInfo() << "Object size" << size();
+    // Speed up by using half resolution: setTextureSize(QSize(width()/2, height()/2));
+    qreal proper_scale = min((width() - 100)/scene().width(), (height() - 100)/scene().height());
+    QPointF proper_translate = QPointF((width() - scene().width() * proper_scale) / 2,
+                                     (height() - scene().height() * proper_scale) / 2);
+    qInfo() << "Scale" << proper_scale << "Proper translate" << proper_translate;
+    scene().setScale(proper_scale);
+    scene().setScroll(proper_translate);
+}
+
+void VCanvas::importImage(QImage &image) {
+    ShapePtr new_shape = make_shared<BitmapShape>(image);
+    qreal scale = min(1.0, min(scene().height() / image.height(), scene().width() / image.width()));
+    qInfo() << "Scale" << scale;
+    new_shape->setTransform(QTransform().scale(scale, scale));
+    scene().activeLayer().addShape(new_shape);
 }

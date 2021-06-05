@@ -36,7 +36,7 @@ QPointF Shape::pos() const {
     return QPointF(x(), y());
 }
 
-Layer* Shape::parent() {
+Layer* Shape::parent() const {
     return parent_;
 }
 

@@ -25,7 +25,7 @@ class Shape {
         qreal rotation() const;
         qreal scaleX() const;
         qreal scaleY() const;
-        Layer* parent();
+        Layer* parent() const;
         void setParent(Layer* parent);
         void setX(qreal x);
         void setY(qreal y);

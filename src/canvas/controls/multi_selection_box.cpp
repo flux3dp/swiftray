@@ -1,3 +1,4 @@
+#include <QDebug>
 #include <canvas/controls/multi_selection_box.h>
 
 bool MultiSelectionBox::mousePressEvent(QMouseEvent *e) {
@@ -8,13 +9,17 @@ bool MultiSelectionBox::mousePressEvent(QMouseEvent *e) {
 
 bool MultiSelectionBox::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::MULTI_SELECTING) return false;
-    selection_box_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
+    QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+    selection_box_ = QRectF(
+                        min(dragged_from_canvas_.x(), canvas_coord.x()),
+                        min(dragged_from_canvas_.y(), canvas_coord.y()),
+                        abs(dragged_from_canvas_.x() - canvas_coord.x()),
+                        abs(dragged_from_canvas_.y() - canvas_coord.y()));
     return true;
 }
 
 bool MultiSelectionBox::mouseReleaseEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::MULTI_SELECTING) return false;
-    
     if (selection_box_.width() != 0 || selection_box_.height() != 0) {
         QList<ShapePtr> selected;
         for (auto &layer : scene().layers()) {

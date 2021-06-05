@@ -25,6 +25,7 @@ class MainWindow : public QMainWindow {
         void updateMode();
         void updateSidePanel();
         void openFile();
+        void openImageFile();
         void on_addLayer_clicked();
 
     private:

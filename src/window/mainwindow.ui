@@ -37,10 +37,16 @@
     <item>
      <widget class="QQuickWidget" name="quickWidget">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>2</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>600</width>
+        <height>600</height>
+       </size>
       </property>
       <property name="sizeIncrement">
        <size>
@@ -242,7 +248,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>274</width>
+             <width>265</width>
              <height>218</height>
             </rect>
            </property>

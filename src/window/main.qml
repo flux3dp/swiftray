@@ -6,8 +6,7 @@ import Vecty 1.0
 Item {
     id: mainWindow
     visible: true
-    width: 1280
-    height: 720
+    anchors.fill: parent
 
     VCanvas {
         id: vcanvas

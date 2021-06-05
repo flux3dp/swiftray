@@ -7,8 +7,10 @@
 #include <window/mainwindow.h>
 #include <widgets/layer_widget.h>
 #include <widgets/canvas_text_edit.h>
+#include <shape/bitmap_shape.h>
 #include "ui_mainwindow.h"
 #include <window/osxwindow.h>
+#include <cmath>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -23,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->quickWidget, &QQuickWidget::statusChanged,
             this, &MainWindow::quickWidgetStatusChanged);
     QUrl source("qrc:/src/window/main.qml");
+    ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
     ui->quickWidget->setSource(source);
     ui->quickWidget->show();
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
@@ -55,7 +58,10 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::openFile() {
-    QString file_name = QFileDialog::getOpenFileName(this);
+    QString file_name = QFileDialog::getOpenFileName(this, 
+                                                    "Open SVG",
+                                                    ".", 
+                                                    tr("SVG Files (*.svg)"));
 
     if (QFile::exists(file_name)) {
         QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
@@ -65,6 +71,22 @@ void MainWindow::openFile() {
             QByteArray data = file.readAll();
             qInfo() << "File size:" << data.size();
             canvas_->loadSVG(data);
+        }
+    }
+}
+
+void MainWindow::openImageFile() {
+    QString file_name = QFileDialog::getOpenFileName(this, 
+                                                    "Open Image",
+                                                    ".", 
+                                                    tr("Image Files (*.png *.jpg)"));
+
+    if (QFile::exists(file_name)) {
+        QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
+        QImage image;
+        if (image.load(file_name)) {
+            qInfo() << "File size:" << image.size();
+            canvas_->importImage(image);
         }
     }
 }
@@ -97,6 +119,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
     connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
     connect(ui->actionDrawText, &QAction::triggered, canvas_, &VCanvas::editDrawText);
+    connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
     connect(ui->btnUnion, SIGNAL(clicked()), canvas_, SLOT(editUnion()));
     connect(ui->btnSubtract, SIGNAL(clicked()), canvas_, SLOT(editSubtract()));
     connect(ui->btnIntersect, SIGNAL(clicked()), canvas_, SLOT(editIntersect()));
@@ -107,6 +130,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     canvas_->scene().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
     canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
     canvas_->scene().text_box_->setStyleSheet("border:0");
+    canvas_->fitWindow();
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     updateLayers();
     updateMode();

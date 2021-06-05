@@ -51,7 +51,12 @@
         "functional": "cpp",
         "complex": "cpp",
         "array": "cpp",
-        "istream": "cpp"
+        "istream": "cpp",
+        "sstream": "cpp",
+        "initializer_list": "cpp",
+        "queue": "cpp",
+        "string_view": "cpp",
+        "utility": "cpp"
     },
     "files.exclude": {
         "**/.git": true,
