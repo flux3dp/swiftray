@@ -18,22 +18,22 @@ void GroupShape::cacheSelectionTestingData() {
         shape->cacheSelectionTestingData();
     }
 }
-bool GroupShape::testHit(QPointF global_coord, qreal tolerance) const {
+bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
 
     for (auto &shape : children_) {
-        if (shape->testHit(local_coord, tolerance)) {
+        if (shape->hitTest(local_coord, tolerance)) {
             return true;
         }
     }
 
     return false;
 }
-bool GroupShape::testHit(QRectF global_coord_rect) const {
+bool GroupShape::hitTest(QRectF global_coord_rect) const {
     QRectF local_coord_rect = transform().inverted().mapRect(global_coord_rect);
 
     for (auto &shape : children_) {
-        if (shape->testHit(local_coord_rect)) {
+        if (shape->hitTest(local_coord_rect)) {
             return true;
         }
     }

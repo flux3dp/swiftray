@@ -109,7 +109,7 @@ const QPointF *TransformBox::controlPoints() {
     return control_points_;
 }
 
-TransformBox::ControlPoint TransformBox::testHit(QPointF clickPoint, float tolerance) {
+TransformBox::ControlPoint TransformBox::hitTest(QPointF clickPoint, float tolerance) {
     controlPoints();
     for (int i = (int)ControlPoint::NW ; i != (int)ControlPoint::ROTATION; i++) {
         if ((control_points_[i] - clickPoint).manhattanLength() < tolerance) {
@@ -135,7 +135,7 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     QRectF bbox = boundingRect();
     QPointF d;
-    activating_control_ = testHit(canvas_coord, 10 / scene().scale());
+    activating_control_ = hitTest(canvas_coord, 10 / scene().scale());
 
     switch (activating_control_) {
     case ControlPoint::ROTATION:
@@ -287,7 +287,7 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     if (scene().mode() == Scene::Mode::EDITING_PATH) return false;
     if (scene().mode() == Scene::Mode::DRAWING_TEXT) return false;
-    ControlPoint cp = testHit(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
+    ControlPoint cp = hitTest(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
 
     switch (cp) {
     case ControlPoint::ROTATION:

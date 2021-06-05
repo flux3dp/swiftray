@@ -38,8 +38,8 @@ class Shape {
         // Virtual functions
         virtual QRectF boundingRect() const;
         virtual void cacheSelectionTestingData() ;
-        virtual bool testHit(QPointF global_coord, qreal tolerance) const;
-        virtual bool testHit(QRectF global_coord_rect) const;
+        virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
+        virtual bool hitTest(QRectF global_coord_rect) const;
         virtual void simplify();
         virtual void paint(QPainter *painter) const;
         virtual shared_ptr<Shape> clone() const;

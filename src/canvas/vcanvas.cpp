@@ -95,7 +95,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     }
 
     if (scene().mode() == Scene::Mode::SELECTING) {
-        ShapePtr hit = scene().testHit(canvas_coord);
+        ShapePtr hit = scene().hitTest(canvas_coord);
 
         if (hit != nullptr) {
             if (!hit->selected) {
@@ -132,7 +132,7 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
     qInfo() << "Mode" << (int)scene().mode();
-    ShapePtr hit = scene().testHit(canvas_coord);
+    ShapePtr hit = scene().hitTest(canvas_coord);
     if (scene().mode() == Scene::Mode::SELECTING) {
         if (hit != nullptr) {
             qInfo() << "Double clicked" << hit.get();

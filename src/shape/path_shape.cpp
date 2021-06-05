@@ -38,17 +38,17 @@ void PathShape::cacheSelectionTestingData() {
     selection_testing_rect_ = QRectF(bbox.x() - SELECTION_TOLERANCE, bbox.y() - SELECTION_TOLERANCE, bbox.width() + SELECTION_TOLERANCE * 2, bbox.height() + SELECTION_TOLERANCE * 2);
 }
 
-bool PathShape::testHit(QPointF global_coord, qreal tolerance) const {
+bool PathShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
 
     if (!selection_testing_rect_.contains(local_coord)) {
         return false;
     }
 
-    return testHit(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
+    return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
-bool PathShape::testHit(QRectF global_coord_rect) const {
+bool PathShape::hitTest(QRectF global_coord_rect) const {
     QPainterPath new_path = transform().map(path_);
     // TODO:: Logic still has bug when the path is not closed
     return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);

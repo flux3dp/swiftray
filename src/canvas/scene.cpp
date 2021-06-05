@@ -265,10 +265,10 @@ void Scene::removeSelections() {
     }
 }
 
-ShapePtr Scene::testHit(QPointF canvas_coord) {
+ShapePtr Scene::hitTest(QPointF canvas_coord) {
     for (auto &layer : layers()) {
         for (auto &shape : layer->children()) {
-            if (shape->testHit(canvas_coord, 5 / scale())) {
+            if (shape->hitTest(canvas_coord, 5 / scale())) {
                 return shape;
             }
         }

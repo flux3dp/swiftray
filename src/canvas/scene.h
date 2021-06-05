@@ -31,7 +31,7 @@ class Scene : QObject {
         void clearAll();
         void clearSelections();
         void removeSelections();
-        ShapePtr testHit(QPointF canvas_coord);
+        ShapePtr hitTest(QPointF canvas_coord);
         // Mode
         Mode mode();
         void setMode(Mode mode);

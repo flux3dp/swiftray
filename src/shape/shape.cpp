@@ -67,13 +67,13 @@ void Shape::simplify() {
     return;
 }
 
-bool Shape::testHit(QPointF, qreal) const {
-    qWarning() << "Shape::TestHit Point not implemented" << this;
+bool Shape::hitTest(QPointF, qreal) const {
+    qWarning() << "Shape::hitTest Point not implemented" << this;
     return false;
 }
 
-bool Shape::testHit(QRectF) const {
-    qWarning() << "Shape::TestHit Rect not implemented" << this;
+bool Shape::hitTest(QRectF) const {
+    qWarning() << "Shape::hitTest Rect not implemented" << this;
     return false;
 }
 

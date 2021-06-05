@@ -6,12 +6,12 @@ BitmapShape::BitmapShape(QImage &image) {
     bitmap_ = QPixmap::fromImage(grayscale);
 }
 
-bool BitmapShape::testHit(QPointF global_coord, qreal tolerance) const {
+bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
-    return testHit(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
+    return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
-bool BitmapShape::testHit(QRectF global_coord_rect) const {
+bool BitmapShape::hitTest(QRectF global_coord_rect) const {
     return boundingRect().intersects(global_coord_rect);
 }
 

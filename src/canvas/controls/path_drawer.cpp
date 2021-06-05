@@ -22,7 +22,7 @@ bool PathDrawer::mousePressEvent(QMouseEvent *e) {
     if (hitOrigin(canvas_coord)) {
         curve_target_ = working_path_.elementAt(0);
     } 
-    if (testHit(canvas_coord)) {
+    if (hitTest(canvas_coord)) {
         is_closing_curve_ = true;
     }
     return true;
@@ -54,7 +54,7 @@ bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
         return true;
     } 
     
-    if (!testHit(canvas_coord) || hitOrigin(canvas_coord)) {
+    if (!hitTest(canvas_coord) || hitOrigin(canvas_coord)) {
         if (is_drawing_curve_ ) {
             if (curve_target_ != invalid_point) {
                 if (last_ctrl_pt_ != invalid_point) { 
@@ -95,7 +95,7 @@ bool PathDrawer::hitOrigin(QPointF canvas_coord) {
     return false;
 }
 
-bool PathDrawer::testHit(QPointF canvas_coord) {
+bool PathDrawer::hitTest(QPointF canvas_coord) {
     for(int i = 0; i < working_path_.elementCount() ; i++ ) {
         QPainterPath::Element ele = working_path_.elementAt(i);
         if (ele.isMoveTo()) {

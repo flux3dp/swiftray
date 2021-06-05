@@ -15,7 +15,7 @@ bool PathEditor::mousePressEvent(QMouseEvent *e) {
     if (target_.get() == nullptr) return false;
     CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
-    dragging_index_ = testHit(getLocalCoord(canvas_coord));
+    dragging_index_ = hitTest(getLocalCoord(canvas_coord));
     if (dragging_index_ > -1) {
         return true;
     } else {
@@ -104,7 +104,7 @@ bool PathEditor::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     QPointF local_coord = getLocalCoord(canvas_coord);
 
-    if (testHit(local_coord) > -1) {
+    if (hitTest(local_coord) > -1) {
         *cursor = Qt::SizeAllCursor;
         return true;
     } else {
@@ -120,7 +120,7 @@ bool PathEditor::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-int PathEditor::testHit(QPointF local_coord) {
+int PathEditor::hitTest(QPointF local_coord) {
     if (target_.get() == nullptr) return -1;
     float tolerance = 8 / scene().scale();
     for(int i = 0; i < path().elementCount() ; i++ ) {
