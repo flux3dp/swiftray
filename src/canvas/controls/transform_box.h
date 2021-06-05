@@ -12,7 +12,7 @@
 class TransformBox : public CanvasControl {
         Q_OBJECT
     public:
-        enum class ControlPoint {
+        enum class Control {
             NONE = -1,
             NW = 0,
             N = 1,
@@ -20,7 +20,7 @@ class TransformBox : public CanvasControl {
             E = 3,
             SE = 4,
             S = 5,
-            SW= 6,
+            SW = 6,
             W = 7,
             ROTATION = 8
         };
@@ -39,14 +39,14 @@ class TransformBox : public CanvasControl {
     private:
         void applyRotate(bool temporarily = false);
         void applyScale(bool temporarily = false);
-        ControlPoint hitTest(QPointF clickPoint, float tolerance);
-        QPointF control_points_[8];
-        ControlPoint activating_control_;
+        Control hitTest(QPointF clickPoint, float tolerance);
+        QPointF controls_[8];
+        Control active_control_;
         QPointF action_center_;
         bool flipped_x;
         bool flipped_y;
-        QRectF init_rotation_rect_;
         QRectF bounding_rect_;
+
         QList<ShapePtr> selections_;
 
         double scale_x_to_apply_;
@@ -56,10 +56,10 @@ class TransformBox : public CanvasControl {
 
         QPointF cursor_;
 
-        double rotated_from;
+        double rotated_from_;
         QSizeF transformed_from_;
 
-        qreal bbox_rotation_;
+        qreal bbox_angle_;
         bool bbox_need_recalc_;
     public slots:
         void updateSelections();

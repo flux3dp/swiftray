@@ -48,7 +48,6 @@ void PathShape::calcBoundingBox() {
     hit_test_rect_ = QRectF(local_bbox.x() - SELECTION_TOLERANCE, local_bbox.y() - SELECTION_TOLERANCE, 
                             local_bbox.width() + SELECTION_TOLERANCE * 2, local_bbox.height() + SELECTION_TOLERANCE * 2);
     unrotated_bbox_ = (transform() * QTransform().translate(x(), y()).rotate(-rotation()).translate(-x(), -y())).map(path_).boundingRect();
-    qInfo() << "localbbox" << local_bbox << "unrotated" << unrotated_bbox_;
 }
 
 void PathShape::paint(QPainter *painter) {
