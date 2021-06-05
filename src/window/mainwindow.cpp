@@ -165,7 +165,7 @@ bool MainWindow::event(QEvent *e)  {
         return true;
 
     default:
-        qInfo() << "Event" << e;
+        //qInfo() << "Event" << e;
         break;
     }
 

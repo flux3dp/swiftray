@@ -41,7 +41,7 @@ class Shape {
         virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
         virtual bool hitTest(QRectF global_coord_rect) const;
         virtual void simplify();
-        virtual void paint(QPainter *painter) const;
+        virtual void paint(QPainter *painter);
         virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
     private:

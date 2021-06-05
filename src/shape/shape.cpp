@@ -82,7 +82,7 @@ QRectF Shape::boundingRect() const {
     return QRectF();
 }
 
-void Shape::paint(QPainter *) const {
+void Shape::paint(QPainter *) {
     qWarning() << "Shape::Paint not implemented" << this;
 }
 

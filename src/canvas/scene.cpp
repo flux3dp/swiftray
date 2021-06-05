@@ -1,4 +1,5 @@
 #include <canvas/scene.h>
+#include <boost/range/adaptor/reversed.hpp>
 #include <QDebug>
 
 Scene::Scene() noexcept {
@@ -267,7 +268,7 @@ void Scene::removeSelections() {
 
 ShapePtr Scene::hitTest(QPointF canvas_coord) {
     for (auto &layer : layers()) {
-        for (auto &shape : layer->children()) {
+        for (auto &shape : boost::adaptors::reverse(layer->children())) {
             if (shape->hitTest(canvas_coord, 5 / scale())) {
                 return shape;
             }

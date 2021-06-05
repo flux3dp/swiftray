@@ -58,7 +58,7 @@ QRectF PathShape::boundingRect() const {
     return transform().map(path_).boundingRect();
 }
 
-void PathShape::paint(QPainter *painter) const {
+void PathShape::paint(QPainter *painter) {
     painter->save();
     painter->setTransform(transform(), true);
     painter->drawPath(path_);

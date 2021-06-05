@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "./compile_and_run.sh",
+            "command": "make",
             "args": [],
             "group": "build",
             "presentation": {

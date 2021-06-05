@@ -70,7 +70,7 @@ QRectF GroupShape::boundingRect() const {
     // TODO: cache this;
     return QRectF(left, top, right - left, bottom - top);
 }
-void GroupShape::paint(QPainter *painter) const {
+void GroupShape::paint(QPainter *painter) {
     painter->save();
     painter->setTransform(transform(), true);
     painter->drawText(QPointF(), selected ? "Selected" : "Free");

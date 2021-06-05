@@ -1,9 +1,16 @@
+#include <QDebug>
 #include <canvas/layer.h>
 #include <shape/bitmap_shape.h>
 
 BitmapShape::BitmapShape(QImage &image) {
     QImage grayscale = image.convertToFormat(QImage::Format_Grayscale8);
-    bitmap_ = QPixmap::fromImage(grayscale);
+    bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(grayscale));
+}
+
+BitmapShape::BitmapShape(const BitmapShape &orig) {
+    bitmap_ = make_unique<QPixmap>(*orig.bitmap_);
+    setParent(orig.parent());
+    setTransform(orig.transform());
 }
 
 bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) const {
@@ -16,34 +23,42 @@ bool BitmapShape::hitTest(QRectF global_coord_rect) const {
 }
 
 QRectF BitmapShape::boundingRect() const {
-    return transform().mapRect(bitmap_.rect());
+    return transform().mapRect(bitmap_->rect());
 }
 
-void BitmapShape::paint(QPainter *painter) const {
+QImage &BitmapShape::image() {
+    std::uintptr_t parent_color = parent() == nullptr ? 0 : parent()->color().value();
+    std::uintptr_t bitmap_address = reinterpret_cast<std::uintptr_t>(bitmap_.get());
+    if (tinted_signature != parent_color + bitmap_address) {
+        tinted_signature = parent_color + bitmap_address;
+        qInfo() << "Tinted image" << tinted_signature;
+        tinted_image_ = bitmap_->toImage();
+        QImage mask(tinted_image_);
+        QPainter p;
+        p.begin(&mask);
+        p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        p.fillRect(QRect(0,0,mask.width(),mask.height()), parent()->color());
+        p.end();
+
+        p.begin(&tinted_image_);
+        p.setCompositionMode(QPainter::CompositionMode_ColorBurn);
+        p.drawImage(0, 0, mask);
+        p.end();
+    }
+    return tinted_image_;
+}
+
+void BitmapShape::paint(QPainter *painter) {
     //TODO cache this
-    QPainter p;
-
-    QImage img = bitmap_.toImage();
-    QImage mask(img);
-
-    p.begin(&mask);
-    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(QRect(0,0,mask.width(),mask.height()), parent()->color());
-    p.end();
-
-    p.begin(&img);
-    p.setCompositionMode(QPainter::CompositionMode_ColorBurn);
-    p.drawImage(0, 0, mask);
-    p.end();
-
     painter->save();
     painter->setTransform(transform(), true);
-    painter->drawImage(0, 0, img);
+    painter->drawImage(0, 0, image());
     painter->restore();
 }
 
 ShapePtr BitmapShape::clone() const {
-    return make_shared<BitmapShape>(*this);
+    ShapePtr new_shape = make_shared<BitmapShape>(*this);
+    return new_shape;
 }
 
 Shape::Type BitmapShape::type() const {

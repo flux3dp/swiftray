@@ -24,7 +24,7 @@ class PathShape : public Shape {
         bool hitTest(QPointF global_coord, qreal tolerance) const override;
         bool hitTest(QRectF global_coord_rect) const override;
         QRectF boundingRect() const override;
-        void paint(QPainter *painter) const override;
+        void paint(QPainter *painter) override;
         shared_ptr<Shape> clone() const override;
         Shape::Type type() const override;
         QPainterPath& path();
