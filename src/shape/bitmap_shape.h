@@ -10,9 +10,9 @@ class BitmapShape : public Shape {
     public:
         BitmapShape(QImage &image);
         BitmapShape(const BitmapShape &orig);
-        bool hitTest(QPointF global_coord, qreal tolerance) const override;
-        bool hitTest(QRectF global_coord_rect) const override;
-        QRectF boundingRect() const override;
+        bool hitTest(QPointF global_coord, qreal tolerance) override;
+        bool hitTest(QRectF global_coord_rect) override;
+        void calcBoundingBox() override;
         void paint(QPainter *painter) override;
         ShapePtr clone() const override;
         Shape::Type type() const override;

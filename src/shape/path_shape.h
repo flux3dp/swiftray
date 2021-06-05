@@ -19,11 +19,9 @@ class PathShape : public Shape {
         PathShape() noexcept;
         PathShape(QPainterPath path);
         virtual ~PathShape();
-        void simplify() override;
-        void cacheSelectionTestingData() override;
-        bool hitTest(QPointF global_coord, qreal tolerance) const override;
-        bool hitTest(QRectF global_coord_rect) const override;
-        QRectF boundingRect() const override;
+        bool hitTest(QPointF global_coord, qreal tolerance) override;
+        bool hitTest(QRectF global_coord_rect) override;
+        void calcBoundingBox() override;
         void paint(QPainter *painter) override;
         shared_ptr<Shape> clone() const override;
         Shape::Type type() const override;
@@ -32,8 +30,7 @@ class PathShape : public Shape {
         QPainterPath path_;
     private:
         QHash<int, NodeType> node_types_;
-        QList<QPointF> selection_testing_points_;
-        QRectF selection_testing_rect_;
+        QRectF hit_test_rect_;
 };
 
 #endif // PATHSHAPE_H

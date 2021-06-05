@@ -32,22 +32,24 @@ class Shape {
         void setPos(QPointF pos);
         void setRotation(qreal r);
         QTransform transform() const;
+        QRectF boundingRect();
         void applyTransform(QTransform transform);
         void setTransform(QTransform transform);
 
         // Virtual functions
-        virtual QRectF boundingRect() const;
-        virtual void cacheSelectionTestingData() ;
-        virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
-        virtual bool hitTest(QRectF global_coord_rect) const;
-        virtual void simplify();
+        virtual bool hitTest(QPointF global_coord, qreal tolerance);
+        virtual bool hitTest(QRectF global_coord_rect);
         virtual void paint(QPainter *painter);
         virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
+        virtual void calcBoundingBox();
     private:
         Layer* parent_;
         QTransform transform_;
         int ref_count_;
+        bool bbox_need_recalc_;
+    protected:
+        QRectF bbox_;
 };
 
 typedef shared_ptr<Shape> ShapePtr;

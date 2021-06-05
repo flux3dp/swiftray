@@ -46,40 +46,38 @@ void Shape::setParent(Layer* parent) {
 
 void Shape::applyTransform(QTransform transform) {
     transform_ = transform_ * transform;
+    bbox_need_recalc_ = true;
 }
 
 void Shape::setTransform(QTransform transform) {
     transform_ = transform;
+    bbox_need_recalc_ = true;
+}
+
+void Shape::calcBoundingBox() {
+    qWarning() << "Shape::calcBoundingBox not implemented" << this;
 }
 
 QTransform Shape::transform() const {
     return transform_;
 }
 
-
-void Shape::cacheSelectionTestingData() {
-    qWarning() << "Shape::CacheSelection not implemented" << this;
-}
-
-
-void Shape::simplify() {
-    qWarning() << "Shape::Simplify not implemented" << this;
-    return;
-}
-
-bool Shape::hitTest(QPointF, qreal) const {
-    qWarning() << "Shape::hitTest Point not implemented" << this;
+bool Shape::hitTest(QPointF, qreal) {
+    qWarning() << "Shape::hitTest(point) not implemented" << this;
     return false;
 }
 
-bool Shape::hitTest(QRectF) const {
-    qWarning() << "Shape::hitTest Rect not implemented" << this;
+bool Shape::hitTest(QRectF) {
+    qWarning() << "Shape::hitTest(rect) not implemented" << this;
     return false;
 }
 
-QRectF Shape::boundingRect() const {
-    qWarning() << "Shape::Bounding rect not implemented" << this;
-    return QRectF();
+QRectF Shape::boundingRect() {
+    if (bbox_need_recalc_) {
+        calcBoundingBox();
+        bbox_need_recalc_ = false;
+    }
+    return bbox_;
 }
 
 void Shape::paint(QPainter *) {

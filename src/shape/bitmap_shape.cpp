@@ -13,17 +13,17 @@ BitmapShape::BitmapShape(const BitmapShape &orig) {
     setTransform(orig.transform());
 }
 
-bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) const {
+bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) {
     QPointF local_coord = transform().inverted().map(global_coord);
     return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
-bool BitmapShape::hitTest(QRectF global_coord_rect) const {
+bool BitmapShape::hitTest(QRectF global_coord_rect) {
     return boundingRect().intersects(global_coord_rect);
 }
 
-QRectF BitmapShape::boundingRect() const {
-    return transform().mapRect(bitmap_->rect());
+void BitmapShape::calcBoundingBox() {
+    bbox_ = transform().mapRect(bitmap_->rect());
 }
 
 QImage &BitmapShape::image() {

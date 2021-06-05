@@ -7,18 +7,7 @@ GroupShape::GroupShape(QList<ShapePtr> &children) {
     children_.append(children);
 }
 
-void GroupShape::simplify() {
-    for (auto &shape : children_) {
-        shape->simplify();
-    }
-}
-
-void GroupShape::cacheSelectionTestingData() {
-    for (auto &shape : children_) {
-        shape->cacheSelectionTestingData();
-    }
-}
-bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) const {
+bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) {
     QPointF local_coord = transform().inverted().map(global_coord);
 
     for (auto &shape : children_) {
@@ -29,7 +18,7 @@ bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) const {
 
     return false;
 }
-bool GroupShape::hitTest(QRectF global_coord_rect) const {
+bool GroupShape::hitTest(QRectF global_coord_rect) {
     QRectF local_coord_rect = transform().inverted().mapRect(global_coord_rect);
 
     for (auto &shape : children_) {
@@ -40,7 +29,7 @@ bool GroupShape::hitTest(QRectF global_coord_rect) const {
 
     return false;
 }
-QRectF GroupShape::boundingRect() const {
+void GroupShape::calcBoundingBox() {
     float top = std::numeric_limits<float>::max();
     float bottom = std::numeric_limits<float>::min();
     float left = std::numeric_limits<float>::max();
@@ -67,8 +56,7 @@ QRectF GroupShape::boundingRect() const {
         }
     }
 
-    // TODO: cache this;
-    return QRectF(left, top, right - left, bottom - top);
+    bbox_ = QRectF(left, top, right - left, bottom - top);
 }
 void GroupShape::paint(QPainter *painter) {
     painter->save();

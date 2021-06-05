@@ -13,11 +13,6 @@ QList<ShapePtr> &TransformBox::selections() {
 }
 
 void TransformBox::updateSelections() {
-    for (int i = 0; i < selections().size() ; i ++) {
-        // Recalculate the click testing points
-        selections().at(i)->simplify();
-    }
-
     selections().clear();
     selections().append(scene().selections());
     updateBoundingRect();

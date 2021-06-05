@@ -12,50 +12,41 @@ PathShape::PathShape() noexcept {
 PathShape::PathShape(QPainterPath path) : Shape() {
     path_ = path;
     
-    // Realign object to center
+    // Realign path to center in local coord 0, 0
     QRectF bbox = path_.boundingRect();
     path_ = QTransform()
             .translate(-bbox.center().x(), -bbox.center().y())
             .map(path_);
-    // Set x,y to center
+    // Set global coord of this object to original path center
     setTransform(transform().translate(bbox.center().x(), bbox.center().y()));
-
-    simplify();
+    calcBoundingBox();
 }
 
 
 PathShape::~PathShape() {
 }
 
-void PathShape::simplify() {
-    // Caching paths to points for selection testing
-    cacheSelectionTestingData();
-}
-
-// only calls this when the path is different
-void PathShape::cacheSelectionTestingData() {
-    QRectF bbox = path_.boundingRect();
-    selection_testing_rect_ = QRectF(bbox.x() - SELECTION_TOLERANCE, bbox.y() - SELECTION_TOLERANCE, bbox.width() + SELECTION_TOLERANCE * 2, bbox.height() + SELECTION_TOLERANCE * 2);
-}
-
-bool PathShape::hitTest(QPointF global_coord, qreal tolerance) const {
+bool PathShape::hitTest(QPointF global_coord, qreal tolerance) {
     QPointF local_coord = transform().inverted().map(global_coord);
 
-    if (!selection_testing_rect_.contains(local_coord)) {
+    if (!hit_test_rect_.contains(local_coord)) {
         return false;
     }
 
     return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
-bool PathShape::hitTest(QRectF global_coord_rect) const {
+bool PathShape::hitTest(QRectF global_coord_rect) {
     QPainterPath new_path = transform().map(path_);
     // TODO:: Logic still has bug when the path is not closed
     return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);
 }
 
-QRectF PathShape::boundingRect() const {
-    return transform().map(path_).boundingRect();
+void PathShape::calcBoundingBox() {
+    bbox_ = transform().map(path_).boundingRect();
+    QRectF local_bbox = path_.boundingRect(); //todo merge bbox_ with local_bbox
+    hit_test_rect_ = QRectF(local_bbox.x() - SELECTION_TOLERANCE, local_bbox.y() - SELECTION_TOLERANCE, 
+                            local_bbox.width() + SELECTION_TOLERANCE * 2, local_bbox.height() + SELECTION_TOLERANCE * 2);
 }
 
 void PathShape::paint(QPainter *painter) {
@@ -79,6 +70,7 @@ QPainterPath& PathShape::path(){
 }
 
 void PathShape::setPath(QPainterPath &path) {
+    // Input path coord is local coord
     path_ = path;
-    simplify();
+    calcBoundingBox();
 }
