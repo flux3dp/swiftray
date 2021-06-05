@@ -110,7 +110,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
-    qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
+    //qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" << canvas_coord;
 
     for (auto &control : controls_) {
         if (control->mouseMoveEvent(e)) return;

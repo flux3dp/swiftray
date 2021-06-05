@@ -43,11 +43,13 @@ class Shape {
         virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
         virtual void calcBoundingBox();
+        QTransform temp_transform_;
+        QRectF unrotated_bbox_;
     private:
         Layer* parent_;
         QTransform transform_;
-        int ref_count_;
         bool bbox_need_recalc_;
+        qreal rotation_;
     protected:
         QRectF bbox_;
 };

@@ -91,6 +91,7 @@ void TextShape::makeCursorRect(int cursor) {
 void TextShape::paint(QPainter* painter) {
     painter->save();
     painter->setTransform(transform(), true);
+    painter->setTransform(temp_transform_, true);
     if (editing_ && 
         QDateTime::currentMSecsSinceEpoch() % 1000 < 500) {
         // Show 500 msec and hide 500 msec

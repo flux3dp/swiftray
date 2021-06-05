@@ -33,24 +33,34 @@ class TransformBox : public CanvasControl {
         const QPointF *controlPoints();
         QRectF boundingRect();
         QList<ShapePtr> &selections();
-        void move(QPointF offset);
+        void calcScale(QPointF canvas_coord);
+        void applyMove(bool temporarily = false);
 
     private:
-        void rotate(double rotation);
-        void scale(QPointF scaleCenter, float scaleX, float scaleY);
+        void applyRotate(bool temporarily = false);
+        void applyScale(bool temporarily = false);
         ControlPoint hitTest(QPointF clickPoint, float tolerance);
         QPointF control_points_[8];
         ControlPoint activating_control_;
         QPointF action_center_;
-        float cumulated_rotation_;
         bool flipped_x;
         bool flipped_y;
         QRectF init_rotation_rect_;
         QRectF bounding_rect_;
         QList<ShapePtr> selections_;
 
-        float transform_rotation;
-        QSizeF transform_scaler;
+        double scale_x_to_apply_;
+        double scale_y_to_apply_;
+        double rotation_to_apply_;
+        QPointF translate_to_apply_;
+
+        QPointF cursor_;
+
+        double rotated_from;
+        QSizeF transformed_from_;
+
+        qreal bbox_rotation_;
+        bool bbox_need_recalc_;
     public slots:
         void updateSelections();
         void updateBoundingRect();

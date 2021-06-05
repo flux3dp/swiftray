@@ -52,6 +52,7 @@ void BitmapShape::paint(QPainter *painter) {
     //TODO cache this
     painter->save();
     painter->setTransform(transform(), true);
+    painter->setTransform(temp_transform_, true);
     painter->drawImage(0, 0, image());
     painter->restore();
 }

@@ -15,6 +15,7 @@ class Scene : QObject {
             MOVING,
             MULTI_SELECTING,
             TRANSFORMING,
+            ROTATING,
             DRAWING_RECT,
             DRAWING_LINE,
             DRAWING_OVAL,

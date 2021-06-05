@@ -6,7 +6,9 @@
 using namespace std;
 
 Shape::Shape() noexcept {
+    rotation_ = 0;
     transform_ = QTransform();
+    temp_transform_ = QTransform();
     selected = false;
     parent_ = nullptr;
 }
@@ -32,6 +34,10 @@ qreal Shape::scaleY() const {
     return transform_.m23();
 }
 
+qreal Shape::rotation() const {
+    return rotation_;
+}
+
 QPointF Shape::pos() const {
     return QPointF(x(), y());
 }
@@ -52,6 +58,10 @@ void Shape::applyTransform(QTransform transform) {
 void Shape::setTransform(QTransform transform) {
     transform_ = transform;
     bbox_need_recalc_ = true;
+}
+
+void Shape::setRotation(qreal rotation) {
+    rotation_ = rotation;
 }
 
 void Shape::calcBoundingBox() {

@@ -61,6 +61,7 @@ void GroupShape::calcBoundingBox() {
 void GroupShape::paint(QPainter *painter) {
     painter->save();
     painter->setTransform(transform(), true);
+    painter->setTransform(temp_transform_, true);
     painter->drawText(QPointF(), selected ? "Selected" : "Free");
 
     for (auto &shape : children_) {
