@@ -49,6 +49,7 @@ bool TextDrawer::keyPressEvent(QKeyEvent *e) {
         scene().setMode(Scene::Mode::SELECTING);
         return true;
     }
+    return false;
 }
 
 void TextDrawer::paint(QPainter *painter){

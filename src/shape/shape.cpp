@@ -26,14 +26,6 @@ qreal Shape::y() const {
     return transform_.dy();
 }
 
-qreal Shape::scaleX() const {
-    return transform_.m22();
-}
-
-qreal Shape::scaleY() const {
-    return transform_.m23();
-}
-
 qreal Shape::rotation() const {
     return rotation_;
 }

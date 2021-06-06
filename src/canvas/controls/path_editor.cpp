@@ -89,6 +89,8 @@ void PathEditor::moveElementTo(int index, QPointF local_coord) {
                 }
             }
             break;
+        default:
+            break;
     }
     path().setElementPositionAt(index, local_coord.x(), local_coord.y());
     target().invalidBBox();

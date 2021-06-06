@@ -22,7 +22,6 @@ PathShape::PathShape(QPainterPath path) : Shape() {
     calcBoundingBox();
 }
 
-
 PathShape::~PathShape() {
 }
 

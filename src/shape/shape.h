@@ -18,37 +18,38 @@ class Shape {
         };
         Shape() noexcept;
         virtual ~Shape();
-        // Common members
+
+        // General attributes
         bool selected;
-        QPointF pos() const;
         qreal x() const;
         qreal y() const;
+        QPointF pos() const;
         qreal rotation() const;
-        qreal scaleX() const;
-        qreal scaleY() const;
         Layer* parent() const;
-        void setParent(Layer* parent);
         void setX(qreal x);
         void setY(qreal y);
         void setPos(QPointF pos);
         void setRotation(qreal r);
-        const QTransform& transform() const;
-        
-        // Transform related
+        void setParent(Layer* parent);
+
+        // Bounding box
         QRectF boundingRect() const;
         QPolygonF rotatedBBox() const;
         void invalidBBox();
+
+        // Transform related
+        const QTransform& transform() const;
         void applyTransform(const QTransform &transform);
         void setTransform(const QTransform &transform);
         void setTempTransform(const QTransform &transform);
 
         // Virtual functions
+        virtual void calcBoundingBox() const;
+        virtual shared_ptr<Shape> clone() const;
         virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
         virtual bool hitTest(QRectF global_coord_rect) const;
         virtual void paint(QPainter *painter) const;
-        virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
-        virtual void calcBoundingBox() const;
     private:
         Layer* parent_;
         mutable bool bbox_need_recalc_;

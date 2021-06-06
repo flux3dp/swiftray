@@ -19,12 +19,14 @@ class PathShape : public Shape {
         PathShape() noexcept;
         PathShape(QPainterPath path);
         virtual ~PathShape();
+        
+        void calcBoundingBox() const override;
+        ShapePtr clone() const override;
         bool hitTest(QPointF global_coord, qreal tolerance) const override;
         bool hitTest(QRectF global_coord_rect) const override;
-        void calcBoundingBox() const override;
         void paint(QPainter *painter) const override;
-        shared_ptr<Shape> clone() const override;
         Shape::Type type() const override;
+
         QPainterPath& path();
         void setPath(QPainterPath &path);
     private:

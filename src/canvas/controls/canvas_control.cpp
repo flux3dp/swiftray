@@ -10,12 +10,13 @@ Scene &CanvasControl::scene() {
 bool CanvasControl::mousePressEvent(QMouseEvent *e) {
     dragged_from_screen_ = e->pos();
     dragged_from_canvas_ = scene().getCanvasCoord(e->pos());
+    return false;
 }
 
-bool CanvasControl::mouseMoveEvent(QMouseEvent *e) {}
-bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) {}
-bool CanvasControl::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {}
-bool CanvasControl::keyPressEvent(QKeyEvent *e) {}
+bool CanvasControl::mouseMoveEvent(QMouseEvent *e) { return false; }
+bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) { return false; }
+bool CanvasControl::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) { return false; }
+bool CanvasControl::keyPressEvent(QKeyEvent *e) { return false; }
 void CanvasControl::paint(QPainter *painter) {}
 
 

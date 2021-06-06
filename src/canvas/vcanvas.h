@@ -64,13 +64,13 @@ class VCanvas : public QQuickPaintedItem {
         SVGPPParser svgpp_parser;
         TransformBox transform_box_;
         MultiSelectionBox multi_selection_box_;
-        RectDrawer rect_drawer_;
-        OvalDrawer oval_drawer_;
-        LineDrawer line_drawer_;
-        PathDrawer path_drawer_;
-        TextDrawer text_drawer_;
-        PathEditor path_editor_;
         Grid grid_;
+        LineDrawer line_drawer_;
+        OvalDrawer oval_drawer_;
+        PathDrawer path_drawer_;
+        PathEditor path_editor_;
+        RectDrawer rect_drawer_;
+        TextDrawer text_drawer_;
         QList<CanvasControl *> controls_;
 
         QTimer *timer;

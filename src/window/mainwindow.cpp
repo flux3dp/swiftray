@@ -217,6 +217,8 @@ void MainWindow::updateMode() {
     case Scene::Mode::DRAWING_TEXT:
         ui->actionDrawText->setChecked(true);
         break;
+    default:
+        break;
     }
 }
 

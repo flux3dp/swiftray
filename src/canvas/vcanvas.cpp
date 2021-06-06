@@ -15,12 +15,12 @@ VCanvas::VCanvas(QQuickItem *parent): QQuickPaintedItem(parent),
     svgpp_parser (SVGPPParser(scene())),
     transform_box_ (TransformBox(scene())),
     multi_selection_box_ (MultiSelectionBox(scene())),
-    rect_drawer_(RectDrawer(scene())),
-    oval_drawer_(OvalDrawer(scene())),
+    grid_(Grid(scene())),
     line_drawer_(LineDrawer(scene())),
+    oval_drawer_(OvalDrawer(scene())),
     path_drawer_(PathDrawer(scene())),
     path_editor_(PathEditor(scene())),
-    grid_(Grid(scene())),
+    rect_drawer_(RectDrawer(scene())),
     text_drawer_(TextDrawer(scene())) {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
