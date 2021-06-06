@@ -106,7 +106,6 @@ void TransformBox::applyScale(bool temporarily) {
             shape->setTempTransform(transform);
         } else {
             shape->setTempTransform(QTransform());
-            qInfo() << "Applying scale" << scale_x_to_apply_ << scale_y_to_apply_;
             shape->applyTransform(transform);
         }
     }
@@ -229,8 +228,6 @@ void TransformBox::calcScale(QPointF canvas_coord) {
 
     QPointF d = local_coord - local_transform_invert.map(action_center_);
 
-    qInfo() << "Local coord" << local_coord << "BBox center" << bbox.center() << "Action center" << action_center_;
-
     if (active_control_ == Control::N || 
         active_control_ == Control::NE || 
         active_control_ == Control::NW) d.setY(-d.y());
@@ -269,7 +266,6 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
             break;
         case Scene::Mode::ROTATING:
             rotation_to_apply_ = (atan2(canvas_coord.y() - action_center_.y(), canvas_coord.x() - action_center_.x()) - rotated_from_) * 180 / 3.1415926;
-            qInfo() << "Transform rotation" << rotation_to_apply_ << action_center_;
             applyRotate(true);
             break;
         

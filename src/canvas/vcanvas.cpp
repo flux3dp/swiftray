@@ -377,7 +377,7 @@ void VCanvas::editDifference() {
 
 void VCanvas::fitWindow() {
     qInfo() << "Object size" << size();
-    // Speed up by using half resolution: setTextureSize(QSize(width()/2, height()/2));
+    // Notes: we can even speed up by using half resolution: setTextureSize(QSize(width()/2, height()/2));
     qreal proper_scale = min((width() - 100)/scene().width(), (height() - 100)/scene().height());
     QPointF proper_translate = QPointF((width() - scene().width() * proper_scale) / 2,
                                      (height() - scene().height() * proper_scale) / 2);
