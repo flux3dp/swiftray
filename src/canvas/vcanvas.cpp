@@ -299,8 +299,8 @@ void VCanvas::editGroup() {
 
     qInfo() << "Groupping";
     scene().stackStep();
-    scene().removeSelections();
     const ShapePtr group_ptr = make_shared<GroupShape>(transform_box_.selections());
+    scene().removeSelections();
     scene().activeLayer().children().push_back(group_ptr);
     scene().setSelection(group_ptr);
 }
@@ -312,6 +312,7 @@ void VCanvas::editUngroup() {
 
     for (auto &shape : group->children()) {
         shape->applyTransform(group->transform());
+        shape->setRotation(shape->rotation() + group->rotation());
         scene().activeLayer().children().push_back(shape);
     }
 
