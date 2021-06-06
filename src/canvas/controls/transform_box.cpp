@@ -12,6 +12,7 @@ QList<ShapePtr> &TransformBox::selections() {
 }
 
 void TransformBox::updateSelections() {
+    reset();
     selections().clear();
     selections().append(scene().selections());
     bbox_need_recalc_ = true;
@@ -19,12 +20,12 @@ void TransformBox::updateSelections() {
 
 void TransformBox::updateBoundingRect() {
     // Check if all selection's rotation are the same
-    bool all_same_rotation = true;
+    bool all_same_direction = true;
     qreal rotation = selections().size() > 0 ? selections().first()->rotation() : 0;
     
     for(ShapePtr &selection : selections()) {
         if (selection->rotation() != rotation) {
-            all_same_rotation = false;
+            all_same_direction = false;
             break;
         }
     }
@@ -34,19 +35,29 @@ void TransformBox::updateBoundingRect() {
     float left = std::numeric_limits<float>::max();
     float right = std::numeric_limits<float>::min();
 
-    for (int i = 0; i < selections().size(); i++) {
-        // TODO:: need to add all same rotation scenario
-        QRectF bb = selections().at(i)->boundingRect();
-        if (all_same_rotation) bb = selections().at(i)->unrotated_bbox_;
+    if (all_same_direction) {
+        QPainterPath local_bbox_path;
+        for (ShapePtr &shape : selections()) {
+            local_bbox_path.addPolygon(shape->rotatedBBox());
+        }
+        QRectF unrotated_bbox = QTransform().rotate(-rotation).map(local_bbox_path).boundingRect();
+        QPolygonF rotated_bbox = QTransform().rotate(-rotation).inverted().map(QPolygonF(unrotated_bbox));
 
-        if (bb.left() < left) left = bb.left();
-        if (bb.top() < top) top = bb.top();
-        if (bb.right() > right) right = bb.right();
-        if (bb.bottom() > bottom) bottom = bb.bottom();
+        QPointF global_center = (rotated_bbox[0] + rotated_bbox[1] + rotated_bbox[2] + rotated_bbox[3]) / 4;
+        bounding_rect_ = QRectF(global_center - QPointF(unrotated_bbox.width() / 2, unrotated_bbox.height() / 2), unrotated_bbox.size());
+        bbox_angle_ = rotation;
+    } else {
+        for (ShapePtr &shape : selections()) {
+            // TODO:: need to add all same rotation scenario
+            QRectF bb = shape->boundingRect();
+            if (bb.left() < left) left = bb.left();
+            if (bb.top() < top) top = bb.top();
+            if (bb.right() > right) right = bb.right();
+            if (bb.bottom() > bottom) bottom = bb.bottom();
+        }
+        bounding_rect_ = QRectF(left, top, right - left, bottom - top);
+        bbox_angle_ = 0;
     }
-
-    bounding_rect_ = QRectF(left, top, right - left, bottom - top);
-    bbox_angle_ = all_same_rotation ? rotation : 0;
 }
 
 QRectF TransformBox::boundingRect() {
@@ -66,9 +77,9 @@ void TransformBox::applyRotate(bool temporarily) {
 
     for (ShapePtr &shape : selections()) {
         if (temporarily) {
-            shape->temp_transform_ = transform;
+            shape->setTempTransform(transform);
         } else {
-            shape->temp_transform_ = QTransform();
+            shape->setTempTransform(QTransform());
             shape->applyTransform(transform);
             shape->setRotation(shape->rotation() + rotation_to_apply_);
         }
@@ -92,9 +103,9 @@ void TransformBox::applyScale(bool temporarily) {
 
     for (ShapePtr &shape : selections()) {
         if (temporarily) {
-            shape->temp_transform_ = transform;
+            shape->setTempTransform(transform);
         } else {
-            shape->temp_transform_ = QTransform();
+            shape->setTempTransform(QTransform());
             qInfo() << "Applying scale" << scale_x_to_apply_ << scale_y_to_apply_;
             shape->applyTransform(transform);
         }
@@ -114,9 +125,9 @@ void TransformBox::applyMove(bool temporarily) {
 
     for (ShapePtr &shape : selections()) {
         if (temporarily) {
-            shape->temp_transform_ = transform;
+            shape->setTempTransform(transform);
         } else {
-            shape->temp_transform_ = QTransform();
+            shape->setTempTransform(QTransform());
             shape->applyTransform(transform);
         }
     }
@@ -129,18 +140,27 @@ void TransformBox::applyMove(bool temporarily) {
 }
 
 const QPointF *TransformBox::controlPoints() {
-    QRectF bbox = boundingRect();
-    QTransform rotate_transform = QTransform().translate(bbox.center().x(), bbox.center().y())
-                                            .rotate(bbox_angle_ + rotation_to_apply_)
-                                            .translate(-bbox.center().x(), -bbox.center().y());
-    controls_[0] = rotate_transform.map(bbox.topLeft());
-    controls_[1] = rotate_transform.map((bbox.topLeft() + bbox.topRight()) / 2);
-    controls_[2] = rotate_transform.map(bbox.topRight());
-    controls_[3] = rotate_transform.map((bbox.topRight() + bbox.bottomRight()) / 2);
-    controls_[4] = rotate_transform.map(bbox.bottomRight());
-    controls_[5] = rotate_transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
-    controls_[6] = rotate_transform.map(bbox.bottomLeft());
-    controls_[7] = rotate_transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
+    QRectF bbox = boundingRect().translated(translate_to_apply_.x(), translate_to_apply_.y());
+    QTransform transform = QTransform().translate(bbox.center().x(), bbox.center().y())
+                                       .rotate(bbox_angle_ + rotation_to_apply_)
+                                       .translate(-bbox.center().x(), -bbox.center().y());
+
+    if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) {
+        transform = transform * QTransform().translate(action_center_.x(), action_center_.y())
+                                .rotate(bbox_angle_)
+                                .scale(scale_x_to_apply_, scale_y_to_apply_)
+                                .rotate(-bbox_angle_)
+                                .translate(-action_center_.x(), -action_center_.y());
+    }
+
+    controls_[0] = transform.map(bbox.topLeft());
+    controls_[1] = transform.map((bbox.topLeft() + bbox.topRight()) / 2);
+    controls_[2] = transform.map(bbox.topRight());
+    controls_[3] = transform.map((bbox.topRight() + bbox.bottomRight()) / 2);
+    controls_[4] = transform.map(bbox.bottomRight());
+    controls_[5] = transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
+    controls_[6] = transform.map(bbox.bottomLeft());
+    controls_[7] = transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
     return controls_;
 }
 
@@ -169,25 +189,18 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
 
     CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+    reset();
 
     active_control_ = hitTest(canvas_coord, 10 / scene().scale());
     if (active_control_ == Control::NONE) return false;
 
-    scale_x_to_apply_ = scale_y_to_apply_ = 1;
-    rotation_to_apply_ = 0;
-    translate_to_apply_ = QPointF();
-    flipped_x = flipped_y = false;
-
-    QRectF bbox = boundingRect();
-
     if (active_control_ == Control::ROTATION) {
-        action_center_ = bbox.center();
+        action_center_ = (controls_[0] + controls_[4]) / 2; // Rotate around rotated bbox center
         rotated_from_ = atan2(canvas_coord.y() - action_center_.y(), canvas_coord.x() - action_center_.x());
-        qInfo() << "Transform rotation" << rotated_from_;
         scene().setMode(Scene::Mode::ROTATING);
     } else {
         action_center_ = controls_[((int)active_control_ + 4) % 8];
-        transformed_from_ = QSizeF(bbox.size());
+        transformed_from_ = QSizeF(boundingRect().size());
         scene().setMode(Scene::Mode::TRANSFORMING);
     }
     scene().stackStep();
@@ -202,8 +215,7 @@ bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
     if (translate_to_apply_ != QPointF()) applyMove(false);
     if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) applyScale(false);
 
-    active_control_ = Control::NONE;
-    flipped_x = flipped_y = false;
+    reset();
 
     scene().setMode(Scene::Mode::SELECTING);
     return true;
@@ -223,7 +235,8 @@ void TransformBox::calcScale(QPointF canvas_coord) {
         active_control_ == Control::NE || 
         active_control_ == Control::NW) d.setY(-d.y());
     if (active_control_ == Control::NW || 
-        active_control_ == Control::W) d.setX(-d.x());
+        active_control_ == Control::W ||
+        active_control_ == Control::SW) d.setX(-d.x());
 
     scale_x_to_apply_ = d.x() / transformed_from_.width();
     scale_y_to_apply_ = d.y() / transformed_from_.height();
@@ -315,20 +328,19 @@ void TransformBox::paint(QPainter *painter) {
     auto pt_pen = QPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine, Qt::RoundCap);
 
     if (selections().size() > 0) {
-        if (active_control_ == Control::ROTATION) {
-            painter->save();
-            painter->translate(action_center_);
-            painter->setPen(blue_pen);
-            painter->rotate(bbox_angle_ + rotation_to_apply_);
-            painter->drawRect(boundingRect().translated(-boundingRect().center()));
-            painter->restore();
-        } else {
-            painter->setPen(blue_pen);
-            painter->drawPolyline(controlPoints(), 8);
-            painter->drawLine(controlPoints()[7], controlPoints()[0]);
-            painter->setPen(pt_pen);
-            painter->drawPoints(controlPoints(), 8);
-            painter->drawPoint(boundingRect().center());
-        }
+        controlPoints();
+        painter->setPen(blue_pen);
+        painter->drawPolyline(controls_, 8);
+        painter->drawLine(controls_[7], controls_[0]);
+        painter->setPen(pt_pen);
+        painter->drawPoints(controls_, 8);
+        painter->drawPoint((controls_[0] + controls_[4]) / 2);
     }
+}
+
+void TransformBox::reset() {
+    active_control_ = Control::NONE;
+    scale_x_to_apply_ = scale_y_to_apply_ = 1;
+    rotation_to_apply_ = 0;
+    translate_to_apply_ = QPointF();
 }

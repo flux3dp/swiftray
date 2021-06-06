@@ -30,6 +30,7 @@ class TransformBox : public CanvasControl {
         bool mouseMoveEvent(QMouseEvent *e) override;
         bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
         void paint(QPainter *painter) override;
+        void reset();
         const QPointF *controlPoints();
         QRectF boundingRect();
         QList<ShapePtr> &selections();
@@ -43,8 +44,6 @@ class TransformBox : public CanvasControl {
         QPointF controls_[8];
         Control active_control_;
         QPointF action_center_;
-        bool flipped_x;
-        bool flipped_y;
         QRectF bounding_rect_;
 
         QList<ShapePtr> selections_;
