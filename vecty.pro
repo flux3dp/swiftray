@@ -13,6 +13,18 @@ INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
 INCLUDEPATH += /usr/local/opt/libxml2/include
 
+# Remove -Wall and -Wextra flag
+QMAKE_CFLAGS_WARN_ON -= -Wall
+QMAKE_CXXFLAGS_WARN_ON -= -Wall
+QMAKE_CFLAGS_WARN_ON -= -Wextra
+QMAKE_CXXFLAGS_WARN_ON -= -Wextra
+
+QMAKE_CXXFLAGS += -Wall
+# QMAKE_CXXFLAGS += -Wextra
+QMAKE_CXXFLAGS += -Wno-unused-local-typedef
+QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+QMAKE_CXXFLAGS += -Wno-unused-variable
+
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
