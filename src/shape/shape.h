@@ -1,3 +1,4 @@
+#include <QRectF>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -31,27 +32,32 @@ class Shape {
         void setY(qreal y);
         void setPos(QPointF pos);
         void setRotation(qreal r);
-        QTransform transform() const;
-        QRectF boundingRect();
-        void applyTransform(QTransform transform);
-        void setTransform(QTransform transform);
+        const QTransform& transform() const;
+        
+        // Transform related
+        QRectF boundingRect() const;
+        QPolygonF rotatedBBox() const;
+        void invalidBBox();
+        void applyTransform(const QTransform &transform);
+        void setTransform(const QTransform &transform);
+        void setTempTransform(const QTransform &transform);
 
         // Virtual functions
-        virtual bool hitTest(QPointF global_coord, qreal tolerance);
-        virtual bool hitTest(QRectF global_coord_rect);
-        virtual void paint(QPainter *painter);
+        virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
+        virtual bool hitTest(QRectF global_coord_rect) const;
+        virtual void paint(QPainter *painter) const;
         virtual shared_ptr<Shape> clone() const;
         virtual Type type() const;
-        virtual void calcBoundingBox();
-        QTransform temp_transform_;
-        QRectF unrotated_bbox_;
+        virtual void calcBoundingBox() const;
     private:
         Layer* parent_;
-        QTransform transform_;
-        bool bbox_need_recalc_;
+        mutable bool bbox_need_recalc_;
         qreal rotation_;
     protected:
-        QRectF bbox_;
+        QTransform temp_transform_;
+        mutable QPolygonF rotated_bbox_;
+        mutable QRectF bbox_;
+        QTransform transform_;
 };
 
 typedef shared_ptr<Shape> ShapePtr;

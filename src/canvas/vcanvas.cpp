@@ -152,9 +152,7 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
             }
         } 
     } else if (scene().mode() == Scene::Mode::EDITING_PATH) {
-        scene().setMode(Scene::Mode::SELECTING);
-        scene().clearSelections();
-        path_editor_.reset();
+        path_editor_.endEditing();
     }
 }
 

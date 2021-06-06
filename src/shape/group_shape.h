@@ -7,13 +7,13 @@ class GroupShape : public Shape {
     public:
         GroupShape();
         GroupShape(QList<ShapePtr> &children);
-        bool hitTest(QPointF global_coord, qreal tolerance) override;
-        bool hitTest(QRectF global_coord_rect) override;
-        void calcBoundingBox() override;
-        void paint(QPainter *painter) override;
+        bool hitTest(QPointF global_coord, qreal tolerance) const override;
+        bool hitTest(QRectF global_coord_rect) const override;
+        void calcBoundingBox() const override;
+        void paint(QPainter *painter) const override;
         ShapePtr clone() const override;
         Shape::Type type() const override;
-        QList<ShapePtr> &children() ;
+        const QList<ShapePtr> &children() const;
     private:
         QList<ShapePtr> children_;
 };

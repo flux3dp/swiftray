@@ -13,7 +13,7 @@ class Layer {
         shared_ptr<Layer> clone();
         QList<ShapePtr> &children();
 
-        QColor color();
+        QColor color() const;
         void setColor(QColor color);
 
         QString name;

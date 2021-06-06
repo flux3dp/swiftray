@@ -91,6 +91,7 @@ void PathEditor::moveElementTo(int index, QPointF local_coord) {
             break;
     }
     path().setElementPositionAt(index, local_coord.x(), local_coord.y());
+    target().invalidBBox();
 }
 
 qreal PathEditor::distance(QPointF point) {
@@ -230,4 +231,21 @@ void PathEditor::setTarget(ShapePtr target) {
         }
     }
 
+}
+
+
+bool PathEditor::keyPressEvent(QKeyEvent *e) {
+    if (scene().mode() != Scene::Mode::EDITING_PATH) return false;
+    if (e->key() == Qt::Key::Key_Escape) {
+        endEditing();
+    }
+    return true;
+}
+
+void PathEditor::endEditing() {
+    scene().setMode(Scene::Mode::SELECTING);
+    scene().clearSelections();
+    target_->invalidBBox();
+    scene().setSelection(target_);
+    reset();
 }

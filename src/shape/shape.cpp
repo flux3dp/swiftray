@@ -50,12 +50,12 @@ void Shape::setParent(Layer* parent) {
     parent_ = parent;
 }
 
-void Shape::applyTransform(QTransform transform) {
+void Shape::applyTransform(const QTransform &transform) {
     transform_ = transform_ * transform;
     bbox_need_recalc_ = true;
 }
 
-void Shape::setTransform(QTransform transform) {
+void Shape::setTransform(const QTransform &transform) {
     transform_ = transform;
     bbox_need_recalc_ = true;
 }
@@ -64,25 +64,25 @@ void Shape::setRotation(qreal rotation) {
     rotation_ = rotation;
 }
 
-void Shape::calcBoundingBox() {
+void Shape::calcBoundingBox() const {
     qWarning() << "Shape::calcBoundingBox not implemented" << this;
 }
 
-QTransform Shape::transform() const {
+const QTransform& Shape::transform() const {
     return transform_;
 }
 
-bool Shape::hitTest(QPointF, qreal) {
+bool Shape::hitTest(QPointF, qreal) const{
     qWarning() << "Shape::hitTest(point) not implemented" << this;
     return false;
 }
 
-bool Shape::hitTest(QRectF) {
+bool Shape::hitTest(QRectF) const {
     qWarning() << "Shape::hitTest(rect) not implemented" << this;
     return false;
 }
 
-QRectF Shape::boundingRect() {
+QRectF Shape::boundingRect() const {
     if (bbox_need_recalc_) {
         calcBoundingBox();
         bbox_need_recalc_ = false;
@@ -90,7 +90,15 @@ QRectF Shape::boundingRect() {
     return bbox_;
 }
 
-void Shape::paint(QPainter *) {
+QPolygonF Shape::rotatedBBox() const {
+    if (bbox_need_recalc_) {
+        calcBoundingBox();
+        bbox_need_recalc_ = false;
+    }
+    return rotated_bbox_;
+}
+
+void Shape::paint(QPainter *) const {
     qWarning() << "Shape::Paint not implemented" << this;
 }
 
@@ -102,4 +110,12 @@ shared_ptr<Shape> Shape::clone() const {
 
 Shape::Type Shape::type() const {
     return Shape::Type::None;
+}
+
+void Shape::invalidBBox() {
+    bbox_need_recalc_ = true;
+}
+
+void Shape::setTempTransform(const QTransform &transform) {
+    temp_transform_ = transform;
 }

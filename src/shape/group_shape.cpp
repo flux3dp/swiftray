@@ -1,13 +1,15 @@
+#include <QDebug>
 #include <shape/group_shape.h>
 
-GroupShape::GroupShape() {
+GroupShape::GroupShape(): Shape() {
 }
 
-GroupShape::GroupShape(QList<ShapePtr> &children) {
+GroupShape::GroupShape(QList<ShapePtr> &children): Shape() {
     children_.append(children);
+    invalidBBox();
 }
 
-bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) {
+bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
 
     for (auto &shape : children_) {
@@ -18,7 +20,7 @@ bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) {
 
     return false;
 }
-bool GroupShape::hitTest(QRectF global_coord_rect) {
+bool GroupShape::hitTest(QRectF global_coord_rect) const {
     QRectF local_coord_rect = transform().inverted().mapRect(global_coord_rect);
 
     for (auto &shape : children_) {
@@ -29,7 +31,7 @@ bool GroupShape::hitTest(QRectF global_coord_rect) {
 
     return false;
 }
-void GroupShape::calcBoundingBox() {
+void GroupShape::calcBoundingBox() const {
     float top = std::numeric_limits<float>::max();
     float bottom = std::numeric_limits<float>::min();
     float left = std::numeric_limits<float>::max();
@@ -37,31 +39,24 @@ void GroupShape::calcBoundingBox() {
 
     for (auto &shape : children_) {
         // TODO: improve bounding box algorithm (draft logic)
-        QRectF bb = transform().mapRect(shape->boundingRect());
+        QRectF bb = shape->boundingRect();
 
-        if (bb.left() < left) {
-            left = bb.left();
-        }
-
-        if (bb.top() < top) {
-            top = bb.top();
-        }
-
-        if (bb.right() > right) {
-            right = bb.right();
-        }
-
-        if (bb.bottom() > bottom) {
-            bottom = bb.bottom();
-        }
+        if (bb.left() < left) left = bb.left();
+        if (bb.top() < top) top = bb.top();
+        if (bb.right() > right) right = bb.right();
+        if (bb.bottom() > bottom) bottom = bb.bottom();
     }
 
-    bbox_ = QRectF(left, top, right - left, bottom - top);
+    QRectF local_bbox = QRectF(left, top, right - left, bottom - top);
+    qInfo() << "Group local bbox" << local_bbox;
+    this->bbox_ = transform().mapRect(local_bbox);
+    this->rotated_bbox_ = transform().map(QPolygonF(local_bbox));
 }
-void GroupShape::paint(QPainter *painter) {
+
+void GroupShape::paint(QPainter *painter) const {
     painter->save();
-    painter->setTransform(transform(), true);
     painter->setTransform(temp_transform_, true);
+    painter->setTransform(transform(), true);
     painter->drawText(QPointF(), selected ? "Selected" : "Free");
 
     for (auto &shape : children_) {
@@ -74,6 +69,7 @@ void GroupShape::paint(QPainter *painter) {
 ShapePtr GroupShape::clone() const {
     GroupShape *group = new GroupShape();
     group->setTransform(transform());
+    group->setRotation(rotation());
 
     for (auto &shape : children_) {
         group->children_.push_back(shape->clone());
@@ -82,7 +78,7 @@ ShapePtr GroupShape::clone() const {
     return ShapePtr(group);
 }
 
-QList<ShapePtr> &GroupShape::children() {
+const QList<ShapePtr> &GroupShape::children() const{
     return children_;
 }
 

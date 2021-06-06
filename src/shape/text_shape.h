@@ -11,7 +11,7 @@ class TextShape : public PathShape {
         TextShape(QString text, QFont font);
         Shape::Type type() const override;
         
-        void paint(QPainter* painter) override;
+        void paint(QPainter* painter) const override;
         QString text();
         QFont font();
         float lineHeight();

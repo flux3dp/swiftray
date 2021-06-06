@@ -20,7 +20,7 @@ void Scene::setSelection(ShapePtr shape) {
     setSelections(list);
 }
 
-void Scene::setSelections(QList<ShapePtr> &shapes) {
+void Scene::setSelections(const QList<ShapePtr> &shapes) {
     clearSelections();
     selections().append(shapes);
 
@@ -249,7 +249,7 @@ bool Scene::setActiveLayer(QString name) {
 }
 
 
-QList<LayerPtr> &Scene::layers() {
+QList<LayerPtr> &Scene::layers(){
     return layers_;
 }
 

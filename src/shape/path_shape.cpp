@@ -5,7 +5,7 @@
 
 using namespace std;
 
-PathShape::PathShape() noexcept {
+PathShape::PathShape() noexcept : Shape() {
     
 }
 
@@ -18,7 +18,7 @@ PathShape::PathShape(QPainterPath path) : Shape() {
             .translate(-bbox.center().x(), -bbox.center().y())
             .map(path_);
     // Set global coord of this object to original path center
-    setTransform(transform().translate(bbox.center().x(), bbox.center().y()));
+    setTransform(QTransform().translate(bbox.center().x(), bbox.center().y()));
     calcBoundingBox();
 }
 
@@ -26,7 +26,7 @@ PathShape::PathShape(QPainterPath path) : Shape() {
 PathShape::~PathShape() {
 }
 
-bool PathShape::hitTest(QPointF global_coord, qreal tolerance) {
+bool PathShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
 
     if (!hit_test_rect_.contains(local_coord)) {
@@ -36,21 +36,21 @@ bool PathShape::hitTest(QPointF global_coord, qreal tolerance) {
     return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
 }
 
-bool PathShape::hitTest(QRectF global_coord_rect) {
+bool PathShape::hitTest(QRectF global_coord_rect) const {
     QPainterPath new_path = transform().map(path_);
     // TODO:: Logic still has bug when the path is not closed
     return new_path.intersects(global_coord_rect) && !new_path.contains(global_coord_rect);
 }
 
-void PathShape::calcBoundingBox() {
-    bbox_ = transform().map(path_).boundingRect();
-    QRectF local_bbox = path_.boundingRect(); //todo merge bbox_ with local_bbox
-    hit_test_rect_ = QRectF(local_bbox.x() - SELECTION_TOLERANCE, local_bbox.y() - SELECTION_TOLERANCE, 
+void PathShape::calcBoundingBox() const {
+    QRectF local_bbox = path_.boundingRect();
+    this->bbox_ = transform().map(path_).boundingRect();
+    this->rotated_bbox_ = transform().map(QPolygonF(local_bbox));    
+    this->hit_test_rect_ = QRectF(local_bbox.x() - SELECTION_TOLERANCE, local_bbox.y() - SELECTION_TOLERANCE, 
                             local_bbox.width() + SELECTION_TOLERANCE * 2, local_bbox.height() + SELECTION_TOLERANCE * 2);
-    unrotated_bbox_ = (transform() * QTransform().translate(x(), y()).rotate(-rotation()).translate(-x(), -y())).map(path_).boundingRect();
 }
 
-void PathShape::paint(QPainter *painter) {
+void PathShape::paint(QPainter *painter) const {
     painter->save();
     painter->setTransform(temp_transform_, true);
     painter->setTransform(transform(), true);
@@ -74,5 +74,5 @@ QPainterPath& PathShape::path(){
 void PathShape::setPath(QPainterPath &path) {
     // Input path coord is local coord
     path_ = path;
-    calcBoundingBox();
+    invalidBBox();
 }

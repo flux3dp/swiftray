@@ -10,18 +10,18 @@ class BitmapShape : public Shape {
     public:
         BitmapShape(QImage &image);
         BitmapShape(const BitmapShape &orig);
-        bool hitTest(QPointF global_coord, qreal tolerance) override;
-        bool hitTest(QRectF global_coord_rect) override;
-        void calcBoundingBox() override;
-        void paint(QPainter *painter) override;
+        bool hitTest(QPointF global_coord, qreal tolerance) const override;
+        bool hitTest(QRectF global_coord_rect) const override;
+        void calcBoundingBox() const override;
+        void paint(QPainter *painter) const override;
         ShapePtr clone() const override;
         Shape::Type type() const override;
-        QImage &image();
+        QImage &image() const;
     private:
         QRectF bounding_rect_;
         unique_ptr<QPixmap> bitmap_;
-        QImage tinted_image_;
-        std::uintptr_t tinted_signature;
+        mutable QImage tinted_image_; //Cache object
+        mutable std::uintptr_t tinted_signature; //Cache object
 };
 
 #endif // BITMAPSHAPE_H

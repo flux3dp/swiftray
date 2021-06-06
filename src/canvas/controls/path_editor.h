@@ -12,9 +12,11 @@ class PathEditor : public CanvasControl {
         bool mouseMoveEvent(QMouseEvent *e) override;
         bool mouseReleaseEvent(QMouseEvent *e) override;
         bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
+        bool keyPressEvent(QKeyEvent *e) override;
         void moveElementTo(int index, QPointF local_coord);
         void paint(QPainter *painter) override;
         void reset();
+        void endEditing();
         int hitTest(QPointF canvas_coord);
         qreal distance(QPointF point);
         PathShape& target();

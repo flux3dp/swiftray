@@ -88,7 +88,7 @@ void TextShape::makeCursorRect(int cursor) {
     };
 }
 
-void TextShape::paint(QPainter* painter) {
+void TextShape::paint(QPainter* painter) const {
     painter->save();
     painter->setTransform(transform(), true);
     painter->setTransform(temp_transform_, true);

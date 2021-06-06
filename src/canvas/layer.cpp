@@ -42,7 +42,7 @@ void Layer::clear() {
     children_.clear();
 }
 
-QColor Layer::color() {
+QColor Layer::color() const {
     return color_;
 }
 
