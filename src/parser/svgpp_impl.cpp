@@ -1,11 +1,6 @@
 #include <parser/svgpp_common.h>
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-#include <svgpp/policy/xml/libxml2.hpp>
-#include <svgpp/svgpp.hpp>
 #include <svgpp/parser/external_function/parse_all_impl.hpp>
 #include <svgpp/factory/color.hpp>
-#include <parser/svgpp_color_factory.h>
 #include <parser/svgpp_impl.h>
 #include <parser/svgpp_context.h>
 
