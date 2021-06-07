@@ -66,3 +66,6 @@ SVGPP_ON(unicode_bidi)
 SVGPP_ON(visibility) 
 SVGPP_ON(word_spacing)
 SVGPP_ON(writing_mode)
+// Begin - Customization
+SVGPP_ON(data_original_layer)
+// End - Customization

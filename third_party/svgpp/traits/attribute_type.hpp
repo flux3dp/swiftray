@@ -128,6 +128,13 @@ template<>              struct attribute_type<tag::element::fePointLight, tag::a
 template<>              struct attribute_type<tag::element::feSpotLight, tag::attribute::x        > { typedef tag::type::number type; };
 template<>              struct attribute_type<tag::element::feSpotLight, tag::attribute::y        > { typedef tag::type::number type; };
 
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_speed>               { typedef tag::type::number type; }; 
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_strength>            { typedef tag::type::number type; };
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_repeat>              { typedef tag::type::integer type; };
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_height>              { typedef tag::type::number type; };
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_diode>               { typedef tag::type::integer type; };
+template<>              struct attribute_type<tag::element::g, tag::attribute::data_zstep>               { typedef tag::type::number type; };
+
 template<class Element> struct attribute_type<Element, tag::attribute::numOctaves>                { typedef tag::type::integer type; };
 template<class Element> struct attribute_type<Element, tag::attribute::targetX   >                { typedef tag::type::integer type; }; 
 template<class Element> struct attribute_type<Element, tag::attribute::targetY   >                { typedef tag::type::integer type; };
@@ -460,5 +467,10 @@ template<class Element> struct attribute_type<Element, tag::attribute::xlink::ti
 template<class Element> struct attribute_type<Element, tag::attribute::xml::lang             > { typedef tag::type::string type; };
 template<>              struct attribute_type<tag::element::script, tag::attribute::type     > { typedef tag::type::string type; };
 template<>              struct attribute_type<tag::element::style, tag::attribute::type      > { typedef tag::type::string type; };
+
+template<> struct attribute_type<tag::element::g, tag::attribute::data_name>                            { typedef tag::type::string type; };
+template<> struct attribute_type<tag::element::g, tag::attribute::data_value>                           { typedef tag::type::string type; };
+template<> struct attribute_type<tag::element::g, tag::attribute::data_config_name>                     { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_original_layer>             { typedef tag::type::string type; };
 
 }}

@@ -1,3 +1,7 @@
+// Attributes must be placed in alphabatical orders!
+// Attributes must be placed in alphabatical orders!
+// Attributes must be placed in alphabatical orders!
+
 SVGPP_ON      (accent_height                      , accent-height)
 SVGPP_ON      (accumulate                         , accumulate)
 SVGPP_ON      (additive                           , additive)
@@ -34,6 +38,20 @@ SVGPP_ON_STYLE(cursor                             , cursor)
 SVGPP_ON      (cx                                 , cx)
 SVGPP_ON      (cy                                 , cy)
 SVGPP_ON      (d                                  , d)
+
+// Begin - customized data attribute (attributes must be placed in alphabatical orders!)
+SVGPP_ON      (data_config_name                   , data-configName)
+SVGPP_ON      (data_diode                         , data-diode)
+SVGPP_ON      (data_height                        , data-height)
+SVGPP_ON      (data_name                          , data-name)
+SVGPP_ON      (data_original_layer                , data-original-layer)
+SVGPP_ON      (data_repeat                        , data-repeat)
+SVGPP_ON      (data_speed                         , data-speed)
+SVGPP_ON      (data_strength                      , data-strength)
+SVGPP_ON      (data_value                         , data-value)
+SVGPP_ON      (data_zstep                         , data-zstep)
+// End - customized data attribute
+
 SVGPP_ON      (descent                            , descent)
 SVGPP_ON      (diffuseConstant                    , diffuseConstant)
 SVGPP_ON_STYLE(direction                          , direction)
