@@ -1,10 +1,10 @@
+#include <parser/svgpp_common.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <svgpp/policy/xml/libxml2.hpp>
 #include <svgpp/svgpp.hpp>
 #include <svgpp/parser/external_function/parse_all_impl.hpp>
 #include <svgpp/factory/color.hpp>
-#include <parser/svgpp_common.h>
 #include <parser/svgpp_color_factory.h>
 #include <parser/svgpp_impl.h>
 #include <parser/svgpp_context.h>
@@ -34,7 +34,7 @@ tag::element::svg,
     tag::element::polygon,
     tag::element::polyline,
     tag::element::rect
-    >::type processed_elements_t;
+    >::type processed_elements1_t;
 
 bool svgpp_parse(QByteArray &data, SVGPPContext &context) {
     try {
@@ -44,7 +44,7 @@ bool svgpp_parse(QByteArray &data, SVGPPContext &context) {
 
         if (root) {
             qInfo() << "SVG Element " << root;
-            document_traversal < processed_elements<processed_elements_t>,
+            document_traversal < processed_elements<processed_elements1_t>,
                                processed_attributes<traits::shapes_attributes_by_element>,
                                transform_events_policy<policy::transform_events::forward_to_method<SVGPPContext>>,
                                svgpp::error_policy<svgpp::policy::error::default_policy<SVGPPContext>>
