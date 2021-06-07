@@ -214,6 +214,12 @@ template<class Element> struct attribute_type<Element, tag::attribute::xml::base
 template<class Element> struct attribute_type<Element, tag::attribute::fill>   { typedef tag::type::paint type; };
 template<class Element> struct attribute_type<Element, tag::attribute::stroke> { typedef tag::type::paint type; };
 
+// Simon: this library force string type to be parsed at BaseContext (I don't know why), iri_fragment can be used as string
+template<class Element> struct attribute_type<Element, tag::attribute::data_name>                       { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_value>                      { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_config_name>                { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_original_layer>             { typedef tag::type::string type; };
+
 #define SVGPP_ON_ATTR(name, values) \
   template<class Element> struct attribute_type<Element, tag::attribute::name> \
     { typedef tag::type::literal_enumeration<literal_enumeration_values<tag::attribute::name>::type> type; };
@@ -467,10 +473,5 @@ template<class Element> struct attribute_type<Element, tag::attribute::xlink::ti
 template<class Element> struct attribute_type<Element, tag::attribute::xml::lang             > { typedef tag::type::string type; };
 template<>              struct attribute_type<tag::element::script, tag::attribute::type     > { typedef tag::type::string type; };
 template<>              struct attribute_type<tag::element::style, tag::attribute::type      > { typedef tag::type::string type; };
-
-template<> struct attribute_type<tag::element::g, tag::attribute::data_name>                            { typedef tag::type::string type; };
-template<> struct attribute_type<tag::element::g, tag::attribute::data_value>                           { typedef tag::type::string type; };
-template<> struct attribute_type<tag::element::g, tag::attribute::data_config_name>                     { typedef tag::type::string type; };
-template<class Element> struct attribute_type<Element, tag::attribute::data_original_layer>             { typedef tag::type::string type; };
 
 }}

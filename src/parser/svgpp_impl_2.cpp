@@ -3,353 +3,18 @@
 #include <iostream>
 #include <parser/svgpp_common.h>
 
-#include <parser/stylable_context.h>
+#include <parser/base_context.h>
+#include <parser/group_context.h>
+#include <parser/image_context.h>
+#include <parser/reference_context.h>
+#include <parser/shape_context.h>
+#include <parser/text_context.h>
+#include <parser/use_context.h>
+
 #include <parser/svgpp_context.h>
 #include <parser/svgpp_impl.h>
 
 using namespace svgpp;
-
-class ObjectContext {
-public:
-  void set(tag::attribute::width, double val){};
-  void set(tag::attribute::height, double val){};
-  void set(tag::attribute::preserveAspectRatio, bool, tag::value::none){};
-
-  void set(tag::attribute::color, color_t){};
-  void set(tag::attribute::marker, tag::value::none){};
-
-  void set(tag::attribute::marker_end, tag::value::none){};
-  void set(tag::attribute::marker_mid, tag::value::none){};
-  void set(tag::attribute::marker_start, tag::value::none){};
-
-  void set(svgpp::tag::attribute::data_strength, double val) {
-    qInfo() << "Data-Strength" << val;
-  }
-
-  void set(svgpp::tag::attribute::data_speed, double val) {
-    qInfo() << "Data-Speed" << val;
-  }
-
-  void set(svgpp::tag::attribute::data_repeat, int val) {}
-  void set(svgpp::tag::attribute::data_height, double val) {}
-  void set(svgpp::tag::attribute::data_diode, int val) {}
-  void set(svgpp::tag::attribute::data_zstep, double val) {}
-
-  template <class IRI>
-  void set(svgpp::tag::attribute::data_config_name, tag::iri_fragment,
-           IRI const &fragment) {
-    qInfo() << "xlink::href" << fragment;
-  }
-
-  void set(svgpp::tag::attribute::data_config_name, RangedChar fragment) {
-    qInfo() << "xlink::href"
-            << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
-  }
-
-  template <class IRI>
-  void set(svgpp::tag::attribute::data_original_layer, tag::iri_fragment,
-           IRI const &fragment) {
-    qInfo() << "xlink::href" << fragment;
-  }
-
-  void set(svgpp::tag::attribute::data_original_layer, RangedChar fragment) {
-    qInfo() << "xlink::href"
-            << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
-  }
-
-  template <class IRI>
-  void set(tag::attribute::xlink::href, tag::iri_fragment,
-           IRI const &fragment) {
-    qInfo() << "xlink::href" << fragment;
-  }
-
-  void set(tag::attribute::xlink::href, RangedChar fragment) {
-    qInfo() << "xlink::href"
-            << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
-  }
-
-  template <typename MaskType> void set(tag::attribute::mask, MaskType){};
-  template <typename Range>
-  void set(tag::attribute::mask, tag::iri_fragment, Range){};
-
-  template <typename Range>
-  void set(tag::attribute::marker, tag::iri_fragment, Range){};
-  template <typename Range> void set(tag::attribute::marker, Range){};
-
-  template <typename Range>
-  void set(tag::attribute::marker_start, tag::iri_fragment, Range){};
-  template <typename Range> void set(tag::attribute::marker_start, Range){};
-
-  template <typename Range>
-  void set(tag::attribute::marker_mid, tag::iri_fragment, Range){};
-  template <typename Range> void set(tag::attribute::marker_mid, Range){};
-
-  template <typename Range>
-  void set(tag::attribute::marker_end, tag::iri_fragment, Range){};
-  template <typename Range> void set(tag::attribute::marker_end, Range){};
-
-  template <typename MinMax, typename SliceMeet>
-  void set(tag::attribute::preserveAspectRatio, bool, MinMax, SliceMeet){};
-  template <typename MaskType> void set(tag::attribute::clip_path, MaskType){};
-  template <typename Range>
-  void set(tag::attribute::clip_path, tag::iri_fragment, Range){};
-
-private:
-  double empty;
-};
-
-class BaseContext : public StylableContext, public ObjectContext {
-public:
-  BaseContext(double resolutionDPI) {
-    qInfo() << "Enter base";
-    length_factory_.set_absolute_units_coefficient(resolutionDPI,
-                                                   tag::length_units::in());
-  }
-
-  using ObjectContext::set;
-  using StylableContext::set;
-
-  // Called by Context Factory
-  void on_enter_element(tag::element::path) { qInfo() << "Enter path"; }
-
-  void on_enter_element(tag::element::rect) { qInfo() << "Enter rect"; }
-
-  void on_enter_element(tag::element::text) { qInfo() << "Enter text"; }
-
-  void on_enter_element(tag::element::image) { qInfo() << "Enter image"; }
-
-  // Called by Context Factory
-  void on_exit_element() { qInfo() << "Exit ele"; }
-
-  // Transform Events Policy
-  void transform_matrix(const boost::array<double, 6> &matrix) {}
-
-  // Viewport Events Policy
-  void set_viewport(double viewport_x, double viewport_y, double viewport_width,
-                    double viewport_height) {
-    length_factory_.set_viewport_size(viewport_width, viewport_height);
-  }
-
-  void set_viewbox_size(double viewbox_width, double viewbox_height) {
-    length_factory_.set_viewport_size(viewbox_width, viewbox_height);
-  }
-
-  void disable_rendering() {}
-
-  static bool unknown_attribute_error(std::string name) {
-    qInfo() << "Unknown attribute" << QString::fromStdString(name);
-    return true;
-  }
-
-  // If textcontext doesn't work
-  template <class T> void set_text(T const &text) {
-    qInfo() << "Set text" << text;
-  }
-
-  template <class T> void set(tag::attribute::x, T const &range) {}
-
-  template <class T> void set(tag::attribute::y, T const &range) {}
-
-  // Length Policy interface
-  typedef factory::length::unitless<> length_factory_type;
-
-  length_factory_type const &length_factory() const { return length_factory_; }
-
-private:
-  length_factory_type length_factory_;
-};
-
-class ShapeContext : public BaseContext {
-public:
-  ShapeContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter shape";
-  }
-
-  using BaseContext::set;
-  using StylableContext::set;
-  // Path Events Policy methods
-  void path_move_to(double x, double y, tag::coordinate::absolute) {
-    std::cout << "Move to " << x << "," << y << std::endl;
-  }
-
-  void path_line_to(double x, double y, tag::coordinate::absolute) {
-    // std::cout << "Line to " << x << "," << y << std::endl;
-  }
-
-  void path_cubic_bezier_to(double x1, double y1, double x2, double y2,
-                            double x, double y, tag::coordinate::absolute) {}
-
-  void path_quadratic_bezier_to(double x1, double y1, double x, double y,
-                                tag::coordinate::absolute) {}
-
-  void path_elliptical_arc_to(double rx, double ry, double x_axis_rotation,
-                              bool large_arc_flag, bool sweep_flag, double x,
-                              double y, tag::coordinate::absolute) {}
-
-  void path_close_subpath() {}
-
-  void path_exit() {}
-
-  // Marker Events Policy method
-  void marker(marker_vertex v, double x, double y, double directionality,
-              unsigned marker_index) {
-    if (marker_index >= markers_.size())
-      markers_.resize(marker_index + 1);
-    MarkerPos &m = markers_[marker_index];
-    m.v = v;
-    m.x = x;
-    m.y = y;
-    m.directionality = directionality;
-  }
-
-private:
-  struct MarkerPos {
-    marker_vertex v;
-    double x, y, directionality;
-  };
-
-  typedef std::vector<MarkerPos> Markers;
-  Markers markers_;
-};
-
-class UseContext : public BaseContext {
-public:
-  UseContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter use";
-  }
-
-  boost::optional<double> const &width() const { return width_; }
-  boost::optional<double> const &height() const { return height_; }
-
-  using BaseContext::set;
-
-  template <class IRI>
-  void set(tag::attribute::xlink::href, tag::iri_fragment,
-           IRI const &fragment) {
-    fragment_id_.assign(boost::begin(fragment), boost::end(fragment));
-  }
-
-  template <class IRI>
-  void set(tag::attribute::xlink::href, IRI const &fragment) {
-    std::cerr << "External references aren't supported\n";
-  }
-
-  void set(tag::attribute::x, double val) { x_ = val; }
-
-  void set(tag::attribute::y, double val) { y_ = val; }
-
-  void set(tag::attribute::width, double val) { width_ = val; }
-
-  void set(tag::attribute::height, double val) { height_ = val; }
-
-  void on_exit_element();
-
-private:
-  std::string fragment_id_;
-  double x_, y_;
-  boost::optional<double> width_, height_;
-};
-
-class ImageContext : public BaseContext {
-public:
-  ImageContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter image";
-  }
-
-  boost::optional<double> const &width() const { return width_; }
-  boost::optional<double> const &height() const { return height_; }
-
-  using BaseContext::set;
-
-  template <class IRI>
-  void set(tag::attribute::xlink::href, tag::iri_fragment,
-           IRI const &fragment) {
-    qInfo() << "xlink::href" << fragment;
-  }
-
-  void set(tag::attribute::xlink::href, RangedChar fragment) {
-    qInfo() << "xlink::href"
-            << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
-  }
-
-  void set(tag::attribute::x, double val) { x_ = val; }
-
-  void set(tag::attribute::y, double val) { y_ = val; }
-
-  void set(tag::attribute::width, double val) { width_ = val; }
-
-  void set(tag::attribute::height, double val) { height_ = val; }
-
-  void on_exit_element();
-
-private:
-  std::string fragment_id_;
-  double x_, y_;
-  boost::optional<double> width_, height_;
-};
-
-class ReferencedSymbolOrSvgContext : public BaseContext {
-public:
-  ReferencedSymbolOrSvgContext(UseContext &referencing)
-      : BaseContext(referencing), referencing_(referencing) {}
-
-  // Viewport Events Policy
-  void get_reference_viewport_size(double &width, double &height) {
-    if (referencing_.width())
-      width = *referencing_.width();
-    if (referencing_.height())
-      height = *referencing_.height();
-  }
-
-private:
-  UseContext &referencing_;
-};
-
-class TextContext : public BaseContext {
-public:
-  TextContext(BaseContext const &parent) : BaseContext(parent), x_(0), y_(0) {
-    qInfo() << "Enter text";
-  }
-
-  template <class Range> void set_text(Range const &text) {
-    text_content_.append(boost::begin(text), boost::end(text));
-  }
-
-  using ObjectContext::set;
-  using StylableContext::set;
-
-  template <class Range> void set(tag::attribute::x, Range const &range) {
-    for (typename boost::range_iterator<Range>::type it = boost::begin(range),
-                                                     end = boost::end(range);
-         it != end; ++it)
-      std::cout << *it;
-  }
-
-  template <class Range> void set(tag::attribute::y, Range const &range) {
-    for (typename boost::range_iterator<Range>::type it = boost::begin(range),
-                                                     end = boost::end(range);
-         it != end; ++it)
-      std::cout << *it;
-  }
-
-private:
-  std::string text_content_;
-  double x_, y_;
-};
-
-class GroupContext : public ShapeContext {
-public:
-  GroupContext(ShapeContext const &parent) : ShapeContext(parent) {
-    qInfo() << "Enter text";
-  }
-  using ObjectContext::set;
-  using ShapeContext::set;
-  using StylableContext::set;
-};
 
 struct ChildContextFactories {
   template <class ParentContext, class ElementTag, class Enable = void>
@@ -359,10 +24,10 @@ struct ChildContextFactories {
   };
 };
 
-/*template<>
+template <>
 struct ChildContextFactories::apply<BaseContext, tag::element::g, void> {
   typedef factory::context::on_stack<GroupContext> type;
-};*/
+};
 
 // This specialization handles all shape elements (elements from
 // traits::shape_elements sequence)
@@ -375,12 +40,12 @@ struct ChildContextFactories::apply<
 };
 
 template <>
-struct ChildContextFactories::apply<BaseContext, tag::element::use_> {
+struct ChildContextFactories::apply<BaseContext, tag::element::use_, void> {
   typedef factory::context::on_stack<UseContext> type;
 };
 
 template <>
-struct ChildContextFactories::apply<BaseContext, tag::element::image> {
+struct ChildContextFactories::apply<BaseContext, tag::element::image, void> {
   typedef factory::context::on_stack<ImageContext> type;
 };
 
@@ -396,6 +61,44 @@ struct ChildContextFactories::apply<UseContext, tag::element::symbol, void> {
 };
 
 template <class ElementTag>
+struct ChildContextFactories::apply<
+    GroupContext, ElementTag,
+    typename boost::enable_if<
+        boost::mpl::has_key<traits::shape_elements, ElementTag>>::type> {
+  typedef factory::context::on_stack<ShapeContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::image> {
+  typedef factory::context::on_stack<ImageContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::text> {
+  typedef factory::context::on_stack<TextContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::tspan> {
+  typedef factory::context::on_stack<TextContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::symbol> {
+  typedef factory::context::on_stack<ReferencedSymbolOrSvgContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::use_> {
+  typedef factory::context::on_stack<UseContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<GroupContext, tag::element::g> {
+  typedef factory::context::on_stack<GroupContext> type;
+};
+
+template <class ElementTag>
 struct ChildContextFactories::apply<UseContext, ElementTag, void>
     : ChildContextFactories::apply<BaseContext, ElementTag> {};
 
@@ -406,6 +109,11 @@ struct ChildContextFactories::apply<ReferencedSymbolOrSvgContext, ElementTag,
 
 template <>
 struct ChildContextFactories::apply<BaseContext, tag::element::text> {
+  typedef factory::context::on_stack<TextContext> type;
+};
+
+template <>
+struct ChildContextFactories::apply<BaseContext, tag::element::tspan> {
   typedef factory::context::on_stack<TextContext> type;
 };
 
@@ -437,7 +145,7 @@ struct processed_elements_t
           tag::element::path, tag::element::polygon, tag::element::polyline,
           tag::element::rect,
           // Text Element
-          tag::element::text, tag::element::tspan,
+          tag::element::text,
           // Image Element
           tag::element::image> {};
 
@@ -501,8 +209,7 @@ struct processed_attributes_t
                            svgpp::tag::attribute::data_zstep>,
           boost::mpl::pair<svgpp::tag::element::g,
                            svgpp::tag::attribute::data_config_name>,
-          boost::mpl::pair<svgpp::tag::element::g,
-                           svgpp::tag::attribute::data_original_layer>> {};
+          svgpp::tag::attribute::data_original_layer> {};
 
 struct ignored_elements_t : boost::mpl::set<tag::element::animateMotion> {};
 
