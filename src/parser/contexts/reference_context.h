@@ -1,6 +1,6 @@
 #include <QDebug>
-#include <parser/base_context.h>
-#include <parser/use_context.h>
+#include <parser/contexts/base_context.h>
+#include <parser/contexts/use_context.h>
 
 #pragma once
 

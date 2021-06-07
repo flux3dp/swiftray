@@ -1,7 +1,7 @@
 
-#include <parser/stylable_context.h>
-#include <parser/object_context.h>
-#include <parser/transformable_context.h>
+#include <parser/contexts/stylable_context.h>
+#include <parser/contexts/object_context.h>
+#include <parser/contexts/transformable_context.h>
 
 #pragma once
 

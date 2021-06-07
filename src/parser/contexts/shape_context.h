@@ -1,5 +1,5 @@
 #include <QPainterPath>
-#include <parser/base_context.h>
+#include <parser/contexts/base_context.h>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>

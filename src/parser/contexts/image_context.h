@@ -1,12 +1,12 @@
-#include <QDebug>
-#include <parser/base_context.h>
+
+#include <parser/contexts/base_context.h>
 
 #pragma once
 
-class UseContext : public BaseContext {
+class ImageContext : public BaseContext {
 public:
-  UseContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter use";
+  ImageContext(BaseContext const &parent) : BaseContext(parent) {
+    qInfo() << "Enter image";
   }
 
   boost::optional<double> const &width() const { return width_; }
@@ -17,12 +17,13 @@ public:
   template <class IRI>
   void set(tag::attribute::xlink::href, tag::iri_fragment,
            IRI const &fragment) {
-    fragment_id_.assign(boost::begin(fragment), boost::end(fragment));
+    qInfo() << "xlink::href" << fragment;
   }
 
-  template <class IRI>
-  void set(tag::attribute::xlink::href, IRI const &fragment) {
-    std::cerr << "External references aren't supported\n";
+  void set(tag::attribute::xlink::href, RangedChar fragment) {
+    qInfo() << "xlink::href"
+            << QString::fromStdString(
+                   std::string(fragment.begin(), fragment.end()));
   }
 
   void set(tag::attribute::x, double val) { x_ = val; }

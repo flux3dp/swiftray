@@ -51,4 +51,6 @@ struct IRIPaint {
 typedef boost::variant<SolidPaint, IRIPaint> Paint;
 
 extern QList<ShapePtr> *svgpp_shapes;
+bool svgpp_parse(QByteArray &data);
+
 #endif
