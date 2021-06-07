@@ -8,11 +8,11 @@ Layer::Layer() {
 }
 
 void Layer::paint(QPainter *painter, int counter) const {
-    QPen dash_pen = QPen(color_, 3, Qt::DashLine);
+    QPen dash_pen = QPen(color_, 2, Qt::DashLine);
     dash_pen.setDashPattern(QVector<qreal>(10, 3));
     dash_pen.setCosmetic(true);
     dash_pen.setDashOffset(counter);
-    QPen solid_pen = QPen(color_, 3, Qt::SolidLine);
+    QPen solid_pen = QPen(color_, 2, Qt::SolidLine);
     solid_pen.setCosmetic(true);
 
     // Draw shapes

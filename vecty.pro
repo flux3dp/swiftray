@@ -22,8 +22,11 @@ QMAKE_CXXFLAGS_WARN_ON -= -Wextra
 QMAKE_CXXFLAGS += -Wall
 # QMAKE_CXXFLAGS += -Wextra
 QMAKE_CXXFLAGS += -Wno-unused-local-typedef
-QMAKE_CXXFLAGS += -Wno-deprecated-declarations
 QMAKE_CXXFLAGS += -Wno-unused-variable
+QMAKE_CXXFLAGS += -Wno-reorder-ctor
+QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+QMAKE_CXXFLAGS += -ferror-limit=1
+QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -41,7 +44,8 @@ SOURCES += \
         src/canvas/vcanvas.cpp \
         src/parser/svgpp_parser.cpp \
         src/parser/svgpp_context.cpp \
-        src/parser/svgpp_impl.cpp
+        src/parser/svgpp_impl.cpp \
+        src/parser/svgpp_impl_2.cpp
 
 RESOURCES += qml.qrc
 

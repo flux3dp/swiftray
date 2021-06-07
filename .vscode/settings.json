@@ -104,7 +104,8 @@
         "memory_resource": "cpp",
         "stop_token": "cpp",
         "cfenv": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "__memory": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

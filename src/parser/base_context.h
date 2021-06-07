@@ -1,11 +1,12 @@
 
 #include <parser/stylable_context.h>
 #include <parser/object_context.h>
+#include <parser/transformable_context.h>
 
 #pragma once
 
 
-class BaseContext : public StylableContext, public ObjectContext {
+class BaseContext : public StylableContext, public ObjectContext, public TransformableContext {
 public:
   BaseContext(double resolutionDPI) {
     qInfo() << "<base>";

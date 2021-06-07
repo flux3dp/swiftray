@@ -61,44 +61,6 @@ struct ChildContextFactories::apply<UseContext, tag::element::symbol, void> {
 };
 
 template <class ElementTag>
-struct ChildContextFactories::apply<
-    GroupContext, ElementTag,
-    typename boost::enable_if<
-        boost::mpl::has_key<traits::shape_elements, ElementTag>>::type> {
-  typedef factory::context::on_stack<ShapeContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::image> {
-  typedef factory::context::on_stack<ImageContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::text> {
-  typedef factory::context::on_stack<TextContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::tspan> {
-  typedef factory::context::on_stack<TextContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::symbol> {
-  typedef factory::context::on_stack<ReferencedSymbolOrSvgContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::use_> {
-  typedef factory::context::on_stack<UseContext> type;
-};
-
-template <>
-struct ChildContextFactories::apply<GroupContext, tag::element::g> {
-  typedef factory::context::on_stack<GroupContext> type;
-};
-
-template <class ElementTag>
 struct ChildContextFactories::apply<UseContext, ElementTag, void>
     : ChildContextFactories::apply<BaseContext, ElementTag> {};
 
@@ -116,6 +78,18 @@ template <>
 struct ChildContextFactories::apply<BaseContext, tag::element::tspan> {
   typedef factory::context::on_stack<TextContext> type;
 };
+
+template <>
+struct ChildContextFactories::apply<
+    TextContext,
+    tag::element::tspan> { // You need to redirect tspan under TextContext
+                           // because it's a sub textcontext item
+  typedef factory::context::on_stack<TextContext> type;
+};
+
+template <class ElementTag>
+struct ChildContextFactories::apply<GroupContext, ElementTag>
+    : ChildContextFactories::apply<BaseContext, ElementTag> {};
 
 struct AttributeTraversal : policy::attribute_traversal::default_policy {
   typedef boost::mpl::if_<
@@ -145,7 +119,7 @@ struct processed_elements_t
           tag::element::path, tag::element::polygon, tag::element::polyline,
           tag::element::rect,
           // Text Element
-          tag::element::text,
+          tag::element::text, tag::element::tspan,
           // Image Element
           tag::element::image> {};
 
@@ -222,8 +196,7 @@ typedef document_traversal<
     color_factory<ColorFactory>,
     length_policy<policy::length::forward_to_method<BaseContext>>,
     attribute_traversal_policy<AttributeTraversal>,
-    transform_events_policy<policy::transform_events::forward_to_method<
-        BaseContext>> // Same as default, but less instantiations
+    transform_events_policy<policy::transform_events::forward_to_method<TransformableContext>> // Same as default, but less instantiations
     >
     document_traversal_t;
 
@@ -254,7 +227,10 @@ void loadSvg(xmlNode *xml_root_element) {
   document_traversal_t::load_document(xml_root_element, context);
 }
 
-bool svgpp_parse2(QByteArray &data, SVGPPContext &context) {
+QList<ShapePtr> *svgpp_shapes = new QList<ShapePtr>();
+
+bool svgpp_parse2(QByteArray &data, SVGPPContext &svgpp_context) 
+{
   try {
     // TODO: Support UTF8
     xmlDoc *doc = xmlParseDoc((const unsigned char *)data.constData());
@@ -265,6 +241,10 @@ bool svgpp_parse2(QByteArray &data, SVGPPContext &context) {
       static const double ResolutionDPI = 90;
       BaseContext context(ResolutionDPI);
       document_traversal_t::load_document(root, context);
+
+      for (auto &shape : *svgpp_shapes) {
+        svgpp_context.scene_.activeLayer().addShape(shape);
+      }
       qInfo() << "Loaded SVG";
       return true;
     }

@@ -28,6 +28,10 @@
 
 #include <string>
 
+#include <QList>
+#include <shape/path_shape.h>
+#include <shape/shape.h>
+
 using namespace svgpp;
 
 typedef boost::variant<tag::value::none, tag::value::currentColor, color_t>
@@ -46,4 +50,5 @@ struct IRIPaint {
 };
 typedef boost::variant<SolidPaint, IRIPaint> Paint;
 
+extern QList<ShapePtr> *svgpp_shapes;
 #endif
