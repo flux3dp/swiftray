@@ -27,14 +27,17 @@ void Layer::paint(QPainter *painter, int counter) const {
     QPen solid_pen = QPen(color_, 2, Qt::SolidLine);
     solid_pen.setCosmetic(true);
 
+    bool selected_flag = false;
+    painter->setPen(solid_pen);
     // Draw shapes
     for (auto &shape : children_) {
-        if (shape->selected()) {
+        if (shape->selected() && !selected_flag) {
             painter->setPen(dash_pen);
-        } else {
+            selected_flag = true;
+        } else if (selected_flag) {
             painter->setPen(solid_pen);
+            selected_flag = false;
         }
-
         shape->paint(painter);
     }
 }

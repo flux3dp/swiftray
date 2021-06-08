@@ -54,7 +54,7 @@ void PathShape::calcBoundingBox() const {
 
 void PathShape::paint(QPainter *painter) const {
     painter->save();
-    painter->setTransform(temp_transform_, true);
+    if (selected_) painter->setTransform(temp_transform_, true);
     painter->setTransform(transform(), true);
     painter->drawPath(path_);
     painter->restore();

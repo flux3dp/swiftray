@@ -18,10 +18,9 @@ public:
   using StylableContext::set;
 
   // Called by Context Factory
-  void on_exit_element() { qInfo() << "</>"; }
-
-  // Transform Events Policy
-  void transform_matrix(const boost::array<double, 6> &matrix) {}
+  void on_exit_element() {
+    qInfo() << "</base>";
+  }
 
   // Viewport Events Policy
   void set_viewport(double viewport_x, double viewport_y, double viewport_width,

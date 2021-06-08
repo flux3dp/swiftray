@@ -35,6 +35,8 @@ VCanvas::VCanvas(QQuickItem *parent)
     ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
            << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
            << &ctrl_text_;
+    fps_count = 0;
+    fps_timer.start();
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -55,6 +57,15 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 
 void VCanvas::paint(QPainter *painter) {
     painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
+    // Draw FPS
+    fps_count++;
+    painter->setPen(Qt::black);
+    painter->drawText(QPointF(10, 10), "FPS " + QString::number(float(fps_count) * 1000 / fps_timer.elapsed()));
+    painter->drawText(QPointF(10, 40), "Objects " + QString::number(scene().activeLayer()->children().size()));
+    if (fps_timer.elapsed() > 3000) {
+        fps_count = 0;
+        fps_timer.restart();
+    }
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
 

@@ -5,6 +5,8 @@
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
+#include <QDebug>
+
 #pragma once
 
 namespace ublas = boost::numeric::ublas;
@@ -13,6 +15,8 @@ typedef ublas::matrix<double> matrix_t;
 class TransformableContext {
 public:
   QPointF getTransformedPos(double x, double y) {
+    // Disable this
+    return QPointF(x, y);
     matrix_t m = ublas::identity_matrix<double>(3, 1);
     m <<= x, y, 1;
     matrix_t npos = ublas::prod(transform_, m);
@@ -21,8 +25,7 @@ public:
 
 
   void transform_matrix(const boost::array<double, 6> &matrix) {
-    // qInfo() << "Load matrix " << matrix[0] << matrix[1] << matrix[2] <<
-    // matrix[3] << matrix[4] << matrix[5];
+    //qInfo() << "Load matrix " << matrix[0] << matrix[1] << matrix[2] << matrix[3] << matrix[4] << matrix[5];
     matrix_t m(3, 3);
     m <<= matrix[0], matrix[2], matrix[4], matrix[1], matrix[3], matrix[5], 0,
         0, 1;
@@ -35,12 +38,12 @@ public:
     m(0, 2) = tx;
     m(1, 2) = ty;
     transform_ = ublas::prod(transform_, m);
-    // qInfo() << "Transform translate";
+    qInfo() << "Transform translate";
   }
 
   void transform_translate(double tx) {
     transform_translate(tx, tx);
-    // qInfo() << "Transform translate";
+    qInfo() << "Transform translate";
   }
 
   void transform_scale(double sx, double sy) {

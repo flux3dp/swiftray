@@ -80,6 +80,10 @@ class VCanvas : public QQuickPaintedItem {
     QTimer *timer;
     QPointF paste_shift_;
 
+
+    QTime fps_timer;
+    int fps_count;
+
   signals:
     void rightAlignedChanged();
 };

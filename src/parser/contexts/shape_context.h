@@ -1,5 +1,6 @@
 #include <QPainterPath>
 #include <QString>
+#include <QTransform>
 #include <parser/contexts/base_context.h>
 
 #include <boost/math/constants/constants.hpp>
@@ -15,8 +16,17 @@ typedef ublas::matrix<double> matrix_t;
 class ShapeContext : public BaseContext {
 public:
   ShapeContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter shape";
+    //qInfo() << "<shape>";
     this->transform_ = ublas::identity_matrix<double>(3, 3);
+    working_path_ = QPainterPath();
+  }
+
+  void on_exit_element() {
+    QTransform transform(transform_(0,0),transform_(1,0),transform_(2,0),transform_(0,1),transform_(1,1),transform_(2,1),transform_(0,2),transform_(1,2),transform_(2,2));
+    QPainterPath mapped_path = transform.map(working_path_);
+    ShapePtr shape = make_shared<PathShape>(mapped_path);
+    svgpp_add_shape(shape, this->strokeColor());
+    //qInfo() << "</shape>";
   }
 
   using BaseContext::set;
@@ -107,10 +117,6 @@ public:
   }
 
   void path_exit() {
-    ShapePtr shape = make_shared<PathShape>(working_path_);
-    svgpp_add_shape(shape, this->strokeColor());
-    this->transform_ = ublas::identity_matrix<double>(3, 3);
-    working_path_ = QPainterPath();
   }
 
   // Marker Events Policy method

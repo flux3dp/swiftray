@@ -196,7 +196,7 @@ typedef document_traversal<
     color_factory<ColorFactory>,
     length_policy<policy::length::forward_to_method<BaseContext>>,
     attribute_traversal_policy<AttributeTraversal>,
-    transform_events_policy<policy::transform_events::forward_to_method<TransformableContext>> // Same as default, but less instantiations
+    transform_events_policy<policy::transform_events::forward_to_method<BaseContext>> // Same as default, but less instantiations
     >
     document_traversal_t;
 
