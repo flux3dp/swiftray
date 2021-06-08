@@ -10,6 +10,7 @@ Scene::Scene() noexcept {
     scale_ = 1;
     width_ = 3000;
     height_ = 2000;
+    font_ = QFont("Tahoma", 200, QFont::Bold);
     addLayer();
 }
 
@@ -270,3 +271,9 @@ QPointF Scene::mousePressedScreenCoord() const {
 void Scene::setMousePressedScreenCoord(QPointF screen_coord) {
     mouse_pressed_screen_coord_ = screen_coord;
 }
+
+void Scene::setFont(QFont &font) {
+    font_ = font;
+}
+
+QFont& Scene::font() { return font_; }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>733</height>
+    <width>1200</width>
+    <height>739</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,9 @@
   <property name="windowIcon">
    <iconset>
     <normaloff>../beam-studio/public/icon.png</normaloff>../beam-studio/public/icon.png</iconset>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging</set>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -38,14 +41,20 @@
      <widget class="QQuickWidget" name="quickWidget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>2</horstretch>
+        <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
        <size>
-        <width>689</width>
+        <width>904</width>
         <height>663</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
        </size>
       </property>
       <property name="sizeIncrement">
@@ -66,7 +75,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1000</width>
+     <width>1200</width>
      <height>25</height>
     </rect>
    </property>
@@ -242,6 +251,12 @@
    <addaction name="actionDiffBtn"/>
   </widget>
   <widget class="QDockWidget" name="fontDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="floating">
     <bool>false</bool>
    </property>
@@ -258,21 +273,27 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <layout class="QVBoxLayout" name="verticalLayout_8">
      <property name="spacing">
       <number>0</number>
      </property>
      <property name="leftMargin">
-      <number>0</number>
+      <number>5</number>
      </property>
      <property name="topMargin">
-      <number>0</number>
+      <number>5</number>
      </property>
      <property name="rightMargin">
-      <number>0</number>
+      <number>5</number>
      </property>
      <property name="bottomMargin">
-      <number>0</number>
+      <number>5</number>
      </property>
      <item>
       <widget class="QFrame" name="frame">
@@ -321,6 +342,24 @@
           </item>
           <item>
            <widget class="QFontComboBox" name="fontComboBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>150</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
             <property name="currentFont">
              <font>
               <family>Helvetica</family>
@@ -499,7 +538,13 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_2">
+  <widget class="QDockWidget" name="layerDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetMovable</set>
    </property>
@@ -633,7 +678,13 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_3">
+  <widget class="QDockWidget" name="layerParamDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetMovable</set>
    </property>
@@ -644,6 +695,12 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <layout class="QVBoxLayout" name="verticalLayout_11">
      <property name="spacing">
       <number>0</number>
@@ -691,9 +748,15 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>234</width>
-          <height>199</height>
+          <width>219</width>
+          <height>166</height>
          </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
@@ -750,19 +813,6 @@
           </layout>
          </item>
          <item>
-          <widget class="QSlider" name="horizontalSlider">
-           <property name="maximum">
-            <number>100</number>
-           </property>
-           <property name="value">
-            <number>25</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QLabel" name="label_2">
@@ -785,19 +835,6 @@
             </widget>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QSlider" name="horizontalSlider_2">
-           <property name="maximum">
-            <number>300</number>
-           </property>
-           <property name="value">
-            <number>300</number>
-           </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -824,7 +861,19 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_4">
+  <widget class="QDockWidget" name="objectParamDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>229</width>
+     <height>101</height>
+    </size>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetMovable</set>
    </property>
@@ -835,6 +884,12 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_4">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <layout class="QVBoxLayout" name="verticalLayout_6">
      <property name="spacing">
       <number>0</number>

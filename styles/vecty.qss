@@ -25,7 +25,7 @@ QToolBar {
 }
 
 QDockWidget {
-  border: 1px solid #DDD;
+  border: 1px solid #EEE;
   color: #555;
   background: #F0F0F0;
 }
@@ -66,7 +66,11 @@ QDockWidget::title {
   border: 0;
 }
 
-#objectFrame2 QDoubleSpinBox {
+QSpinBox {
+  height: 25px;
+}
+
+QDoubleSpinBox {
   height: 25px;
 }
 

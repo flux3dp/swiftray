@@ -72,6 +72,9 @@ class Scene : public QObject {
     void setScale(qreal scale);
     void setMousePressedScreenCoord(QPointF screen_coord);
 
+    void setFont(QFont &font);
+    QFont& font();
+
     QList<ShapePtr> &shapes();
 
     unique_ptr<CanvasTextEdit> text_box_;
@@ -97,6 +100,8 @@ class Scene : public QObject {
     QList<QList<LayerPtr>> redo_stack_;
     QList<LayerPtr> layers_;
     QList<ShapePtr> selections_;
+
+    QFont font_;
 
     Mode mode_;
     int new_layer_id_;

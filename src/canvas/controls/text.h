@@ -17,6 +17,7 @@ class Text : public CanvasControl {
     void reset();
     TextShape &target();
     void setTarget(ShapePtr &target);
+    bool hasTarget();
 
   private:
     QPointF origin_;

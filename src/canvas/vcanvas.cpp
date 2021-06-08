@@ -431,13 +431,27 @@ void VCanvas::setLayerOrder(QList<LayerPtr> new_order) {
 }
 
 void VCanvas::setFont(const QFont &font) {
+    QFont new_font;
     if (scene().selections().size() > 0 && 
         scene().selections().at(0)->type() == Shape::Type::Text) {
         TextShape *t = dynamic_cast<TextShape *>(scene().selections().at(0).get());
-        QFont new_font = t->font();
+        new_font = t->font();
         new_font.setFamily(font.family());
         t->setFont(new_font);
         ShapePtr shape = scene().selections().at(0);
         scene().setSelection(shape);
     }
+    if (scene().mode() == Scene::Mode::DRAWING_TEXT) {
+        if (ctrl_text_.hasTarget()) {
+            new_font = ctrl_text_.target().font();
+            new_font.setFamily(font.family());
+            ctrl_text_.target().setFont(new_font);
+        } else {
+            new_font = scene().font();
+            new_font.setFamily(font.family());
+            ctrl_text_.target().setFont(new_font);
+            scene().setFont(new_font);   
+        }
+    }
+    scene().setFont(new_font);
 }
