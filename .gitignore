@@ -3,3 +3,4 @@ svgpp/bin
 *.o.d
 .DS_Store
 build/*
+.vscode/ipch/*

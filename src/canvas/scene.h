@@ -44,6 +44,7 @@ class Scene : QObject {
     Layer &activeLayer();
     bool setActiveLayer(QString name);
     void addLayer();
+    void addLayer(Layer& layer);
     void removeLayer(QString name);
     // Undo
     void undo();

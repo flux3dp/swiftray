@@ -41,7 +41,7 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
     // scene().clearAll();
     // scene().addLayer();
     bool success = svgpp_parser_.parse(svg_data);
-    setAntialiasing(false);
+    setAntialiasing(true);
 
     if (success) {
         editSelectAll();

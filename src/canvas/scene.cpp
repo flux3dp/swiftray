@@ -158,6 +158,15 @@ void Scene::addLayer() {
     emit layerChanged();
 }
 
+void Scene::addLayer(Layer &layer) {
+    if (layers().length() > 0)
+        stackStep();
+    qDebug() << "Add layer";
+    layers() << layer.clone();
+    active_layer_ = layers().last();
+    emit layerChanged();
+}
+
 Scene::Mode Scene::mode() { return mode_; }
 
 void Scene::setMode(Mode mode) {

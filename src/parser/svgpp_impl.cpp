@@ -1,4 +1,5 @@
 #include <QByteArray>
+#include <QMap>
 #include <QDebug>
 #include <iostream>
 #include <parser/svgpp_common.h>
@@ -10,6 +11,8 @@
 #include <parser/contexts/shape_context.h>
 #include <parser/contexts/text_context.h>
 #include <parser/contexts/use_context.h>
+
+#include <canvas/layer.h>
 
 using namespace svgpp;
 
@@ -224,7 +227,8 @@ void loadSvg(xmlNode *xml_root_element) {
   document_traversal_t::load_document(xml_root_element, context);
 }
 
-QList<ShapePtr> *svgpp_shapes = new QList<ShapePtr>();
+QList<Layer> *svgpp_layers = new QList<Layer>();
+QMap<QString, Layer*> *svgpp_layer_map = new QMap<QString, Layer*>();
 
 bool svgpp_parse(QByteArray &data) {
   try {
@@ -236,7 +240,8 @@ bool svgpp_parse(QByteArray &data) {
       qInfo() << "SVG Element " << root;
       static const double ResolutionDPI = 90;
       BaseContext context(ResolutionDPI);
-      svgpp_shapes->clear();
+      svgpp_layers->clear();
+      svgpp_layer_map->clear();
       document_traversal_t::load_document(root, context);
       qInfo() << "Loaded SVG";
       return true;
@@ -246,4 +251,19 @@ bool svgpp_parse(QByteArray &data) {
   }
 
   return false;
+}
+
+void svgpp_add_shape(ShapePtr &shape, QString layer_name) {
+  if (svgpp_layer_map->contains(layer_name)) {
+    auto layer_iter = svgpp_layer_map->find(layer_name);
+    if (layer_iter != svgpp_layer_map->end()) {
+      (*layer_iter)->addShape(shape);
+    }
+  } else {
+    svgpp_layers->push_back(Layer());
+    svgpp_layers->last().name = layer_name;
+    svgpp_layers->last().setColor(QColor(layer_name));
+    svgpp_layers->last().addShape(shape);
+    svgpp_layer_map->insert(layer_name, &(svgpp_layers->last()));
+  }
 }

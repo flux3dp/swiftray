@@ -6,7 +6,7 @@ SVGPPParser::SVGPPParser(Scene &scene): scene_(scene) {
 
 bool SVGPPParser::parse(QByteArray &data) {
     bool success = svgpp_parse(data);
-    for (auto &shape : *svgpp_shapes) {
-        scene_.activeLayer().addShape(shape);
+    for (auto &layer : *svgpp_layers) {
+        scene_.addLayer(layer);
     }
 }

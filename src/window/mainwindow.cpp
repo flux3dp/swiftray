@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    qInfo() << "Falling back to OpenGLRhi in QT6";
     // QPaintedItem in Qt6 does not support Metal rendering yet
     ((QQuickWindow *)ui->quickWidget)
         ->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
@@ -148,8 +149,9 @@ void MainWindow::updateLayers() {
     ui->layerList->clear();
 
     for (auto &layer : canvas_->scene().layers()) {
+        bool active = &canvas_->scene().activeLayer() == layer.get();
         auto *list_widget =
-            new LayerWidget(ui->layerList->parentWidget(), *layer);
+            new LayerWidget(ui->layerList->parentWidget(), *layer, active);
         auto *list_item = new QListWidgetItem(ui->layerList);
         auto size = list_widget->size();
         list_item->setSizeHint(size);

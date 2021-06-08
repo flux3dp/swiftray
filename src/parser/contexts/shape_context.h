@@ -1,4 +1,5 @@
 #include <QPainterPath>
+#include <QString>
 #include <parser/contexts/base_context.h>
 
 #include <boost/math/constants/constants.hpp>
@@ -107,7 +108,7 @@ public:
 
   void path_exit() {
     ShapePtr shape = make_shared<PathShape>(working_path_);
-    svgpp_shapes->push_back(shape);
+    svgpp_add_shape(shape, this->strokeColor());
     this->transform_ = ublas::identity_matrix<double>(3, 3);
     working_path_ = QPainterPath();
   }

@@ -29,6 +29,7 @@
 #include <string>
 
 #include <QList>
+#include <QString>
 #include <shape/path_shape.h>
 #include <shape/shape.h>
 
@@ -48,9 +49,11 @@ struct IRIPaint {
   std::string fragment_;
   boost::optional<SolidPaint> fallback_;
 };
-typedef boost::variant<SolidPaint, IRIPaint> Paint;
+typedef boost::variant<SolidPaint, IRIPaint> SVGPPPaint;
 
-extern QList<ShapePtr> *svgpp_shapes;
+extern QList<Layer> *svgpp_layers;
+extern QMap<QString, Layer*> *svgpp_layer_map;
 bool svgpp_parse(QByteArray &data);
+void svgpp_add_shape(ShapePtr &shape, QString layer_name);
 
 #endif

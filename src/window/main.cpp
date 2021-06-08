@@ -14,6 +14,12 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
     app.setStyle("fusion");
+
+    // Force anti-aliasing
+    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+    format.setSamples(8);
+    QSurfaceFormat::setDefaultFormat(format);
+
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
 
