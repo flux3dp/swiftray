@@ -28,7 +28,7 @@ LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
     ui->labelName->setText(layer->name);
     active_ = active;
     if (active_) {
-        ui->layerWidgetFrame->setStyleSheet("#layerWidgetFrame { background-color: #333; border-left: 5px solid #0091ff; }");
+        ui->layerWidgetFrame->setStyleSheet("#layerWidgetFrame { background-color: #0091ff; }");
         ui->labelName->setStyleSheet("color: white;");
     }
 }

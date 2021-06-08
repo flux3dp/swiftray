@@ -2,6 +2,7 @@ QToolBar {
   background-color: #F0F0F0;
   spacing: 8px;
   border-right: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
 }
 
 #tabWidget {
@@ -16,19 +17,57 @@ QToolBar {
 #objectTab {
   border: 0;
   border-left: 1px solid #CCC;
+  background: #F8F8F8;
 }
 
 #scrollAreaWidgetContent {
-  background: #F8F8F8
+  /*background: #F8F8F8*/
+}
+
+QDockWidget {
+  border: 1px solid #DDD;
+  color: #555;
+  background: #F0F0F0;
+}
+
+QDockWidget > QFrame {
+  background: #F0F0F0;
+}
+
+QDockWidget::title {
+  text-align: left; /* align the text to the left */
+  background: #F0F0F0;
+  padding-left: 5px;
 }
 
 #objectFrame1 {
   border: 0;
-  background: #F8F8F8;
+  background: #FFFFFF;
+  border-bottom: 1px solid #CCC;
+}
+
+#objectFrame1 QLine {
+  border: 0;
+  border-bottom: 1px solid #CCC;
+}
+
+#objectFrame1 QToolButton {
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  qproperty-iconSize: 20px;
+}
+
+#objectFrame1 QToolButton:hover {
+  background: #CCC;
 }
 
 #objectFrame2 {
   border: 0;
+}
+
+#objectFrame2 QDoubleSpinBox {
+  height: 25px;
 }
 
 #objectFrame3 {
@@ -50,13 +89,12 @@ QToolBar {
   border: 0;
 }
 
-/* macOS fix*/
 #parameterFrame QSpinBox {
   height: 25px;
 }
 
 #scrollAreaWidgetContents {
-  background: #F8F8F8;
+  background: #F0F0F0;
 }
 
 #addLayerFrame {
@@ -90,23 +128,27 @@ QToolBar {
   opacity: 1
 }
 
-#toolBar QToolButton {
+QToolButton {
   border-width: 0px;
   border-radius: 0px;
 }
 
-#toolBar QToolButton:hover {
+QToolButton:hover {
   background: #CCC;
 }
 
-#toolBar QToolButton:pressed {
+QToolButton:pressed {
   background: #BBB;
 }
 
-#toolBar QToolButton:focused {
+QToolButton:focused {
   background: #555;
 }
 
-#toolBar QToolButton:checked {
+QToolButton:checked {
   background: #BBB;
+}
+
+#fontDock QFrame {
+  border: 0;
 }

@@ -59,6 +59,7 @@ class VCanvas : public QQuickPaintedItem {
     void setLayerOrder(QList<LayerPtr> order);
 
     void fitWindow();
+    void setFont(const QFont &font);
 
   private:
     bool ready;

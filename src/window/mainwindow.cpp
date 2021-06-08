@@ -102,13 +102,16 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
     connect(ui->actionDrawText, &QAction::triggered, canvas_, &VCanvas::editDrawText);
     connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
-    connect(ui->btnUnion, &QToolButton::clicked, canvas_, &VCanvas::editUnion);
-    connect(ui->btnSubtract, &QToolButton::clicked, canvas_, &VCanvas::editSubtract);
-    connect(ui->btnIntersect, &QToolButton::clicked, canvas_, &VCanvas::editIntersect);
-    connect(ui->btnDiff, &QToolButton::clicked, canvas_, &VCanvas::editDifference);
+    connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &VCanvas::editUnion);
+    connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &VCanvas::editSubtract);
+    connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &VCanvas::editIntersect);
+    connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
     connect(&canvas_->scene(), &Scene::layerChanged, this, &MainWindow::updateLayers);
     connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
     connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);
+    connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [ = ](const QFont & font) {
+        canvas_->setFont(font);
+    });
     connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
     connect(ui->layerList, &QListWidget::itemClicked, [ = ](QListWidgetItem * item) {
         canvas_->setActiveLayer(dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))->layer_);
@@ -117,7 +120,6 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
     canvas_->scene().text_box_->setStyleSheet("border:0");
     canvas_->fitWindow();
-    ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
     updateLayers();
     updateMode();
     updateSidePanel();
@@ -139,7 +141,9 @@ void MainWindow::updateLayers() {
         }
     }
 
-    ui->layerList->scrollToItem(ui->layerList->selectedItems().first(), QAbstractItemView::PositionAtCenter);
+    if (ui->layerList->currentItem()) {
+        ui->layerList->scrollToItem(ui->layerList->currentItem(), QAbstractItemView::PositionAtCenter);
+    }
 }
 
 void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
@@ -231,8 +235,7 @@ void MainWindow::updateMode() {
 
 void MainWindow::updateSidePanel() {
     QList<ShapePtr> &items = canvas_->scene().selections();
-
-    if (items.length() > 1) {
+    /*if (items.length() > 1) {
         ui->tabWidget->setTabText(1, "Multiple Objects");
         ui->tabWidget->setTabEnabled(1, true);
         ui->tabWidget->setCurrentIndex(1);
@@ -244,7 +247,6 @@ void MainWindow::updateSidePanel() {
         ui->tabWidget->setTabText(1, "-");
         ui->tabWidget->setCurrentIndex(0);
         ui->tabWidget->setTabEnabled(1, false);
-    }
-
+    }*/
     setOSXWindowTitleColor(this);
 }

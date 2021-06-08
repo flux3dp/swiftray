@@ -16,7 +16,7 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
         qInfo() << "Create virtual text shape";
-        ShapePtr new_shape = make_shared<TextShape>("", QFont("Tahoma", 88, QFont::Bold));
+        ShapePtr new_shape = make_shared<TextShape>("", QFont("Tahoma", 200, QFont::Bold));
         setTarget(new_shape);
         target().setTransform(QTransform().translate(origin_.x(), origin_.y()));
     }
@@ -55,10 +55,10 @@ void Text::paint(QPainter *painter) {
     target().setText(text);
     target().makeCursorRect(scene().text_box_->textCursor().position());
     target().setEditing(true);
-    QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
+    QPen pen(scene().activeLayer()->color(), 2, Qt::SolidLine);
     pen.setCosmetic(true);
 
-    QPen caret_pen(Qt::black, 5, Qt::SolidLine);
+    QPen caret_pen(Qt::black, 2, Qt::SolidLine);
     caret_pen.setCosmetic(true);
 
     painter->setPen(pen);
