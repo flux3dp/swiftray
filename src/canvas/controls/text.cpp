@@ -37,7 +37,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
             scene().text_box_->toPlainText().length() > 0) {
             qInfo() << "Create new text shape instance";
             scene().stackStep();
-            scene().activeLayer().addShape(target_);
+            scene().activeLayer()->addShape(target_);
             scene().setSelection(target_);
         }
         reset();
@@ -55,7 +55,7 @@ void Text::paint(QPainter *painter) {
     target().setText(text);
     target().makeCursorRect(scene().text_box_->textCursor().position());
     target().setEditing(true);
-    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
 
     QPen caret_pen(Qt::black, 5, Qt::SolidLine);

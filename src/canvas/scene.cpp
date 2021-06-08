@@ -46,7 +46,6 @@ QList<ShapePtr> &Scene::selections() { return selections_; }
 void Scene::clearAll() {
     clearSelections();
     layers().clear();
-    new_layer_id_ = 1;
     active_layer_ = nullptr;
     emit layerChanged();
 }
@@ -83,7 +82,7 @@ QList<LayerPtr> Scene::cloneStack(QList<LayerPtr> &stack) {
 void Scene::dumpStack(QList<LayerPtr> &stack) {
     qInfo() << "<Stack>";
     for (auto &layer : stack) {
-        qInfo() << "  <Layer " << &layer << ">";
+        qInfo() << "  <Layer " << layer.get() << ">";
         for (auto &shape : layer->children()) {
             qInfo() << "    <Shape " << shape.get()
                     << " selected =" << shape->selected() << " />";
@@ -97,7 +96,7 @@ void Scene::undo() {
     if (undo_stack_.isEmpty()) {
         return;
     }
-    QString active_layer_name = activeLayer().name;
+    QString active_layer_name = activeLayer()->name;
     stackRedo();
     clearAll();
     Scene::dumpStack(undo_stack_.last());
@@ -121,7 +120,7 @@ void Scene::redo() {
     if (redo_stack_.isEmpty()) {
         return;
     }
-    QString active_layer_name = activeLayer().name;
+    QString active_layer_name = activeLayer()->name;
     stackUndo();
     clearAll();
     layers().append(redo_stack_.last());
@@ -152,8 +151,7 @@ void Scene::addLayer() {
     if (layers().length() > 0)
         stackStep();
     qDebug() << "Add layer";
-    layers() << make_shared<Layer>();
-    layers().last()->name = "Layer " + QString::number(new_layer_id_++);
+    layers() << make_shared<Layer>(new_layer_id_++);
     active_layer_ = layers().last();
     emit layerChanged();
 }
@@ -205,23 +203,32 @@ void Scene::setScrollY(qreal scroll_y) { scroll_y_ = scroll_y; }
 
 void Scene::setScale(qreal scale) { scale_ = scale; }
 
-Layer &Scene::activeLayer() {
+LayerPtr& Scene::activeLayer() {
     Q_ASSERT_X(layers_.size() != 0, "Active Layer",
                "Access to active layer when there is no layer");
     Q_ASSERT_X(active_layer_ != nullptr, "Active Layer",
                "Access to active layer is cleaned");
-    return *active_layer_;
+    return active_layer_;
 }
 
 bool Scene::setActiveLayer(QString name) {
     for (auto &layer : layers()) {
         if (layer->name == name) {
             active_layer_ = layer;
+            emit layerChanged();
             return true;
         }
     }
 
-    active_layer_ = layers().last();
+    Q_ASSERT_X(false, "Active Layer",
+               "Invalid active layer name");
+}
+
+bool Scene::setActiveLayer(LayerPtr &layer) {
+    Q_ASSERT_X(layers_.contains(layer), "Active Layer",
+               "Invalid layer ptr when setting active layer");
+    active_layer_ = layer;
+    emit layerChanged();
     return false;
 }
 

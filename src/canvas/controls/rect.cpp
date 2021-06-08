@@ -18,14 +18,14 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
     path.addRect(rect_);
     ShapePtr new_rect = make_shared<PathShape>(path);
     scene().stackStep();
-    scene().activeLayer().addShape(new_rect);
+    scene().activeLayer()->addShape(new_rect);
     scene().setSelection(new_rect);
     scene().setMode(Scene::Mode::SELECTING);
     return true;
 }
 
 void Rect::paint(QPainter *painter) {
-    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawRect(rect_);

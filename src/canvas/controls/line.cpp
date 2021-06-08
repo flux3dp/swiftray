@@ -19,7 +19,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
     path.lineTo(scene().getCanvasCoord(e->pos()));
     ShapePtr new_line = make_shared<PathShape>(path);
     scene().stackStep();
-    scene().activeLayer().addShape(new_line);
+    scene().activeLayer()->addShape(new_line);
     scene().setSelection(new_line);
     scene().setMode(Scene::Mode::SELECTING);
     return true;
@@ -28,7 +28,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
 void Line::paint(QPainter *painter) {
     if (cursor_ == QPointF(0, 0))
         return;
-    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawLine(scene().mousePressedCanvasCoord(), cursor_);

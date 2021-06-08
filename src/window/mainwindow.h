@@ -26,6 +26,7 @@ class MainWindow : public QMainWindow {
         void updateSidePanel();
         void openFile();
         void openImageFile();
+        void layerOrderChanged(const QModelIndex & sourceParent, int sourceStart, int sourceEnd, const QModelIndex & destinationParent, int destinationRow);
         void on_addLayer_clicked();
 
     private:

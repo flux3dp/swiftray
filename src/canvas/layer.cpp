@@ -10,8 +10,13 @@ QString LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A"
 int layer_color_counter;
 
 Layer::Layer() {
-    color_ = LayerColors[(layer_color_counter++) % 17];
+    color_ = QColor(LayerColors[(layer_color_counter++) % 17]);
     name = "Layer 1";
+}
+
+Layer::Layer(int new_layer_id) {
+    color_ = QColor(LayerColors[(new_layer_id-1) % 17]);
+    name = "Layer " + QString::number(new_layer_id);
 }
 
 void Layer::paint(QPainter *painter, int counter) const {

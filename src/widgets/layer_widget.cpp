@@ -1,3 +1,4 @@
+#include <QDebug>
 #include <QStyleOption>
 #include <widgets/layer_widget.h>
 #include "ui_layer_widget.h"
@@ -8,7 +9,7 @@
     ui->setupUi(this);
 }*/
 
-LayerWidget::LayerWidget(QWidget *parent, Layer &layer, bool active) :
+LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
     QWidget(parent),
     ui(new Ui::LayerWidget),
     layer_(layer),
@@ -20,13 +21,15 @@ LayerWidget::LayerWidget(QWidget *parent, Layer &layer, bool active) :
     paint.setRenderHint(QPainter::Antialiasing, true);
     QPen pen(QColor(255, 255, 255, 255), 5);
     paint.setPen(pen);
-    paint.setBrush(QBrush(layer.color()));
+    paint.setBrush(QBrush(layer->color()));
     paint.drawRoundedRect(QRectF(30, 30, 40, 40), 10, 10);
     paint.end();
     ui->labelIcon->setPixmap(pix);
-    ui->labelName->setText(layer.name);
+    ui->labelName->setText(layer->name);
     active_ = active;
-    setStyleSheet("#frame:hover { background-color: #F0F0F0; }");
+    setStyleSheet("#frame:hover { background-color: #F0F0F0; }"
+                  "#btnHide { opacity: 0 }"
+                  "#btnHide:hover { opacity: 1 }");
     if (active_) {
         ui->frame->setStyleSheet("#frame { background-color: #333; border-left: 5px solid #0091ff; }");
         ui->labelName->setStyleSheet("color: white;");

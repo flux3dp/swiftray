@@ -55,6 +55,9 @@ class VCanvas : public QQuickPaintedItem {
 
     void importImage(QImage &image);
 
+    void setActiveLayer(LayerPtr &layer);
+    void setLayerOrder(QList<LayerPtr> order);
+
     void fitWindow();
 
   private:

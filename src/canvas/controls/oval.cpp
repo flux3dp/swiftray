@@ -20,14 +20,14 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
     path.arcTo(rect_, 0, 360 * 16);
     ShapePtr new_oval = make_shared<PathShape>(path);
     scene().stackStep();
-    scene().activeLayer().addShape(new_oval);
+    scene().activeLayer()->addShape(new_oval);
     scene().setSelection(new_oval);
     scene().setMode(Scene::Mode::SELECTING);
     return true;
 }
 
 void Oval::paint(QPainter *painter) {
-    QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawArc(rect_, 0, 360 * 16);

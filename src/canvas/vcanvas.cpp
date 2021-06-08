@@ -10,6 +10,7 @@
 #include <shape/bitmap_shape.h>
 #include <shape/group_shape.h>
 #include <shape/path_shape.h>
+#include <boost/range/adaptor/reversed.hpp>
 
 VCanvas::VCanvas(QQuickItem *parent)
     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
@@ -228,7 +229,7 @@ void VCanvas::editPaste() {
         return;
     scene().stackStep();
     qInfo() << "Edit Paste";
-    int index_clip_begin = scene().activeLayer().children().length();
+    int index_clip_begin = scene().activeLayer()->children().length();
     paste_shift_ += QPointF(20, 20);
     QTransform shift =
         QTransform().translate(paste_shift_.x(), paste_shift_.y());
@@ -236,14 +237,14 @@ void VCanvas::editPaste() {
     for (int i = 0; i < scene().clipboard().length(); i++) {
         ShapePtr shape = scene().clipboard().at(i)->clone();
         shape->applyTransform(shift);
-        scene().activeLayer().children().push_back(shape);
+        scene().activeLayer()->children().push_back(shape);
     }
 
     QList<ShapePtr> selected_shapes;
 
     for (int i = index_clip_begin;
-         i < scene().activeLayer().children().length(); i++) {
-        selected_shapes << scene().activeLayer().children().at(i);
+         i < scene().activeLayer()->children().length(); i++) {
+        selected_shapes << scene().activeLayer()->children().at(i);
     }
 
     scene().setSelections(selected_shapes);
@@ -309,7 +310,7 @@ void VCanvas::editGroup() {
     ShapePtr group_ptr =
         make_shared<GroupShape>(ctrl_transform_.selections());
     scene().removeSelections();
-    scene().activeLayer().children().push_back(group_ptr);
+    scene().activeLayer()->children().push_back(group_ptr);
     scene().setSelection(group_ptr);
 }
 void VCanvas::editUngroup() {
@@ -321,7 +322,7 @@ void VCanvas::editUngroup() {
     for (auto &shape : group->children()) {
         shape->applyTransform(group->transform());
         shape->setRotation(shape->rotation() + group->rotation());
-        scene().activeLayer().children().push_back(shape);
+        scene().activeLayer()->children().push_back(shape);
     }
 
     scene().setSelections(group->children());
@@ -349,7 +350,7 @@ void VCanvas::editUnion() {
     scene().stackStep();
     ShapePtr new_shape = make_shared<PathShape>(result);
     scene().removeSelections();
-    scene().activeLayer().addShape(new_shape);
+    scene().activeLayer()->addShape(new_shape);
     scene().setSelection(new_shape);
 }
 void VCanvas::editSubtract() {
@@ -367,7 +368,7 @@ void VCanvas::editSubtract() {
         b->transform().map(b->path())));
     ShapePtr new_shape = make_shared<PathShape>(new_path);
     scene().removeSelections();
-    scene().activeLayer().addShape(new_shape);
+    scene().activeLayer()->addShape(new_shape);
     scene().setSelection(new_shape);
 }
 void VCanvas::editIntersect() {
@@ -386,7 +387,7 @@ void VCanvas::editIntersect() {
     new_path.closeSubpath();
     ShapePtr new_shape = make_shared<PathShape>(new_path);
     scene().removeSelections();
-    scene().activeLayer().addShape(new_shape);
+    scene().activeLayer()->addShape(new_shape);
     scene().setSelection(new_shape);
 }
 void VCanvas::editDifference() {}
@@ -412,5 +413,19 @@ void VCanvas::importImage(QImage &image) {
                                scene().width() / image.width()));
     qInfo() << "Scale" << scale;
     new_shape->setTransform(QTransform().scale(scale, scale));
-    scene().activeLayer().addShape(new_shape);
+    scene().activeLayer()->addShape(new_shape);
+}
+
+void VCanvas::setActiveLayer(LayerPtr &layer) { 
+    scene().setActiveLayer(layer);
+}
+
+void VCanvas::setLayerOrder(QList<LayerPtr> new_order) {
+    scene().stackStep();
+    LayerPtr active_layer = scene().activeLayer();
+    scene().clearAll();
+    for (auto &layer : boost::adaptors::reverse(new_order)) {
+        scene().layers().push_back(layer);
+    }
+    scene().setActiveLayer(active_layer);
 }

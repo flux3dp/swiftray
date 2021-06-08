@@ -93,7 +93,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     if (is_closing_curve_) {
         ShapePtr new_shape = make_shared<PathShape>(working_path_);
         scene().stackStep();
-        scene().activeLayer().addShape(new_shape);
+        scene().activeLayer()->addShape(new_shape);
         scene().setSelection(new_shape);
         scene().setMode(Scene::Mode::SELECTING);
         reset();
@@ -137,7 +137,7 @@ void PathDraw::paint(QPainter *painter) {
         return;
     auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
-    auto black_pen = QPen(scene().activeLayer().color(), 3, Qt::SolidLine);
+    auto black_pen = QPen(scene().activeLayer()->color(), 3, Qt::SolidLine);
     blue_pen.setCosmetic(true);
     black_pen.setCosmetic(true);
     painter->setPen(black_pen);

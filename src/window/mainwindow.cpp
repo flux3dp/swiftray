@@ -5,6 +5,7 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <boost/range/adaptor/reversed.hpp>
 #include <cmath>
 #include <shape/bitmap_shape.h>
 #include <widgets/canvas_text_edit.h>
@@ -80,6 +81,7 @@ void MainWindow::openImageFile() {
     if (QFile::exists(file_name)) {
         QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
         QImage image;
+
         if (image.load(file_name)) {
             qInfo() << "File size:" << image.size();
             canvas_->importImage(image);
@@ -140,6 +142,14 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     canvas_->scene().text_box_->setStyleSheet("border:0");
     canvas_->fitWindow();
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
+    connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this,
+            &MainWindow::layerOrderChanged);
+    connect(ui->layerList, &QListWidget::itemClicked,
+            [=](QListWidgetItem *item) {
+                canvas_->setActiveLayer(
+                    dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))
+                        ->layer_);
+            });
     updateLayers();
     updateMode();
     updateSidePanel();
@@ -148,10 +158,10 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 void MainWindow::updateLayers() {
     ui->layerList->clear();
 
-    for (auto &layer : canvas_->scene().layers()) {
-        bool active = &canvas_->scene().activeLayer() == layer.get();
+    for (auto &layer : boost::adaptors::reverse(canvas_->scene().layers())) {
+        bool active = canvas_->scene().activeLayer().get() == layer.get();
         auto *list_widget =
-            new LayerWidget(ui->layerList->parentWidget(), *layer, active);
+            new LayerWidget(ui->layerList->parentWidget(), layer, active);
         auto *list_item = new QListWidgetItem(ui->layerList);
         auto size = list_widget->size();
         list_item->setSizeHint(size);
@@ -159,11 +169,27 @@ void MainWindow::updateLayers() {
     }
 }
 
+void MainWindow::layerOrderChanged(const QModelIndex &sourceParent,
+                                   int sourceStart, int sourceEnd,
+                                   const QModelIndex &destinationParent,
+                                   int destinationRow) {
+    QList<LayerPtr> new_order;
+
+    for (int i = 0; i < ui->layerList->count(); i++) {
+        new_order << dynamic_cast<LayerWidget *>(
+                         ui->layerList->itemWidget(ui->layerList->item(i)))
+                         ->layer_;
+    }
+
+    canvas_->setLayerOrder(new_order);
+}
+
 bool MainWindow::event(QEvent *e) {
     switch (e->type()) {
     case QEvent::CursorChange:
     case QEvent::UpdateRequest:
         break;
+
     case QEvent::NativeGesture:
         qInfo() << "Native Gesture!";
         canvas_->event(e);
@@ -217,12 +243,15 @@ void MainWindow::updateMode() {
     case Scene::Mode::DRAWING_OVAL:
         ui->actionDrawOval->setChecked(true);
         break;
+
     case Scene::Mode::DRAWING_PATH:
         ui->actionDrawPath->setChecked(true);
         break;
+
     case Scene::Mode::DRAWING_TEXT:
         ui->actionDrawText->setChecked(true);
         break;
+
     default:
         break;
     }
