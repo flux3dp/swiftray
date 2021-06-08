@@ -13,7 +13,7 @@ Scene::Scene() noexcept {
     addLayer();
 }
 
-void Scene::setSelection(ShapePtr shape) {
+void Scene::setSelection(ShapePtr &shape) {
     QList<ShapePtr> list;
     list.push_back(shape);
     setSelections(list);
@@ -39,7 +39,7 @@ void Scene::clearSelections() {
     emit selectionsChanged();
 }
 
-bool Scene::isSelected(ShapePtr shape) { return selections().contains(shape); }
+bool Scene::isSelected(ShapePtr &shape) { return selections().contains(shape); }
 
 QList<ShapePtr> &Scene::selections() { return selections_; }
 

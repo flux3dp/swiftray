@@ -306,7 +306,7 @@ void VCanvas::editGroup() {
 
     qInfo() << "Groupping";
     scene().stackStep();
-    const ShapePtr group_ptr =
+    ShapePtr group_ptr =
         make_shared<GroupShape>(ctrl_transform_.selections());
     scene().removeSelections();
     scene().activeLayer().children().push_back(group_ptr);

@@ -16,7 +16,8 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
         qInfo() << "Create virtual text shape";
-        setTarget(make_shared<TextShape>("", QFont("Tahoma", 88, QFont::Bold)));
+        ShapePtr new_shape = make_shared<TextShape>("", QFont("Tahoma", 88, QFont::Bold));
+        setTarget(new_shape);
         target().setTransform(QTransform().translate(origin_.x(), origin_.y()));
     }
     return true;
@@ -39,7 +40,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
             scene().activeLayer().addShape(target_);
             scene().setSelection(target_);
         }
-        setTarget(nullptr);
+        reset();
         scene().setMode(Scene::Mode::SELECTING);
         return true;
     }
@@ -76,7 +77,7 @@ TextShape &Text::target() {
     return *dynamic_cast<TextShape *>(target_.get());
 }
 
-void Text::setTarget(ShapePtr new_target) {
+void Text::setTarget(ShapePtr &new_target) {
     target_ = new_target;
     if (target_ != nullptr) {
         scene().text_box_->setPlainText(target().text());

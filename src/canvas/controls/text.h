@@ -16,7 +16,7 @@ class Text : public CanvasControl {
     bool isActive() override;
     void reset();
     TextShape &target();
-    void setTarget(ShapePtr target);
+    void setTarget(ShapePtr &target);
 
   private:
     QPointF origin_;

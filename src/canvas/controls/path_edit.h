@@ -33,7 +33,7 @@ class PathEdit : public CanvasControl {
     QPainterPath &path();
     QPointF getLocalCoord(QPointF canvas_coord);
 
-    void setTarget(ShapePtr target);
+    void setTarget(ShapePtr &target);
 
   private:
     ShapePtr target_;

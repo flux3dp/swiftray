@@ -236,7 +236,7 @@ PathShape &PathEdit::target() {
     return *dynamic_cast<PathShape *>(target_.get());
 }
 
-void PathEdit::setTarget(ShapePtr target) {
+void PathEdit::setTarget(ShapePtr &target) {
     target_ = target;
     int elem_count = path().elementCount();
     is_closed_shape_ = elem_count > 0 &&

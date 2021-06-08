@@ -25,9 +25,9 @@ class Scene : QObject {
     };
     Scene() noexcept;
     // Selection
-    bool isSelected(ShapePtr shape);
+    bool isSelected(ShapePtr &shape);
     QList<ShapePtr> &selections();
-    void setSelection(ShapePtr shape);
+    void setSelection(ShapePtr &shape);
     void setSelections(const QList<ShapePtr> &shapes);
     void clearAll();
     void clearSelections();

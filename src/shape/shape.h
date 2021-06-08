@@ -60,5 +60,4 @@ class Shape {
 };
 
 typedef shared_ptr<Shape> ShapePtr;
-
 #endif // SHAPE_H
