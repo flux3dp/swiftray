@@ -5,9 +5,11 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
 #include <cmath>
 #include <shape/bitmap_shape.h>
+#include <widgets/spinbox_helper.h>
 #include <widgets/canvas_text_edit.h>
 #include <widgets/layer_widget.h>
 #include <window/mainwindow.h>
@@ -41,6 +43,9 @@ void MainWindow::loadQSS() {
     file.open(QFile::ReadOnly);
     QString styleSheet = QLatin1String(file.readAll());
     setStyleSheet(styleSheet);
+    ((SpinBoxHelper *)ui->spinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper *)ui->spinBox_2)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper *)ui->spinBox_3)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void MainWindow::openFile() {
@@ -48,6 +53,7 @@ void MainWindow::openFile() {
 
     if (!QFile::exists(file_name))
         return;
+
     QFile file(file_name);
 
     if (file.open(QFile::ReadOnly)) {
@@ -59,8 +65,10 @@ void MainWindow::openFile() {
 
 void MainWindow::openImageFile() {
     QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+
     if (!QFile::exists(file_name))
         return;
+
     QImage image;
 
     if (image.load(file_name)) {
@@ -72,8 +80,10 @@ void MainWindow::openImageFile() {
 void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     if (status == QQuickWidget::Error) {
         const auto widgetErrors = this->ui->quickWidget->errors();
+
         for (const QQmlError &error : widgetErrors)
             qInfo() << error.toString();
+
         Q_ASSERT_X(false, "QQuickWidget Initialization", "QQuickWidget failed to initialize");
     }
 
@@ -100,16 +110,14 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
     connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);
     connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
-    connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
+    connect(ui->layerList, &QListWidget::itemClicked, [ = ](QListWidgetItem * item) {
         canvas_->setActiveLayer(dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))->layer_);
     });
-
     canvas_->scene().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
     canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
     canvas_->scene().text_box_->setStyleSheet("border:0");
     canvas_->fitWindow();
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
-
     updateLayers();
     updateMode();
     updateSidePanel();
@@ -125,7 +133,13 @@ void MainWindow::updateLayers() {
         auto size = list_widget->size();
         list_item->setSizeHint(size);
         ui->layerList->setItemWidget(list_item, list_widget);
+
+        if (active) {
+            ui->layerList->setCurrentItem(list_item);
+        }
     }
+
+    ui->layerList->scrollToItem(ui->layerList->selectedItems().first(), QAbstractItemView::PositionAtCenter);
 }
 
 void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
@@ -167,9 +181,13 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
     // statusBar()->showMessage(message);
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow() {
+    delete ui;
+}
 
-void MainWindow::on_addLayer_clicked() { canvas_->scene().addLayer(); }
+void MainWindow::on_addLayer_clicked() {
+    canvas_->scene().addLayer();
+}
 
 void MainWindow::updateMode() {
     ui->actionSelect->setChecked(false);

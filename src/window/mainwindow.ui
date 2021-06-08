@@ -229,7 +229,7 @@
            <bool>false</bool>
           </property>
           <property name="styleSheet">
-           <string notr="true">background: #F8F8F8;</string>
+           <string notr="true"/>
           </property>
           <property name="frameShadow">
            <enum>QFrame::Plain</enum>
@@ -255,11 +255,17 @@
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
              <widget class="QComboBox" name="comboBox_2">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="editable">
+               <bool>false</bool>
               </property>
               <item>
                <property name="text">
@@ -284,6 +290,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="spinBox_2">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
                 <property name="suffix">
                  <string> %</string>
                 </property>

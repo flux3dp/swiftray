@@ -50,6 +50,15 @@ QToolBar {
   border: 0;
 }
 
+/* macOS fix*/
+#parameterFrame QSpinBox {
+  height: 25px;
+}
+
+#scrollAreaWidgetContents {
+  background: #F8F8F8;
+}
+
 #addLayerFrame {
   border: 0;
   background: white;
@@ -63,29 +72,41 @@ QToolBar {
   border: 0;
 }
 
-#layerWidgetFrame:hover { 
-  background-color: #F0F0F0; 
+#layerWidgetFrame:hover {
+  background-color: #F0F0F0;
 }
-#btnHide { opacity: 0 }
-#btnHide:hover { opacity: 1 }
 
-QToolButton {
+#layerWidgetFrame QToolButton {
+  border-width: 0px;
+  border-radius: 0px;
+  background: none;
+}
+
+#btnHide {
+  opacity: 0
+}
+
+#btnHide:hover {
+  opacity: 1
+}
+
+#toolBar QToolButton {
   border-width: 0px;
   border-radius: 0px;
 }
 
-QToolButton:hover {
+#toolBar QToolButton:hover {
   background: #CCC;
 }
 
-QToolButton:pressed {
+#toolBar QToolButton:pressed {
   background: #BBB;
 }
 
-QToolButton:focused {
+#toolBar QToolButton:focused {
   background: #555;
 }
 
-QToolButton:checked {
+#toolBar QToolButton:checked {
   background: #BBB;
 }
