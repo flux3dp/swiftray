@@ -27,11 +27,8 @@ LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
     ui->labelIcon->setPixmap(pix);
     ui->labelName->setText(layer->name);
     active_ = active;
-    setStyleSheet("#frame:hover { background-color: #F0F0F0; }"
-                  "#btnHide { opacity: 0 }"
-                  "#btnHide:hover { opacity: 1 }");
     if (active_) {
-        ui->frame->setStyleSheet("#frame { background-color: #333; border-left: 5px solid #0091ff; }");
+        ui->layerWidgetFrame->setStyleSheet("#layerWidgetFrame { background-color: #333; border-left: 5px solid #0091ff; }");
         ui->labelName->setStyleSheet("color: white;");
     }
 }

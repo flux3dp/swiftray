@@ -94,9 +94,4 @@ FORMS += \
     src/widgets/layer_widget.ui \
     src/window/mainwindow.ui
 
-DISTFILES += \
-    ../../Downloads/icons8-cursor-48.png \
-    ../../vecty.qss \
-    images/select.png
-
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

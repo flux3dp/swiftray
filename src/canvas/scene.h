@@ -7,7 +7,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-class Scene : QObject {
+class Scene : public QObject {
     Q_OBJECT
   public:
     enum class Mode {

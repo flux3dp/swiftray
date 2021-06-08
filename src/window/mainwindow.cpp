@@ -13,94 +13,68 @@
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-    qInfo() << "Falling back to OpenGLRhi in QT6";
-    // QPaintedItem in Qt6 does not support Metal rendering yet
-    ((QQuickWindow *)ui->quickWidget)
-        ->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
-    connect(ui->quickWidget, &QQuickWidget::sceneGraphError, this,
-            &MainWindow::sceneGraphError);
-#endif
-    connect(ui->quickWidget, &QQuickWidget::statusChanged, this,
-            &MainWindow::quickWidgetStatusChanged);
-    QUrl source("qrc:/src/window/main.qml");
-    ui->quickWidget->setResizeMode(
-        QQuickWidget::ResizeMode::SizeRootObjectToView);
-    ui->quickWidget->setSource(source);
-    ui->quickWidget->show();
+    connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::quickWidgetStatusChanged);
     connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
     connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
-    this->setStyleSheet(
-        "QToolBar { background-color: #F0F0F0; spacing: 8px; border-right: 1px "
-        "solid #CCC; }"
-        "#tabWidget { border: 0; }"
-        "#layerTab { border: 0; border-left: 1px solid #CCC;  }"
-        "#objectTab { border: 0; border-left: 1px solid #CCC; }"
-        "#scrollAreaWidgetContent { background: #F8F8F8 }"
-        "#objectFrame1 { border: 0; background: #F8F8F8;}"
-        "#objectFrame2 { border: 0; }"
-        "#objectFrame3 { border: 0; }"
-        "#objectFrame4 { border: 0; }"
-        "#parameterLabelFrame { border: 0; border-top: 1px solid #CCC; "
-        "border-bottom: 1px solid #CCC; background: #F0F0F0; }"
-        "#parameterFrame { border: 0; }"
-        "#addLayerFrame { border: 0; background: white; }");
-    ui->layerList->setStyleSheet("border: 0");
-    ui->toolBar->setStyleSheet(
-        "QToolButton{ border-width:0px; border-radius: 0px; }"
-        "QToolButton:hover { background:#CCC; }"
-        "QToolButton:pressed { background:#BBB; }"
-        "QToolButton:focused { background:#555; }"
-        "QToolButton:checked { background:#BBB; }");
+    loadQML();
+    loadQSS();
     updateMode();
 }
 
+void MainWindow::loadQML() {
+#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
+    // QPaintedItem in Qt6 does not support Metal rendering yet, so it will be slow using metal RHI
+    qInfo() << "Falling back to OpenGLRhi in QT6";
+    ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
+    connect(ui->quickWidget, &QQuickWidget::sceneGraphError, this, &MainWindow::sceneGraphError);
+#endif
+    QUrl source("qrc:/src/window/main.qml");
+    ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
+    ui->quickWidget->setSource(source);
+    ui->quickWidget->show();
+}
+
+void MainWindow::loadQSS() {
+    QFile file(":/styles/vecty.qss");
+    file.open(QFile::ReadOnly);
+    QString styleSheet = QLatin1String(file.readAll());
+    setStyleSheet(styleSheet);
+}
+
 void MainWindow::openFile() {
-    QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".",
-                                                     tr("SVG Files (*.svg)"));
+    QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".", tr("SVG Files (*.svg)"));
 
-    if (QFile::exists(file_name)) {
-        QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
-        QFile file(file_name);
+    if (!QFile::exists(file_name))
+        return;
+    QFile file(file_name);
 
-        if (file.open(QFile::ReadOnly)) {
-            QByteArray data = file.readAll();
-            qInfo() << "File size:" << data.size();
-            canvas_->loadSVG(data);
-        }
+    if (file.open(QFile::ReadOnly)) {
+        QByteArray data = file.readAll();
+        qInfo() << "File size:" << data.size();
+        canvas_->loadSVG(data);
     }
 }
 
 void MainWindow::openImageFile() {
-    QString file_name = QFileDialog::getOpenFileName(
-        this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+    QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+    if (!QFile::exists(file_name))
+        return;
+    QImage image;
 
-    if (QFile::exists(file_name)) {
-        QMimeType mime = QMimeDatabase().mimeTypeForFile(file_name);
-        QImage image;
-
-        if (image.load(file_name)) {
-            qInfo() << "File size:" << image.size();
-            canvas_->importImage(image);
-        }
+    if (image.load(file_name)) {
+        qInfo() << "File size:" << image.size();
+        canvas_->importImage(image);
     }
 }
 
 void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
-    qInfo() << status;
-
     if (status == QQuickWidget::Error) {
-        QStringList errors;
         const auto widgetErrors = this->ui->quickWidget->errors();
-
         for (const QQmlError &error : widgetErrors)
-            errors.append(error.toString());
-
-        // statusBar()->showMessage(errors.join(QStringLiteral(", ")));
-    } else {
+            qInfo() << error.toString();
+        Q_ASSERT_X(false, "QQuickWidget Initialization", "QQuickWidget failed to initialize");
     }
 
     canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
@@ -109,47 +83,33 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
     connect(ui->actionUndo, &QAction::triggered, canvas_, &VCanvas::editUndo);
     connect(ui->actionRedo, &QAction::triggered, canvas_, &VCanvas::editRedo);
-    connect(ui->actionSelect_All, &QAction::triggered, canvas_,
-            &VCanvas::editSelectAll);
+    connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
     connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
-    connect(ui->actionUngroup, &QAction::triggered, canvas_,
-            &VCanvas::editUngroup);
-    connect(ui->actionDrawRect, &QAction::triggered, canvas_,
-            &VCanvas::editDrawRect);
-    connect(ui->actionDrawOval, &QAction::triggered, canvas_,
-            &VCanvas::editDrawOval);
-    connect(ui->actionDrawLine, &QAction::triggered, canvas_,
-            &VCanvas::editDrawLine);
-    connect(ui->actionDrawPath, &QAction::triggered, canvas_,
-            &VCanvas::editDrawPath);
-    connect(ui->actionDrawText, &QAction::triggered, canvas_,
-            &VCanvas::editDrawText);
-    connect(ui->actionDrawPhoto, &QAction::triggered, this,
-            &MainWindow::openImageFile);
-    connect(ui->btnUnion, SIGNAL(clicked()), canvas_, SLOT(editUnion()));
-    connect(ui->btnSubtract, SIGNAL(clicked()), canvas_, SLOT(editSubtract()));
-    connect(ui->btnIntersect, SIGNAL(clicked()), canvas_,
-            SLOT(editIntersect()));
-    connect(ui->btnDiff, SIGNAL(clicked()), canvas_, SLOT(editDifference()));
-    connect((QObject *)&canvas_->scene(), SIGNAL(layerChanged()), this,
-            SLOT(updateLayers()));
-    connect((QObject *)&canvas_->scene(), SIGNAL(modeChanged()), this,
-            SLOT(updateMode()));
-    connect((QObject *)&canvas_->scene(), SIGNAL(selectionsChanged()), this,
-            SLOT(updateSidePanel()));
+    connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+    connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
+    connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
+    connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
+    connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
+    connect(ui->actionDrawText, &QAction::triggered, canvas_, &VCanvas::editDrawText);
+    connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
+    connect(ui->btnUnion, &QToolButton::clicked, canvas_, &VCanvas::editUnion);
+    connect(ui->btnSubtract, &QToolButton::clicked, canvas_, &VCanvas::editSubtract);
+    connect(ui->btnIntersect, &QToolButton::clicked, canvas_, &VCanvas::editIntersect);
+    connect(ui->btnDiff, &QToolButton::clicked, canvas_, &VCanvas::editDifference);
+    connect(&canvas_->scene(), &Scene::layerChanged, this, &MainWindow::updateLayers);
+    connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
+    connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);
+    connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
+    connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
+        canvas_->setActiveLayer(dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))->layer_);
+    });
+
     canvas_->scene().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
     canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
     canvas_->scene().text_box_->setStyleSheet("border:0");
     canvas_->fitWindow();
     ui->layerList->setDragDropMode(QAbstractItemView::InternalMove);
-    connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this,
-            &MainWindow::layerOrderChanged);
-    connect(ui->layerList, &QListWidget::itemClicked,
-            [=](QListWidgetItem *item) {
-                canvas_->setActiveLayer(
-                    dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))
-                        ->layer_);
-            });
+
     updateLayers();
     updateMode();
     updateSidePanel();
@@ -160,8 +120,7 @@ void MainWindow::updateLayers() {
 
     for (auto &layer : boost::adaptors::reverse(canvas_->scene().layers())) {
         bool active = canvas_->scene().activeLayer().get() == layer.get();
-        auto *list_widget =
-            new LayerWidget(ui->layerList->parentWidget(), layer, active);
+        auto *list_widget = new LayerWidget(ui->layerList->parentWidget(), layer, active);
         auto *list_item = new QListWidgetItem(ui->layerList);
         auto size = list_widget->size();
         list_item->setSizeHint(size);
@@ -169,16 +128,12 @@ void MainWindow::updateLayers() {
     }
 }
 
-void MainWindow::layerOrderChanged(const QModelIndex &sourceParent,
-                                   int sourceStart, int sourceEnd,
-                                   const QModelIndex &destinationParent,
-                                   int destinationRow) {
+void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
+                                   const QModelIndex &destinationParent, int destinationRow) {
     QList<LayerPtr> new_order;
 
     for (int i = 0; i < ui->layerList->count(); i++) {
-        new_order << dynamic_cast<LayerWidget *>(
-                         ui->layerList->itemWidget(ui->layerList->item(i)))
-                         ->layer_;
+        new_order << dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(ui->layerList->item(i)))->layer_;
     }
 
     canvas_->setLayerOrder(new_order);
@@ -208,8 +163,7 @@ bool MainWindow::event(QEvent *e) {
     return QMainWindow::event(e);
 }
 
-void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError,
-                                 const QString &message) {
+void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
     // statusBar()->showMessage(message);
 }
 

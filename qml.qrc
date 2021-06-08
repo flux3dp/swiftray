@@ -41,6 +41,6 @@
         <file>images/icon-nodetype-1.png</file>
         <file>images/icon-setting.png</file>
         <file>images/icon-valign-bot.png</file>
-        <file>vecty.qss</file>
+        <file>styles/vecty.qss</file>
     </qresource>
 </RCC>

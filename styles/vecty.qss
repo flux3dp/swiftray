@@ -1,0 +1,91 @@
+QToolBar {
+  background-color: #F0F0F0;
+  spacing: 8px;
+  border-right: 1px solid #CCC;
+}
+
+#tabWidget {
+  border: 0;
+}
+
+#layerTab {
+  border: 0;
+  border-left: 1px solid #CCC;
+}
+
+#objectTab {
+  border: 0;
+  border-left: 1px solid #CCC;
+}
+
+#scrollAreaWidgetContent {
+  background: #F8F8F8
+}
+
+#objectFrame1 {
+  border: 0;
+  background: #F8F8F8;
+}
+
+#objectFrame2 {
+  border: 0;
+}
+
+#objectFrame3 {
+  border: 0;
+}
+
+#objectFrame4 {
+  border: 0;
+}
+
+#parameterLabelFrame {
+  border: 0;
+  border-top: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  background: #F0F0F0;
+}
+
+#parameterFrame {
+  border: 0;
+}
+
+#addLayerFrame {
+  border: 0;
+  background: white;
+}
+
+#layerList {
+  border: 0;
+}
+
+#layerWidgetFrame {
+  border: 0;
+}
+
+#layerWidgetFrame:hover { 
+  background-color: #F0F0F0; 
+}
+#btnHide { opacity: 0 }
+#btnHide:hover { opacity: 1 }
+
+QToolButton {
+  border-width: 0px;
+  border-radius: 0px;
+}
+
+QToolButton:hover {
+  background: #CCC;
+}
+
+QToolButton:pressed {
+  background: #BBB;
+}
+
+QToolButton:focused {
+  background: #555;
+}
+
+QToolButton:checked {
+  background: #BBB;
+}

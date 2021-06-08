@@ -18,6 +18,9 @@ class MainWindow : public QMainWindow {
         explicit MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
         bool event(QEvent *e) override;
+        void loadQML();
+        void loadQSS();
+
     private slots:
         void quickWidgetStatusChanged(QQuickWidget::Status);
         void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
