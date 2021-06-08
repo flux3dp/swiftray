@@ -1,8 +1,9 @@
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
-#ifndef GRID_H
-#define GRID_H
+#ifndef CONTROL_GRID_H
+#define CONTROL_GRID_H
+namespace Controls {
 
 class Grid : public CanvasControl {
   public:
@@ -11,4 +12,5 @@ class Grid : public CanvasControl {
     bool isActive() override;
 };
 
-#endif // GRID_H
+} // namespace Controls
+#endif // CONTROL_GRID_H

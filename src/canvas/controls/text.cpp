@@ -1,15 +1,17 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
-#include <canvas/controls/text_drawer.h>
+#include <canvas/controls/text.h>
 #include <cmath>
 #include <shape/path_shape.h>
 
-bool TextDrawer::isActive() { 
+using namespace Controls;
+
+bool Text::isActive() { 
     return scene().mode() == Scene::Mode::DRAWING_TEXT; 
 }
 
-bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
+bool Text::mouseReleaseEvent(QMouseEvent *e) {
     origin_ = scene().getCanvasCoord(e->pos());
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
@@ -20,14 +22,14 @@ bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-bool TextDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
+bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     if (scene().mode() != Scene::Mode::DRAWING_TEXT)
         return false;
     *cursor = Qt::IBeamCursor;
     return true;
 }
 
-bool TextDrawer::keyPressEvent(QKeyEvent *e) {
+bool Text::keyPressEvent(QKeyEvent *e) {
     if (e->key() == Qt::Key::Key_Escape) {
         target().setEditing(false);
         if (target().parent() == nullptr &&
@@ -44,7 +46,7 @@ bool TextDrawer::keyPressEvent(QKeyEvent *e) {
     return false;
 }
 
-void TextDrawer::paint(QPainter *painter) {
+void Text::paint(QPainter *painter) {
     if (target_ == nullptr)
         return;
     QString text =
@@ -63,18 +65,18 @@ void TextDrawer::paint(QPainter *painter) {
     painter->setPen(caret_pen);
 }
 
-void TextDrawer::reset() {
+void Text::reset() {
     blink_counter = 0;
     target_ = nullptr;
     origin_ = QPointF();
     scene().text_box_->clear();
 }
 
-TextShape &TextDrawer::target() {
+TextShape &Text::target() {
     return *dynamic_cast<TextShape *>(target_.get());
 }
 
-void TextDrawer::setTarget(ShapePtr new_target) {
+void Text::setTarget(ShapePtr new_target) {
     target_ = new_target;
     if (target_ != nullptr) {
         scene().text_box_->setPlainText(target().text());

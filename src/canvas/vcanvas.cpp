@@ -13,11 +13,13 @@
 
 VCanvas::VCanvas(QQuickItem *parent)
     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
-      transform_box_(TransformBox(scene())),
-      multi_selection_box_(MultiSelectionBox(scene())), grid_(Grid(scene())),
-      line_drawer_(LineDrawer(scene())), oval_drawer_(OvalDrawer(scene())),
-      path_drawer_(PathDrawer(scene())), path_editor_(PathEditor(scene())),
-      rect_drawer_(RectDrawer(scene())), text_drawer_(TextDrawer(scene())),
+      ctrl_transform_(Controls::Transform(scene())),
+      ctrl_select_(Controls::Select(scene())),
+      ctrl_grid_(Controls::Grid(scene())), ctrl_line_(Controls::Line(scene())),
+      ctrl_oval_(Controls::Oval(scene())),
+      ctrl_path_draw_(Controls::PathDraw(scene())),
+      ctrl_path_edit_(Controls::PathEdit(scene())),
+      ctrl_rect_(Controls::Rect(scene())), ctrl_text_(Controls::Text(scene())),
       paste_shift_(QPointF()) {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
@@ -29,9 +31,9 @@ VCanvas::VCanvas(QQuickItem *parent)
     connect(timer, &QTimer::timeout, this, &VCanvas::loop);
     timer->start(16);
     scene().setMode(Scene::Mode::SELECTING);
-    controls_ << &transform_box_ << &multi_selection_box_ << &rect_drawer_
-              << &oval_drawer_ << &line_drawer_ << &path_drawer_
-              << &path_editor_ << &text_drawer_;
+    ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
+           << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
+           << &ctrl_text_;
     qInfo() << "Rendering target = " << this->renderTarget();
 }
 
@@ -55,13 +57,13 @@ void VCanvas::paint(QPainter *painter) {
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());
 
-    grid_.paint(painter);
+    ctrl_grid_.paint(painter);
 
     for (const LayerPtr &layer : scene().layers()) {
         layer->paint(painter, counter);
     }
 
-    for (auto &control : controls_) {
+    for (auto &control : ctrls_) {
         if (control->isActive()) {
             control->paint(painter);
         }
@@ -71,7 +73,7 @@ void VCanvas::paint(QPainter *painter) {
 void VCanvas::keyPressEvent(QKeyEvent *e) {
     // qInfo() << "Key press" << e;
 
-    for (auto &control : controls_) {
+    for (auto &control : ctrls_) {
         if (control->isActive() && control->keyPressEvent(e))
             return;
     }
@@ -88,7 +90,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
     qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
             << canvas_coord;
 
-    for (auto &control : controls_) {
+    for (auto &control : ctrls_) {
         if (control->isActive() && control->mousePressEvent(e))
             return;
     }
@@ -112,7 +114,7 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     // qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" <<
     // canvas_coord;
 
-    for (auto &control : controls_) {
+    for (auto &control : ctrls_) {
         if (control->isActive() && control->mouseMoveEvent(e))
             return;
     }
@@ -123,7 +125,7 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
     qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)"
             << canvas_coord;
 
-    for (auto &control : controls_) {
+    for (auto &control : ctrls_) {
         if (control->isActive() && control->mouseReleaseEvent(e))
             return;
     }
@@ -143,12 +145,12 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
             switch (hit->type()) {
             case Shape::Type::Path:
                 scene().clearSelections();
-                path_editor_.setTarget(hit);
+                ctrl_path_edit_.setTarget(hit);
                 scene().setMode(Scene::Mode::EDITING_PATH);
                 break;
             case Shape::Type::Text:
                 scene().clearSelections();
-                text_drawer_.setTarget(hit);
+                ctrl_text_.setTarget(hit);
                 scene().setMode(Scene::Mode::DRAWING_TEXT);
                 break;
             default:
@@ -156,7 +158,7 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
             }
         }
     } else if (scene().mode() == Scene::Mode::EDITING_PATH) {
-        path_editor_.endEditing();
+        ctrl_path_edit_.endEditing();
     }
 }
 
@@ -178,8 +180,9 @@ bool VCanvas::event(QEvent *e) {
     switch (e->type()) {
     case QEvent::HoverMove:
         unsetCursor();
-        for (auto &control : controls_) {
-            if (control->isActive() && control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
+        for (auto &control : ctrls_) {
+            if (control->isActive() &&
+                control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
                 setCursor(cursor);
                 break;
             }
@@ -227,8 +230,8 @@ void VCanvas::editPaste() {
     qInfo() << "Edit Paste";
     int index_clip_begin = scene().activeLayer().children().length();
     paste_shift_ += QPointF(20, 20);
-    QTransform shift = QTransform().translate(paste_shift_.x(),
-                                              paste_shift_.y());
+    QTransform shift =
+        QTransform().translate(paste_shift_.x(), paste_shift_.y());
 
     for (int i = 0; i < scene().clipboard().length(); i++) {
         ShapePtr shape = scene().clipboard().at(i)->clone();
@@ -257,31 +260,31 @@ void VCanvas::editUndo() { scene().undo(); }
 void VCanvas::editRedo() { scene().redo(); }
 
 void VCanvas::editDrawRect() {
-    rect_drawer_.reset();
+    ctrl_rect_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_RECT);
 }
 
 void VCanvas::editDrawOval() {
-    oval_drawer_.reset();
+    ctrl_oval_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_OVAL);
 }
 
 void VCanvas::editDrawLine() {
-    line_drawer_.reset();
+    ctrl_line_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_LINE);
 }
 
 void VCanvas::editDrawPath() {
-    path_drawer_.reset();
+    ctrl_path_draw_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_PATH);
 }
 
 void VCanvas::editDrawText() {
-    text_drawer_.reset();
+    ctrl_text_.reset();
     scene().clearSelections();
     scene().setMode(Scene::Mode::DRAWING_TEXT);
 }
@@ -304,7 +307,7 @@ void VCanvas::editGroup() {
     qInfo() << "Groupping";
     scene().stackStep();
     const ShapePtr group_ptr =
-        make_shared<GroupShape>(transform_box_.selections());
+        make_shared<GroupShape>(ctrl_transform_.selections());
     scene().removeSelections();
     scene().activeLayer().children().push_back(group_ptr);
     scene().setSelection(group_ptr);

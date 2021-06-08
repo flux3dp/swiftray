@@ -4,10 +4,11 @@
 
 #ifndef TEXTDRAWER_H
 #define TEXTDRAWER_H
+namespace Controls {
 
-class TextDrawer : public CanvasControl {
+class Text : public CanvasControl {
   public:
-    TextDrawer(Scene &scene_) noexcept : CanvasControl(scene_) {}
+    Text(Scene &scene_) noexcept : CanvasControl(scene_) {}
     bool mouseReleaseEvent(QMouseEvent *e) override;
     bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
     bool keyPressEvent(QKeyEvent *e) override;
@@ -23,4 +24,5 @@ class TextDrawer : public CanvasControl {
     int blink_counter;
 };
 
+}
 #endif // TEXTDRAWER_H

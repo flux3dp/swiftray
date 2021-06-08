@@ -1,12 +1,13 @@
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
-#ifndef LINEDRAWER_H
-#define LINEDRAWER_H
+#ifndef CONTROL_LINE_H
+#define CONTROL_LINE_H
+namespace Controls {
 
-class LineDrawer : public CanvasControl {
+class Line : public CanvasControl {
   public:
-    LineDrawer(Scene &scene_) noexcept : CanvasControl(scene_) {}
+    Line(Scene &scene_) noexcept : CanvasControl(scene_) {}
     bool mouseMoveEvent(QMouseEvent *e) override;
     bool mouseReleaseEvent(QMouseEvent *e) override;
     void paint(QPainter *painter) override;
@@ -17,4 +18,6 @@ class LineDrawer : public CanvasControl {
     QPointF cursor_;
 };
 
-#endif // LINEDRAWER_H
+}
+
+#endif // CONTROL_LINE_H

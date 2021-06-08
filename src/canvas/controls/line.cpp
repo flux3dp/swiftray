@@ -1,18 +1,19 @@
 #include <QPainterPath>
-#include <canvas/controls/line_drawer.h>
+#include <canvas/controls/line.h>
 #include <cmath>
 #include <shape/path_shape.h>
+using namespace Controls;
 
-bool LineDrawer::isActive() { 
+bool Line::isActive() { 
     return scene().mode() == Scene::Mode::DRAWING_LINE; 
 }
 
-bool LineDrawer::mouseMoveEvent(QMouseEvent *e) {
+bool Line::mouseMoveEvent(QMouseEvent *e) {
     cursor_ = scene().getCanvasCoord(e->pos());
     return true;
 }
 
-bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
+bool Line::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.moveTo(scene().mousePressedCanvasCoord());
     path.lineTo(scene().getCanvasCoord(e->pos()));
@@ -24,7 +25,7 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-void LineDrawer::paint(QPainter *painter) {
+void Line::paint(QPainter *painter) {
     if (cursor_ == QPointF(0, 0))
         return;
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
@@ -33,4 +34,4 @@ void LineDrawer::paint(QPainter *painter) {
     painter->drawLine(scene().mousePressedCanvasCoord(), cursor_);
 }
 
-void LineDrawer::reset() { cursor_ = QPointF(); }
+void Line::reset() { cursor_ = QPointF(); }

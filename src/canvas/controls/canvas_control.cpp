@@ -1,4 +1,6 @@
 #include <canvas/controls/canvas_control.h>
+using namespace Controls;
+
 CanvasControl::CanvasControl(Scene &scene)
     : scene_(scene){
 

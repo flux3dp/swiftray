@@ -1,22 +1,24 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
-#include <canvas/controls/path_drawer.h>
+#include <canvas/controls/path_draw.h>
 #include <cmath>
 #include <shape/path_shape.h>
 
-bool PathDrawer::isActive() { 
+using namespace Controls;
+
+bool PathDraw::isActive() { 
     return scene().mode() == Scene::Mode::DRAWING_PATH; 
 }
 
-PathDrawer::PathDrawer(Scene &scene_) noexcept : CanvasControl(scene_) {
+PathDraw::PathDraw(Scene &scene_) noexcept : CanvasControl(scene_) {
     curve_target_ = invalid_point;
     last_ctrl_pt_ = invalid_point;
     is_drawing_curve_ = false;
     is_closing_curve_ = false;
 }
 
-bool PathDrawer::mousePressEvent(QMouseEvent *e) {
+bool PathDraw::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
     curve_target_ = canvas_coord;
@@ -30,7 +32,7 @@ bool PathDrawer::mousePressEvent(QMouseEvent *e) {
     return true;
 }
 
-bool PathDrawer::mouseMoveEvent(QMouseEvent *e) {
+bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_PATH)
         return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
@@ -41,7 +43,7 @@ bool PathDrawer::mouseMoveEvent(QMouseEvent *e) {
     return true;
 }
 
-bool PathDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
+bool PathDraw::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     if (scene().mode() != Scene::Mode::DRAWING_PATH)
         return false;
     *cursor = Qt::CrossCursor;
@@ -49,7 +51,7 @@ bool PathDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     return true;
 }
 
-bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
+bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::DRAWING_PATH)
         return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
@@ -99,7 +101,7 @@ bool PathDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-bool PathDrawer::hitOrigin(QPointF canvas_coord) {
+bool PathDraw::hitOrigin(QPointF canvas_coord) {
     if (working_path_.elementCount() > 0 &&
         (working_path_.elementAt(0) - canvas_coord).manhattanLength() <
             15 / scene().scale()) {
@@ -108,7 +110,7 @@ bool PathDrawer::hitOrigin(QPointF canvas_coord) {
     return false;
 }
 
-bool PathDrawer::hitTest(QPointF canvas_coord) {
+bool PathDraw::hitTest(QPointF canvas_coord) {
     for (int i = 0; i < working_path_.elementCount(); i++) {
         QPainterPath::Element ele = working_path_.elementAt(i);
         if (ele.isMoveTo()) {
@@ -130,7 +132,7 @@ bool PathDrawer::hitTest(QPointF canvas_coord) {
     return false;
 }
 
-void PathDrawer::paint(QPainter *painter) {
+void PathDraw::paint(QPainter *painter) {
     if (scene().mode() != Scene::Mode::DRAWING_PATH)
         return;
     auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
@@ -177,7 +179,7 @@ void PathDrawer::paint(QPainter *painter) {
     }
 }
 
-void PathDrawer::reset() {
+void PathDraw::reset() {
     working_path_ = QPainterPath();
     curve_target_ = invalid_point;
     last_ctrl_pt_ = invalid_point;

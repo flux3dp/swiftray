@@ -1,20 +1,22 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
-#include <canvas/controls/path_editor.h>
+#include <canvas/controls/path_edit.h>
 #include <cfloat>
 #include <cmath>
 
-PathEditor::PathEditor(Scene &scene_) noexcept : CanvasControl(scene_) {
+using namespace Controls;
+
+PathEdit::PathEdit(Scene &scene_) noexcept : CanvasControl(scene_) {
     dragging_index_ = -1;
     target_ = nullptr;
 }
 
-bool PathEditor::isActive() { 
+bool PathEdit::isActive() { 
     return scene().mode() == Scene::Mode::EDITING_PATH; 
 }
 
-bool PathEditor::mousePressEvent(QMouseEvent *e) {
+bool PathEdit::mousePressEvent(QMouseEvent *e) {
     if (target_.get() == nullptr)
         return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
@@ -26,7 +28,7 @@ bool PathEditor::mousePressEvent(QMouseEvent *e) {
     }
 }
 
-bool PathEditor::mouseMoveEvent(QMouseEvent *e) {
+bool PathEdit::mouseMoveEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::EDITING_PATH)
         return false;
     if (target_.get() == nullptr)
@@ -48,7 +50,7 @@ bool PathEditor::mouseMoveEvent(QMouseEvent *e) {
     return true;
 }
 
-void PathEditor::moveElementTo(int index, QPointF local_coord) {
+void PathEdit::moveElementTo(int index, QPointF local_coord) {
     QPainterPath::Element ele = path().elementAt(index);
     QPointF offset = local_coord - ele;
     int last_index = path().elementCount() - 1;
@@ -112,11 +114,11 @@ void PathEditor::moveElementTo(int index, QPointF local_coord) {
     target().invalidBBox();
 }
 
-qreal PathEditor::distance(QPointF point) {
+qreal PathEdit::distance(QPointF point) {
     return sqrt(pow(point.x(), 2) + pow(point.y(), 2));
 }
 
-bool PathEditor::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
+bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     if (scene().mode() != Scene::Mode::EDITING_PATH)
         return false;
     if (target_.get() == nullptr)
@@ -133,7 +135,7 @@ bool PathEditor::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     }
 }
 
-bool PathEditor::mouseReleaseEvent(QMouseEvent *e) {
+bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
     if (scene().mode() != Scene::Mode::EDITING_PATH)
         return false;
     if (target_.get() == nullptr)
@@ -143,7 +145,7 @@ bool PathEditor::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-int PathEditor::hitTest(QPointF local_coord) {
+int PathEdit::hitTest(QPointF local_coord) {
     if (target_.get() == nullptr)
         return -1;
     float tolerance = 8 / scene().scale();
@@ -156,7 +158,7 @@ int PathEditor::hitTest(QPointF local_coord) {
     return -1;
 }
 
-void PathEditor::paint(QPainter *painter) {
+void PathEdit::paint(QPainter *painter) {
     if (scene().mode() != Scene::Mode::EDITING_PATH)
         return;
     if (target_.get() == nullptr)
@@ -222,19 +224,19 @@ void PathEditor::paint(QPainter *painter) {
     painter->restore();
 }
 
-void PathEditor::reset() { target_ = nullptr; }
+void PathEdit::reset() { target_ = nullptr; }
 
-QPainterPath &PathEditor::path() { return target().path(); }
+QPainterPath &PathEdit::path() { return target().path(); }
 
-QPointF PathEditor::getLocalCoord(QPointF canvas_coord) {
+QPointF PathEdit::getLocalCoord(QPointF canvas_coord) {
     return target_->transform().inverted().map(canvas_coord);
 }
 
-PathShape &PathEditor::target() {
+PathShape &PathEdit::target() {
     return *dynamic_cast<PathShape *>(target_.get());
 }
 
-void PathEditor::setTarget(ShapePtr target) {
+void PathEdit::setTarget(ShapePtr target) {
     target_ = target;
     int elem_count = path().elementCount();
     is_closed_shape_ = elem_count > 0 &&
@@ -256,7 +258,7 @@ void PathEditor::setTarget(ShapePtr target) {
     }
 }
 
-bool PathEditor::keyPressEvent(QKeyEvent *e) {
+bool PathEdit::keyPressEvent(QKeyEvent *e) {
     if (scene().mode() != Scene::Mode::EDITING_PATH)
         return false;
     if (e->key() == Qt::Key::Key_Escape) {
@@ -265,7 +267,7 @@ bool PathEditor::keyPressEvent(QKeyEvent *e) {
     return true;
 }
 
-void PathEditor::endEditing() {
+void PathEdit::endEditing() {
     scene().setMode(Scene::Mode::SELECTING);
     scene().clearSelections();
     target_->invalidBBox();

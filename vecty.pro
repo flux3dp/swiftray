@@ -67,17 +67,13 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     src/canvas/layer.h \
     src/canvas/scene.h \
-    src/canvas/controls/canvas_control.h \
-    src/canvas/controls/rect_drawer.h \
-    src/canvas/controls/transform_box.h \
+    $$files(src/canvas/controls/*.h) \
+    $$files(src/shape/*.h) \
     src/widgets/layer_widget.h \
     src/widgets/canvas_text_edit.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
-    src/shape/group_shape.h \
-    src/shape/path_shape.h \
     src/canvas/vcanvas.h \
-    src/shape/shape.h \
     src/parser/svgpp_common.h \
     src/parser/svgpp_parser.h \
     src/parser/svgpp_color_factory.h

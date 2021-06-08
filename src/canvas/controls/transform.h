@@ -6,10 +6,12 @@
 #include <limits>
 #include <shape/shape.h>
 
-#ifndef TRANSFORM_BOX_H
-#define TRANSFORM_BOX_H
+#ifndef TRANSFORM_H
+#define TRANSFORM_H
 
-class TransformBox : public CanvasControl {
+namespace Controls {
+
+class Transform : public CanvasControl {
     Q_OBJECT
   public:
     enum class Control {
@@ -24,7 +26,7 @@ class TransformBox : public CanvasControl {
         W = 7,
         ROTATION = 8
     };
-    TransformBox(Scene &scene) noexcept;
+    Transform(Scene &scene) noexcept;
     bool keyPressEvent(QKeyEvent *e) override;
     bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
     bool mousePressEvent(QMouseEvent *e) override;
@@ -69,4 +71,5 @@ class TransformBox : public CanvasControl {
     void transformChanged();
 };
 
+}
 #endif

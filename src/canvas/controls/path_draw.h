@@ -1,14 +1,15 @@
 #include <QMouseEvent>
 #include <canvas/controls/canvas_control.h>
 
-#ifndef PATHDRAWER_H
-#define PATHDRAWER_H
+#ifndef CONTROL_PATH_DRAW_H
+#define CONTROL_PATH_DRAW_H
+namespace Controls {
 
 constexpr QPointF invalid_point(-1, -1);
 
-class PathDrawer : public CanvasControl {
+class PathDraw : public CanvasControl {
   public:
-    PathDrawer(Scene &scene_) noexcept;
+    PathDraw(Scene &scene_) noexcept;
     bool mousePressEvent(QMouseEvent *e) override;
     bool mouseMoveEvent(QMouseEvent *e) override;
     bool mouseReleaseEvent(QMouseEvent *e) override;
@@ -28,4 +29,5 @@ class PathDrawer : public CanvasControl {
     QPointF last_ctrl_pt_;
 };
 
-#endif // PATHDRAWER_H
+}
+#endif // CONTROL_PATH_DRAW_H

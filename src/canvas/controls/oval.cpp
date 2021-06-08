@@ -1,18 +1,20 @@
 #include <QPainterPath>
-#include <canvas/controls/oval_drawer.h>
+#include <canvas/controls/oval.h>
 #include <cmath>
 #include <shape/path_shape.h>
 
-bool OvalDrawer::isActive() { 
+using namespace Controls;
+
+bool Oval::isActive() { 
     return scene().mode() == Scene::Mode::DRAWING_OVAL; 
 }
 
-bool OvalDrawer::mouseMoveEvent(QMouseEvent *e) {
+bool Oval::mouseMoveEvent(QMouseEvent *e) {
     rect_ = QRectF(scene().mousePressedCanvasCoord(), scene().getCanvasCoord(e->pos()));
     return true;
 }
 
-bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
+bool Oval::mouseReleaseEvent(QMouseEvent *e) {
     QPainterPath path;
     path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
     path.arcTo(rect_, 0, 360 * 16);
@@ -24,11 +26,11 @@ bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-void OvalDrawer::paint(QPainter *painter) {
+void Oval::paint(QPainter *painter) {
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawArc(rect_, 0, 360 * 16);
 }
 
-void OvalDrawer::reset() { rect_ = QRectF(0, 0, 0, 0); }
+void Oval::reset() { rect_ = QRectF(0, 0, 0, 0); }

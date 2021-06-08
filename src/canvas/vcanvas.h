@@ -3,18 +3,17 @@
 #include <QtQuick>
 #include <canvas/controls/canvas_control.h>
 #include <canvas/controls/grid.h>
-#include <canvas/controls/line_drawer.h>
-#include <canvas/controls/multi_selection_box.h>
-#include <canvas/controls/oval_drawer.h>
-#include <canvas/controls/path_drawer.h>
-#include <canvas/controls/path_editor.h>
-#include <canvas/controls/rect_drawer.h>
-#include <canvas/controls/text_drawer.h>
-#include <canvas/controls/transform_box.h>
+#include <canvas/controls/line.h>
+#include <canvas/controls/select.h>
+#include <canvas/controls/oval.h>
+#include <canvas/controls/path_draw.h>
+#include <canvas/controls/path_edit.h>
+#include <canvas/controls/rect.h>
+#include <canvas/controls/text.h>
+#include <canvas/controls/transform.h>
 #include <canvas/scene.h>
 #include <parser/svgpp_parser.h>
 #include <shape/shape.h>
-
 class VCanvas : public QQuickPaintedItem {
     Q_OBJECT
     QML_ELEMENT
@@ -63,16 +62,16 @@ class VCanvas : public QQuickPaintedItem {
     int counter;
     Scene scene_;
     SVGPPParser svgpp_parser_;
-    TransformBox transform_box_;
-    MultiSelectionBox multi_selection_box_;
-    Grid grid_;
-    LineDrawer line_drawer_;
-    OvalDrawer oval_drawer_;
-    PathDrawer path_drawer_;
-    PathEditor path_editor_;
-    RectDrawer rect_drawer_;
-    TextDrawer text_drawer_;
-    QList<CanvasControl *> controls_;
+    Controls::Transform ctrl_transform_;
+    Controls::Select ctrl_select_;
+    Controls::Grid ctrl_grid_;
+    Controls::Line ctrl_line_;
+    Controls::Oval ctrl_oval_;
+    Controls::PathDraw ctrl_path_draw_;
+    Controls::PathEdit ctrl_path_edit_;
+    Controls::Rect ctrl_rect_;
+    Controls::Text ctrl_text_;
+    QList<Controls::CanvasControl *> ctrls_;
 
     QTimer *timer;
     QPointF paste_shift_;

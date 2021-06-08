@@ -3,6 +3,8 @@
 #include <cmath>
 #include <shape/path_shape.h>
 
+using namespace Controls;
+
 bool Grid::isActive() { 
     return true; 
 }

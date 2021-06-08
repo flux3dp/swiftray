@@ -2,10 +2,11 @@
 #include <canvas/controls/canvas_control.h>
 #include <shape/path_shape.h>
 
-#ifndef PATHEDITOR_H
-#define PATHEDITOR_H
+#ifndef CONTROL_PATH_EDIT_H
+#define CONTROL_PATH_EDIT_H
+namespace Controls {
 
-class PathEditor : public CanvasControl {
+class PathEdit : public CanvasControl {
   public:
     class PathNode {
       public:
@@ -14,7 +15,7 @@ class PathEditor : public CanvasControl {
         PathNode(PathShape::NodeType node_type) : type{node_type} {};
     };
 
-    PathEditor(Scene &scene_) noexcept;
+    PathEdit(Scene &scene_) noexcept;
     bool mousePressEvent(QMouseEvent *e) override;
     bool mouseMoveEvent(QMouseEvent *e) override;
     bool mouseReleaseEvent(QMouseEvent *e) override;
@@ -41,4 +42,5 @@ class PathEditor : public CanvasControl {
     QList<PathNode> cache_;
 };
 
-#endif // PATHEDITOR_H
+}
+#endif // CONTROL_PATH_EDIT_H

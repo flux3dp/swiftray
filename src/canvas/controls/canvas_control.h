@@ -6,6 +6,7 @@
 #ifndef CANVAS_CONTROL_H
 #define CANVAS_CONTROL_H
 
+namespace Controls {
 class CanvasControl : public QObject {
     Q_OBJECT
   public:
@@ -24,4 +25,16 @@ class CanvasControl : public QObject {
     Scene &scene_;
 };
 
+// Possible control classes
+class Grid;
+class Line;
+class Oval;
+class PathDraw;
+class PathEdit;
+class Rect;
+class Select;
+class Text;
+class Transform;
+
+}
 #endif // CANVAS_CONTROL_H
