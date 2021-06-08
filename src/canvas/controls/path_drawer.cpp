@@ -5,6 +5,10 @@
 #include <cmath>
 #include <shape/path_shape.h>
 
+bool PathDrawer::isActive() { 
+    return scene().mode() == Scene::Mode::DRAWING_PATH; 
+}
+
 PathDrawer::PathDrawer(Scene &scene_) noexcept : CanvasControl(scene_) {
     curve_target_ = invalid_point;
     last_ctrl_pt_ = invalid_point;
@@ -13,9 +17,6 @@ PathDrawer::PathDrawer(Scene &scene_) noexcept : CanvasControl(scene_) {
 }
 
 bool PathDrawer::mousePressEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_PATH)
-        return false;
-    CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
     curve_target_ = canvas_coord;

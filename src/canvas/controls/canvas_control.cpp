@@ -6,16 +6,16 @@ CanvasControl::CanvasControl(Scene &scene)
 
 Scene &CanvasControl::scene() { return scene_; }
 
-bool CanvasControl::mousePressEvent(QMouseEvent *e) {
-    dragged_from_screen_ = e->pos();
-    dragged_from_canvas_ = scene().getCanvasCoord(e->pos());
-    return false;
-}
+bool CanvasControl::isActive() { return false; }
 
-bool CanvasControl::mouseMoveEvent(QMouseEvent *e) { return false; }
-bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) { return false; }
+// Event Handlers - return true if the event is handled in this control when isActive==true
+bool CanvasControl::mousePressEvent(QMouseEvent *e) { return true; }
+bool CanvasControl::mouseMoveEvent(QMouseEvent *e) { return true; }
+bool CanvasControl::mouseReleaseEvent(QMouseEvent *e) { return true; }
 bool CanvasControl::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
     return false;
 }
-bool CanvasControl::keyPressEvent(QKeyEvent *e) { return false; }
+bool CanvasControl::keyPressEvent(QKeyEvent *e) { return true; }
+
+// Paint
 void CanvasControl::paint(QPainter *painter) {}

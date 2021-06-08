@@ -8,6 +8,7 @@ class Grid : public CanvasControl {
   public:
     Grid(Scene &scene_) noexcept : CanvasControl(scene_) {}
     void paint(QPainter *painter) override;
+    bool isActive() override;
 };
 
 #endif // GRID_H

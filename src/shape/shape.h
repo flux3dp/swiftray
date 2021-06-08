@@ -14,17 +14,18 @@ class Shape {
     virtual ~Shape();
 
     // General attributes
-    bool selected;
-    qreal x() const;
-    qreal y() const;
+    bool selected() const;
+    Layer *parent() const;
     QPointF pos() const;
     qreal rotation() const;
-    Layer *parent() const;
+    qreal x() const;
+    qreal y() const;
     void setX(qreal x);
     void setY(qreal y);
     void setPos(QPointF pos);
     void setRotation(qreal r);
     void setParent(Layer *parent);
+    void setSelected(bool selected);
 
     // Bounding box
     QRectF boundingRect() const;
@@ -47,14 +48,15 @@ class Shape {
 
   private:
     Layer *parent_;
-    mutable bool bbox_need_recalc_;
     qreal rotation_;
+    mutable bool bbox_need_recalc_;
 
   protected:
     QTransform temp_transform_;
+    QTransform transform_;
     mutable QPolygonF rotated_bbox_;
     mutable QRectF bbox_;
-    QTransform transform_;
+    bool selected_;
 };
 
 typedef shared_ptr<Shape> ShapePtr;

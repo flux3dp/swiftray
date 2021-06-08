@@ -62,7 +62,7 @@ class VCanvas : public QQuickPaintedItem {
     bool ready;
     int counter;
     Scene scene_;
-    SVGPPParser svgpp_parser;
+    SVGPPParser svgpp_parser_;
     TransformBox transform_box_;
     MultiSelectionBox multi_selection_box_;
     Grid grid_;
@@ -75,7 +75,7 @@ class VCanvas : public QQuickPaintedItem {
     QList<CanvasControl *> controls_;
 
     QTimer *timer;
-    QHash<int, int> m_fingerPointMapping;
+    QPointF paste_shift_;
 
   signals:
     void rightAlignedChanged();

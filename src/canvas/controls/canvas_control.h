@@ -16,10 +16,9 @@ class CanvasControl : public QObject {
     virtual bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor);
     virtual bool keyPressEvent(QKeyEvent *e);
     virtual void paint(QPainter *painter);
+    virtual bool isActive(); // Return if the control is active in the correct mode
 
     Scene &scene();
-    QPointF dragged_from_screen_;
-    QPointF dragged_from_canvas_;
 
   private:
     Scene &scene_;

@@ -3,6 +3,10 @@
 #include <cmath>
 #include <shape/path_shape.h>
 
+bool Grid::isActive() { 
+    return true; 
+}
+
 void Grid::paint(QPainter *painter) {
     painter->fillRect(0, 0, scene().width(), scene().height(), Qt::white);
     QPen grey_pen(QColor("#DDD"), 1, Qt::SolidLine);

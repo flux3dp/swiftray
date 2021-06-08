@@ -12,12 +12,13 @@
 #include <shape/path_shape.h>
 
 VCanvas::VCanvas(QQuickItem *parent)
-    : QQuickPaintedItem(parent), svgpp_parser(SVGPPParser(scene())),
+    : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
       transform_box_(TransformBox(scene())),
       multi_selection_box_(MultiSelectionBox(scene())), grid_(Grid(scene())),
       line_drawer_(LineDrawer(scene())), oval_drawer_(OvalDrawer(scene())),
       path_drawer_(PathDrawer(scene())), path_editor_(PathEditor(scene())),
-      rect_drawer_(RectDrawer(scene())), text_drawer_(TextDrawer(scene())) {
+      rect_drawer_(RectDrawer(scene())), text_drawer_(TextDrawer(scene())),
+      paste_shift_(QPointF()) {
     setRenderTarget(RenderTarget::FramebufferObject);
     setAcceptedMouseButtons(Qt::AllButtons);
     setAcceptHoverEvents(true);
@@ -37,7 +38,7 @@ VCanvas::VCanvas(QQuickItem *parent)
 void VCanvas::loadSVG(QByteArray &svg_data) {
     // scene().clearAll();
     // scene().addLayer();
-    bool success = svgpp_parser.parse(svg_data);
+    bool success = svgpp_parser_.parse(svg_data);
     setAntialiasing(false);
 
     if (success) {
@@ -61,7 +62,9 @@ void VCanvas::paint(QPainter *painter) {
     }
 
     for (auto &control : controls_) {
-        control->paint(painter);
+        if (control->isActive()) {
+            control->paint(painter);
+        }
     }
 }
 
@@ -69,7 +72,7 @@ void VCanvas::keyPressEvent(QKeyEvent *e) {
     // qInfo() << "Key press" << e;
 
     for (auto &control : controls_) {
-        if (control->keyPressEvent(e))
+        if (control->isActive() && control->keyPressEvent(e))
             return;
     }
 
@@ -81,11 +84,12 @@ void VCanvas::keyPressEvent(QKeyEvent *e) {
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+    scene().setMousePressedScreenCoord(e->pos());
     qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
             << canvas_coord;
 
     for (auto &control : controls_) {
-        if (control->mousePressEvent(e))
+        if (control->isActive() && control->mousePressEvent(e))
             return;
     }
 
@@ -93,7 +97,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
         ShapePtr hit = scene().hitTest(canvas_coord);
 
         if (hit != nullptr) {
-            if (!hit->selected) {
+            if (!hit->selected()) {
                 scene().setSelection(hit);
             }
         } else {
@@ -109,7 +113,7 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
     // canvas_coord;
 
     for (auto &control : controls_) {
-        if (control->mouseMoveEvent(e))
+        if (control->isActive() && control->mouseMoveEvent(e))
             return;
     }
 }
@@ -120,7 +124,7 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
             << canvas_coord;
 
     for (auto &control : controls_) {
-        if (control->mouseReleaseEvent(e))
+        if (control->isActive() && control->mouseReleaseEvent(e))
             return;
     }
 
@@ -175,7 +179,7 @@ bool VCanvas::event(QEvent *e) {
     case QEvent::HoverMove:
         unsetCursor();
         for (auto &control : controls_) {
-            if (control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
+            if (control->isActive() && control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
                 setCursor(cursor);
                 break;
             }
@@ -213,7 +217,7 @@ void VCanvas::editCopy() {
     qInfo() << "Edit Copy";
     scene().clipboard().clear();
     scene().setClipboard(scene().selections());
-    scene().pasting_shift = QPointF(0, 0);
+    paste_shift_ = QPointF(0, 0);
 }
 
 void VCanvas::editPaste() {
@@ -222,9 +226,9 @@ void VCanvas::editPaste() {
     scene().stackStep();
     qInfo() << "Edit Paste";
     int index_clip_begin = scene().activeLayer().children().length();
-    scene().pasting_shift += QPointF(10, 10);
-    QTransform shift = QTransform().translate(scene().pasting_shift.x(),
-                                              scene().pasting_shift.y());
+    paste_shift_ += QPointF(20, 20);
+    QTransform shift = QTransform().translate(paste_shift_.x(),
+                                              paste_shift_.y());
 
     for (int i = 0; i < scene().clipboard().length(); i++) {
         ShapePtr shape = scene().clipboard().at(i)->clone();
@@ -232,14 +236,14 @@ void VCanvas::editPaste() {
         scene().activeLayer().children().push_back(shape);
     }
 
-    QList<ShapePtr> selected;
+    QList<ShapePtr> selected_shapes;
 
     for (int i = index_clip_begin;
          i < scene().activeLayer().children().length(); i++) {
-        selected << scene().activeLayer().children().at(i);
+        selected_shapes << scene().activeLayer().children().at(i);
     }
 
-    scene().setSelections(selected);
+    scene().setSelections(selected_shapes);
 }
 
 void VCanvas::editDelete() {

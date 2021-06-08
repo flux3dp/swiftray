@@ -80,8 +80,6 @@ HEADERS += \
     src/shape/shape.h \
     src/parser/svgpp_common.h \
     src/parser/svgpp_parser.h \
-    src/parser/svgpp_context.h \
-    src/parser/svgpp_impl.h \
     src/parser/svgpp_color_factory.h
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system

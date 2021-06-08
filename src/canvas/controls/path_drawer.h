@@ -17,6 +17,7 @@ class PathDrawer : public CanvasControl {
     void reset();
     bool hitTest(QPointF canvas_coord);
     bool hitOrigin(QPointF canvas_coord);
+    bool isActive() override;
 
   private:
     QPainterPath working_path_;

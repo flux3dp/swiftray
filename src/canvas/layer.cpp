@@ -16,14 +16,14 @@ void Layer::paint(QPainter *painter, int counter) const {
     solid_pen.setCosmetic(true);
 
     // Draw shapes
-    for (int i = 0; i < children_.size(); i++) {
-        if (children_.at(i)->selected) {
+    for (auto &shape : children_) {
+        if (shape->selected()) {
             painter->setPen(dash_pen);
         } else {
             painter->setPen(solid_pen);
         }
 
-        children_.at(i)->paint(painter);
+        shape->paint(painter);
     }
 }
 

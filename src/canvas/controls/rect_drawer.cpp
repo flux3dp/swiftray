@@ -2,21 +2,16 @@
 #include <canvas/controls/rect_drawer.h>
 #include <shape/path_shape.h>
 
-bool RectDrawer::mousePressEvent(QMouseEvent *e) {
-    CanvasControl::mousePressEvent(e);
-    return false;
+bool RectDrawer::isActive() { 
+    return scene().mode() == Scene::Mode::DRAWING_RECT; 
 }
 
 bool RectDrawer::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_RECT)
-        return false;
-    rect_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
+    rect_ = QRectF(scene().mousePressedCanvasCoord(), scene().getCanvasCoord(e->pos()));
     return true;
 }
 
 bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_RECT)
-        return false;
     QPainterPath path;
     path.addRect(rect_);
     ShapePtr new_rect = make_shared<PathShape>(path);
@@ -28,8 +23,6 @@ bool RectDrawer::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void RectDrawer::paint(QPainter *painter) {
-    if (scene().mode() != Scene::Mode::DRAWING_RECT)
-        return;
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);

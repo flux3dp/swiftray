@@ -7,28 +7,32 @@
 
 class PathEditor : public CanvasControl {
   public:
-    PathEditor(Scene &scene_) noexcept;
-    bool mousePressEvent(QMouseEvent *e) override;
-    bool mouseMoveEvent(QMouseEvent *e) override;
-    bool mouseReleaseEvent(QMouseEvent *e) override;
-    bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
-    bool keyPressEvent(QKeyEvent *e) override;
-    void moveElementTo(int index, QPointF local_coord);
-    void paint(QPainter *painter) override;
-    void reset();
-    void endEditing();
-    int hitTest(QPointF canvas_coord);
-    qreal distance(QPointF point);
-    PathShape &target();
-    void setTarget(ShapePtr target);
-    QPainterPath &path();
-    QPointF getLocalCoord(QPointF canvas_coord);
     class PathNode {
       public:
         PathShape::NodeType type;
         bool selected;
         PathNode(PathShape::NodeType node_type) : type{node_type} {};
     };
+
+    PathEditor(Scene &scene_) noexcept;
+    bool mousePressEvent(QMouseEvent *e) override;
+    bool mouseMoveEvent(QMouseEvent *e) override;
+    bool mouseReleaseEvent(QMouseEvent *e) override;
+    bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
+    bool keyPressEvent(QKeyEvent *e) override;
+    void paint(QPainter *painter) override;
+    bool isActive() override;
+    void endEditing();
+    void moveElementTo(int index, QPointF local_coord);
+    void reset();
+    int hitTest(QPointF canvas_coord);
+
+    qreal distance(QPointF point);
+    PathShape &target();
+    QPainterPath &path();
+    QPointF getLocalCoord(QPointF canvas_coord);
+
+    void setTarget(ShapePtr target);
 
   private:
     ShapePtr target_;

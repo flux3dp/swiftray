@@ -10,12 +10,13 @@ PathEditor::PathEditor(Scene &scene_) noexcept : CanvasControl(scene_) {
     target_ = nullptr;
 }
 
+bool PathEditor::isActive() { 
+    return scene().mode() == Scene::Mode::EDITING_PATH; 
+}
+
 bool PathEditor::mousePressEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::EDITING_PATH)
-        return false;
     if (target_.get() == nullptr)
         return false;
-    CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     dragging_index_ = hitTest(getLocalCoord(canvas_coord));
     if (dragging_index_ > -1) {

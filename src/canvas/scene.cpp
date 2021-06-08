@@ -4,7 +4,6 @@
 
 Scene::Scene() noexcept {
     mode_ = Mode::SELECTING;
-    pasting_shift = QPointF();
     new_layer_id_ = 1;
     scroll_x_ = 0;
     scroll_y_ = 0;
@@ -24,16 +23,16 @@ void Scene::setSelections(const QList<ShapePtr> &shapes) {
     clearSelections();
     selections().append(shapes);
 
-    for (int i = 0; i < selections().size(); i++) {
-        selections().at(i)->selected = true;
+    for (auto &shape : selections()) {
+        shape->setSelected(true);
     }
 
     emit selectionsChanged();
 }
 
 void Scene::clearSelections() {
-    for (int i = 0; i < selections().size(); i++) {
-        selections().at(i)->selected = false;
+    for (auto &shape : selections()) {
+        shape->setSelected(false);
     }
 
     selections().clear();
@@ -87,7 +86,7 @@ void Scene::dumpStack(QList<LayerPtr> &stack) {
         qInfo() << "  <Layer " << &layer << ">";
         for (auto &shape : layer->children()) {
             qInfo() << "    <Shape " << shape.get()
-                    << " selected =" << shape->selected << " />";
+                    << " selected =" << shape->selected() << " />";
         }
         qInfo() << "  </Layer>";
     }
@@ -103,16 +102,16 @@ void Scene::undo() {
     clearAll();
     Scene::dumpStack(undo_stack_.last());
     layers().append(undo_stack_.last());
-    QList<ShapePtr> selected;
+    QList<ShapePtr> selected_shapes;
 
     for (auto &layer : layers()) {
         for (auto &shape : layer->children()) {
-            if (shape->selected)
-                selected << shape;
+            if (shape->selected())
+                selected_shapes << shape;
         }
     }
 
-    setSelections(selected);
+    setSelections(selected_shapes);
     setActiveLayer(active_layer_name);
     emit layerChanged();
     undo_stack_.pop_back();
@@ -126,16 +125,16 @@ void Scene::redo() {
     stackUndo();
     clearAll();
     layers().append(redo_stack_.last());
-    QList<ShapePtr> selected;
+    QList<ShapePtr> selected_shapes;
 
     for (auto &layer : layers()) {
         for (auto &shape : layer->children()) {
-            if (shape->selected)
-                selected << shape;
+            if (shape->selected())
+                selected_shapes << shape;
         }
     }
 
-    setSelections(selected);
+    setSelections(selected_shapes);
     setActiveLayer(active_layer_name);
     emit layerChanged();
     redo_stack_.pop_back();
@@ -228,7 +227,7 @@ void Scene::removeSelections() {
     for (auto &layer : layers()) {
         layer->children().erase(
             std::remove_if(layer->children().begin(), layer->children().end(),
-                           [](ShapePtr &s) { return s->selected; }),
+                           [](ShapePtr &s) { return s->selected(); }),
             layer->children().end());
     }
 }
@@ -242,4 +241,16 @@ ShapePtr Scene::hitTest(QPointF canvas_coord) {
         }
     }
     return nullptr;
+}
+
+QPointF Scene::mousePressedCanvasCoord() const {
+    return getCanvasCoord(mouse_pressed_screen_coord_);
+}
+
+QPointF Scene::mousePressedScreenCoord() const {
+    return mouse_pressed_screen_coord_;
+}
+
+void Scene::setMousePressedScreenCoord(QPointF screen_coord) {
+    mouse_pressed_screen_coord_ = screen_coord;
 }

@@ -5,22 +5,11 @@
 #include <cmath>
 #include <shape/path_shape.h>
 
-bool TextDrawer::mousePressEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return false;
-    CanvasControl::mousePressEvent(e);
-    return false;
-}
-
-bool TextDrawer::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return false;
-    return true;
+bool TextDrawer::isActive() { 
+    return scene().mode() == Scene::Mode::DRAWING_TEXT; 
 }
 
 bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return false;
     origin_ = scene().getCanvasCoord(e->pos());
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
@@ -39,8 +28,6 @@ bool TextDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 }
 
 bool TextDrawer::keyPressEvent(QKeyEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return false;
     if (e->key() == Qt::Key::Key_Escape) {
         target().setEditing(false);
         if (target().parent() == nullptr &&
@@ -58,8 +45,6 @@ bool TextDrawer::keyPressEvent(QKeyEvent *e) {
 }
 
 void TextDrawer::paint(QPainter *painter) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return;
     if (target_ == nullptr)
         return;
     QString text =

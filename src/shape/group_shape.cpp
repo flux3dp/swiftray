@@ -60,7 +60,6 @@ void GroupShape::paint(QPainter *painter) const {
     painter->save();
     painter->setTransform(temp_transform_, true);
     painter->setTransform(transform(), true);
-    painter->drawText(QPointF(), selected ? "Selected" : "Free");
 
     for (auto &shape : children_) {
         shape->paint(painter);

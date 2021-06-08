@@ -1,26 +1,25 @@
 #include <QDebug>
 #include <canvas/controls/multi_selection_box.h>
 
-bool MultiSelectionBox::mousePressEvent(QMouseEvent *e) {
-    CanvasControl::mousePressEvent(e);
+MultiSelectionBox::MultiSelectionBox(Scene &scene_) noexcept : CanvasControl(scene_) {
     selection_box_ = QRectF(0, 0, 0, 0);
-    return false;
+}
+
+bool MultiSelectionBox::isActive() { 
+    return scene().mode() == Scene::Mode::MULTI_SELECTING; 
 }
 
 bool MultiSelectionBox::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::MULTI_SELECTING)
-        return false;
+    QPointF start = scene().mousePressedCanvasCoord();
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
-    selection_box_ = QRectF(min(dragged_from_canvas_.x(), canvas_coord.x()),
-                            min(dragged_from_canvas_.y(), canvas_coord.y()),
-                            abs(dragged_from_canvas_.x() - canvas_coord.x()),
-                            abs(dragged_from_canvas_.y() - canvas_coord.y()));
+    selection_box_ = QRectF(min(start.x(), canvas_coord.x()),
+                            min(start.y(), canvas_coord.y()),
+                            abs(start.x() - canvas_coord.x()),
+                            abs(start.y() - canvas_coord.y()));
     return true;
 }
 
 bool MultiSelectionBox::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::MULTI_SELECTING)
-        return false;
     if (selection_box_.width() != 0 || selection_box_.height() != 0) {
         QList<ShapePtr> selected;
         for (auto &layer : scene().layers()) {
@@ -34,13 +33,11 @@ bool MultiSelectionBox::mouseReleaseEvent(QMouseEvent *e) {
     }
 
     scene().setMode(Scene::Mode::SELECTING);
+    selection_box_ = QRectF(0, 0, 0, 0);
     return true;
 }
 
 void MultiSelectionBox::paint(QPainter *painter) {
-    if (scene().mode() != Scene::Mode::MULTI_SELECTING)
-        return;
-
     painter->setPen(
         QPen(QColor::fromRgb(0x00, 0x99, 0xCC, 255), 0, Qt::DashLine));
     painter->fillRect(selection_box_,

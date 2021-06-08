@@ -3,21 +3,16 @@
 #include <cmath>
 #include <shape/path_shape.h>
 
-bool OvalDrawer::mousePressEvent(QMouseEvent *e) {
-    CanvasControl::mousePressEvent(e);
-    return false;
+bool OvalDrawer::isActive() { 
+    return scene().mode() == Scene::Mode::DRAWING_OVAL; 
 }
 
 bool OvalDrawer::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_OVAL)
-        return false;
-    rect_ = QRectF(dragged_from_canvas_, scene().getCanvasCoord(e->pos()));
+    rect_ = QRectF(scene().mousePressedCanvasCoord(), scene().getCanvasCoord(e->pos()));
     return true;
 }
 
 bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_OVAL)
-        return false;
     QPainterPath path;
     path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
     path.arcTo(rect_, 0, 360 * 16);
@@ -30,8 +25,6 @@ bool OvalDrawer::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void OvalDrawer::paint(QPainter *painter) {
-    if (scene().mode() != Scene::Mode::DRAWING_OVAL)
-        return;
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);

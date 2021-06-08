@@ -8,6 +8,14 @@ TransformBox::TransformBox(Scene &scene) noexcept : CanvasControl(scene) {
             SLOT(updateSelections()));
 }
 
+bool TransformBox::isActive() {
+    return scene().selections().size() > 0 &&
+           (scene().mode() == Scene::Mode::SELECTING ||
+            scene().mode() == Scene::Mode::MOVING ||
+            scene().mode() == Scene::Mode::ROTATING ||
+            scene().mode() == Scene::Mode::TRANSFORMING);
+}
+
 QList<ShapePtr> &TransformBox::selections() { return selections_; }
 
 void TransformBox::updateSelections() {
@@ -80,9 +88,6 @@ QRectF TransformBox::boundingRect() {
 }
 
 void TransformBox::applyRotate(bool temporarily) {
-    if (selections().size() == 0)
-        return;
-
     QTransform transform =
         QTransform()
             .translate(action_center_.x(), action_center_.y())
@@ -107,9 +112,6 @@ void TransformBox::applyRotate(bool temporarily) {
 }
 
 void TransformBox::applyScale(bool temporarily) {
-    if (selections().size() == 0)
-        return;
-
     QTransform transform =
         QTransform()
             .translate(action_center_.x(), action_center_.y())
@@ -135,9 +137,6 @@ void TransformBox::applyScale(bool temporarily) {
 }
 
 void TransformBox::applyMove(bool temporarily) {
-    if (selections().size() == 0)
-        return;
-
     QTransform transform = QTransform().translate(translate_to_apply_.x(),
                                                   translate_to_apply_.y());
 
@@ -208,12 +207,6 @@ TransformBox::Control TransformBox::hitTest(QPointF clickPoint,
 }
 
 bool TransformBox::mousePressEvent(QMouseEvent *e) {
-    if (scene().mode() == Scene::Mode::EDITING_PATH)
-        return false;
-    if (scene().mode() == Scene::Mode::DRAWING_TEXT)
-        return false;
-
-    CanvasControl::mousePressEvent(e);
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     reset();
 
@@ -237,12 +230,6 @@ bool TransformBox::mousePressEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() == Scene::Mode::EDITING_PATH)
-        return false;
-    if (active_control_ == Control::NONE &&
-        scene().mode() != Scene::Mode::MOVING)
-        return false;
-
     if (rotation_to_apply_ != 0)
         applyRotate(false);
     if (translate_to_apply_ != QPointF())
@@ -286,16 +273,13 @@ void TransformBox::calcScale(QPointF canvas_coord) {
 }
 
 bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() == Scene::Mode::EDITING_PATH)
-        return false;
-    if (scene().selections().size() == 0)
-        return false;
-
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
     // Todo - check if no selection
+    
     if (scene().mode() == Scene::Mode::SELECTING) {
-        if ((e->pos() - dragged_from_screen_).manhattanLength() > 3) {
+        // Do move event if user actually dragged
+        if ((e->pos() - scene().mousePressedScreenCoord()).manhattanLength() > 3) {
             scene().stackStep();
             scene().setMode(Scene::Mode::MOVING);
         }
@@ -303,7 +287,7 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 
     switch (scene().mode()) {
     case Scene::Mode::MOVING:
-        translate_to_apply_ = canvas_coord - dragged_from_canvas_;
+        translate_to_apply_ = canvas_coord - scene().mousePressedCanvasCoord();
         applyMove(true);
         break;
     case Scene::Mode::ROTATING:
@@ -325,10 +309,6 @@ bool TransformBox::mouseMoveEvent(QMouseEvent *e) {
 }
 
 bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    if (scene().mode() == Scene::Mode::EDITING_PATH)
-        return false;
-    if (scene().mode() == Scene::Mode::DRAWING_TEXT)
-        return false;
     Control cp =
         hitTest(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
 
@@ -365,10 +345,6 @@ bool TransformBox::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 }
 
 void TransformBox::paint(QPainter *painter) {
-    if (scene().mode() == Scene::Mode::EDITING_PATH)
-        return;
-    if (scene().mode() == Scene::Mode::DRAWING_TEXT)
-        return;
     auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     auto blue_pen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
     auto pt_pen = QPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine,
@@ -390,4 +366,9 @@ void TransformBox::reset() {
     scale_x_to_apply_ = scale_y_to_apply_ = 1;
     rotation_to_apply_ = 0;
     translate_to_apply_ = QPointF();
+}
+
+bool TransformBox::keyPressEvent(QKeyEvent *e) { 
+    /// Transform box does not handle all key events
+    return false; 
 }

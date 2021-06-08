@@ -58,6 +58,8 @@ class Scene : QObject {
     qreal scale() const;
     qreal width() const;
     qreal height() const;
+    QPointF mousePressedScreenCoord() const;
+    QPointF mousePressedCanvasCoord() const;
 
     void setWidth(qreal width);
     void setHeight(qreal height);
@@ -65,10 +67,10 @@ class Scene : QObject {
     void setScrollX(qreal scroll_x);
     void setScrollY(qreal scroll_y);
     void setScale(qreal scale);
+    void setMousePressedScreenCoord(QPointF screen_coord);
 
     QList<ShapePtr> &shapes();
 
-    QPointF pasting_shift;
     unique_ptr<CanvasTextEdit> text_box_;
   signals:
     void selectionsChanged();
@@ -97,6 +99,8 @@ class Scene : QObject {
     Mode mode_;
     int new_layer_id_;
     LayerPtr active_layer_;
+
+    QPointF mouse_pressed_screen_coord_;
 };
 
 #endif // SCENE_H

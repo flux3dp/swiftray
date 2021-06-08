@@ -9,7 +9,7 @@ Shape::Shape() noexcept {
     rotation_ = 0;
     transform_ = QTransform();
     temp_transform_ = QTransform();
-    selected = false;
+    selected_ = false;
     parent_ = nullptr;
 }
 
@@ -27,6 +27,8 @@ QPointF Shape::pos() const { return QPointF(x(), y()); }
 
 Layer *Shape::parent() const { return parent_; }
 
+bool Shape::selected() const { return selected_; }
+
 void Shape::setParent(Layer *parent) { parent_ = parent; }
 
 void Shape::applyTransform(const QTransform &transform) {
@@ -40,6 +42,8 @@ void Shape::setTransform(const QTransform &transform) {
 }
 
 void Shape::setRotation(qreal rotation) { rotation_ = rotation; }
+
+void Shape::setSelected(bool selected) { selected_ = selected; }
 
 void Shape::calcBoundingBox() const {
     qWarning() << "Shape::calcBoundingBox not implemented" << this;

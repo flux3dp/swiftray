@@ -25,11 +25,13 @@ class TransformBox : public CanvasControl {
         ROTATION = 8
     };
     TransformBox(Scene &scene) noexcept;
+    bool keyPressEvent(QKeyEvent *e) override;
+    bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
     bool mousePressEvent(QMouseEvent *e) override;
     bool mouseReleaseEvent(QMouseEvent *e) override;
     bool mouseMoveEvent(QMouseEvent *e) override;
-    bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
     void paint(QPainter *painter) override;
+    bool isActive() override;
     void reset();
     const QPointF *controlPoints();
     QRectF boundingRect();
