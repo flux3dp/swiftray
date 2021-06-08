@@ -1,6 +1,6 @@
-#include <shape/shape.h>
-#include <canvas/layer.h>
 #include <QDebug>
+#include <canvas/layer.h>
+#include <shape/shape.h>
 
 Layer::Layer() {
     color_ = QColor::fromRgb(rand() % 256, rand() % 256, rand() % 256, 255);
@@ -27,7 +27,6 @@ void Layer::paint(QPainter *painter, int counter) const {
     }
 }
 
-
 void Layer::addShape(ShapePtr shape) {
     shape->setParent(this);
     children_.push_back(shape);
@@ -38,21 +37,13 @@ void Layer::removeShape(ShapePtr shape) {
     children_.removeOne(shape);
 }
 
-void Layer::clear() {
-    children_.clear();
-}
+void Layer::clear() { children_.clear(); }
 
-QColor Layer::color() const {
-    return color_;
-}
+QColor Layer::color() const { return color_; }
 
-void Layer::setColor(QColor color) {
-    color_ = color;
-}
+void Layer::setColor(QColor color) { color_ = color; }
 
-QList<ShapePtr> &Layer::children() {
-    return children_;
-}
+QList<ShapePtr> &Layer::children() { return children_; }
 
 LayerPtr Layer::clone() {
     LayerPtr layer = make_shared<Layer>();

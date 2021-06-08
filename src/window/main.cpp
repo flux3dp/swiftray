@@ -10,8 +10,8 @@
 #include <window/mainwindow.h>
 
 int main(int argc, char *argv[]) {
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
-    app.setAttribute(Qt::AA_EnableHighDpiScaling);
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
     app.setStyle("fusion");
     QTranslator translator;

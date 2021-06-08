@@ -1,6 +1,6 @@
-#include <canvas/scene.h>
-#include <boost/range/adaptor/reversed.hpp>
 #include <QDebug>
+#include <boost/range/adaptor/reversed.hpp>
+#include <canvas/scene.h>
 
 Scene::Scene() noexcept {
     mode_ = Mode::SELECTING;
@@ -40,13 +40,9 @@ void Scene::clearSelections() {
     emit selectionsChanged();
 }
 
-bool Scene::isSelected(ShapePtr shape) {
-    return selections().contains(shape);
-}
+bool Scene::isSelected(ShapePtr shape) { return selections().contains(shape); }
 
-QList<ShapePtr> &Scene::selections() {
-    return selections_;
-}
+QList<ShapePtr> &Scene::selections() { return selections_; }
 
 void Scene::clearAll() {
     clearSelections();
@@ -90,7 +86,8 @@ void Scene::dumpStack(QList<LayerPtr> &stack) {
     for (auto &layer : stack) {
         qInfo() << "  <Layer " << &layer << ">";
         for (auto &shape : layer->children()) {
-            qInfo() << "    <Shape "<< shape.get() << " selected =" << shape->selected << " />";
+            qInfo() << "    <Shape " << shape.get()
+                    << " selected =" << shape->selected << " />";
         }
         qInfo() << "  </Layer>";
     }
@@ -110,7 +107,8 @@ void Scene::undo() {
 
     for (auto &layer : layers()) {
         for (auto &shape : layer->children()) {
-            if (shape->selected) selected << shape;
+            if (shape->selected)
+                selected << shape;
         }
     }
 
@@ -119,7 +117,6 @@ void Scene::undo() {
     emit layerChanged();
     undo_stack_.pop_back();
 }
-
 
 void Scene::redo() {
     if (redo_stack_.isEmpty()) {
@@ -133,20 +130,18 @@ void Scene::redo() {
 
     for (auto &layer : layers()) {
         for (auto &shape : layer->children()) {
-            if (shape->selected) selected << shape;
+            if (shape->selected)
+                selected << shape;
         }
     }
-    
+
     setSelections(selected);
     setActiveLayer(active_layer_name);
     emit layerChanged();
     redo_stack_.pop_back();
 }
 
-QList<ShapePtr> &Scene::clipboard() {
-    return shape_clipboard_;
-}
-
+QList<ShapePtr> &Scene::clipboard() { return shape_clipboard_; }
 
 void Scene::setClipboard(QList<ShapePtr> &items) {
     for (auto &item : items) {
@@ -155,7 +150,8 @@ void Scene::setClipboard(QList<ShapePtr> &items) {
 }
 
 void Scene::addLayer() {
-    if (layers().length() > 0) stackStep();
+    if (layers().length() > 0)
+        stackStep();
     qDebug() << "Add layer";
     layers() << make_shared<Layer>();
     layers().last()->name = "Layer " + QString::number(new_layer_id_++);
@@ -163,9 +159,7 @@ void Scene::addLayer() {
     emit layerChanged();
 }
 
-Scene::Mode Scene::mode() {
-    return mode_;
-}
+Scene::Mode Scene::mode() { return mode_; }
 
 void Scene::setMode(Mode mode) {
     mode_ = mode;
@@ -176,63 +170,38 @@ QPointF Scene::getCanvasCoord(QPointF window_coord) const {
     return (window_coord - scroll()) / scale();
 }
 
-QPointF Scene::scroll() const {
-    return QPointF(scroll_x_, scroll_y_);
-}
+QPointF Scene::scroll() const { return QPointF(scroll_x_, scroll_y_); }
 
+qreal Scene::scrollX() const { return scroll_x_; }
 
-qreal Scene::scrollX() const {
-    return scroll_x_;
-}
+qreal Scene::scrollY() const { return scroll_y_; }
 
-qreal Scene::scrollY() const {
-    return scroll_y_;
-}
+qreal Scene::scale() const { return scale_; }
 
-qreal Scene::scale() const {
-    return scale_;
-}
+qreal Scene::width() const { return width_; }
 
-qreal Scene::width() const{
-    return width_;
-}
+qreal Scene::height() const { return height_; }
 
-qreal Scene::height() const {
-    return height_;
-}
+void Scene::setWidth(qreal width) { width_ = width; }
 
-
-void Scene::setWidth(qreal width) {
-    width_ = width;
-}
-
-void Scene::setHeight(qreal height) {
-    height_ = height;
-
-}
+void Scene::setHeight(qreal height) { height_ = height; }
 
 void Scene::setScroll(QPointF scroll) {
     scroll_x_ = scroll.x();
     scroll_y_ = scroll.y();
 }
 
-void Scene::setScrollX(qreal scroll_x) {
-    scroll_x_ = scroll_x;
+void Scene::setScrollX(qreal scroll_x) { scroll_x_ = scroll_x; }
 
-}
+void Scene::setScrollY(qreal scroll_y) { scroll_y_ = scroll_y; }
 
-void Scene::setScrollY(qreal scroll_y) {
-    scroll_y_ = scroll_y;
-
-}
-
-void Scene::setScale(qreal scale) {
-    scale_ = scale;
-}
+void Scene::setScale(qreal scale) { scale_ = scale; }
 
 Layer &Scene::activeLayer() {
-    Q_ASSERT_X(layers_.size() != 0, "Active Layer", "Access to active layer when there is no layer");
-    Q_ASSERT_X(active_layer_ != nullptr, "Active Layer", "Access to active layer is cleaned");
+    Q_ASSERT_X(layers_.size() != 0, "Active Layer",
+               "Access to active layer when there is no layer");
+    Q_ASSERT_X(active_layer_ != nullptr, "Active Layer",
+               "Access to active layer is cleaned");
     return *active_layer_;
 }
 
@@ -248,10 +217,7 @@ bool Scene::setActiveLayer(QString name) {
     return false;
 }
 
-
-QList<LayerPtr> &Scene::layers(){
-    return layers_;
-}
+QList<LayerPtr> &Scene::layers() { return layers_; }
 
 void Scene::removeSelections() {
     // Clear selection pointers in other componenets
@@ -260,9 +226,10 @@ void Scene::removeSelections() {
 
     // Remove
     for (auto &layer : layers()) {
-        layer->children().erase(std::remove_if(layer->children().begin(), layer->children().end(), [](ShapePtr & s) {
-            return s->selected;
-        }), layer->children().end());
+        layer->children().erase(
+            std::remove_if(layer->children().begin(), layer->children().end(),
+                           [](ShapePtr &s) { return s->selected; }),
+            layer->children().end());
     }
 }
 

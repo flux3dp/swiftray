@@ -1,9 +1,9 @@
-#include <shape/path_shape.h>
-#include <canvas/controls/grid.h>
 #include <QPainterPath>
+#include <canvas/controls/grid.h>
 #include <cmath>
+#include <shape/path_shape.h>
 
-void Grid::paint(QPainter *painter){
+void Grid::paint(QPainter *painter) {
     painter->fillRect(0, 0, scene().width(), scene().height(), Qt::white);
     QPen grey_pen(QColor("#DDD"), 1, Qt::SolidLine);
     QPen black_pen(Qt::black, 1, Qt::SolidLine);
@@ -13,18 +13,18 @@ void Grid::paint(QPainter *painter){
     black_thick_pen.setCosmetic(true);
 
     painter->setPen(grey_pen);
-    for(int x = 0; x < scene().width(); x += 100) {
+    for (int x = 0; x < scene().width(); x += 100) {
         painter->drawLine(x, 0, x, scene().height());
     }
-    for(int y = 0; y < scene().height(); y += 100) {
+    for (int y = 0; y < scene().height(); y += 100) {
         painter->drawLine(0, y, scene().width(), y);
     }
 
     painter->setPen(black_pen);
-    for(int x = 0; x < scene().width(); x += 1000) {
+    for (int x = 0; x < scene().width(); x += 1000) {
         painter->drawLine(x, 0, x, scene().height());
     }
-    for(int y = 0; y < scene().height(); y += 1000) {
+    for (int y = 0; y < scene().height(); y += 1000) {
         painter->drawLine(0, y, scene().width(), y);
     }
 

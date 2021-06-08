@@ -1,7 +1,7 @@
-#include <shape/path_shape.h>
-#include <canvas/controls/line_drawer.h>
 #include <QPainterPath>
+#include <canvas/controls/line_drawer.h>
 #include <cmath>
+#include <shape/path_shape.h>
 
 bool LineDrawer::mousePressEvent(QMouseEvent *e) {
     CanvasControl::mousePressEvent(e);
@@ -9,13 +9,15 @@ bool LineDrawer::mousePressEvent(QMouseEvent *e) {
 }
 
 bool LineDrawer::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_LINE) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_LINE)
+        return false;
     cursor_ = scene().getCanvasCoord(e->pos());
     return true;
 }
 
 bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_LINE) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_LINE)
+        return false;
     QPainterPath path;
     path.moveTo(dragged_from_canvas_);
     path.lineTo(scene().getCanvasCoord(e->pos()));
@@ -27,15 +29,15 @@ bool LineDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-void LineDrawer::paint(QPainter *painter){
-    if (scene().mode() != Scene::Mode::DRAWING_LINE) return;
-    if (cursor_ == QPointF(0,0)) return;
+void LineDrawer::paint(QPainter *painter) {
+    if (scene().mode() != Scene::Mode::DRAWING_LINE)
+        return;
+    if (cursor_ == QPointF(0, 0))
+        return;
     QPen pen(scene().activeLayer().color(), 3, Qt::SolidLine);
     pen.setCosmetic(true);
     painter->setPen(pen);
     painter->drawLine(dragged_from_canvas_, cursor_);
 }
 
-void LineDrawer::reset() {
-    cursor_ = QPointF();
-}
+void LineDrawer::reset() { cursor_ = QPointF(); }

@@ -1,5 +1,5 @@
-#include <shape/shape.h>
 #include <QDebug>
+#include <shape/shape.h>
 
 #define SELECTION_TOLERANCE 15
 
@@ -13,34 +13,21 @@ Shape::Shape() noexcept {
     parent_ = nullptr;
 }
 
-Shape::~Shape() {
-}
+Shape::~Shape() {}
 
 // only calls this when the path is different
 
-qreal Shape::x() const {
-    return transform_.dx();
-}
+qreal Shape::x() const { return transform_.dx(); }
 
-qreal Shape::y() const {
-    return transform_.dy();
-}
+qreal Shape::y() const { return transform_.dy(); }
 
-qreal Shape::rotation() const {
-    return rotation_;
-}
+qreal Shape::rotation() const { return rotation_; }
 
-QPointF Shape::pos() const {
-    return QPointF(x(), y());
-}
+QPointF Shape::pos() const { return QPointF(x(), y()); }
 
-Layer* Shape::parent() const {
-    return parent_;
-}
+Layer *Shape::parent() const { return parent_; }
 
-void Shape::setParent(Layer* parent) {
-    parent_ = parent;
-}
+void Shape::setParent(Layer *parent) { parent_ = parent; }
 
 void Shape::applyTransform(const QTransform &transform) {
     transform_ = transform_ * transform;
@@ -52,19 +39,15 @@ void Shape::setTransform(const QTransform &transform) {
     bbox_need_recalc_ = true;
 }
 
-void Shape::setRotation(qreal rotation) {
-    rotation_ = rotation;
-}
+void Shape::setRotation(qreal rotation) { rotation_ = rotation; }
 
 void Shape::calcBoundingBox() const {
     qWarning() << "Shape::calcBoundingBox not implemented" << this;
 }
 
-const QTransform& Shape::transform() const {
-    return transform_;
-}
+const QTransform &Shape::transform() const { return transform_; }
 
-bool Shape::hitTest(QPointF, qreal) const{
+bool Shape::hitTest(QPointF, qreal) const {
     qWarning() << "Shape::hitTest(point) not implemented" << this;
     return false;
 }
@@ -100,13 +83,9 @@ shared_ptr<Shape> Shape::clone() const {
     return shape;
 }
 
-Shape::Type Shape::type() const {
-    return Shape::Type::None;
-}
+Shape::Type Shape::type() const { return Shape::Type::None; }
 
-void Shape::invalidBBox() {
-    bbox_need_recalc_ = true;
-}
+void Shape::invalidBBox() { bbox_need_recalc_ = true; }
 
 void Shape::setTempTransform(const QTransform &transform) {
     temp_transform_ = transform;

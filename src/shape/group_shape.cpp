@@ -1,10 +1,9 @@
 #include <QDebug>
 #include <shape/group_shape.h>
 
-GroupShape::GroupShape(): Shape() {
-}
+GroupShape::GroupShape() : Shape() {}
 
-GroupShape::GroupShape(QList<ShapePtr> &children): Shape() {
+GroupShape::GroupShape(QList<ShapePtr> &children) : Shape() {
     children_.append(children);
     invalidBBox();
 }
@@ -41,10 +40,14 @@ void GroupShape::calcBoundingBox() const {
         // TODO: improve bounding box algorithm (draft logic)
         QRectF bb = shape->boundingRect();
 
-        if (bb.left() < left) left = bb.left();
-        if (bb.top() < top) top = bb.top();
-        if (bb.right() > right) right = bb.right();
-        if (bb.bottom() > bottom) bottom = bb.bottom();
+        if (bb.left() < left)
+            left = bb.left();
+        if (bb.top() < top)
+            top = bb.top();
+        if (bb.right() > right)
+            right = bb.right();
+        if (bb.bottom() > bottom)
+            bottom = bb.bottom();
     }
 
     QRectF local_bbox = QRectF(left, top, right - left, bottom - top);
@@ -78,10 +81,6 @@ ShapePtr GroupShape::clone() const {
     return ShapePtr(group);
 }
 
-const QList<ShapePtr> &GroupShape::children() const{
-    return children_;
-}
+const QList<ShapePtr> &GroupShape::children() const { return children_; }
 
-Shape::Type GroupShape::type() const {
-    return Shape::Type::Group;
-}
+Shape::Type GroupShape::type() const { return Shape::Type::Group; }

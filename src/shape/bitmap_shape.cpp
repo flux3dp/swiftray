@@ -15,7 +15,9 @@ BitmapShape::BitmapShape(const BitmapShape &orig) : Shape() {
 
 bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) const {
     QPointF local_coord = transform().inverted().map(global_coord);
-    return hitTest(QRectF(global_coord.x() - tolerance, global_coord.y() - tolerance, tolerance * 2, tolerance * 2));
+    return hitTest(QRectF(global_coord.x() - tolerance,
+                          global_coord.y() - tolerance, tolerance * 2,
+                          tolerance * 2));
 }
 
 bool BitmapShape::hitTest(QRectF global_coord_rect) const {
@@ -28,8 +30,10 @@ void BitmapShape::calcBoundingBox() const {
 }
 
 QImage &BitmapShape::image() const {
-    std::uintptr_t parent_color = parent() == nullptr ? 0 : parent()->color().value();
-    std::uintptr_t bitmap_address = reinterpret_cast<std::uintptr_t>(bitmap_.get());
+    std::uintptr_t parent_color =
+        parent() == nullptr ? 0 : parent()->color().value();
+    std::uintptr_t bitmap_address =
+        reinterpret_cast<std::uintptr_t>(bitmap_.get());
     if (tinted_signature != parent_color + bitmap_address) {
         tinted_signature = parent_color + bitmap_address;
         qInfo() << "Tinted image" << tinted_signature;
@@ -38,7 +42,7 @@ QImage &BitmapShape::image() const {
         QPainter p;
         p.begin(&mask);
         p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-        p.fillRect(QRect(0,0,mask.width(),mask.height()), parent()->color());
+        p.fillRect(QRect(0, 0, mask.width(), mask.height()), parent()->color());
         p.end();
 
         p.begin(&tinted_image_);
@@ -49,7 +53,7 @@ QImage &BitmapShape::image() const {
     return tinted_image_;
 }
 
-void BitmapShape::paint(QPainter *painter) const{
+void BitmapShape::paint(QPainter *painter) const {
     painter->save();
     painter->setTransform(temp_transform_, true);
     painter->setTransform(transform(), true);
@@ -62,6 +66,4 @@ ShapePtr BitmapShape::clone() const {
     return new_shape;
 }
 
-Shape::Type BitmapShape::type() const {
-    return Shape::Type::Bitmap;
-}
+Shape::Type BitmapShape::type() const { return Shape::Type::Bitmap; }

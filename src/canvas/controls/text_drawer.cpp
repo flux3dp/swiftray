@@ -1,23 +1,26 @@
 #include <QApplication>
-#include <QPainterPath>
 #include <QDebug>
-#include <shape/path_shape.h>
+#include <QPainterPath>
 #include <canvas/controls/text_drawer.h>
 #include <cmath>
+#include <shape/path_shape.h>
 
 bool TextDrawer::mousePressEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return false;
     CanvasControl::mousePressEvent(e);
     return false;
 }
 
 bool TextDrawer::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return false;
     return true;
 }
 
 bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return false;
     origin_ = scene().getCanvasCoord(e->pos());
     scene().text_box_->setFocus();
     if (target_ == nullptr) {
@@ -28,18 +31,20 @@ bool TextDrawer::mouseReleaseEvent(QMouseEvent *e) {
     return true;
 }
 
-
 bool TextDrawer::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return false;
     *cursor = Qt::IBeamCursor;
     return true;
 }
 
 bool TextDrawer::keyPressEvent(QKeyEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return false;
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return false;
     if (e->key() == Qt::Key::Key_Escape) {
         target().setEditing(false);
-        if (target().parent() == nullptr && scene().text_box_->toPlainText().length() > 0) {
+        if (target().parent() == nullptr &&
+            scene().text_box_->toPlainText().length() > 0) {
             qInfo() << "Create new text shape instance";
             scene().stackStep();
             scene().activeLayer().addShape(target_);
@@ -52,10 +57,13 @@ bool TextDrawer::keyPressEvent(QKeyEvent *e) {
     return false;
 }
 
-void TextDrawer::paint(QPainter *painter){
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT) return;
-    if (target_ == nullptr) return;
-    QString text = scene().text_box_->toPlainText() + scene().text_box_->preeditString();
+void TextDrawer::paint(QPainter *painter) {
+    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
+        return;
+    if (target_ == nullptr)
+        return;
+    QString text =
+        scene().text_box_->toPlainText() + scene().text_box_->preeditString();
     target().setText(text);
     target().makeCursorRect(scene().text_box_->textCursor().position());
     target().setEditing(true);
@@ -78,7 +86,7 @@ void TextDrawer::reset() {
 }
 
 TextShape &TextDrawer::target() {
-    return *dynamic_cast<TextShape*>(target_.get());
+    return *dynamic_cast<TextShape *>(target_.get());
 }
 
 void TextDrawer::setTarget(ShapePtr new_target) {
