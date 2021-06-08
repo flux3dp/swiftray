@@ -25,7 +25,8 @@ public:
     QTransform transform(transform_(0,0),transform_(1,0),transform_(2,0),transform_(0,1),transform_(1,1),transform_(2,1),transform_(0,2),transform_(1,2),transform_(2,2));
     QPainterPath mapped_path = transform.map(working_path_);
     ShapePtr shape = make_shared<PathShape>(mapped_path);
-    svgpp_add_shape(shape, this->strokeColor());
+    QString layer_name = this->strokeColor() == "N" ? this->fillColor() : this->strokeColor();
+    svgpp_add_shape(shape, layer_name);
     //qInfo() << "</shape>";
   }
 

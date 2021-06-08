@@ -34,7 +34,7 @@ void Layer::paint(QPainter *painter, int counter) const {
         if (shape->selected() && !selected_flag) {
             painter->setPen(dash_pen);
             selected_flag = true;
-        } else if (selected_flag) {
+        } else if (!shape->selected() && selected_flag) {
             painter->setPen(solid_pen);
             selected_flag = false;
         }

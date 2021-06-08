@@ -385,8 +385,23 @@ class StylableContext : public PaintContext<svgpp::tag::attribute::stroke>,
                 return label;
             }
         }
-        return "Unknown color";
+        return "N";
     }
+
+    QString fillColor() {
+        if (auto *color_solid = boost::get<SolidPaint>(&style_.fill_paint_)) {
+            if (auto *ease_color = boost::get<color_t>(color_solid)) {
+                QString label = "#" +
+                                QString::number(ease_color->get<0>(), 16).rightJustified(2, '0') +
+                                QString::number((int)ease_color->get<1>(), 16).rightJustified(2, '0') +
+                                QString::number((int)ease_color->get<2>(), 16).rightJustified(2, '0');
+                qInfo() << "Fill color" << label;
+                return label;
+            }
+        }
+        return "N";
+    }
+
 
   private:
     Style style_;
