@@ -1,16 +1,17 @@
+#include <canvas/vcanvas.h>
 #include <QCursor>
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
 #include <QWidget>
-#include <canvas/layer.h>
-#include <canvas/vcanvas.h>
 #include <cstring>
 #include <iostream>
+#include <canvas/layer.h>
 #include <shape/bitmap_shape.h>
 #include <shape/group_shape.h>
 #include <shape/path_shape.h>
 #include <boost/range/adaptor/reversed.hpp>
+#include <gcode/gcode_generator.h>
 
 VCanvas::VCanvas(QQuickItem *parent)
     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
@@ -466,4 +467,9 @@ void VCanvas::setFont(const QFont &font) {
         }
     }
     scene().setFont(new_font);
+}
+
+void VCanvas::exportGcode() {
+    GCodeGenerator gen;
+    gen.convertStack(scene().layers());   
 }

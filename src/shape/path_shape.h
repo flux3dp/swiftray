@@ -5,6 +5,7 @@
 
 using namespace std;
 
+namespace Controls { class PathEdit; }
 class PathShape : public Shape {
   public:
     enum class NodeType {
@@ -27,13 +28,17 @@ class PathShape : public Shape {
     void paint(QPainter *painter) const override;
     Shape::Type type() const override;
 
-    QPainterPath &path();
+    const QPainterPath &path() const;
     void setPath(QPainterPath &path);
 
+    friend class Controls::PathEdit;
+
   private:
-    QPainterPath path_;
     QHash<int, NodeType> node_types_;
     mutable QRectF hit_test_rect_;
+
+  protected:
+    QPainterPath path_;
 };
 
 #endif // PATHSHAPE_H

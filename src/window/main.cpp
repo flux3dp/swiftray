@@ -5,15 +5,32 @@
 
 #include <QLocale>
 #include <QTranslator>
+#include <QDebug>
 #include <canvas/vcanvas.h>
 #include <window/osxwindow.h>
 #include <window/mainwindow.h>
 
+int mainCLI(int argc, char *argv[]) {
+    qInfo() << "Vecty CLI interface";
+    VCanvas vcanvas;
+    QFile file(argv[2]);
+    Q_ASSERT_X(file.exists(), "Vecty CLI", "File not found");
+    Q_ASSERT_X(file.open(QFile::ReadOnly), "Vecty CLI", "Can not open the file");
+    QByteArray data = file.readAll();
+    vcanvas.loadSVG(data);
+    vcanvas.exportGcode();
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
+
+    if (argc > 1 && strcmp(argv[1], "cli") == 0) {
+        return mainCLI(argc, argv);
+    }
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
-    app.setStyle("fusion");
+    //app.setStyle("fusion");
 
     // Force anti-aliasing
     QSurfaceFormat format = QSurfaceFormat::defaultFormat();

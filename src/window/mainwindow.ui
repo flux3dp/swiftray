@@ -87,6 +87,7 @@
     <addaction name="actionSave"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
+    <addaction name="actionExportGcode"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -1243,6 +1244,11 @@
    </property>
    <property name="text">
     <string>VFlip</string>
+   </property>
+  </action>
+  <action name="actionExportGcode">
+   <property name="text">
+    <string>Export Gcode</string>
    </property>
   </action>
  </widget>

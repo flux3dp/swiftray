@@ -67,7 +67,7 @@ shared_ptr<Shape> PathShape::clone() const {
 
 Shape::Type PathShape::type() const { return Shape::Type::Path; }
 
-QPainterPath &PathShape::path() { return path_; }
+const QPainterPath &PathShape::path() const { return path_; }
 
 void PathShape::setPath(QPainterPath &path) {
     // Input path coord is local coord

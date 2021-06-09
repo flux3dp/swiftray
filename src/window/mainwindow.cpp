@@ -101,6 +101,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
     connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
     connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+    connect(ui->actionExportGcode, &QAction::triggered, canvas_, &VCanvas::exportGcode);
     connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
     connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
     connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);

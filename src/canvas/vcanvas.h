@@ -61,6 +61,8 @@ class VCanvas : public QQuickPaintedItem {
     void fitWindow();
     void setFont(const QFont &font);
 
+    void exportGcode();
+
   private:
     bool ready;
     int counter;

@@ -67,3 +67,5 @@ ShapePtr BitmapShape::clone() const {
 }
 
 Shape::Type BitmapShape::type() const { return Shape::Type::Bitmap; }
+
+const QPixmap* BitmapShape::pixmap() const { return bitmap_.get(); }

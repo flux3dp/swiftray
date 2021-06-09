@@ -45,7 +45,8 @@ SOURCES += \
         src/canvas/vcanvas.cpp \
         src/parser/svgpp_parser.cpp \
         src/parser/svgpp_impl.cpp \
-        src/parser/svgpp_external_impl.cpp
+        src/parser/svgpp_external_impl.cpp \
+        src/gcode/gcode_generator.cpp
 
 RESOURCES += qml.qrc
 

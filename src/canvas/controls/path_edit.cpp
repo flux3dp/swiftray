@@ -203,7 +203,7 @@ void PathEdit::paint(QPainter *painter) {
 
 void PathEdit::reset() { target_ = nullptr; }
 
-QPainterPath &PathEdit::path() { return target().path(); }
+QPainterPath &PathEdit::path() { return target().path_; }
 
 QPointF PathEdit::getLocalCoord(QPointF canvas_coord) { return target_->transform().inverted().map(canvas_coord); }
 

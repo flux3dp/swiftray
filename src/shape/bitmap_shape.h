@@ -16,6 +16,7 @@ class BitmapShape : public Shape {
     bool hitTest(QRectF global_coord_rect) const override;
     void paint(QPainter *painter) const override;
     Shape::Type type() const override;
+    const QPixmap* pixmap() const;
 
     QImage &image() const;
 
