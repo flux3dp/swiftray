@@ -253,7 +253,7 @@ bool svgpp_parse(QByteArray &data) {
   return false;
 }
 
-void svgpp_add_shape(ShapePtr &shape, QString layer_name) {
+void svgpp_add_shape(ShapePtr shape, QString layer_name) {
   if (svgpp_layer_map->contains(layer_name)) {
     auto layer_iter = svgpp_layer_map->find(layer_name);
     if (layer_iter != svgpp_layer_map->end()) {

@@ -8,8 +8,8 @@ class Layer {
     Layer();
     Layer(int new_layer_id);
     void paint(QPainter *painter, int counter) const;
-    void addShape(ShapePtr &shape);
-    void removeShape(ShapePtr &shape);
+    void addShape(ShapePtr shape);
+    void removeShape(ShapePtr shape);
     void clear();
     shared_ptr<Layer> clone();
     QList<ShapePtr> &children();

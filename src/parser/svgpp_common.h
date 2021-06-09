@@ -54,6 +54,6 @@ typedef boost::variant<SolidPaint, IRIPaint> SVGPPPaint;
 extern QList<Layer> *svgpp_layers;
 extern QMap<QString, Layer*> *svgpp_layer_map;
 bool svgpp_parse(QByteArray &data);
-void svgpp_add_shape(ShapePtr &shape, QString layer_name);
+void svgpp_add_shape(ShapePtr shape, QString layer_name);
 
 #endif

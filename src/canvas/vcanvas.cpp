@@ -425,6 +425,7 @@ void VCanvas::importImage(QImage &image) {
     qInfo() << "Scale" << scale;
     new_shape->setTransform(QTransform().scale(scale, scale));
     scene().activeLayer()->addShape(new_shape);
+    scene().setSelection(new_shape);
 }
 
 void VCanvas::setActiveLayer(LayerPtr &layer) { 
