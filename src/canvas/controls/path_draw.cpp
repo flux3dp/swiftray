@@ -33,8 +33,6 @@ bool PathDraw::mousePressEvent(QMouseEvent *e) {
 }
 
 bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_PATH)
-        return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
     if ((canvas_coord - curve_target_).manhattanLength() < 10)
         return false;
@@ -44,16 +42,12 @@ bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
 }
 
 bool PathDraw::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    if (scene().mode() != Scene::Mode::DRAWING_PATH)
-        return false;
     *cursor = Qt::CrossCursor;
     cursor_ = scene().getCanvasCoord(e->pos());
     return true;
 }
 
 bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::DRAWING_PATH)
-        return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
     if (working_path_.elementCount() == 0) {
@@ -133,8 +127,6 @@ bool PathDraw::hitTest(QPointF canvas_coord) {
 }
 
 void PathDraw::paint(QPainter *painter) {
-    if (scene().mode() != Scene::Mode::DRAWING_PATH)
-        return;
     auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
     auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
     auto black_pen = QPen(scene().activeLayer()->color(), 3, Qt::SolidLine);

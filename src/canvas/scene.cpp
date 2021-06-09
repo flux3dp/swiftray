@@ -40,7 +40,7 @@ void Scene::clearSelections() {
     emit selectionsChanged();
 }
 
-bool Scene::isSelected(ShapePtr &shape) { return selections().contains(shape); }
+bool Scene::isSelected(ShapePtr &shape) const { return selections_.contains(shape); }
 
 QList<ShapePtr> &Scene::selections() { return selections_; }
 
@@ -140,7 +140,8 @@ void Scene::redo() {
     redo_stack_.pop_back();
 }
 
-QList<ShapePtr> &Scene::clipboard() { return shape_clipboard_; }
+const QList<ShapePtr> &Scene::clipboard() const { return shape_clipboard_; }
+void Scene::clearClipboard() { shape_clipboard_.clear(); }
 
 void Scene::setClipboard(QList<ShapePtr> &items) {
     for (auto &item : items) {
@@ -166,7 +167,7 @@ void Scene::addLayer(Layer &layer) {
     emit layerChanged();
 }
 
-Scene::Mode Scene::mode() { return mode_; }
+Scene::Mode Scene::mode() const { return mode_; }
 
 void Scene::setMode(Mode mode) {
     mode_ = mode;
@@ -276,4 +277,4 @@ void Scene::setFont(QFont &font) {
     font_ = font;
 }
 
-QFont& Scene::font() { return font_; }
+const QFont& Scene::font() const { return font_; }

@@ -12,9 +12,7 @@ PathEdit::PathEdit(Scene &scene_) noexcept : CanvasControl(scene_) {
     target_ = nullptr;
 }
 
-bool PathEdit::isActive() { 
-    return scene().mode() == Scene::Mode::EDITING_PATH; 
-}
+bool PathEdit::isActive() { return scene().mode() == Scene::Mode::EDITING_PATH; }
 
 bool PathEdit::mousePressEvent(QMouseEvent *e) {
     if (target_.get() == nullptr)
@@ -29,8 +27,6 @@ bool PathEdit::mousePressEvent(QMouseEvent *e) {
 }
 
 bool PathEdit::mouseMoveEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::EDITING_PATH)
-        return false;
     if (target_.get() == nullptr)
         return false;
 
@@ -40,8 +36,7 @@ bool PathEdit::mouseMoveEvent(QMouseEvent *e) {
         moveElementTo(dragging_index_, local_coord);
 
         if (is_closed_shape_) {
-            if (dragging_index_ == 0 ||
-                dragging_index_ == path().elementCount() - 1) {
+            if (dragging_index_ == 0 || dragging_index_ == path().elementCount() - 1) {
                 moveElementTo(0, local_coord);
                 moveElementTo(path().elementCount() - 1, local_coord);
             }
@@ -66,14 +61,11 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
     case PathShape::NodeType::CURVE_SMOOTH:
     case PathShape::NodeType::CURVE_CORNER:
         prev_ele = path().elementAt(index - 1);
-        path().setElementPositionAt(index - 1, prev_ele.x + offset.x(),
-                                    prev_ele.y + offset.y());
+        path().setElementPositionAt(index - 1, prev_ele.x + offset.x(), prev_ele.y + offset.y());
 
         next_ele = path().elementAt((index + 1) % last_index);
         if (next_ele.type == QPainterPath::ElementType::CurveToElement) {
-            path().setElementPositionAt((index + 1) % last_index,
-                                        next_ele.x + offset.x(),
-                                        next_ele.y + offset.y());
+            path().setElementPositionAt((index + 1) % last_index, next_ele.x + offset.x(), next_ele.y + offset.y());
         }
         break;
     case PathShape::NodeType::CURVE_CTRL_PREV:
@@ -82,8 +74,7 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
             endpoint_index = index + 1;
             opposite_index = (index + 2) % last_index;
         } else {
-            endpoint_index =
-                is_closed_shape_ && index == 1 ? last_index : index - 1;
+            endpoint_index = is_closed_shape_ && index == 1 ? last_index : index - 1;
             opposite_index = index - 2 >= 0 ? index - 2 : last_index - 1;
         }
 
@@ -91,19 +82,13 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
         endpoint = path().elementAt(endpoint_index);
         opposite_ele = path().elementAt(opposite_index);
         if (opposite_ele.type == QPainterPath::ElementType::CurveToElement ||
-            opposite_ele.type ==
-                QPainterPath::ElementType::CurveToDataElement) {
+            opposite_ele.type == QPainterPath::ElementType::CurveToDataElement) {
             if (group_type == PathShape::NodeType::CURVE_SYMMETRY) {
-                path().setElementPositionAt(opposite_index,
-                                            opposite_ele.x - offset.x(),
-                                            opposite_ele.y - offset.y());
+                path().setElementPositionAt(opposite_index, opposite_ele.x - offset.x(), opposite_ele.y - offset.y());
             } else if (group_type == PathShape::NodeType::CURVE_SMOOTH) {
-                QPointF new_pos =
-                    endpoint + (endpoint - local_coord) *
-                                   distance(opposite_ele - endpoint) /
-                                   distance(endpoint - local_coord);
-                path().setElementPositionAt(opposite_index, new_pos.x(),
-                                            new_pos.y());
+                QPointF new_pos = endpoint + (endpoint - local_coord) * distance(opposite_ele - endpoint) /
+                                                 distance(endpoint - local_coord);
+                path().setElementPositionAt(opposite_index, new_pos.x(), new_pos.y());
             }
         }
         break;
@@ -114,13 +99,9 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
     target().invalidBBox();
 }
 
-qreal PathEdit::distance(QPointF point) {
-    return sqrt(pow(point.x(), 2) + pow(point.y(), 2));
-}
+qreal PathEdit::distance(QPointF point) { return sqrt(pow(point.x(), 2) + pow(point.y(), 2)); }
 
 bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    if (scene().mode() != Scene::Mode::EDITING_PATH)
-        return false;
     if (target_.get() == nullptr)
         return false;
 
@@ -136,8 +117,6 @@ bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 }
 
 bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
-    if (scene().mode() != Scene::Mode::EDITING_PATH)
-        return false;
     if (target_.get() == nullptr)
         return false;
     QPointF canvas_coord = scene().getCanvasCoord(e->pos());
@@ -202,12 +181,10 @@ void PathEdit::paint(QPainter *painter) {
     float large_size = 4 / scene().scale();
     float small_size = 2 / scene().scale();
     for (auto &p : large_points) {
-        large_rects << QRectF(p.x() - large_size, p.y() - large_size,
-                              large_size * 2, large_size * 2);
+        large_rects << QRectF(p.x() - large_size, p.y() - large_size, large_size * 2, large_size * 2);
     }
     for (auto &p : small_points) {
-        small_rects << QRectF(p.x() - small_size, p.y() - small_size,
-                              small_size * 2, small_size * 2);
+        small_rects << QRectF(p.x() - small_size, p.y() - small_size, small_size * 2, small_size * 2);
     }
     painter->setPen(blue_pen);
     painter->drawRects(large_rects);
@@ -228,20 +205,15 @@ void PathEdit::reset() { target_ = nullptr; }
 
 QPainterPath &PathEdit::path() { return target().path(); }
 
-QPointF PathEdit::getLocalCoord(QPointF canvas_coord) {
-    return target_->transform().inverted().map(canvas_coord);
-}
+QPointF PathEdit::getLocalCoord(QPointF canvas_coord) { return target_->transform().inverted().map(canvas_coord); }
 
-PathShape &PathEdit::target() {
-    return *dynamic_cast<PathShape *>(target_.get());
-}
+PathShape &PathEdit::target() { return *dynamic_cast<PathShape *>(target_.get()); }
 
 void PathEdit::setTarget(ShapePtr &target) {
     target_ = target;
     int elem_count = path().elementCount();
-    is_closed_shape_ = elem_count > 0 &&
-                       (path().elementAt(0) - path().elementAt(elem_count - 1))
-                               .manhattanLength() <= FLT_EPSILON;
+    is_closed_shape_ =
+        elem_count > 0 && (path().elementAt(0) - path().elementAt(elem_count - 1)).manhattanLength() <= FLT_EPSILON;
     cache_.clear();
 
     for (int i = 0; i < path().elementCount(); i++) {
@@ -259,8 +231,6 @@ void PathEdit::setTarget(ShapePtr &target) {
 }
 
 bool PathEdit::keyPressEvent(QKeyEvent *e) {
-    if (scene().mode() != Scene::Mode::EDITING_PATH)
-        return false;
     if (e->key() == Qt::Key::Key_Escape) {
         endEditing();
     }

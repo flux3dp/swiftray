@@ -2,7 +2,7 @@
 #include <canvas/layer.h>
 #include <shape/shape.h>
 
-QString LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
+const QString LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
                          "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
                          "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
                          "#607D8B", "#9E9E9E"};

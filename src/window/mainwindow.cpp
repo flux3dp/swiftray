@@ -106,6 +106,8 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &VCanvas::editSubtract);
     connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &VCanvas::editIntersect);
     connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
+    connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
+    connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
     connect(&canvas_->scene(), &Scene::layerChanged, this, &MainWindow::updateLayers);
     connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
     connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);

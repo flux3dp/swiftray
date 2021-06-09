@@ -25,7 +25,7 @@ class Scene : public QObject {
     };
     Scene() noexcept;
     // Selection
-    bool isSelected(ShapePtr &shape);
+    bool isSelected(ShapePtr &shape) const;
     QList<ShapePtr> &selections();
     void setSelection(ShapePtr &shape);
     void setSelections(const QList<ShapePtr> &shapes);
@@ -34,11 +34,12 @@ class Scene : public QObject {
     void removeSelections();
     ShapePtr hitTest(QPointF canvas_coord);
     // Mode
-    Mode mode();
+    Mode mode() const;
     void setMode(Mode mode);
     // Clipboard
-    QList<ShapePtr> &clipboard();
+    const QList<ShapePtr> &clipboard() const;
     void setClipboard(QList<ShapePtr> &items);
+    void clearClipboard();
     // Layer
     QList<LayerPtr> &layers();
     LayerPtr& activeLayer();
@@ -73,9 +74,7 @@ class Scene : public QObject {
     void setMousePressedScreenCoord(QPointF screen_coord);
 
     void setFont(QFont &font);
-    QFont& font();
-
-    QList<ShapePtr> &shapes();
+    const QFont& font() const;
 
     unique_ptr<CanvasTextEdit> text_box_;
   signals:

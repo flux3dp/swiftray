@@ -230,7 +230,7 @@ void VCanvas::editCopy() {
     if (scene().mode() != Scene::Mode::SELECTING)
         return;
     qInfo() << "Edit Copy";
-    scene().clipboard().clear();
+    scene().clearClipboard();
     scene().setClipboard(scene().selections());
     paste_shift_ = QPointF(0, 0);
 }

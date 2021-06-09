@@ -24,8 +24,6 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-    if (scene().mode() != Scene::Mode::DRAWING_TEXT)
-        return false;
     *cursor = Qt::IBeamCursor;
     return true;
 }
