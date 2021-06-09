@@ -39,6 +39,7 @@ SOURCES += \
         $$files(src/shape/*.cpp) \
         src/widgets/layer_widget.cpp \
         src/widgets/canvas_text_edit.cpp \
+        src/widgets/transform_widget.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
         src/canvas/vcanvas.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
     $$files(src/shape/*.h) \
     src/widgets/layer_widget.h \
     src/widgets/canvas_text_edit.h \
+    src/widgets/transform_widget.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
     src/canvas/vcanvas.h \
@@ -92,6 +94,7 @@ UI_DIR = /Users/simon/Dev/vecty/build/.ui
 
 FORMS += \
     src/widgets/layer_widget.ui \
+    src/widgets/transform_widget.ui \
     src/window/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

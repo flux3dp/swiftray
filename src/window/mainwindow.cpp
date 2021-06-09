@@ -12,6 +12,7 @@
 #include <widgets/spinbox_helper.h>
 #include <widgets/canvas_text_edit.h>
 #include <widgets/layer_widget.h>
+#include <widgets/transform_widget.h>
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
 
@@ -23,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     loadQML();
     loadQSS();
     updateMode();
+    ui->objectParamDock->setWidget(new TransformWidget(ui->objectParamContents));
 }
 
 void MainWindow::loadQML() {
@@ -43,9 +45,12 @@ void MainWindow::loadQSS() {
     file.open(QFile::ReadOnly);
     QString styleSheet = QLatin1String(file.readAll());
     setStyleSheet(styleSheet);
-    ((SpinBoxHelper *)ui->spinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-    ((SpinBoxHelper *)ui->spinBox_2)->lineEdit()->setStyleSheet("padding: 0 8px;");
-    ((SpinBoxHelper *)ui->spinBox_3)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QSpinBox> *)ui->spinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QSpinBox> *)ui->spinBox_2)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QSpinBox> *)ui->spinBox_3)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QSpinBox> *)ui->spinBox_4)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QDoubleSpinBox> *)ui->doubleSpinBox_6)->lineEdit()->setStyleSheet("padding: 0 8px;");
+    ((SpinBoxHelper<QDoubleSpinBox> *)ui->doubleSpinBox_7)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void MainWindow::openFile() {
@@ -107,7 +112,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &VCanvas::editIntersect);
     connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
     connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
-    connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
+    connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editUngroup);
     connect(&canvas_->scene(), &Scene::layerChanged, this, &MainWindow::updateLayers);
     connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
     connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);

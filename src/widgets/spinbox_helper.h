@@ -3,9 +3,11 @@
 
 #ifndef SPINBOX_HELPER
 #define SPINBOX_HELPER
-class SpinBoxHelper : public QSpinBox {
+
+template<class SpinBoxType>
+class SpinBoxHelper : public SpinBoxType {
     public:
         // By subclassing QSpinbox, we are allowed to access protected properties
-        QLineEdit* lineEdit() { return QSpinBox::lineEdit(); }
+        QLineEdit* lineEdit() { return SpinBoxType::lineEdit(); }
 };
 #endif
