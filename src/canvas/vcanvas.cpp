@@ -11,7 +11,8 @@
 #include <shape/group_shape.h>
 #include <shape/path_shape.h>
 #include <boost/range/adaptor/reversed.hpp>
-#include <gcode/gcode_generator.h>
+#include <gcode/toolpath_exporter.h>
+#include <gcode/generators/gcode_generator.h>
 
 VCanvas::VCanvas(QQuickItem *parent)
     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
@@ -471,5 +472,6 @@ void VCanvas::setFont(const QFont &font) {
 
 void VCanvas::exportGcode() {
     GCodeGenerator gen;
-    gen.convertStack(scene().layers());   
+    ToolpathExporter exporter(&gen);
+    exporter.convertStack(scene().layers());   
 }

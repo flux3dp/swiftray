@@ -4,10 +4,14 @@
 #include <shape/bitmap_shape.h>
 #include <shape/path_shape.h>
 #include <shape/group_shape.h>
+#include <gcode/generators/base_generator.h>
 
-class GCodeGenerator {
+#ifndef TOOLPATH_EXPORTER_H
+#define TOOLPATH_EXPORTER_H
+
+class ToolpathExporter {
     public:
-        GCodeGenerator() noexcept;
+        ToolpathExporter(BaseGenerator *generator) noexcept;
         void convertStack(const QList<LayerPtr> &layers);
     private:
         void convertLayer(const LayerPtr &layer);
@@ -26,4 +30,7 @@ class GCodeGenerator {
         QList<QPolygonF> layer_polygons_;
         QPixmap layer_bitmap_;
         unique_ptr<QPainter> layer_painter_;
+        BaseGenerator *generator_;
 };
+
+#endif
