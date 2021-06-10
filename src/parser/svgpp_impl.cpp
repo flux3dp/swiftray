@@ -12,6 +12,8 @@
 #include <parser/contexts/text_context.h>
 #include <parser/contexts/use_context.h>
 
+#include <parser/contexts/svgpp_doc.h>
+
 #include <canvas/layer.h>
 
 using namespace svgpp;
@@ -200,33 +202,27 @@ typedef document_traversal<
     transform_events_policy<policy::transform_events::forward_to_method<BaseContext>> // Same as default, but less instantiations
     >
     document_traversal_t;
-
-xmlNode *FindCurrentDocumentElementById(std::string const &) { return NULL; }
-
 struct processed_elements_with_symbol_t
     : boost::mpl::insert<processed_elements_t::type,
                          tag::element::symbol>::type {};
 
 void UseContext::on_exit_element() {
-  if (xmlNode *element = FindCurrentDocumentElementById(fragment_id_)) {
-    // TODO: Check for cyclic references
-    // TODO: Apply translate transform (x_, y_)
-    document_traversal_t::load_referenced_element<
-        referencing_element<tag::element::use_>,
-        expected_elements<traits::reusable_elements>,
-        processed_elements<processed_elements_with_symbol_t>>::load(element,
-                                                                    *this);
+  if (xmlNode* element = document().getElementById(fragment_id_)) {
+      qInfo() << "Element found" << QString::fromStdString(fragment_id_);
+      SVGPPDoc::FollowRef lock(document(), element);
+      transform_translate(x_, y_);
+      document_traversal_t::load_referenced_element<
+        svgpp::referencing_element<svgpp::tag::element::use_>,
+        svgpp::expected_elements<svgpp::traits::reusable_elements>,
+        svgpp::processed_elements<
+          boost::mpl::insert<processed_elements_t, svgpp::tag::element::symbol>::type 
+        >
+      >::load(element, *this);
   } else
-    std::cerr << "Element referenced by 'use' not found\n";
+    qInfo() << "Element reference not found" << QString::fromStdString(fragment_id_);
 }
 
 void ImageContext::on_exit_element() {}
-
-void loadSvg(xmlNode *xml_root_element) {
-  static const double ResolutionDPI = 90;
-  BaseContext context(ResolutionDPI);
-  document_traversal_t::load_document(xml_root_element, context);
-}
 
 QList<Layer> *svgpp_layers = new QList<Layer>();
 QMap<QString, Layer*> *svgpp_layer_map = new QMap<QString, Layer*>();
@@ -234,13 +230,14 @@ QMap<QString, Layer*> *svgpp_layer_map = new QMap<QString, Layer*>();
 bool svgpp_parse(QByteArray &data) {
   try {
     // TODO: Support UTF8
-    xmlDoc *doc = xmlParseDoc((const unsigned char *)data.constData());
-    xmlNode *root = xmlDocGetRootElement(doc);
+    xmlDoc *xml_doc = xmlParseDoc((const unsigned char *)data.constData());
+    xmlNode *root = xmlDocGetRootElement(xml_doc);
 
     if (root) {
       qInfo() << "SVG Element " << root;
+      SVGPPDoc document(xml_doc);
       static const double ResolutionDPI = 90;
-      BaseContext context(ResolutionDPI);
+      BaseContext context(document, ResolutionDPI);
       svgpp_layers->clear();
       svgpp_layer_map->clear();
       document_traversal_t::load_document(root, context);

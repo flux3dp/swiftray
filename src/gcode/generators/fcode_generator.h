@@ -1,15 +1,15 @@
 #include <sstream>
 #include <gcode/generators/base_generator.h>
 
-#ifndef GCODE_GENERATOR_H
-#define GCODE_GENERATOR_H
+#ifndef FCODE_GENERATOR_H
+#define FCODE_GENERATOR_H
 
 /*
-Basic GCode Generator for Grbl like machines.
+Fcode (Binary gcode) generator for FLUX Beambox and beamo
 */
-class GCodeGenerator : public BaseGenerator {
+class FCodeGenerator : public BaseGenerator {
   public:
-    GCodeGenerator() : BaseGenerator() {
+    FCodeGenerator() : BaseGenerator() {
         reset();
     }
 

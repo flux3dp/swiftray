@@ -9,4 +9,5 @@ bool SVGPPParser::parse(QByteArray &data) {
     for (auto &layer : *svgpp_layers) {
         scene_.addLayer(layer);
     }
+    scene_.emitAllChanges();
 }

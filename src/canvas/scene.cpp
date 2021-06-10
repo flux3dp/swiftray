@@ -159,12 +159,15 @@ void Scene::addLayer() {
 }
 
 void Scene::addLayer(Layer &layer) {
-    if (layers().length() > 0)
-        stackStep();
-    qDebug() << "Add layer";
+    qDebug() << "Add layer" << layer.name << "(stackless)";
     layers() << layer.clone();
     active_layer_ = layers().last();
+}
+
+void Scene::emitAllChanges() {
+    emit selectionsChanged();
     emit layerChanged();
+    emit modeChanged();
 }
 
 Scene::Mode Scene::mode() const { return mode_; }

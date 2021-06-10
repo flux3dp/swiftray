@@ -2,13 +2,14 @@
 #include <parser/contexts/stylable_context.h>
 #include <parser/contexts/object_context.h>
 #include <parser/contexts/transformable_context.h>
+#include <parser/contexts/svgpp_doc.h>
 
 #pragma once
 
 
 class BaseContext : public StylableContext, public ObjectContext, public TransformableContext {
 public:
-  BaseContext(double resolutionDPI) {
+  BaseContext(SVGPPDoc &document, double resolutionDPI): doc_(document) {
     qInfo() << "<base>";
     length_factory_.set_absolute_units_coefficient(resolutionDPI,
                                                    tag::length_units::in());
@@ -44,6 +45,8 @@ public:
 
   length_factory_type const &length_factory() const { return length_factory_; }
 
+  SVGPPDoc & document() const { return doc_; }
 private:
   length_factory_type length_factory_;
+  SVGPPDoc & doc_;
 };
