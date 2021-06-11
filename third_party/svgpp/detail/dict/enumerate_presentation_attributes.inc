@@ -68,4 +68,6 @@ SVGPP_ON(word_spacing)
 SVGPP_ON(writing_mode)
 // Begin - Customization
 SVGPP_ON(data_original_layer)
+SVGPP_ON(data_wireframe)
+SVGPP_ON(data_xform)
 // End - Customization

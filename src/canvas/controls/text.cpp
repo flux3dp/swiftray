@@ -30,6 +30,7 @@ bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 
 bool Text::keyPressEvent(QKeyEvent *e) {
     if (e->key() == Qt::Key::Key_Escape) {
+        if (target_ == nullptr) return false;
         target().setEditing(false);
         if (target().parent() == nullptr &&
             scene().text_box_->toPlainText().length() > 0) {
@@ -74,7 +75,7 @@ void Text::reset() {
 }
 
 TextShape &Text::target() {
-    return *dynamic_cast<TextShape *>(target_.get());
+    return static_cast<TextShape&>(*target_.get());
 }
 
 bool Text::hasTarget() { 

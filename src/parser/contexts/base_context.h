@@ -18,6 +18,16 @@ public:
   using ObjectContext::set;
   using StylableContext::set;
 
+
+  template <class Range>
+  void set_text(Range const &text) {
+    std::string str;
+    str.append(boost::begin(text), boost::end(text));
+    if (svgpp_active_layer_ != nullptr) {
+      svgpp_active_layer_->setName(QString::fromStdString(str));
+    }
+  }
+
   // Called by Context Factory
   void on_exit_element() {
     qInfo() << "</base>";

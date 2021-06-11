@@ -47,7 +47,7 @@ class Scene : public QObject {
     bool setActiveLayer(QString name);
     bool setActiveLayer(LayerPtr &layer);
     void addLayer();
-    void addLayer(Layer& layer);
+    void addLayer(LayerPtr &layer);
     void removeLayer(QString name);
     void dumpStack(QList<LayerPtr> &stack);
     // Undo

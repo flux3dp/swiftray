@@ -11,12 +11,12 @@ int layer_color_counter;
 
 Layer::Layer() {
     color_ = QColor(LayerColors[(layer_color_counter++) % 17]);
-    name = "Layer 1";
+    name_ = "Layer 1";
 }
 
 Layer::Layer(int new_layer_id) {
     color_ = QColor(LayerColors[(new_layer_id-1) % 17]);
-    name = "Layer " + QString::number(new_layer_id);
+    name_ = "Layer " + QString::number(new_layer_id);
 }
 
 void Layer::paint(QPainter *painter, int counter) const {
@@ -66,7 +66,47 @@ LayerPtr Layer::clone() {
         layer->addShape(shape->clone());
     }
 
-    layer->name = name;
+    layer->setName(name());
     layer->setColor(color());
     return layer;
+}
+
+double Layer::repeat() const {
+    return repeat_;
+}
+double Layer::speed() const {
+    return speed_;
+}
+double Layer::strength() const {
+    return strength_;
+}
+
+QString Layer::name() const {
+    return name_;
+}
+
+void Layer::setHeight(double height) {
+    height_ = height;
+}
+
+void Layer::setName(const QString &name) {
+    name_ = name;
+}
+
+void Layer::setSpeed(double speed) {
+    speed_ = speed;
+}
+
+void Layer::setStrength(double strength) {
+    strength_ = strength;
+}
+
+void Layer::setRepeat(double repeat) {
+    repeat_ = repeat;
+}
+void Layer::setDiode(int diode) {
+    diode_ = !!diode;
+}
+void Layer::setZStep(double zstep) {
+    zstep_ = zstep;
 }

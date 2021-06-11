@@ -30,6 +30,7 @@
 
 #include <QList>
 #include <QString>
+#include <canvas/layer.h>
 #include <shape/path_shape.h>
 #include <shape/shape.h>
 
@@ -51,9 +52,13 @@ struct IRIPaint {
 };
 typedef boost::variant<SolidPaint, IRIPaint> SVGPPPaint;
 
-extern QList<Layer> *svgpp_layers;
+extern QList<LayerPtr> *svgpp_layers;
 extern QMap<QString, Layer*> *svgpp_layer_map;
+extern LayerPtr svgpp_active_layer_;
 bool svgpp_parse(QByteArray &data);
+void svgpp_add_layer(LayerPtr layer);
 void svgpp_add_shape(ShapePtr shape, QString layer_name);
+void svgpp_set_active_layer(LayerPtr layer);
+void svgpp_unset_active_layer();
 
 #endif

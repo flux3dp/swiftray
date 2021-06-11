@@ -219,6 +219,9 @@ template<class Element> struct attribute_type<Element, tag::attribute::data_name
 template<class Element> struct attribute_type<Element, tag::attribute::data_value>                      { typedef tag::type::string type; };
 template<class Element> struct attribute_type<Element, tag::attribute::data_config_name>                { typedef tag::type::string type; };
 template<class Element> struct attribute_type<Element, tag::attribute::data_original_layer>             { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_color>                      { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_wireframe>                  { typedef tag::type::string type; };
+template<class Element> struct attribute_type<Element, tag::attribute::data_xform>                      { typedef tag::type::string type; };
 
 #define SVGPP_ON_ATTR(name, values) \
   template<class Element> struct attribute_type<Element, tag::attribute::name> \

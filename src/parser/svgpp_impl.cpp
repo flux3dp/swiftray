@@ -115,7 +115,9 @@ struct AttributeTraversal : policy::attribute_traversal::default_policy {
 struct processed_elements_t
     : boost::mpl::set<
           // SVG Structural Elements
-          tag::element::svg, tag::element::g, tag::element::use_,
+          tag::element::svg, tag::element::g, 
+          tag::element::use_,
+          tag::element::title,
           // SVG Shape Elements
           tag::element::circle, tag::element::ellipse, tag::element::line,
           tag::element::path, tag::element::polygon, tag::element::polyline,
@@ -156,7 +158,6 @@ struct processed_attributes_t
           // Marker attributes
           tag::attribute::marker_start, tag::attribute::marker_mid,
           tag::attribute::marker_end, tag::attribute::marker,
-          tag::attribute::markerUnits, tag::attribute::markerWidth,
           // Shape attributes
           tag::attribute::clip_path, tag::attribute::color,
           tag::attribute::fill, tag::attribute::mask,
@@ -184,7 +185,11 @@ struct processed_attributes_t
           boost::mpl::pair<svgpp::tag::element::g,
                            svgpp::tag::attribute::data_zstep>,
           boost::mpl::pair<svgpp::tag::element::g,
+                           svgpp::tag::attribute::data_color>,
+          boost::mpl::pair<svgpp::tag::element::g,
                            svgpp::tag::attribute::data_config_name>,
+          boost::mpl::pair<svgpp::tag::element::g,
+                           svgpp::tag::attribute::data_name>,
           svgpp::tag::attribute::data_original_layer> {};
 
 struct ignored_elements_t : boost::mpl::set<tag::element::animateMotion> {};
@@ -224,8 +229,9 @@ void UseContext::on_exit_element() {
 
 void ImageContext::on_exit_element() {}
 
-QList<Layer> *svgpp_layers = new QList<Layer>();
+QList<LayerPtr> *svgpp_layers = new QList<LayerPtr>();
 QMap<QString, Layer*> *svgpp_layer_map = new QMap<QString, Layer*>();
+LayerPtr svgpp_active_layer_ = nullptr;
 
 bool svgpp_parse(QByteArray &data) {
   try {
@@ -251,17 +257,41 @@ bool svgpp_parse(QByteArray &data) {
   return false;
 }
 
-void svgpp_add_shape(ShapePtr shape, QString layer_name) {
-  if (svgpp_layer_map->contains(layer_name)) {
-    auto layer_iter = svgpp_layer_map->find(layer_name);
+void svgpp_set_active_layer(LayerPtr layer) {
+  svgpp_active_layer_ = layer;
+}
+
+void svgpp_unset_active_layer() {
+  svgpp_active_layer_ = nullptr;
+}
+
+void svgpp_add_layer(LayerPtr layer) {
+  if (svgpp_layer_map->contains(layer->name())) {
+    qInfo() << "Redefintion of layer" << layer->name();
+    // Merge layer children
+    auto layer_iter = svgpp_layer_map->find(layer->name());
+    if (layer_iter != svgpp_layer_map->end()) {
+      (*layer_iter)->children().append(layer->children());
+    }
+    return;
+  }
+  svgpp_layers->push_back(layer);
+  svgpp_layer_map->insert(layer->name(), layer.get());
+} 
+
+void svgpp_add_shape(ShapePtr shape, QString color_string) {
+  if (svgpp_active_layer_ != nullptr) {
+    svgpp_active_layer_->addShape(shape);
+  } else if (svgpp_layer_map->contains(color_string)) {
+    auto layer_iter = svgpp_layer_map->find(color_string);
     if (layer_iter != svgpp_layer_map->end()) {
       (*layer_iter)->addShape(shape);
     }
   } else {
-    svgpp_layers->push_back(Layer());
-    svgpp_layers->last().name = layer_name;
-    svgpp_layers->last().setColor(QColor(layer_name));
-    svgpp_layers->last().addShape(shape);
-    svgpp_layer_map->insert(layer_name, &(svgpp_layers->last()));
+    svgpp_layers->push_back(make_shared<Layer>());
+    svgpp_layers->last()->setName(color_string);
+    svgpp_layers->last()->setColor(QColor(color_string));
+    svgpp_layers->last()->addShape(shape);
+    svgpp_layer_map->insert(color_string, svgpp_layers->last().get());
   }
 }

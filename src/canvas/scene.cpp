@@ -97,7 +97,7 @@ void Scene::undo() {
     if (undo_stack_.isEmpty()) {
         return;
     }
-    QString active_layer_name = activeLayer()->name;
+    QString active_layer_name = activeLayer()->name();
     stackRedo();
     clearAll();
     Scene::dumpStack(undo_stack_.last());
@@ -121,7 +121,7 @@ void Scene::redo() {
     if (redo_stack_.isEmpty()) {
         return;
     }
-    QString active_layer_name = activeLayer()->name;
+    QString active_layer_name = activeLayer()->name();
     stackUndo();
     clearAll();
     layers().append(redo_stack_.last());
@@ -158,9 +158,9 @@ void Scene::addLayer() {
     emit layerChanged();
 }
 
-void Scene::addLayer(Layer &layer) {
-    qDebug() << "Add layer" << layer.name << "(stackless)";
-    layers() << layer.clone();
+void Scene::addLayer(LayerPtr &layer) {
+    qDebug() << "Add layer" << layer->name() << "(stackless)";
+    layers() << layer->clone();
     active_layer_ = layers().last();
 }
 
@@ -218,7 +218,7 @@ LayerPtr& Scene::activeLayer() {
 
 bool Scene::setActiveLayer(QString name) {
     for (auto &layer : layers()) {
-        if (layer->name == name) {
+        if (layer->name() == name) {
             active_layer_ = layer;
             emit layerChanged();
             return true;

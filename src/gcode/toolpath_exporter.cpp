@@ -23,7 +23,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
     layer_polygons_.clear();
     layer_bitmap_ = QPixmap(QSize(3000, 2000));
     layer_painter_ = make_unique<QPainter>(&layer_bitmap_);
-    qInfo() << "Output Layer #" << layer->name;
+    qInfo() << "Output Layer #" << layer->name();
 
     //generator_->setLaserPowerLimit(layer->strength);
 

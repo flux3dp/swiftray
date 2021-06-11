@@ -265,6 +265,7 @@ inline bool attribute_id_to_tag(ElementTag, attribute_id id, F & fn,
 #include <svgpp/detail/dict/enumerate_presentation_attributes.inc>
     // Begin - customized data attributes for layers
     SVGPP_ON(data_config_name)
+    SVGPP_ON(data_color)
     SVGPP_ON(data_diode)
     SVGPP_ON(data_height)
     SVGPP_ON(data_name)

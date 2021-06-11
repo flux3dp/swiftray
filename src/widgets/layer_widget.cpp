@@ -25,7 +25,7 @@ LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
     paint.drawRoundedRect(QRectF(30, 30, 40, 40), 10, 10);
     paint.end();
     ui->labelIcon->setPixmap(pix);
-    ui->labelName->setText(layer->name);
+    ui->labelName->setText(layer->name());
     active_ = active;
     if (active_) {
         ui->layerWidgetFrame->setStyleSheet("#layerWidgetFrame { background-color: #0091ff; }");

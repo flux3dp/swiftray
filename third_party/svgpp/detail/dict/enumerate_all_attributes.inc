@@ -40,6 +40,7 @@ SVGPP_ON      (cy                                 , cy)
 SVGPP_ON      (d                                  , d)
 
 // Begin - customized data attribute (attributes must be placed in alphabatical orders!)
+SVGPP_ON      (data_color                         , data-color)
 SVGPP_ON      (data_config_name                   , data-configName)
 SVGPP_ON      (data_diode                         , data-diode)
 SVGPP_ON      (data_height                        , data-height)
@@ -50,6 +51,8 @@ SVGPP_ON      (data_speed                         , data-speed)
 SVGPP_ON      (data_strength                      , data-strength)
 SVGPP_ON      (data_value                         , data-value)
 SVGPP_ON      (data_zstep                         , data-zstep)
+SVGPP_ON      (data_wireframe                     , data-wireframe)
+SVGPP_ON      (data_xform                         , data-xform)
 // End - customized data attribute
 
 SVGPP_ON      (descent                            , descent)
