@@ -10,32 +10,40 @@ Basic GCode Generator for Grbl like machines.
 class GCodeGenerator : public BaseGenerator {
   public:
     GCodeGenerator() : BaseGenerator() {
-        reset();
     }
 
     void moveTo(float x, float y, float speed) override{
-        if (current_x_ == x && current_y_ == y)
+        if (x_ == x && y_ == y && speed_ == speed)
             return;
         str_stream_ << "G1";
-        if (current_x_ != x)
+        if (x_ != x) {
             str_stream_ << "X" << x;
-        if (current_y_ != y)
+            x_ = x;
+        }
+        if (y_ != y) {
             str_stream_ << "Y" << y;
-        if (current_speed_ != speed)
+            y_ = y;
+        }
+        if (speed_ != speed) {
             str_stream_ << "F" << speed;
+            speed_ = speed;
+        }
         str_stream_ << std::endl;
     }
 
-    void setLaserPowerLimit(float power) override {
+    void setLaserPower(float power) override {
         str_stream_ << "M3S" << power << std::endl;
+        power_ = power;
     }
     
     void turnOffLaser() override {
         str_stream_ << "M5" << std::endl;
+        power_ = 0;
     }
 
     void turnOnLaser() override {
         str_stream_ << "M3" << std::endl;
+        power_ = 1;
     }
 
     void useAbsolutePositioning() override {
@@ -48,13 +56,6 @@ class GCodeGenerator : public BaseGenerator {
 
     void home() override {
         str_stream_ << "G28" << std::endl;
-    }
-
-    void reset() override {
-        current_x_ = 0;
-        current_y_ = 0;
-        current_power_ = 0;
-        current_speed_ = 0;
     }
 };
 

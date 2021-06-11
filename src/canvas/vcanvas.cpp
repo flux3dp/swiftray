@@ -473,5 +473,6 @@ void VCanvas::setFont(const QFont &font) {
 void VCanvas::exportGcode() {
     GCodeGenerator gen;
     ToolpathExporter exporter(&gen);
-    exporter.convertStack(scene().layers());   
+    exporter.convertStack(scene().layers());
+    std::cout << gen.toString();
 }

@@ -13,7 +13,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Add CMake and CLion Environment">
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/text.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/text.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gcode/generators/base_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/base_generator.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gcode/generators/fcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/fcode_generator.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gcode/generators/gcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/gcode_generator.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath_exporter.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath_exporter.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,13 +54,9 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
+    <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
   <component name="RunManager" selected="CMake Application.vecty_bin">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="vecty_bin" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Project" TARGET_NAME="vecty_bin" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Project" RUN_TARGET_NAME="vecty_bin">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -83,7 +85,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1623404020053</updated>
-      <workItem from="1623404021452" duration="105000" />
+      <workItem from="1623404021452" duration="2703000" />
+      <workItem from="1623411928931" duration="15081000" />
     </task>
     <task id="LOCAL-00001" summary="Add CMake and CLion Environment">
       <created>1623404105389</created>
@@ -108,6 +111,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add CMake and CLion Environment" />

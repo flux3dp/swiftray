@@ -24,13 +24,20 @@ class ToolpathExporter {
         void outputLayerGcode();
         void outputLayerPathGcode();
         void outputLayerBitmapGcode();
+
+        bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
+        bool rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
+
         QList<QString> gcode_;
         QTransform global_transform_;
         QList<ShapePtr> layer_elements_;
         QList<QPolygonF> layer_polygons_;
         QPixmap layer_bitmap_;
+        LayerPtr current_layer_;
         unique_ptr<QPainter> layer_painter_;
-        BaseGenerator *generator_;
+        BaseGenerator *gen_;
+        float dpmm_;
+        float travel_speed_;
 };
 
 #endif

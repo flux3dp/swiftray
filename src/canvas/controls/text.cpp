@@ -7,7 +7,7 @@
 
 using namespace Controls;
 
-bool Text::isActive() { 
+bool Text::isActive() {
     return scene().mode() == Scene::Mode::DRAWING_TEXT; 
 }
 
