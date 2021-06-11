@@ -62,7 +62,7 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
 
 void ToolpathExporter::convertBitmap(const BitmapShape* bmp) {
     qInfo() << "Convert Bitmap" << bmp;
-    // layer_painter_->setTransform(QTransform().scale(dpmm_/10.0, dpmm_/10.0));
+    layer_painter_->setTransform(QTransform().scale(dpmm_/10.0, dpmm_/10.0), false);
     layer_painter_->setTransform(global_transform_ * bmp->transform(), true);
     layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
 }

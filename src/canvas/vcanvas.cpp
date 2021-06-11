@@ -61,12 +61,18 @@ void VCanvas::paint(QPainter *painter) {
     painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
     // Draw FPS
     fps_count++;
+    fps = (fps * 4 + float(fps_count) * 1000 / fps_timer.elapsed()) / 5;
     painter->setPen(Qt::black);
-    painter->drawText(QPointF(10, 10), "FPS " + QString::number(float(fps_count) * 1000 / fps_timer.elapsed()));
+    painter->drawText(QPointF(10, 10), "FPS " + QString::number(round(fps*100)/100.0));
     painter->drawText(QPointF(10, 40), "Objects " + QString::number(scene().activeLayer()->children().size()));
     if (fps_timer.elapsed() > 3000) {
         fps_count = 0;
         fps_timer.restart();
+    }
+    if (fps < 30) {
+        painter->setRenderHint(QPainter::RenderHint::Antialiasing, false);
+    } else {
+        painter->setRenderHint(QPainter::RenderHint::Antialiasing, true);
     }
     painter->translate(scene().scroll());
     painter->scale(scene().scale(), scene().scale());

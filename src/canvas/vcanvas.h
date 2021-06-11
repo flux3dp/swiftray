@@ -85,6 +85,7 @@ class VCanvas : public QQuickPaintedItem {
 
     QTime fps_timer;
     int fps_count;
+    float fps;
 
   signals:
     void rightAlignedChanged();
