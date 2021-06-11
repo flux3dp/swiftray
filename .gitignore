@@ -4,3 +4,4 @@ svgpp/bin
 .DS_Store
 build/*
 .vscode/ipch/*
+cmake-build-debug/
