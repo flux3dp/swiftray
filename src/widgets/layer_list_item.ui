@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LayerWidget</class>
- <widget class="QWidget" name="LayerWidget">
+ <class>LayerListItem</class>
+ <widget class="QWidget" name="LayerListItem">
   <property name="enabled">
    <bool>true</bool>
   </property>

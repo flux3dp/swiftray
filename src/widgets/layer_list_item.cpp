@@ -1,17 +1,17 @@
+#include <widgets/layer_list_item.h>
 #include <QDebug>
 #include <QStyleOption>
-#include <widgets/layer_widget.h>
-#include "ui_layer_widget.h"
+#include "ui_layer_list_item.h"
 
-/*LayerWidget::LayerWidget(QWidget *parent) :
+/*LayerListItem::LayerListItem(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::LayerWidget) {
+    ui(new Ui::LayerListItem) {
     ui->setupUi(this);
 }*/
 
-LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
+LayerListItem::LayerListItem(QWidget *parent, LayerPtr &layer, bool active) :
     QWidget(parent),
-    ui(new Ui::LayerWidget),
+    ui(new Ui::LayerListItem),
     layer_(layer),
     active_(active) {
     ui->setupUi(this);
@@ -27,13 +27,14 @@ LayerWidget::LayerWidget(QWidget *parent, LayerPtr &layer, bool active) :
     ui->labelIcon->setPixmap(pix);
     ui->labelName->setText(layer->name());
     active_ = active;
+
     if (active_) {
         ui->layerWidgetFrame->setStyleSheet("#layerWidgetFrame { background-color: #0091ff; }");
         ui->labelName->setStyleSheet("color: white;");
     }
 }
 
-void LayerWidget::paintEvent(QPaintEvent* event) {
+void LayerListItem::paintEvent(QPaintEvent *event) {
     QStyleOption opt;
     opt.init(this);
     QPainter p(this);
@@ -41,6 +42,6 @@ void LayerWidget::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 }
 
-LayerWidget::~LayerWidget() {
+LayerListItem::~LayerListItem() {
     delete ui;
 }

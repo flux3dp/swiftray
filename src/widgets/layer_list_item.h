@@ -5,21 +5,21 @@
 #include <canvas/layer.h>
 
 namespace Ui {
-class LayerWidget;
+class LayerListItem;
 }
 
-class LayerWidget : public QWidget {
+class LayerListItem : public QWidget {
     Q_OBJECT
 
   public:
-    // explicit LayerWidget(QWidget *parent = nullptr);
-    LayerWidget(QWidget *parent, LayerPtr &layer, bool active);
+    // explicit LayerListItem(QWidget *parent = nullptr);
+    LayerListItem(QWidget *parent, LayerPtr &layer, bool active);
     void paintEvent(QPaintEvent *event) override;
-    ~LayerWidget();
+    ~LayerListItem();
     LayerPtr &layer_;
 
   private:
-    Ui::LayerWidget *ui;
+    Ui::LayerListItem *ui;
     bool active_;
 };
 
