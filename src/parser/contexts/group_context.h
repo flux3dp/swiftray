@@ -54,8 +54,10 @@ public:
   }
 
   Layer &layer() {
-    if (layer_ptr_ == nullptr) layer_ptr_ = make_shared<Layer>();
-    qInfo() << "Create layer";
+    if (layer_ptr_ == nullptr) {
+        qInfo() << "Create layer";
+        layer_ptr_ = make_shared<Layer>();
+    }
     svgpp_set_active_layer(layer_ptr_);
     return *layer_ptr_;
   }

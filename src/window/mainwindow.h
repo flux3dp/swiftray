@@ -1,11 +1,15 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
 #include <QMainWindow>
 #include <QQuickWindow>
 #include <QQuickWidget>
 #include <QListWidget>
+#include <widgets/layer_list_item.h>
+#include <widgets/transform_panel.h>
+#include <widgets/layer_params_panel.h>
 #include <canvas/vcanvas.h>
+
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
 
 namespace Ui {
     class MainWindow;
@@ -35,7 +39,8 @@ class MainWindow : public QMainWindow {
     private:
         Ui::MainWindow *ui;
         VCanvas *canvas_;
-        QListWidget *layer_list_;
+        unique_ptr<LayerParamsPanel> layer_params_panel_;
+        unique_ptr<TransformPanel> transform_panel_;
 };
 
 #endif // MAINWINDOW_H

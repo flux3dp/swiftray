@@ -12,11 +12,17 @@ int layer_color_counter;
 Layer::Layer() {
     color_ = QColor(LayerColors[(layer_color_counter++) % 17]);
     name_ = "Layer 1";
+    speed_ = 20;
+    strength_ = 30;
+    repeat_ = 1;
 }
 
 Layer::Layer(int new_layer_id) {
     color_ = QColor(LayerColors[(new_layer_id-1) % 17]);
     name_ = "Layer " + QString::number(new_layer_id);
+    speed_ = 20;
+    strength_ = 30;
+    repeat_ = 1;
 }
 
 void Layer::paint(QPainter *painter, int counter) const {
@@ -61,13 +67,11 @@ void Layer::setColor(QColor color) { color_ = color; }
 QList<ShapePtr> &Layer::children() { return children_; }
 
 LayerPtr Layer::clone() {
-    LayerPtr layer = make_shared<Layer>();
+    LayerPtr layer = make_shared<Layer>(*this);
+    layer->children_.clear();
     for (auto &shape : children_) {
         layer->addShape(shape->clone());
     }
-
-    layer->setName(name());
-    layer->setColor(color());
     return layer;
 }
 

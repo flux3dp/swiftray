@@ -37,9 +37,10 @@ SOURCES += \
         src/canvas/scene.cpp \
         $$files(src/canvas/controls/*.cpp) \
         $$files(src/shape/*.cpp) \
-        src/widgets/layer_widget.cpp \
         src/widgets/canvas_text_edit.cpp \
-        src/widgets/transform_widget.cpp \
+        src/widgets/layer_list_item.cpp \
+        src/widgets/layer_params_panel.cpp \
+        src/widgets/transform_panel.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
         src/canvas/vcanvas.cpp \
@@ -71,9 +72,10 @@ HEADERS += \
     src/canvas/scene.h \
     $$files(src/canvas/controls/*.h) \
     $$files(src/shape/*.h) \
-    src/widgets/layer_widget.h \
     src/widgets/canvas_text_edit.h \
-    src/widgets/transform_widget.h \
+    src/widgets/layer_list_item.h \
+    src/widgets/layer_params_panel.h \
+    src/widgets/transform_panel.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
     src/canvas/vcanvas.h \
@@ -94,8 +96,9 @@ RCC_DIR = /Users/simon/Dev/vecty/build/.rcc
 UI_DIR = /Users/simon/Dev/vecty/build/.ui
 
 FORMS += \
-    src/widgets/layer_widget.ui \
-    src/widgets/transform_widget.ui \
+    src/widgets/layer_list_item.ui \
+    src/widgets/layer_params_panel.ui \
+    src/widgets/transform_panel.ui \
     src/window/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

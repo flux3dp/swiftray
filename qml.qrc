@@ -30,7 +30,6 @@
         <file>images/icon-lock.png</file>
         <file>images/icon-rect-01.png</file>
         <file>images/icon-union.png</file>
-        <file>images/select.png</file>
         <file>images/icon-eyeclose.png</file>
         <file>images/icon-hflip.png</file>
         <file>images/icon-nodetype-0.png</file>
@@ -41,6 +40,7 @@
         <file>images/icon-nodetype-1.png</file>
         <file>images/icon-setting.png</file>
         <file>images/icon-valign-bot.png</file>
+        <file>images/icon-plus-01.png</file>
         <file>styles/vecty.qss</file>
     </qresource>
 </RCC>

@@ -17,15 +17,14 @@ SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
+FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
 
 SET(SOURCES
     src/canvas/layer.cpp
     src/canvas/scene.cpp
     ${CONTROLS_CPP}
     ${SHAPES_CPP}
-    src/widgets/layer_widget.cpp
-    src/widgets/canvas_text_edit.cpp
-    src/widgets/transform_widget.cpp
+    ${WIDGETS_CPP}
     src/window/main.cpp
     src/window/mainwindow.cpp
     src/canvas/vcanvas.cpp

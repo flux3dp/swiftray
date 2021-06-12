@@ -11,8 +11,6 @@
 #include <shape/bitmap_shape.h>
 #include <widgets/spinbox_helper.h>
 #include <widgets/canvas_text_edit.h>
-#include <widgets/layer_widget.h>
-#include <widgets/transform_widget.h>
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
 
@@ -24,7 +22,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     loadQML();
     loadQSS();
     updateMode();
-    ui->objectParamDock->setWidget(new TransformWidget(ui->objectParamContents));
+    transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock);
+    layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
+    ui->objectParamDock->setWidget(transform_panel_.get());
+    ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
 }
 
 void MainWindow::loadQML() {
@@ -45,9 +46,6 @@ void MainWindow::loadQSS() {
     file.open(QFile::ReadOnly);
     QString styleSheet = QLatin1String(file.readAll());
     setStyleSheet(styleSheet);
-    ((SpinBoxHelper<QSpinBox> *)ui->spinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-    ((SpinBoxHelper<QSpinBox> *)ui->spinBox_2)->lineEdit()->setStyleSheet("padding: 0 8px;");
-    ((SpinBoxHelper<QSpinBox> *)ui->spinBox_3)->lineEdit()->setStyleSheet("padding: 0 8px;");
     ((SpinBoxHelper<QSpinBox> *)ui->spinBox_4)->lineEdit()->setStyleSheet("padding: 0 8px;");
     ((SpinBoxHelper<QDoubleSpinBox> *)ui->doubleSpinBox_6)->lineEdit()->setStyleSheet("padding: 0 8px;");
     ((SpinBoxHelper<QDoubleSpinBox> *)ui->doubleSpinBox_7)->lineEdit()->setStyleSheet("padding: 0 8px;");
@@ -117,12 +115,15 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     connect(&canvas_->scene(), &Scene::layerChanged, this, &MainWindow::updateLayers);
     connect(&canvas_->scene(), &Scene::modeChanged, this, &MainWindow::updateMode);
     connect(&canvas_->scene(), &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);
+    connect(ui->btnAddLayer, &QAbstractButton::clicked, [ = ]() {
+        canvas_->scene().addLayer();
+    });
     connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [ = ](const QFont & font) {
         canvas_->setFont(font);
     });
     connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
     connect(ui->layerList, &QListWidget::itemClicked, [ = ](QListWidgetItem * item) {
-        canvas_->setActiveLayer(dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(item))->layer_);
+        canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
     });
     canvas_->scene().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
     canvas_->scene().text_box_->setGeometry(10, 10, 200, 200);
@@ -138,7 +139,7 @@ void MainWindow::updateLayers() {
 
     for (auto &layer : boost::adaptors::reverse(canvas_->scene().layers())) {
         bool active = canvas_->scene().activeLayer().get() == layer.get();
-        auto *list_widget = new LayerWidget(ui->layerList->parentWidget(), layer, active);
+        auto *list_widget = new LayerListItem(ui->layerList->parentWidget(), layer, active);
         auto *list_item = new QListWidgetItem(ui->layerList);
         auto size = list_widget->size();
         list_item->setSizeHint(size);
@@ -152,6 +153,9 @@ void MainWindow::updateLayers() {
     if (ui->layerList->currentItem()) {
         ui->layerList->scrollToItem(ui->layerList->currentItem(), QAbstractItemView::PositionAtCenter);
     }
+    if (layer_params_panel_ != nullptr) {
+        layer_params_panel_->updateLayer(canvas_->scene().activeLayer());
+    }
 }
 
 void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
@@ -159,7 +163,7 @@ void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceSt
     QList<LayerPtr> new_order;
 
     for (int i = 0; i < ui->layerList->count(); i++) {
-        new_order << dynamic_cast<LayerWidget *>(ui->layerList->itemWidget(ui->layerList->item(i)))->layer_;
+        new_order << dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(ui->layerList->item(i)))->layer_;
     }
 
     canvas_->setLayerOrder(new_order);
