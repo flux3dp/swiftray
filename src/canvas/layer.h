@@ -4,47 +4,74 @@
 #define LAYER_H
 
 class Layer {
-  public:
-    Layer(QColor color, QString name);
-    Layer(int new_layer_id);
-    Layer();
-    void paint(QPainter *painter, int counter) const;
-    void addShape(ShapePtr shape);
-    void removeShape(ShapePtr shape);
-    void clear();
-    shared_ptr<Layer> clone();
-    QList<ShapePtr> &children();
+public:
+  Layer(QColor color, QString name);
 
-    int repeat() const;
-    int speed() const;
-    int strength() const;
-    QColor color() const;
-    QString name() const;
+  Layer(int new_layer_id);
 
-    void setColor(QColor color);
-    void setHeight(double height);
-    void setName(const QString &name);
-    void setSpeed(int speed);
-    void setStrength(int strength);
-    void setRepeat(int repeat);
-    void setDiode(int diode_);
-    void setZStep(double zstep);
+  Layer();
+
+  void paint(QPainter *painter, int counter) const;
+
+  void addShape(ShapePtr shape);
+
+  void removeShape(ShapePtr shape);
+
+  void clear();
+
+  shared_ptr<Layer> clone();
+
+  QList<ShapePtr> &children();
+
+  int repeat() const;
+
+  int speed() const;
+
+  int strength() const;
+
+  QColor color() const;
+
+  QString name() const;
+
+  void setColor(QColor color);
+
+  void setHeight(double height);
+
+  void setName(const QString &name);
+
+  void setSpeed(int speed);
+
+  void setStrength(int strength);
+
+  void setRepeat(int repeat);
+
+  void setDiode(int diode_);
+
+  void setZStep(double zstep);
 
 
-    bool isVisible() const;
-    void setVisible(bool visible);
+  bool isVisible() const;
 
-  private:
-    QColor color_;
-    QString name_;
-    QList<ShapePtr> children_;
-    int strength_;
-    int speed_;
-    double zstep_;
-    bool diode_;
-    int repeat_;
-    double height_;
-    bool visible_;
+  void setVisible(bool visible);
+
+  void invalidCache();
+
+  void cache() const;
+
+private:
+  QColor color_;
+  QString name_;
+  QList<ShapePtr> children_;
+  int strength_;
+  int speed_;
+  double zstep_;
+  bool diode_;
+  int repeat_;
+  double height_;
+  bool visible_;
+  mutable bool cache_valid_;
+  mutable QPainterPath selected_path_;
+  mutable QPainterPath non_selected_path_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;
