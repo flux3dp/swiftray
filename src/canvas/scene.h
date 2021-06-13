@@ -50,6 +50,8 @@ class Scene : public QObject {
     void addLayer(LayerPtr &layer);
     void removeLayer(QString name);
     void dumpStack(QList<LayerPtr> &stack);
+    void reorderLayers(QList<LayerPtr> &new_order);
+
     // Undo
     void undo();
     void redo();

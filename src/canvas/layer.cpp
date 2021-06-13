@@ -2,30 +2,34 @@
 #include <canvas/layer.h>
 #include <shape/shape.h>
 
-const QString LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
+const QColor LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
                          "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
                          "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
                          "#607D8B", "#9E9E9E"};
 
 int layer_color_counter;
 
-Layer::Layer() {
-    color_ = QColor(LayerColors[(layer_color_counter++) % 17]);
-    name_ = "Layer 1";
+Layer::Layer(QColor color, QString name) {
+    color_ = color;
+    name_ = name;
     speed_ = 20;
     strength_ = 30;
     repeat_ = 1;
+    visible_ = true;
 }
 
-Layer::Layer(int new_layer_id) {
-    color_ = QColor(LayerColors[(new_layer_id-1) % 17]);
-    name_ = "Layer " + QString::number(new_layer_id);
-    speed_ = 20;
-    strength_ = 30;
-    repeat_ = 1;
+Layer::Layer() :
+    Layer(LayerColors[(layer_color_counter++) % 17],
+          "Layer 1") {
+}
+
+Layer::Layer(int new_layer_id) :
+    Layer(LayerColors[(new_layer_id-1) % 17],
+          "Layer " + QString::number(new_layer_id)) {
 }
 
 void Layer::paint(QPainter *painter, int counter) const {
+    if (!visible_) return;
     QPen dash_pen = QPen(color_, 2, Qt::DashLine);
     dash_pen.setDashPattern(QVector<qreal>(10, 3));
     dash_pen.setCosmetic(true);
@@ -75,13 +79,13 @@ LayerPtr Layer::clone() {
     return layer;
 }
 
-double Layer::repeat() const {
+int Layer::repeat() const {
     return repeat_;
 }
-double Layer::speed() const {
+int Layer::speed() const {
     return speed_;
 }
-double Layer::strength() const {
+int Layer::strength() const {
     return strength_;
 }
 
@@ -97,15 +101,15 @@ void Layer::setName(const QString &name) {
     name_ = name;
 }
 
-void Layer::setSpeed(double speed) {
+void Layer::setSpeed(int speed) {
     speed_ = speed;
 }
 
-void Layer::setStrength(double strength) {
+void Layer::setStrength(int strength) {
     strength_ = strength;
 }
 
-void Layer::setRepeat(double repeat) {
+void Layer::setRepeat(int repeat) {
     repeat_ = repeat;
 }
 void Layer::setDiode(int diode) {
@@ -113,4 +117,12 @@ void Layer::setDiode(int diode) {
 }
 void Layer::setZStep(double zstep) {
     zstep_ = zstep;
+}
+
+bool Layer::isVisible() const {
+    return visible_;
+}
+
+void Layer::setVisible(bool visible) {
+    visible_ = visible;
 }

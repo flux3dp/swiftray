@@ -56,12 +56,16 @@ class VCanvas : public QQuickPaintedItem {
     void importImage(QImage &image);
 
     void setActiveLayer(LayerPtr &layer);
-    void setLayerOrder(QList<LayerPtr> order);
+    void setLayerOrder(QList<LayerPtr> &order);
 
     void fitWindow();
     void setFont(const QFont &font);
 
     void exportGcode();
+
+    Controls::Transform& transformControl() {
+        return ctrl_transform_;
+    }
 
   private:
     bool ready;

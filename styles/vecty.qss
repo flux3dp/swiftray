@@ -109,13 +109,9 @@ QDoubleSpinBox {
   background: #F0F0F0;
 }
 
-#addLayerFrame {
-  border: 0;
-  background: white;
-}
-
 #layerList {
   border: 0;
+  border-bottom: 1px solid #CCC;
 }
 
 #layerWidgetFrame {

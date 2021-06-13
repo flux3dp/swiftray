@@ -19,6 +19,9 @@ public slots:
     void updateLayer(LayerPtr layer);
 
 private:
+    void loadStyles();
+    void registerEvents();
+
     Ui::LayerParamsPanel *ui;
     LayerPtr layer_;
 };

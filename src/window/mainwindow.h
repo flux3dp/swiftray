@@ -2,6 +2,7 @@
 #include <QQuickWindow>
 #include <QQuickWidget>
 #include <QListWidget>
+#include <QToolButton>
 #include <widgets/layer_list_item.h>
 #include <widgets/transform_panel.h>
 #include <widgets/layer_params_panel.h>
@@ -24,6 +25,7 @@ class MainWindow : public QMainWindow {
         bool event(QEvent *e) override;
         void loadQML();
         void loadQSS();
+        void loadWidgets();
 
     private slots:
         void quickWidgetStatusChanged(QQuickWidget::Status);
@@ -34,13 +36,14 @@ class MainWindow : public QMainWindow {
         void openFile();
         void openImageFile();
         void layerOrderChanged(const QModelIndex & sourceParent, int sourceStart, int sourceEnd, const QModelIndex & destinationParent, int destinationRow);
-        void on_addLayer_clicked();
 
     private:
         Ui::MainWindow *ui;
-        VCanvas *canvas_;
+        VCanvas* canvas_;
+        Scene* scene_;
         unique_ptr<LayerParamsPanel> layer_params_panel_;
         unique_ptr<TransformPanel> transform_panel_;
+        unique_ptr<QToolButton> add_layer_btn_;
 };
 
 #endif // MAINWINDOW_H

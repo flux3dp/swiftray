@@ -25,6 +25,7 @@ void Transform::updateSelections() {
     selections().clear();
     selections().append(scene().selections());
     bbox_need_recalc_ = true;
+    emit transformChanged();
 }
 
 void Transform::updateBoundingRect() {

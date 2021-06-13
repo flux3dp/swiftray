@@ -440,14 +440,9 @@ void VCanvas::setActiveLayer(LayerPtr &layer) {
     scene().setActiveLayer(layer);
 }
 
-void VCanvas::setLayerOrder(QList<LayerPtr> new_order) {
+void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
     scene().stackStep();
-    LayerPtr active_layer = scene().activeLayer();
-    scene().clearAll();
-    for (auto &layer : boost::adaptors::reverse(new_order)) {
-        scene().layers().push_back(layer);
-    }
-    scene().setActiveLayer(active_layer);
+    scene().reorderLayers(new_order);
 }
 
 void VCanvas::setFont(const QFont &font) {

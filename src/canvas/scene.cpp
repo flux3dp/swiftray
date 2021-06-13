@@ -99,7 +99,8 @@ void Scene::undo() {
     }
     QString active_layer_name = activeLayer()->name();
     stackRedo();
-    clearAll();
+    clearSelections();
+    layers().clear();
     Scene::dumpStack(undo_stack_.last());
     layers().append(undo_stack_.last());
     QList<ShapePtr> selected_shapes;
@@ -123,7 +124,8 @@ void Scene::redo() {
     }
     QString active_layer_name = activeLayer()->name();
     stackUndo();
-    clearAll();
+    clearSelections();
+    layers().clear();
     layers().append(redo_stack_.last());
     QList<ShapePtr> selected_shapes;
 
@@ -230,14 +232,26 @@ bool Scene::setActiveLayer(QString name) {
 }
 
 bool Scene::setActiveLayer(LayerPtr &layer) {
-    Q_ASSERT_X(layers_.contains(layer), "Active Layer",
-               "Invalid layer ptr when setting active layer");
+    if (!layers_.contains(layer)) {
+        qInfo() << "Layers" << layers_.size();
+        for (auto &layer : layers_) {
+            qInfo() << layer.get();
+        }
+        qInfo() << "Set layer" << layer.get();
+        Q_ASSERT_X(false, "Active Layer",
+                   "Invalid layer ptr when setting active layer");
+    }
     active_layer_ = layer;
     emit layerChanged();
     return false;
 }
 
 QList<LayerPtr> &Scene::layers() { return layers_; }
+
+void Scene::reorderLayers(QList<LayerPtr> &new_order) {
+    layers_.clear();
+    layers_.append(new_order);
+}
 
 void Scene::removeSelections() {
     // Clear selection pointers in other componenets

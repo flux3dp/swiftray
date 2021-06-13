@@ -5,8 +5,9 @@
 
 class Layer {
   public:
-    Layer();
+    Layer(QColor color, QString name);
     Layer(int new_layer_id);
+    Layer();
     void paint(QPainter *painter, int counter) const;
     void addShape(ShapePtr shape);
     void removeShape(ShapePtr shape);
@@ -14,31 +15,36 @@ class Layer {
     shared_ptr<Layer> clone();
     QList<ShapePtr> &children();
 
-    double repeat() const;
-    double speed() const;
-    double strength() const;
+    int repeat() const;
+    int speed() const;
+    int strength() const;
     QColor color() const;
     QString name() const;
 
     void setColor(QColor color);
     void setHeight(double height);
     void setName(const QString &name);
-    void setSpeed(double speed);
-    void setStrength(double strength);
-    void setRepeat(double repeat);
+    void setSpeed(int speed);
+    void setStrength(int strength);
+    void setRepeat(int repeat);
     void setDiode(int diode_);
     void setZStep(double zstep);
+
+
+    bool isVisible() const;
+    void setVisible(bool visible);
 
   private:
     QColor color_;
     QString name_;
     QList<ShapePtr> children_;
-    double strength_;
-    double speed_;
+    int strength_;
+    int speed_;
     double zstep_;
     bool diode_;
-    bool repeat_;
-    bool height_;
+    int repeat_;
+    double height_;
+    bool visible_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

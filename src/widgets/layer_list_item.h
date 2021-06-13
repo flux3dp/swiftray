@@ -16,9 +16,13 @@ class LayerListItem : public QWidget {
     LayerListItem(QWidget *parent, LayerPtr &layer, bool active);
     void paintEvent(QPaintEvent *event) override;
     ~LayerListItem();
-    LayerPtr &layer_;
+    LayerPtr layer_;
 
   private:
+    void createIcon();
+    void loadStyles();
+    void registerEvents();
+
     Ui::LayerListItem *ui;
     bool active_;
 };
