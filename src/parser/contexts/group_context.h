@@ -22,19 +22,19 @@ public:
     qInfo() << "Data-Speed" << val;
     layer().setSpeed(val);
   }
-  
+
   void set(svgpp::tag::attribute::data_repeat, int val) {
-    layer().setRepeat(val); 
+    layer().setRepeat(val);
   }
-  
+
   void set(svgpp::tag::attribute::data_height, double val) {
     layer().setHeight(val);
   }
-  
+
   void set(svgpp::tag::attribute::data_diode, int val) {
     layer().setDiode(val);
   }
-  
+
   void set(svgpp::tag::attribute::data_zstep, double val) {
     layer().setZStep(val);
   }
@@ -50,13 +50,13 @@ public:
   void set(svgpp::tag::attribute::data_config_name, RangedChar fragment) {
     qInfo() << "xlink::href"
             << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
+                 std::string(fragment.begin(), fragment.end()));
   }
 
   Layer &layer() {
     if (layer_ptr_ == nullptr) {
-        qInfo() << "Create layer";
-        layer_ptr_ = make_shared<Layer>();
+      qInfo() << "Create layer";
+      layer_ptr_ = make_shared<Layer>();
     }
     svgpp_set_active_layer(layer_ptr_);
     return *layer_ptr_;
@@ -69,6 +69,10 @@ public:
       svgpp_unset_active_layer();
     }
     qInfo() << "</g>";
+  }
+
+  string type() {
+    return "g";
   }
 
   using ObjectContext::set;

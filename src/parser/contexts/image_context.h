@@ -10,11 +10,12 @@ public:
   }
 
   boost::optional<double> const &width() const { return width_; }
+
   boost::optional<double> const &height() const { return height_; }
 
   using BaseContext::set;
 
-  template <class IRI>
+  template<class IRI>
   void set(tag::attribute::xlink::href, tag::iri_fragment,
            IRI const &fragment) {
     qInfo() << "xlink::href" << fragment;
@@ -23,7 +24,7 @@ public:
   void set(tag::attribute::xlink::href, RangedChar fragment) {
     qInfo() << "xlink::href"
             << QString::fromStdString(
-                   std::string(fragment.begin(), fragment.end()));
+                 std::string(fragment.begin(), fragment.end()));
   }
 
   void set(tag::attribute::x, double val) { x_ = val; }
@@ -34,7 +35,11 @@ public:
 
   void set(tag::attribute::height, double val) { height_ = val; }
 
-  void on_exit_element();
+  void on_exit_element() {}
+
+  string type() {
+    return "image";
+  }
 
 private:
   std::string fragment_id_;

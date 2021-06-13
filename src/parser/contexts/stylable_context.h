@@ -395,7 +395,6 @@ class StylableContext : public PaintContext<svgpp::tag::attribute::stroke>,
                                 QString::number(ease_color->get<0>(), 16).rightJustified(2, '0') +
                                 QString::number((int)ease_color->get<1>(), 16).rightJustified(2, '0') +
                                 QString::number((int)ease_color->get<2>(), 16).rightJustified(2, '0');
-                qInfo() << "Fill color" << label;
                 return label;
             }
         }

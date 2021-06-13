@@ -56,6 +56,10 @@ public:
   length_factory_type const &length_factory() const { return length_factory_; }
 
   SVGPPDoc & document() const { return doc_; }
+
+  virtual string type() {
+      return "svg";
+  }
 private:
   length_factory_type length_factory_;
   SVGPPDoc & doc_;

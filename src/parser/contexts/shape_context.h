@@ -22,7 +22,8 @@ public:
   }
 
   void on_exit_element() {
-    QTransform transform(transform_(0,0),transform_(1,0),transform_(2,0),transform_(0,1),transform_(1,1),transform_(2,1),transform_(0,2),transform_(1,2),transform_(2,2));
+    QTransform transform(transform_(0, 0), transform_(1, 0), transform_(2, 0), transform_(0, 1), transform_(1, 1),
+                         transform_(2, 1), transform_(0, 2), transform_(1, 2), transform_(2, 2));
     QPainterPath mapped_path = transform.map(working_path_);
     ShapePtr shape = make_shared<PathShape>(mapped_path);
     QString layer_name = this->strokeColor() == "N" ? this->fillColor() : this->strokeColor();
@@ -32,6 +33,7 @@ public:
 
   using BaseContext::set;
   using StylableContext::set;
+
   // Path Events Policy methods
   void path_move_to(double x, double y, tag::coordinate::absolute) {
     QPointF newPos = getTransformedPos(x, y);
@@ -72,9 +74,9 @@ public:
     // TODO support rotated arc
     // https://github.com/inkcut/inkcut/blob/ab27cf57ce5a5bd3bcaeef77bac28e4d6f92895a/inkcut/core/svg.py
     const double x1 = currentPos.x(), y1 = currentPos.y(),
-                 x1prime = (x1 - x2) / 2, y1prime = (y1 - y2) / 2,
-                 lamb = (x1prime * x1prime) / (rx * rx) +
-                        (y1prime * y1prime) / (ry * ry);
+         x1prime = (x1 - x2) / 2, y1prime = (y1 - y2) / 2,
+         lamb = (x1prime * x1prime) / (rx * rx) +
+                (y1prime * y1prime) / (ry * ry);
 
     if (lamb >= 1) {
       ry = sqrt(lamb) * ry;
@@ -91,13 +93,13 @@ public:
     }
 
     const double factor =
-        (large_arc_flag == sweep_flag ? -1 : 1) * sqrt(radicand);
+         (large_arc_flag == sweep_flag ? -1 : 1) * sqrt(radicand);
     const double cxprime = factor * rx * y1prime / ry,
-                 cyprime = -factor * ry * x1prime / rx,
-                 cx = cxprime + (x1 + x2) / 2, cy = cyprime + (y1 + y2) / 2,
-                 start_theta = -atan2((y1 - cy) * rx, (x1 - cx) * ry),
-                 start_phi = -atan2(y1 - cy, x1 - cx),
-                 end_phi = -atan2(y2 - cy, x2 - cx);
+         cyprime = -factor * ry * x1prime / rx,
+         cx = cxprime + (x1 + x2) / 2, cy = cyprime + (y1 + y2) / 2,
+         start_theta = -atan2((y1 - cy) * rx, (x1 - cx) * ry),
+         start_phi = -atan2(y1 - cy, x1 - cx),
+         end_phi = -atan2(y2 - cy, x2 - cx);
     double sweep_length = end_phi - start_phi;
 
     if (sweep_length < 0 && !sweep_flag) {
@@ -113,8 +115,8 @@ public:
                         sweep_length * 360 / 2 / 3.1415926);
   }
 
-  void path_close_subpath() { 
-    working_path_.closeSubpath(); 
+  void path_close_subpath() {
+    working_path_.closeSubpath();
   }
 
   void path_exit() {
@@ -131,6 +133,11 @@ public:
     m.y = y;
     m.directionality = directionality;
   }
+
+  string type() {
+    return "path";
+  }
+
 
 private:
   struct MarkerPos {
