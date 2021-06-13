@@ -2,6 +2,10 @@ QT += quick
 QT += quickwidgets
 QT += widgets 
 QT += opengl
+QT += gui
+QT += gui-private
+QT += svg
+QT += svg-private
 
 CONFIG += c++17
 CONFIG += optimize_full

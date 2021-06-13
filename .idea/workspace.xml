@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="Project" targetName="vecty_bin_autogen" />
-      <config projectName="Project" targetName="vecty_bin" />
+      <config projectName="vecty" targetName="vecty_bin" />
+      <config projectName="vecty" targetName="vecty_bin_autogen" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -12,15 +15,22 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Add CMake and CLion Environment">
+    <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="al">
+      <change afterPath="$PROJECT_DIR$/src/parser/contexts/css_context.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/parser/css/svg_style_selector.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/vcanvas.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/vcanvas.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/base_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/base_generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/fcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/fcode_generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/gcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/gcode_generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath_exporter.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath_exporter.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/contexts/base_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/base_context.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/contexts/group_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/group_context.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/contexts/image_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/image_context.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/contexts/shape_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/shape_context.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/contexts/stylable_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/stylable_context.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_common.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_common.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_impl.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_impl.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_parser.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/third_party/svgpp/policy/xml/libxml2.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/third_party/svgpp/policy/xml/libxml2.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vecty.pro" beforeDir="false" afterPath="$PROJECT_DIR$/vecty.pro" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/vecty.pro.user" beforeDir="false" afterPath="$PROJECT_DIR$/vecty.pro.user" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +53,9 @@
     </file-type-list>
   </component>
   <component name="ProjectId" id="1tnTnNwajfvwLWHLtKFTUOn37Uo" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -51,19 +64,25 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
-    <property name="settings.editor.selected.configurable" value="vcs.Git" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
   </component>
   <component name="RunManager" selected="CMake Application.vecty_bin">
-    <configuration name="vecty_bin" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Project" TARGET_NAME="vecty_bin" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Project" RUN_TARGET_NAME="vecty_bin">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="vecty_bin_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Project" TARGET_NAME="vecty_bin_autogen" CONFIG_NAME="Debug">
+    <configuration name="vecty_bin" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="vecty_bin" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="vecty" RUN_TARGET_NAME="vecty_bin">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="vecty_bin_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="vecty_bin_autogen" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -87,7 +106,9 @@
       <option name="presentableId" value="Default" />
       <updated>1623404020053</updated>
       <workItem from="1623404021452" duration="2703000" />
-      <workItem from="1623411928931" duration="16444000" />
+      <workItem from="1623411928931" duration="24202000" />
+      <workItem from="1623494077644" duration="21095000" />
+      <workItem from="1623590119938" duration="9926000" />
     </task>
     <task id="LOCAL-00001" summary="Add CMake and CLion Environment">
       <created>1623404105389</created>
@@ -117,5 +138,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add CMake and CLion Environment" />
     <option name="LAST_COMMIT_MESSAGE" value="Add CMake and CLion Environment" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
