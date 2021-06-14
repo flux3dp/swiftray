@@ -167,18 +167,15 @@ void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceSt
 }
 
 bool MainWindow::event(QEvent *e) {
+  QNativeGestureEvent *nge0;
+  QNativeGestureEvent nge1(Qt::NativeGestureType::ZoomNativeGesture, QPointF(), QPointF(), QPointF(), 0, 0, 0);
   switch (e->type()) {
     case QEvent::CursorChange:
     case QEvent::UpdateRequest:
       break;
 
     case QEvent::NativeGesture:
-      qInfo() << "Native Gesture!";
-      canvas_->event(e);
-      return true;
-
     case QEvent::KeyPress:
-      // qInfo() << "Key event" << e;
       canvas_->event(e);
       return true;
 
@@ -193,6 +190,7 @@ bool MainWindow::event(QEvent *e) {
 void MainWindow::resizeEvent(QResizeEvent *event) {
   QMainWindow::resizeEvent(event);
   canvas_->setScreenSize(ui->quickWidget->geometry().size());
+  canvas_->setScreenOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {

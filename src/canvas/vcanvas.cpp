@@ -1,4 +1,5 @@
 #include <canvas/vcanvas.h>
+#include <QQuickWidget>
 #include <QCursor>
 #include <QDebug>
 #include <QHoverEvent>
@@ -50,14 +51,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   fps_count = 0;
   fps_timer.start();
 
-
   qInfo() << "Rendering target = " << this->renderTarget();
-
-  connect(&ctrl_transform_, &Controls::Transform::transformChanged, [=]() {
-    for (auto &shape : scene().selections()) {
-      shape->parent()->flushCache();
-    }
-  });
 }
 
 VCanvas::~VCanvas() {
@@ -83,14 +77,6 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 void VCanvas::paint(QPainter *painter) {
   painter->save();
   painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
-  // Calculate FPS
-  fps_count++;
-  fps = (fps * 4 + float(fps_count) * 1000 / fps_timer.elapsed()) / 5;
-  if (fps < 30) {
-    painter->setRenderHint(QPainter::RenderHint::Antialiasing, false);
-  } else {
-    painter->setRenderHint(QPainter::RenderHint::Antialiasing, true);
-  }
   // Move to scroll and scale
   painter->translate(scene().scroll());
   painter->scale(scene().scale(), scene().scale());
@@ -103,9 +89,12 @@ void VCanvas::paint(QPainter *painter) {
     do_flush_cache = true;
     qInfo() << "Flush cache" << screen_rect_;
   }
+
+  int object_count = 0;
+
   for (const LayerPtr &layer : scene().layers()) {
     if (do_flush_cache) layer->flushCache();
-    layer->paint(painter, screen_rect_, counter);
+    object_count += layer->paint(painter, screen_rect_, counter);
   }
 
   for (auto &control : ctrls_) {
@@ -114,11 +103,13 @@ void VCanvas::paint(QPainter *painter) {
     }
   }
 
-  // Draw FPS
   painter->restore();
+  // Calculate FPS
+  fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
+  painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40), "Objects " + QString::number(scene().activeLayer()->children().size()));
+  painter->drawText(QPointF(10, 40), "Objects " + QString::number(object_count));
   painter->drawText(QPointF(10, 60), "Mem " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;
@@ -249,8 +240,12 @@ bool VCanvas::event(QEvent *e) {
     case QEvent::NativeGesture:
       nge = static_cast<QNativeGestureEvent *>(e);
 
+      //  (passed by main window)
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
+        QPoint mouse_pos = nge->localPos().toPoint() - screen_offset_;
+        double orig_scale = scene().scale();
         scene().setScale(max(0.01, scene().scale() + nge->value() / 2));
+        scene().setScroll(mouse_pos - (mouse_pos - scene().scroll()) * scene().scale() / orig_scale);
       }
 
       break;
@@ -524,4 +519,9 @@ void VCanvas::setScreenSize(QSize screen_size) {
   qInfo() << "Resize canvas" << screen_size;
   screen_size_ = screen_size;
   fitWindow();
+}
+
+void VCanvas::setScreenOffset(QPoint offset) {
+  qInfo() << "Screen offset" << offset;
+  screen_offset_ = offset;
 }

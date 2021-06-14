@@ -11,7 +11,7 @@ public:
 
   Layer();
 
-  void paint(QPainter *painter, QRectF screen_rect, int counter) const;
+  int paint(QPainter *painter, QRectF screen_rect, int counter) const;
 
   void addShape(ShapePtr shape);
 
@@ -72,6 +72,7 @@ private:
   mutable bool cache_valid_;
   mutable QPainterPath selected_path_;
   mutable QPainterPath non_selected_path_;
+  mutable int displaying_paths_count_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

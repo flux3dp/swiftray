@@ -66,7 +66,6 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
       next_ele = path().elementAt((index + 1) % last_index);
       if (next_ele.type == QPainterPath::ElementType::CurveToElement) {
         path().setElementPositionAt((index + 1) % last_index, next_ele.x + offset.x(), next_ele.y + offset.y());
-        target().parent()->flushCache();
       }
       break;
     case PathShape::NodeType::CurveCtrlPrev:
@@ -90,7 +89,6 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
           QPointF new_pos = endpoint + (endpoint - local_coord) * distance(opposite_ele - endpoint) /
                                        distance(endpoint - local_coord);
           path().setElementPositionAt(opposite_index, new_pos.x(), new_pos.y());
-          target().parent()->flushCache();
         }
       }
       break;
@@ -242,7 +240,7 @@ bool PathEdit::keyPressEvent(QKeyEvent *e) {
 void PathEdit::endEditing() {
   scene().setMode(Scene::Mode::Selecting);
   scene().clearSelections();
-  target_->flushCache();
+  target().flushCache();
   scene().setSelection(target_);
   reset();
 }

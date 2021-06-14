@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <shape/shape.h>
+#include <canvas/layer.h>
 
 #define SELECTION_TOLERANCE 15
 
@@ -35,12 +36,12 @@ void Shape::setParent(Layer *parent) { parent_ = parent; }
 
 void Shape::applyTransform(const QTransform &transform) {
   transform_ = transform_ * transform;
-  bbox_need_recalc_ = true;
+  flushCache();
 }
 
 void Shape::setTransform(const QTransform &transform) {
   transform_ = transform;
-  bbox_need_recalc_ = true;
+  flushCache();
 }
 
 void Shape::setRotation(qreal rotation) { rotation_ = rotation; }
@@ -93,7 +94,12 @@ shared_ptr<Shape> Shape::clone() const {
 
 Shape::Type Shape::type() const { return Shape::Type::None; }
 
-void Shape::flushCache() { bbox_need_recalc_ = true; }
+void Shape::flushCache() {
+  bbox_need_recalc_ = true;
+  if (parent_) {
+    parent_->flushCache();
+  }
+}
 
 void Shape::setTempTransform(const QTransform &transform) {
   temp_transform_ = transform;

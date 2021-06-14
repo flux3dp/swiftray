@@ -2,12 +2,12 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <canvas/scene.h>
 
-Scene::Scene() noexcept {
-  mode_ = Mode::Selecting;
-  new_layer_id_ = 1;
-  scroll_x_ = 0;
-  scroll_y_ = 0;
-  scale_ = 1;
+Scene::Scene() noexcept:
+     mode_(Mode::Selecting),
+     new_layer_id_(1),
+     scroll_x_(0),
+     scroll_y_(0),
+     scale_(1) {
   width_ = 3000;
   height_ = 2000;
   font_ = QFont("Tahoma", 200, QFont::Bold);

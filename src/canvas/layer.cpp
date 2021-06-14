@@ -33,31 +33,38 @@ Layer::Layer(int new_layer_id) :
 void Layer::cache(QRectF screen_rect) const {
   selected_path_.clear();
   non_selected_path_.clear();
+  displaying_paths_count_ = 0;
   for (auto &shape : children_) {
-    if (shape->type() == Shape::Type::Path) {
+    if (shape->type() == Shape::Type::Path || shape->type() == Shape::Type::Text) {
       PathShape *p = (PathShape *) shape.get();
       if (shape->selected()) {
         QPainterPath path = (shape->transform() * shape->tempTransform()).map(p->path());
-        if (path.intersects(screen_rect))
+        if (path.intersects(screen_rect)) {
           selected_path_.addPath(path);
+          displaying_paths_count_++;
+        }
       } else {
         QPainterPath path = shape->transform().map(p->path());
-        if (path.intersects(screen_rect))
+        if (path.intersects(screen_rect)) {
           non_selected_path_.addPath(shape->transform().map(p->path()));
+          displaying_paths_count_++;
+        }
       }
     }
   }
   cache_valid_ = true;
 }
 
-void Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
-  if (!visible_) return;
+int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
+  if (!visible_) return 0;
   QPen dash_pen = QPen(color_, 2, Qt::DashLine);
   dash_pen.setDashPattern(QVector<qreal>(10, 3));
   dash_pen.setCosmetic(true);
   dash_pen.setDashOffset(0.3F * counter);
   QPen solid_pen = QPen(color_, 2, Qt::SolidLine);
   solid_pen.setCosmetic(true);
+
+  int painted_objects = 0;
 
   bool selected_flag = false;
   painter->setPen(solid_pen);
@@ -67,7 +74,8 @@ void Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   }
   //TODO(Make multiple caches between non-path item)
   for (auto &shape : children_) {
-    if (shape->type() != Shape::Type::Path) {
+    if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) {
+      painted_objects++;
       shape->paint(painter);
     }
   }
@@ -75,6 +83,7 @@ void Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   painter->drawPath(selected_path_);
   painter->setPen(solid_pen);
   painter->drawPath(non_selected_path_);
+  return painted_objects + displaying_paths_count_;
 }
 
 void Layer::addShape(ShapePtr shape) {

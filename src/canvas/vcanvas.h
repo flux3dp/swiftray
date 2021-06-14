@@ -100,6 +100,8 @@ public Q_SLOTS:
 
   void setScreenSize(QSize size);
 
+  void setScreenOffset(QPoint offset);
+
   Controls::Transform &transformControl() {
     return ctrl_transform_;
   }
@@ -128,6 +130,7 @@ private:
   int fps_count;
   float fps;
   QRectF screen_rect_;
+  QPoint screen_offset_;
   QSize screen_size_;
   QString mem_info_;
   QThread *mem_thread_;
