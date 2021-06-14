@@ -7,38 +7,47 @@ using namespace std;
 
 namespace Controls { class PathEdit; }
 class PathShape : public Shape {
-  public:
-    enum class NodeType {
-        CURVE_SYMMETRY,
-        CURVE_SMOOTH,
-        CURVE_CORNER,
-        CURVE_CTRL_PREV,
-        CURVE_CTRL_NEXT,
-        LINE_TO,
-        MOVE_TO
-    };
-    PathShape() noexcept;
-    PathShape(QPainterPath path);
-    virtual ~PathShape();
+public:
+  enum class NodeType {
+    CurveSymmetry,
+    CurveSmooth,
+    CurveCorner,
+    CurveCtrlPrev,
+    CurveCtrlNext,
+    LINE_TO,
+    MOVE_TO
+  };
 
-    void calcBoundingBox() const override;
-    ShapePtr clone() const override;
-    bool hitTest(QPointF global_coord, qreal tolerance) const override;
-    bool hitTest(QRectF global_coord_rect) const override;
-    void paint(QPainter *painter) const override;
-    Shape::Type type() const override;
+  PathShape() noexcept;
 
-    const QPainterPath &path() const;
-    void setPath(QPainterPath &path);
+  PathShape(QPainterPath path);
 
-    friend class Controls::PathEdit;
+  virtual ~PathShape();
 
-  private:
-    QHash<int, NodeType> node_types_;
-    mutable QRectF hit_test_rect_;
+  void calcBoundingBox() const override;
 
-  protected:
-    QPainterPath path_;
+  ShapePtr clone() const override;
+
+  bool hitTest(QPointF global_coord, qreal tolerance) const override;
+
+  bool hitTest(QRectF global_coord_rect) const override;
+
+  void paint(QPainter *painter) const override;
+
+  Shape::Type type() const override;
+
+  const QPainterPath &path() const;
+
+  void setPath(QPainterPath &path);
+
+  friend class Controls::PathEdit;
+
+private:
+  QHash<int, NodeType> node_types_;
+  mutable QRectF hit_test_rect_;
+
+protected:
+  QPainterPath path_;
 };
 
 #endif // PATHSHAPE_H

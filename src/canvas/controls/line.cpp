@@ -5,7 +5,7 @@
 using namespace Controls;
 
 bool Line::isActive() { 
-    return scene().mode() == Scene::Mode::DRAWING_LINE; 
+    return scene().mode() == Scene::Mode::LineDrawing;
 }
 
 bool Line::mouseMoveEvent(QMouseEvent *e) {
@@ -21,7 +21,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
     scene().stackStep();
     scene().activeLayer()->addShape(new_line);
     scene().setSelection(new_line);
-    scene().setMode(Scene::Mode::SELECTING);
+    scene().setMode(Scene::Mode::Selecting);
     return true;
 }
 

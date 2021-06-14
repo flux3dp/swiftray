@@ -6,7 +6,7 @@
 using namespace Controls;
 
 bool Oval::isActive() { 
-    return scene().mode() == Scene::Mode::DRAWING_OVAL; 
+    return scene().mode() == Scene::Mode::OvalDrawing;
 }
 
 bool Oval::mouseMoveEvent(QMouseEvent *e) {
@@ -22,7 +22,7 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
     scene().stackStep();
     scene().activeLayer()->addShape(new_oval);
     scene().setSelection(new_oval);
-    scene().setMode(Scene::Mode::SELECTING);
+    scene().setMode(Scene::Mode::Selecting);
     return true;
 }
 

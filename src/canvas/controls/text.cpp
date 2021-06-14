@@ -8,7 +8,7 @@
 using namespace Controls;
 
 bool Text::isActive() {
-    return scene().mode() == Scene::Mode::DRAWING_TEXT; 
+    return scene().mode() == Scene::Mode::TextDrawing;
 }
 
 bool Text::mouseReleaseEvent(QMouseEvent *e) {
@@ -42,7 +42,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
             scene().setSelection(target_);
         }
         reset();
-        scene().setMode(Scene::Mode::SELECTING);
+        scene().setMode(Scene::Mode::Selecting);
         return true;
     }
     return false;

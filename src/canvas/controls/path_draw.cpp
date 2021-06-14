@@ -8,7 +8,7 @@
 using namespace Controls;
 
 bool PathDraw::isActive() { 
-    return scene().mode() == Scene::Mode::DRAWING_PATH; 
+    return scene().mode() == Scene::Mode::PathDrawing;
 }
 
 PathDraw::PathDraw(Scene &scene_) noexcept : CanvasControl(scene_) {
@@ -89,7 +89,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
         scene().stackStep();
         scene().activeLayer()->addShape(new_shape);
         scene().setSelection(new_shape);
-        scene().setMode(Scene::Mode::SELECTING);
+        scene().setMode(Scene::Mode::Selecting);
         reset();
     }
     return true;

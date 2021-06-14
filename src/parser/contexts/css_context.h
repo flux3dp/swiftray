@@ -1,12 +1,12 @@
-#include <parser/contexts/base_context.h>
+#ifndef CSSCONTEXT_H
+#define CSSCONTEXT_H
+
 #include <QtGui/private/qcssparser_p.h>
 #include <QtSvg/private/qsvghandler_p.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
-#pragma once
-
-#include <parser/css/svg_style_selector.h>
+#include <parser/contexts/base_context.h>
+#include <parser/svgpp_defs.h>
 
 class CSSContext : public BaseContext {
 public:
@@ -38,3 +38,5 @@ public:
 private:
   std::string fragment_id_;
 };
+
+#endif

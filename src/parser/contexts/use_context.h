@@ -6,21 +6,22 @@
 class UseContext : public BaseContext {
 public:
   UseContext(BaseContext const &parent) : BaseContext(parent) {
-    qInfo() << "Enter use";
+    qInfo() << "<use>";
   }
 
   boost::optional<double> const &width() const { return width_; }
+
   boost::optional<double> const &height() const { return height_; }
 
   using BaseContext::set;
 
-  template <class IRI>
+  template<class IRI>
   void set(tag::attribute::xlink::href, tag::iri_fragment,
            IRI const &fragment) {
     fragment_id_.assign(boost::begin(fragment), boost::end(fragment));
   }
 
-  template <class IRI>
+  template<class IRI>
   void set(tag::attribute::xlink::href, IRI const &fragment) {
     std::cerr << "External references aren't supported\n";
   }

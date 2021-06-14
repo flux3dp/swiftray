@@ -1,4 +1,5 @@
 #include <parser/svgpp_common.h>
+#include <libxml/xpath.h>
 #include <set>
 
 #ifndef SVGPP_DOC_H
@@ -8,47 +9,44 @@ class SVGPPDoc {
 public:
   class FollowRef;
 
-  SVGPPDoc(xmlDoc *doc) : xml_(doc) {}
+  SVGPPDoc(xmlDocPtr xml_doc) : xml_(xml_doc) {
+    xml_context_ = xmlXPathNewContext(xml_doc);
+  }
 
   ~SVGPPDoc() {
-    // TODO(Free all xml refs)
-    xmlFree(doc);
+    qDebug() << "[Memory] ~SVGPPDoc(" << this << ")";
+    xmlFreeDoc(xml_);
+    xmlXPathFreeContext(xml_context_);
   }
 
-  xmlNode *root() { return xmlDocGetRootElement(xml_); }
+  xmlNodePtr root() { return xmlDocGetRootElement(xml_); }
 
-  xmlNode *getElementById(xmlNode *rootnode, const xmlChar *id) {
-    xmlNode *node = rootnode;
-    if (node == nullptr) {
-      qInfo() << "ROOT IS NULL?";
-      return nullptr;
-    }
+  xmlNodePtr getElementById(std::string id) {
+    std::string query = QString("//*[@id='" + QString::fromStdString(id) + "']").toStdString();
+    xmlXPathObjectPtr result = xmlXPathEval(
+         (const xmlChar *) query.c_str(),
+         xml_context_);
+    if (result == nullptr || result->nodesetval == nullptr) return nullptr;
 
-    while (node != nullptr) {
-      xmlChar *node_id = xmlGetProp(node, (xmlChar *) "id");
-      if (node_id && xmlStrcmp(node_id, id) == 0) {
+    for (int i = 0; i < result->nodesetval->nodeNr; i++) {
+      xmlNodePtr node = result->nodesetval->nodeTab[i];
+      if (node->type == XML_ELEMENT_NODE) {
+        xmlFree(result);
         return node;
-      } else if (node->children != nullptr) {
-        xmlNode *children_result = getElementById(node->children, id);
-        if (children_result != nullptr) {
-          return children_result;
-        }
       }
-      node = node->next;
     }
-    return NULL;
+    return nullptr;
   }
 
-  xmlNode *getElementById(std::string id) { return getElementById(root(), (xmlChar *) id.c_str()); }
-
-  xmlDoc *xml_;
-  typedef std::set<xmlNode *> followed_refs_t;
+  xmlDocPtr xml_;
+  xmlXPathContextPtr xml_context_;
+  typedef std::set<xmlNodePtr> followed_refs_t;
   followed_refs_t followed_refs_;
 };
 
 class SVGPPDoc::FollowRef {
 public:
-  FollowRef(SVGPPDoc &document, xmlNode *el) : document_(document) {
+  FollowRef(SVGPPDoc &document, xmlNodePtr el) : document_(document) {
     std::pair<SVGPPDoc::followed_refs_t::iterator, bool> ins = document.followed_refs_.insert(el);
     if (!ins.second)
       throw std::runtime_error("Cyclic reference found");

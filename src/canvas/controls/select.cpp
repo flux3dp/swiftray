@@ -8,7 +8,7 @@ Select::Select(Scene &scene) noexcept : CanvasControl(scene) {
 }
 
 bool Select::isActive() { 
-    return scene().mode() == Scene::Mode::MULTI_SELECTING; 
+    return scene().mode() == Scene::Mode::MultiSelecting;
 }
 
 bool Select::mouseMoveEvent(QMouseEvent *e) {
@@ -34,7 +34,7 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
         scene().setSelections(selected);
     }
 
-    scene().setMode(Scene::Mode::SELECTING);
+    scene().setMode(Scene::Mode::Selecting);
     selection_box_ = QRectF(0, 0, 0, 0);
     return true;
 }

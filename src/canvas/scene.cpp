@@ -3,7 +3,7 @@
 #include <canvas/scene.h>
 
 Scene::Scene() noexcept {
-  mode_ = Mode::SELECTING;
+  mode_ = Mode::Selecting;
   new_layer_id_ = 1;
   scroll_x_ = 0;
   scroll_y_ = 0;

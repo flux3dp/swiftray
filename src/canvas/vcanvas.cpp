@@ -33,7 +33,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &VCanvas::loop);
   timer->start(16);
-  scene().setMode(Scene::Mode::SELECTING);
+  scene().setMode(Scene::Mode::Selecting);
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
          << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
          << &ctrl_text_;
@@ -121,7 +121,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
       return;
   }
 
-  if (scene().mode() == Scene::Mode::SELECTING) {
+  if (scene().mode() == Scene::Mode::Selecting) {
     ShapePtr hit = scene().hitTest(canvas_coord);
 
     if (hit != nullptr) {
@@ -130,7 +130,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
       }
     } else {
       scene().clearSelections();
-      scene().setMode(Scene::Mode::MULTI_SELECTING);
+      scene().setMode(Scene::Mode::MultiSelecting);
     }
   }
 }
@@ -156,7 +156,7 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
       return;
   }
 
-  scene().setMode(Scene::Mode::SELECTING);
+  scene().setMode(Scene::Mode::Selecting);
 }
 
 void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
@@ -165,25 +165,25 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
           << canvas_coord;
   qInfo() << "Mode" << (int) scene().mode();
   ShapePtr hit = scene().hitTest(canvas_coord);
-  if (scene().mode() == Scene::Mode::SELECTING) {
+  if (scene().mode() == Scene::Mode::Selecting) {
     if (hit != nullptr) {
       qInfo() << "Double clicked" << hit.get();
       switch (hit->type()) {
         case Shape::Type::Path:
           scene().clearSelections();
           ctrl_path_edit_.setTarget(hit);
-          scene().setMode(Scene::Mode::EDITING_PATH);
+          scene().setMode(Scene::Mode::PathEditing);
           break;
         case Shape::Type::Text:
           scene().clearSelections();
           ctrl_text_.setTarget(hit);
-          scene().setMode(Scene::Mode::DRAWING_TEXT);
+          scene().setMode(Scene::Mode::TextDrawing);
           break;
         default:
           break;
       }
     }
-  } else if (scene().mode() == Scene::Mode::EDITING_PATH) {
+  } else if (scene().mode() == Scene::Mode::PathEditing) {
     ctrl_path_edit_.endEditing();
   }
 }
@@ -233,7 +233,7 @@ bool VCanvas::event(QEvent *e) {
 }
 
 void VCanvas::editCut() {
-  if (scene().mode() != Scene::Mode::SELECTING)
+  if (scene().mode() != Scene::Mode::Selecting)
     return;
   scene().stackStep();
   qInfo() << "Edit Cut";
@@ -242,7 +242,7 @@ void VCanvas::editCut() {
 }
 
 void VCanvas::editCopy() {
-  if (scene().mode() != Scene::Mode::SELECTING)
+  if (scene().mode() != Scene::Mode::Selecting)
     return;
   qInfo() << "Edit Copy";
   scene().clearClipboard();
@@ -251,7 +251,7 @@ void VCanvas::editCopy() {
 }
 
 void VCanvas::editPaste() {
-  if (scene().mode() != Scene::Mode::SELECTING)
+  if (scene().mode() != Scene::Mode::Selecting)
     return;
   scene().stackStep();
   qInfo() << "Edit Paste";
@@ -289,35 +289,35 @@ void VCanvas::editRedo() { scene().redo(); }
 void VCanvas::editDrawRect() {
   ctrl_rect_.reset();
   scene().clearSelections();
-  scene().setMode(Scene::Mode::DRAWING_RECT);
+  scene().setMode(Scene::Mode::RectDrawing);
 }
 
 void VCanvas::editDrawOval() {
   ctrl_oval_.reset();
   scene().clearSelections();
-  scene().setMode(Scene::Mode::DRAWING_OVAL);
+  scene().setMode(Scene::Mode::OvalDrawing);
 }
 
 void VCanvas::editDrawLine() {
   ctrl_line_.reset();
   scene().clearSelections();
-  scene().setMode(Scene::Mode::DRAWING_LINE);
+  scene().setMode(Scene::Mode::LineDrawing);
 }
 
 void VCanvas::editDrawPath() {
   ctrl_path_draw_.reset();
   scene().clearSelections();
-  scene().setMode(Scene::Mode::DRAWING_PATH);
+  scene().setMode(Scene::Mode::PathDrawing);
 }
 
 void VCanvas::editDrawText() {
   ctrl_text_.reset();
   scene().clearSelections();
-  scene().setMode(Scene::Mode::DRAWING_TEXT);
+  scene().setMode(Scene::Mode::TextDrawing);
 }
 
 void VCanvas::editSelectAll() {
-  if (scene().mode() != Scene::Mode::SELECTING)
+  if (scene().mode() != Scene::Mode::Selecting)
     return;
   QList<ShapePtr> all_shapes;
 
@@ -468,7 +468,7 @@ void VCanvas::setFont(const QFont &font) {
     ShapePtr shape = scene().selections().at(0);
     scene().setSelection(shape);
   }
-  if (scene().mode() == Scene::Mode::DRAWING_TEXT) {
+  if (scene().mode() == Scene::Mode::TextDrawing) {
     if (ctrl_text_.hasTarget()) {
       new_font = ctrl_text_.target().font();
       new_font.setFamily(font.family());

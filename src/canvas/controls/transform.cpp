@@ -12,10 +12,10 @@ Transform::Transform(Scene &scene) noexcept: CanvasControl(scene) {
 
 bool Transform::isActive() {
   return scene().selections().size() > 0 &&
-         (scene().mode() == Scene::Mode::SELECTING ||
-          scene().mode() == Scene::Mode::MOVING ||
-          scene().mode() == Scene::Mode::ROTATING ||
-          scene().mode() == Scene::Mode::TRANSFORMING);
+         (scene().mode() == Scene::Mode::Selecting ||
+          scene().mode() == Scene::Mode::Moving ||
+          scene().mode() == Scene::Mode::Rotating ||
+          scene().mode() == Scene::Mode::Transforming);
 }
 
 QList<ShapePtr> &Transform::selections() { return selections_; }
@@ -224,11 +224,11 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
                      2; // Rotate around rotated bbox center
     rotated_from_ = atan2(canvas_coord.y() - action_center_.y(),
                           canvas_coord.x() - action_center_.x());
-    scene().setMode(Scene::Mode::ROTATING);
+    scene().setMode(Scene::Mode::Rotating);
   } else {
     action_center_ = controls_[((int) active_control_ + 4) % 8];
     transformed_from_ = QSizeF(boundingRect().size());
-    scene().setMode(Scene::Mode::TRANSFORMING);
+    scene().setMode(Scene::Mode::Transforming);
   }
   scene().stackStep();
   return true;
@@ -244,7 +244,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
 
   reset();
 
-  scene().setMode(Scene::Mode::SELECTING);
+  scene().setMode(Scene::Mode::Selecting);
   return true;
 }
 
@@ -282,21 +282,21 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
 
   if (selections_.empty()) return false;
 
-  if (scene().mode() == Scene::Mode::SELECTING) {
+  if (scene().mode() == Scene::Mode::Selecting) {
     // Do move event if user actually dragged
     if ((e->pos() - scene().mousePressedScreenCoord()).manhattanLength() > 3) {
       scene().stackStep();
-      scene().setMode(Scene::Mode::MOVING);
+      scene().setMode(Scene::Mode::Moving);
     }
   }
 
   switch (scene().mode()) {
-    case Scene::Mode::MOVING:
+    case Scene::Mode::Moving:
       translate_to_apply_ = canvas_coord - scene().mousePressedCanvasCoord();
       qInfo() << "Moving";
       applyMove(true);
       break;
-    case Scene::Mode::ROTATING:
+    case Scene::Mode::Rotating:
       rotation_to_apply_ = (atan2(canvas_coord.y() - action_center_.y(),
                                   canvas_coord.x() - action_center_.x()) -
                             rotated_from_) *
@@ -304,7 +304,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
       applyRotate(true);
       break;
 
-    case Scene::Mode::TRANSFORMING:
+    case Scene::Mode::Transforming:
       calcScale(canvas_coord);
       applyScale(true);
       break;

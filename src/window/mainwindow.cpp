@@ -208,28 +208,28 @@ void MainWindow::updateMode() {
   ui->actionDrawPolygon->setChecked(false);
 
   switch (scene_->mode()) {
-    case Scene::Mode::SELECTING:
-    case Scene::Mode::MULTI_SELECTING:
+    case Scene::Mode::Selecting:
+    case Scene::Mode::MultiSelecting:
       ui->actionSelect->setChecked(true);
       break;
 
-    case Scene::Mode::DRAWING_LINE:
+    case Scene::Mode::LineDrawing:
       ui->actionDrawLine->setChecked(true);
       break;
 
-    case Scene::Mode::DRAWING_RECT:
+    case Scene::Mode::RectDrawing:
       ui->actionDrawRect->setChecked(true);
       break;
 
-    case Scene::Mode::DRAWING_OVAL:
+    case Scene::Mode::OvalDrawing:
       ui->actionDrawOval->setChecked(true);
       break;
 
-    case Scene::Mode::DRAWING_PATH:
+    case Scene::Mode::PathDrawing:
       ui->actionDrawPath->setChecked(true);
       break;
 
-    case Scene::Mode::DRAWING_TEXT:
+    case Scene::Mode::TextDrawing:
       ui->actionDrawText->setChecked(true);
       break;
 

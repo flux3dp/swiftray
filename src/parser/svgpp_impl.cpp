@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <iostream>
 #include <parser/svgpp_common.h>
+#include <parser/svgpp_defs.h>
 
 #include <parser/contexts/base_context.h>
 #include <parser/contexts/group_context.h>
@@ -241,8 +242,8 @@ bool svgpp_parse(QByteArray &data) {
     if (root) {
       qInfo() << "SVG Element " << root;
       SVGPPDoc document(xml_doc);
-      static const double ResolutionDPI = 90;
-      BaseContext context(document, ResolutionDPI);
+      static const double resolution_dpi = 90;
+      BaseContext context(document, resolution_dpi);
       svgpp_layers->clear();
       svgpp_layer_map->clear();
       document_traversal_t::load_document(root, context);
