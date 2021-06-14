@@ -49,7 +49,7 @@ public:
 
   QPolygonF rotatedBBox() const;
 
-  void invalidBBox();
+  void flushCache();
 
   // Transform related
   const QTransform &transform() const;

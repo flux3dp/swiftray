@@ -66,7 +66,6 @@ void Transform::updateBoundingRect() {
     bbox_angle_ = rotation;
   } else {
     for (ShapePtr &shape : selections()) {
-      // TODO:: need to add all same rotation scenario
       QRectF bb = shape->boundingRect();
       if (bb.left() < left)
         left = bb.left();
@@ -99,7 +98,7 @@ void Transform::applyRotate(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->invalidCache();
+      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -126,7 +125,7 @@ void Transform::applyScale(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->invalidCache();
+      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -147,7 +146,7 @@ void Transform::applyMove(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->invalidCache();
+      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -281,7 +280,7 @@ void Transform::calcScale(QPointF canvas_coord) {
 bool Transform::mouseMoveEvent(QMouseEvent *e) {
   QPointF canvas_coord = scene().getCanvasCoord(e->pos());
 
-  // Todo - check if no selection
+  if (selections_.empty()) return false;
 
   if (scene().mode() == Scene::Mode::SELECTING) {
     // Do move event if user actually dragged

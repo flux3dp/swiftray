@@ -153,6 +153,6 @@ void Layer::setVisible(bool visible) {
   visible_ = visible;
 }
 
-void Layer::invalidCache() {
+void Layer::flushCache() {
   cache_valid_ = false;
 }

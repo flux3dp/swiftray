@@ -14,7 +14,7 @@ Scene::Scene() noexcept {
   addLayer();
   connect(this, &Scene::selectionsChanged, [=]() {
     for (auto &layer : layers_) {
-      layer->invalidCache();
+      layer->flushCache();
     }
   });
 }

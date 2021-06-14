@@ -54,7 +54,7 @@ public:
 
   void setVisible(bool visible);
 
-  void invalidCache();
+  void flushCache();
 
   void cache() const;
 

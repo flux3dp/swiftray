@@ -25,12 +25,11 @@ public:
 
 
   void transform_matrix(const boost::array<double, 6> &matrix) {
-    //qInfo() << "Load matrix " << matrix[0] << matrix[1] << matrix[2] << matrix[3] << matrix[4] << matrix[5];
     matrix_t m(3, 3);
     m <<= matrix[0], matrix[2], matrix[4], matrix[1], matrix[3], matrix[5], 0,
-        0, 1;
-    // todo fix logic
-    transform_ = m; // ublas::prod(transform_, m);
+         0, 1;
+    // TODO(warn: the logic here means transforms will be joined by svgpp, but it is not guaranteed by the library)
+    transform_ = m; // should be "ublas::prod(transform_, m);"
   }
 
   void transform_translate(double tx, double ty) {
@@ -63,13 +62,14 @@ public:
     angle *= boost::math::constants::degree<double>();
     matrix_t m(3, 3);
     m <<= std::cos(angle), -std::sin(angle), 0, std::sin(angle),
-        std::cos(angle), 0, 0, 0, 1;
+         std::cos(angle), 0, 0, 0, 1;
     transform_ = ublas::prod(transform_, m);
     qInfo() << "Transform rotate";
   }
 
-  matrix_t       & transform()       { return transform_; }
-  matrix_t const & transform() const { return transform_; }
+  matrix_t &transform() { return transform_; }
+
+  matrix_t const &transform() const { return transform_; }
 
   matrix_t transform_;
 };

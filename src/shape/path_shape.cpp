@@ -72,5 +72,5 @@ const QPainterPath &PathShape::path() const { return path_; }
 void PathShape::setPath(QPainterPath &path) {
     // Input path coord is local coord
     path_ = path;
-    invalidBBox();
+  flushCache();
 }

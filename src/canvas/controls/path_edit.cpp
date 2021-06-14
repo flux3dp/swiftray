@@ -96,7 +96,7 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
         break;
     }
     path().setElementPositionAt(index, local_coord.x(), local_coord.y());
-    target().invalidBBox();
+  target().flushCache();
 }
 
 qreal PathEdit::distance(QPointF point) { return sqrt(pow(point.x(), 2) + pow(point.y(), 2)); }
@@ -240,7 +240,7 @@ bool PathEdit::keyPressEvent(QKeyEvent *e) {
 void PathEdit::endEditing() {
     scene().setMode(Scene::Mode::SELECTING);
     scene().clearSelections();
-    target_->invalidBBox();
+  target_->flushCache();
     scene().setSelection(target_);
     reset();
 }

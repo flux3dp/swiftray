@@ -91,7 +91,7 @@ shared_ptr<Shape> Shape::clone() const {
 
 Shape::Type Shape::type() const { return Shape::Type::None; }
 
-void Shape::invalidBBox() { bbox_need_recalc_ = true; }
+void Shape::flushCache() { bbox_need_recalc_ = true; }
 
 void Shape::setTempTransform(const QTransform &transform) {
   temp_transform_ = transform;

@@ -43,7 +43,7 @@ VCanvas::VCanvas(QQuickItem *parent)
 
   connect(&ctrl_transform_, &Controls::Transform::transformChanged, [=]() {
     for (auto &shape : scene().selections()) {
-      shape->parent()->invalidCache();
+      shape->parent()->flushCache();
     }
   });
 }
@@ -329,7 +329,7 @@ void VCanvas::editSelectAll() {
 }
 
 void VCanvas::editGroup() {
-  if (scene().selections().size() == 0)
+  if (scene().selections().empty())
     return;
 
   qInfo() << "Groupping";

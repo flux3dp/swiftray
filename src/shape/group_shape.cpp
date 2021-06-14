@@ -5,7 +5,7 @@ GroupShape::GroupShape() : Shape() {}
 
 GroupShape::GroupShape(QList<ShapePtr> &children) : Shape() {
     children_.append(children);
-    invalidBBox();
+  flushCache();
 }
 
 bool GroupShape::hitTest(QPointF global_coord, qreal tolerance) const {
