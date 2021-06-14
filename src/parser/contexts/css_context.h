@@ -32,6 +32,7 @@ public:
     qInfo() << "</style>";
   }
 
+  using BaseContext::set;
   using ObjectContext::set;
   using StylableContext::set;
 

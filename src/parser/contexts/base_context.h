@@ -9,8 +9,10 @@
 
 class BaseContext : public StylableContext, public ObjectContext, public TransformableContext {
 public:
-  BaseContext(SVGPPDoc &document, double resolutionDPI): doc_(document) {
+  BaseContext(SVGPPDoc &document, double resolutionDPI) : doc_(document) {
     qInfo() << "<base>";
+    id_ = "";
+    class_name_ = "";
     length_factory_.set_absolute_units_coefficient(resolutionDPI,
                                                    tag::length_units::in());
   }
@@ -19,13 +21,25 @@ public:
   using StylableContext::set;
 
 
-  template <class Range>
+  template<class Range>
   void set_text(Range const &text) {
     std::string str;
     str.append(boost::begin(text), boost::end(text));
     if (svgpp_active_layer_ != nullptr) {
       svgpp_active_layer_->setName(QString::fromStdString(str));
     }
+  }
+
+  void set(tag::attribute::id, RangedChar id) {
+    std::string str;
+    str.append(boost::begin(id), boost::end(id));
+    id_ = QString::fromStdString(str);
+  }
+
+  void set(tag::attribute::class_, RangedChar class_) {
+    std::string str;
+    str.append(boost::begin(class_), boost::end(class_));
+    class_name_ = QString::fromStdString(str);
   }
 
   // Called by Context Factory
@@ -55,12 +69,17 @@ public:
 
   length_factory_type const &length_factory() const { return length_factory_; }
 
-  SVGPPDoc & document() const { return doc_; }
+  SVGPPDoc &document() const { return doc_; }
 
   virtual string type() {
-      return "svg";
+    return "svg";
   }
+
+  QString id_;
+  QString class_name_;
+
 private:
   length_factory_type length_factory_;
-  SVGPPDoc & doc_;
+  SVGPPDoc &doc_;
+
 };

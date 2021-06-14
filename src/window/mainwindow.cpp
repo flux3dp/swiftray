@@ -128,10 +128,11 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   updateLayers();
   updateMode();
   updateSidePanel();
+  canvas_->setScreenSize(ui->quickWidget->geometry().size());
+  canvas_->setScreenOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::updateLayers() {
-  qInfo() << "Update layers";
   ui->layerList->clear();
 
   for (auto &layer : boost::adaptors::reverse(scene_->layers())) {

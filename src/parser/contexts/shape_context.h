@@ -21,26 +21,40 @@ public:
     working_path_ = QPainterPath();
   }
 
+  void check_style() {
+    if (this->id_.isEmpty() && this->class_name_.isEmpty()) return;
+    SVGStyleSelector::NodePtr node;
+    SVGNode mockup("path", this->id_, this->class_name_);
+    node.ptr = &mockup;
+    // TODO(Rewrite declaration for node to process only simple rules)
+    auto decls = svgpp_style_selector->declarationsForNode(node);
+    for (auto &decl : decls) {
+      if (decl.d->property.isEmpty())
+        continue;
+      if (decl.d->property == "fill") {
+        if (decl.d->values.size() > 0) {
+          QColor c(decl.d->values[0].toString());
+          style().fill_paint_ = color_t(c.red(), c.green(), c.blue());
+        }
+      } else if (decl.d->property == "stroke") {
+        if (decl.d->values.size() > 0) {
+          QColor c(decl.d->values[0].toString());
+          style().stroke_paint_ = color_t(c.red(), c.green(), c.blue());
+        }
+      }
+    }
+  }
+
   void on_exit_element() {
     QTransform transform(transform_(0, 0), transform_(1, 0), transform_(2, 0), transform_(0, 1), transform_(1, 1),
                          transform_(2, 1), transform_(0, 2), transform_(1, 2), transform_(2, 2));
     QPainterPath mapped_path = transform.map(working_path_);
     ShapePtr shape = make_shared<PathShape>(mapped_path);
-    QString layer_name = this->strokeColor() == "N" ? this->fillColor() : this->strokeColor();
+    check_style();
+    QString layer_name = this->strokeColor() == "N/A" ? this->fillColor() : this->strokeColor();
     svgpp_add_shape(shape, layer_name);
     //qInfo() << "</shape>";
-    // Simple lookup for css
-    /*SVGStyleSelector::NodePtr node;
-    node.ptr = shape.get();
-    auto decls = svgpp_style_selector->declarationsForNode(node);
-    for (auto &decl : decls) {
-      if (decl.d->property.isEmpty())
-        continue;
-    }*/
   }
-
-  using BaseContext::set;
-  using StylableContext::set;
 
   // Path Events Policy methods
   void path_move_to(double x, double y, tag::coordinate::absolute) {
@@ -134,6 +148,8 @@ public:
     return "path";
   }
 
+  using BaseContext::set;
+  using StylableContext::set;
 
 private:
   struct MarkerPos {

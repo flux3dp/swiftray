@@ -51,7 +51,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   fps_count = 0;
   fps_timer.start();
 
-  qInfo() << "Rendering target = " << this->renderTarget();
+  qInfo() << "[VCanvas] Rendering target = " << this->renderTarget();
 }
 
 VCanvas::~VCanvas() {
@@ -87,7 +87,6 @@ void VCanvas::paint(QPainter *painter) {
   if (screen_rect_ != scene().screenRect(screen_size_)) {
     screen_rect_ = scene().screenRect(screen_size_);
     do_flush_cache = true;
-    qInfo() << "Flush cache" << screen_rect_;
   }
 
   int object_count = 0;
@@ -449,7 +448,6 @@ void VCanvas::editIntersect() {
 void VCanvas::editDifference() {}
 
 void VCanvas::fitWindow() {
-  qInfo() << "Object size" << size();
   // Notes: we can even speed up by using half resolution:
   // setTextureSize(QSize(width()/2, height()/2));
   qreal proper_scale = min((width() - 100) / scene().width(),
@@ -457,8 +455,6 @@ void VCanvas::fitWindow() {
   QPointF proper_translate =
        QPointF((width() - scene().width() * proper_scale) / 2,
                (height() - scene().height() * proper_scale) / 2);
-  qInfo() << "Scale" << proper_scale << "Proper translate"
-          << proper_translate;
   scene().setScale(proper_scale);
   scene().setScroll(proper_translate);
 }
@@ -516,12 +512,10 @@ void VCanvas::exportGcode() {
 }
 
 void VCanvas::setScreenSize(QSize screen_size) {
-  qInfo() << "Resize canvas" << screen_size;
   screen_size_ = screen_size;
   fitWindow();
 }
 
 void VCanvas::setScreenOffset(QPoint offset) {
-  qInfo() << "Screen offset" << offset;
   screen_offset_ = offset;
 }

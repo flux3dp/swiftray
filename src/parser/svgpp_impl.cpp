@@ -139,47 +139,27 @@ struct processed_elements_t
           tag::element::image> {
 };
 
-// Joining some sequences from traits namespace with chosen attributes
-struct processed_attributes_t
-     : boost::mpl::set50<
-          svgpp::tag::attribute::transform, svgpp::tag::attribute::stroke,
-          svgpp::tag::attribute::stroke_width,
+typedef boost::mpl::protect<
+     boost::mpl::joint_view<
+          traits::shapes_attributes_by_element,
+          traits::viewport_attributes>
+> default_process_attribute_t;
+
+typedef
+boost::mpl::fold<
+     default_process_attribute_t,
+     boost::mpl::set<
+          tag::attribute::transform,
+          tag::attribute::stroke,
+          tag::attribute::stroke_width,
+          tag::attribute::clip_path,
+          tag::attribute::color,
+          tag::attribute::fill,
+          tag::attribute::mask,
+          tag::attribute::id,
+          tag::attribute::class_,
           boost::mpl::pair<svgpp::tag::element::use_, svgpp::tag::attribute::xlink::href>,
-          // traits::shapes_attributes_by_element,
-          boost::mpl::pair<tag::element::path, tag::attribute::d>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::x>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::y>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::width>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::height>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::rx>,
-          boost::mpl::pair<tag::element::rect, tag::attribute::ry>,
-          boost::mpl::pair<tag::element::circle, tag::attribute::cx>,
-          boost::mpl::pair<tag::element::circle, tag::attribute::cy>,
-          boost::mpl::pair<tag::element::circle, tag::attribute::r>,
-          boost::mpl::pair<tag::element::ellipse, tag::attribute::cx>,
-          boost::mpl::pair<tag::element::ellipse, tag::attribute::cy>,
-          boost::mpl::pair<tag::element::ellipse, tag::attribute::rx>,
-          boost::mpl::pair<tag::element::ellipse, tag::attribute::ry>,
-          boost::mpl::pair<tag::element::line, tag::attribute::x1>,
-          boost::mpl::pair<tag::element::line, tag::attribute::y1>,
-          boost::mpl::pair<tag::element::line, tag::attribute::x2>,
-          boost::mpl::pair<tag::element::line, tag::attribute::y2>,
-          boost::mpl::pair<tag::element::polyline, tag::attribute::points>,
-          boost::mpl::pair<tag::element::polygon, tag::attribute::points>,
-          // Marker attributes
-          tag::attribute::marker_start, tag::attribute::marker_mid,
-          tag::attribute::marker_end, tag::attribute::marker,
-          // Shape attributes
-          tag::attribute::clip_path, tag::attribute::color,
-          tag::attribute::fill, tag::attribute::mask,
-          // traits::viewport_attributes
-          tag::attribute::x, tag::attribute::y, tag::attribute::width,
-          tag::attribute::height, tag::attribute::viewBox,
-          boost::mpl::pair<svgpp::tag::element::svg, tag::attribute::preserveAspectRatio>,
-          boost::mpl::pair<svgpp::tag::element::use_, tag::attribute::preserveAspectRatio>,
-          // image
           boost::mpl::pair<svgpp::tag::element::image, svgpp::tag::attribute::xlink::href>,
-          // group data
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_strength>,
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_speed>,
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_repeat>,
@@ -189,8 +169,13 @@ struct processed_attributes_t
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_color>,
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_config_name>,
           boost::mpl::pair<svgpp::tag::element::g, svgpp::tag::attribute::data_name>,
-          svgpp::tag::attribute::data_original_layer> {
-};
+          tag::attribute::data_original_layer
+     >::type,
+     boost::mpl::insert<boost::mpl::_1, boost::mpl::_2>
+>
+::type processed_attributes_t;
+
+// Joining some sequences from traits namespace with chosen attributes
 
 typedef document_traversal<
      processed_elements<processed_elements_t>,

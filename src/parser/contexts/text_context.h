@@ -10,25 +10,26 @@ public:
     qInfo() << "Enter text";
   }
 
-  template <class Range>
+  template<class Range>
   void set_text(Range const &text) {
     text_content_.append(boost::begin(text), boost::end(text));
   }
 
-  template <class Range>
+  template<class Range>
   void set(tag::attribute::x, Range const &range) {
     for (auto it = boost::begin(range), end = boost::end(range); it != end;
          ++it)
       std::cout << *it;
   }
 
-  template <class Range>
+  template<class Range>
   void set(tag::attribute::y, Range const &range) {
     for (auto it = boost::begin(range), end = boost::end(range); it != end;
          ++it)
       std::cout << *it;
   }
 
+  using BaseContext::set;
   using ObjectContext::set;
   using StylableContext::set;
 

@@ -75,6 +75,7 @@ public:
     return "g";
   }
 
+  using BaseContext::set;
   using ObjectContext::set;
   using StylableContext::set;
   bool is_layer_;

@@ -166,7 +166,6 @@ void Scene::addLayer() {
 }
 
 void Scene::addLayer(LayerPtr &layer) {
-  qDebug() << "Add layer by ptr" << layer->name();
   layers() << layer->clone();
   active_layer_ = layers().last();
 }
