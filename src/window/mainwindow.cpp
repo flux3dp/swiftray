@@ -190,6 +190,11 @@ bool MainWindow::event(QEvent *e) {
   return QMainWindow::event(e);
 }
 
+void MainWindow::resizeEvent(QResizeEvent *event) {
+  QMainWindow::resizeEvent(event);
+  canvas_->setScreenSize(ui->quickWidget->geometry().size());
+}
+
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
   // statusBar()->showMessage(message);
 }

@@ -29,6 +29,14 @@ public:
     QString layer_name = this->strokeColor() == "N" ? this->fillColor() : this->strokeColor();
     svgpp_add_shape(shape, layer_name);
     //qInfo() << "</shape>";
+    // Simple lookup for css
+    /*SVGStyleSelector::NodePtr node;
+    node.ptr = shape.get();
+    auto decls = svgpp_style_selector->declarationsForNode(node);
+    for (auto &decl : decls) {
+      if (decl.d->property.isEmpty())
+        continue;
+    }*/
   }
 
   using BaseContext::set;
@@ -36,41 +44,29 @@ public:
 
   // Path Events Policy methods
   void path_move_to(double x, double y, tag::coordinate::absolute) {
-    QPointF newPos = getTransformedPos(x, y);
-    working_path_.moveTo(newPos.x(), newPos.y());
+    working_path_.moveTo(x, y);
   }
 
   void path_line_to(double x, double y, tag::coordinate::absolute) {
-    QPointF newPos = getTransformedPos(x, y);
-    working_path_.lineTo(newPos.x(), newPos.y());
+    working_path_.lineTo(x, y);
   }
 
   void path_cubic_bezier_to(double x1, double y1, double x2, double y2,
                             double x, double y, tag::coordinate::absolute) {
-
-    QPointF newPos2 = getTransformedPos(x2, y2);
-    QPointF newPos1 = getTransformedPos(x1, y1);
-    QPointF newPos = getTransformedPos(x, y);
-    working_path_.cubicTo(newPos1.x(), newPos1.y(), newPos2.x(), newPos2.y(),
-                          newPos.x(), newPos.y());
+    working_path_.cubicTo(x1, y1, x2, y2,
+                          x, y);
   }
 
   void path_quadratic_bezier_to(double x1, double y1, double x, double y,
                                 tag::coordinate::absolute) {
-
-    QPointF newPos1 = getTransformedPos(x1, y1);
-    QPointF newPos = getTransformedPos(x, y);
-    working_path_.quadTo(newPos1.x(), newPos1.y(), newPos.x(), newPos.y());
+    working_path_.quadTo(x1, y1, x, y);
   }
 
   void path_elliptical_arc_to(double rx, double ry, double x_axis_rotation,
                               bool large_arc_flag, bool sweep_flag, double x2,
                               double y2, tag::coordinate::absolute) {
-    QPointF newPos2 = getTransformedPos(x2, y2);
-    x2 = newPos2.x();
-    y2 = newPos2.y();
     // qInfo() << "E bezier to " << x << "," << y;
-    QPointF currentPos = working_path_.currentPosition();
+    const QPointF &currentPos = working_path_.currentPosition();
     // TODO support rotated arc
     // https://github.com/inkcut/inkcut/blob/ab27cf57ce5a5bd3bcaeef77bac28e4d6f92895a/inkcut/core/svg.py
     const double x1 = currentPos.x(), y1 = currentPos.y(),

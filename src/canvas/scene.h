@@ -98,6 +98,8 @@ public:
 
   qreal height() const;
 
+  QRectF screenRect(QSize screen_size) const;
+
   QPointF mousePressedScreenCoord() const;
 
   QPointF mousePressedCanvasCoord() const;

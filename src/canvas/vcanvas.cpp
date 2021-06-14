@@ -30,15 +30,27 @@ VCanvas::VCanvas(QQuickItem *parent)
   setAcceptTouchEvents(true);
   setAntialiasing(true);
   setOpaquePainting(true);
+  // Set main loop
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &VCanvas::loop);
   timer->start(16);
+  // Set memory monitor
+  mem_thread_ = new QThread(this);
+  mem_monitor_.moveToThread(mem_thread_);
+  mem_thread_->start();
+  QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
+
+  // Set mode
   scene().setMode(Scene::Mode::Selecting);
+  // Register controls
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
          << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
          << &ctrl_text_;
+  // FPS
   fps_count = 0;
   fps_timer.start();
+
+
   qInfo() << "Rendering target = " << this->renderTarget();
 
   connect(&ctrl_transform_, &Controls::Transform::transformChanged, [=]() {
@@ -46,6 +58,11 @@ VCanvas::VCanvas(QQuickItem *parent)
       shape->parent()->flushCache();
     }
   });
+}
+
+VCanvas::~VCanvas() {
+  mem_thread_->requestInterruption();
+  mem_thread_->wait(1300);
 }
 
 void VCanvas::loadSVG(QByteArray &svg_data) {
@@ -64,35 +81,48 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 }
 
 void VCanvas::paint(QPainter *painter) {
+  painter->save();
   painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
-  // Draw FPS
+  // Calculate FPS
   fps_count++;
   fps = (fps * 4 + float(fps_count) * 1000 / fps_timer.elapsed()) / 5;
-  painter->setPen(Qt::black);
-  painter->drawText(QPointF(10, 10), "FPS " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40), "Objects " + QString::number(scene().activeLayer()->children().size()));
-  if (fps_timer.elapsed() > 3000) {
-    fps_count = 0;
-    fps_timer.restart();
-  }
   if (fps < 30) {
     painter->setRenderHint(QPainter::RenderHint::Antialiasing, false);
   } else {
     painter->setRenderHint(QPainter::RenderHint::Antialiasing, true);
   }
+  // Move to scroll and scale
   painter->translate(scene().scroll());
   painter->scale(scene().scale(), scene().scale());
 
   ctrl_grid_.paint(painter);
 
+  bool do_flush_cache = false;
+  if (screen_rect_ != scene().screenRect(screen_size_)) {
+    screen_rect_ = scene().screenRect(screen_size_);
+    do_flush_cache = true;
+    qInfo() << "Flush cache" << screen_rect_;
+  }
   for (const LayerPtr &layer : scene().layers()) {
-    layer->paint(painter, counter);
+    if (do_flush_cache) layer->flushCache();
+    layer->paint(painter, screen_rect_, counter);
   }
 
   for (auto &control : ctrls_) {
     if (control->isActive()) {
       control->paint(painter);
     }
+  }
+
+  // Draw FPS
+  painter->restore();
+  painter->setPen(Qt::black);
+  painter->drawText(QPointF(10, 20), "FPS " + QString::number(round(fps * 100) / 100.0));
+  painter->drawText(QPointF(10, 40), "Objects " + QString::number(scene().activeLayer()->children().size()));
+  painter->drawText(QPointF(10, 60), "Mem " + mem_monitor_.system_info_);
+  if (fps_timer.elapsed() > 3000) {
+    fps_count = 0;
+    fps_timer.restart();
   }
 }
 
@@ -488,4 +518,10 @@ void VCanvas::exportGcode() {
   ToolpathExporter exporter(&gen);
   exporter.convertStack(scene().layers());
   std::cout << gen.toString();
+}
+
+void VCanvas::setScreenSize(QSize screen_size) {
+  qInfo() << "Resize canvas" << screen_size;
+  screen_size_ = screen_size;
+  fitWindow();
 }

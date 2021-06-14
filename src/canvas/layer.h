@@ -11,7 +11,7 @@ public:
 
   Layer();
 
-  void paint(QPainter *painter, int counter) const;
+  void paint(QPainter *painter, QRectF screen_rect, int counter) const;
 
   void addShape(ShapePtr shape);
 
@@ -56,7 +56,7 @@ public:
 
   void flushCache();
 
-  void cache() const;
+  void cache(QRectF screenRect) const;
 
 private:
   QColor color_;

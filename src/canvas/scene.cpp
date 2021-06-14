@@ -209,6 +209,10 @@ void Scene::setScroll(QPointF scroll) {
   scroll_y_ = scroll.y();
 }
 
+QRectF Scene::screenRect(QSize screen_size) const {
+  return QRectF(getCanvasCoord(QPoint(0, 0)), getCanvasCoord(QPoint(screen_size.width(), screen_size.height())));
+}
+
 void Scene::setScrollX(qreal scroll_x) { scroll_x_ = scroll_x; }
 
 void Scene::setScrollY(qreal scroll_y) { scroll_y_ = scroll_y; }

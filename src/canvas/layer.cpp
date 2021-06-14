@@ -30,23 +30,27 @@ Layer::Layer(int new_layer_id) :
            "Layer " + QString::number(new_layer_id)) {
 }
 
-void Layer::cache() const {
+void Layer::cache(QRectF screen_rect) const {
   selected_path_.clear();
   non_selected_path_.clear();
   for (auto &shape : children_) {
     if (shape->type() == Shape::Type::Path) {
       PathShape *p = (PathShape *) shape.get();
       if (shape->selected()) {
-        selected_path_.addPath((shape->transform() * shape->tempTransform()).map(p->path()));
+        QPainterPath path = (shape->transform() * shape->tempTransform()).map(p->path());
+        if (path.intersects(screen_rect))
+          selected_path_.addPath(path);
       } else {
-        non_selected_path_.addPath(shape->transform().map(p->path()));
+        QPainterPath path = shape->transform().map(p->path());
+        if (path.intersects(screen_rect))
+          non_selected_path_.addPath(shape->transform().map(p->path()));
       }
     }
   }
   cache_valid_ = true;
 }
 
-void Layer::paint(QPainter *painter, int counter) const {
+void Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   if (!visible_) return;
   QPen dash_pen = QPen(color_, 2, Qt::DashLine);
   dash_pen.setDashPattern(QVector<qreal>(10, 3));
@@ -59,7 +63,7 @@ void Layer::paint(QPainter *painter, int counter) const {
   painter->setPen(solid_pen);
   // Draw shapes
   if (!cache_valid_) {
-    cache();
+    cache(screen_rect);
   }
   //TODO(Make multiple caches between non-path item)
   for (auto &shape : children_) {

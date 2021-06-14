@@ -13,7 +13,9 @@ Shape::Shape() noexcept {
   parent_ = nullptr;
 }
 
-Shape::~Shape() {}
+Shape::~Shape() {
+  qDebug() << "[Memory] ~Shape" << this;
+}
 
 // only calls this when the path is different
 
