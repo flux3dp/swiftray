@@ -1,4 +1,5 @@
 #include <shape/shape.h>
+#include <canvas/cache-stack.h>
 
 #ifndef LAYER_H
 #define LAYER_H
@@ -84,9 +85,7 @@ private:
   bool visible_;
   // Cache properties
   mutable bool cache_valid_;
-  mutable QPainterPath selected_path_;
-  mutable QPainterPath non_selected_path_;
-  mutable int displaying_paths_count_;
+  mutable CacheStack cache_stack_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

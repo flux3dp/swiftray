@@ -36,27 +36,11 @@ Layer::~Layer() {
 }
 
 void Layer::cache(QRectF screen_rect) const {
-  selected_path_.clear();
-  non_selected_path_.clear();
-  displaying_paths_count_ = 0;
+  cache_stack_.begin(screen_rect);
   for (auto &shape : children_) {
-    if (shape->type() == Shape::Type::Path || shape->type() == Shape::Type::Text) {
-      PathShape *p = (PathShape *) shape.get();
-      if (shape->selected()) {
-        QPainterPath path = (shape->transform() * shape->tempTransform()).map(p->path());
-        if (path.intersects(screen_rect)) {
-          selected_path_.addPath(path);
-          displaying_paths_count_++;
-        }
-      } else {
-        QPainterPath path = shape->transform().map(p->path());
-        if (path.intersects(screen_rect)) {
-          non_selected_path_.addPath(shape->transform().map(p->path()));
-          displaying_paths_count_++;
-        }
-      }
-    }
+    cache_stack_.addShape(shape.get());
   }
+  cache_stack_.end();
   cache_valid_ = true;
 }
 
@@ -69,26 +53,22 @@ int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   QPen solid_pen = QPen(color_, 2, Qt::SolidLine);
   solid_pen.setCosmetic(true);
 
-  int painted_objects = 0;
 
-  bool selected_flag = false;
-  painter->setPen(solid_pen);
-  // Draw shapes
   if (!cache_valid_) {
     cache(screen_rect);
   }
-  //TODO(Make multiple caches between non-path item)
-  for (auto &shape : children_) {
-    if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) {
-      painted_objects++;
-      shape->paint(painter);
+  // Draw shapes
+  int painted_objects = 0;
+  for (auto &group : cache_stack_.groups_) {
+    if (group.type_ == CacheGroup::Type::SelectedPaths) {
+      painter->setPen(dash_pen);
+    } else if (group.type_ == CacheGroup::Type::NonSelectedPaths) {
+      painter->setPen(solid_pen);
     }
+    group.paint(painter);
+    painted_objects += group.count_;
   }
-  painter->setPen(dash_pen);
-  painter->drawPath(selected_path_);
-  painter->setPen(solid_pen);
-  painter->drawPath(non_selected_path_);
-  return painted_objects + displaying_paths_count_;
+  return painted_objects;
 }
 
 void Layer::addShape(ShapePtr shape) {

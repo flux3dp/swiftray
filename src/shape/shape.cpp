@@ -15,7 +15,7 @@ Shape::Shape() noexcept {
 }
 
 Shape::~Shape() {
-  qDebug() << "[Memory] ~Shape" << this;
+  //qDebug() << "[Memory] ~Shape" << this;
 }
 
 // only calls this when the path is different
@@ -103,4 +103,5 @@ void Shape::flushCache() {
 
 void Shape::setTempTransform(const QTransform &transform) {
   temp_transform_ = transform;
+  flushCache();
 }

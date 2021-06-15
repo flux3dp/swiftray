@@ -1,5 +1,5 @@
 #include "transform-panel.h"
-#include "ui_transform_panel.h"
+#include "ui_transform-panel.h"
 #include <widgets/spinbox-helper.h>
 
 TransformPanel::TransformPanel(QWidget *parent) :

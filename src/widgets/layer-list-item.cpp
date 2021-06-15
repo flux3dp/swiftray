@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QStyleOption>
 #include <widgets/layer-list-item.h>
-#include "ui_layer_list_item.h"
+#include "ui_layer-list-item.h"
 
 /*LayerListItem::LayerListItem(QWidget *parent) :
     QWidget(parent),

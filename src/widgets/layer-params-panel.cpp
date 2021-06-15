@@ -1,6 +1,6 @@
 #include <QDebug>
 #include "layer-params-panel.h"
-#include "ui_layer_params_panel.h"
+#include "ui_layer-params-panel.h"
 #include <widgets/spinbox-helper.h>
 
 LayerParamsPanel::LayerParamsPanel(QWidget *parent) :

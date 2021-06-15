@@ -98,7 +98,6 @@ void Transform::applyRotate(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -125,7 +124,6 @@ void Transform::applyScale(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -146,7 +144,6 @@ void Transform::applyMove(bool temporarily) {
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
-      shape->parent()->flushCache();
       shape->setTempTransform(transform);
     } else {
       shape->setTempTransform(QTransform());
@@ -293,7 +290,6 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   switch (scene().mode()) {
     case Document::Mode::Moving:
       translate_to_apply_ = canvas_coord - scene().mousePressedCanvasCoord();
-      qInfo() << "Moving";
       applyMove(true);
       break;
     case Document::Mode::Rotating:

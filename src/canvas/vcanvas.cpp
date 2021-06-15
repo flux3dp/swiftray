@@ -90,6 +90,7 @@ void VCanvas::paint(QPainter *painter) {
   }
 
   int object_count = 0;
+  counter++;
 
   for (const LayerPtr &layer : document().layers()) {
     if (do_flush_cache) layer->flushCache();
@@ -214,7 +215,6 @@ void VCanvas::wheelEvent(QWheelEvent *e) {
 }
 
 void VCanvas::loop() {
-  counter++;
   update();
 }
 
