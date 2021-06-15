@@ -30,6 +30,7 @@ SET(SOURCES
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
         ${WIDGETS_CPP}
+        src/canvas/cache-stack.cpp
         src/window/main.cpp
         src/window/mainwindow.cpp
         src/canvas/vcanvas.cpp

@@ -40,6 +40,8 @@ public:
 
   void cache(QRectF screenRect) const;
 
+  void calcPen();
+
   // Getters:
   int repeat() const;
 
@@ -50,6 +52,8 @@ public:
   QColor color() const;
 
   QString name() const;
+
+  QRectF screenRect();
 
   bool isVisible() const;
 
@@ -86,6 +90,10 @@ private:
   // Cache properties
   mutable bool cache_valid_;
   mutable CacheStack cache_stack_;
+  mutable QRectF screen_rect_;
+  // Pen properties
+  mutable QPen dash_pen_;
+  QPen solid_pen_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

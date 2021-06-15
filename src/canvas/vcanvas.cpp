@@ -361,7 +361,7 @@ void VCanvas::editGroup() {
   ShapePtr group_ptr =
        make_shared<GroupShape>(ctrl_transform_.selections());
   document().removeSelections();
-  document().activeLayer()->children().push_back(group_ptr);
+  document().activeLayer()->addShape(group_ptr);
   document().setSelection(group_ptr);
 }
 
@@ -374,7 +374,7 @@ void VCanvas::editUngroup() {
   for (auto &shape : group->children()) {
     shape->applyTransform(group->transform());
     shape->setRotation(shape->rotation() + group->rotation());
-    document().activeLayer()->children().push_back(shape);
+    document().activeLayer()->addShape(shape);
   }
 
   document().setSelections(group->children());

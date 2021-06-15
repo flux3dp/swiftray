@@ -348,7 +348,8 @@ bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 
 void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-  auto blue_pen = QPen(QBrush(sky_blue), 0, Qt::DashLine);
+  auto blue_pen = QPen(QBrush(sky_blue), 1, Qt::SolidLine);
+  blue_pen.setCosmetic(true);
   auto pt_pen = QPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
 

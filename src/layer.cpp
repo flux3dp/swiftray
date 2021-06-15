@@ -18,6 +18,7 @@ Layer::Layer(QColor color, QString name) {
   repeat_ = 1;
   visible_ = true;
   cache_valid_ = false;
+  calcPen();
 }
 
 Layer::Layer() :
@@ -46,27 +47,32 @@ void Layer::cache(QRectF screen_rect) const {
 
 int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   if (!visible_) return 0;
-  QPen dash_pen = QPen(color_, 2, Qt::DashLine);
-  dash_pen.setDashPattern(QVector<qreal>(10, 3));
-  dash_pen.setCosmetic(true);
-  dash_pen.setDashOffset(0.3F * counter);
-  QPen solid_pen = QPen(color_, 2, Qt::SolidLine);
-  solid_pen.setCosmetic(true);
+  screen_rect_ = screen_rect;
+  dash_pen_.setDashOffset(0.3F * counter);
 
-
-  if (!cache_valid_) {
-    cache(screen_rect);
-  }
+  if (!cache_valid_) cache(screen_rect);
   // Draw shapes
   int painted_objects = 0;
-  for (auto &group : cache_stack_.groups_) {
-    if (group.type_ == CacheGroup::Type::SelectedPaths) {
-      painter->setPen(dash_pen);
-    } else if (group.type_ == CacheGroup::Type::NonSelectedPaths) {
-      painter->setPen(solid_pen);
+  for (auto &cache : cache_stack_.caches_) {
+    switch (cache.type()) {
+      case CacheType::SelectedPaths:
+        painter->setPen(dash_pen_);
+        cache.paint(painter);
+        break;
+      case CacheType::NonSelectedPaths:
+        painter->setPen(solid_pen_);
+        cache.paint(painter);
+        break;
+      case CacheType::Group:
+        for (auto &shape : cache.shapes()) {
+          painter->setPen(shape->selected() ? dash_pen_ : solid_pen_);
+          shape->paint(painter);
+        }
+        break;
+      default:
+        cache.paint(painter);
     }
-    group.paint(painter);
-    painted_objects += group.count_;
+    painted_objects += cache.shapes().size();
   }
   return painted_objects;
 }
@@ -87,11 +93,22 @@ void Layer::removeSelected() {
                                   [](ShapePtr &s) { return s->selected(); }), children_.end());
 }
 
+void Layer::calcPen() {
+  dash_pen_ = QPen(color_, 2, Qt::DashLine);
+  dash_pen_.setDashPattern(QVector<qreal>(10, 3));
+  dash_pen_.setCosmetic(true);
+  solid_pen_ = QPen(color_, 2, Qt::SolidLine);
+  solid_pen_.setCosmetic(true);
+}
+
 void Layer::clear() { children_.clear(); }
 
 QColor Layer::color() const { return color_; }
 
-void Layer::setColor(QColor color) { color_ = color; }
+void Layer::setColor(QColor color) {
+  color_ = color;
+  calcPen();
+}
 
 QList<ShapePtr> &Layer::children() { return children_; }
 
@@ -158,4 +175,8 @@ void Layer::setVisible(bool visible) {
 
 void Layer::flushCache() {
   cache_valid_ = false;
+}
+
+QRectF Layer::screenRect() {
+  return screen_rect_;
 }

@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <layer.h>
 #include <shape/group-shape.h>
 
 GroupShape::GroupShape() : Shape() {}
@@ -56,18 +57,24 @@ void GroupShape::calcBoundingBox() const {
   qInfo() << "Group local bbox" << local_bbox;
   this->bbox_ = transform().mapRect(local_bbox);
   this->rotated_bbox_ = transform().map(QPolygonF(local_bbox));
+  cache();
+}
+
+void GroupShape::cache() const {
+  if (this->parent() == nullptr) return;
+  cache_stack_.begin(this->parent()->screenRect(), transform_ * temp_transform_);
+  for (auto &shape : children_) {
+    cache_stack_.addShape(shape.get());
+  }
+  cache_stack_.end();
 }
 
 void GroupShape::paint(QPainter *painter) const {
-  painter->save();
-  painter->setTransform(temp_transform_, true);
-  painter->setTransform(transform(), true);
+  boundingRect();
 
-  for (auto &shape : children_) {
-    shape->paint(painter);
+  for (auto &cache : cache_stack_.caches_) {
+    cache.paint(painter);
   }
-
-  painter->restore();
 }
 
 ShapePtr GroupShape::clone() const {
