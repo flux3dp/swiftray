@@ -73,7 +73,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     src/canvas/layer.h \
-    src/canvas/scene.h \
+    src/canvas/document.h \
     $$files(src/canvas/controls/*.h) \
     $$files(src/shape/*.h) \
     src/widgets/canvas_text_edit.h \

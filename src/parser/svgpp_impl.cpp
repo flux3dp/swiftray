@@ -5,18 +5,18 @@
 #include <parser/svgpp_common.h>
 #include <parser/svgpp_defs.h>
 
-#include <parser/contexts/base_context.h>
-#include <parser/contexts/group_context.h>
-#include <parser/contexts/image_context.h>
-#include <parser/contexts/reference_context.h>
-#include <parser/contexts/shape_context.h>
-#include <parser/contexts/text_context.h>
-#include <parser/contexts/use_context.h>
-#include <parser/contexts/css_context.h>
+#include <parser/contexts/base-context.h>
+#include <parser/contexts/group-context.h>
+#include <parser/contexts/image-context.h>
+#include <parser/contexts/reference-context.h>
+#include <parser/contexts/shape-context.h>
+#include <parser/contexts/text-context.h>
+#include <parser/contexts/use-context.h>
+#include <parser/contexts/css-context.h>
 
-#include <parser/contexts/svgpp_doc.h>
+#include <parser/contexts/svgpp-doc.h>
 
-#include <canvas/layer.h>
+#include <layer.h>
 
 using namespace svgpp;
 
@@ -196,9 +196,9 @@ struct processed_elements_with_symbol_t
 };
 
 void UseContext::on_exit_element() {
-  if (xmlNode *element = document().getElementById(fragment_id_)) {
+  if (xmlNode *element = svgppDoc().getElementById(fragment_id_)) {
     qInfo() << "Element found" << QString::fromStdString(fragment_id_);
-    SVGPPDoc::FollowRef lock(document(), element);
+    SVGPPDoc::FollowRef lock(svgppDoc(), element);
     transform_translate(x_, y_);
     document_traversal_t::load_referenced_element<
          svgpp::referencing_element<svgpp::tag::element::use_>,
@@ -226,9 +226,9 @@ bool svgpp_parse(QByteArray &data) {
 
     if (root) {
       qInfo() << "SVG Element " << root;
-      SVGPPDoc document(xml_doc);
+      SVGPPDoc svgpp_doc(xml_doc);
       static const double resolution_dpi = 90;
-      BaseContext context(document, resolution_dpi);
+      BaseContext context(svgpp_doc, resolution_dpi);
       svgpp_layers->clear();
       svgpp_layer_map->clear();
       document_traversal_t::load_document(root, context);

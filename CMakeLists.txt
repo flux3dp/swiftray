@@ -25,8 +25,8 @@ FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
 FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
 
 SET(SOURCES
-        src/canvas/layer.cpp
-        src/canvas/scene.cpp
+        src/layer.cpp
+        src/document.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
         ${WIDGETS_CPP}
@@ -36,9 +36,9 @@ SET(SOURCES
         src/parser/svgpp_parser.cpp
         src/parser/svgpp_impl.cpp
         src/parser/svgpp_external_impl.cpp
-        src/gcode/toolpath_exporter.cpp
+        src/gcode/toolpath-exporter.cpp
         src/window/osxwindow.mm
-        src/parser/css/svg_style_selector.h)
+        src/parser/css/svg-style-selector.h)
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}

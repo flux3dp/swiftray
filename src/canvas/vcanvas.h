@@ -2,20 +2,20 @@
 #define VCANVAS_H
 
 #include <QtQuick>
-#include <canvas/controls/canvas_control.h>
+#include <canvas/controls/canvas-control.h>
 #include <canvas/controls/grid.h>
 #include <canvas/controls/line.h>
 #include <canvas/controls/select.h>
 #include <canvas/controls/oval.h>
-#include <canvas/controls/path_draw.h>
-#include <canvas/controls/path_edit.h>
+#include <canvas/controls/path-draw.h>
+#include <canvas/controls/path-edit.h>
 #include <canvas/controls/rect.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
-#include <canvas/scene.h>
+#include <document.h>
 #include <parser/svgpp_parser.h>
 #include <shape/shape.h>
-#include <canvas/memory_monitor.h>
+#include <canvas/memory-monitor.h>
 
 class VCanvas : public QQuickPaintedItem {
 Q_OBJECT
@@ -46,7 +46,7 @@ public:
 
   bool event(QEvent *e) override;
 
-  Scene &scene();
+  Document &document();
 
 public Q_SLOTS:
 
@@ -109,7 +109,7 @@ public Q_SLOTS:
 private:
   bool ready;
   int counter;
-  Scene scene_;
+  Document scene_;
   SVGPPParser svgpp_parser_;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;

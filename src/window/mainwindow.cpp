@@ -7,9 +7,9 @@
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
 #include <cmath>
-#include <shape/bitmap_shape.h>
-#include <widgets/spinbox_helper.h>
-#include <widgets/canvas_text_edit.h>
+#include <shape/bitmap-shape.h>
+#include <widgets/spinbox-helper.h>
+#include <widgets/canvas-text-edit.h>
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
 #include "ui_mainwindow.h"
@@ -89,7 +89,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 
   // Set the owner of vcanvas
   canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-  scene_ = &canvas_->scene();
+  scene_ = &canvas_->document();
   connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
   connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
@@ -111,9 +111,9 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
   connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
   connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editUngroup);
-  connect(scene_, &Scene::layerChanged, this, &MainWindow::updateLayers);
-  connect(scene_, &Scene::modeChanged, this, &MainWindow::updateMode);
-  connect(scene_, &Scene::selectionsChanged, this, &MainWindow::updateSidePanel);
+  connect(scene_, &Document::layerChanged, this, &MainWindow::updateLayers);
+  connect(scene_, &Document::modeChanged, this, &MainWindow::updateMode);
+  connect(scene_, &Document::selectionsChanged, this, &MainWindow::updateSidePanel);
   connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](const QFont &font) {
     canvas_->setFont(font);
   });
@@ -212,28 +212,28 @@ void MainWindow::updateMode() {
   ui->actionDrawPolygon->setChecked(false);
 
   switch (scene_->mode()) {
-    case Scene::Mode::Selecting:
-    case Scene::Mode::MultiSelecting:
+    case Document::Mode::Selecting:
+    case Document::Mode::MultiSelecting:
       ui->actionSelect->setChecked(true);
       break;
 
-    case Scene::Mode::LineDrawing:
+    case Document::Mode::LineDrawing:
       ui->actionDrawLine->setChecked(true);
       break;
 
-    case Scene::Mode::RectDrawing:
+    case Document::Mode::RectDrawing:
       ui->actionDrawRect->setChecked(true);
       break;
 
-    case Scene::Mode::OvalDrawing:
+    case Document::Mode::OvalDrawing:
       ui->actionDrawOval->setChecked(true);
       break;
 
-    case Scene::Mode::PathDrawing:
+    case Document::Mode::PathDrawing:
       ui->actionDrawPath->setChecked(true);
       break;
 
-    case Scene::Mode::TextDrawing:
+    case Document::Mode::TextDrawing:
       ui->actionDrawText->setChecked(true);
       break;
 

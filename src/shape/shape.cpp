@@ -1,6 +1,6 @@
 #include <QDebug>
 #include <shape/shape.h>
-#include <canvas/layer.h>
+#include <layer.h>
 
 #define SELECTION_TOLERANCE 15
 

@@ -1,11 +1,11 @@
 #include <QPainterPath>
 #include <canvas/controls/rect.h>
-#include <shape/path_shape.h>
+#include <shape/path-shape.h>
 
 using namespace Controls;
 
 bool Rect::isActive() {
-  return scene().mode() == Scene::Mode::RectDrawing;
+  return scene().mode() == Document::Mode::RectDrawing;
 }
 
 bool Rect::mouseMoveEvent(QMouseEvent *e) {
@@ -20,7 +20,7 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   scene().stackStep();
   scene().activeLayer()->addShape(new_rect);
   scene().setSelection(new_rect);
-  scene().setMode(Scene::Mode::Selecting);
+  scene().setMode(Document::Mode::Selecting);
   return true;
 }
 

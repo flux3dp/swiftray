@@ -3,12 +3,12 @@
 
 using namespace Controls;
 
-Select::Select(Scene &scene) noexcept : CanvasControl(scene) {
+Select::Select(Document &scene) noexcept : CanvasControl(scene) {
     selection_box_ = QRectF(0, 0, 0, 0);
 }
 
 bool Select::isActive() { 
-    return scene().mode() == Scene::Mode::MultiSelecting;
+    return scene().mode() == Document::Mode::MultiSelecting;
 }
 
 bool Select::mouseMoveEvent(QMouseEvent *e) {
@@ -34,7 +34,7 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
         scene().setSelections(selected);
     }
 
-    scene().setMode(Scene::Mode::Selecting);
+    scene().setMode(Document::Mode::Selecting);
     selection_box_ = QRectF(0, 0, 0, 0);
     return true;
 }

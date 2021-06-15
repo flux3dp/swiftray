@@ -30,7 +30,7 @@
 
 #include <QList>
 #include <QString>
-#include <canvas/layer.h>
+#include <layer.h>
 
 using namespace svgpp;
 

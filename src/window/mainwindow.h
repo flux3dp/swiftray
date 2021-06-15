@@ -3,9 +3,9 @@
 #include <QQuickWidget>
 #include <QListWidget>
 #include <QToolButton>
-#include <widgets/layer_list_item.h>
-#include <widgets/transform_panel.h>
-#include <widgets/layer_params_panel.h>
+#include <widgets/layer-list-item.h>
+#include <widgets/transform-panel.h>
+#include <widgets/layer-params-panel.h>
 #include <canvas/vcanvas.h>
 
 #ifndef MAINWINDOW_H
@@ -56,7 +56,7 @@ private slots:
 private:
   Ui::MainWindow *ui;
   VCanvas *canvas_;
-  Scene *scene_;
+  Document *scene_;
   unique_ptr<LayerParamsPanel> layer_params_panel_;
   unique_ptr<TransformPanel> transform_panel_;
   unique_ptr<QToolButton> add_layer_btn_;

@@ -2,10 +2,10 @@
 #define SVGPP_DEFS_H
 
 #include <parser/svgpp_common.h>
-#include <canvas/layer.h>
-#include <shape/path_shape.h>
+#include <layer.h>
+#include <shape/path-shape.h>
 #include <shape/shape.h>
-#include <parser/css/svg_style_selector.h>
+#include <parser/css/svg-style-selector.h>
 
 typedef boost::variant<tag::value::none, tag::value::currentColor, color_t>
      SolidPaint;

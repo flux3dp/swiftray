@@ -1,21 +1,25 @@
 #include <QMouseEvent>
-#include <canvas/controls/canvas_control.h>
+#include <canvas/controls/canvas-control.h>
 
 #ifndef MULTISELECTIONBOX_H
 #define MULTISELECTIONBOX_H
 namespace Controls {
 
-class Select: public CanvasControl {
+  class Select : public CanvasControl {
   public:
-    Select(Scene &scene_) noexcept;
+    Select(Document &scene_) noexcept;
+
     bool mouseMoveEvent(QMouseEvent *e) override;
+
     bool mouseReleaseEvent(QMouseEvent *e) override;
+
     void paint(QPainter *painter) override;
+
     bool isActive() override;
 
   private:
     QRectF selection_box_;
-};
+  };
 
 }
 

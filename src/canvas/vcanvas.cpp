@@ -7,23 +7,23 @@
 #include <QWidget>
 #include <cstring>
 #include <iostream>
-#include <canvas/layer.h>
-#include <shape/bitmap_shape.h>
-#include <shape/group_shape.h>
-#include <shape/path_shape.h>
+#include <layer.h>
+#include <shape/bitmap-shape.h>
+#include <shape/group-shape.h>
+#include <shape/path-shape.h>
 #include <boost/range/adaptor/reversed.hpp>
-#include <gcode/toolpath_exporter.h>
-#include <gcode/generators/gcode_generator.h>
+#include <gcode/toolpath-exporter.h>
+#include <gcode/generators/gcode-generator.h>
 
 VCanvas::VCanvas(QQuickItem *parent)
-     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(scene())),
-       ctrl_transform_(Controls::Transform(scene())),
-       ctrl_select_(Controls::Select(scene())),
-       ctrl_grid_(Controls::Grid(scene())), ctrl_line_(Controls::Line(scene())),
-       ctrl_oval_(Controls::Oval(scene())),
-       ctrl_path_draw_(Controls::PathDraw(scene())),
-       ctrl_path_edit_(Controls::PathEdit(scene())),
-       ctrl_rect_(Controls::Rect(scene())), ctrl_text_(Controls::Text(scene())),
+     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
+       ctrl_transform_(Controls::Transform(document())),
+       ctrl_select_(Controls::Select(document())),
+       ctrl_grid_(Controls::Grid(document())), ctrl_line_(Controls::Line(document())),
+       ctrl_oval_(Controls::Oval(document())),
+       ctrl_path_draw_(Controls::PathDraw(document())),
+       ctrl_path_edit_(Controls::PathEdit(document())),
+       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())),
        paste_shift_(QPointF()) {
   setRenderTarget(RenderTarget::FramebufferObject);
   setAcceptedMouseButtons(Qt::AllButtons);
@@ -42,7 +42,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
 
   // Set mode
-  scene().setMode(Scene::Mode::Selecting);
+  document().setMode(Document::Mode::Selecting);
   // Register controls
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
          << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
@@ -60,14 +60,14 @@ VCanvas::~VCanvas() {
 }
 
 void VCanvas::loadSVG(QByteArray &svg_data) {
-  // scene().clearAll();
-  // scene().addLayer();
+  // document().clearAll();
+  // document().addLayer();
   bool success = svgpp_parser_.parse(svg_data);
   setAntialiasing(true);
 
   if (success) {
     editSelectAll();
-    scene().stackStep();
+    document().stackStep();
     forceActiveFocus();
     ready = true;
     update();
@@ -78,20 +78,20 @@ void VCanvas::paint(QPainter *painter) {
   painter->save();
   painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
   // Move to scroll and scale
-  painter->translate(scene().scroll());
-  painter->scale(scene().scale(), scene().scale());
+  painter->translate(document().scroll());
+  painter->scale(document().scale(), document().scale());
 
   ctrl_grid_.paint(painter);
 
   bool do_flush_cache = false;
-  if (screen_rect_ != scene().screenRect(screen_size_)) {
-    screen_rect_ = scene().screenRect(screen_size_);
+  if (screen_rect_ != document().screenRect(screen_size_)) {
+    screen_rect_ = document().screenRect(screen_size_);
     do_flush_cache = true;
   }
 
   int object_count = 0;
 
-  for (const LayerPtr &layer : scene().layers()) {
+  for (const LayerPtr &layer : document().layers()) {
     if (do_flush_cache) layer->flushCache();
     object_count += layer->paint(painter, screen_rect_, counter);
   }
@@ -131,8 +131,8 @@ void VCanvas::keyPressEvent(QKeyEvent *e) {
 }
 
 void VCanvas::mousePressEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
-  scene().setMousePressedScreenCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  document().setMousePressedScreenCoord(e->pos());
   qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
 
@@ -141,22 +141,22 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
       return;
   }
 
-  if (scene().mode() == Scene::Mode::Selecting) {
-    ShapePtr hit = scene().hitTest(canvas_coord);
+  if (document().mode() == Document::Mode::Selecting) {
+    ShapePtr hit = document().hitTest(canvas_coord);
 
     if (hit != nullptr) {
       if (!hit->selected()) {
-        scene().setSelection(hit);
+        document().setSelection(hit);
       }
     } else {
-      scene().clearSelections();
-      scene().setMode(Scene::Mode::MultiSelecting);
+      document().clearSelections();
+      document().setMode(Document::Mode::MultiSelecting);
     }
   }
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   // qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" <<
   // canvas_coord;
 
@@ -167,7 +167,7 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
 
@@ -176,40 +176,40 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
       return;
   }
 
-  scene().setMode(Scene::Mode::Selecting);
+  document().setMode(Document::Mode::Selecting);
 }
 
 void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
-  qInfo() << "Mode" << (int) scene().mode();
-  ShapePtr hit = scene().hitTest(canvas_coord);
-  if (scene().mode() == Scene::Mode::Selecting) {
+  qInfo() << "Mode" << (int) document().mode();
+  ShapePtr hit = document().hitTest(canvas_coord);
+  if (document().mode() == Document::Mode::Selecting) {
     if (hit != nullptr) {
       qInfo() << "Double clicked" << hit.get();
       switch (hit->type()) {
         case Shape::Type::Path:
-          scene().clearSelections();
+          document().clearSelections();
           ctrl_path_edit_.setTarget(hit);
-          scene().setMode(Scene::Mode::PathEditing);
+          document().setMode(Document::Mode::PathEditing);
           break;
         case Shape::Type::Text:
-          scene().clearSelections();
+          document().clearSelections();
           ctrl_text_.setTarget(hit);
-          scene().setMode(Scene::Mode::TextDrawing);
+          document().setMode(Document::Mode::TextDrawing);
           break;
         default:
           break;
       }
     }
-  } else if (scene().mode() == Scene::Mode::PathEditing) {
+  } else if (document().mode() == Document::Mode::PathEditing) {
     ctrl_path_edit_.endEditing();
   }
 }
 
 void VCanvas::wheelEvent(QWheelEvent *e) {
-  scene().setScroll(scene().scroll() + e->pixelDelta() / 2.5);
+  document().setScroll(document().scroll() + e->pixelDelta() / 2.5);
   qInfo() << "Wheel Event" << e->pixelDelta();
 }
 
@@ -242,9 +242,9 @@ bool VCanvas::event(QEvent *e) {
       //  (passed by main window)
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - screen_offset_;
-        double orig_scale = scene().scale();
-        scene().setScale(max(0.01, scene().scale() + nge->value() / 2));
-        scene().setScroll(mouse_pos - (mouse_pos - scene().scroll()) * scene().scale() / orig_scale);
+        double orig_scale = document().scale();
+        document().setScale(max(0.01, document().scale() + nge->value() / 2));
+        document().setScroll(mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale);
       }
 
       break;
@@ -257,141 +257,141 @@ bool VCanvas::event(QEvent *e) {
 }
 
 void VCanvas::editCut() {
-  if (scene().mode() != Scene::Mode::Selecting)
+  if (document().mode() != Document::Mode::Selecting)
     return;
-  scene().stackStep();
+  document().stackStep();
   qInfo() << "Edit Cut";
   editCopy();
-  scene().removeSelections();
+  document().removeSelections();
 }
 
 void VCanvas::editCopy() {
-  if (scene().mode() != Scene::Mode::Selecting)
+  if (document().mode() != Document::Mode::Selecting)
     return;
   qInfo() << "Edit Copy";
-  scene().clearClipboard();
-  scene().setClipboard(scene().selections());
+  document().clearClipboard();
+  document().setClipboard(document().selections());
   paste_shift_ = QPointF(0, 0);
 }
 
 void VCanvas::editPaste() {
-  if (scene().mode() != Scene::Mode::Selecting)
+  if (document().mode() != Document::Mode::Selecting)
     return;
-  scene().stackStep();
+  document().stackStep();
   qInfo() << "Edit Paste";
-  int index_clip_begin = scene().activeLayer()->children().length();
+  int index_clip_begin = document().activeLayer()->children().length();
   paste_shift_ += QPointF(20, 20);
   QTransform shift =
        QTransform().translate(paste_shift_.x(), paste_shift_.y());
 
-  for (int i = 0; i < scene().clipboard().length(); i++) {
-    ShapePtr shape = scene().clipboard().at(i)->clone();
+  for (int i = 0; i < document().clipboard().length(); i++) {
+    ShapePtr shape = document().clipboard().at(i)->clone();
     shape->applyTransform(shift);
-    scene().activeLayer()->children().push_back(shape);
+    document().activeLayer()->children().push_back(shape);
   }
 
   QList<ShapePtr> selected_shapes;
 
   for (int i = index_clip_begin;
-       i < scene().activeLayer()->children().length(); i++) {
-    selected_shapes << scene().activeLayer()->children().at(i);
+       i < document().activeLayer()->children().length(); i++) {
+    selected_shapes << document().activeLayer()->children().at(i);
   }
 
-  scene().setSelections(selected_shapes);
+  document().setSelections(selected_shapes);
 }
 
 void VCanvas::editDelete() {
-  scene().stackStep();
+  document().stackStep();
   qInfo() << "Edit Delete";
-  scene().removeSelections();
+  document().removeSelections();
 }
 
-void VCanvas::editUndo() { scene().undo(); }
+void VCanvas::editUndo() { document().undo(); }
 
-void VCanvas::editRedo() { scene().redo(); }
+void VCanvas::editRedo() { document().redo(); }
 
 void VCanvas::editDrawRect() {
   ctrl_rect_.reset();
-  scene().clearSelections();
-  scene().setMode(Scene::Mode::RectDrawing);
+  document().clearSelections();
+  document().setMode(Document::Mode::RectDrawing);
 }
 
 void VCanvas::editDrawOval() {
   ctrl_oval_.reset();
-  scene().clearSelections();
-  scene().setMode(Scene::Mode::OvalDrawing);
+  document().clearSelections();
+  document().setMode(Document::Mode::OvalDrawing);
 }
 
 void VCanvas::editDrawLine() {
   ctrl_line_.reset();
-  scene().clearSelections();
-  scene().setMode(Scene::Mode::LineDrawing);
+  document().clearSelections();
+  document().setMode(Document::Mode::LineDrawing);
 }
 
 void VCanvas::editDrawPath() {
   ctrl_path_draw_.reset();
-  scene().clearSelections();
-  scene().setMode(Scene::Mode::PathDrawing);
+  document().clearSelections();
+  document().setMode(Document::Mode::PathDrawing);
 }
 
 void VCanvas::editDrawText() {
   ctrl_text_.reset();
-  scene().clearSelections();
-  scene().setMode(Scene::Mode::TextDrawing);
+  document().clearSelections();
+  document().setMode(Document::Mode::TextDrawing);
 }
 
 void VCanvas::editSelectAll() {
-  if (scene().mode() != Scene::Mode::Selecting)
+  if (document().mode() != Document::Mode::Selecting)
     return;
   QList<ShapePtr> all_shapes;
 
-  for (auto &layer : scene().layers()) {
+  for (auto &layer : document().layers()) {
     all_shapes.append(layer->children());
   }
 
-  scene().setSelections(all_shapes);
+  document().setSelections(all_shapes);
 }
 
 void VCanvas::editGroup() {
-  if (scene().selections().empty())
+  if (document().selections().empty())
     return;
 
   qInfo() << "Groupping";
-  scene().stackStep();
+  document().stackStep();
   ShapePtr group_ptr =
        make_shared<GroupShape>(ctrl_transform_.selections());
-  scene().removeSelections();
-  scene().activeLayer()->children().push_back(group_ptr);
-  scene().setSelection(group_ptr);
+  document().removeSelections();
+  document().activeLayer()->children().push_back(group_ptr);
+  document().setSelection(group_ptr);
 }
 
 void VCanvas::editUngroup() {
   qInfo() << "Groupping";
-  scene().stackStep();
-  ShapePtr group_ptr = scene().selections().first();
+  document().stackStep();
+  ShapePtr group_ptr = document().selections().first();
   GroupShape *group = (GroupShape *) group_ptr.get();
 
   for (auto &shape : group->children()) {
     shape->applyTransform(group->transform());
     shape->setRotation(shape->rotation() + group->rotation());
-    scene().activeLayer()->children().push_back(shape);
+    document().activeLayer()->children().push_back(shape);
   }
 
-  scene().setSelections(group->children());
+  document().setSelections(group->children());
 
-  for (auto &layer : scene().layers()) {
+  for (auto &layer : document().layers()) {
     layer->children().removeOne(group_ptr);
   }
 }
 
-Scene &VCanvas::scene() { return scene_; }
+Document &VCanvas::document() { return scene_; }
 
 void VCanvas::editUnion() {
-  if (scene().selections().size() < 2)
+  if (document().selections().size() < 2)
     return;
   QPainterPath result;
 
-  for (auto &shape : scene().selections()) {
+  for (auto &shape : document().selections()) {
     if (shape->type() != Shape::Type::Path &&
         shape->type() != Shape::Type::Text)
       return;
@@ -399,50 +399,50 @@ void VCanvas::editUnion() {
          dynamic_cast<PathShape *>(shape.get())->path()));
   }
 
-  scene().stackStep();
+  document().stackStep();
   ShapePtr new_shape = make_shared<PathShape>(result);
-  scene().removeSelections();
-  scene().activeLayer()->addShape(new_shape);
-  scene().setSelection(new_shape);
+  document().removeSelections();
+  document().activeLayer()->addShape(new_shape);
+  document().setSelection(new_shape);
 }
 
 void VCanvas::editSubtract() {
-  if (scene().selections().size() != 2)
+  if (document().selections().size() != 2)
     return;
 
-  if (scene().selections().at(0)->type() != Shape::Type::Path ||
-      scene().selections().at(1)->type() != Shape::Type::Path)
+  if (document().selections().at(0)->type() != Shape::Type::Path ||
+      document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  scene().stackStep();
-  PathShape *a = dynamic_cast<PathShape *>(scene().selections().at(0).get());
-  PathShape *b = dynamic_cast<PathShape *>(scene().selections().at(1).get());
+  document().stackStep();
+  PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
+  PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  scene().removeSelections();
-  scene().activeLayer()->addShape(new_shape);
-  scene().setSelection(new_shape);
+  document().removeSelections();
+  document().activeLayer()->addShape(new_shape);
+  document().setSelection(new_shape);
 }
 
 void VCanvas::editIntersect() {
-  if (scene().selections().size() != 2)
+  if (document().selections().size() != 2)
     return;
 
-  if (scene().selections().at(0)->type() != Shape::Type::Path ||
-      scene().selections().at(1)->type() != Shape::Type::Path)
+  if (document().selections().at(0)->type() != Shape::Type::Path ||
+      document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  scene().stackStep();
-  PathShape *a = dynamic_cast<PathShape *>(scene().selections().at(0).get());
-  PathShape *b = dynamic_cast<PathShape *>(scene().selections().at(1).get());
+  document().stackStep();
+  PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
+  PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).intersected(
        b->transform().map(b->path())));
   new_path.closeSubpath();
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  scene().removeSelections();
-  scene().activeLayer()->addShape(new_shape);
-  scene().setSelection(new_shape);
+  document().removeSelections();
+  document().activeLayer()->addShape(new_shape);
+  document().setSelection(new_shape);
 }
 
 void VCanvas::editDifference() {}
@@ -450,64 +450,64 @@ void VCanvas::editDifference() {}
 void VCanvas::fitWindow() {
   // Notes: we can even speed up by using half resolution:
   // setTextureSize(QSize(width()/2, height()/2));
-  qreal proper_scale = min((width() - 100) / scene().width(),
-                           (height() - 100) / scene().height());
+  qreal proper_scale = min((width() - 100) / document().width(),
+                           (height() - 100) / document().height());
   QPointF proper_translate =
-       QPointF((width() - scene().width() * proper_scale) / 2,
-               (height() - scene().height() * proper_scale) / 2);
-  scene().setScale(proper_scale);
-  scene().setScroll(proper_translate);
+       QPointF((width() - document().width() * proper_scale) / 2,
+               (height() - document().height() * proper_scale) / 2);
+  document().setScale(proper_scale);
+  document().setScroll(proper_translate);
 }
 
 void VCanvas::importImage(QImage &image) {
   ShapePtr new_shape = make_shared<BitmapShape>(image);
-  qreal scale = min(1.0, min(scene().height() / image.height(),
-                             scene().width() / image.width()));
+  qreal scale = min(1.0, min(document().height() / image.height(),
+                             document().width() / image.width()));
   qInfo() << "Scale" << scale;
   new_shape->setTransform(QTransform().scale(scale, scale));
-  scene().activeLayer()->addShape(new_shape);
-  scene().setSelection(new_shape);
+  document().activeLayer()->addShape(new_shape);
+  document().setSelection(new_shape);
 }
 
 void VCanvas::setActiveLayer(LayerPtr &layer) {
-  scene().setActiveLayer(layer);
+  document().setActiveLayer(layer);
 }
 
 void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
-  scene().stackStep();
-  scene().reorderLayers(new_order);
+  document().stackStep();
+  document().reorderLayers(new_order);
 }
 
 void VCanvas::setFont(const QFont &font) {
   QFont new_font;
-  if (scene().selections().size() > 0 &&
-      scene().selections().at(0)->type() == Shape::Type::Text) {
-    TextShape *t = dynamic_cast<TextShape *>(scene().selections().at(0).get());
+  if (document().selections().size() > 0 &&
+      document().selections().at(0)->type() == Shape::Type::Text) {
+    TextShape *t = dynamic_cast<TextShape *>(document().selections().at(0).get());
     new_font = t->font();
     new_font.setFamily(font.family());
     t->setFont(new_font);
-    ShapePtr shape = scene().selections().at(0);
-    scene().setSelection(shape);
+    ShapePtr shape = document().selections().at(0);
+    document().setSelection(shape);
   }
-  if (scene().mode() == Scene::Mode::TextDrawing) {
+  if (document().mode() == Document::Mode::TextDrawing) {
     if (ctrl_text_.hasTarget()) {
       new_font = ctrl_text_.target().font();
       new_font.setFamily(font.family());
       ctrl_text_.target().setFont(new_font);
     } else {
-      new_font = scene().font();
+      new_font = document().font();
       new_font.setFamily(font.family());
       ctrl_text_.target().setFont(new_font);
-      scene().setFont(new_font);
+      document().setFont(new_font);
     }
   }
-  scene().setFont(new_font);
+  document().setFont(new_font);
 }
 
 void VCanvas::exportGcode() {
   GCodeGenerator gen;
   ToolpathExporter exporter(&gen);
-  exporter.convertStack(scene().layers());
+  exporter.convertStack(document().layers());
   std::cout << gen.toString();
 }
 
