@@ -75,6 +75,7 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
 }
 
 void VCanvas::paint(QPainter *painter) {
+  painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
   painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
   // Move to scroll and scale
@@ -106,7 +107,6 @@ void VCanvas::paint(QPainter *painter) {
   painter->restore();
   // Calculate FPS
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
-  painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS " + QString::number(round(fps * 100) / 100.0));
   painter->drawText(QPointF(10, 40), "Objects " + QString::number(object_count));
@@ -287,7 +287,7 @@ void VCanvas::editPaste() {
   for (int i = 0; i < document().clipboard().length(); i++) {
     ShapePtr shape = document().clipboard().at(i)->clone();
     shape->applyTransform(shift);
-    document().activeLayer()->children().push_back(shape);
+    document().activeLayer()->addShape(shape);
   }
 
   QList<ShapePtr> selected_shapes;

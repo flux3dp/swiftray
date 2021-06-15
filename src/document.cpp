@@ -235,8 +235,8 @@ bool Document::setActiveLayer(QString name) {
     }
   }
 
-  Q_ASSERT_X(false, "Active Layer",
-             "Invalid active layer name");
+  active_layer_ = layers().last();
+  return false;
 }
 
 bool Document::setActiveLayer(LayerPtr &layer) {
