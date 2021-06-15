@@ -1,4 +1,4 @@
-#include <parser/svgpp_common.h>
+#include <parser/svgpp-common.h>
 
 #include <boost/math/constants/constants.hpp>
 #include <boost/numeric/ublas/assignment.hpp>

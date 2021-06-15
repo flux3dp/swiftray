@@ -1,5 +1,5 @@
 #include <QDebug>
-#include <parser/svgpp_common.h>
+#include <parser/svgpp-common.h>
 
 #pragma once
 

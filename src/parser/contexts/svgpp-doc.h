@@ -1,4 +1,4 @@
-#include <parser/svgpp_common.h>
+#include <parser/svgpp-common.h>
 #include <libxml/xpath.h>
 #include <set>
 

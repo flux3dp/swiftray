@@ -6,7 +6,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <parser/contexts/base-context.h>
-#include <parser/svgpp_defs.h>
+#include <parser/svgpp-defs.h>
 
 class CSSContext : public BaseContext {
 public:

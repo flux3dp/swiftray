@@ -13,7 +13,7 @@
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
 #include <document.h>
-#include <parser/svgpp_parser.h>
+#include <parser/svgpp-parser.h>
 #include <shape/shape.h>
 #include <canvas/memory-monitor.h>
 

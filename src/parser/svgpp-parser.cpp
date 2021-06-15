@@ -1,6 +1,6 @@
 #include <QDebug>
-#include <parser/svgpp_common.h>
-#include <parser/svgpp_parser.h>
+#include <parser/svgpp-common.h>
+#include <parser/svgpp-parser.h>
 
 SVGPPParser::SVGPPParser(Document &scene) : scene_(scene) {
 }

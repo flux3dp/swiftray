@@ -22,7 +22,7 @@
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-#include <parser/svgpp_color_factory.h>
+#include <parser/svgpp-color-factory.h>
 #include <svgpp/policy/xml/libxml2.hpp>
 #include <svgpp/svgpp.hpp>
 

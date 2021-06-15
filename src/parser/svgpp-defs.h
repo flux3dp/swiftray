@@ -1,7 +1,7 @@
 #ifndef SVGPP_DEFS_H
 #define SVGPP_DEFS_H
 
-#include <parser/svgpp_common.h>
+#include <parser/svgpp-common.h>
 #include <layer.h>
 #include <shape/path-shape.h>
 #include <shape/shape.h>

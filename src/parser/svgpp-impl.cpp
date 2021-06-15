@@ -2,8 +2,8 @@
 #include <QMap>
 #include <QDebug>
 #include <iostream>
-#include <parser/svgpp_common.h>
-#include <parser/svgpp_defs.h>
+#include <parser/svgpp-common.h>
+#include <parser/svgpp-defs.h>
 
 #include <parser/contexts/base-context.h>
 #include <parser/contexts/group-context.h>

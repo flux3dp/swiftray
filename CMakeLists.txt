@@ -33,9 +33,9 @@ SET(SOURCES
         src/window/main.cpp
         src/window/mainwindow.cpp
         src/canvas/vcanvas.cpp
-        src/parser/svgpp_parser.cpp
-        src/parser/svgpp_impl.cpp
-        src/parser/svgpp_external_impl.cpp
+        src/parser/svgpp-parser.cpp
+        src/parser/svgpp-impl.cpp
+        src/parser/svgpp-external-impl.cpp
         src/gcode/toolpath-exporter.cpp
         src/window/osxwindow.mm
         src/parser/css/svg-style-selector.h)
