@@ -69,7 +69,7 @@ Shape::Type PathShape::type() const { return Shape::Type::Path; }
 
 const QPainterPath &PathShape::path() const { return path_; }
 
-void PathShape::setPath(QPainterPath &path) {
+void PathShape::setPath(const QPainterPath &path) {
   // Input path coord is local coord
   path_ = path;
   flushCache();

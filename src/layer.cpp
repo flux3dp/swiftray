@@ -78,13 +78,13 @@ int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
 }
 
 void Layer::addShape(ShapePtr shape) {
-  shape->setParent(this);
+  shape->setLayer(this);
   children_.push_back(shape);
   cache_valid_ = false;
 }
 
 void Layer::removeShape(ShapePtr shape) {
-  shape->setParent(nullptr);
+  shape->setLayer(nullptr);
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
   }

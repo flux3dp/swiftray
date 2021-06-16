@@ -61,8 +61,8 @@ void GroupShape::calcBoundingBox() const {
 }
 
 void GroupShape::cache() const {
-  if (this->parent() == nullptr) return;
-  cache_stack_.begin(this->parent()->screenRect(), transform_ * temp_transform_);
+  if (!hasLayer()) return;
+  cache_stack_.begin(layer().screenRect(), transform_ * temp_transform_);
   for (auto &shape : children_) {
     cache_stack_.addShape(shape.get());
   }

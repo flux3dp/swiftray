@@ -53,7 +53,7 @@ public:
 
   void addLayer(LayerPtr &layer);
 
-  void removeLayer(QString name);
+  void removeLayer(LayerPtr &layer);
 
   // Dumps layers info
   void dumpStack(QList<LayerPtr> &stack);
@@ -118,15 +118,12 @@ public:
 
   void redo();
 
-  // Stack current layers and shapes data for undo/redo
-  void stackStep();
-
-  unique_ptr<CanvasTextEdit> text_box_;
-
   void addUndoEvent(BaseUndoEvent *event);
 
   QList<EventPtr> undo2;
   QList<EventPtr> redo2;
+
+  unique_ptr<CanvasTextEdit> text_box_;
 
 signals:
 
@@ -138,20 +135,11 @@ signals:
 
 
 private:
-  void stackRedo();
-
-  void stackUndo();
-
-  QList<LayerPtr> cloneStack(QList<LayerPtr> &stack);
-
   qreal scroll_x_;
   qreal scroll_y_;
   qreal scale_;
   qreal width_;
   qreal height_;
-
-  QList<QList<LayerPtr>> undo_stack_;
-  QList<QList<LayerPtr>> redo_stack_;
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;

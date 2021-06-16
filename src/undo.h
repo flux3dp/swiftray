@@ -28,47 +28,37 @@ typedef shared_ptr<BaseUndoEvent> EventPtr;
 
 class AddLayerEvent : public BaseUndoEvent {
 public:
-  AddLayerEvent(Document &document, LayerPtr layer) :
-       document_(document), layer_(layer) {}
+  AddLayerEvent(LayerPtr &layer) : layer_(layer) {}
 
-  virtual void undo();
+  void undo() override;
 
-  virtual void redo();
+  void redo() override;
 
   LayerPtr layer_;
-  Document &document_;
 };
 
 class RemoveLayerEvent : public BaseUndoEvent {
 public:
-  RemoveLayerEvent(Document &document, LayerPtr layer) :
-       document_(document), layer_(layer) {}
+  RemoveLayerEvent(LayerPtr layer) : layer_(layer) {}
 
-  virtual void undo();
+  void undo() override;
 
-  virtual void redo();
+  void redo() override;
 
   LayerPtr layer_;
-  Document &document_;
 };
 
 class AddShapeEvent : public BaseUndoEvent {
 public:
   AddShapeEvent(ShapePtr shape) :
-       shape_(shape) { layer_ = shape->parent(); }
+       shape_(shape) { layer_ = &shape->layer(); }
 
   AddShapeEvent(LayerPtr layer, ShapePtr shape) :
        layer_(layer.get()), shape_(shape) {}
 
-  virtual void undo() {
-    qInfo() << "Undoing add shape" << shape_.get() << "with layer" << layer_->name();
-    layer_->removeShape(shape_);
-  }
+  void undo() override;
 
-  virtual void redo() {
-    qInfo() << "Redoing add shape";
-    layer_->addShape(shape_);
-  }
+  void redo() override;
 
   // Shape events don't need to manage layer's lifecycle
   Layer *layer_;
@@ -78,18 +68,14 @@ public:
 class RemoveShapeEvent : public BaseUndoEvent {
 public:
   RemoveShapeEvent(ShapePtr shape) :
-       shape_(shape) {}
+       shape_(shape) { layer_ = &shape->layer(); }
 
   RemoveShapeEvent(LayerPtr layer, ShapePtr shape) :
        layer_(layer.get()), shape_(shape) {}
 
-  virtual void undo() {
-    shape_->parent()->addShape(shape_);
-  }
+  void undo() override;
 
-  virtual void redo() {
-    shape_->parent()->removeShape(shape_);
-  }
+  void redo() override;
 
   // Shape events don't need to manage layer's lifecycle
   Layer *layer_;
@@ -110,6 +96,22 @@ public:
     }
   }
 
+  static JoinedEvent *addShapes(const QList<ShapePtr> &shapes) {
+    JoinedEvent *evt = new JoinedEvent();
+    for (auto &shape : shapes) {
+      evt->events << make_shared<AddShapeEvent>(shape);
+    }
+    return evt;
+  }
+
+  static JoinedEvent *removeShapes(const QList<ShapePtr> &shapes) {
+    JoinedEvent *evt = new JoinedEvent();
+    for (auto &shape : shapes) {
+      evt->events << make_shared<RemoveShapeEvent>(shape);
+    }
+    return evt;
+  }
+
   QList<EventPtr> events;
 };
 
@@ -119,24 +121,24 @@ template<typename T, typename PropType, const PropType &(T::*PropGetter)() const
 class PropChangeEvent : public BaseUndoEvent {
 public:
 
-  explicit PropChangeEvent(shared_ptr<T> target, PropType value) {
+  explicit PropChangeEvent(T *target, PropType value) {
     target_ = target;
     value_ = value;
-    qInfo() << "New PCE" << target.get();
+    qInfo() << "New PropChangeEvent (shape" << target << ")";
   }
 
   void undo() override {
     qInfo() << "Undoing prop change";
-    redo_value_ = (target_.get()->*PropGetter)();
-    (target_.get()->*PropSetter)(value_);
+    redo_value_ = (target_->*PropGetter)();
+    (target_->*PropSetter)(value_);
   }
 
   void redo() override {
     qInfo() << "Redoing prop change";
-    (target_.get()->*PropSetter)(redo_value_);
+    (target_->*PropSetter)(redo_value_);
   };
 
-  shared_ptr<T> target_;
+  T *target_;
   PropType value_;
   PropType redo_value_;
 };

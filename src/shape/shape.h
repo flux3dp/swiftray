@@ -22,7 +22,7 @@ public:
   // General attributes
   bool selected() const;
 
-  Layer *parent() const;
+  Layer &layer() const;
 
   QPointF pos() const;
 
@@ -40,7 +40,7 @@ public:
 
   void setRotation(qreal r);
 
-  void setParent(Layer *parent);
+  void setLayer(Layer *layer);
 
   void setSelected(bool selected);
 
@@ -62,6 +62,8 @@ public:
 
   void setTempTransform(const QTransform &transform);
 
+  bool hasLayer() const;
+
   // Virtual functions
   virtual void calcBoundingBox() const;
 
@@ -76,7 +78,7 @@ public:
   virtual Type type() const;
 
 private:
-  Layer *parent_;
+  Layer *layer_;
   qreal rotation_;
   mutable bool bbox_need_recalc_;
 

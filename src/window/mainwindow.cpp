@@ -89,7 +89,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 
   // Set the owner of vcanvas
   canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-  scene_ = &canvas_->document();
+  doc_ = &canvas_->document();
   connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
   connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
@@ -111,9 +111,9 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
   connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
   connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editUngroup);
-  connect(scene_, &Document::layerChanged, this, &MainWindow::updateLayers);
-  connect(scene_, &Document::modeChanged, this, &MainWindow::updateMode);
-  connect(scene_, &Document::selectionsChanged, this, &MainWindow::updateSidePanel);
+  connect(doc_, &Document::layerChanged, this, &MainWindow::updateLayers);
+  connect(doc_, &Document::modeChanged, this, &MainWindow::updateMode);
+  connect(doc_, &Document::selectionsChanged, this, &MainWindow::updateSidePanel);
   connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](const QFont &font) {
     canvas_->setFont(font);
   });
@@ -121,9 +121,9 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
     canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
-  scene_->text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
-  scene_->text_box_->setGeometry(10, 10, 200, 200);
-  scene_->text_box_->setStyleSheet("border:0");
+  doc_->text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
+  doc_->text_box_->setGeometry(10, 10, 200, 200);
+  doc_->text_box_->setStyleSheet("border:0");
   canvas_->fitWindow();
   updateLayers();
   updateMode();
@@ -135,8 +135,8 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 void MainWindow::updateLayers() {
   ui->layerList->clear();
 
-  for (auto &layer : boost::adaptors::reverse(scene_->layers())) {
-    bool active = scene_->activeLayer().get() == layer.get();
+  for (auto &layer : boost::adaptors::reverse(doc_->layers())) {
+    bool active = doc_->activeLayer().get() == layer.get();
     auto *list_widget = new LayerListItem(ui->layerList->parentWidget(), layer, active);
     auto *list_item = new QListWidgetItem(ui->layerList);
     auto size = list_widget->size();
@@ -152,7 +152,7 @@ void MainWindow::updateLayers() {
     ui->layerList->scrollToItem(ui->layerList->currentItem(), QAbstractItemView::PositionAtCenter);
   }
   if (layer_params_panel_ != nullptr) {
-    layer_params_panel_->updateLayer(scene_->activeLayer());
+    layer_params_panel_->updateLayer(doc_->activeLayer());
   }
 }
 
@@ -211,7 +211,7 @@ void MainWindow::updateMode() {
   ui->actionDrawText->setChecked(false);
   ui->actionDrawPolygon->setChecked(false);
 
-  switch (scene_->mode()) {
+  switch (doc_->mode()) {
     case Document::Mode::Selecting:
     case Document::Mode::MultiSelecting:
       ui->actionSelect->setChecked(true);
@@ -243,7 +243,7 @@ void MainWindow::updateMode() {
 }
 
 void MainWindow::updateSidePanel() {
-  QList<ShapePtr> &items = scene_->selections();
+  QList<ShapePtr> &items = doc_->selections();
   setOSXWindowTitleColor(this);
 }
 
@@ -253,8 +253,8 @@ void MainWindow::loadWidgets() {
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
   ui->objectParamDock->setWidget(transform_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
-  if (canvas_ != nullptr && scene_->layers().size() > 0) {
-    layer_params_panel_->updateLayer(scene_->activeLayer());
+  if (canvas_ != nullptr && doc_->layers().size() > 0) {
+    layer_params_panel_->updateLayer(doc_->activeLayer());
   }
   add_layer_btn_ = make_unique<QToolButton>(ui->layerList);
   add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
@@ -265,7 +265,7 @@ void MainWindow::loadWidgets() {
   add_layer_btn_->raise();
   add_layer_btn_->show();
   connect(add_layer_btn_.get(), &QAbstractButton::clicked, [=]() {
-    scene_->addLayer();
+    canvas_->addEmptyLayer();
   });
   transform_panel_->setTransformControl(&canvas_->transformControl());
 }

@@ -55,35 +55,6 @@ void Document::clearAll() {
   emit layerChanged();
 }
 
-void Document::stackStep() {
-  redo_stack_.clear();
-  stackUndo();
-}
-
-void Document::stackUndo() {
-  if (undo_stack_.size() > 19) {
-    undo_stack_.pop_front();
-  }
-  undo_stack_.push_back(cloneStack(layers_));
-}
-
-void Document::stackRedo() {
-  if (redo_stack_.size() > 19) {
-    redo_stack_.pop_front();
-  }
-  redo_stack_.push_back(cloneStack(layers_));
-}
-
-QList<LayerPtr> Document::cloneStack(QList<LayerPtr> &stack) {
-  QList<LayerPtr> cloned;
-
-  for (auto &layer : stack) {
-    cloned << layer->clone();
-  }
-
-  return cloned;
-}
-
 void Document::dumpStack(QList<LayerPtr> &stack) {
   qInfo() << "<Stack>";
   for (auto &layer : stack) {
@@ -106,6 +77,8 @@ void Document::undo() {
   redo2 << evt;
 
   QString active_layer_name = activeLayer()->name();
+
+  // TODO (Fix mode change event and selection)
   QList<ShapePtr> selected_shapes;
   for (auto &layer : layers()) {
     for (auto &shape : layer->children()) {
@@ -143,72 +116,11 @@ void Document::redo() {
 
 void Document::addUndoEvent(BaseUndoEvent *e) {
   // Use shared_ptr to manage lifecycle
+  redo2.clear();
   undo2.push_back(shared_ptr<BaseUndoEvent>(e));
 };
 
-/*
-void Document::undo() {
-  if (undo_stack_.isEmpty()) {
-    return;
-  }
-  QString active_layer_name = activeLayer()->name();
-  stackRedo();
-  clearSelections();
-  layers().clear();
-  Document::dumpStack(undo_stack_.last());
-  layers().append(undo_stack_.last());
-  QList<ShapePtr> selected_shapes;
-
-  for (auto &layer : layers()) {
-    for (auto &shape : layer->children()) {
-      if (shape->selected())
-        selected_shapes << shape;
-    }
-  }
-
-  setSelections(selected_shapes);
-  setActiveLayer(active_layer_name);
-  emit layerChanged();
-  undo_stack_.pop_back();
-}
-
-void Document::redo() {
-  if (redo_stack_.isEmpty()) {
-    return;
-  }
-  QString active_layer_name = activeLayer()->name();
-  stackUndo();
-  clearSelections();
-  layers().clear();
-  layers().append(redo_stack_.last());
-  QList<ShapePtr> selected_shapes;
-
-  for (auto &layer : layers()) {
-    for (auto &shape : layer->children()) {
-      if (shape->selected())
-        selected_shapes << shape;
-    }
-  }
-
-  setSelections(selected_shapes);
-  setActiveLayer(active_layer_name);
-  emit layerChanged();
-  redo_stack_.pop_back();
-}*/
-
-const QList<ShapePtr> &Document::clipboard() const { return shape_clipboard_; }
-
-void Document::clearClipboard() { shape_clipboard_.clear(); }
-
-void Document::setClipboard(QList<ShapePtr> &items) {
-  for (auto &item : items) {
-    shape_clipboard_.push_back(item->clone());
-  }
-}
-
 void Document::addLayer() {
-  if (layers().length() > 0)
-    stackStep();
   qDebug() << "Add layer";
   layers() << make_shared<Layer>(new_layer_id_++);
   active_layer_ = layers().last();
@@ -218,6 +130,12 @@ void Document::addLayer() {
 void Document::addLayer(LayerPtr &layer) {
   layers() << layer->clone();
   active_layer_ = layers().last();
+}
+
+void Document::removeLayer(LayerPtr &layer) {
+  if (!layers().removeOne(layer)) {
+    qInfo() << "Failed to remove layer";
+  }
 }
 
 void Document::emitAllChanges() {

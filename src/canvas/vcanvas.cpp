@@ -23,8 +23,7 @@ VCanvas::VCanvas(QQuickItem *parent)
        ctrl_oval_(Controls::Oval(document())),
        ctrl_path_draw_(Controls::PathDraw(document())),
        ctrl_path_edit_(Controls::PathEdit(document())),
-       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())),
-       paste_shift_(QPointF()) {
+       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())) {
   setRenderTarget(RenderTarget::FramebufferObject);
   setAcceptedMouseButtons(Qt::AllButtons);
   setAcceptHoverEvents(true);
@@ -40,8 +39,8 @@ VCanvas::VCanvas(QQuickItem *parent)
   mem_monitor_.moveToThread(mem_thread_);
   mem_thread_->start();
   QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
-
-  // Set mode
+  // Set document & mode
+  current_doc_ = new Document();
   document().setMode(Document::Mode::Selecting);
   // Register controls
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
@@ -60,14 +59,12 @@ VCanvas::~VCanvas() {
 }
 
 void VCanvas::loadSVG(QByteArray &svg_data) {
-  // document().clearAll();
-  // document().addLayer();
+  // TODO(Add undo events for loading svg)
   bool success = svgpp_parser_.parse(svg_data);
   setAntialiasing(true);
 
   if (success) {
     editSelectAll();
-    document().stackStep();
     forceActiveFocus();
     ready = true;
     update();
@@ -259,58 +256,26 @@ bool VCanvas::event(QEvent *e) {
 void VCanvas::editCut() {
   if (document().mode() != Document::Mode::Selecting)
     return;
-  document().stackStep();
-  for (auto &layer : document().layers()) {
-    for (auto &shape : layer->children()) {
-      if (shape->selected()) {
-        document().addUndoEvent(new RemoveShapeEvent(shape));
-      }
-    }
-  }
-  qInfo() << "Edit Cut";
-  editCopy();
-  document().removeSelections();
+  clipboard().cutFrom(document());
 }
 
 void VCanvas::editCopy() {
   if (document().mode() != Document::Mode::Selecting)
     return;
-  qInfo() << "Edit Copy";
-  document().clearClipboard();
-  document().setClipboard(document().selections());
-  paste_shift_ = QPointF(0, 0);
+  clipboard().set(document().selections());
 }
 
 void VCanvas::editPaste() {
   if (document().mode() != Document::Mode::Selecting)
     return;
-  document().stackStep();
-  qInfo() << "Edit Paste";
-  int index_clip_begin = document().activeLayer()->children().length();
-  paste_shift_ += QPointF(20, 20);
-  QTransform shift =
-       QTransform().translate(paste_shift_.x(), paste_shift_.y());
-
-  for (int i = 0; i < document().clipboard().length(); i++) {
-    ShapePtr shape = document().clipboard().at(i)->clone();
-    shape->applyTransform(shift);
-    document().activeLayer()->addShape(shape);
-    document().addUndoEvent(new AddShapeEvent(shape));
-  }
-
-  QList<ShapePtr> selected_shapes;
-
-  for (int i = index_clip_begin;
-       i < document().activeLayer()->children().length(); i++) {
-    selected_shapes << document().activeLayer()->children().at(i);
-  }
-
-  document().setSelections(selected_shapes);
+  clipboard().pasteTo(document());
 }
 
 void VCanvas::editDelete() {
-  document().stackStep();
   qInfo() << "Edit Delete";
+  if (document().mode() != Document::Mode::Selecting)
+    return;
+  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()));
   document().removeSelections();
 }
 
@@ -365,17 +330,18 @@ void VCanvas::editGroup() {
     return;
 
   qInfo() << "Groupping";
-  document().stackStep();
   ShapePtr group_ptr =
        make_shared<GroupShape>(ctrl_transform_.selections());
+  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(group_ptr);
   document().setSelection(group_ptr);
+  evt->events << make_shared<AddShapeEvent>(group_ptr);
+  document().addUndoEvent(evt);
 }
 
 void VCanvas::editUngroup() {
   qInfo() << "Groupping";
-  document().stackStep();
   ShapePtr group_ptr = document().selections().first();
   GroupShape *group = (GroupShape *) group_ptr.get();
 
@@ -384,15 +350,17 @@ void VCanvas::editUngroup() {
     shape->setRotation(shape->rotation() + group->rotation());
     document().activeLayer()->addShape(shape);
   }
-
   document().setSelections(group->children());
-
   for (auto &layer : document().layers()) {
     layer->children().removeOne(group_ptr);
   }
+
+  JoinedEvent *evt = JoinedEvent::addShapes(group->children());
+  evt->events << make_shared<RemoveShapeEvent>(group_ptr);
+  document().addUndoEvent(evt);
 }
 
-Document &VCanvas::document() { return scene_; }
+Document &VCanvas::document() { return *VCanvas::current_doc_; }
 
 void VCanvas::editUnion() {
   if (document().selections().size() < 2)
@@ -407,11 +375,13 @@ void VCanvas::editUnion() {
          dynamic_cast<PathShape *>(shape.get())->path()));
   }
 
-  document().stackStep();
   ShapePtr new_shape = make_shared<PathShape>(result);
+  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
   document().setSelection(new_shape);
+  evt->events << make_shared<AddShapeEvent>(new_shape);
+  document().addUndoEvent(evt);
 }
 
 void VCanvas::editSubtract() {
@@ -422,15 +392,17 @@ void VCanvas::editSubtract() {
       document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  document().stackStep();
   PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
   PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
   ShapePtr new_shape = make_shared<PathShape>(new_path);
+  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
   document().setSelection(new_shape);
+  evt->events << make_shared<AddShapeEvent>(new_shape);
+  document().addUndoEvent(evt);
 }
 
 void VCanvas::editIntersect() {
@@ -441,19 +413,26 @@ void VCanvas::editIntersect() {
       document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  document().stackStep();
   PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
   PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).intersected(
        b->transform().map(b->path())));
   new_path.closeSubpath();
   ShapePtr new_shape = make_shared<PathShape>(new_path);
+  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
   document().setSelection(new_shape);
+  evt->events << make_shared<AddShapeEvent>(new_shape);
+  document().addUndoEvent(evt);
 }
 
 void VCanvas::editDifference() {}
+
+void VCanvas::addEmptyLayer() {
+  document()->addLayer();
+  document()->addUndoEvent(new AddLayerEvent(document()->activeLayer()));
+}
 
 void VCanvas::fitWindow() {
   // Notes: we can even speed up by using half resolution:
@@ -482,7 +461,7 @@ void VCanvas::setActiveLayer(LayerPtr &layer) {
 }
 
 void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
-  document().stackStep();
+  // TODO(Add undo for set layer order);
   document().reorderLayers(new_order);
 }
 
@@ -526,4 +505,8 @@ void VCanvas::setScreenSize(QSize screen_size) {
 
 void VCanvas::setScreenOffset(QPoint offset) {
   screen_offset_ = offset;
+}
+
+Clipboard &VCanvas::clipboard() {
+  return clipboard_;
 }

@@ -44,14 +44,17 @@ namespace Controls {
 
     PathShape &target();
 
-    QPainterPath &path();
-
     QPointF getLocalCoord(QPointF canvas_coord);
 
     void setTarget(ShapePtr &target);
 
+    const QPainterPath &path() const;
+
+    void setPath(const QPainterPath &path);
+
   private:
     ShapePtr target_;
+    QPainterPath path_;
     int dragging_index_;
     bool is_closed_shape_;
     QList<PathNode> cache_;

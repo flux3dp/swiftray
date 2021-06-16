@@ -32,10 +32,9 @@ bool Text::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
     if (target_ == nullptr) return false;
     target().setEditing(false);
-    if (target().parent() == nullptr &&
+    if (!target().hasLayer() &&
         scene().text_box_->toPlainText().length() > 0) {
       qInfo() << "Create new text shape instance";
-      scene().stackStep();
       scene().activeLayer()->addShape(target_);
       scene().setSelection(target_);
       scene().addUndoEvent(new AddShapeEvent(scene().activeLayer(), target_));

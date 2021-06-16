@@ -11,7 +11,7 @@ Shape::Shape() noexcept {
   transform_ = QTransform();
   temp_transform_ = QTransform();
   selected_ = false;
-  parent_ = nullptr;
+  layer_ = nullptr;
 }
 
 Shape::~Shape() {
@@ -28,11 +28,16 @@ qreal Shape::rotation() const { return rotation_; }
 
 QPointF Shape::pos() const { return QPointF(x(), y()); }
 
-Layer *Shape::parent() const { return parent_; }
+Layer &Shape::layer() const {
+  if (layer_ == nullptr) Q_ASSERT_X(false, "Shape", "Shape has no layer, use hasLayer() to check first");
+  return *layer_;
+}
 
 bool Shape::selected() const { return selected_; }
 
-void Shape::setParent(Layer *parent) { parent_ = parent; }
+void Shape::setLayer(Layer *layer) { layer_ = layer; }
+
+bool Shape::hasLayer() const { return layer_ != nullptr; }
 
 void Shape::applyTransform(const QTransform &transform) {
   transform_ = transform_ * transform;
@@ -96,8 +101,8 @@ Shape::Type Shape::type() const { return Shape::Type::None; }
 
 void Shape::flushCache() {
   bbox_need_recalc_ = true;
-  if (parent_) {
-    parent_->flushCache();
+  if (layer_) {
+    layer_->flushCache();
   }
 }
 

@@ -17,7 +17,6 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addRect(rect_);
   ShapePtr new_rect = make_shared<PathShape>(path);
-  scene().stackStep();
   scene().activeLayer()->addShape(new_rect);
   scene().setSelection(new_rect);
   scene().setMode(Document::Mode::Selecting);

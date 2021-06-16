@@ -27,6 +27,7 @@ FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
 SET(SOURCES
         src/layer.cpp
         src/document.cpp
+        src/undo.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
         ${WIDGETS_CPP}

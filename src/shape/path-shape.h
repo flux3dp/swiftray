@@ -38,7 +38,7 @@ public:
 
   const QPainterPath &path() const;
 
-  void setPath(QPainterPath &path);
+  void setPath(const QPainterPath &path);
 
   friend class Controls::PathEdit;
 

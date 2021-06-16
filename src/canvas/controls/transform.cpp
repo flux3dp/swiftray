@@ -227,7 +227,6 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
     transformed_from_ = QSizeF(boundingRect().size());
     scene().setMode(Document::Mode::Transforming);
   }
-  scene().stackStep();
   return true;
 }
 
@@ -236,7 +235,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   JoinedEvent *evt = new JoinedEvent();
   for (auto &shape : selections()) {
     evt->events << make_shared<TransformChangeEvent>(
-         selections().first(),
+         selections().first().get(),
          selections().first()->transform());
   }
   scene().addUndoEvent(evt);
@@ -291,7 +290,6 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   if (scene().mode() == Document::Mode::Selecting) {
     // Do move event if user actually dragged
     if ((e->pos() - scene().mousePressedScreenCoord()).manhattanLength() > 3) {
-      scene().stackStep();
       scene().setMode(Document::Mode::Moving);
     }
   }

@@ -16,6 +16,7 @@
 #include <parser/svgpp-parser.h>
 #include <shape/shape.h>
 #include <canvas/memory-monitor.h>
+#include <clipboard.h>
 
 /*The canvas should be designed to handle multiple documents,
   carefully choose what you want to put in the canvas,
@@ -49,7 +50,7 @@ public:
 
   bool event(QEvent *e) override;
 
-  Document &document();
+  static Document &document();
 
 public Q_SLOTS:
 
@@ -89,6 +90,8 @@ public Q_SLOTS:
 
   void editDifference();
 
+  void addEmptyLayer();
+
   void importImage(QImage &image);
 
   void setActiveLayer(LayerPtr &layer);
@@ -109,10 +112,12 @@ public Q_SLOTS:
     return ctrl_transform_;
   }
 
+  Clipboard &clipboard();
+
 private:
   bool ready;
   int counter;
-  Document scene_;
+  static Document *current_doc_;
   SVGPPParser svgpp_parser_;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
@@ -126,7 +131,6 @@ private:
   QList<Controls::CanvasControl *> ctrls_;
 
   QTimer *timer;
-  QPointF paste_shift_;
 
   QTime fps_timer;
   int fps_count;
@@ -135,6 +139,9 @@ private:
   QPoint screen_offset_;
   QSize screen_size_;
   QThread *mem_thread_;
+  Clipboard clipboard_;
+
+private:
   MemoryMonitor mem_monitor_;
 
 signals:
