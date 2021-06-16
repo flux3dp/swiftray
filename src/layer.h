@@ -6,7 +6,13 @@
 
 class Layer {
 public:
-  Layer(QColor color, QString name);
+  enum class Type {
+    Line,
+    Fill,
+    FillLine
+  };
+
+  Layer(const QColor &color, const QString &name);
 
   Layer(int new_layer_id);
 
@@ -15,10 +21,10 @@ public:
   ~Layer();
 
   // Paint the layer with screen rect and dash counter
-  int paint(QPainter *painter, QRectF screen_rect, int counter) const;
+  int paint(QPainter *painter, int counter) const;
 
   // Add ShapePtr to children array
-  void addShape(ShapePtr shape);
+  void addShape(const ShapePtr &shape);
 
   // Return children array
   QList<ShapePtr> &children();
@@ -30,7 +36,7 @@ public:
   shared_ptr<Layer> clone();
 
   // Remove specific ShapePtr
-  void removeShape(ShapePtr shape);
+  void removeShape(const ShapePtr &shape);
 
   // Remove shapes marked with selected
   void removeSelected();
@@ -38,7 +44,7 @@ public:
   // Cache functions
   void flushCache();
 
-  void cache(QRectF screenRect) const;
+  void cache() const;
 
   void calcPen();
 
@@ -58,7 +64,7 @@ public:
   bool isVisible() const;
 
   // Setters:
-  void setColor(QColor color);
+  void setColor(const QColor &color);
 
   void setHeight(double height);
 
@@ -83,9 +89,9 @@ private:
   int strength_;
   int speed_;
   double zstep_;
-  bool diode_;
+  bool is_diode_;
   int repeat_;
-  double height_;
+  double target_height_;
   bool visible_;
   // Cache properties
   mutable bool cache_valid_;
@@ -94,6 +100,7 @@ private:
   // Pen properties
   mutable QPen dash_pen_;
   QPen solid_pen_;
+  Type type_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

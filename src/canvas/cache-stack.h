@@ -20,11 +20,11 @@ public:
 
     explicit Cache(Type type);
 
-    void merge(QRectF screen_rect, QTransform base_transform);
+    void merge(const QTransform &base_transform);
 
     void paint(QPainter *painter);
 
-    Type type() const;
+    Cache::Type type() const;
 
     const QList<Shape *> shapes() const;
 
@@ -35,7 +35,7 @@ public:
   };
 
   // Set required information for caches
-  void begin(QRectF screen_rect, QTransform base_transform = QTransform());
+  void begin(const QTransform &base_transform = QTransform());
 
   // Calculate the cache
   void end();
@@ -43,7 +43,6 @@ public:
   // Categorize the shapes to different cache group
   void addShape(Shape *shape);
 
-  QRectF screen_rect_;
   QTransform base_transform_;
   QList<Cache> caches_;
 };

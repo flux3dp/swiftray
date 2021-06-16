@@ -2,16 +2,16 @@
 #include <QDebug>
 #include <QList>
 #include <shape/path-shape.h>
+#include <canvas/vcanvas.h>
 
-void CacheStack::begin(QRectF screen_rect, QTransform base_transform) {
-  screen_rect_ = screen_rect;
+void CacheStack::begin(const QTransform &base_transform) {
   base_transform_ = base_transform;
   caches_.clear();
 }
 
 void CacheStack::end() {
   for (auto &group : caches_) {
-    group.merge(screen_rect_, base_transform_);
+    group.merge(base_transform_);
   }
 }
 
@@ -46,10 +46,11 @@ void CacheStack::addShape(Shape *shape) {
 
 CacheStack::Cache::Cache(CacheType type) : type_(type) {}
 
-void CacheStack::Cache::merge(QRectF screen_rect, QTransform base_transform) {
+void CacheStack::Cache::merge(const QTransform &base_transform) {
   if (type_ != Type::SelectedPaths && type_ != Type::NonSelectedPaths) return;
+  const QRectF &screen_rect = VCanvas::screenRect();
   for (auto &shape : shapes_) {
-    PathShape *p = (PathShape *) shape;
+    auto *p = (PathShape *) shape;
     QTransform transform = p->transform() * p->tempTransform() * base_transform;
     QPainterPath transformed_path = transform.map(p->path());
     if (transformed_path.intersects(screen_rect)) {

@@ -10,13 +10,16 @@ const QColor LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8B
 
 int layer_color_counter;
 
-Layer::Layer(QColor color, QString name) {
+Layer::Layer(const QColor &color, const QString &name) {
   color_ = color;
   name_ = name;
   speed_ = 20;
   strength_ = 30;
   repeat_ = 1;
   visible_ = true;
+  zstep_ = 0;
+  is_diode_ = false;
+  target_height_ = 0;
   cache_valid_ = false;
   calcPen();
 }
@@ -32,12 +35,10 @@ Layer::Layer(int new_layer_id) :
 }
 
 
-Layer::~Layer() {
+Layer::~Layer() = default;
 
-}
-
-void Layer::cache(QRectF screen_rect) const {
-  cache_stack_.begin(screen_rect);
+void Layer::cache() const {
+  cache_stack_.begin();
   for (auto &shape : children_) {
     cache_stack_.addShape(shape.get());
   }
@@ -45,12 +46,11 @@ void Layer::cache(QRectF screen_rect) const {
   cache_valid_ = true;
 }
 
-int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
+int Layer::paint(QPainter *painter, int counter) const {
   if (!visible_) return 0;
-  screen_rect_ = screen_rect;
   dash_pen_.setDashOffset(0.3F * counter);
 
-  if (!cache_valid_) cache(screen_rect);
+  if (!cache_valid_) cache();
   // Draw shapes
   int painted_objects = 0;
   for (auto &cache : cache_stack_.caches_) {
@@ -77,13 +77,13 @@ int Layer::paint(QPainter *painter, QRectF screen_rect, int counter) const {
   return painted_objects;
 }
 
-void Layer::addShape(ShapePtr shape) {
+void Layer::addShape(const ShapePtr &shape) {
   shape->setLayer(this);
   children_.push_back(shape);
   cache_valid_ = false;
 }
 
-void Layer::removeShape(ShapePtr shape) {
+void Layer::removeShape(const ShapePtr &shape) {
   shape->setLayer(nullptr);
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
@@ -108,7 +108,7 @@ void Layer::clear() { children_.clear(); }
 
 QColor Layer::color() const { return color_; }
 
-void Layer::setColor(QColor color) {
+void Layer::setColor(const QColor &color) {
   color_ = color;
   calcPen();
 }
@@ -141,7 +141,7 @@ QString Layer::name() const {
 }
 
 void Layer::setHeight(double height) {
-  height_ = height;
+  target_height_ = height;
 }
 
 void Layer::setName(const QString &name) {
@@ -161,7 +161,7 @@ void Layer::setRepeat(int repeat) {
 }
 
 void Layer::setDiode(int diode) {
-  diode_ = !!diode;
+  is_diode_ = !!diode;
 }
 
 void Layer::setZStep(double zstep) {
@@ -178,8 +178,4 @@ void Layer::setVisible(bool visible) {
 
 void Layer::flushCache() {
   cache_valid_ = false;
-}
-
-QRectF Layer::screenRect() {
-  return screen_rect_;
 }

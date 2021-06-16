@@ -52,6 +52,8 @@ public:
 
   static Document &document();
 
+  static const QRectF &screenRect();
+
 public Q_SLOTS:
 
   void editCut();
@@ -98,15 +100,15 @@ public Q_SLOTS:
 
   void setLayerOrder(QList<LayerPtr> &order);
 
-  void fitWindow();
+  void fitToWindow();
 
   void setFont(const QFont &font);
 
   void exportGcode();
 
-  void setScreenSize(QSize size);
+  void setWidgetSize(QSize widget_size);
 
-  void setScreenOffset(QPoint offset);
+  void setWidgetOffset(QPoint offset);
 
   Controls::Transform &transformControl() {
     return ctrl_transform_;
@@ -115,9 +117,10 @@ public Q_SLOTS:
   Clipboard &clipboard();
 
 private:
+  static Document *current_doc_;
+  static QRectF screen_rect_;
   bool ready;
   int counter;
-  static Document *current_doc_;
   SVGPPParser svgpp_parser_;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
@@ -132,12 +135,11 @@ private:
 
   QTimer *timer;
 
-  QTime fps_timer;
+  QElapsedTimer fps_timer;
   int fps_count;
   float fps;
-  QRectF screen_rect_;
-  QPoint screen_offset_;
-  QSize screen_size_;
+  QPoint widget_offset_;
+  QSize widget_size_;
   QThread *mem_thread_;
   Clipboard clipboard_;
 

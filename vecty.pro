@@ -100,9 +100,9 @@ RCC_DIR = /Users/simon/Dev/vecty/build/.rcc
 UI_DIR = /Users/simon/Dev/vecty/build/.ui
 
 FORMS += \
-    src/widgets/layer_list_item.ui \
-    src/widgets/layer_params_panel.ui \
-    src/widgets/transform_panel.ui \
+    src/widgets/layer-list-item.ui \
+    src/widgets/layer-params-panel.ui \
+    src/widgets/transform-panel.ui \
     src/window/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

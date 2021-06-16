@@ -4,16 +4,17 @@
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
-#include <QWidget>
-#include <cstring>
 #include <iostream>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/group-shape.h>
 #include <shape/path-shape.h>
-#include <boost/range/adaptor/reversed.hpp>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
+
+// Initialize static members
+Document *VCanvas::current_doc_ = new Document();
+QRectF VCanvas::screen_rect_ = QRectF();
 
 VCanvas::VCanvas(QQuickItem *parent)
      : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
@@ -40,7 +41,6 @@ VCanvas::VCanvas(QQuickItem *parent)
   mem_thread_->start();
   QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
   // Set document & mode
-  current_doc_ = new Document();
   document().setMode(Document::Mode::Selecting);
   // Register controls
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
@@ -81,18 +81,18 @@ void VCanvas::paint(QPainter *painter) {
 
   ctrl_grid_.paint(painter);
 
-  bool do_flush_cache = false;
-  if (screen_rect_ != document().screenRect(screen_size_)) {
-    screen_rect_ = document().screenRect(screen_size_);
-    do_flush_cache = true;
+  bool screen_changed = false;
+  if (screen_rect_ != document().screenRect(widget_size_)) {
+    screen_rect_ = document().screenRect(widget_size_);
+    screen_changed = true;
   }
 
   int object_count = 0;
   counter++;
 
   for (const LayerPtr &layer : document().layers()) {
-    if (do_flush_cache) layer->flushCache();
-    object_count += layer->paint(painter, screen_rect_, counter);
+    if (screen_changed) layer->flushCache();
+    object_count += layer->paint(painter, counter);
   }
 
   for (auto &control : ctrls_) {
@@ -154,10 +154,6 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
 }
 
 void VCanvas::mouseMoveEvent(QMouseEvent *e) {
-  QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  // qInfo() << "Mouse Move (screen)" << e->pos() << " -> (canvas)" <<
-  // canvas_coord;
-
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseMoveEvent(e))
       return;
@@ -165,10 +161,6 @@ void VCanvas::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
-  QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  qInfo() << "Mouse Release (screen)" << e->pos() << " -> (canvas)"
-          << canvas_coord;
-
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseReleaseEvent(e))
       return;
@@ -181,7 +173,6 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
-  qInfo() << "Mode" << (int) document().mode();
   ShapePtr hit = document().hitTest(canvas_coord);
   if (document().mode() == Document::Mode::Selecting) {
     if (hit != nullptr) {
@@ -208,7 +199,6 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
 
 void VCanvas::wheelEvent(QWheelEvent *e) {
   document().setScroll(document().scroll() + e->pixelDelta() / 2.5);
-  qInfo() << "Wheel Event" << e->pixelDelta();
 }
 
 void VCanvas::loop() {
@@ -225,7 +215,7 @@ bool VCanvas::event(QEvent *e) {
       unsetCursor();
       for (auto &control : ctrls_) {
         if (control->isActive() &&
-            control->hoverEvent(static_cast<QHoverEvent *>(e), &cursor)) {
+            control->hoverEvent(dynamic_cast<QHoverEvent *>(e), &cursor)) {
           setCursor(cursor);
           break;
         }
@@ -234,11 +224,11 @@ bool VCanvas::event(QEvent *e) {
       break;
 
     case QEvent::NativeGesture:
-      nge = static_cast<QNativeGestureEvent *>(e);
+      nge = dynamic_cast<QNativeGestureEvent *>(e);
 
       //  (passed by main window)
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
-        QPoint mouse_pos = nge->localPos().toPoint() - screen_offset_;
+        QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
         document().setScale(max(0.01, document().scale() + nge->value() / 2));
         document().setScroll(mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale);
@@ -329,7 +319,6 @@ void VCanvas::editGroup() {
   if (document().selections().empty())
     return;
 
-  qInfo() << "Groupping";
   ShapePtr group_ptr =
        make_shared<GroupShape>(ctrl_transform_.selections());
   JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
@@ -341,9 +330,8 @@ void VCanvas::editGroup() {
 }
 
 void VCanvas::editUngroup() {
-  qInfo() << "Groupping";
   ShapePtr group_ptr = document().selections().first();
-  GroupShape *group = (GroupShape *) group_ptr.get();
+  auto *group = (GroupShape *) group_ptr.get();
 
   for (auto &shape : group->children()) {
     shape->applyTransform(group->transform());
@@ -361,6 +349,8 @@ void VCanvas::editUngroup() {
 }
 
 Document &VCanvas::document() { return *VCanvas::current_doc_; }
+
+const QRectF &VCanvas::screenRect() { return screen_rect_; };
 
 void VCanvas::editUnion() {
   if (document().selections().size() < 2)
@@ -430,11 +420,11 @@ void VCanvas::editIntersect() {
 void VCanvas::editDifference() {}
 
 void VCanvas::addEmptyLayer() {
-  document()->addLayer();
-  document()->addUndoEvent(new AddLayerEvent(document()->activeLayer()));
+  document().addLayer();
+  document().addUndoEvent(new AddLayerEvent(document().activeLayer()));
 }
 
-void VCanvas::fitWindow() {
+void VCanvas::fitToWindow() {
   // Notes: we can even speed up by using half resolution:
   // setTextureSize(QSize(width()/2, height()/2));
   qreal proper_scale = min((width() - 100) / document().width(),
@@ -467,7 +457,7 @@ void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
 
 void VCanvas::setFont(const QFont &font) {
   QFont new_font;
-  if (document().selections().size() > 0 &&
+  if (!document().selections().isEmpty() &&
       document().selections().at(0)->type() == Shape::Type::Text) {
     TextShape *t = dynamic_cast<TextShape *>(document().selections().at(0).get());
     new_font = t->font();
@@ -498,13 +488,13 @@ void VCanvas::exportGcode() {
   std::cout << gen.toString();
 }
 
-void VCanvas::setScreenSize(QSize screen_size) {
-  screen_size_ = screen_size;
-  fitWindow();
+void VCanvas::setWidgetSize(QSize widget_size) {
+  widget_size_ = widget_size;
+  fitToWindow();
 }
 
-void VCanvas::setScreenOffset(QPoint offset) {
-  screen_offset_ = offset;
+void VCanvas::setWidgetOffset(QPoint offset) {
+  widget_offset_ = offset;
 }
 
 Clipboard &VCanvas::clipboard() {

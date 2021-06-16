@@ -6,7 +6,6 @@
 #include <QQuickWidget>
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
-#include <cmath>
 #include <shape/bitmap-shape.h>
 #include <widgets/spinbox-helper.h>
 #include <widgets/canvas-text-edit.h>
@@ -89,7 +88,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
 
   // Set the owner of vcanvas
   canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-  doc_ = &canvas_->document();
+  doc_ = &VCanvas::document();
   connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
   connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
@@ -111,6 +110,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
   connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
   connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+  // TODO (connect with vcanvas instead of document, ui files should decouple with document)
   connect(doc_, &Document::layerChanged, this, &MainWindow::updateLayers);
   connect(doc_, &Document::modeChanged, this, &MainWindow::updateMode);
   connect(doc_, &Document::selectionsChanged, this, &MainWindow::updateSidePanel);
@@ -124,12 +124,12 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   doc_->text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
   doc_->text_box_->setGeometry(10, 10, 200, 200);
   doc_->text_box_->setStyleSheet("border:0");
-  canvas_->fitWindow();
+  canvas_->fitToWindow();
   updateLayers();
   updateMode();
   updateSidePanel();
-  canvas_->setScreenSize(ui->quickWidget->geometry().size());
-  canvas_->setScreenOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
+  canvas_->setWidgetSize(ui->quickWidget->geometry().size());
+  canvas_->setWidgetOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::updateLayers() {
@@ -168,8 +168,6 @@ void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceSt
 }
 
 bool MainWindow::event(QEvent *e) {
-  QNativeGestureEvent *nge0;
-  QNativeGestureEvent nge1(Qt::NativeGestureType::ZoomNativeGesture, QPointF(), QPointF(), QPointF(), 0, 0, 0);
   switch (e->type()) {
     case QEvent::CursorChange:
     case QEvent::UpdateRequest:
@@ -190,8 +188,8 @@ bool MainWindow::event(QEvent *e) {
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
   QMainWindow::resizeEvent(event);
-  canvas_->setScreenSize(ui->quickWidget->geometry().size());
-  canvas_->setScreenOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
+  canvas_->setWidgetSize(ui->quickWidget->geometry().size());
+  canvas_->setWidgetOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
@@ -253,7 +251,7 @@ void MainWindow::loadWidgets() {
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
   ui->objectParamDock->setWidget(transform_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
-  if (canvas_ != nullptr && doc_->layers().size() > 0) {
+  if (canvas_ != nullptr && !doc_->layers().isEmpty()) {
     layer_params_panel_->updateLayer(doc_->activeLayer());
   }
   add_layer_btn_ = make_unique<QToolButton>(ui->layerList);
