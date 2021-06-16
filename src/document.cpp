@@ -98,6 +98,56 @@ void Document::dumpStack(QList<LayerPtr> &stack) {
 }
 
 void Document::undo() {
+  if (undo2.isEmpty()) return;
+  qInfo() << "Stack" << undo2.size();
+  EventPtr evt = undo2.last();
+  evt->undo();
+  undo2.pop_back();
+  redo2 << evt;
+
+  QString active_layer_name = activeLayer()->name();
+  QList<ShapePtr> selected_shapes;
+  for (auto &layer : layers()) {
+    for (auto &shape : layer->children()) {
+      if (shape->selected())
+        selected_shapes << shape;
+    }
+  }
+
+  setSelections(selected_shapes);
+  setActiveLayer(active_layer_name);
+  emit layerChanged();
+}
+
+void Document::redo() {
+  if (redo2.isEmpty()) return;
+  qInfo() << "Stack" << redo2.size();
+  EventPtr evt = redo2.last();
+  evt->redo();
+  redo2.pop_back();
+  undo2 << evt;
+
+  QString active_layer_name = activeLayer()->name();
+  QList<ShapePtr> selected_shapes;
+  for (auto &layer : layers()) {
+    for (auto &shape : layer->children()) {
+      if (shape->selected())
+        selected_shapes << shape;
+    }
+  }
+
+  setSelections(selected_shapes);
+  setActiveLayer(active_layer_name);
+  emit layerChanged();
+}
+
+void Document::addUndoEvent(BaseUndoEvent *e) {
+  // Use shared_ptr to manage lifecycle
+  undo2.push_back(shared_ptr<BaseUndoEvent>(e));
+};
+
+/*
+void Document::undo() {
   if (undo_stack_.isEmpty()) {
     return;
   }
@@ -144,7 +194,7 @@ void Document::redo() {
   setActiveLayer(active_layer_name);
   emit layerChanged();
   redo_stack_.pop_back();
-}
+}*/
 
 const QList<ShapePtr> &Document::clipboard() const { return shape_clipboard_; }
 

@@ -260,6 +260,13 @@ void VCanvas::editCut() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   document().stackStep();
+  for (auto &layer : document().layers()) {
+    for (auto &shape : layer->children()) {
+      if (shape->selected()) {
+        document().addUndoEvent(new RemoveShapeEvent(shape));
+      }
+    }
+  }
   qInfo() << "Edit Cut";
   editCopy();
   document().removeSelections();
@@ -288,6 +295,7 @@ void VCanvas::editPaste() {
     ShapePtr shape = document().clipboard().at(i)->clone();
     shape->applyTransform(shift);
     document().activeLayer()->addShape(shape);
+    document().addUndoEvent(new AddShapeEvent(shape));
   }
 
   QList<ShapePtr> selected_shapes;

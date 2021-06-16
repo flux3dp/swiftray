@@ -38,6 +38,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
       scene().stackStep();
       scene().activeLayer()->addShape(target_);
       scene().setSelection(target_);
+      scene().addUndoEvent(new AddShapeEvent(scene().activeLayer(), target_));
     } else {
       scene().setSelection(target_);
     }

@@ -199,7 +199,7 @@ Transform::Control Transform::hitTest(QPointF clickPoint,
 
   if (!this->boundingRect().contains(clickPoint)) {
     for (int i = 0; i < 8; i++) {
-      if ((controls_[i] - clickPoint).manhattanLength() < tolerance * 2) {
+      if ((controls_[i] - clickPoint).manhattanLength() < tolerance * 1.5) {
         return Control::ROTATION;
       }
     }
@@ -232,6 +232,15 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
 }
 
 bool Transform::mouseReleaseEvent(QMouseEvent *e) {
+  // Save before changes apply
+  JoinedEvent *evt = new JoinedEvent();
+  for (auto &shape : selections()) {
+    evt->events << make_shared<TransformChangeEvent>(
+         selections().first(),
+         selections().first()->transform());
+  }
+  scene().addUndoEvent(evt);
+
   if (rotation_to_apply_ != 0)
     applyRotate(false);
   if (translate_to_apply_ != QPointF())

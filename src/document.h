@@ -3,9 +3,11 @@
 #include <layer.h>
 #include <shape/shape.h>
 #include <widgets/canvas-text-edit.h>
+#include <undo.h>
 
 #ifndef SCENE_H
 #define SCENE_H
+
 
 class Document : public QObject {
 Q_OBJECT
@@ -68,8 +70,6 @@ public:
 
   QList<LayerPtr> &layers();
 
-  const QList<ShapePtr> &clipboard() const;
-
   LayerPtr &activeLayer();
 
   QPointF scroll() const;
@@ -93,13 +93,9 @@ public:
   // Setters:
   void setMode(Mode mode);
 
-  void setClipboard(QList<ShapePtr> &items);
-
   bool setActiveLayer(QString name);
 
   bool setActiveLayer(LayerPtr &layer);
-
-  void clearClipboard();
 
   void setWidth(qreal width);
 
@@ -127,6 +123,11 @@ public:
 
   unique_ptr<CanvasTextEdit> text_box_;
 
+  void addUndoEvent(BaseUndoEvent *event);
+
+  QList<EventPtr> undo2;
+  QList<EventPtr> redo2;
+
 signals:
 
   void selectionsChanged();
@@ -134,6 +135,7 @@ signals:
   void layerChanged();
 
   void modeChanged();
+
 
 private:
   void stackRedo();
@@ -148,10 +150,9 @@ private:
   qreal width_;
   qreal height_;
 
-  QList<ShapePtr> shape_clipboard_;
-
   QList<QList<LayerPtr>> undo_stack_;
   QList<QList<LayerPtr>> redo_stack_;
+
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;
 

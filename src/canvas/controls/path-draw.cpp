@@ -90,6 +90,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     scene().activeLayer()->addShape(new_shape);
     scene().setSelection(new_shape);
     scene().setMode(Document::Mode::Selecting);
+    scene().addUndoEvent(new AddShapeEvent(new_shape));
     reset();
   }
   return true;

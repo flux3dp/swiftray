@@ -23,6 +23,7 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   scene().activeLayer()->addShape(new_oval);
   scene().setSelection(new_oval);
   scene().setMode(Document::Mode::Selecting);
+  scene().addUndoEvent(new AddShapeEvent(new_oval));
   return true;
 }
 

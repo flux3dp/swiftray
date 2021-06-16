@@ -85,7 +85,10 @@ void Layer::addShape(ShapePtr shape) {
 
 void Layer::removeShape(ShapePtr shape) {
   shape->setParent(nullptr);
-  children_.removeOne(shape);
+  if (!children_.removeOne(shape)) {
+    qInfo() << "[Layer] Failed to remove children";
+  }
+  flushCache();
 }
 
 void Layer::removeSelected() {

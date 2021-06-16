@@ -17,6 +17,9 @@
 #include <shape/shape.h>
 #include <canvas/memory-monitor.h>
 
+/*The canvas should be designed to handle multiple documents,
+  carefully choose what you want to put in the canvas,
+  and what you want to put in the document. */
 class VCanvas : public QQuickPaintedItem {
 Q_OBJECT
   QML_ELEMENT
@@ -125,14 +128,12 @@ private:
   QTimer *timer;
   QPointF paste_shift_;
 
-
   QTime fps_timer;
   int fps_count;
   float fps;
   QRectF screen_rect_;
   QPoint screen_offset_;
   QSize screen_size_;
-  QString mem_info_;
   QThread *mem_thread_;
   MemoryMonitor mem_monitor_;
 

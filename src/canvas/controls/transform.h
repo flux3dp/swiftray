@@ -131,4 +131,6 @@ namespace Controls {
   };
 
 }
+
+typedef PropChangeEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;
 #endif

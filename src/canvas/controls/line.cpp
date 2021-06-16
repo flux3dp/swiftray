@@ -23,6 +23,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   scene().activeLayer()->addShape(new_line);
   scene().setSelection(new_line);
   scene().setMode(Document::Mode::Selecting);
+  scene().addUndoEvent(new AddShapeEvent(new_line));
   return true;
 }
 

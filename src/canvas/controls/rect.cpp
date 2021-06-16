@@ -21,6 +21,7 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   scene().activeLayer()->addShape(new_rect);
   scene().setSelection(new_rect);
   scene().setMode(Document::Mode::Selecting);
+  scene().addUndoEvent(new AddShapeEvent(new_rect));
   return true;
 }
 
