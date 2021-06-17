@@ -29,19 +29,18 @@ public:
   Document() noexcept;
 
   // Selecting functions
-  bool isSelected(ShapePtr &shape) const;
 
   QList<ShapePtr> &selections();
 
+  QList<ShapePtr> &lastSelections();
+
+  void setSelection(nullptr_t);
+
   void setSelection(ShapePtr &shape);
 
-  void setSelections(const QList<ShapePtr> &shapes);
+  void setSelections(const QList<ShapePtr> &new_selections);
 
   void emitAllChanges();
-
-  void clearAll();
-
-  void clearSelections();
 
   void removeSelections();
 
@@ -104,7 +103,7 @@ public:
 
   bool setActiveLayer(QString name);
 
-  bool setActiveLayer(LayerPtr &layer);
+  void setActiveLayer(LayerPtr &layer);
 
   void setWidth(qreal width);
 
@@ -129,6 +128,8 @@ public:
 
   void addUndoEvent(BaseUndoEvent *event);
 
+  void addUndoEvent(const EventPtr &e);
+
   QList<EventPtr> undo2;
   QList<EventPtr> redo2;
 
@@ -152,6 +153,7 @@ private:
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;
+  QList<ShapePtr> last_selections_;
 
   QFont font_;
 

@@ -148,7 +148,7 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
         document().setSelection(hit);
       }
     } else {
-      document().clearSelections();
+      document().setSelection(nullptr);
       document().setMode(Document::Mode::MultiSelecting);
     }
   }
@@ -180,12 +180,12 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
       qInfo() << "Double clicked" << hit.get();
       switch (hit->type()) {
         case Shape::Type::Path:
-          document().clearSelections();
+          document().setSelection(nullptr);
           ctrl_path_edit_.setTarget(hit);
           document().setMode(Document::Mode::PathEditing);
           break;
         case Shape::Type::Text:
-          document().clearSelections();
+          document().setSelection(nullptr);
           ctrl_text_.setTarget(hit);
           document().setMode(Document::Mode::TextDrawing);
           break;
@@ -278,31 +278,31 @@ void VCanvas::editRedo() { document().redo(); }
 
 void VCanvas::editDrawRect() {
   ctrl_rect_.reset();
-  document().clearSelections();
+  document().setSelection(nullptr);
   document().setMode(Document::Mode::RectDrawing);
 }
 
 void VCanvas::editDrawOval() {
   ctrl_oval_.reset();
-  document().clearSelections();
+  document().setSelection(nullptr);
   document().setMode(Document::Mode::OvalDrawing);
 }
 
 void VCanvas::editDrawLine() {
   ctrl_line_.reset();
-  document().clearSelections();
+  document().setSelection(nullptr);
   document().setMode(Document::Mode::LineDrawing);
 }
 
 void VCanvas::editDrawPath() {
   ctrl_path_draw_.reset();
-  document().clearSelections();
+  document().setSelection(nullptr);
   document().setMode(Document::Mode::PathDrawing);
 }
 
 void VCanvas::editDrawText() {
   ctrl_text_.reset();
-  document().clearSelections();
+  document().setSelection(nullptr);
   document().setMode(Document::Mode::TextDrawing);
 }
 
@@ -346,13 +346,12 @@ void VCanvas::editUnion() {
   }
 
   ShapePtr new_shape = make_shared<PathShape>(result);
-  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
-  document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  evt->events << make_shared<AddShapeEvent>(new_shape);
-  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
+                          AddShapeEvent::shared(new_shape) +
+                          SelectionEvent::changeFromCurrent());
+  document().removeSelections();
   document().setSelection(new_shape);
-  document().addUndoEvent(evt);
 }
 
 void VCanvas::editSubtract() {
@@ -368,13 +367,12 @@ void VCanvas::editSubtract() {
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
-  document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  evt->events << make_shared<AddShapeEvent>(new_shape);
-  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
+                          AddShapeEvent::shared(new_shape) +
+                          SelectionEvent::changeFromCurrent());
+  document().removeSelections();
   document().setSelection(new_shape);
-  document().addUndoEvent(evt);
 }
 
 void VCanvas::editIntersect() {
@@ -391,13 +389,12 @@ void VCanvas::editIntersect() {
        b->transform().map(b->path())));
   new_path.closeSubpath();
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
-  document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  evt->events << make_shared<AddShapeEvent>(new_shape);
-  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
+                          AddShapeEvent::shared(new_shape) +
+                          SelectionEvent::changeFromCurrent());
+  document().removeSelections();
   document().setSelection(new_shape);
-  document().addUndoEvent(evt);
 }
 
 void VCanvas::editDifference() {}

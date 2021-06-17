@@ -20,41 +20,27 @@ Document::Document() noexcept:
   });
 }
 
+void Document::setSelection(nullptr_t) {
+  setSelections({});
+}
+
 void Document::setSelection(ShapePtr &shape) {
-  QList<ShapePtr> list;
-  list.push_back(shape);
-  setSelections(list);
+  setSelections({shape});
 }
 
-void Document::setSelections(const QList<ShapePtr> &shapes) {
-  clearSelections();
-  selections().append(shapes);
-
-  for (auto &shape : selections()) {
-    shape->setSelected(true);
-  }
+void Document::setSelections(const QList<ShapePtr> &new_selections) {
+  for (auto &shape : selections_) { shape->setSelected(false); }
+  last_selections_.clear();
+  last_selections_.append(selections_);
+  selections_.clear();
+  selections_.append(new_selections);
+  for (auto &shape : selections_) { shape->setSelected(true); }
   emit selectionsChanged();
 }
-
-void Document::clearSelections() {
-  for (auto &shape : selections()) {
-    shape->setSelected(false);
-  }
-
-  selections().clear();
-  emit selectionsChanged();
-}
-
-bool Document::isSelected(ShapePtr &shape) const { return selections_.contains(shape); }
 
 QList<ShapePtr> &Document::selections() { return selections_; }
 
-void Document::clearAll() {
-  clearSelections();
-  layers().clear();
-  active_layer_ = nullptr;
-  emit layerChanged();
-}
+QList<ShapePtr> &Document::lastSelections() { return last_selections_; }
 
 void Document::dumpStack(QList<LayerPtr> &stack) {
   qInfo() << "<Stack>";
@@ -106,6 +92,13 @@ void Document::addUndoEvent(BaseUndoEvent *e) {
   undo2.push_back(shared_ptr<BaseUndoEvent>(e));
 };
 
+void Document::addUndoEvent(const EventPtr &e) {
+  // Use shared_ptr to manage lifecycle
+  redo2.clear();
+  undo2.push_back(e);
+};
+
+
 void Document::addLayer() {
   qDebug() << "Add layer";
   layers() << make_shared<Layer>(new_layer_id_++);
@@ -143,10 +136,6 @@ QPointF Document::getCanvasCoord(QPointF window_coord) const {
 
 QPointF Document::scroll() const { return QPointF(scroll_x_, scroll_y_); }
 
-qreal Document::scrollX() const { return scroll_x_; }
-
-qreal Document::scrollY() const { return scroll_y_; }
-
 qreal Document::scale() const { return scale_; }
 
 qreal Document::width() const { return width_; }
@@ -165,10 +154,6 @@ void Document::setScroll(QPointF scroll) {
 QRectF Document::screenRect(QSize screen_size) const {
   return QRectF(getCanvasCoord(QPoint(0, 0)), getCanvasCoord(QPoint(screen_size.width(), screen_size.height())));
 }
-
-void Document::setScrollX(qreal scroll_x) { scroll_x_ = scroll_x; }
-
-void Document::setScrollY(qreal scroll_y) { scroll_y_ = scroll_y; }
 
 void Document::setScale(qreal scale) { scale_ = scale; }
 
@@ -193,38 +178,31 @@ bool Document::setActiveLayer(QString name) {
   return false;
 }
 
-bool Document::setActiveLayer(LayerPtr &layer) {
-  if (!layers_.contains(layer)) {
-    qInfo() << "Layers" << layers_.size();
+void Document::setActiveLayer(LayerPtr &target_layer) {
+  if (!layers_.contains(target_layer)) {
+    qInfo() << "Total layers" << layers_.size();
     for (auto &layer : layers_) {
       qInfo() << layer.get();
     }
-    qInfo() << "Set layer" << layer.get();
+    qInfo() << "Cannot set active layer" << target_layer.get();
     Q_ASSERT_X(false, "Active Layer",
                "Invalid layer ptr when setting active layer");
   }
-  active_layer_ = layer;
+  active_layer_ = target_layer;
   emit layerChanged();
-  return false;
 }
 
 QList<LayerPtr> &Document::layers() { return layers_; }
 
 void Document::reorderLayers(QList<LayerPtr> &new_order) {
-  layers_.clear();
-  layers_.append(new_order);
+  // TODO (Add undo event)
+  layers_ = new_order;
 }
 
 void Document::removeSelections() {
-  // Clear selection pointers in other components
-  selections().clear();
-
-  // Remove from layer
-  for (auto &layer : layers()) {
-    layer->removeSelected();
-  }
-
-  emit selectionsChanged();
+  // Remove shapes from its layer
+  for (auto &shape : selections_) { shape->layer().removeShape(shape); }
+  setSelection(nullptr);
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {
@@ -265,19 +243,16 @@ void Document::groupSelections() {
   if (selections().empty()) return;
 
   ShapePtr group_ptr = make_shared<GroupShape>(selections());
-  addUndoEvent(
-       new JoinedEvent(
-            {
-                 new SelectionEvent(),
-                 JoinedEvent::removeShapes(selections()),
-                 new AddShapeEvent(activeLayer(), group_ptr),
-                 new SelectionEvent(QList<ShapePtr>())
-            }
-       )
-  );
+  auto grouped_items = selections();
   removeSelections();
   activeLayer()->addShape(group_ptr);
   setSelection(group_ptr);
+  addUndoEvent(
+       SelectionEvent::shared(grouped_items) +
+       JoinedEvent::removeShapes(grouped_items) +
+       AddShapeEvent::shared(group_ptr) +
+       SelectionEvent::shared(QList<ShapePtr>())
+  );
 }
 
 void Document::ungroupSelections() {
@@ -287,27 +262,22 @@ void Document::ungroupSelections() {
 
   auto *group = (GroupShape *) group_ptr.get();
 
-  JoinedEvent *transform_events = new JoinedEvent();
+  auto transform_events = make_shared<JoinedEvent>();
   for (auto &shape : group->children()) {
-    transform_events->events << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
-    transform_events->events << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
+    transform_events << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
+    transform_events << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
     shape->applyTransform(group->transform());
     shape->setRotation(shape->rotation() + group->rotation());
     activeLayer()->addShape(shape);
   }
 
-  addUndoEvent(
-       new JoinedEvent(
-            {
-                 transform_events,
-                 JoinedEvent::addShapes(group->children()),
-                 new SelectionEvent(),
-                 new RemoveShapeEvent(group_ptr)
-            }
-       )
-  );
-
   setSelections(group->children());
   group_ptr->layer().removeShape(group_ptr);
 
+  addUndoEvent(
+       transform_events +
+       JoinedEvent::addShapes(group->children()) +
+       SelectionEvent::shared({}) +
+       make_shared<RemoveShapeEvent>(group_ptr)
+  );
 }

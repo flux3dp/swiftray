@@ -88,17 +88,14 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     ShapePtr new_shape = make_shared<PathShape>(working_path_);
     scene().activeLayer()->addShape(new_shape);
     scene().setMode(Document::Mode::Selecting);
-    scene().addUndoEvent(
-         new JoinedEvent(
-              {
-                   new AddShapeEvent(new_shape),
-                   new SelectionEvent(scene().selections())
-              }
-         )
-    );
     scene().setSelection(new_shape);
     reset();
+    scene().addUndoEvent(
+         AddShapeEvent::shared(new_shape) +
+         SelectionEvent::shared(scene().lastSelections())
+    );
   }
+
   return true;
 }
 

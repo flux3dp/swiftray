@@ -29,7 +29,7 @@ qreal Shape::rotation() const { return rotation_; }
 QPointF Shape::pos() const { return QPointF(x(), y()); }
 
 Layer &Shape::layer() const {
-  if (layer_ == nullptr) Q_ASSERT_X(false, "Shape", "Shape has no layer, use hasLayer() to check first");
+  Q_ASSERT_X(hasLayer(), "Shape", "Shape has no layer, use hasLayer() to check first");
   return *layer_;
 }
 

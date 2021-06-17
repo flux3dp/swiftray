@@ -6,6 +6,8 @@
 
 class Document;
 
+class JoinedEvent;
+
 class BaseUndoEvent {
 public:
   enum class Type {
@@ -22,6 +24,8 @@ public:
   virtual void redo() {}
 
   virtual Type type() { return Type::None; }
+
+  shared_ptr<JoinedEvent> operator+(BaseUndoEvent *another_event);
 };
 
 typedef shared_ptr<BaseUndoEvent> EventPtr;
@@ -55,6 +59,14 @@ public:
 
   AddShapeEvent(LayerPtr layer, ShapePtr shape) :
        layer_(layer.get()), shape_(shape) {}
+
+  static shared_ptr<AddShapeEvent> shared(ShapePtr shape) {
+    return make_shared<AddShapeEvent>(shape);
+  }
+
+  static shared_ptr<AddShapeEvent> shared(LayerPtr layer, ShapePtr shape) {
+    return make_shared<AddShapeEvent>(layer, shape);
+  }
 
   void undo() override;
 
@@ -91,6 +103,14 @@ public:
     origin_selections_.append(origin_selections);
   }
 
+  static shared_ptr<SelectionEvent> shared(const QList<ShapePtr> &origin_selections) {
+    return make_shared<SelectionEvent>(origin_selections);
+  }
+
+  static shared_ptr<SelectionEvent> changeFromCurrent() {
+    return make_shared<SelectionEvent>();
+  }
+
   void undo() override;
 
   void redo() override;
@@ -111,6 +131,13 @@ public:
     }
   }
 
+  // Constructor for joining multiple events (event ptr)
+  JoinedEvent(initializer_list<EventPtr> undo_events) {
+    for (auto &event : undo_events) {
+      events << event;
+    }
+  }
+
   virtual void undo() {
     for (auto &event : events) {
       event->undo();
@@ -123,16 +150,16 @@ public:
     }
   }
 
-  static JoinedEvent *addShapes(const QList<ShapePtr> &shapes) {
-    JoinedEvent *evt = new JoinedEvent();
+  static shared_ptr<JoinedEvent> addShapes(const QList<ShapePtr> &shapes) {
+    auto evt = make_shared<JoinedEvent>();
     for (auto &shape : shapes) {
       evt->events << make_shared<AddShapeEvent>(shape);
     }
     return evt;
   }
 
-  static JoinedEvent *removeShapes(const QList<ShapePtr> &shapes) {
-    JoinedEvent *evt = new JoinedEvent();
+  static shared_ptr<JoinedEvent> removeShapes(const QList<ShapePtr> &shapes) {
+    auto evt = make_shared<JoinedEvent>();
     for (auto &shape : shapes) {
       evt->events << make_shared<RemoveShapeEvent>(shape);
     }
@@ -141,6 +168,8 @@ public:
 
   QList<EventPtr> events;
 };
+
+typedef shared_ptr<JoinedEvent> JoinedEventPtr;
 
 // TODO(Add prop change event for non referenced type, probably change PropType to PropType&)
 template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
@@ -188,6 +217,13 @@ public:
   PropType value_;
   PropType redo_value_;
 };
+
+// Operators overload
+JoinedEventPtr operator+(const EventPtr &a, const EventPtr &b);
+
+JoinedEventPtr &operator<<(JoinedEventPtr &a, const EventPtr &b);
+
+JoinedEventPtr &operator<<(JoinedEventPtr &a, BaseUndoEvent *b);
 
 // Abbreviations for undo events
 typedef PropObjChangeEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;

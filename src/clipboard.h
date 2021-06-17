@@ -12,41 +12,44 @@ public:
   }
 
   void set(QList<ShapePtr> &items) {
+    qInfo() << "Clipboard set";
     shapes_.clear();
     for (auto &item : items) {
+      qInfo() << "Clipboard copy" << item.get();
       shapes_.push_back(item->clone());
     }
     paste_shift_ = QPointF(0, 0);
   }
 
   void cutFrom(Document &doc) {
-    doc.addUndoEvent(
-         new JoinedEvent(
-              {
-                   new SelectionEvent(doc.selections()),
-                   JoinedEvent::removeShapes(doc.selections())
-              }
-         )
-    );
-    this->set(doc.selections());
+    qInfo() << "Clipboard cut";
+    QList<ShapePtr> items;
+    items.append(doc.selections());
+    this->set(items);
+    qInfo() << "Clipboard cut size" << items.size();
     doc.removeSelections();
+    // TODO fix random selected paste..
+    // TODO fix remove shapes because the layer is removed!? (maybe we should keep it)
+    doc.addUndoEvent(SelectionEvent::shared(items) +
+                     JoinedEvent::removeShapes(items));
   }
 
   void pasteTo(Document &doc) {
+    qInfo() << "Clipboard paste";
+    auto undo_evt = make_shared<JoinedEvent>();
     paste_shift_ += QPointF(20, 20);
     QTransform shift_transform =
          QTransform().translate(paste_shift_.x(), paste_shift_.y());
-    int index_clip_begin = doc.activeLayer()->children().length();
+    undo_evt << new SelectionEvent(doc.selections());
 
-    JoinedEvent *undo_evt = new JoinedEvent();
-    undo_evt->events << make_shared<SelectionEvent>(doc.selections());
+    int index_clip_begin = doc.activeLayer()->children().length();
     for (auto &shape : shapes_) {
       ShapePtr new_shape = shape->clone();
       new_shape->applyTransform(shift_transform);
       doc.activeLayer()->addShape(new_shape);
-      undo_evt->events << make_shared<AddShapeEvent>(new_shape);
+      qInfo() << "Clipboard paste" << new_shape.get() << &new_shape->layer();
+      undo_evt << new AddShapeEvent(new_shape);
     }
-    doc.addUndoEvent(undo_evt);
 
     QList<ShapePtr> selected_shapes;
 
@@ -55,6 +58,7 @@ public:
     }
 
     doc.setSelections(selected_shapes);
+    doc.addUndoEvent(undo_evt);
   }
 
   void clear() {

@@ -1,6 +1,20 @@
 #include <undo.h>
 #include <canvas/vcanvas.h>
 
+JoinedEventPtr operator+(const EventPtr &a, const EventPtr &b) {
+  return JoinedEventPtr(new JoinedEvent({a, b}));
+}
+
+JoinedEventPtr &operator<<(JoinedEventPtr &a, const EventPtr &b) {
+  a->events << b;
+  return a;
+}
+
+JoinedEventPtr &operator<<(JoinedEventPtr &a, BaseUndoEvent *b) {
+  a->events << EventPtr(b);
+  return a;
+}
+
 void AddLayerEvent::undo() {
   VCanvas::document().removeLayer(layer_);
 }

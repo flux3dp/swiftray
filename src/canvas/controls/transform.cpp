@@ -232,24 +232,21 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
 
 bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   // Save before changes apply
-  JoinedEvent *evt = new JoinedEvent();
+  auto undo_evt = make_shared<JoinedEvent>();
   for (auto &shape : selections()) {
-    evt->events << make_shared<TransformChangeEvent>(
-         selections().first().get(),
-         selections().first()->transform());
+    undo_evt << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
+    if (rotation_to_apply_ != 0)
+      undo_evt << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
   }
-  scene().addUndoEvent(evt);
 
-  if (rotation_to_apply_ != 0)
-    applyRotate(false);
-  if (translate_to_apply_ != QPointF())
-    applyMove(false);
-  if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1)
-    applyScale(false);
+  if (rotation_to_apply_ != 0) applyRotate(false);
+  if (translate_to_apply_ != QPointF()) applyMove(false);
+  if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) applyScale(false);
 
   reset();
 
   scene().setMode(Document::Mode::Selecting);
+  scene().addUndoEvent(undo_evt);
   return true;
 }
 

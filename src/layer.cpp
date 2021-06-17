@@ -3,10 +3,12 @@
 #include <shape/shape.h>
 #include <shape/path-shape.h>
 
-const QColor LayerColors[17] = {"#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
-                                "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
-                                "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
-                                "#607D8B", "#9E9E9E"};
+const QColor LayerColors[17] = {
+     "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
+     "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
+     "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
+     "#607D8B", "#9E9E9E"
+};
 
 int layer_color_counter;
 
@@ -69,7 +71,7 @@ void Layer::addShape(const ShapePtr &shape) {
 }
 
 void Layer::removeShape(const ShapePtr &shape) {
-  shape->setLayer(nullptr);
+  //shape->setLayer(nullptr);
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
   }
