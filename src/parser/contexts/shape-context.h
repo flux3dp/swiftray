@@ -50,7 +50,7 @@ public:
     QPainterPath mapped_path = qtransform().map(working_path_);
     ShapePtr shape = make_shared<PathShape>(mapped_path);
     QString layer_name = this->strokeColor() == "N/A" ? this->fillColor() : this->strokeColor();
-    if (this->fillColor() != "N/A") ((PathShape *) shape.get())->setFilled(true);
+    if (this->strokeColor() == "N/A" && this->fillColor() != "N/A") ((PathShape *) shape.get())->setFilled(true);
     svgpp_add_shape(shape, layer_name);
   }
 

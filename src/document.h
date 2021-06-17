@@ -90,6 +90,9 @@ public:
 
   const QFont &font() const;
 
+  // Graphics should be drawn in lower quality is this return true
+  bool isVolatile();
+
   // Setters:
   void setMode(Mode mode);
 

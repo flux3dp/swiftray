@@ -55,6 +55,10 @@ public:
 
   static const QRectF &screenRect();
 
+  Controls::Transform &transformControl() { return ctrl_transform_; }
+
+  Clipboard &clipboard();
+
 public Q_SLOTS:
 
   void editCut();
@@ -110,12 +114,6 @@ public Q_SLOTS:
   void setWidgetSize(QSize widget_size);
 
   void setWidgetOffset(QPoint offset);
-
-  Controls::Transform &transformControl() {
-    return ctrl_transform_;
-  }
-
-  Clipboard &clipboard();
 
 private:
   static Document *current_doc_;

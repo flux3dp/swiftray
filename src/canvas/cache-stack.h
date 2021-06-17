@@ -27,10 +27,15 @@ public:
 
     const QList<Shape *> shapes() const;
 
+    const QPixmap &fillCache(QPainter *painter, QBrush brush);
+
     // Use weak pointer (no lifespan issue here)
     QList<Shape *> shapes_;
     Type type_;
     QPainterPath joined_path_;
+    QPixmap cache_pixmap_;
+    bool is_fill_cached_;
+    QRectF bbox_;
   };
 
   // Set required information for caches

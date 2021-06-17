@@ -145,9 +145,7 @@ template<typename T, typename PropType, PropType (T::*PropGetter)() const, void 
 class PropChangeEvent : public BaseUndoEvent {
 public:
 
-  explicit PropChangeEvent(T *target, PropType value) : target_(target), value_(value) {
-    qInfo() << "New PropChangeEvent (shape" << target << ")";
-  }
+  explicit PropChangeEvent(T *target, PropType value) : target_(target), value_(value) {}
 
   void undo() override {
     qInfo() << "Undoing prop change";
@@ -170,9 +168,7 @@ template<typename T, typename PropType, const PropType &(T::*PropGetter)() const
 class PropObjChangeEvent : public BaseUndoEvent {
 public:
 
-  explicit PropObjChangeEvent(T *target, PropType value) : target_(target), value_(value) {
-    qInfo() << "New PropChangeEvent (shape" << target << ")";
-  }
+  explicit PropObjChangeEvent(T *target, PropType value) : target_(target), value_(value) {}
 
   void undo() override {
     qInfo() << "Undoing prop change";

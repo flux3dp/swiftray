@@ -48,6 +48,7 @@ private:
   BaseGenerator *gen_;
   float dpmm_;
   float travel_speed_;
+  bool is_bitmap_dirty_;
 };
 
 #endif

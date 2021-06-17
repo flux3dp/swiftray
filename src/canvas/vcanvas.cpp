@@ -19,6 +19,7 @@ QRectF VCanvas::screen_rect_ = QRectF();
 
 VCanvas::VCanvas(QQuickItem *parent)
      : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
+       counter(0),
        ctrl_transform_(Controls::Transform(document())),
        ctrl_select_(Controls::Select(document())),
        ctrl_grid_(Controls::Grid(document())), ctrl_line_(Controls::Line(document())),
@@ -35,7 +36,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   // Set main loop
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &VCanvas::loop);
-  timer->start(16);
+  timer->start(33);
   // Set memory monitor
   mem_thread_ = new QThread(this);
   mem_monitor_.moveToThread(mem_thread_);
@@ -106,9 +107,10 @@ void VCanvas::paint(QPainter *painter) {
   // Calculate FPS
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
-  painter->drawText(QPointF(10, 20), "FPS " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40), "Objects " + QString::number(object_count));
-  painter->drawText(QPointF(10, 60), "Mem " + mem_monitor_.system_info_);
+  painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
+  painter->drawText(QPointF(10, 40),
+                    "Objects " + QString::number(object_count) + " Counter: " + QString::number(counter));
+  painter->drawText(QPointF(10, 60), "Mem: " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;
     fps_timer.restart();
@@ -429,7 +431,7 @@ void VCanvas::addEmptyLayer() {
 
 void VCanvas::fitToWindow() {
   // Notes: we can even speed up by using half resolution:
-  // setTextureSize(QSize(width()/2, height()/2));
+  //setTextureSize(QSize(width() / 2, height() / 2));
   qreal proper_scale = min((width() - 100) / document().width(),
                            (height() - 100) / document().height());
   QPointF proper_translate =

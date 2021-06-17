@@ -386,7 +386,7 @@
              </size>
             </property>
             <property name="styleSheet">
-             <string notr="true">padding-left: 5px</string>
+             <string notr="true">padding: 5px</string>
             </property>
             <property name="currentFont">
              <font>

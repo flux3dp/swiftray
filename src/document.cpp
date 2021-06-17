@@ -251,4 +251,9 @@ void Document::setFont(QFont &font) {
   font_ = font;
 }
 
+bool Document::isVolatile() {
+  // TODO (Add scrolling and zooming)
+  return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
+}
+
 const QFont &Document::font() const { return font_; }

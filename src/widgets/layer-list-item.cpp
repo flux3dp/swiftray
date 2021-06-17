@@ -17,6 +17,7 @@ LayerListItem::LayerListItem(QWidget *parent, LayerPtr &layer, bool active) :
      active_(active) {
   ui->setupUi(this);
   ui->labelName->setText(layer->name());
+  ui->comboBox->setCurrentIndex((int) layer->type());
   createIcon();
   loadStyles();
   registerEvents();
