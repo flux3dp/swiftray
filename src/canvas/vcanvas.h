@@ -119,7 +119,7 @@ private:
   static Document *current_doc_;
   static QRectF screen_rect_;
   bool ready;
-  int counter;
+  int dash_counter_;
   SVGPPParser svgpp_parser_;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;

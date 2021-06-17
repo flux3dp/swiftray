@@ -19,7 +19,7 @@ QRectF VCanvas::screen_rect_ = QRectF();
 
 VCanvas::VCanvas(QQuickItem *parent)
      : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
-       counter(0),
+       dash_counter_(0),
        ctrl_transform_(Controls::Transform(document())),
        ctrl_select_(Controls::Select(document())),
        ctrl_grid_(Controls::Grid(document())), ctrl_line_(Controls::Line(document())),
@@ -90,11 +90,11 @@ void VCanvas::paint(QPainter *painter) {
   }
 
   int object_count = 0;
-  counter++;
+  dash_counter_++;
 
   for (const LayerPtr &layer : document().layers()) {
     if (screen_changed) layer->flushCache();
-    object_count += layer->paint(painter, counter);
+    object_count += layer->paint(painter, dash_counter_);
   }
 
   for (auto &control : ctrls_) {
@@ -109,7 +109,7 @@ void VCanvas::paint(QPainter *painter) {
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
   painter->drawText(QPointF(10, 40),
-                    "Objects " + QString::number(object_count) + " Counter: " + QString::number(counter));
+                    "Objects " + QString::number(object_count) + " Counter: " + QString::number(dash_counter_));
   painter->drawText(QPointF(10, 60), "Mem: " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;

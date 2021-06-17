@@ -21,7 +21,7 @@ public:
 
   ~Layer();
 
-  // Paint the layer with screen rect and dash counter
+  // Paint the layer with screen rect and dash dash_counter_
   int paint(QPainter *painter, int counter) const;
 
   // Add ShapePtr to children array
