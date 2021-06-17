@@ -19,9 +19,13 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   ShapePtr new_rect = make_shared<PathShape>(path);
   scene().activeLayer()->addShape(new_rect);
   scene().setMode(Document::Mode::Selecting);
-  scene().addUndoEvent(new JoinedEvent(
-       new AddShapeEvent(new_rect),
-       new SelectionEvent(scene().selections()))
+  scene().addUndoEvent(
+       new JoinedEvent(
+            {
+                 new AddShapeEvent(new_rect),
+                 new SelectionEvent(scene().selections())
+            }
+       )
   );
   scene().setSelection(new_rect);
   return true;

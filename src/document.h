@@ -60,6 +60,12 @@ public:
 
   void reorderLayers(QList<LayerPtr> &new_order);
 
+  // Group functions
+
+  void groupSelections();
+
+  void ungroupSelections();
+
   // Coordinate functions:
   QPointF getCanvasCoord(QPointF window_coord) const;
 

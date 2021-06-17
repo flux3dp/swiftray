@@ -1,6 +1,7 @@
 #include <QDebug>
 #include <boost/range/adaptor/reversed.hpp>
 #include <document.h>
+#include <shape/group-shape.h>
 
 Document::Document() noexcept:
      mode_(Mode::Selecting),
@@ -78,9 +79,9 @@ void Document::undo() {
 
   QString active_layer_name = activeLayer()->name();
 
-  // TODO (Fix mode change event and selection)
-
+  // TODO (Fix mode change event and selection, and add layer)
   setActiveLayer(active_layer_name);
+  emit selectionsChanged();
   emit layerChanged();
 }
 
@@ -95,6 +96,7 @@ void Document::redo() {
   QString active_layer_name = activeLayer()->name();
 
   setActiveLayer(active_layer_name);
+  emit selectionsChanged();
   emit layerChanged();
 }
 
@@ -258,3 +260,54 @@ bool Document::isVolatile() {
 }
 
 const QFont &Document::font() const { return font_; }
+
+void Document::groupSelections() {
+  if (selections().empty()) return;
+
+  ShapePtr group_ptr = make_shared<GroupShape>(selections());
+  addUndoEvent(
+       new JoinedEvent(
+            {
+                 new SelectionEvent(),
+                 JoinedEvent::removeShapes(selections()),
+                 new AddShapeEvent(activeLayer(), group_ptr),
+                 new SelectionEvent(QList<ShapePtr>())
+            }
+       )
+  );
+  removeSelections();
+  activeLayer()->addShape(group_ptr);
+  setSelection(group_ptr);
+}
+
+void Document::ungroupSelections() {
+  if (selections().empty()) return;
+  ShapePtr group_ptr = selections().first();
+  if (group_ptr->type() != Shape::Type::Group) return;
+
+  auto *group = (GroupShape *) group_ptr.get();
+
+  JoinedEvent *transform_events = new JoinedEvent();
+  for (auto &shape : group->children()) {
+    transform_events->events << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
+    transform_events->events << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
+    shape->applyTransform(group->transform());
+    shape->setRotation(shape->rotation() + group->rotation());
+    activeLayer()->addShape(shape);
+  }
+
+  addUndoEvent(
+       new JoinedEvent(
+            {
+                 transform_events,
+                 JoinedEvent::addShapes(group->children()),
+                 new SelectionEvent(),
+                 new RemoveShapeEvent(group_ptr)
+            }
+       )
+  );
+
+  setSelections(group->children());
+  group_ptr->layer().removeShape(group_ptr);
+
+}

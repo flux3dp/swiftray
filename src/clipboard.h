@@ -22,8 +22,10 @@ public:
   void cutFrom(Document &doc) {
     doc.addUndoEvent(
          new JoinedEvent(
-              new SelectionEvent(doc.selections()),
-              JoinedEvent::removeShapes(doc.selections())
+              {
+                   new SelectionEvent(doc.selections()),
+                   JoinedEvent::removeShapes(doc.selections())
+              }
          )
     );
     this->set(doc.selections());

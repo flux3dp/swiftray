@@ -86,7 +86,7 @@ class SelectionEvent : public BaseUndoEvent {
 public:
   SelectionEvent();
 
-  SelectionEvent(QList<ShapePtr> &origin_selections) {
+  SelectionEvent(const QList<ShapePtr> &origin_selections) {
     origin_selections_.clear();
     origin_selections_.append(origin_selections);
   }
@@ -104,15 +104,11 @@ public:
 
   JoinedEvent() {}
 
-  // Constructor for joining two events
-  JoinedEvent(BaseUndoEvent *e1, BaseUndoEvent *e2) {
-    events << EventPtr(e1);
-    events << EventPtr(e2);
-  }
-
-  // Constructor for joining three events
-  JoinedEvent(BaseUndoEvent *e1, BaseUndoEvent *e2, BaseUndoEvent *e3) : JoinedEvent(e1, e2) {
-    events << EventPtr(e3);
+  // Constructor for joining multiple events
+  JoinedEvent(initializer_list<BaseUndoEvent *> undo_events) {
+    for (auto &event : undo_events) {
+      events << EventPtr(event);
+    }
   }
 
   virtual void undo() {
@@ -192,5 +188,9 @@ public:
   PropType value_;
   PropType redo_value_;
 };
+
+// Abbreviations for undo events
+typedef PropObjChangeEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;
+typedef PropChangeEvent<Shape, qreal, &Shape::rotation, &Shape::setRotation> RotationChangeEvent;
 
 #endif

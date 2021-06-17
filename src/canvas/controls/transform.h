@@ -132,5 +132,4 @@ namespace Controls {
 
 }
 
-typedef PropObjChangeEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;
 #endif

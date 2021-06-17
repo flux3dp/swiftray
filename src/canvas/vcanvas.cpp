@@ -320,40 +320,12 @@ void VCanvas::editSelectAll() {
 
 void VCanvas::editGroup() {
   qInfo() << "Edit Group";
-  if (document().selections().empty())
-    return;
-
-  ShapePtr group_ptr = make_shared<GroupShape>(document().selections());
-  document().addUndoEvent(new JoinedEvent(
-       new SelectionEvent(),
-       JoinedEvent::removeShapes(document().selections()),
-       new AddShapeEvent(document().activeLayer(), group_ptr)
-  ));
-  document().removeSelections();
-  document().activeLayer()->addShape(group_ptr);
-  document().setSelection(group_ptr);
+  document().groupSelections();
 }
 
 void VCanvas::editUngroup() {
   qInfo() << "Edit Ungroup";
-  ShapePtr group_ptr = document().selections().first();
-  // TODO check if group_ptr is group
-  auto *group = (GroupShape *) group_ptr.get();
-
-  for (auto &shape : group->children()) {
-    shape->applyTransform(group->transform());
-    shape->setRotation(shape->rotation() + group->rotation());
-    document().activeLayer()->addShape(shape);
-  }
-
-  document().addUndoEvent(new JoinedEvent(
-       JoinedEvent::addShapes(group->children()),
-       new SelectionEvent(),
-       new RemoveShapeEvent(group_ptr)
-  ));
-
-  document().setSelections(group->children());
-  group_ptr->layer().removeShape(group_ptr);
+  document().ungroupSelections();
 }
 
 Document &VCanvas::document() { return *VCanvas::current_doc_; }

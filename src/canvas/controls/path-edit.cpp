@@ -250,9 +250,12 @@ void PathEdit::endEditing() {
   scene().setMode(Document::Mode::Selecting);
   scene().addUndoEvent(
        new JoinedEvent(
-            new SelectionEvent(scene().selections()),
-            new PropObjChangeEvent<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
-                 (PathShape *) target_.get(), target().path()))
+            {
+                 new SelectionEvent(scene().selections()),
+                 new PropObjChangeEvent<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
+                      (PathShape *) target_.get(), target().path())
+            }
+       )
   );
   target().setPath(path_);
   scene().setSelection(target_);
