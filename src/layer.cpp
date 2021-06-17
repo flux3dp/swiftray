@@ -77,8 +77,16 @@ void Layer::removeShape(const ShapePtr &shape) {
 }
 
 void Layer::removeSelected() {
-  children().erase(std::remove_if(children_.begin(), children_.end(),
-                                  [](ShapePtr &s) { return s->selected(); }), children_.end());
+  auto func = [](ShapePtr &s) {
+    if (s->selected()) {
+      s->setSelected(false);
+      return true;
+    } else {
+      return false;
+    }
+  };
+  children().erase(std::remove_if(children_.begin(), children_.end(), func),
+                   children_.end());
 }
 
 void Layer::calcPen() {

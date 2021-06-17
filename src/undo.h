@@ -84,6 +84,8 @@ public:
 
 class SelectionEvent : public BaseUndoEvent {
 public:
+  SelectionEvent();
+
   SelectionEvent(QList<ShapePtr> &origin_selections) {
     origin_selections_.clear();
     origin_selections_.append(origin_selections);
@@ -106,6 +108,11 @@ public:
   JoinedEvent(BaseUndoEvent *e1, BaseUndoEvent *e2) {
     events << EventPtr(e1);
     events << EventPtr(e2);
+  }
+
+  // Constructor for joining three events
+  JoinedEvent(BaseUndoEvent *e1, BaseUndoEvent *e2, BaseUndoEvent *e3) : JoinedEvent(e1, e2) {
+    events << EventPtr(e3);
   }
 
   virtual void undo() {

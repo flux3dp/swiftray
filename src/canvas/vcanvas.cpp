@@ -4,13 +4,11 @@
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
-#include <iostream>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/group-shape.h>
 #include <shape/path-shape.h>
 #include <gcode/toolpath-exporter.h>
-#include <gcode/generators/gcode-generator.h>
 #include <widgets/preview-window.h>
 
 // Initialize static members
@@ -321,21 +319,25 @@ void VCanvas::editSelectAll() {
 }
 
 void VCanvas::editGroup() {
+  qInfo() << "Edit Group";
   if (document().selections().empty())
     return;
 
-  ShapePtr group_ptr =
-       make_shared<GroupShape>(ctrl_transform_.selections());
-  JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
+  ShapePtr group_ptr = make_shared<GroupShape>(document().selections());
+  document().addUndoEvent(new JoinedEvent(
+       new SelectionEvent(),
+       JoinedEvent::removeShapes(document().selections()),
+       new AddShapeEvent(document().activeLayer(), group_ptr)
+  ));
   document().removeSelections();
   document().activeLayer()->addShape(group_ptr);
   document().setSelection(group_ptr);
-  evt->events << make_shared<AddShapeEvent>(group_ptr);
-  document().addUndoEvent(evt);
 }
 
 void VCanvas::editUngroup() {
+  qInfo() << "Edit Ungroup";
   ShapePtr group_ptr = document().selections().first();
+  // TODO check if group_ptr is group
   auto *group = (GroupShape *) group_ptr.get();
 
   for (auto &shape : group->children()) {
@@ -343,14 +345,15 @@ void VCanvas::editUngroup() {
     shape->setRotation(shape->rotation() + group->rotation());
     document().activeLayer()->addShape(shape);
   }
-  document().setSelections(group->children());
-  for (auto &layer : document().layers()) {
-    layer->children().removeOne(group_ptr);
-  }
 
-  JoinedEvent *evt = JoinedEvent::addShapes(group->children());
-  evt->events << make_shared<RemoveShapeEvent>(group_ptr);
-  document().addUndoEvent(evt);
+  document().addUndoEvent(new JoinedEvent(
+       JoinedEvent::addShapes(group->children()),
+       new SelectionEvent(),
+       new RemoveShapeEvent(group_ptr)
+  ));
+
+  document().setSelections(group->children());
+  group_ptr->layer().removeShape(group_ptr);
 }
 
 Document &VCanvas::document() { return *VCanvas::current_doc_; }
@@ -374,8 +377,9 @@ void VCanvas::editUnion() {
   JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  document().setSelection(new_shape);
   evt->events << make_shared<AddShapeEvent>(new_shape);
+  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().setSelection(new_shape);
   document().addUndoEvent(evt);
 }
 
@@ -395,8 +399,9 @@ void VCanvas::editSubtract() {
   JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  document().setSelection(new_shape);
   evt->events << make_shared<AddShapeEvent>(new_shape);
+  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().setSelection(new_shape);
   document().addUndoEvent(evt);
 }
 
@@ -417,8 +422,9 @@ void VCanvas::editIntersect() {
   JoinedEvent *evt = JoinedEvent::removeShapes(document().selections());
   document().removeSelections();
   document().activeLayer()->addShape(new_shape);
-  document().setSelection(new_shape);
   evt->events << make_shared<AddShapeEvent>(new_shape);
+  evt->events << make_shared<SelectionEvent>(document().selections());
+  document().setSelection(new_shape);
   document().addUndoEvent(evt);
 }
 
@@ -456,11 +462,12 @@ void VCanvas::setActiveLayer(LayerPtr &layer) {
 }
 
 void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
-  // TODO(Add undo for set layer order);
+  // TODO (Add undo for set layer order);
   document().reorderLayers(new_order);
 }
 
 void VCanvas::setFont(const QFont &font) {
+  // TODO (Add undo for set font event)
   QFont new_font;
   if (!document().selections().isEmpty() &&
       document().selections().at(0)->type() == Shape::Type::Text) {

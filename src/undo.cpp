@@ -18,30 +18,40 @@ void RemoveLayerEvent::redo() {
 }
 
 void AddShapeEvent::undo() {
-  qInfo() << "Undoing add shape" << shape_.get() << "with layer" << layer_->name();
+  qInfo() << "Undo add shape" << (int) shape_->type();
   layer_->removeShape(shape_);
 }
 
 void AddShapeEvent::redo() {
-  qInfo() << "Redoing add shape";
+  qInfo() << "Redo add shape" << (int) shape_->type();
   layer_->addShape(shape_);
 }
 
 
 void RemoveShapeEvent::undo() {
+  qInfo() << "Undo remove shape" << (int) shape_->type();
   layer_->addShape(shape_);
 }
 
 void RemoveShapeEvent::redo() {
+  qInfo() << "Undo add shape" << (int) shape_->type();
   layer_->removeShape(shape_);
 }
 
+SelectionEvent::SelectionEvent() {
+  origin_selections_.clear();
+  origin_selections_.append(VCanvas::document().selections());
+}
+
 void SelectionEvent::undo() {
+  qInfo() << "Undo selection event" << origin_selections_.size();
   redo_selections_.clear();
   redo_selections_.append(VCanvas::document().selections());
   VCanvas::document().setSelections(origin_selections_);
 }
 
 void SelectionEvent::redo() {
+  qInfo() << "Redo selection event" << redo_selections_.size();
   VCanvas::document().setSelections(redo_selections_);
 }
+

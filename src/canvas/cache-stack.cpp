@@ -5,14 +5,16 @@
 #include <shape/group-shape.h>
 #include <canvas/vcanvas.h>
 
-void CacheStack::begin(const QTransform &base_transform) {
-  base_transform_ = base_transform;
+CacheStack::CacheStack() : force_fill_(false) {}
+
+void CacheStack::begin(const QTransform &global_transform) {
+  global_transform_ = global_transform;
   caches_.clear();
 }
 
 void CacheStack::end() {
-  for (auto &group : caches_) {
-    group.merge(base_transform_);
+  for (auto &cache : caches_) {
+    cache.merge(global_transform_);
   }
 }
 
@@ -38,7 +40,7 @@ void CacheStack::addShape(Shape *shape) {
       Q_ASSERT_X(false, "CacheStack", "Cannot cache unknown typed shapes");
   }
 
-  if (caches_.isEmpty() || caches_.last().type_ != cache_type) {
+  if (caches_.isEmpty() || caches_.last().type() != cache_type) {
     caches_.push_back(CacheStack::Cache(cache_type));
   }
 
@@ -46,19 +48,23 @@ void CacheStack::addShape(Shape *shape) {
     // Flush sub group cache
     shape->flushCache();
   }
-  caches_.last().shapes_.push_back(shape);
+  caches_.last().addShape(shape);
 }
 
 CacheStack::Cache::Cache(CacheType type) : type_(type), is_fill_cached_(false) {}
 
+void CacheStack::Cache::addShape(Shape *shape) {
+  shapes_.push_back(shape);
+}
+
 // Merge all path shape into one joined path
-void CacheStack::Cache::merge(const QTransform &base_transform) {
+void CacheStack::Cache::merge(const QTransform &global_transform) {
   if (type_ > Type::NonSelectedFilledPaths) return;
   const QRectF &screen_rect = VCanvas::screenRect();
   joined_path_ = QPainterPath();
   for (auto &shape : shapes_) {
     auto *p = (PathShape *) shape;
-    QTransform transform = p->transform() * p->tempTransform() * base_transform;
+    QTransform transform = p->transform() * p->tempTransform() * global_transform;
     QPainterPath transformed_path = transform.map(p->path());
     if (transformed_path.intersects(screen_rect)) {
       joined_path_.addPath(transformed_path);
@@ -95,35 +101,39 @@ const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush brush) {
   return cache_pixmap_;
 }
 
+// Primary logic for painting shapes is here
 int CacheStack::paint(QPainter *painter) {
   QElapsedTimer timer;
   timer.start();
   for (auto &cache : caches_) {
     switch (cache.type()) {
       case CacheType::SelectedPaths:
-        painter->strokePath(cache.joined_path_, selected_pen_);
+        painter->strokePath(cache.joined_path_, dash_pen_);
         if (force_fill_) cache.fillCache(painter, filling_brush_);
         break;
       case CacheType::SelectedFilledPaths:
-        painter->strokePath(cache.joined_path_, selected_pen_);
+        painter->strokePath(cache.joined_path_, dash_pen_);
         cache.fillCache(painter, filling_brush_);
         break;
       case CacheType::NonSelectedPaths:
-        painter->strokePath(cache.joined_path_, nonselected_pen_);
+        painter->strokePath(cache.joined_path_, force_selection_ ? dash_pen_ : solid_pen_);
         if (force_fill_) cache.fillCache(painter, filling_brush_);
         break;
       case CacheType::NonSelectedFilledPaths:
         cache.fillCache(painter, filling_brush_);
         break;
       case CacheType::Group:
-        for (auto &shape : cache.shapes_) {
-          ((GroupShape *) shape)->cacheStack().setBrush(filling_brush_);
-          ((GroupShape *) shape)->cacheStack().setPen(selected_pen_, nonselected_pen_);
+        for (auto &shape : cache.shapes()) {
+          CacheStack &child_stack = ((GroupShape *) shape)->cacheStack();
+          child_stack.setBrush(filling_brush_);
+          child_stack.setPen(dash_pen_, solid_pen_);
+          child_stack.setForceFill(force_fill_);
+          child_stack.setForceSelection(shape->selected());
           shape->paint(painter);
         }
         break;
       default:
-        for (auto &shape : cache.shapes_) {
+        for (auto &shape : cache.shapes()) {
           shape->paint(painter);
         }
     }
@@ -139,6 +149,23 @@ CacheType CacheStack::Cache::type() const {
   return type_;
 }
 
-const QList<Shape *> CacheStack::Cache::shapes() const {
+const QList<Shape *> &CacheStack::Cache::shapes() const {
   return shapes_;
+}
+
+void CacheStack::setBrush(const QBrush &brush) {
+  filling_brush_ = brush;
+}
+
+void CacheStack::setPen(const QPen &dash_pen, const QPen &solid_pen) {
+  dash_pen_ = dash_pen;
+  solid_pen_ = solid_pen;
+}
+
+void CacheStack::setForceFill(bool force_fill) {
+  force_fill_ = force_fill;
+}
+
+void CacheStack::setForceSelection(bool force_selection) {
+  force_selection_ = force_selection;
 }

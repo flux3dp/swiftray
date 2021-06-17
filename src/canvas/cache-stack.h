@@ -5,6 +5,8 @@
 #include <QList>
 #include <shape/path-shape.h>
 
+// Rewrite to support transform dirty or content dirty, transform dirty does not require heavy recalculation
+
 class CacheStack {
 public:
   // Cache groups of shapes with similar properties
@@ -21,25 +23,32 @@ public:
 
     explicit Cache(Type type);
 
-    void merge(const QTransform &base_transform);
+    void merge(const QTransform &global_transform);
 
     Cache::Type type() const;
 
-    const QList<Shape *> shapes() const;
+    const QList<Shape *> &shapes() const;
+
+    void addShape(Shape *shape);
 
     const QPixmap &fillCache(QPainter *painter, QBrush brush);
 
+    // Path cache
+    QPainterPath joined_path_;
+  private:
     // Use weak pointer (no lifespan issue here)
     QList<Shape *> shapes_;
     Type type_;
-    QPainterPath joined_path_;
+    // Filling pixmap cache (filling is a computation heavy work for complex paths)
     QPixmap cache_pixmap_;
     bool is_fill_cached_;
     QRectF bbox_;
   };
 
+  CacheStack();
+
   // Set required information for caches
-  void begin(const QTransform &base_transform = QTransform());
+  void begin(const QTransform &global_transform = QTransform());
 
   // Calculate the cache
   void end();
@@ -49,28 +58,24 @@ public:
 
   int paint(QPainter *painter);
 
-  void setBrush(const QBrush &brush) {
-    filling_brush_ = brush;
-  }
+  void setBrush(const QBrush &brush);
 
-  void setPen(const QPen &selected_pen, const QPen &nonselected_pen) {
-    selected_pen_ = selected_pen;
-    nonselected_pen_ = nonselected_pen;
-  }
+  void setPen(const QPen &dash_pen, const QPen &solid_pen);
 
-  void setForceFill(bool force_fill) {
-    force_fill_ = force_fill;
-  }
+  void setForceFill(bool force_fill);
+
+  void setForceSelection(bool force_selection);
 
 
-  QTransform base_transform_;
+  QTransform global_transform_;
   QList<Cache> caches_;
 
 private:
-  QPen selected_pen_;
-  QPen nonselected_pen_;
+  QPen dash_pen_;
+  QPen solid_pen_;
   QBrush filling_brush_;
   bool force_fill_;
+  bool force_selection_;
 };
 
 typedef CacheStack::Cache::Type CacheType;

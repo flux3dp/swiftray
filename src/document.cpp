@@ -214,14 +214,15 @@ void Document::reorderLayers(QList<LayerPtr> &new_order) {
 }
 
 void Document::removeSelections() {
-  // Clear selection pointers in other componenets
+  // Clear selection pointers in other components
   selections().clear();
-  emit selectionsChanged();
 
-  // Remove
+  // Remove from layer
   for (auto &layer : layers()) {
     layer->removeSelected();
   }
+
+  emit selectionsChanged();
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {

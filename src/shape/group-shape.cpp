@@ -62,6 +62,7 @@ void GroupShape::calcBoundingBox() const {
 
 void GroupShape::cache() const {
   if (!hasLayer()) return;
+  // TODO: fix transform to global transform
   cache_stack_.begin(transform_ * temp_transform_);
   for (auto &shape : children_) {
     cache_stack_.addShape(shape.get());
