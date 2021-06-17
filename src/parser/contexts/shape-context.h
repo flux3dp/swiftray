@@ -47,7 +47,7 @@ public:
 
   void on_exit_element() {
     check_style();
-    QPainterPath mapped_path = transform().map(working_path_);
+    QPainterPath mapped_path = qtransform().map(working_path_);
     ShapePtr shape = make_shared<PathShape>(mapped_path);
     QString layer_name = this->strokeColor() == "N/A" ? this->fillColor() : this->strokeColor();
     if (this->fillColor() != "N/A") ((PathShape *) shape.get())->setFilled(true);
