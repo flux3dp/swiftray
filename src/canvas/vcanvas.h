@@ -17,6 +17,7 @@
 #include <shape/shape.h>
 #include <canvas/memory-monitor.h>
 #include <clipboard.h>
+#include <gcode/generators/preview-generator.h>
 
 /*The canvas should be designed to handle multiple documents,
   carefully choose what you want to put in the canvas,
@@ -104,7 +105,7 @@ public Q_SLOTS:
 
   void setFont(const QFont &font);
 
-  void exportGcode();
+  shared_ptr<PreviewGenerator> exportGcode();
 
   void setWidgetSize(QSize widget_size);
 

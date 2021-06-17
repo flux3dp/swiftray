@@ -11,6 +11,7 @@
 #include <widgets/canvas-text-edit.h>
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
+#include <widgets/preview-window.h>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -48,7 +49,7 @@ void MainWindow::loadQSS() {
 }
 
 void MainWindow::openFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".", tr("SVG Files (*.svg)"));
+  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".", tr("SVG Files (*.svg)", "BVG Files (*.bvg)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -97,7 +98,12 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
   connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
-  connect(ui->actionExportGcode, &QAction::triggered, canvas_, &VCanvas::exportGcode);
+  connect(ui->actionExportGcode, &QAction::triggered, [=, this]() {
+    auto gen = canvas_->exportGcode();
+    PreviewWindow *pw = new PreviewWindow(this);
+    pw->setPreviewPath(gen);
+    pw->show();
+  });
   connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
   connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
   connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);

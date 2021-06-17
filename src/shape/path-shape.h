@@ -5,7 +5,6 @@
 
 using namespace std;
 
-namespace Controls { class PathEdit; }
 class PathShape : public Shape {
 public:
   enum class NodeType {
@@ -40,7 +39,12 @@ public:
 
   void setPath(const QPainterPath &path);
 
-  friend class Controls::PathEdit;
+  bool isFilled() const;
+
+  void setFilled(bool filled);
+
+private:
+  bool filled_;
 
 private:
   QHash<int, NodeType> node_types_;

@@ -9,7 +9,8 @@ public:
   enum class Type {
     Line,
     Fill,
-    FillLine
+    FillLine,
+    Mixed // Compatible mode with Beam Studio, could be deprecated in the future
   };
 
   Layer(const QColor &color, const QString &name);

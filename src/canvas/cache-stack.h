@@ -13,7 +13,8 @@ public:
     enum class Type {
       SelectedPaths,
       NonSelectedPaths,
-      FilledPaths,
+      SelectedFilledPaths, // Compatible mode with mixed layer, could be deprecated
+      NonSelectedFilledPaths, // Compatible mode with mixed layer, could be deprecated
       Bitmap,
       Group
     };
@@ -21,8 +22,6 @@ public:
     explicit Cache(Type type);
 
     void merge(const QTransform &base_transform);
-
-    void paint(QPainter *painter);
 
     Cache::Type type() const;
 
@@ -43,8 +42,30 @@ public:
   // Categorize the shapes to different cache group
   void addShape(Shape *shape);
 
+  int paint(QPainter *painter);
+
+  void setBrush(const QBrush &brush) {
+    filling_brush_ = brush;
+  }
+
+  void setPen(const QPen &selected_pen, const QPen &nonselected_pen) {
+    selected_pen_ = selected_pen;
+    nonselected_pen_ = nonselected_pen;
+  }
+
+  void setForceFill(bool force_fill) {
+    force_fill_ = force_fill;
+  }
+
+
   QTransform base_transform_;
   QList<Cache> caches_;
+
+private:
+  QPen selected_pen_;
+  QPen nonselected_pen_;
+  QBrush filling_brush_;
+  bool force_fill_;
 };
 
 typedef CacheStack::Cache::Type CacheType;

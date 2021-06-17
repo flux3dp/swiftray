@@ -40,9 +40,14 @@ Layer::~Layer() = default;
 
 void Layer::cache() const {
   cache_stack_.begin();
+  cache_stack_.setPen(dash_pen_, solid_pen_);
+  cache_stack_.setBrush(QBrush(color()));
+  cache_stack_.setForceFill(type_ == Type::FillLine || type_ == Type::Fill);
+
   for (auto &shape : children_) {
     cache_stack_.addShape(shape.get());
   }
+
   cache_stack_.end();
   cache_valid_ = true;
 }
@@ -52,34 +57,9 @@ int Layer::paint(QPainter *painter, int counter) const {
   dash_pen_.setDashOffset(0.3F * counter);
 
   if (!cache_valid_) cache();
+  cache_stack_.setPen(dash_pen_, solid_pen_);
   // Draw shapes
-  int painted_objects = 0;
-  if (this->type() == Type::Fill || this->type() == Type::FillLine) {
-    painter->setBrush(QBrush(color()));
-  }
-  for (auto &cache : cache_stack_.caches_) {
-    switch (cache.type()) {
-      case CacheType::SelectedPaths:
-        painter->setPen(dash_pen_);
-        cache.paint(painter);
-        break;
-      case CacheType::NonSelectedPaths:
-        painter->setPen(solid_pen_);
-        cache.paint(painter);
-        break;
-      case CacheType::Group:
-        for (auto &shape : cache.shapes()) {
-          painter->setPen(shape->selected() ? dash_pen_ : solid_pen_);
-          shape->paint(painter);
-        }
-        break;
-      default:
-        cache.paint(painter);
-    }
-    painted_objects += cache.shapes().size();
-  }
-  painter->setBrush(Qt::NoBrush);
-  return painted_objects;
+  return cache_stack_.paint(painter);
 }
 
 void Layer::addShape(const ShapePtr &shape) {
@@ -191,4 +171,5 @@ Layer::Type Layer::type() const {
 
 void Layer::setType(Layer::Type type) {
   type_ = type;
+  flushCache();
 }

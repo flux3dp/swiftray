@@ -46,14 +46,12 @@ public:
   }
 
   void on_exit_element() {
-    QTransform transform(transform_(0, 0), transform_(1, 0), transform_(2, 0), transform_(0, 1), transform_(1, 1),
-                         transform_(2, 1), transform_(0, 2), transform_(1, 2), transform_(2, 2));
-    QPainterPath mapped_path = transform.map(working_path_);
-    ShapePtr shape = make_shared<PathShape>(mapped_path);
     check_style();
+    QPainterPath mapped_path = transform().map(working_path_);
+    ShapePtr shape = make_shared<PathShape>(mapped_path);
     QString layer_name = this->strokeColor() == "N/A" ? this->fillColor() : this->strokeColor();
+    if (this->fillColor() != "N/A") ((PathShape *) shape.get())->setFilled(true);
     svgpp_add_shape(shape, layer_name);
-    //qInfo() << "</shape>";
   }
 
   // Path Events Policy methods
@@ -79,7 +77,6 @@ public:
   void path_elliptical_arc_to(double rx, double ry, double x_axis_rotation,
                               bool large_arc_flag, bool sweep_flag, double x2,
                               double y2, tag::coordinate::absolute) {
-    // qInfo() << "E bezier to " << x << "," << y;
     const QPointF &currentPos = working_path_.currentPosition();
     // TODO support rotated arc
     // https://github.com/inkcut/inkcut/blob/ab27cf57ce5a5bd3bcaeef77bac28e4d6f92895a/inkcut/core/svg.py
@@ -133,6 +130,7 @@ public:
   }
 
   // Marker Events Policy method
+  // TODO (Truly support marker)
   void marker(marker_vertex v, double x, double y, double directionality,
               unsigned marker_index) {
     if (marker_index >= markers_.size())

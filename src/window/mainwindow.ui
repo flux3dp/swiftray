@@ -385,6 +385,9 @@
               <height>16777215</height>
              </size>
             </property>
+            <property name="styleSheet">
+             <string notr="true">padding-left: 5px</string>
+            </property>
             <property name="currentFont">
              <font>
               <family>Helvetica</family>
@@ -1058,6 +1061,9 @@
   <action name="actionExportGcode">
    <property name="text">
     <string>Export Gcode</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
  </widget>

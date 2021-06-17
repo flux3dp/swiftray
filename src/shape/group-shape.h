@@ -4,6 +4,8 @@
 #include <shape/shape.h>
 #include <canvas/cache-stack.h>
 
+// We may need to change the group to cross-layer group instead of a shape object in the future
+// This group implementation is downward compatible with other vector design software's paradigm
 class GroupShape : public Shape {
 public:
   GroupShape();
@@ -17,6 +19,8 @@ public:
   bool hitTest(QRectF global_coord_rect) const override;
 
   void cache() const;
+
+  CacheStack &cacheStack();
 
   void paint(QPainter *painter) const override;
 

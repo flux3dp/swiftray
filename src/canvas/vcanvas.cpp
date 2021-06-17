@@ -11,6 +11,7 @@
 #include <shape/path-shape.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
+#include <widgets/preview-window.h>
 
 // Initialize static members
 Document *VCanvas::current_doc_ = new Document();
@@ -483,12 +484,11 @@ void VCanvas::setFont(const QFont &font) {
   document().setFont(new_font);
 }
 
-void VCanvas::exportGcode() {
-
-  GCodeGenerator gen;
-  ToolpathExporter exporter(&gen);
+shared_ptr<PreviewGenerator> VCanvas::exportGcode() {
+  auto gen = make_shared<PreviewGenerator>();
+  ToolpathExporter exporter(gen.get());
   exporter.convertStack(document().layers());
-  std::cout << gen.toString();
+  return gen;
 }
 
 void VCanvas::setWidgetSize(QSize widget_size) {

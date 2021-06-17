@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS "-O2")
 
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
-FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
+FILE(GLOB WIDGETS_CPP2 "src/widgets/*.cpp")
 
 SET(SOURCES
         src/layer.cpp
@@ -30,7 +30,7 @@ SET(SOURCES
         src/undo.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
-        ${WIDGETS_CPP}
+        ${WIDGETS_CPP2}
         src/canvas/cache-stack.cpp
         src/window/main.cpp
         src/window/mainwindow.cpp

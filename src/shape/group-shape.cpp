@@ -70,11 +70,10 @@ void GroupShape::cache() const {
 }
 
 void GroupShape::paint(QPainter *painter) const {
+  // TODO (move group's refresh cache outside of bounding rect)
   boundingRect();
 
-  for (auto &cache : cache_stack_.caches_) {
-    cache.paint(painter);
-  }
+  cache_stack_.paint(painter);
 }
 
 ShapePtr GroupShape::clone() const {
@@ -92,3 +91,5 @@ ShapePtr GroupShape::clone() const {
 const QList<ShapePtr> &GroupShape::children() const { return children_; }
 
 Shape::Type GroupShape::type() const { return Shape::Type::Group; }
+
+CacheStack &GroupShape::cacheStack() { return cache_stack_; }

@@ -23,6 +23,10 @@ public:
     return QPointF(npos(0, 0), npos(1, 0));
   }
 
+  QTransform transform() {
+    return QTransform(transform_(0, 0), transform_(1, 0), transform_(2, 0), transform_(0, 1), transform_(1, 1),
+                      transform_(2, 1), transform_(0, 2), transform_(1, 2), transform_(2, 2));
+  }
 
   void transform_matrix(const boost::array<double, 6> &matrix) {
     matrix_t m(3, 3);

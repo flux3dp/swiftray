@@ -5,9 +5,9 @@
 
 using namespace std;
 
-PathShape::PathShape() noexcept: Shape() {}
+PathShape::PathShape() noexcept: Shape(), filled_(false) {}
 
-PathShape::PathShape(QPainterPath path) : Shape() {
+PathShape::PathShape(QPainterPath path) : Shape(), filled_(false) {
   path_ = path;
 
   // Realign path to center in local coord 0, 0
@@ -22,6 +22,7 @@ PathShape::PathShape(QPainterPath path) : Shape() {
 
 PathShape::~PathShape() {}
 
+// TODO (Add hitTest for filling mode)
 bool PathShape::hitTest(QPointF global_coord, qreal tolerance) const {
   QPointF local_coord = transform().inverted().map(global_coord);
 
@@ -73,4 +74,13 @@ void PathShape::setPath(const QPainterPath &path) {
   // Input path coord is local coord
   path_ = path;
   flushCache();
+}
+
+bool PathShape::isFilled() const {
+  return filled_;
+}
+
+void PathShape::setFilled(bool filled) {
+  qInfo() << "Filled";
+  filled_ = filled;
 }

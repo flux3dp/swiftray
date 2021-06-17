@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QList>
 #include <shape/path-shape.h>
+#include <shape/group-shape.h>
 #include <canvas/vcanvas.h>
 
 void CacheStack::begin(const QTransform &base_transform) {
@@ -21,7 +22,11 @@ void CacheStack::addShape(Shape *shape) {
   switch (shape->type()) {
     case Shape::Type::Path:
     case Shape::Type::Text:
-      cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
+      if (((PathShape *) shape)->isFilled()) {
+        cache_type = shape->selected() ? CacheType::SelectedFilledPaths : CacheType::NonSelectedFilledPaths;
+      } else {
+        cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
+      }
       break;
     case Shape::Type::Bitmap:
       cache_type = CacheType::Bitmap;
@@ -47,7 +52,7 @@ void CacheStack::addShape(Shape *shape) {
 CacheStack::Cache::Cache(CacheType type) : type_(type) {}
 
 void CacheStack::Cache::merge(const QTransform &base_transform) {
-  if (type_ != Type::SelectedPaths && type_ != Type::NonSelectedPaths) return;
+  if (type_ > Type::NonSelectedFilledPaths) return;
   const QRectF &screen_rect = VCanvas::screenRect();
   for (auto &shape : shapes_) {
     auto *p = (PathShape *) shape;
@@ -59,14 +64,44 @@ void CacheStack::Cache::merge(const QTransform &base_transform) {
   }
 }
 
-void CacheStack::Cache::paint(QPainter *painter) {
-  if (type_ == Type::SelectedPaths || type_ == Type::NonSelectedPaths) {
-    painter->drawPath(joined_path_);
-  } else {
-    for (auto &shape : shapes_) {
-      shape->paint(painter);
+int CacheStack::paint(QPainter *painter) {
+  for (auto &cache : caches_) {
+    switch (cache.type()) {
+      case CacheType::SelectedPaths:
+        painter->setBrush(force_fill_ ? filling_brush_ : Qt::NoBrush);
+        painter->setPen(selected_pen_);
+        painter->drawPath(cache.joined_path_);
+        break;
+      case CacheType::SelectedFilledPaths:
+        painter->setBrush(filling_brush_);
+        painter->setPen(selected_pen_);
+        painter->drawPath(cache.joined_path_);
+        break;
+      case CacheType::NonSelectedPaths:
+        painter->setBrush(force_fill_ ? filling_brush_ : Qt::NoBrush);
+        painter->setPen(nonselected_pen_);
+        painter->drawPath(cache.joined_path_);
+        break;
+      case CacheType::NonSelectedFilledPaths:
+        painter->setBrush(filling_brush_);
+        painter->setPen(nonselected_pen_);
+        painter->drawPath(cache.joined_path_);
+        break;
+      case CacheType::Group:
+        for (auto &shape : cache.shapes_) {
+          shape->flushCache();
+          ((GroupShape *) shape)->cacheStack().setBrush(filling_brush_);
+          ((GroupShape *) shape)->cacheStack().setPen(selected_pen_, nonselected_pen_);
+          shape->paint(painter);
+        }
+      default:
+        for (auto &shape : cache.shapes_) {
+          shape->paint(painter);
+        }
     }
   }
+  painter->setBrush(Qt::NoBrush);
+  return caches_.size();
 }
 
 CacheType CacheStack::Cache::type() const {

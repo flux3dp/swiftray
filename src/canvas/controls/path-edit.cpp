@@ -209,7 +209,7 @@ PathShape &PathEdit::target() { return *dynamic_cast<PathShape *>(target_.get())
 
 void PathEdit::setTarget(ShapePtr &edit_target) {
   target_ = edit_target;
-  path_ = QPainterPath(target().path_);
+  path_ = QPainterPath(target().path());
   int elem_count = path_.elementCount();
   is_closed_shape_ =
        elem_count > 0 && (path_.elementAt(0) - path_.elementAt(elem_count - 1)).manhattanLength() <= FLT_EPSILON;
