@@ -49,50 +49,57 @@ public:
   void calcPen();
 
   // Getters:
+
+  QColor color() const;
+
+  QRectF screenRect();
+
+  QString name() const;
+
+  Type type() const;
+
+  bool isVisible() const;
+
   int repeat() const;
 
   int speed() const;
 
   int strength() const;
 
-  QColor color() const;
-
-  QString name() const;
-
-  QRectF screenRect();
-
-  bool isVisible() const;
-
   // Setters:
+
   void setColor(const QColor &color);
+
+  void setDiode(int diode_);
 
   void setHeight(double height);
 
   void setName(const QString &name);
 
+  void setRepeat(int repeat);
+
   void setSpeed(int speed);
 
   void setStrength(int strength);
 
-  void setRepeat(int repeat);
-
-  void setDiode(int diode_);
-
-  void setZStep(double zstep);
+  void setType(Type type);
 
   void setVisible(bool visible);
+
+  void setZStep(double zstep);
 
 private:
   QColor color_;
   QString name_;
   QList<ShapePtr> children_;
-  int strength_;
-  int speed_;
-  double zstep_;
+  Type type_;
   bool is_diode_;
-  int repeat_;
-  double target_height_;
   bool visible_;
+  double target_height_;
+  double zstep_;
+  int repeat_;
+  int speed_;
+  int strength_;
   // Cache properties
   mutable bool cache_valid_;
   mutable CacheStack cache_stack_;
@@ -100,7 +107,6 @@ private:
   // Pen properties
   mutable QPen dash_pen_;
   QPen solid_pen_;
-  Type type_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

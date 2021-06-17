@@ -21,6 +21,7 @@ Layer::Layer(const QColor &color, const QString &name) {
   is_diode_ = false;
   target_height_ = 0;
   cache_valid_ = false;
+  type_ = Type::Line;
   calcPen();
 }
 
@@ -53,6 +54,9 @@ int Layer::paint(QPainter *painter, int counter) const {
   if (!cache_valid_) cache();
   // Draw shapes
   int painted_objects = 0;
+  if (this->type() == Type::Fill || this->type() == Type::FillLine) {
+    painter->setBrush(QBrush(color()));
+  }
   for (auto &cache : cache_stack_.caches_) {
     switch (cache.type()) {
       case CacheType::SelectedPaths:
@@ -74,6 +78,7 @@ int Layer::paint(QPainter *painter, int counter) const {
     }
     painted_objects += cache.shapes().size();
   }
+  painter->setBrush(Qt::NoBrush);
   return painted_objects;
 }
 
@@ -178,4 +183,12 @@ void Layer::setVisible(bool visible) {
 
 void Layer::flushCache() {
   cache_valid_ = false;
+}
+
+Layer::Type Layer::type() const {
+  return type_;
+}
+
+void Layer::setType(Layer::Type type) {
+  type_ = type;
 }

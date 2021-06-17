@@ -266,6 +266,8 @@ void VCanvas::editDelete() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   document().addUndoEvent(JoinedEvent::removeShapes(document().selections()));
+
+  // TODO(Add all selection events to accompany with document.removeSelections and setSelections)
   document().removeSelections();
 }
 
@@ -482,6 +484,7 @@ void VCanvas::setFont(const QFont &font) {
 }
 
 void VCanvas::exportGcode() {
+
   GCodeGenerator gen;
   ToolpathExporter exporter(&gen);
   exporter.convertStack(document().layers());

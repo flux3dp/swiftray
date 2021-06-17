@@ -36,9 +36,13 @@ bool Text::keyPressEvent(QKeyEvent *e) {
         scene().text_box_->toPlainText().length() > 0) {
       qInfo() << "Create new text shape instance";
       scene().activeLayer()->addShape(target_);
+      scene().addUndoEvent(new JoinedEvent(
+           new AddShapeEvent(target_),
+           new SelectionEvent(scene().selections()))
+      );
       scene().setSelection(target_);
-      scene().addUndoEvent(new AddShapeEvent(scene().activeLayer(), target_));
     } else {
+      scene().addUndoEvent(new SelectionEvent(scene().selections()));
       scene().setSelection(target_);
     }
     reset();

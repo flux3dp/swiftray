@@ -20,9 +20,12 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   path.arcTo(rect_, 0, 360 * 16);
   ShapePtr new_oval = make_shared<PathShape>(path);
   scene().activeLayer()->addShape(new_oval);
-  scene().setSelection(new_oval);
   scene().setMode(Document::Mode::Selecting);
-  scene().addUndoEvent(new AddShapeEvent(new_oval));
+  scene().addUndoEvent(new JoinedEvent(
+       new AddShapeEvent(new_oval),
+       new SelectionEvent(scene().selections()))
+  );
+  scene().setSelection(new_oval);
   return true;
 }
 

@@ -79,15 +79,7 @@ void Document::undo() {
   QString active_layer_name = activeLayer()->name();
 
   // TODO (Fix mode change event and selection)
-  QList<ShapePtr> selected_shapes;
-  for (auto &layer : layers()) {
-    for (auto &shape : layer->children()) {
-      if (shape->selected())
-        selected_shapes << shape;
-    }
-  }
 
-  setSelections(selected_shapes);
   setActiveLayer(active_layer_name);
   emit layerChanged();
 }
@@ -101,15 +93,7 @@ void Document::redo() {
   undo2 << evt;
 
   QString active_layer_name = activeLayer()->name();
-  QList<ShapePtr> selected_shapes;
-  for (auto &layer : layers()) {
-    for (auto &shape : layer->children()) {
-      if (shape->selected())
-        selected_shapes << shape;
-    }
-  }
 
-  setSelections(selected_shapes);
   setActiveLayer(active_layer_name);
   emit layerChanged();
 }

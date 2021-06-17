@@ -35,3 +35,13 @@ void RemoveShapeEvent::undo() {
 void RemoveShapeEvent::redo() {
   layer_->removeShape(shape_);
 }
+
+void SelectionEvent::undo() {
+  redo_selections_.clear();
+  redo_selections_.append(VCanvas::document().selections());
+  VCanvas::document().setSelections(origin_selections_);
+}
+
+void SelectionEvent::redo() {
+  VCanvas::document().setSelections(redo_selections_);
+}

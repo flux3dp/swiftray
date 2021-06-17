@@ -20,14 +20,13 @@ public:
   }
 
   void cutFrom(Document &doc) {
-    JoinedEvent *evt = new JoinedEvent();
-    for (auto &layer : doc.layers()) {
-      for (auto &shape : layer->children()) {
-        if (shape->selected()) evt->events << make_shared<RemoveShapeEvent>(shape);
-      }
-    }
-    doc.addUndoEvent(evt);
-    set(doc.selections());
+    doc.addUndoEvent(
+         new JoinedEvent(
+              new SelectionEvent(doc.selections()),
+              JoinedEvent::removeShapes(doc.selections())
+         )
+    );
+    this->set(doc.selections());
     doc.removeSelections();
   }
 
@@ -37,14 +36,15 @@ public:
          QTransform().translate(paste_shift_.x(), paste_shift_.y());
     int index_clip_begin = doc.activeLayer()->children().length();
 
-    JoinedEvent *evt = new JoinedEvent();
+    JoinedEvent *undo_evt = new JoinedEvent();
+    undo_evt->events << make_shared<SelectionEvent>(doc.selections());
     for (auto &shape : shapes_) {
       ShapePtr new_shape = shape->clone();
       new_shape->applyTransform(shift_transform);
       doc.activeLayer()->addShape(new_shape);
-      evt->events << make_shared<AddShapeEvent>(new_shape);
+      undo_evt->events << make_shared<AddShapeEvent>(new_shape);
     }
-    doc.addUndoEvent(evt);
+    doc.addUndoEvent(undo_evt);
 
     QList<ShapePtr> selected_shapes;
 

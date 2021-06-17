@@ -82,8 +82,32 @@ public:
   ShapePtr shape_;
 };
 
+class SelectionEvent : public BaseUndoEvent {
+public:
+  SelectionEvent(QList<ShapePtr> &origin_selections) {
+    origin_selections_.clear();
+    origin_selections_.append(origin_selections);
+  }
+
+  void undo() override;
+
+  void redo() override;
+
+  QList<ShapePtr> origin_selections_;
+  QList<ShapePtr> redo_selections_;
+};
+
 class JoinedEvent : public BaseUndoEvent {
 public:
+
+  JoinedEvent() {}
+
+  // Constructor for joining two events
+  JoinedEvent(BaseUndoEvent *e1, BaseUndoEvent *e2) {
+    events << EventPtr(e1);
+    events << EventPtr(e2);
+  }
+
   virtual void undo() {
     for (auto &event : events) {
       event->undo();
@@ -115,15 +139,38 @@ public:
   QList<EventPtr> events;
 };
 
-
-template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
-     const PropType &)>
+// TODO(Add prop change event for non referenced type, probably change PropType to PropType&)
+template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
+     PropType)>
 class PropChangeEvent : public BaseUndoEvent {
 public:
 
-  explicit PropChangeEvent(T *target, PropType value) {
-    target_ = target;
-    value_ = value;
+  explicit PropChangeEvent(T *target, PropType value) : target_(target), value_(value) {
+    qInfo() << "New PropChangeEvent (shape" << target << ")";
+  }
+
+  void undo() override {
+    qInfo() << "Undoing prop change";
+    redo_value_ = (target_->*PropGetter)();
+    (target_->*PropSetter)(value_);
+  }
+
+  void redo() override {
+    qInfo() << "Redoing prop change";
+    (target_->*PropSetter)(redo_value_);
+  };
+
+  T *target_;
+  PropType value_;
+  PropType redo_value_;
+};
+
+template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
+     const PropType &)>
+class PropObjChangeEvent : public BaseUndoEvent {
+public:
+
+  explicit PropObjChangeEvent(T *target, PropType value) : target_(target), value_(value) {
     qInfo() << "New PropChangeEvent (shape" << target << ")";
   }
 
