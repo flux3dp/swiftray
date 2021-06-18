@@ -55,7 +55,7 @@ private slots:
 
 private:
   Ui::MainWindow *ui;
-  VCanvas *canvas_;
+  Canvas *canvas_;
   Document *doc_;
   unique_ptr<LayerParamsPanel> layer_params_panel_;
   unique_ptr<TransformPanel> transform_panel_;

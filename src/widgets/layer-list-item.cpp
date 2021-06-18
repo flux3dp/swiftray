@@ -51,13 +51,13 @@ void LayerListItem::loadStyles() {
 void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->setVisible(!layer_->isVisible());
-    VCanvas::document().addUndoEvent(
+    Canvas::document().addUndoEvent(
          new PropEvent<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()));
   });
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     auto undo = new PropEvent<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), layer_->type());
     layer_->setType((Layer::Type) index);
-    VCanvas::document().addUndoEvent(undo);
+    Canvas::document().addUndoEvent(undo);
   });
 }
 

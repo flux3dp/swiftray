@@ -8,7 +8,7 @@ Item {
     visible: true
     anchors.fill: parent
 
-    VCanvas {
+    Canvas {
         id: vcanvas
         anchors.fill: parent
         contentsScale: 1

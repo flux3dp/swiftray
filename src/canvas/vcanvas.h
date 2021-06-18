@@ -22,14 +22,14 @@
 /*The canvas should be designed to handle multiple documents,
   carefully choose what you want to put in the canvas,
   and what you want to put in the document. */
-class VCanvas : public QQuickPaintedItem {
+class Canvas : public QQuickPaintedItem {
 Q_OBJECT
   QML_ELEMENT
 
 public:
-  VCanvas(QQuickItem *parent = 0);
+  Canvas(QQuickItem *parent = 0);
 
-  ~VCanvas();
+  ~Canvas();
 
   void paint(QPainter *painter) override;
 

@@ -88,34 +88,34 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
   }
 
   // Set the owner of vcanvas
-  canvas_ = ui->quickWidget->rootObject()->findChildren<VCanvas *>().first();
-  doc_ = &VCanvas::document();
-  connect(ui->actionCut, &QAction::triggered, canvas_, &VCanvas::editCut);
-  connect(ui->actionCopy, &QAction::triggered, canvas_, &VCanvas::editCopy);
-  connect(ui->actionPaste, &QAction::triggered, canvas_, &VCanvas::editPaste);
-  connect(ui->actionUndo, &QAction::triggered, canvas_, &VCanvas::editUndo);
-  connect(ui->actionRedo, &QAction::triggered, canvas_, &VCanvas::editRedo);
-  connect(ui->actionSelect_All, &QAction::triggered, canvas_, &VCanvas::editSelectAll);
-  connect(ui->actionGroup, &QAction::triggered, canvas_, &VCanvas::editGroup);
-  connect(ui->actionUngroup, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+  canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
+  doc_ = &Canvas::document();
+  connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
+  connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
+  connect(ui->actionPaste, &QAction::triggered, canvas_, &Canvas::editPaste);
+  connect(ui->actionUndo, &QAction::triggered, canvas_, &Canvas::editUndo);
+  connect(ui->actionRedo, &QAction::triggered, canvas_, &Canvas::editRedo);
+  connect(ui->actionSelect_All, &QAction::triggered, canvas_, &Canvas::editSelectAll);
+  connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionExportGcode, &QAction::triggered, [=, this]() {
     auto gen = canvas_->exportGcode();
     PreviewWindow *pw = new PreviewWindow(this);
     pw->setPreviewPath(gen);
     pw->show();
   });
-  connect(ui->actionDrawRect, &QAction::triggered, canvas_, &VCanvas::editDrawRect);
-  connect(ui->actionDrawOval, &QAction::triggered, canvas_, &VCanvas::editDrawOval);
-  connect(ui->actionDrawLine, &QAction::triggered, canvas_, &VCanvas::editDrawLine);
-  connect(ui->actionDrawPath, &QAction::triggered, canvas_, &VCanvas::editDrawPath);
-  connect(ui->actionDrawText, &QAction::triggered, canvas_, &VCanvas::editDrawText);
+  connect(ui->actionDrawRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
+  connect(ui->actionDrawOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
+  connect(ui->actionDrawLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
+  connect(ui->actionDrawPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
+  connect(ui->actionDrawText, &QAction::triggered, canvas_, &Canvas::editDrawText);
   connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
-  connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &VCanvas::editUnion);
-  connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &VCanvas::editSubtract);
-  connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &VCanvas::editIntersect);
-  connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &VCanvas::editDifference);
-  connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &VCanvas::editGroup);
-  connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &VCanvas::editUngroup);
+  connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &Canvas::editUnion);
+  connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &Canvas::editSubtract);
+  connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &Canvas::editIntersect);
+  connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &Canvas::editDifference);
+  connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
   // TODO (connect with vcanvas instead of document, ui files should decouple with document)
   connect(doc_, &Document::layerChanged, this, &MainWindow::updateLayers);
   connect(doc_, &Document::modeChanged, this, &MainWindow::updateMode);

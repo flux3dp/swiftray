@@ -16,19 +16,19 @@ JoinedEventPtr &operator<<(JoinedEventPtr &a, BaseUndoEvent *b) {
 }
 
 void AddLayerEvent::undo() {
-  VCanvas::document().removeLayer(layer_);
+  Canvas::document().removeLayer(layer_);
 }
 
 void AddLayerEvent::redo() {
-  VCanvas::document().addLayer(layer_);
+  Canvas::document().addLayer(layer_);
 }
 
 void RemoveLayerEvent::undo() {
-  VCanvas::document().addLayer(layer_);
+  Canvas::document().addLayer(layer_);
 }
 
 void RemoveLayerEvent::redo() {
-  VCanvas::document().removeLayer(layer_);
+  Canvas::document().removeLayer(layer_);
 }
 
 void AddShapeEvent::undo() {
@@ -54,18 +54,18 @@ void RemoveShapeEvent::redo() {
 
 SelectionEvent::SelectionEvent() {
   origin_selections_.clear();
-  origin_selections_.append(VCanvas::document().selections());
+  origin_selections_.append(Canvas::document().selections());
 }
 
 void SelectionEvent::undo() {
   qInfo() << "Undo selection event" << origin_selections_.size();
   redo_selections_.clear();
-  redo_selections_.append(VCanvas::document().selections());
-  VCanvas::document().setSelections(origin_selections_);
+  redo_selections_.append(Canvas::document().selections());
+  Canvas::document().setSelections(origin_selections_);
 }
 
 void SelectionEvent::redo() {
   qInfo() << "Redo selection event" << redo_selections_.size();
-  VCanvas::document().setSelections(redo_selections_);
+  Canvas::document().setSelections(redo_selections_);
 }
 

@@ -60,7 +60,7 @@ void CacheStack::Cache::addShape(Shape *shape) {
 // Merge all path shape into one joined path
 void CacheStack::Cache::merge(const QTransform &global_transform) {
   if (type_ > Type::NonSelectedFilledPaths) return;
-  const QRectF &screen_rect = VCanvas::screenRect();
+  const QRectF &screen_rect = Canvas::screenRect();
   joined_path_ = QPainterPath();
   for (auto &shape : shapes_) {
     auto *p = (PathShape *) shape;
@@ -76,9 +76,9 @@ const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush &brush) {
   if (!is_fill_cached_) {
     // Get screen information
     QPainterPath screen_rect;
-    screen_rect.addRect(VCanvas::screenRect());
-    float scale = VCanvas::document().isVolatile() ?
-                  VCanvas::document().scale() * 0.5 : VCanvas::document().scale() * 2;
+    screen_rect.addRect(Canvas::screenRect());
+    float scale = Canvas::document().isVolatile() ?
+                  Canvas::document().scale() * 0.5 : Canvas::document().scale() * 2;
     // Calculate data
     joined_path_ = joined_path_.intersected(screen_rect);
     bbox_ = joined_path_.boundingRect();
@@ -86,7 +86,7 @@ const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush &brush) {
     cache_pixmap_ = QPixmap(bbox_.size().toSize() * scale);
     cache_pixmap_.fill(QColor::fromRgba64(255, 255, 255, 0));
     QPainter cpaint(&cache_pixmap_);
-    cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !VCanvas::document().isVolatile());
+    cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !Canvas::document().isVolatile());
     cpaint.setTransform(
          QTransform()
               .scale(scale, scale)

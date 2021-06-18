@@ -12,10 +12,10 @@
 #include <widgets/preview-window.h>
 
 // Initialize static members
-Document *VCanvas::current_doc_ = new Document();
-QRectF VCanvas::screen_rect_ = QRectF();
+Document *Canvas::current_doc_ = new Document();
+QRectF Canvas::screen_rect_ = QRectF();
 
-VCanvas::VCanvas(QQuickItem *parent)
+Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
        ctrl_transform_(Controls::Transform(document())),
        ctrl_select_(Controls::Select(document())),
@@ -34,7 +34,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   setOpaquePainting(true);
   // Set main loop
   timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &VCanvas::loop);
+  connect(timer, &QTimer::timeout, this, &Canvas::loop);
   timer->start(16);
   // Set memory monitor
   mem_thread_ = new QThread(this);
@@ -51,15 +51,15 @@ VCanvas::VCanvas(QQuickItem *parent)
   fps_count = 0;
   fps_timer.start();
 
-  qInfo() << "[VCanvas] Rendering target = " << this->renderTarget();
+  qInfo() << "[Canvas] Rendering target = " << this->renderTarget();
 }
 
-VCanvas::~VCanvas() {
+Canvas::~Canvas() {
   mem_thread_->requestInterruption();
   mem_thread_->wait(1300);
 }
 
-void VCanvas::loadSVG(QByteArray &svg_data) {
+void Canvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
   document().setRecordingUndo(false);
   bool success = svgpp_parser_.parse(svg_data);
@@ -74,7 +74,7 @@ void VCanvas::loadSVG(QByteArray &svg_data) {
   }
 }
 
-void VCanvas::paint(QPainter *painter) {
+void Canvas::paint(QPainter *painter) {
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
   painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
@@ -118,7 +118,7 @@ void VCanvas::paint(QPainter *painter) {
   }
 }
 
-void VCanvas::keyPressEvent(QKeyEvent *e) {
+void Canvas::keyPressEvent(QKeyEvent *e) {
   // qInfo() << "Key press" << e;
 
   for (auto &control : ctrls_) {
@@ -132,7 +132,7 @@ void VCanvas::keyPressEvent(QKeyEvent *e) {
   }
 }
 
-void VCanvas::mousePressEvent(QMouseEvent *e) {
+void Canvas::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   document().setMousePressedScreenCoord(e->pos());
   qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
@@ -157,14 +157,14 @@ void VCanvas::mousePressEvent(QMouseEvent *e) {
   }
 }
 
-void VCanvas::mouseMoveEvent(QMouseEvent *e) {
+void Canvas::mouseMoveEvent(QMouseEvent *e) {
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseMoveEvent(e))
       return;
   }
 }
 
-void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
+void Canvas::mouseReleaseEvent(QMouseEvent *e) {
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseReleaseEvent(e))
       return;
@@ -173,7 +173,7 @@ void VCanvas::mouseReleaseEvent(QMouseEvent *e) {
   document().setMode(Document::Mode::Selecting);
 }
 
-void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
+void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
@@ -201,15 +201,15 @@ void VCanvas::mouseDoubleClickEvent(QMouseEvent *e) {
   }
 }
 
-void VCanvas::wheelEvent(QWheelEvent *e) {
+void Canvas::wheelEvent(QWheelEvent *e) {
   document().setScroll(document().scroll() + e->pixelDelta() / 2.5);
 }
 
-void VCanvas::loop() {
+void Canvas::loop() {
   update();
 }
 
-bool VCanvas::event(QEvent *e) {
+bool Canvas::event(QEvent *e) {
   // qInfo() << "QEvent" << e;
   QNativeGestureEvent *nge;
   Qt::CursorShape cursor;
@@ -247,25 +247,25 @@ bool VCanvas::event(QEvent *e) {
   return QQuickPaintedItem::event(e);
 }
 
-void VCanvas::editCut() {
+void Canvas::editCut() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   clipboard().cutFrom(document());
 }
 
-void VCanvas::editCopy() {
+void Canvas::editCopy() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   clipboard().set(document().selections());
 }
 
-void VCanvas::editPaste() {
+void Canvas::editPaste() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   clipboard().pasteTo(document());
 }
 
-void VCanvas::editDelete() {
+void Canvas::editDelete() {
   qInfo() << "Edit Delete";
   if (document().mode() != Document::Mode::Selecting)
     return;
@@ -275,41 +275,41 @@ void VCanvas::editDelete() {
   document().removeSelections();
 }
 
-void VCanvas::editUndo() { document().undo(); }
+void Canvas::editUndo() { document().undo(); }
 
-void VCanvas::editRedo() { document().redo(); }
+void Canvas::editRedo() { document().redo(); }
 
-void VCanvas::editDrawRect() {
+void Canvas::editDrawRect() {
   ctrl_rect_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::RectDrawing);
 }
 
-void VCanvas::editDrawOval() {
+void Canvas::editDrawOval() {
   ctrl_oval_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::OvalDrawing);
 }
 
-void VCanvas::editDrawLine() {
+void Canvas::editDrawLine() {
   ctrl_line_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::LineDrawing);
 }
 
-void VCanvas::editDrawPath() {
+void Canvas::editDrawPath() {
   ctrl_path_draw_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::PathDrawing);
 }
 
-void VCanvas::editDrawText() {
+void Canvas::editDrawText() {
   ctrl_text_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::TextDrawing);
 }
 
-void VCanvas::editSelectAll() {
+void Canvas::editSelectAll() {
   if (document().mode() != Document::Mode::Selecting)
     return;
   QList<ShapePtr> all_shapes;
@@ -321,21 +321,21 @@ void VCanvas::editSelectAll() {
   document().setSelections(all_shapes);
 }
 
-void VCanvas::editGroup() {
+void Canvas::editGroup() {
   qInfo() << "Edit Group";
   document().groupSelections();
 }
 
-void VCanvas::editUngroup() {
+void Canvas::editUngroup() {
   qInfo() << "Edit Ungroup";
   document().ungroupSelections();
 }
 
-Document &VCanvas::document() { return *VCanvas::current_doc_; }
+Document &Canvas::document() { return *Canvas::current_doc_; }
 
-const QRectF &VCanvas::screenRect() { return screen_rect_; };
+const QRectF &Canvas::screenRect() { return screen_rect_; };
 
-void VCanvas::editUnion() {
+void Canvas::editUnion() {
   if (document().selections().size() < 2)
     return;
   QPainterPath result;
@@ -357,7 +357,7 @@ void VCanvas::editUnion() {
   document().setSelection(new_shape);
 }
 
-void VCanvas::editSubtract() {
+void Canvas::editSubtract() {
   if (document().selections().size() != 2)
     return;
 
@@ -378,7 +378,7 @@ void VCanvas::editSubtract() {
   document().setSelection(new_shape);
 }
 
-void VCanvas::editIntersect() {
+void Canvas::editIntersect() {
   if (document().selections().size() != 2)
     return;
 
@@ -400,14 +400,14 @@ void VCanvas::editIntersect() {
   document().setSelection(new_shape);
 }
 
-void VCanvas::editDifference() {}
+void Canvas::editDifference() {}
 
-void VCanvas::addEmptyLayer() {
+void Canvas::addEmptyLayer() {
   document().addLayer();
   document().addUndoEvent(new AddLayerEvent(document().activeLayer()));
 }
 
-void VCanvas::fitToWindow() {
+void Canvas::fitToWindow() {
   // Notes: we can even speed up by using half resolution:
   //setTextureSize(QSize(width() / 2, height() / 2));
   qreal proper_scale = min((width() - 100) / document().width(),
@@ -419,7 +419,7 @@ void VCanvas::fitToWindow() {
   document().setScroll(proper_translate);
 }
 
-void VCanvas::importImage(QImage &image) {
+void Canvas::importImage(QImage &image) {
   ShapePtr new_shape = make_shared<BitmapShape>(image);
   qreal scale = min(1.0, min(document().height() / image.height(),
                              document().width() / image.width()));
@@ -429,16 +429,16 @@ void VCanvas::importImage(QImage &image) {
   document().setSelection(new_shape);
 }
 
-void VCanvas::setActiveLayer(LayerPtr &layer) {
+void Canvas::setActiveLayer(LayerPtr &layer) {
   document().setActiveLayer(layer);
 }
 
-void VCanvas::setLayerOrder(QList<LayerPtr> &new_order) {
+void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
   // TODO (Add undo for set layer order);
   document().reorderLayers(new_order);
 }
 
-void VCanvas::setFont(const QFont &font) {
+void Canvas::setFont(const QFont &font) {
   // TODO (Add undo for set font event)
   QFont new_font;
   if (!document().selections().isEmpty() &&
@@ -465,22 +465,22 @@ void VCanvas::setFont(const QFont &font) {
   document().setFont(new_font);
 }
 
-shared_ptr<PreviewGenerator> VCanvas::exportGcode() {
+shared_ptr<PreviewGenerator> Canvas::exportGcode() {
   auto gen = make_shared<PreviewGenerator>();
   ToolpathExporter exporter(gen.get());
   exporter.convertStack(document().layers());
   return gen;
 }
 
-void VCanvas::setWidgetSize(QSize widget_size) {
+void Canvas::setWidgetSize(QSize widget_size) {
   widget_size_ = widget_size;
   fitToWindow();
 }
 
-void VCanvas::setWidgetOffset(QPoint offset) {
+void Canvas::setWidgetOffset(QPoint offset) {
   widget_offset_ = offset;
 }
 
-Clipboard &VCanvas::clipboard() {
+Clipboard &Canvas::clipboard() {
   return clipboard_;
 }
