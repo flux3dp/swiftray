@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <QStyleOption>
 #include <widgets/layer-list-item.h>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 #include "ui_layer-list-item.h"
 #include <undo.h>
 

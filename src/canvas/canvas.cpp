@@ -1,4 +1,4 @@
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 #include <QQuickWidget>
 #include <QCursor>
 #include <QDebug>

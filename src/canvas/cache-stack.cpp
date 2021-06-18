@@ -3,7 +3,7 @@
 #include <QList>
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 
 CacheStack::CacheStack() : force_fill_(false), force_selection_(false) {}
 

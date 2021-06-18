@@ -34,7 +34,7 @@ SET(SOURCES
         src/canvas/cache-stack.cpp
         src/window/main.cpp
         src/window/mainwindow.cpp
-        src/canvas/vcanvas.cpp
+        src/canvas/canvas.cpp
         src/parser/svgpp-parser.cpp
         src/parser/svgpp-impl.cpp
         src/parser/svgpp-external-impl.cpp

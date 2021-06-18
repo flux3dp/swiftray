@@ -1,5 +1,5 @@
 #include <undo.h>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 
 JoinedEventPtr operator+(const EventPtr &a, const EventPtr &b) {
   return JoinedEventPtr(new JoinedEvent({a, b}));

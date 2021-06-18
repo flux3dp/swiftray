@@ -6,7 +6,7 @@
 #include <QLocale>
 #include <QTranslator>
 #include <QDebug>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 #include <window/osxwindow.h>
 #include <window/mainwindow.h>
 

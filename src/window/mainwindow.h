@@ -6,7 +6,7 @@
 #include <widgets/layer-list-item.h>
 #include <widgets/transform-panel.h>
 #include <widgets/layer-params-panel.h>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H

@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <layer.h>
 #include <shape/shape.h>
-#include <canvas/vcanvas.h>
+#include <canvas/canvas.h>
 
 const QColor LayerColors[17] = {
      "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
