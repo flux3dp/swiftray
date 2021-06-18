@@ -5,8 +5,8 @@
   </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
     <generated>
-      <config projectName="vecty" targetName="vecty_bin" />
-      <config projectName="vecty" targetName="vecty_bin_autogen" />
+      <config projectName="vecty" targetName="beambird" />
+      <config projectName="vecty" targetName="beambird_autogen" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -17,9 +17,11 @@
   <component name="ChangeListManager">
     <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Optimize layer rendering">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/window/mainwindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/window/mainwindow.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/styles/vecty.qss" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/beambird.pro" beforeDir="false" afterPath="$PROJECT_DIR$/beambird.pro" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/beambird.pro.user" beforeDir="false" afterPath="$PROJECT_DIR$/beambird.pro.user" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/qml.qrc" beforeDir="false" afterPath="$PROJECT_DIR$/qml.qrc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path-edit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-edit.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/widgets/layer-list-item.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-list-item.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +109,7 @@
       <workItem from="1623590119938" duration="58274000" />
       <workItem from="1623770873114" duration="28553000" />
       <workItem from="1623861399812" duration="55722000" />
-      <workItem from="1623998525310" duration="20000" />
+      <workItem from="1623998525310" duration="862000" />
     </task>
     <task id="LOCAL-00001" summary="Add CMake and CLion Environment">
       <created>1623404105389</created>

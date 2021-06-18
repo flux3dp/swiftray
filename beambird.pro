@@ -37,22 +37,17 @@ QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-        src/canvas/layer.cpp \
-        src/canvas/scene.cpp \
         $$files(src/canvas/controls/*.cpp) \
         $$files(src/shape/*.cpp) \
-        src/widgets/canvas_text_edit.cpp \
-        src/widgets/layer_list_item.cpp \
-        src/widgets/layer_params_panel.cpp \
-        src/widgets/preview-window.cpp \
-        src/widgets/transform_panel.cpp \
+        $$files(src/widgets/*.cpp) \
+        $$files(src/parser/*.cpp) \
+        $$files(src/canvas/*.cpp) \
+        $$files(src/gcode/*.cpp) \
+        src/undo.cpp \
+        src/document.cpp \
+        src/layer.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
-        src/canvas/vcanvas.cpp \
-        src/parser/svgpp_parser.cpp \
-        src/parser/svgpp_impl.cpp \
-        src/parser/svgpp_external_impl.cpp \
-        src/gcode/toolpath_exporter.cpp
 
 RESOURCES += qml.qrc
 
@@ -73,21 +68,18 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    src/canvas/layer.h \
-    src/canvas/document.h \
+    src/document.h \
+    src/layer.h \
+    src/undo.h \
+    $$files(src/canvas/*.h) \
     $$files(src/canvas/controls/*.h) \
     $$files(src/shape/*.h) \
-    src/widgets/canvas_text_edit.h \
-    src/widgets/layer_list_item.h \
-    src/widgets/layer_params_panel.h \
-    src/widgets/preview-window.h \
-    src/widgets/transform_panel.h \
+    $$files(src/parser/*.h) \
+    $$files(src/parser/generators/*.h) \
+    $$files(src/gcoder/*.h) \
+    $$files(src/widgets/*.h) \
     src/window/mainwindow.h \
-    src/window/osxwindow.h \
-    src/canvas/vcanvas.h \
-    src/parser/svgpp_common.h \
-    src/parser/svgpp_parser.h \
-    src/parser/svgpp_color_factory.h
+    src/window/osxwindow.h
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd

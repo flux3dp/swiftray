@@ -41,6 +41,6 @@
         <file>images/icon-setting.png</file>
         <file>images/icon-valign-bot.png</file>
         <file>images/icon-plus-01.png</file>
-        <file>styles/vecty.qss</file>
+        <file>styles/beambird.qss</file>
     </qresource>
 </RCC>
