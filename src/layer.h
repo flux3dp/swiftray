@@ -15,7 +15,7 @@ public:
 
   Layer(const QColor &color, const QString &name);
 
-  Layer(int new_layer_id);
+  explicit Layer(int new_layer_id);
 
   Layer();
 
@@ -30,17 +30,11 @@ public:
   // Return children array
   QList<ShapePtr> &children();
 
-  // Clear all children
-  void clear();
-
   // Clone the children and the layer itself
   shared_ptr<Layer> clone();
 
   // Remove specific ShapePtr
   void removeShape(const ShapePtr &shape);
-
-  // Remove shapes marked with selected
-  void removeSelected();
 
   // Cache functions
   void flushCache();
@@ -51,15 +45,15 @@ public:
 
   // Getters:
 
-  QColor color() const;
+  const QColor &color() const;
 
-  QRectF screenRect();
-
-  QString name() const;
+  const QString &name() const;
 
   Type type() const;
 
   bool isVisible() const;
+
+  bool isDiode() const;
 
   int repeat() const;
 
@@ -67,13 +61,18 @@ public:
 
   int strength() const;
 
+  double stepHeight() const;
+
+  double targetHeight() const;
+
+
   // Setters:
 
   void setColor(const QColor &color);
 
-  void setDiode(int diode_);
+  void setDiode(bool is_diode);
 
-  void setHeight(double height);
+  void setTargetHeight(double height);
 
   void setName(const QString &name);
 
@@ -87,7 +86,7 @@ public:
 
   void setVisible(bool visible);
 
-  void setZStep(double zstep);
+  void setStepHeight(double step_height);
 
 private:
   QColor color_;
@@ -95,16 +94,15 @@ private:
   QList<ShapePtr> children_;
   Type type_;
   bool is_diode_;
-  bool visible_;
+  bool is_visible_;
   double target_height_;
-  double zstep_;
+  double step_height_;
   int repeat_;
   int speed_;
   int strength_;
   // Cache properties
   mutable bool cache_valid_;
   mutable CacheStack cache_stack_;
-  mutable QRectF screen_rect_;
   // Pen properties
   mutable QPen dash_pen_;
   QPen solid_pen_;

@@ -165,7 +165,7 @@ LayerPtr &Document::activeLayer() {
   return active_layer_;
 }
 
-bool Document::setActiveLayer(QString name) {
+bool Document::setActiveLayer(const QString &name) {
   for (auto &layer : layers()) {
     if (layer->name() == name) {
       active_layer_ = layer;

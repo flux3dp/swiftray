@@ -5,7 +5,7 @@
 #include <shape/group-shape.h>
 #include <canvas/vcanvas.h>
 
-CacheStack::CacheStack() : force_fill_(false) {}
+CacheStack::CacheStack() : force_fill_(false), force_selection_(false) {}
 
 void CacheStack::begin(const QTransform &global_transform) {
   global_transform_ = global_transform;
@@ -72,7 +72,7 @@ void CacheStack::Cache::merge(const QTransform &global_transform) {
   }
 }
 
-const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush brush) {
+const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush &brush) {
   if (!is_fill_cached_) {
     // Get screen information
     QPainterPath screen_rect;

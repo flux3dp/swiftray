@@ -79,10 +79,6 @@ public:
 
   QPointF scroll() const;
 
-  qreal scrollX() const;
-
-  qreal scrollY() const;
-
   qreal scale() const;
 
   qreal width() const;
@@ -101,7 +97,7 @@ public:
   // Setters:
   void setMode(Mode mode);
 
-  bool setActiveLayer(QString name);
+  bool setActiveLayer(const QString &name);
 
   void setActiveLayer(LayerPtr &layer);
 
@@ -110,10 +106,6 @@ public:
   void setHeight(qreal height);
 
   void setScroll(QPointF scroll);
-
-  void setScrollX(qreal scroll_x);
-
-  void setScrollY(qreal scroll_y);
 
   void setScale(qreal scale);
 

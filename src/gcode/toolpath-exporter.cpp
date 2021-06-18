@@ -73,6 +73,7 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
 }
 
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
+  // TODO (Add dirty rect)
   qInfo() << "Convert Bitmap" << bmp;
   layer_painter_->save();
   layer_painter_->setTransform(QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0), false);
@@ -89,6 +90,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Fix paths inside group)
     // TODO (Fix overlapping fills inside a single layer)
+    // TODO (Consider CacheStack as a primary painter for layers)
     layer_painter_->setBrush(QBrush(current_layer_->color()));
     layer_painter_->drawPath(path->transform().map(path->path()));
     layer_painter_->setBrush(Qt::NoBrush);

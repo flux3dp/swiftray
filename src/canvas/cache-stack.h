@@ -31,7 +31,7 @@ public:
 
     void addShape(Shape *shape);
 
-    const QPixmap &fillCache(QPainter *painter, QBrush brush);
+    const QPixmap &fillCache(QPainter *painter, QBrush &brush);
 
     // Path cache
     QPainterPath joined_path_;

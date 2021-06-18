@@ -28,8 +28,6 @@ public:
     this->set(items);
     qInfo() << "Clipboard cut size" << items.size();
     doc.removeSelections();
-    // TODO fix random selected paste..
-    // TODO fix remove shapes because the layer is removed!? (maybe we should keep it)
     doc.addUndoEvent(SelectionEvent::shared(items) +
                      JoinedEvent::removeShapes(items));
   }

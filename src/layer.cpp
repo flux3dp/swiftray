@@ -1,7 +1,7 @@
 #include <QDebug>
 #include <layer.h>
 #include <shape/shape.h>
-#include <shape/path-shape.h>
+#include <canvas/vcanvas.h>
 
 const QColor LayerColors[17] = {
      "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
@@ -10,7 +10,9 @@ const QColor LayerColors[17] = {
      "#607D8B", "#9E9E9E"
 };
 
-int layer_color_counter;
+int layer_color_counter = 0;
+
+// Constructors
 
 Layer::Layer(const QColor &color, const QString &name) {
   color_ = color;
@@ -18,8 +20,8 @@ Layer::Layer(const QColor &color, const QString &name) {
   speed_ = 20;
   strength_ = 30;
   repeat_ = 1;
-  visible_ = true;
-  zstep_ = 0;
+  is_visible_ = true;
+  step_height_ = 0;
   is_diode_ = false;
   target_height_ = 0;
   cache_valid_ = false;
@@ -55,10 +57,10 @@ void Layer::cache() const {
 }
 
 int Layer::paint(QPainter *painter, int counter) const {
-  if (!visible_) return 0;
-  dash_pen_.setDashOffset(0.3F * counter);
-
+  if (!is_visible_) return 0;
+  // Update cache
   if (!cache_valid_) cache();
+  dash_pen_.setDashOffset(0.3F * counter);
   cache_stack_.setPen(dash_pen_, solid_pen_);
   // Draw shapes
   return cache_stack_.paint(painter);
@@ -71,24 +73,10 @@ void Layer::addShape(const ShapePtr &shape) {
 }
 
 void Layer::removeShape(const ShapePtr &shape) {
-  //shape->setLayer(nullptr);
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
   }
   flushCache();
-}
-
-void Layer::removeSelected() {
-  auto func = [](ShapePtr &s) {
-    if (s->selected()) {
-      s->setSelected(false);
-      return true;
-    } else {
-      return false;
-    }
-  };
-  children().erase(std::remove_if(children_.begin(), children_.end(), func),
-                   children_.end());
 }
 
 void Layer::calcPen() {
@@ -99,25 +87,11 @@ void Layer::calcPen() {
   solid_pen_.setCosmetic(true);
 }
 
-void Layer::clear() { children_.clear(); }
+// Getters
 
-QColor Layer::color() const { return color_; }
-
-void Layer::setColor(const QColor &color) {
-  color_ = color;
-  calcPen();
-}
+const QColor &Layer::color() const { return color_; }
 
 QList<ShapePtr> &Layer::children() { return children_; }
-
-LayerPtr Layer::clone() {
-  LayerPtr layer = make_shared<Layer>(*this);
-  layer->children_.clear();
-  for (auto &shape : children_) {
-    layer->addShape(shape->clone());
-  }
-  return layer;
-}
 
 int Layer::repeat() const {
   return repeat_;
@@ -131,55 +105,98 @@ int Layer::strength() const {
   return strength_;
 }
 
-QString Layer::name() const {
+const QString &Layer::name() const {
   return name_;
 }
 
-void Layer::setHeight(double height) {
-  target_height_ = height;
-}
-
-void Layer::setName(const QString &name) {
-  name_ = name;
-}
-
-void Layer::setSpeed(int speed) {
-  speed_ = speed;
-}
-
-void Layer::setStrength(int strength) {
-  strength_ = strength;
-}
-
-void Layer::setRepeat(int repeat) {
-  repeat_ = repeat;
-}
-
-void Layer::setDiode(int diode) {
-  is_diode_ = !!diode;
-}
-
-void Layer::setZStep(double zstep) {
-  zstep_ = zstep;
-}
-
 bool Layer::isVisible() const {
-  return visible_;
+  return is_visible_;
 }
 
-void Layer::setVisible(bool visible) {
-  visible_ = visible;
+bool Layer::isDiode() const {
+  return is_diode_;
 }
 
 void Layer::flushCache() {
   cache_valid_ = false;
 }
 
-Layer::Type Layer::type() const {
-  return type_;
+double Layer::stepHeight() const { return step_height_; }
+
+double Layer::targetHeight() const { return target_height_; }
+
+Layer::Type Layer::type() const { return type_; }
+
+// Setters
+
+void Layer::setVisible(bool visible) {
+  is_visible_ = visible;
+}
+
+void Layer::setColor(const QColor &color) {
+  auto undo = new PropObjEvent<Layer, QColor, &Layer::color, &Layer::setColor>(this, color_);
+  color_ = color;
+  calcPen();
+  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setType(Layer::Type type) {
+  auto undo = new PropEvent<Layer, Layer::Type, &Layer::type, &Layer::setType>(this, type_);
   type_ = type;
   flushCache();
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setTargetHeight(double height) {
+  auto undo_evt = new PropEvent<Layer, double, &Layer::targetHeight, &Layer::setTargetHeight>(this,
+                                                                                              target_height_);
+  target_height_ = height;
+  VCanvas::document().addUndoEvent(undo_evt);
+}
+
+void Layer::setName(const QString &name) {
+  auto undo = new PropObjEvent<Layer, QString, &Layer::name, &Layer::setName>(this, name_);
+  name_ = name;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setSpeed(int speed) {
+  auto undo = new PropEvent<Layer, int, &Layer::speed, &Layer::setSpeed>(this, speed_);
+  speed_ = speed;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setStrength(int strength) {
+  auto undo = new PropEvent<Layer, int, &Layer::strength, &Layer::setStrength>(this, strength_);
+  strength_ = strength;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setRepeat(int repeat) {
+  auto undo = new PropEvent<Layer, int, &Layer::repeat, &Layer::setRepeat>(this, repeat_);
+  repeat_ = repeat;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setDiode(bool is_diode) {
+  auto undo = new PropEvent<Layer, bool, &Layer::isDiode, &Layer::setDiode>(this, is_diode_);
+  is_diode_ = is_diode;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+void Layer::setStepHeight(double step_height) {
+  auto undo = new PropEvent<Layer, double, &Layer::stepHeight, &Layer::setStepHeight>(this, step_height_);
+  step_height_ = step_height;
+  VCanvas::document().addUndoEvent(undo);
+}
+
+// Clone
+
+LayerPtr Layer::clone() {
+  LayerPtr layer = make_shared<Layer>(*this);
+  layer->children_.clear();
+  for (auto &shape : children_) {
+    layer->addShape(shape->clone());
+  }
+  return layer;
 }

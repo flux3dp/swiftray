@@ -28,7 +28,7 @@ public:
   }
 
   void set(svgpp::tag::attribute::data_height, double val) {
-    layer().setHeight(val);
+    layer().setTargetHeight(val);
   }
 
   void set(svgpp::tag::attribute::data_diode, int val) {
@@ -36,7 +36,7 @@ public:
   }
 
   void set(svgpp::tag::attribute::data_zstep, double val) {
-    layer().setZStep(val);
+    layer().setStepHeight(val);
   }
 
   void set(svgpp::tag::attribute::data_name, RangedChar fragment) {

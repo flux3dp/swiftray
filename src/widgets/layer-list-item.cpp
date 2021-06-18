@@ -51,7 +51,7 @@ void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->setVisible(!layer_->isVisible());
     VCanvas::document().addUndoEvent(
-         new PropChangeEvent<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()));
+         new PropEvent<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()));
   });
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     layer_->setType((Layer::Type) index);

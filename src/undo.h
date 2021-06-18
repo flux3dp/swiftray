@@ -32,7 +32,7 @@ typedef shared_ptr<BaseUndoEvent> EventPtr;
 
 class AddLayerEvent : public BaseUndoEvent {
 public:
-  AddLayerEvent(LayerPtr &layer) : layer_(layer) {}
+  explicit AddLayerEvent(LayerPtr &layer) : layer_(layer) {}
 
   void undo() override;
 
@@ -43,7 +43,7 @@ public:
 
 class RemoveLayerEvent : public BaseUndoEvent {
 public:
-  RemoveLayerEvent(LayerPtr layer) : layer_(layer) {}
+  explicit RemoveLayerEvent(LayerPtr &layer) : layer_(layer) {}
 
   void undo() override;
 
@@ -54,17 +54,17 @@ public:
 
 class AddShapeEvent : public BaseUndoEvent {
 public:
-  AddShapeEvent(ShapePtr shape) :
+  explicit AddShapeEvent(const ShapePtr &shape) :
        shape_(shape) { layer_ = &shape->layer(); }
 
-  AddShapeEvent(LayerPtr layer, ShapePtr shape) :
+  AddShapeEvent(const LayerPtr &layer, const ShapePtr &shape) :
        layer_(layer.get()), shape_(shape) {}
 
-  static shared_ptr<AddShapeEvent> shared(ShapePtr shape) {
+  static shared_ptr<AddShapeEvent> shared(const ShapePtr &shape) {
     return make_shared<AddShapeEvent>(shape);
   }
 
-  static shared_ptr<AddShapeEvent> shared(LayerPtr layer, ShapePtr shape) {
+  static shared_ptr<AddShapeEvent> shared(const LayerPtr &layer, const ShapePtr &shape) {
     return make_shared<AddShapeEvent>(layer, shape);
   }
 
@@ -79,11 +79,19 @@ public:
 
 class RemoveShapeEvent : public BaseUndoEvent {
 public:
-  RemoveShapeEvent(ShapePtr shape) :
+  explicit RemoveShapeEvent(const ShapePtr &shape) :
        shape_(shape) { layer_ = &shape->layer(); }
 
-  RemoveShapeEvent(LayerPtr layer, ShapePtr shape) :
+  RemoveShapeEvent(const LayerPtr &layer, const ShapePtr &shape) :
        layer_(layer.get()), shape_(shape) {}
+
+  static shared_ptr<RemoveShapeEvent> shared(const ShapePtr &shape) {
+    return make_shared<RemoveShapeEvent>(shape);
+  }
+
+  static shared_ptr<RemoveShapeEvent> shared(const LayerPtr &layer, const ShapePtr &shape) {
+    return make_shared<RemoveShapeEvent>(layer, shape);
+  }
 
   void undo() override;
 
@@ -98,7 +106,7 @@ class SelectionEvent : public BaseUndoEvent {
 public:
   SelectionEvent();
 
-  SelectionEvent(const QList<ShapePtr> &origin_selections) {
+  explicit SelectionEvent(const QList<ShapePtr> &origin_selections) {
     origin_selections_.clear();
     origin_selections_.append(origin_selections);
   }
@@ -138,13 +146,13 @@ public:
     }
   }
 
-  virtual void undo() {
+  void undo() override {
     for (auto &event : events) {
       event->undo();
     }
   }
 
-  virtual void redo() {
+  void redo() override {
     for (auto &event : events) {
       event->redo();
     }
@@ -171,13 +179,13 @@ public:
 
 typedef shared_ptr<JoinedEvent> JoinedEventPtr;
 
-// TODO(Add prop change event for non referenced type, probably change PropType to PropType&)
+// Event when object's property is changed, and the property can be "passed by value"
 template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
      PropType)>
-class PropChangeEvent : public BaseUndoEvent {
+class PropEvent : public BaseUndoEvent {
 public:
 
-  explicit PropChangeEvent(T *target, PropType value) : target_(target), value_(value) {}
+  explicit PropEvent(T *target, PropType value) : target_(target), value_(value) {}
 
   void undo() override {
     qInfo() << "Undoing prop change";
@@ -195,12 +203,13 @@ public:
   PropType redo_value_;
 };
 
+// Event when object's property is changed, and the property is usually "passed by reference"
 template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
      const PropType &)>
-class PropObjChangeEvent : public BaseUndoEvent {
+class PropObjEvent : public BaseUndoEvent {
 public:
 
-  explicit PropObjChangeEvent(T *target, PropType value) : target_(target), value_(value) {}
+  explicit PropObjEvent(T *target, PropType value) : target_(target), value_(value) {}
 
   void undo() override {
     qInfo() << "Undoing prop change";
@@ -226,7 +235,7 @@ JoinedEventPtr &operator<<(JoinedEventPtr &a, const EventPtr &b);
 JoinedEventPtr &operator<<(JoinedEventPtr &a, BaseUndoEvent *b);
 
 // Abbreviations for undo events
-typedef PropObjChangeEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;
-typedef PropChangeEvent<Shape, qreal, &Shape::rotation, &Shape::setRotation> RotationChangeEvent;
+typedef PropObjEvent<Shape, QTransform, &Shape::transform, &Shape::setTransform> TransformChangeEvent;
+typedef PropEvent<Shape, qreal, &Shape::rotation, &Shape::setRotation> RotationChangeEvent;
 
 #endif

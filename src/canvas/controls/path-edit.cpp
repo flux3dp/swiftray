@@ -119,7 +119,7 @@ bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
     return false;
-  scene().addUndoEvent(new PropObjChangeEvent<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
+  scene().addUndoEvent(new PropObjEvent<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
        this, target().path()));
   target().setPath(path_);
   return true;
@@ -252,7 +252,7 @@ void PathEdit::endEditing() {
        new JoinedEvent(
             {
                  new SelectionEvent(scene().selections()),
-                 new PropObjChangeEvent<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
+                 new PropObjEvent<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
                       (PathShape *) target_.get(), target().path())
             }
        )

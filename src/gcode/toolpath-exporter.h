@@ -38,7 +38,6 @@ private:
 
   bool rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
 
-  QList<QString> gcode_;
   QTransform global_transform_;
   QList<ShapePtr> layer_elements_;
   QList<QPolygonF> layer_polygons_;
