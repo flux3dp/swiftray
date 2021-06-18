@@ -69,7 +69,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     src/document.h \
     src/layer.h \
-    src/undo.h \
+    src/command.h \
     $$files(src/canvas/*.h) \
     $$files(src/canvas/controls/*.h) \
     $$files(src/shape/*.h) \

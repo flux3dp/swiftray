@@ -19,12 +19,10 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   path.moveTo(scene().mousePressedCanvasCoord());
   path.lineTo(scene().getCanvasCoord(e->pos()));
   ShapePtr new_line = make_shared<PathShape>(path);
-  scene().activeLayer()->addShape(new_line);
-  scene().setSelection(new_line);
   scene().setMode(Document::Mode::Selecting);
-  scene().addUndoEvent(
-       AddShapeEvent::shared(new_line) +
-       SelectionEvent::shared(scene().lastSelections())
+  scene().execute(
+       Commands::AddShape::shared(scene().activeLayer(), new_line) +
+       Commands::Select::shared({new_line})
   );
   return true;
 }

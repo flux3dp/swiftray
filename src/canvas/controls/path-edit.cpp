@@ -122,8 +122,9 @@ bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
     return false;
 
-  scene().addUndoEvent(new PropObjEvent<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
-       this, target().path()));
+  scene().execute(
+       new Commands::SetRef<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
+            this, path_));
   target().setPath(path_);
   return true;
 }
@@ -255,15 +256,11 @@ void PathEdit::setPath(const QPainterPath &path) {
 
 void PathEdit::endEditing() {
   scene().setMode(Document::Mode::Selecting);
-  scene().addUndoEvent(
-       new JoinedEvent({
-                            new SelectionEvent(scene().selections()),
-                            new PropObjEvent<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
-                                 (PathShape *) target_.get(), target().path())
-                       }
-       )
+
+  scene().execute(
+       Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>::shared(
+            &target(), path_) +
+       Commands::Select::shared({target_})
   );
-  target().setPath(path_);
-  scene().setSelection(target_);
   reset();
 }

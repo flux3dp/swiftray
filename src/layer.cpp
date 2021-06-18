@@ -123,10 +123,8 @@ void Layer::setVisible(bool visible) {
 }
 
 void Layer::setColor(const QColor &color) {
-  auto undo = new PropObjEvent<Layer, QColor, &Layer::color, &Layer::setColor>(this, color_);
   color_ = color;
   calcPen();
-  Canvas::document().addUndoEvent(undo);
 }
 
 void Layer::setType(Layer::Type type) {

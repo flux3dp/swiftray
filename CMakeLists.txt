@@ -18,7 +18,7 @@ SET(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTORCC ON)
 SET(CMAKE_AUTOUIC ON)
 SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
-set(CMAKE_CXX_FLAGS "-O2")
+#SET(CMAKE_CXX_FLAGS "-O2")
 
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
@@ -27,7 +27,7 @@ FILE(GLOB WIDGETS_CPP2 "src/widgets/*.cpp")
 SET(SOURCES
         src/layer.cpp
         src/document.cpp
-        src/undo.cpp
+        src/command.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
         ${WIDGETS_CPP2}

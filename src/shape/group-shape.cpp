@@ -54,7 +54,6 @@ void GroupShape::calcBoundingBox() const {
   }
 
   QRectF local_bbox = QRectF(left, top, right - left, bottom - top);
-  qInfo() << "Group local bbox" << local_bbox;
   this->bbox_ = transform().mapRect(local_bbox);
   this->rotated_bbox_ = transform().map(QPolygonF(local_bbox));
   // TODO (Move group's refresh cache outside of bounding rect)

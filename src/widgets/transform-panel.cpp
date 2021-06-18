@@ -84,7 +84,6 @@ void TransformPanel::setTransformControl(Controls::Transform *ctrl) {
 }
 
 void TransformPanel::updateControl() {
-  qInfo() << "PX" << x_ << y_ << r_ << w_ << h_;
   ctrl_->updateTransformFromUI(x_, y_, r_, w_, h_);
 }
 

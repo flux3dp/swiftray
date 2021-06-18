@@ -90,25 +90,30 @@ QRectF Transform::boundingRect() {
 }
 
 void Transform::applyRotate(bool temporarily) {
+  qDebug() << "Transform rotated";
   QTransform transform =
        QTransform()
             .translate(action_center_.x(), action_center_.y())
             .rotate(rotation_to_apply_)
             .translate(-action_center_.x(), -action_center_.y());
 
+  auto cmd = make_shared<JoinedCmd>();
+
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
       shape->setTempTransform(transform);
     } else {
+      qDebug() << "[Transform] Apply rotation";
       shape->setTempTransform(QTransform());
-      shape->applyTransform(transform);
-      shape->setRotation(shape->rotation() + rotation_to_apply_);
+      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
+      cmd << new Commands::SetRotation(shape.get(), shape->rotation() + rotation_to_apply_);
     }
   }
 
   if (!temporarily) {
     rotation_to_apply_ = 0;
     bbox_need_recalc_ = true;
+    scene().execute(cmd);
     emit transformChanged();
   }
 }
@@ -121,19 +126,22 @@ void Transform::applyScale(bool temporarily) {
             .scale(scale_x_to_apply_, scale_y_to_apply_)
             .rotate(-bbox_angle_)
             .translate(-action_center_.x(), -action_center_.y());
+  auto cmd = make_shared<JoinedCmd>();
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
       shape->setTempTransform(transform);
     } else {
+      qDebug() << "[Transform] Apply scale";
       shape->setTempTransform(QTransform());
-      shape->applyTransform(transform);
+      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
     }
   }
 
   if (!temporarily) {
     scale_x_to_apply_ = scale_y_to_apply_ = 1;
     bbox_need_recalc_ = true;
+    scene().execute(cmd);
     emit transformChanged();
   }
 }
@@ -141,19 +149,21 @@ void Transform::applyScale(bool temporarily) {
 void Transform::applyMove(bool temporarily) {
   QTransform transform = QTransform().translate(translate_to_apply_.x(),
                                                 translate_to_apply_.y());
-
+  auto cmd = make_shared<JoinedCmd>();
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
       shape->setTempTransform(transform);
     } else {
+      qDebug() << "[Transform] Apply move";
       shape->setTempTransform(QTransform());
-      shape->applyTransform(transform);
+      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
     }
   }
 
   if (!temporarily) {
     bbox_need_recalc_ = true;
     translate_to_apply_ = QPointF();
+    scene().execute(cmd);
     emit transformChanged();
   }
 }
@@ -231,22 +241,12 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
 }
 
 bool Transform::mouseReleaseEvent(QMouseEvent *e) {
-  // Save before changes apply
-  auto undo_evt = make_shared<JoinedEvent>();
-  for (auto &shape : selections()) {
-    undo_evt << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
-    if (rotation_to_apply_ != 0)
-      undo_evt << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
-  }
-
   if (rotation_to_apply_ != 0) applyRotate(false);
   if (translate_to_apply_ != QPointF()) applyMove(false);
   if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) applyScale(false);
 
   reset();
-
   scene().setMode(Document::Mode::Selecting);
-  scene().addUndoEvent(undo_evt);
   return true;
 }
 

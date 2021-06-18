@@ -35,17 +35,12 @@ bool Text::keyPressEvent(QKeyEvent *e) {
     if (!target().hasLayer() &&
         scene().text_box_->toPlainText().length() > 0) {
       qInfo() << "Create new text shape instance";
-      scene().activeLayer()->addShape(target_);
-      scene().setSelection(target_);
-      scene().addUndoEvent(
-           AddShapeEvent::shared(target_) +
-           SelectionEvent::shared(scene().lastSelections())
+      scene().execute(
+           Commands::AddShape::shared(scene().activeLayer(), target_) +
+           Commands::Select::shared({target_})
       );
     } else {
-      scene().setSelection(target_);
-      scene().addUndoEvent(
-           SelectionEvent::shared(scene().lastSelections())
-      );
+      scene().execute(Commands::Select::shared({target_}));
     }
     reset();
     scene().setMode(Document::Mode::Selecting);

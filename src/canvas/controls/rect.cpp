@@ -17,12 +17,10 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addRect(rect_);
   ShapePtr new_rect = make_shared<PathShape>(path);
-  scene().activeLayer()->addShape(new_rect);
   scene().setMode(Document::Mode::Selecting);
-  scene().setSelection(new_rect);
-  scene().addUndoEvent(
-       AddShapeEvent::shared(new_rect) +
-       SelectionEvent::shared(scene().lastSelections())
+  scene().execute(
+       Commands::AddShape::shared(scene().activeLayer(), new_rect) +
+       Commands::Select::shared({new_rect})
   );
   return true;
 }

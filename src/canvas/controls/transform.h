@@ -60,16 +60,16 @@ namespace Controls {
     }
 
     void updateTransformFromUI(double new_x, double new_y, double new_r, double new_w, double new_h) {
-      if (new_x != x() || new_y != y()) {
+      if (abs(new_x - x()) > 0.01 || abs(new_y - y()) > 0.01) {
         translate_to_apply_ = QPointF(new_x - x(), new_y - y());
         applyMove();
       }
-      if (new_r != rotation()) {
+      if (abs(new_r - rotation()) > 0.01) {
         rotation_to_apply_ = new_r - rotation();
         action_center_ = boundingRect().center();
         applyRotate();
       }
-      if (new_w != width() || new_h != height()) {
+      if (abs(new_w - width()) > 0.01 || abs(new_h - height()) > 0.01) {
         scale_x_to_apply_ = new_w / width();
         scale_y_to_apply_ = new_h / height();
         action_center_ = boundingRect().center();

@@ -3,7 +3,7 @@
 #include <widgets/layer-list-item.h>
 #include <canvas/canvas.h>
 #include "ui_layer-list-item.h"
-#include <undo.h>
+#include <command.h>
 
 /*LayerListItem::LayerListItem(QWidget *parent) :
     QWidget(parent),
@@ -50,14 +50,14 @@ void LayerListItem::loadStyles() {
 
 void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
-    layer_->setVisible(!layer_->isVisible());
-    Canvas::document().addUndoEvent(
-         new PropEvent<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()));
+    Canvas::document().execute(
+         Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>::shared(layer_.get(), !layer_->isVisible())
+    );
   });
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    auto undo = new PropEvent<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), layer_->type());
-    layer_->setType((Layer::Type) index);
-    Canvas::document().addUndoEvent(undo);
+    Canvas::document().execute(
+         Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>::shared(layer_.get(), (Layer::Type) index)
+    );
   });
 }
 

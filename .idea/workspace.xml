@@ -15,14 +15,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Optimize layer rendering">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/beambird.pro" beforeDir="false" afterPath="$PROJECT_DIR$/beambird.pro" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/beambird.pro.user" beforeDir="false" afterPath="$PROJECT_DIR$/beambird.pro.user" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/qml.qrc" beforeDir="false" afterPath="$PROJECT_DIR$/qml.qrc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path-edit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-edit.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer-list-item.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-list-item.cpp" afterDir="false" />
-    </list>
+    <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Optimize layer rendering" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -70,9 +63,9 @@
     </key>
   </component>
   <component name="RunManager" selected="CMake Application.beambird">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <configuration name="beambird" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="beambird" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="vecty" RUN_TARGET_NAME="beambird">
@@ -109,7 +102,8 @@
       <workItem from="1623590119938" duration="58274000" />
       <workItem from="1623770873114" duration="28553000" />
       <workItem from="1623861399812" duration="55722000" />
-      <workItem from="1623998525310" duration="862000" />
+      <workItem from="1623998525310" duration="11206000" />
+      <workItem from="1624033652869" duration="7866000" />
     </task>
     <task id="LOCAL-00001" summary="Add CMake and CLion Environment">
       <created>1623404105389</created>

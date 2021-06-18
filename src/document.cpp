@@ -31,8 +31,6 @@ void Document::setSelection(ShapePtr &shape) {
 
 void Document::setSelections(const QList<ShapePtr> &new_selections) {
   for (auto &shape : selections_) { shape->setSelected(false); }
-  last_selections_.clear();
-  last_selections_.append(selections_);
   selections_.clear();
   selections_.append(new_selections);
   for (auto &shape : selections_) { shape->setSelected(true); }
@@ -40,8 +38,6 @@ void Document::setSelections(const QList<ShapePtr> &new_selections) {
 }
 
 QList<ShapePtr> &Document::selections() { return selections_; }
-
-QList<ShapePtr> &Document::lastSelections() { return last_selections_; }
 
 void Document::dumpStack(QList<LayerPtr> &stack) {
   qInfo() << "<Stack>";
@@ -57,11 +53,11 @@ void Document::dumpStack(QList<LayerPtr> &stack) {
 }
 
 void Document::undo() {
-  if (undo_stack_.isEmpty()) return;
-  EventPtr evt = undo_stack_.last();
+  if (undo2_stack_.isEmpty()) return;
+  CmdPtr evt = undo2_stack_.last();
   evt->undo();
-  undo_stack_.pop_back();
-  redo_stack_ << evt;
+  undo2_stack_.pop_back();
+  redo2_stack_ << evt;
 
   QString active_layer_name = activeLayer()->name();
 
@@ -72,12 +68,12 @@ void Document::undo() {
 }
 
 void Document::redo() {
-  if (redo_stack_.isEmpty()) return;
-  qInfo() << "Stack" << redo_stack_.size();
-  EventPtr evt = redo_stack_.last();
+  if (redo2_stack_.isEmpty()) return;
+  qInfo() << "Stack" << redo2_stack_.size();
+  CmdPtr evt = redo2_stack_.last();
   evt->redo();
-  redo_stack_.pop_back();
-  undo_stack_ << evt;
+  redo2_stack_.pop_back();
+  undo2_stack_ << evt;
 
   QString active_layer_name = activeLayer()->name();
 
@@ -86,18 +82,14 @@ void Document::redo() {
   emit layerChanged();
 }
 
-void Document::addUndoEvent(BaseUndoEvent *e) {
-  if (!is_recording_undo_) return;
-  redo_stack_.clear();
-  // Use shared_ptr to manage lifecycle
-  undo_stack_.push_back(EventPtr(e));
-};
+void Document::execute(Commands::BaseCmd *event) {
+  execute(CmdPtr(event));
+}
 
-void Document::addUndoEvent(const EventPtr &e) {
-  if (!is_recording_undo_) return;
-  redo_stack_.clear();
-  undo_stack_.push_back(e);
-};
+void Document::execute(const CmdPtr &e) {
+  e->redo();
+  undo2_stack_.push_back(e);
+}
 
 
 void Document::addLayer() {
@@ -250,15 +242,10 @@ void Document::groupSelections() {
   if (selections().empty()) return;
 
   ShapePtr group_ptr = make_shared<GroupShape>(selections());
-  auto grouped_items = selections();
-  removeSelections();
-  activeLayer()->addShape(group_ptr);
-  setSelection(group_ptr);
-  addUndoEvent(
-       SelectionEvent::shared(grouped_items) +
-       JoinedEvent::removeShapes(grouped_items) +
-       AddShapeEvent::shared(group_ptr) +
-       SelectionEvent::shared(QList<ShapePtr>())
+  execute(
+       Commands::AddShape::shared(activeLayer(), group_ptr) +
+       Commands::JoinedCmd::removeSelections() +
+       Commands::Select::shared({group_ptr})
   );
 }
 
@@ -269,22 +256,15 @@ void Document::ungroupSelections() {
 
   auto *group = (GroupShape *) group_ptr.get();
 
-  auto transform_events = make_shared<JoinedEvent>();
+  auto cmd = make_shared<Commands::JoinedCmd>();
   for (auto &shape : group->children()) {
-    transform_events << make_shared<TransformChangeEvent>(shape.get(), shape->transform());
-    transform_events << make_shared<RotationChangeEvent>(shape.get(), shape->rotation());
-    shape->applyTransform(group->transform());
-    shape->setRotation(shape->rotation() + group->rotation());
-    activeLayer()->addShape(shape);
+    cmd << new Commands::SetTransform(shape.get(), shape->transform() * group->transform());
+    cmd << new Commands::SetRotation(shape.get(), shape->rotation() + group->rotation());
+    cmd << new Commands::AddShape(activeLayer(), shape);
   }
 
-  setSelections(group->children());
-  group_ptr->layer().removeShape(group_ptr);
+  cmd << new Commands::Select(group->children());
+  cmd << new Commands::RemoveShape(&group_ptr->layer(), group_ptr);
 
-  addUndoEvent(
-       transform_events +
-       JoinedEvent::addShapes(group->children()) +
-       SelectionEvent::shared({}) +
-       make_shared<RemoveShapeEvent>(group_ptr)
-  );
+  execute(cmd);
 }

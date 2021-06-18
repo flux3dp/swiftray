@@ -4,7 +4,7 @@
 #include <layer.h>
 #include <shape/shape.h>
 #include <widgets/canvas-text-edit.h>
-#include <undo.h>
+#include <command.h>
 
 #ifndef SCENE_H
 #define SCENE_H
@@ -121,9 +121,9 @@ public:
 
   void redo();
 
-  void addUndoEvent(BaseUndoEvent *event);
+  void execute(Commands::BaseCmd *event);
 
-  void addUndoEvent(const EventPtr &e);
+  void execute(const CmdPtr &e);
 
   unique_ptr<CanvasTextEdit> text_box_;
 
@@ -158,8 +158,8 @@ private:
   QPointF mouse_pressed_screen_coord_;
   QElapsedTimer volatility_timer;
 
-  QList<EventPtr> undo_stack_;
-  QList<EventPtr> redo_stack_;
+  QList<CmdPtr> undo2_stack_;
+  QList<CmdPtr> redo2_stack_;
 };
 
 #endif // SCENE_H

@@ -283,8 +283,9 @@ void Canvas::editDelete() {
     return;
 
   // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
-  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()));
-  document().removeSelections();
+  document().execute(
+       JoinedCmd::removeSelections()
+  );
 }
 
 void Canvas::editUndo() { document().undo(); }
@@ -361,12 +362,11 @@ void Canvas::editUnion() {
   }
 
   ShapePtr new_shape = make_shared<PathShape>(result);
-  document().activeLayer()->addShape(new_shape);
-  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
-                          AddShapeEvent::shared(new_shape) +
-                          SelectionEvent::changeFromCurrent());
-  document().removeSelections();
-  document().setSelection(new_shape);
+  document().execute(
+       Commands::AddShape::shared(document().activeLayer(), new_shape) +
+       Commands::JoinedCmd::removeSelections() +
+       Commands::Select::shared({new_shape})
+  );
 }
 
 void Canvas::editSubtract() {
@@ -382,12 +382,11 @@ void Canvas::editSubtract() {
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  document().activeLayer()->addShape(new_shape);
-  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
-                          AddShapeEvent::shared(new_shape) +
-                          SelectionEvent::changeFromCurrent());
-  document().removeSelections();
-  document().setSelection(new_shape);
+  document().execute(
+       Commands::AddShape::shared(document().activeLayer(), new_shape) +
+       Commands::JoinedCmd::removeSelections() +
+       Commands::Select::shared({new_shape})
+  );
 }
 
 void Canvas::editIntersect() {
@@ -404,19 +403,20 @@ void Canvas::editIntersect() {
        b->transform().map(b->path())));
   new_path.closeSubpath();
   ShapePtr new_shape = make_shared<PathShape>(new_path);
-  document().activeLayer()->addShape(new_shape);
-  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()) +
-                          AddShapeEvent::shared(new_shape) +
-                          SelectionEvent::changeFromCurrent());
-  document().removeSelections();
-  document().setSelection(new_shape);
+  document().execute(
+       Commands::AddShape::shared(document().activeLayer(), new_shape) +
+       Commands::JoinedCmd::removeSelections() +
+       Commands::Select::shared({new_shape})
+  );
 }
 
 void Canvas::editDifference() {}
 
 void Canvas::addEmptyLayer() {
   document().addLayer();
-  document().addUndoEvent(new AddLayerEvent(document().activeLayer()));
+  document().execute(
+       new Commands::AddLayer(document().activeLayer())
+  );
 }
 
 void Canvas::fitToWindow() {
