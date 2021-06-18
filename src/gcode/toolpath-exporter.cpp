@@ -26,7 +26,7 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
 
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
-  // TODO (Use layer_painter to manage transform passing)
+  // TODO (Use layer_painter to manage transform over different sub objects)
   global_transform_ = QTransform();
   layer_polygons_.clear();
   layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
@@ -74,14 +74,13 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
 }
 
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
-  // TODO (Fix for object inside groups)
   qInfo() << "Convert Bitmap" << bmp;
   QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * global_transform_ * bmp->transform();
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
   layer_painter_->restore();
-  // TODO (Fix transform usage)
+  // TODO (Consider group transform)
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
 }
 
@@ -90,9 +89,9 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
-    // TODO (Fix paths inside group)
+    // TODO (Consider group transform)
     // TODO (Fix overlapping fills inside a single layer)
-    // TODO (Consider CacheStack as a primary painter for layers)
+    // TODO (Consider CacheStack as a primary painter for layers?)
     QPainterPath transformed_path = path->transform().map(path->path());
     layer_painter_->setBrush(QBrush(current_layer_->color()));
     layer_painter_->drawPath(transformed_path);
@@ -221,7 +220,7 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
   float pixel_size = 1.0 / dpmm_;
   int x_max = bitmap_dirty_area_.right();
   int x_min = bitmap_dirty_area_.left();
-  // TODO (pass down machine size);
+  // TODO (Pass machine size as argument);
   int MACHINE_MAX_X = 300;
   bool x_moved = false;
   bool y_moved = false;

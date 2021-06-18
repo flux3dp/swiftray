@@ -78,7 +78,7 @@ public:
                               bool large_arc_flag, bool sweep_flag, double x2,
                               double y2, tag::coordinate::absolute) {
     const QPointF &currentPos = working_path_.currentPosition();
-    // TODO support rotated arc
+    // TODO (Support rotated arc)
     // https://github.com/inkcut/inkcut/blob/ab27cf57ce5a5bd3bcaeef77bac28e4d6f92895a/inkcut/core/svg.py
     const double x1 = currentPos.x(), y1 = currentPos.y(),
          x1prime = (x1 - x2) / 2, y1prime = (y1 - y2) / 2,

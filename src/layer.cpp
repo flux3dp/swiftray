@@ -3,13 +3,6 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 
-const QColor LayerColors[17] = {
-     "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
-     "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
-     "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
-     "#607D8B", "#9E9E9E"
-};
-
 int layer_color_counter = 0;
 
 // Constructors
@@ -29,15 +22,12 @@ Layer::Layer(const QColor &color, const QString &name) {
 }
 
 Layer::Layer() :
-     Layer(LayerColors[(layer_color_counter++) % 17],
-           "Layer 1") {
-}
+     Layer(Layer::DefaultColors.at((layer_color_counter++) % 17),
+           "Layer 1") {}
 
 Layer::Layer(int new_layer_id) :
-     Layer(LayerColors[(new_layer_id - 1) % 17],
-           "Layer " + QString::number(new_layer_id)) {
-}
-
+     Layer(Layer::DefaultColors.at((new_layer_id - 1) % 17),
+           "圖層 " + QString::number(new_layer_id)) {}
 
 Layer::~Layer() = default;
 

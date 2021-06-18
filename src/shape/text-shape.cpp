@@ -53,7 +53,6 @@ void TextShape::makeCursorRect(int cursor) {
     QString &line = lines_[i];
     int cursor_offset = cursor - current_pos;
     if (cursor_offset >= 0 && cursor_offset <= line.length()) {
-      // TODO :: remove line.length() < cursor_offset
       QString test_string =
            (cursor_offset == 0 || line.length() < cursor_offset)
            ? "A"

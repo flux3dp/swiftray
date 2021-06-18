@@ -57,12 +57,13 @@ void GroupShape::calcBoundingBox() const {
   qInfo() << "Group local bbox" << local_bbox;
   this->bbox_ = transform().mapRect(local_bbox);
   this->rotated_bbox_ = transform().map(QPolygonF(local_bbox));
+  // TODO (Move group's refresh cache outside of bounding rect)
   cache();
 }
 
 void GroupShape::cache() const {
   if (!hasLayer()) return;
-  // TODO: fix transform to global transform
+  // TODO: (This breaks if the group is inside another group! Consider global transform)
   cache_stack_.begin(transform_ * temp_transform_);
   for (auto &shape : children_) {
     cache_stack_.addShape(shape.get());
@@ -71,7 +72,6 @@ void GroupShape::cache() const {
 }
 
 void GroupShape::paint(QPainter *painter) const {
-  // TODO (move group's refresh cache outside of bounding rect)
   boundingRect();
 
   cache_stack_.paint(painter);

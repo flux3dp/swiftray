@@ -88,6 +88,7 @@ public:
 
   void setStepHeight(double step_height);
 
+  static QList<QColor> DefaultColors;
 private:
   QColor color_;
   QString name_;

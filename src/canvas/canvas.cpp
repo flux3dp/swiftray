@@ -12,6 +12,14 @@
 #include <widgets/preview-window.h>
 
 // Initialize static members
+QList<QColor> Layer::DefaultColors = QList<QColor>(
+     {
+          "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
+          "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
+          "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
+          "#607D8B", "#9E9E9E"
+     }
+);
 Document *Canvas::current_doc_ = new Document();
 QRectF Canvas::screen_rect_ = QRectF();
 
@@ -273,9 +281,9 @@ void Canvas::editDelete() {
   qInfo() << "Edit Delete";
   if (document().mode() != Document::Mode::Selecting)
     return;
-  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()));
 
-  // TODO(Add all selection events to accompany with document.removeSelections and setSelections)
+  // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
+  document().addUndoEvent(JoinedEvent::removeShapes(document().selections()));
   document().removeSelections();
 }
 
@@ -487,4 +495,9 @@ void Canvas::setWidgetOffset(QPoint offset) {
 
 Clipboard &Canvas::clipboard() {
   return clipboard_;
+}
+
+void Canvas::backToSelectMode() {
+  // TODO (Add exit function to all controls)
+
 }

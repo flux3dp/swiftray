@@ -8,7 +8,6 @@ QT += svg
 QT += svg-private
 
 CONFIG += c++17
-CONFIG += optimize_full
 LIBS += -L"/usr/local/lib"
 LIBS += -L"/usr/local/opt/libxml2/lib"
 LIBS += -lxml2

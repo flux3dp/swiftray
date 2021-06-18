@@ -104,6 +104,7 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     pw->setPreviewPath(gen);
     pw->show();
   });
+  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
   connect(ui->actionDrawRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
   connect(ui->actionDrawOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
   connect(ui->actionDrawLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);

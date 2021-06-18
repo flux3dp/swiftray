@@ -115,6 +115,8 @@ public Q_SLOTS:
 
   void setWidgetOffset(QPoint offset);
 
+  void backToSelectMode();
+
 private:
   static Document *current_doc_;
   static QRectF screen_rect_;

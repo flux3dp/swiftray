@@ -124,6 +124,7 @@ int CacheStack::paint(QPainter *painter) {
         break;
       case CacheType::Group:
         for (auto &shape : cache.shapes()) {
+          // TODO (Add a parent pointer to cacheStack and check the parent status instead of passing down pens and selection information)
           CacheStack &child_stack = ((GroupShape *) shape)->cacheStack();
           child_stack.setBrush(filling_brush_);
           child_stack.setPen(dash_pen_, solid_pen_);

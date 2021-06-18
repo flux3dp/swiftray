@@ -57,12 +57,11 @@ void Document::dumpStack(QList<LayerPtr> &stack) {
 }
 
 void Document::undo() {
-  if (undo2.isEmpty()) return;
-  qInfo() << "Stack" << undo2.size();
-  EventPtr evt = undo2.last();
+  if (undo_stack_.isEmpty()) return;
+  EventPtr evt = undo_stack_.last();
   evt->undo();
-  undo2.pop_back();
-  redo2 << evt;
+  undo_stack_.pop_back();
+  redo_stack_ << evt;
 
   QString active_layer_name = activeLayer()->name();
 
@@ -73,12 +72,12 @@ void Document::undo() {
 }
 
 void Document::redo() {
-  if (redo2.isEmpty()) return;
-  qInfo() << "Stack" << redo2.size();
-  EventPtr evt = redo2.last();
+  if (redo_stack_.isEmpty()) return;
+  qInfo() << "Stack" << redo_stack_.size();
+  EventPtr evt = redo_stack_.last();
   evt->redo();
-  redo2.pop_back();
-  undo2 << evt;
+  redo_stack_.pop_back();
+  undo_stack_ << evt;
 
   QString active_layer_name = activeLayer()->name();
 
@@ -89,17 +88,15 @@ void Document::redo() {
 
 void Document::addUndoEvent(BaseUndoEvent *e) {
   if (!is_recording_undo_) return;
-  redo2.clear();
-
+  redo_stack_.clear();
   // Use shared_ptr to manage lifecycle
-  undo2.push_back(shared_ptr<BaseUndoEvent>(e));
+  undo_stack_.push_back(EventPtr(e));
 };
 
 void Document::addUndoEvent(const EventPtr &e) {
   if (!is_recording_undo_) return;
-  // Use shared_ptr to manage lifecycle
-  redo2.clear();
-  undo2.push_back(e);
+  redo_stack_.clear();
+  undo_stack_.push_back(e);
 };
 
 

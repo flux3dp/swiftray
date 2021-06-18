@@ -125,9 +125,6 @@ public:
 
   void addUndoEvent(const EventPtr &e);
 
-  QList<EventPtr> undo2;
-  QList<EventPtr> redo2;
-
   unique_ptr<CanvasTextEdit> text_box_;
 
 signals:
@@ -160,6 +157,9 @@ private:
 
   QPointF mouse_pressed_screen_coord_;
   QElapsedTimer volatility_timer;
+
+  QList<EventPtr> undo_stack_;
+  QList<EventPtr> redo_stack_;
 };
 
 #endif // SCENE_H
