@@ -18,73 +18,8 @@
     <list default="true" id="cd27a8a7-d1a5-4c86-b257-5adb0dbbb0fd" name="Default Changelist" comment="Optimize layer rendering">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/canvas_control.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/canvas-control.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/canvas_control.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/canvas-control.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/grid.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/grid.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/grid.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/grid.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/line.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/line.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/line.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/line.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/oval.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/oval.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/oval.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/oval.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path_draw.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-draw.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path_draw.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-draw.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path_edit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-edit.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/path_edit.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/path-edit.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/rect.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/rect.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/rect.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/rect.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/select.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/select.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/select.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/select.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/text.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/text.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/text.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/text.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/transform.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/transform.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/controls/transform.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/controls/transform.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/layer.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/layer.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/layer.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/layer.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/memory_monitor.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/memory-monitor.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/scene.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/document.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/scene.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/document.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/vcanvas.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/canvas/vcanvas.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/canvas/vcanvas.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/base_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/base-generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/fcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/fcode-generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/generators/gcode_generator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/generators/gcode-generator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath-exporter.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/gcode/toolpath_exporter.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/gcode/toolpath-exporter.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/contexts/base_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/base_context.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/contexts/group_context.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/group_context.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/contexts/svgpp_doc.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/contexts/svgpp_doc.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svg_impl_3.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_color_factory.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_color_factory.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_common.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_common.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_defs.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_defs.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_impl.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_impl.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_parser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_parser.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/parser/svgpp_parser.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/parser/svgpp_parser.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/bitmap_shape.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/bitmap-shape.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/bitmap_shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/bitmap-shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/group_shape.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/group-shape.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/group_shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/group-shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/path_shape.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/path-shape.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/path_shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/path-shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/shape.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/shape.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/text_shape.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/text-shape.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/shape/text_shape.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/shape/text-shape.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/canvas_text_edit.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/canvas-text-edit.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/canvas_text_edit.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/canvas-text-edit.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_list_item.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-list-item.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_list_item.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-list-item.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_list_item.ui" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-list-item.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_params_panel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-params-panel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_params_panel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-params-panel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/layer_params_panel.ui" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/layer-params-panel.ui" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/spinbox_helper.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/spinbox-helper.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/transform_panel.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/transform-panel.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/transform_panel.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/transform-panel.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/widgets/transform_panel.ui" beforeDir="false" afterPath="$PROJECT_DIR$/src/widgets/transform-panel.ui" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/window/mainwindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/window/mainwindow.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/window/mainwindow.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/window/mainwindow.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vecty.pro" beforeDir="false" afterPath="$PROJECT_DIR$/vecty.pro" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/vecty.qmlproject.qtds" beforeDir="false" afterPath="$PROJECT_DIR$/vecty.qmlproject.qtds" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/styles/vecty.qss" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +42,7 @@
     </file-type-list>
   </component>
   <component name="ProjectId" id="1tnTnNwajfvwLWHLtKFTUOn37Uo" />
-  <component name="ProjectLevelVcsManager">
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
   </component>
   <component name="ProjectViewState">
@@ -123,25 +58,27 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.C/C++" />
+    <property name="ts.external.directory.path" value="$APPLICATION_HOME_DIR$/plugins/JavaScriptLanguage/jsLanguageServicesImpl/external" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
-  <component name="RunManager" selected="CMake Application.vecty_bin">
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+  <component name="RunManager" selected="CMake Application.beambird">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="beambird" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="beambird" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="vecty" RUN_TARGET_NAME="beambird">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="vecty_bin" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="vecty_bin" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="vecty" RUN_TARGET_NAME="vecty_bin">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="vecty_bin_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="vecty_bin_autogen" CONFIG_NAME="Debug">
+    <configuration name="beambird_autogen" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="vecty" TARGET_NAME="beambird_autogen" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -152,8 +89,8 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="CMake Application.vecty_bin" />
-      <item itemvalue="CMake Application.vecty_bin_autogen" />
+      <item itemvalue="CMake Application.beambird" />
+      <item itemvalue="CMake Application.beambird_autogen" />
     </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -167,7 +104,10 @@
       <workItem from="1623404021452" duration="2703000" />
       <workItem from="1623411928931" duration="24202000" />
       <workItem from="1623494077644" duration="21095000" />
-      <workItem from="1623590119938" duration="45967000" />
+      <workItem from="1623590119938" duration="58274000" />
+      <workItem from="1623770873114" duration="28553000" />
+      <workItem from="1623861399812" duration="55722000" />
+      <workItem from="1623998525310" duration="20000" />
     </task>
     <task id="LOCAL-00001" summary="Add CMake and CLion Environment">
       <created>1623404105389</created>

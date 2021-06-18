@@ -39,7 +39,7 @@ void MainWindow::loadQML() {
 }
 
 void MainWindow::loadQSS() {
-  QFile file(":/styles/vecty.qss");
+  QFile file(":/styles/beambird.qss");
   file.open(QFile::ReadOnly);
   QString styleSheet = QLatin1String(file.readAll());
   setStyleSheet(styleSheet);
