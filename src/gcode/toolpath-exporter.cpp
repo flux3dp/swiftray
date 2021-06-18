@@ -26,12 +26,13 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
 
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
+  // TODO (Use layer_painter to manage transform passing)
   global_transform_ = QTransform();
   layer_polygons_.clear();
   layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
   layer_bitmap_.fill(Qt::white);
   layer_painter_ = make_unique<QPainter>(&layer_bitmap_);
-  is_bitmap_dirty_ = false;
+  bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
   qInfo() << "Output Layer #" << layer->name();
 
@@ -73,14 +74,15 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
 }
 
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
-  // TODO (Add dirty rect)
+  // TODO (Fix for object inside groups)
   qInfo() << "Convert Bitmap" << bmp;
+  QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * global_transform_ * bmp->transform();
   layer_painter_->save();
-  layer_painter_->setTransform(QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0), false);
-  layer_painter_->setTransform(global_transform_ * bmp->transform(), true);
+  layer_painter_->setTransform(transform, false);
   layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
   layer_painter_->restore();
-  is_bitmap_dirty_ = true;
+  // TODO (Fix transform usage)
+  bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
 }
 
 void ToolpathExporter::convertPath(const PathShape *path) {
@@ -91,10 +93,11 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     // TODO (Fix paths inside group)
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers)
+    QPainterPath transformed_path = path->transform().map(path->path());
     layer_painter_->setBrush(QBrush(current_layer_->color()));
-    layer_painter_->drawPath(path->transform().map(path->path()));
+    layer_painter_->drawPath(transformed_path);
     layer_painter_->setBrush(Qt::NoBrush);
-    is_bitmap_dirty_ = true;
+    bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
   }
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Line ||
@@ -134,14 +137,14 @@ void ToolpathExporter::outputLayerPathGcode() {
 }
 
 void ToolpathExporter::outputLayerBitmapGcode() {
-  if (!is_bitmap_dirty_) return;
-  qInfo() << "> layer bitmap";
+  if (bitmap_dirty_area_.width() == 0) return;
+  qInfo() << "> layer bitmap" << bitmap_dirty_area_;
   bool reverse = false;
   QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
   image.save("/Users/simon/Downloads/test.png", "PNG");
   qInfo() << "Stride" << image.bytesPerLine();
 
-  for (int y = 0; y < layer_bitmap_.height(); y++) {
+  for (int y = bitmap_dirty_area_.top(); y <= bitmap_dirty_area_.bottom(); y++) {
     rasterBitmapRow(image.scanLine(y), (float) y / dpmm_, reverse, QPointF());
     reverse = !reverse;
   }
@@ -216,10 +219,15 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
 bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse,
                                        QPointF offset) {
   float pixel_size = 1.0 / dpmm_;
-  int max_x = layer_bitmap_.width();
+  int x_max = bitmap_dirty_area_.right();
+  int x_min = bitmap_dirty_area_.left();
+  // TODO (pass down machine size);
+  int MACHINE_MAX_X = 300;
   bool x_moved = false;
   bool y_moved = false;
-  auto x_range = reverse ? boost::irange(max_x - 1, 0, -1) : boost::irange(0, max_x - 1, 1);
+  auto x_range = reverse ? boost::irange(x_max - 1, x_min, -1) : boost::irange(x_min, x_max - 1, 1);
+
+  gen_->setLaserPower(0);
 
   for (int x : x_range) {
     float p = data[x] > 127 ? 255 : 0;
@@ -252,9 +260,15 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
     }
   }
 
+  if (gen_->power() > 0) {
+    // If the last pixel is still powered on
+    gen_->moveToX(*(x_range.end() - 1) * pixel_size - offset.x());
+    x_moved = true;
+  }
+
   if (x_moved) {
     float buffer_x = reverse ? std::max(0.0, gen_->x() - 25.0) :
-                     std::min(0.0 + layer_bitmap_.width() * pixel_size, gen_->x() + 25.0);
+                     std::min(0.0 + MACHINE_MAX_X, gen_->x() + 25.0);
     gen_->turnOffLaser();
     gen_->moveToX(buffer_x);
   }

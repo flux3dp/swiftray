@@ -47,7 +47,7 @@ private:
   BaseGenerator *gen_;
   float dpmm_;
   float travel_speed_;
-  bool is_bitmap_dirty_;
+  QRectF bitmap_dirty_area_;
 };
 
 #endif
