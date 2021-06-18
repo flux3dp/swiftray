@@ -105,6 +105,8 @@ public:
 
   void setHeight(qreal height);
 
+  void setRecordingUndo(bool recording_undo);
+
   void setScroll(QPointF scroll);
 
   void setScale(qreal scale);
@@ -142,6 +144,8 @@ private:
   qreal scale_;
   qreal width_;
   qreal height_;
+
+  bool is_recording_undo_;
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;

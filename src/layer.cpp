@@ -13,7 +13,6 @@ const QColor LayerColors[17] = {
 int layer_color_counter = 0;
 
 // Constructors
-
 Layer::Layer(const QColor &color, const QString &name) {
   color_ = color;
   name_ = name;
@@ -141,57 +140,39 @@ void Layer::setColor(const QColor &color) {
 }
 
 void Layer::setType(Layer::Type type) {
-  auto undo = new PropEvent<Layer, Layer::Type, &Layer::type, &Layer::setType>(this, type_);
   type_ = type;
   flushCache();
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setTargetHeight(double height) {
-  auto undo_evt = new PropEvent<Layer, double, &Layer::targetHeight, &Layer::setTargetHeight>(this,
-                                                                                              target_height_);
   target_height_ = height;
-  VCanvas::document().addUndoEvent(undo_evt);
 }
 
 void Layer::setName(const QString &name) {
-  auto undo = new PropObjEvent<Layer, QString, &Layer::name, &Layer::setName>(this, name_);
   name_ = name;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setSpeed(int speed) {
-  auto undo = new PropEvent<Layer, int, &Layer::speed, &Layer::setSpeed>(this, speed_);
   speed_ = speed;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setStrength(int strength) {
-  auto undo = new PropEvent<Layer, int, &Layer::strength, &Layer::setStrength>(this, strength_);
   strength_ = strength;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setRepeat(int repeat) {
-  auto undo = new PropEvent<Layer, int, &Layer::repeat, &Layer::setRepeat>(this, repeat_);
   repeat_ = repeat;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setDiode(bool is_diode) {
-  auto undo = new PropEvent<Layer, bool, &Layer::isDiode, &Layer::setDiode>(this, is_diode_);
   is_diode_ = is_diode;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 void Layer::setStepHeight(double step_height) {
-  auto undo = new PropEvent<Layer, double, &Layer::stepHeight, &Layer::setStepHeight>(this, step_height_);
   step_height_ = step_height;
-  VCanvas::document().addUndoEvent(undo);
 }
 
 // Clone
-
 LayerPtr Layer::clone() {
   LayerPtr layer = make_shared<Layer>(*this);
   layer->children_.clear();

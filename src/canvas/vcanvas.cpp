@@ -17,14 +17,15 @@ QRectF VCanvas::screen_rect_ = QRectF();
 
 VCanvas::VCanvas(QQuickItem *parent)
      : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
-       dash_counter_(0),
        ctrl_transform_(Controls::Transform(document())),
        ctrl_select_(Controls::Select(document())),
        ctrl_grid_(Controls::Grid(document())), ctrl_line_(Controls::Line(document())),
        ctrl_oval_(Controls::Oval(document())),
        ctrl_path_draw_(Controls::PathDraw(document())),
        ctrl_path_edit_(Controls::PathEdit(document())),
-       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())) {
+       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())),
+       dash_counter_(0),
+       fps(0) {
   setRenderTarget(RenderTarget::FramebufferObject);
   setAcceptedMouseButtons(Qt::AllButtons);
   setAcceptHoverEvents(true);
@@ -34,7 +35,7 @@ VCanvas::VCanvas(QQuickItem *parent)
   // Set main loop
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &VCanvas::loop);
-  timer->start(33);
+  timer->start(16);
   // Set memory monitor
   mem_thread_ = new QThread(this);
   mem_monitor_.moveToThread(mem_thread_);
@@ -60,7 +61,9 @@ VCanvas::~VCanvas() {
 
 void VCanvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
+  document().setRecordingUndo(false);
   bool success = svgpp_parser_.parse(svg_data);
+  document().setRecordingUndo(true);
   setAntialiasing(true);
 
   if (success) {
@@ -107,7 +110,7 @@ void VCanvas::paint(QPainter *painter) {
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
   painter->drawText(QPointF(10, 40),
-                    "Objects " + QString::number(object_count) + " Counter: " + QString::number(dash_counter_));
+                    "Objects " + QString::number(object_count) + " Frames: #" + QString::number(dash_counter_));
   painter->drawText(QPointF(10, 60), "Mem: " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;

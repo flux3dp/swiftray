@@ -8,7 +8,8 @@ Document::Document() noexcept:
      new_layer_id_(1),
      scroll_x_(0),
      scroll_y_(0),
-     scale_(1) {
+     scale_(1),
+     is_recording_undo_(true) {
   width_ = 3000;
   height_ = 2000;
   font_ = QFont("Tahoma", 200, QFont::Bold);
@@ -87,12 +88,15 @@ void Document::redo() {
 }
 
 void Document::addUndoEvent(BaseUndoEvent *e) {
-  // Use shared_ptr to manage lifecycle
+  if (!is_recording_undo_) return;
   redo2.clear();
+
+  // Use shared_ptr to manage lifecycle
   undo2.push_back(shared_ptr<BaseUndoEvent>(e));
 };
 
 void Document::addUndoEvent(const EventPtr &e) {
+  if (!is_recording_undo_) return;
   // Use shared_ptr to manage lifecycle
   redo2.clear();
   undo2.push_back(e);
@@ -156,6 +160,8 @@ QRectF Document::screenRect(QSize screen_size) const {
 }
 
 void Document::setScale(qreal scale) { scale_ = scale; }
+
+void Document::setRecordingUndo(bool recording_undo) { is_recording_undo_ = recording_undo; }
 
 LayerPtr &Document::activeLayer() {
   Q_ASSERT_X(layers_.size() != 0, "Active Layer",
