@@ -44,6 +44,7 @@ SOURCES += \
         src/widgets/canvas_text_edit.cpp \
         src/widgets/layer_list_item.cpp \
         src/widgets/layer_params_panel.cpp \
+        src/widgets/preview-window.cpp \
         src/widgets/transform_panel.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
@@ -56,7 +57,7 @@ SOURCES += \
 RESOURCES += qml.qrc
 
 TRANSLATIONS += \
-    vecty_zh_TW.ts
+    beambird_zh_TW.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 
@@ -79,6 +80,7 @@ HEADERS += \
     src/widgets/canvas_text_edit.h \
     src/widgets/layer_list_item.h \
     src/widgets/layer_params_panel.h \
+    src/widgets/preview-window.h \
     src/widgets/transform_panel.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h \
@@ -93,15 +95,10 @@ else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_syst
 INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
-DESTDIR = /Users/simon/Dev/vecty/build
-OBJECTS_DIR = /Users/simon/Dev/vecty/build/.obj
-MOC_DIR = /Users/simon/Dev/vecty/build/.moc
-RCC_DIR = /Users/simon/Dev/vecty/build/.rcc
-UI_DIR = /Users/simon/Dev/vecty/build/.ui
-
 FORMS += \
     src/widgets/layer-list-item.ui \
     src/widgets/layer-params-panel.ui \
+    src/widgets/preview-window.ui \
     src/widgets/transform-panel.ui \
     src/window/mainwindow.ui
 

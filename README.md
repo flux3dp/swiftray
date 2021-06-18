@@ -1,8 +1,32 @@
-# Vecty
-C++ based vector editor for laser cutter.
+# BeamBird
 
-## Coding Rules
+Powerful and fast laser engraver/cutter tool based on C++.
+
+## Dependencies
+
+- Compilers must support C++17 standards.
+- Qt Framework 5.15
+- Qt Creator
+- Qt Framework and Creator can be installed via [online installer](https://www.qt.io/download-open-source)
+
+## Building
+
+### CMake
+
+This project uses CMake to build.
+
+```
+$> mkdir build
+$> cd build
+$> cmake ..
+$> make -j12
+```
+
+### Qt Creator
+
+Open the .pro project file in the root directory, and click run.
+
+## Coding Guides
+
 1. Use Modern C++ as possible as you can.
-2. However... do not use smart pointers on QObject
-3. Use pass by reference for objects and smart pointer as you can
-4. Reduce logic implementation in widgets and QML codes, to maintain low coupling with Qt Framework.
+2. Reduce logic implementation in widgets and QML codes, to maintain low coupling with Qt Framework.

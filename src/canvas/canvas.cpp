@@ -130,6 +130,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
       e->key() == Qt::Key::Key_Back) {
     editDelete();
   }
+
+  if (e->key() == Qt::Key::Key_Escape) {
+    document().setSelection(nullptr);
+  }
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {

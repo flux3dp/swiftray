@@ -1,5 +1,6 @@
 #include <QPoint>
 #include <QWidget>
+#include <QElapsedTimer>
 #include <layer.h>
 #include <shape/shape.h>
 #include <widgets/canvas-text-edit.h>
@@ -158,6 +159,7 @@ private:
   LayerPtr active_layer_;
 
   QPointF mouse_pressed_screen_coord_;
+  QElapsedTimer volatility_timer;
 };
 
 #endif // SCENE_H

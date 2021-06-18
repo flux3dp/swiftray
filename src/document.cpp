@@ -153,13 +153,17 @@ void Document::setHeight(qreal height) { height_ = height; }
 void Document::setScroll(QPointF scroll) {
   scroll_x_ = scroll.x();
   scroll_y_ = scroll.y();
+  volatility_timer.restart();
 }
 
 QRectF Document::screenRect(QSize screen_size) const {
   return QRectF(getCanvasCoord(QPoint(0, 0)), getCanvasCoord(QPoint(screen_size.width(), screen_size.height())));
 }
 
-void Document::setScale(qreal scale) { scale_ = scale; }
+void Document::setScale(qreal scale) {
+  scale_ = scale;
+  volatility_timer.restart();
+}
 
 void Document::setRecordingUndo(bool recording_undo) { is_recording_undo_ = recording_undo; }
 
@@ -239,7 +243,7 @@ void Document::setFont(QFont &font) {
 }
 
 bool Document::isVolatile() {
-  // TODO (Add scrolling and zooming)
+  if (volatility_timer.elapsed() < 1000) { return true; }
   return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
 }
 

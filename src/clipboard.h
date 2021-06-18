@@ -12,28 +12,23 @@ public:
   }
 
   void set(QList<ShapePtr> &items) {
-    qInfo() << "Clipboard set";
     shapes_.clear();
     for (auto &item : items) {
-      qInfo() << "Clipboard copy" << item.get();
       shapes_.push_back(item->clone());
     }
     paste_shift_ = QPointF(0, 0);
   }
 
   void cutFrom(Document &doc) {
-    qInfo() << "Clipboard cut";
     QList<ShapePtr> items;
     items.append(doc.selections());
     this->set(items);
-    qInfo() << "Clipboard cut size" << items.size();
     doc.removeSelections();
     doc.addUndoEvent(SelectionEvent::shared(items) +
                      JoinedEvent::removeShapes(items));
   }
 
   void pasteTo(Document &doc) {
-    qInfo() << "Clipboard paste";
     auto undo_evt = make_shared<JoinedEvent>();
     paste_shift_ += QPointF(20, 20);
     QTransform shift_transform =
@@ -45,7 +40,6 @@ public:
       ShapePtr new_shape = shape->clone();
       new_shape->applyTransform(shift_transform);
       doc.activeLayer()->addShape(new_shape);
-      qInfo() << "Clipboard paste" << new_shape.get() << &new_shape->layer();
       undo_evt << new AddShapeEvent(new_shape);
     }
 
