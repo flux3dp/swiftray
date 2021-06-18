@@ -293,31 +293,26 @@ void Canvas::editUndo() { document().undo(); }
 void Canvas::editRedo() { document().redo(); }
 
 void Canvas::editDrawRect() {
-  ctrl_rect_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::RectDrawing);
 }
 
 void Canvas::editDrawOval() {
-  ctrl_oval_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::OvalDrawing);
 }
 
 void Canvas::editDrawLine() {
-  ctrl_line_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::LineDrawing);
 }
 
 void Canvas::editDrawPath() {
-  ctrl_path_draw_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::PathDrawing);
 }
 
 void Canvas::editDrawText() {
-  ctrl_text_.reset();
   document().setSelection(nullptr);
   document().setMode(Document::Mode::TextDrawing);
 }

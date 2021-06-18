@@ -13,9 +13,11 @@ namespace Controls {
 
     bool mouseReleaseEvent(QMouseEvent *e) override;
 
+    bool keyPressEvent(QKeyEvent *e) override;
+
     void paint(QPainter *painter) override;
 
-    void reset();
+    void exit() override;
 
     bool isActive() override;
 

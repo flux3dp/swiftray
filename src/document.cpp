@@ -87,6 +87,7 @@ void Document::execute(Commands::BaseCmd *event) {
 }
 
 void Document::execute(const CmdPtr &e) {
+  redo2_stack_.clear();
   e->redo();
   undo2_stack_.push_back(e);
 }

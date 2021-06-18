@@ -36,7 +36,7 @@ namespace Controls {
 
     void moveElementTo(int index, QPointF local_coord);
 
-    void reset();
+    void exit() override;
 
     int hitTest(QPointF canvas_coord);
 

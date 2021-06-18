@@ -17,11 +17,13 @@ namespace Controls {
 
     bool mouseReleaseEvent(QMouseEvent *e) override;
 
+    bool keyPressEvent(QKeyEvent *e) override;
+
     bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
 
     void paint(QPainter *painter) override;
 
-    void reset();
+    void exit() override;
 
     bool hitTest(QPointF canvas_coord);
 

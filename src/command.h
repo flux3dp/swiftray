@@ -5,7 +5,8 @@
 #include <shape/shape.h>
 
 // TODO add mode change command if we need to do redo in certain modes..
-
+// TODO simplify command usage
+// TODO create batch command for add / remove shapes
 class Document;
 // TODO (Move implementation to command.cpp)
 namespace Commands {
@@ -235,12 +236,12 @@ namespace Commands {
   // Abbreviations for undo events
   typedef Commands::SetRef<Shape, QTransform, &Shape::transform, &Shape::setTransform> SetTransform;
   typedef Commands::Set<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotation;
+  typedef Commands::Set<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotation;
 }
 
 typedef Commands::CmdPtr CmdPtr;
 typedef Commands::JoinedPtr JoinedPtr;
 typedef Commands::JoinedCmd JoinedCmd;
 typedef Commands::BaseCmd BaseCmd;
-
 
 #endif

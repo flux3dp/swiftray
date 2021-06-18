@@ -42,8 +42,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
     } else {
       scene().execute(Commands::Select::shared({target_}));
     }
-    reset();
-    scene().setMode(Document::Mode::Selecting);
+    exit();
     return true;
   }
   return false;
@@ -59,20 +58,16 @@ void Text::paint(QPainter *painter) {
   target().setEditing(true);
   QPen pen(scene().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
-
-  QPen caret_pen(Qt::black, 2, Qt::SolidLine);
-  caret_pen.setCosmetic(true);
-
   painter->setPen(pen);
   target_->paint(painter);
-  painter->setPen(caret_pen);
 }
 
-void Text::reset() {
+void Text::exit() {
   blink_counter = 0;
   target_ = nullptr;
   origin_ = QPointF();
   scene().text_box_->clear();
+  scene().setMode(Document::Mode::Selecting);
 }
 
 TextShape &Text::target() {

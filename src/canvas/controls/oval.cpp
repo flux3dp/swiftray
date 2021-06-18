@@ -19,11 +19,11 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
   path.arcTo(rect_, 0, 360 * 16);
   ShapePtr new_oval = make_shared<PathShape>(path);
-  scene().setMode(Document::Mode::Selecting);
   scene().execute(
        Commands::AddShape::shared(scene().activeLayer(), new_oval) +
        Commands::Select::shared({new_oval})
   );
+  exit();
   return true;
 }
 
@@ -34,4 +34,15 @@ void Oval::paint(QPainter *painter) {
   painter->drawArc(rect_, 0, 360 * 16);
 }
 
-void Oval::reset() { rect_ = QRectF(0, 0, 0, 0); }
+bool Oval::keyPressEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Escape) {
+    exit();
+    return true;
+  }
+  return false;
+}
+
+void Oval::exit() {
+  rect_ = QRectF(0, 0, 0, 0);
+  scene().setMode(Document::Mode::Selecting);
+}

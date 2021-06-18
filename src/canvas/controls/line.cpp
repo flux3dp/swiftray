@@ -19,11 +19,11 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   path.moveTo(scene().mousePressedCanvasCoord());
   path.lineTo(scene().getCanvasCoord(e->pos()));
   ShapePtr new_line = make_shared<PathShape>(path);
-  scene().setMode(Document::Mode::Selecting);
   scene().execute(
        Commands::AddShape::shared(scene().activeLayer(), new_line) +
        Commands::Select::shared({new_line})
   );
+  exit();
   return true;
 }
 
@@ -36,4 +36,15 @@ void Line::paint(QPainter *painter) {
   painter->drawLine(scene().mousePressedCanvasCoord(), cursor_);
 }
 
-void Line::reset() { cursor_ = QPointF(); }
+bool Line::keyPressEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Escape) {
+    exit();
+    return true;
+  }
+  return false;
+}
+
+void Line::exit() {
+  cursor_ = QPointF();
+  scene().setMode(Document::Mode::Selecting);
+}

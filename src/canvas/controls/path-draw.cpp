@@ -90,8 +90,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
          Commands::AddShape::shared(scene().activeLayer(), new_shape) +
          Commands::Select::shared({new_shape})
     );
-    scene().setMode(Document::Mode::Selecting);
-    reset();
+    exit();
   }
 
   return true;
@@ -173,10 +172,20 @@ void PathDraw::paint(QPainter *painter) {
   }
 }
 
-void PathDraw::reset() {
+
+bool PathDraw::keyPressEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Escape) {
+    exit();
+    return true;
+  }
+  return false;
+}
+
+void PathDraw::exit() {
   working_path_ = QPainterPath();
   curve_target_ = invalid_point;
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
+  scene().setMode(Document::Mode::Selecting);
 }

@@ -7,7 +7,7 @@
 
 using namespace Controls;
 
-PathEdit::PathEdit(Document &scene_) noexcept: CanvasControl(scene_) {
+PathEdit::PathEdit(Document &scene_) noexcept: CanvasControl(scene_), is_closed_shape_(false) {
   dragging_index_ = -1;
   target_ = nullptr;
 }
@@ -200,10 +200,6 @@ void PathEdit::paint(QPainter *painter) {
   painter->restore();
 }
 
-void PathEdit::reset() {
-  target_ = nullptr;
-}
-
 QPointF PathEdit::getLocalCoord(QPointF canvas_coord) {
   return target_->transform().inverted().map(canvas_coord);
 }
@@ -255,12 +251,16 @@ void PathEdit::setPath(const QPainterPath &path) {
 }
 
 void PathEdit::endEditing() {
-  scene().setMode(Document::Mode::Selecting);
-
   scene().execute(
        Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>::shared(
             &target(), path_) +
        Commands::Select::shared({target_})
   );
-  reset();
+  exit();
+}
+
+void PathEdit::exit() {
+  // TODO (Do more stuff for command undo)
+  // Maybe switch into another stack for undo/redo?
+  target_ = nullptr;
 }

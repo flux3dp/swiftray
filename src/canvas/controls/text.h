@@ -20,7 +20,7 @@ namespace Controls {
 
     bool isActive() override;
 
-    void reset();
+    void exit() override;
 
     TextShape &target();
 

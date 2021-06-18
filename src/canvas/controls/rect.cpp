@@ -32,4 +32,16 @@ void Rect::paint(QPainter *painter) {
   painter->drawRect(rect_);
 }
 
-void Rect::reset() { rect_ = QRectF(0, 0, 0, 0); }
+
+bool Rect::keyPressEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Escape) {
+    exit();
+    return true;
+  }
+  return false;
+}
+
+void Rect::exit() {
+  rect_ = QRectF(0, 0, 0, 0);
+  scene().setMode(Document::Mode::Selecting);
+}

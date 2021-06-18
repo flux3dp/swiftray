@@ -26,3 +26,5 @@ bool CanvasControl::keyPressEvent(QKeyEvent *e) { return true; }
 
 // Paint
 void CanvasControl::paint(QPainter *painter) {}
+
+void CanvasControl::exit() {}
