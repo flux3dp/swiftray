@@ -68,14 +68,16 @@ void ToolpathExporter::convertShape(const ShapePtr &shape) {
 void ToolpathExporter::convertGroup(const GroupShape *group) {
   qInfo() << "Convert Group" << group;
 
+  global_transform_ = group->globalTransform();
   for (auto &shape : group->children()) {
     convertShape(shape);
   }
+  global_transform_ = QTransform();
 }
 
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   qInfo() << "Convert Bitmap" << bmp;
-  QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * global_transform_ * bmp->transform();
+  QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * bmp->transform() * global_transform_;
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
@@ -86,13 +88,13 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
 
 void ToolpathExporter::convertPath(const PathShape *path) {
   qInfo() << "Convert Path" << path;
+  QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());;
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Consider group transform)
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
-    QPainterPath transformed_path = path->transform().map(path->path());
     layer_painter_->setBrush(QBrush(current_layer_->color()));
     layer_painter_->drawPath(transformed_path);
     layer_painter_->setBrush(Qt::NoBrush);
@@ -101,7 +103,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Line ||
       current_layer_->type() == Layer::Type::FillLine) {
-    layer_polygons_.append((global_transform_ * path->transform()).map(path->path()).toSubpathPolygons());
+    layer_polygons_.append(transformed_path.toSubpathPolygons());
   }
 }
 
