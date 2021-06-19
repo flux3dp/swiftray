@@ -5,4 +5,7 @@ svgpp/bin
 build/*
 .vscode/ipch/*
 cmake-build-debug/
+.idea/*
 .idea/workspace.xml
+workspace.xml
+.name
