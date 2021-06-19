@@ -1,18 +1,36 @@
 #include <canvas/cache-stack.h>
 #include <QDebug>
 #include <QList>
+
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
 #include <canvas/canvas.h>
 
-CacheStack::CacheStack() : force_fill_(false), force_selection_(false) {}
+CacheStack::CacheStack(GroupShape *group) :
+     group_(group),
+     layer_(nullptr),
+     type_(Type::Group) {}
 
-void CacheStack::begin(const QTransform &global_transform) {
-  global_transform_ = global_transform;
+CacheStack::CacheStack(Layer *layer) :
+     layer_(layer),
+     group_(nullptr),
+     type_(Type::Layer) {}
+
+void CacheStack::update() {
   caches_.clear();
-}
 
-void CacheStack::end() {
+  // Load children
+  if (isLayer()) {
+    for (auto &shape: layer_->children()) {
+      addShape(shape.get());
+    }
+  } else {
+    global_transform_ = group_->globalTransform();
+    for (auto &shape: group_->children()) {
+      addShape(shape.get());
+    }
+  }
+  // Merge paths
   for (auto &cache : caches_) {
     cache.merge(global_transform_);
   }
@@ -24,10 +42,15 @@ void CacheStack::addShape(Shape *shape) {
   switch (shape->type()) {
     case Shape::Type::Path:
     case Shape::Type::Text:
-      if (((PathShape *) shape)->isFilled()) {
-        cache_type = shape->selected() ? CacheType::SelectedFilledPaths : CacheType::NonSelectedFilledPaths;
+      if (isLayer()) {
+        if (((PathShape *) shape)->isFilled()) {
+          cache_type = shape->selected() ? CacheType::SelectedFilledPaths : CacheType::NonSelectedFilledPaths;
+        } else {
+          cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
+        }
       } else {
-        cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
+        cache_type = ((PathShape *) shape)->isFilled() ? CacheType::NonSelectedFilledPaths
+                                                       : CacheType::NonSelectedPaths;
       }
       break;
     case Shape::Type::Bitmap:
@@ -35,32 +58,34 @@ void CacheStack::addShape(Shape *shape) {
       break;
     case Shape::Type::Group:
       cache_type = CacheType::Group;
+      ((GroupShape *) shape)->cacheStack().update(); // If the shape is a group, we need to flush it, but do not propagate event back to the top
       break;
     default:
       Q_ASSERT_X(false, "CacheStack", "Cannot cache unknown typed shapes");
   }
 
   if (caches_.isEmpty() || caches_.last().type() != cache_type) {
-    caches_.push_back(CacheStack::Cache(cache_type));
+    caches_.push_back(CacheStack::Cache(this, cache_type));
   }
 
-  if (shape->type() == Shape::Type::Group) {
-    // Flush sub group cache
-    shape->flushCache();
-  }
   caches_.last().addShape(shape);
 }
 
-CacheStack::Cache::Cache(CacheType type) : type_(type), is_fill_cached_(false) {}
+// CacheFragment constructor
+CacheStack::Cache::Cache(CacheStack *stack,
+                         CacheType type) :
+     stack_(stack),
+     type_(type),
+     is_fill_cached_(false) {}
 
 void CacheStack::Cache::addShape(Shape *shape) {
   shapes_.push_back(shape);
 }
 
-// Merge all path shape into one joined path
+// CacheFragment merging all path shape into one joined path
 void CacheStack::Cache::merge(const QTransform &global_transform) {
   if (type_ > Type::NonSelectedFilledPaths) return;
-  const QRectF &screen_rect = Canvas::screenRect();
+  const QRectF &screen_rect = stack_->document().screenRect();
   joined_path_ = QPainterPath();
   for (auto &shape : shapes_) {
     auto *p = (PathShape *) shape;
@@ -72,66 +97,77 @@ void CacheStack::Cache::merge(const QTransform &global_transform) {
   }
 }
 
-const QPixmap &CacheStack::Cache::fillCache(QPainter *painter, QBrush &brush) {
+void CacheStack::Cache::cacheFill() {
+  // Get screen information
+  QPainterPath screen_rect;
+  screen_rect.addRect(stack_->document().screenRect());
+  float scale = stack_->document().scale() * (stack_->document().isVolatile() ? 0.5 : 2);
+  // Clip with screen_rect
+  joined_path_ = joined_path_.intersected(screen_rect);
+  bbox_ = joined_path_.boundingRect();
+  // Draw filled path to pixmap cache
+  cache_pixmap_ = QPixmap(bbox_.size().toSize() * scale);
+  cache_pixmap_.fill(QColor::fromRgba64(255, 255, 255, 0));
+  QPainter cpaint(&cache_pixmap_);
+  cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !stack_->document().isVolatile());
+  cpaint.setTransform(
+       QTransform()
+            .scale(scale, scale)
+            .translate(-bbox_.left(), -bbox_.top()),
+       false);
+  cpaint.fillPath(joined_path_, stack_->color());
+  cpaint.end();
+}
+
+void CacheStack::Cache::stroke(QPainter *painter, const QPen &pen) {
+  painter->strokePath(joined_path_, pen);
+}
+
+void CacheStack::Cache::fill(QPainter *painter, const QPen &pen) {
   if (!is_fill_cached_) {
-    // Get screen information
-    QPainterPath screen_rect;
-    screen_rect.addRect(Canvas::screenRect());
-    float scale = Canvas::document().isVolatile() ?
-                  Canvas::document().scale() * 0.5 : Canvas::document().scale() * 2;
-    // Calculate data
-    joined_path_ = joined_path_.intersected(screen_rect);
-    bbox_ = joined_path_.boundingRect();
-    // Draw cache
-    cache_pixmap_ = QPixmap(bbox_.size().toSize() * scale);
-    cache_pixmap_.fill(QColor::fromRgba64(255, 255, 255, 0));
-    QPainter cpaint(&cache_pixmap_);
-    cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !Canvas::document().isVolatile());
-    cpaint.setTransform(
-         QTransform()
-              .scale(scale, scale)
-              .translate(-bbox_.left(), -bbox_.top()),
-         false);
-    cpaint.fillPath(joined_path_, brush);
-    cpaint.end();
+    cacheFill();
     is_fill_cached_ = true;
   }
   painter->drawPixmap(bbox_, cache_pixmap_,
                       QRectF(QPointF(), QSizeF(cache_pixmap_.width(), cache_pixmap_.height())));
-  return cache_pixmap_;
 }
 
-// Primary logic for painting shapes is here
+
+// Primary logic for painting shapes
 int CacheStack::paint(QPainter *painter) {
   QElapsedTimer timer;
   timer.start();
+
+  Layer::Type layer_type = isGroup() ? group_->layer()->type() : layer_->type();
+  bool always_fill = layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine;
+  bool always_select = isGroup() ? group_->isParentSelected() : false;
+
+  QPen dash_pen(color(), 2, Qt::DashLine);
+  dash_pen.setDashPattern(QVector<qreal>(10, 3));
+  dash_pen.setCosmetic(true);
+  dash_pen.setDashOffset(document().framesCount());
+  QPen solid_pen(color(), 2, Qt::SolidLine);
+  solid_pen.setCosmetic(true);
+  QBrush brush(color());
+
+
   for (auto &cache : caches_) {
     switch (cache.type()) {
       case CacheType::SelectedPaths:
-        painter->strokePath(cache.joined_path_, dash_pen_);
-        if (force_fill_) cache.fillCache(painter, filling_brush_);
+        cache.stroke(painter, dash_pen);
+        if (always_fill) cache.fill(painter, dash_pen);
         break;
       case CacheType::SelectedFilledPaths:
-        painter->strokePath(cache.joined_path_, dash_pen_);
-        cache.fillCache(painter, filling_brush_);
+        cache.stroke(painter, dash_pen);
+        cache.fill(painter, dash_pen);
         break;
       case CacheType::NonSelectedPaths:
-        painter->strokePath(cache.joined_path_, force_selection_ ? dash_pen_ : solid_pen_);
-        if (force_fill_) cache.fillCache(painter, filling_brush_);
+        cache.stroke(painter, always_select ? dash_pen : solid_pen);
+        if (always_fill) cache.fill(painter, dash_pen);
         break;
       case CacheType::NonSelectedFilledPaths:
-        cache.fillCache(painter, filling_brush_);
-        break;
-      case CacheType::Group:
-        for (auto &shape : cache.shapes()) {
-          // TODO (Add a parent pointer to cacheStack and check the parent status instead of passing down pens and selection information)
-          CacheStack &child_stack = ((GroupShape *) shape)->cacheStack();
-          child_stack.setBrush(filling_brush_);
-          child_stack.setPen(dash_pen_, solid_pen_);
-          child_stack.setForceFill(force_fill_);
-          child_stack.setForceSelection(shape->selected());
-          shape->paint(painter);
-        }
+        cache.stroke(painter, always_select ? dash_pen : solid_pen);
+        cache.fill(painter, dash_pen);
         break;
       default:
         for (auto &shape : cache.shapes()) {
@@ -140,8 +176,8 @@ int CacheStack::paint(QPainter *painter) {
     }
   }
   painter->setBrush(Qt::NoBrush);
-  if (timer.elapsed() > 100) {
-    qInfo() << "Cache paint slow" << this << timer.elapsed() << "ms";
+  if (timer.elapsed() > 500) {
+    qDebug() << "[Painting] Slow Rendering (" << this << timer.elapsed() << "ms)";
   }
   return caches_.size();
 }
@@ -154,19 +190,14 @@ const QList<Shape *> &CacheStack::Cache::shapes() const {
   return shapes_;
 }
 
-void CacheStack::setBrush(const QBrush &brush) {
-  filling_brush_ = brush;
+bool CacheStack::isGroup() const {
+  return type_ == Type::Group;
 }
 
-void CacheStack::setPen(const QPen &dash_pen, const QPen &solid_pen) {
-  dash_pen_ = dash_pen;
-  solid_pen_ = solid_pen;
+bool CacheStack::isLayer() const {
+  return type_ == Type::Layer;
 }
 
-void CacheStack::setForceFill(bool force_fill) {
-  force_fill_ = force_fill;
-}
+const Document &CacheStack::document() const { return isGroup() ? group_->layer()->document() : layer_->document(); }
 
-void CacheStack::setForceSelection(bool force_selection) {
-  force_selection_ = force_selection;
-}
+const QColor &CacheStack::color() const { return isGroup() ? group_->layer()->color() : layer_->color(); }

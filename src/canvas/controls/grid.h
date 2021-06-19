@@ -7,7 +7,7 @@ namespace Controls {
 
   class Grid : public CanvasControl {
   public:
-    Grid(Document &scene_) noexcept: CanvasControl(scene_) {}
+    Grid(Canvas *canvas) noexcept: CanvasControl(canvas) {}
 
     void paint(QPainter *painter) override;
 

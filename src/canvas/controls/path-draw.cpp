@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
+
 #include <canvas/controls/path-draw.h>
 #include <cmath>
 #include <shape/path-shape.h>
@@ -8,10 +9,10 @@
 using namespace Controls;
 
 bool PathDraw::isActive() {
-  return scene().mode() == Document::Mode::PathDrawing;
+  return document().mode() == Document::Mode::PathDrawing;
 }
 
-PathDraw::PathDraw(Document &scene_) noexcept: CanvasControl(scene_) {
+PathDraw::PathDraw(Canvas *canvas) noexcept: CanvasControl(canvas) {
   curve_target_ = invalid_point;
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
@@ -19,7 +20,7 @@ PathDraw::PathDraw(Document &scene_) noexcept: CanvasControl(scene_) {
 }
 
 bool PathDraw::mousePressEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
 
   curve_target_ = canvas_coord;
 
@@ -33,22 +34,22 @@ bool PathDraw::mousePressEvent(QMouseEvent *e) {
 }
 
 bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   if ((canvas_coord - curve_target_).manhattanLength() < 10)
     return false;
   is_drawing_curve_ = true;
-  cursor_ = scene().getCanvasCoord(e->pos());
+  cursor_ = document().getCanvasCoord(e->pos());
   return true;
 }
 
 bool PathDraw::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   *cursor = Qt::CrossCursor;
-  cursor_ = scene().getCanvasCoord(e->pos());
+  cursor_ = document().getCanvasCoord(e->pos());
   return true;
 }
 
 bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
 
   if (working_path_.elementCount() == 0) {
     working_path_.moveTo(canvas_coord);
@@ -86,9 +87,9 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
 
   if (is_closing_curve_) {
     ShapePtr new_shape = make_shared<PathShape>(working_path_);
-    scene().execute(
-         Commands::AddShape::shared(scene().activeLayer(), new_shape) +
-         Commands::Select::shared({new_shape})
+    document().execute(
+         Commands::AddShape::shared(document().activeLayer(), new_shape) +
+         Commands::Select::shared(&document(), {new_shape})
     );
     exit();
   }
@@ -99,7 +100,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
 bool PathDraw::hitOrigin(QPointF canvas_coord) {
   if (working_path_.elementCount() > 0 &&
       (working_path_.elementAt(0) - canvas_coord).manhattanLength() <
-      15 / scene().scale()) {
+      15 / document().scale()) {
     return true;
   }
   return false;
@@ -109,17 +110,17 @@ bool PathDraw::hitTest(QPointF canvas_coord) {
   for (int i = 0; i < working_path_.elementCount(); i++) {
     QPainterPath::Element ele = working_path_.elementAt(i);
     if (ele.isMoveTo()) {
-      if ((ele - canvas_coord).manhattanLength() < 15 / scene().scale()) {
+      if ((ele - canvas_coord).manhattanLength() < 15 / document().scale()) {
         return true;
       }
     } else if (ele.isLineTo()) {
-      if ((ele - canvas_coord).manhattanLength() < 15 / scene().scale()) {
+      if ((ele - canvas_coord).manhattanLength() < 15 / document().scale()) {
         return true;
       }
     } else if (ele.isCurveTo()) {
       QPointF ele_end_point = working_path_.elementAt(i + 2);
       if ((ele_end_point - canvas_coord).manhattanLength() <
-          15 / scene().scale()) {
+          15 / document().scale()) {
         return true;
       }
     }
@@ -130,7 +131,7 @@ bool PathDraw::hitTest(QPointF canvas_coord) {
 void PathDraw::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
   auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
-  auto black_pen = QPen(scene().activeLayer()->color(), 3, Qt::SolidLine);
+  auto black_pen = QPen(document().activeLayer()->color(), 3, Qt::SolidLine);
   blue_pen.setCosmetic(true);
   black_pen.setCosmetic(true);
   painter->setPen(black_pen);
@@ -187,5 +188,5 @@ void PathDraw::exit() {
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
-  scene().setMode(Document::Mode::Selecting);
+  document().setMode(Document::Mode::Selecting);
 }

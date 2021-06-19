@@ -1,23 +1,24 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
+
 #include <canvas/controls/path-edit.h>
 #include <cfloat>
 #include <cmath>
 
 using namespace Controls;
 
-PathEdit::PathEdit(Document &scene_) noexcept: CanvasControl(scene_), is_closed_shape_(false) {
+PathEdit::PathEdit(Canvas *canvas) noexcept: CanvasControl(canvas), is_closed_shape_(false) {
   dragging_index_ = -1;
   target_ = nullptr;
 }
 
-bool PathEdit::isActive() { return scene().mode() == Document::Mode::PathEditing; }
+bool PathEdit::isActive() { return document().mode() == Document::Mode::PathEditing; }
 
 bool PathEdit::mousePressEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
     return false;
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   dragging_index_ = hitTest(getLocalCoord(canvas_coord));
   if (dragging_index_ > -1) {
     return true;
@@ -30,7 +31,7 @@ bool PathEdit::mouseMoveEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
     return false;
 
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   QPointF local_coord = getLocalCoord(canvas_coord);
   if (dragging_index_ > -1) {
     moveElementTo(dragging_index_, local_coord);
@@ -107,7 +108,7 @@ bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   if (target_.get() == nullptr)
     return false;
 
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   QPointF local_coord = getLocalCoord(canvas_coord);
 
   if (hitTest(local_coord) > -1) {
@@ -122,7 +123,7 @@ bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
     return false;
 
-  scene().execute(
+  document().execute(
        new Commands::SetRef<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
             this, path_));
   target().setPath(path_);
@@ -132,7 +133,7 @@ bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
 int PathEdit::hitTest(QPointF local_coord) {
   if (target_.get() == nullptr)
     return -1;
-  float tolerance = 8 / scene().scale();
+  float tolerance = 8 / document().scale();
   for (int i = 0; i < path_.elementCount(); i++) {
     QPainterPath::Element ele = path_.elementAt(i);
     if ((ele - local_coord).manhattanLength() < tolerance) {
@@ -143,7 +144,7 @@ int PathEdit::hitTest(QPointF local_coord) {
 }
 
 void PathEdit::paint(QPainter *painter) {
-  if (scene().mode() != Document::Mode::PathEditing)
+  if (document().mode() != Document::Mode::PathEditing)
     return;
   if (target_.get() == nullptr)
     return;
@@ -181,8 +182,8 @@ void PathEdit::paint(QPainter *painter) {
   small_points = target().transform().map(small_points);
   QVector<QRectF> large_rects;
   QVector<QRectF> small_rects;
-  float large_size = 4 / scene().scale();
-  float small_size = 2 / scene().scale();
+  float large_size = 4 / document().scale();
+  float small_size = 2 / document().scale();
   for (auto &p : large_points) {
     large_rects << QRectF(p.x() - large_size, p.y() - large_size, large_size * 2, large_size * 2);
   }
@@ -251,10 +252,10 @@ void PathEdit::setPath(const QPainterPath &path) {
 }
 
 void PathEdit::endEditing() {
-  scene().execute(
+  document().execute(
        Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>::shared(
             &target(), path_) +
-       Commands::Select::shared({target_})
+       Commands::Select::shared(&document(), {target_})
   );
   exit();
 }

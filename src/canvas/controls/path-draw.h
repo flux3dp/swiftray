@@ -9,7 +9,7 @@ namespace Controls {
 
   class PathDraw : public CanvasControl {
   public:
-    PathDraw(Document &scene_) noexcept;
+    PathDraw(Canvas *canvas) noexcept;
 
     bool mousePressEvent(QMouseEvent *e) override;
 

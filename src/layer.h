@@ -4,6 +4,8 @@
 #ifndef LAYER_H
 #define LAYER_H
 
+class Document;
+
 class Layer {
 public:
   enum class Type {
@@ -13,16 +15,20 @@ public:
     Mixed // Compatible mode with Beam Studio, could be deprecated in the future
   };
 
-  Layer(const QColor &color, const QString &name);
+  /** Constructors **/
 
-  explicit Layer(int new_layer_id);
+  Layer(Document *doc, const QColor &color, const QString &name);
+
+  Layer(Document *doc, int layer_id);
+
+  Layer(Document *doc);
 
   Layer();
 
+
   ~Layer();
 
-  // Paint the layer with screen rect and dash dash_counter_
-  int paint(QPainter *painter, int counter) const;
+  int paint(QPainter *painter) const;
 
   // Add ShapePtr to children array
   void addShape(const ShapePtr &shape);
@@ -39,11 +45,7 @@ public:
   // Cache functions
   void flushCache();
 
-  void cache() const;
-
-  void calcPen();
-
-  // Getters:
+  /** Getters **/
 
   const QColor &color() const;
 
@@ -65,8 +67,10 @@ public:
 
   double targetHeight() const;
 
+  Document &document();
 
-  // Setters:
+
+  /** Setters **/
 
   void setColor(const QColor &color);
 
@@ -88,8 +92,12 @@ public:
 
   void setStepHeight(double step_height);
 
+  void setDocument(Document *doc);
+
   static QList<QColor> DefaultColors;
 private:
+  /** Main properties **/
+  Document *document_;
   QColor color_;
   QString name_;
   QList<ShapePtr> children_;
@@ -101,12 +109,10 @@ private:
   int repeat_;
   int speed_;
   int strength_;
-  // Cache properties
+
+  /** Main properties **/
   mutable bool cache_valid_;
-  mutable CacheStack cache_stack_;
-  // Pen properties
-  mutable QPen dash_pen_;
-  QPen solid_pen_;
+  mutable unique_ptr<CacheStack> cache_;
 };
 
 typedef shared_ptr<Layer> LayerPtr;

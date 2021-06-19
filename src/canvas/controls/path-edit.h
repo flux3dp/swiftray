@@ -16,7 +16,7 @@ namespace Controls {
       PathNode(PathShape::NodeType node_type) : type{node_type} {};
     };
 
-    PathEdit(Document &scene_) noexcept;
+    PathEdit(Canvas *canvas) noexcept;
 
     bool mousePressEvent(QMouseEvent *e) override;
 

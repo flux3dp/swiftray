@@ -1,14 +1,13 @@
 #include <canvas/controls/canvas-control.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
-CanvasControl::CanvasControl(Document &scene)
-     : scene_(scene) {
-
+CanvasControl::CanvasControl(Canvas *canvas) {
+  canvas_ = canvas;
 };
 
-Document &CanvasControl::scene() { return scene_; }
-
+// Getters;
 bool CanvasControl::isActive() { return false; }
 
 // Event Handlers - return true if the event is handled in this control when isActive==true
@@ -28,3 +27,13 @@ bool CanvasControl::keyPressEvent(QKeyEvent *e) { return true; }
 void CanvasControl::paint(QPainter *painter) {}
 
 void CanvasControl::exit() {}
+
+// Canvas accessor
+Canvas &CanvasControl::canvas() {
+  return *canvas_;
+}
+
+// Canvas document accessor
+Document &CanvasControl::document() {
+  return canvas_->document();
+}

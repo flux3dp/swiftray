@@ -20,20 +20,24 @@ QList<QColor> Layer::DefaultColors = QList<QColor>(
           "#607D8B", "#9E9E9E"
      }
 );
-Document *Canvas::current_doc_ = new Document();
-QRectF Canvas::screen_rect_ = QRectF();
 
 Canvas::Canvas(QQuickItem *parent)
-     : QQuickPaintedItem(parent), svgpp_parser_(SVGPPParser(document())),
-       ctrl_transform_(Controls::Transform(document())),
-       ctrl_select_(Controls::Select(document())),
-       ctrl_grid_(Controls::Grid(document())), ctrl_line_(Controls::Line(document())),
-       ctrl_oval_(Controls::Oval(document())),
-       ctrl_path_draw_(Controls::PathDraw(document())),
-       ctrl_path_edit_(Controls::PathEdit(document())),
-       ctrl_rect_(Controls::Rect(document())), ctrl_text_(Controls::Text(document())),
-       dash_counter_(0),
-       fps(0) {
+     : QQuickPaintedItem(parent),
+       current_doc_(make_unique<Document>()),
+       ctrl_transform_(Controls::Transform(this)),
+       ctrl_select_(Controls::Select(this)),
+       ctrl_grid_(Controls::Grid(this)),
+       ctrl_line_(Controls::Line(this)),
+       ctrl_oval_(Controls::Oval(this)),
+       ctrl_path_draw_(Controls::PathDraw(this)),
+       ctrl_path_edit_(Controls::PathEdit(this)),
+       ctrl_rect_(Controls::Rect(this)),
+       ctrl_text_(Controls::Text(this)),
+       svgpp_parser_(SVGPPParser()),
+       fps(0),
+       timer(new QTimer(this)),
+       mem_thread_(new QThread(this)) {
+
   setRenderTarget(RenderTarget::FramebufferObject);
   setAcceptedMouseButtons(Qt::AllButtons);
   setAcceptHoverEvents(true);
@@ -41,11 +45,9 @@ Canvas::Canvas(QQuickItem *parent)
   setAntialiasing(true);
   setOpaquePainting(true);
   // Set main loop
-  timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
   timer->start(16);
   // Set memory monitor
-  mem_thread_ = new QThread(this);
   mem_monitor_.moveToThread(mem_thread_);
   mem_thread_->start();
   QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
@@ -70,7 +72,7 @@ Canvas::~Canvas() {
 void Canvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
   document().setRecordingUndo(false);
-  bool success = svgpp_parser_.parse(svg_data);
+  bool success = svgpp_parser_.parse(&document(), svg_data);
   document().setRecordingUndo(true);
   setAntialiasing(true);
 
@@ -92,19 +94,7 @@ void Canvas::paint(QPainter *painter) {
 
   ctrl_grid_.paint(painter);
 
-  bool screen_changed = false;
-  if (screen_rect_ != document().screenRect(widget_size_)) {
-    screen_rect_ = document().screenRect(widget_size_);
-    screen_changed = true;
-  }
-
-  int object_count = 0;
-  dash_counter_++;
-
-  for (const LayerPtr &layer : document().layers()) {
-    if (screen_changed) layer->flushCache();
-    object_count += layer->paint(painter, dash_counter_);
-  }
+  document().paint(painter);
 
   for (auto &control : ctrls_) {
     if (control->isActive()) {
@@ -117,8 +107,7 @@ void Canvas::paint(QPainter *painter) {
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40),
-                    "Objects " + QString::number(object_count) + " Frames: #" + QString::number(dash_counter_));
+  painter->drawText(QPointF(10, 40), " Frames: #" + QString::number(document().framesCount()));
   painter->drawText(QPointF(10, 60), "Mem: " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;
@@ -284,7 +273,7 @@ void Canvas::editDelete() {
 
   // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
   document().execute(
-       JoinedCmd::removeSelections()
+       JoinedCmd::removeSelections(&document())
   );
 }
 
@@ -339,10 +328,6 @@ void Canvas::editUngroup() {
   document().ungroupSelections();
 }
 
-Document &Canvas::document() { return *Canvas::current_doc_; }
-
-const QRectF &Canvas::screenRect() { return screen_rect_; };
-
 void Canvas::editUnion() {
   if (document().selections().size() < 2)
     return;
@@ -359,8 +344,8 @@ void Canvas::editUnion() {
   ShapePtr new_shape = make_shared<PathShape>(result);
   document().execute(
        Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections() +
-       Commands::Select::shared({new_shape})
+       Commands::JoinedCmd::removeSelections(&document()) +
+       Commands::Select::shared(&document(), {new_shape})
   );
 }
 
@@ -379,8 +364,8 @@ void Canvas::editSubtract() {
   ShapePtr new_shape = make_shared<PathShape>(new_path);
   document().execute(
        Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections() +
-       Commands::Select::shared({new_shape})
+       Commands::JoinedCmd::removeSelections(&document()) +
+       Commands::Select::shared(&document(), {new_shape})
   );
 }
 
@@ -400,8 +385,8 @@ void Canvas::editIntersect() {
   ShapePtr new_shape = make_shared<PathShape>(new_path);
   document().execute(
        Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections() +
-       Commands::Select::shared({new_shape})
+       Commands::JoinedCmd::removeSelections(&document()) +
+       Commands::Select::shared(&document(), {new_shape})
   );
 }
 
@@ -481,6 +466,7 @@ shared_ptr<PreviewGenerator> Canvas::exportGcode() {
 
 void Canvas::setWidgetSize(QSize widget_size) {
   widget_size_ = widget_size;
+  document().setScreenSize(widget_size);
   fitToWindow();
 }
 
@@ -496,3 +482,5 @@ void Canvas::backToSelectMode() {
   // TODO (Add exit function to all controls)
 
 }
+
+Document &Canvas::document() { return *current_doc_.get(); }

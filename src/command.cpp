@@ -1,4 +1,6 @@
-#include <canvas/canvas.h>
+#include <QDebug>
+#include <command.h>
+#include <document.h>
 
 using namespace Commands;
 
@@ -18,65 +20,69 @@ JoinedPtr &Commands::operator<<(JoinedPtr &a, BaseCmd *b) {
   return a;
 }
 
-void AddLayer::undo() {
+void AddLayer::undo(Document *doc) {
   qDebug() << "[Command] Undo add layer";
-  Canvas::document().removeLayer(layer_);
+  doc->removeLayer(layer_);
 }
 
-void AddLayer::redo() {
+void AddLayer::redo(Document *doc) {
   qDebug() << "[Command] Do add layer";
-  Canvas::document().addLayer(layer_);
+  doc->addLayer(layer_);
 }
 
-void RemoveLayer::undo() {
-  Canvas::document().addLayer(layer_);
+void RemoveLayer::undo(Document *doc) {
+  doc->addLayer(layer_);
 }
 
-void RemoveLayer::redo() {
-  Canvas::document().removeLayer(layer_);
+void RemoveLayer::redo(Document *doc) {
+  doc->removeLayer(layer_);
 }
 
-void AddShape::undo() {
-  qDebug() << "[Command] Undo remove shape";
+void AddShape::undo(Document *doc) {
+  qDebug() << "[Command] Undo remove shape" << shape_.get();
   layer_->removeShape(shape_);
 }
 
-void AddShape::redo() {
-  qDebug() << "[Command] Do add shape";
+void AddShape::redo(Document *doc) {
+  qDebug() << "[Command] Do add shape" << shape_.get();
   layer_->addShape(shape_);
 }
 
 
-void RemoveShape::undo() {
+void RemoveShape::undo(Document *doc) {
   qDebug() << "[Command] Undo remove shape";
   layer_->addShape(shape_);
 }
 
-void RemoveShape::redo() {
+void RemoveShape::redo(Document *doc) {
   qDebug() << "[Command] Do remove shape";
   layer_->removeShape(shape_);
 }
 
-Select::Select(const QList<ShapePtr> &new_selections) {
+Select::Select(Document *doc, const QList<ShapePtr> &new_selections) {
   old_selections_.clear();
-  old_selections_.append(Canvas::document().selections());
+  old_selections_.append(doc->selections());
   new_selections_.clear();
   new_selections_.append(new_selections);
 }
 
-void Select::undo() {
+void Select::undo(Document *doc) {
   qDebug() << "[Command] Undo select";
-  Canvas::document().setSelections(old_selections_);
+  doc->setSelections(old_selections_);
 }
 
-void Select::redo() {
-  qDebug() << "[Command] Do select";
-  Canvas::document().setSelections(new_selections_);
+void Select::redo(Document *doc) {
+  if (!new_selections_.empty()) {
+    qDebug() << "[Command] Do select" << new_selections_.first().get();
+  } else {
+    qDebug() << "[Command] Do select none";
+  }
+  doc->setSelections(new_selections_);
 }
 
-shared_ptr<JoinedCmd> JoinedCmd::removeSelections() {
+shared_ptr<JoinedCmd> JoinedCmd::removeSelections(Document *doc) {
   QList<ShapePtr> selections;
-  selections.append(Canvas::document().selections());
-  return Select::shared({}) +
+  selections.append(doc->selections());
+  return Select::shared(doc, {}) +
          JoinedCmd::removeShapes(selections);
 }

@@ -9,7 +9,7 @@ BitmapShape::BitmapShape(QImage &image) : Shape() {
 
 BitmapShape::BitmapShape(const BitmapShape &orig) : Shape() {
   bitmap_ = make_unique<QPixmap>(*orig.bitmap_);
-  setLayer(&orig.layer());
+  setLayer(orig.layer());
   setTransform(orig.transform());
 }
 
@@ -30,7 +30,7 @@ void BitmapShape::calcBoundingBox() const {
 }
 
 QImage &BitmapShape::image() const {
-  std::uintptr_t parent_color = hasLayer() ? 0 : layer().color().value();
+  std::uintptr_t parent_color = hasLayer() ? 0 : layer()->color().value();
   std::uintptr_t bitmap_address =
        reinterpret_cast<std::uintptr_t>(bitmap_.get());
   if (tinted_signature != parent_color + bitmap_address) {
@@ -41,7 +41,7 @@ QImage &BitmapShape::image() const {
     QPainter p;
     p.begin(&mask);
     p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(QRect(0, 0, mask.width(), mask.height()), layer().color());
+    p.fillRect(QRect(0, 0, mask.width(), mask.height()), layer()->color());
     p.end();
 
     p.begin(&tinted_image_);

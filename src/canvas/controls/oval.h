@@ -7,7 +7,7 @@ namespace Controls {
 
   class Oval : public CanvasControl {
   public:
-    Oval(Document &scene_) noexcept: CanvasControl(scene_) {}
+    Oval(Canvas *canvas) noexcept: CanvasControl(canvas) {}
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 

@@ -6,19 +6,18 @@
 
 using namespace std;
 
-Shape::Shape() noexcept {
-  rotation_ = 0;
-  transform_ = QTransform();
-  temp_transform_ = QTransform();
-  selected_ = false;
-  layer_ = nullptr;
-}
+Shape::Shape() noexcept:
+     rotation_(0),
+     transform_(),
+     temp_transform_(),
+     selected_(false),
+     layer_(nullptr),
+     parent_(nullptr),
+     bbox_need_recalc_(false) {}
 
 Shape::~Shape() {
   //qDebug() << "[Memory] ~Shape" << this;
 }
-
-// only calls this when the path is different
 
 qreal Shape::x() const { return transform_.dx(); }
 
@@ -28,15 +27,23 @@ qreal Shape::rotation() const { return rotation_; }
 
 QPointF Shape::pos() const { return QPointF(x(), y()); }
 
-Layer &Shape::layer() const {
-  Q_ASSERT_X(hasLayer(), "Shape", "Shape has no layer, use hasLayer() to check first");
-  return *layer_;
+Layer *Shape::layer() const {
+  Shape *top_node = (Shape *) this;
+  while (top_node->parent_ != nullptr) {
+    top_node = top_node->parent_;
+  }
+  Layer *top_layer = top_node->layer_;
+  Q_ASSERT_X(top_layer != nullptr, "Shape",
+             "This node or its top node doesn't belong to any layer, the logic may be wrong."
+             "You can also use shape->hasLayer() to check before access.");
+  return top_layer;
 }
 
 bool Shape::selected() const { return selected_; }
 
 void Shape::setLayer(Layer *layer) { layer_ = layer; }
 
+// Note: hasLayer() does not consider if parent node has layers.
 bool Shape::hasLayer() const { return layer_ != nullptr; }
 
 void Shape::applyTransform(const QTransform &transform) {
@@ -60,6 +67,16 @@ void Shape::calcBoundingBox() const {
 const QTransform &Shape::transform() const { return transform_; }
 
 const QTransform &Shape::tempTransform() const { return temp_transform_; }
+
+QTransform Shape::globalTransform() const {
+  QTransform global_transform = transform_;
+  Shape *parent = parent_;
+  while (parent != nullptr) {
+    global_transform = global_transform * parent->transform();
+    parent = parent_->parent();
+  }
+  return global_transform;
+}
 
 bool Shape::hitTest(QPointF, qreal) const {
   qWarning() << "Shape::hitTest(point) not implemented" << this;
@@ -104,9 +121,24 @@ void Shape::flushCache() {
   if (layer_) {
     layer_->flushCache();
   }
+  /*if (parent_) {
+    parent_->flushCache();
+  }*/
 }
 
 void Shape::setTempTransform(const QTransform &transform) {
   temp_transform_ = transform;
   flushCache();
+}
+
+Shape *Shape::parent() const {
+  return parent_;
+}
+
+void Shape::setParent(Shape *parent) {
+  parent_ = parent;
+}
+
+Shape::operator QString() {
+  return "Shape(" + QString::number((int) type()) + ")";
 }

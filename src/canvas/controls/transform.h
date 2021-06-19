@@ -27,7 +27,7 @@ namespace Controls {
       ROTATION = 8
     };
 
-    Transform(Document &scene) noexcept;
+    Transform(Canvas *canvas) noexcept;
 
     bool keyPressEvent(QKeyEvent *e) override;
 

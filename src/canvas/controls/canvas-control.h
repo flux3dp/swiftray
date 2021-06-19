@@ -6,11 +6,13 @@
 #ifndef CANVAS_CONTROL_H
 #define CANVAS_CONTROL_H
 
+class Canvas;
+
 namespace Controls {
   class CanvasControl : public QObject {
   Q_OBJECT
   public:
-    CanvasControl(Document &scene);
+    CanvasControl(Canvas *parent);
 
     virtual bool mousePressEvent(QMouseEvent *e);
 
@@ -29,10 +31,12 @@ namespace Controls {
 
     virtual void exit();
 
-    Document &scene();
+    Canvas &canvas();
+
+    Document &document();
 
   private:
-    Document &scene_;
+    Canvas *canvas_;
   };
 
   // Possible control classes

@@ -1,16 +1,19 @@
-#include <QPainterPath>
-#include <document.h>
-
 #ifndef SVGPP_PARSER_H
 #define SVGPP_PARSER_H
 
+#include <QPainterPath>
+
+// This class acts like a bridge from main program to svgpp,
+// to make the svgpp compiling dependency stops at "svgpp-parser.cpp"
+// so the compiling process will be faster
+
+class Document;
+
 class SVGPPParser {
 public:
-  SVGPPParser(Document &scene);
+  SVGPPParser() {};
 
-  Document &scene_;
-
-  bool parse(QByteArray &data);
+  bool parse(Document *doc, QByteArray &data);
 };
 
 #endif // SVGPP_PARSER_H

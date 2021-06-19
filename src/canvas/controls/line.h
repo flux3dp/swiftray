@@ -7,7 +7,7 @@ namespace Controls {
 
   class Line : public CanvasControl {
   public:
-    Line(Document &scene_) noexcept: CanvasControl(scene_) {}
+    Line(Canvas *canvas) noexcept: CanvasControl(canvas) {}
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 

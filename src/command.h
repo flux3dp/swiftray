@@ -15,11 +15,11 @@ namespace Commands {
   class BaseCmd {
   public:
 
-    virtual void undo() {
+    virtual void undo(Document *doc) {
       Q_ASSERT_X(false, "Commands", "This command did not implement undo");
     }
 
-    virtual void redo() {
+    virtual void redo(Document *doc) {
       Q_ASSERT_X(false, "Commands", "This command did not implement redo");
     }
 
@@ -32,9 +32,9 @@ namespace Commands {
   public:
     explicit AddLayer(LayerPtr &layer) : layer_(layer) {}
 
-    void undo() override;
+    void undo(Document *doc) override;
 
-    void redo() override;
+    void redo(Document *doc) override;
 
     LayerPtr layer_;
   };
@@ -43,9 +43,9 @@ namespace Commands {
   public:
     explicit RemoveLayer(LayerPtr &layer) : layer_(layer) {}
 
-    void undo() override;
+    void undo(Document *doc) override;
 
-    void redo() override;
+    void redo(Document *doc) override;
 
     LayerPtr layer_;
   };
@@ -59,9 +59,9 @@ namespace Commands {
       return make_shared<AddShape>(layer, shape);
     }
 
-    void undo() override;
+    void undo(Document *doc) override;
 
-    void redo() override;
+    void redo(Document *doc) override;
 
     // Shape events don't need to manage layer's lifecycle
     Layer *layer_;
@@ -71,7 +71,7 @@ namespace Commands {
   class RemoveShape : public BaseCmd {
   public:
     explicit RemoveShape(const ShapePtr &shape) :
-         shape_(shape) { layer_ = &shape->layer(); }
+         shape_(shape) { layer_ = shape->layer(); }
 
     RemoveShape(const LayerPtr &layer, const ShapePtr &shape) :
          layer_(layer.get()), shape_(shape) {}
@@ -87,9 +87,9 @@ namespace Commands {
       return make_shared<RemoveShape>(layer, shape);
     }
 
-    void undo() override;
+    void undo(Document *doc) override;
 
-    void redo() override;
+    void redo(Document *doc) override;
 
     // Shape events don't need to manage layer's lifecycle
     Layer *layer_;
@@ -99,15 +99,15 @@ namespace Commands {
   class Select : public BaseCmd {
   public:
 
-    explicit Select(const QList<ShapePtr> &new_selections_);
+    explicit Select(Document *doc, const QList<ShapePtr> &new_selections_);
 
-    static shared_ptr<Select> shared(const QList<ShapePtr> &new_selections) {
-      return make_shared<Select>(new_selections);
+    static shared_ptr<Select> shared(Document *doc, const QList<ShapePtr> &new_selections) {
+      return make_shared<Select>(doc, new_selections);
     }
 
-    void undo() override;
+    void undo(Document *doc) override;
 
-    void redo() override;
+    void redo(Document *doc) override;
 
     QList<ShapePtr> old_selections_;
     QList<ShapePtr> new_selections_;
@@ -132,15 +132,15 @@ namespace Commands {
       }
     }
 
-    void undo() override {
+    void undo(Document *doc) override {
       for (int i = events.size() - 1; i >= 0; i--) {
-        events.at(i)->undo();
+        events.at(i)->undo(doc);
       }
     }
 
-    void redo() override {
+    void redo(Document *doc) override {
       for (auto &event : events) {
-        event->redo();
+        event->redo(doc);
       }
     }
 
@@ -160,7 +160,7 @@ namespace Commands {
       return evt;
     }
 
-    static shared_ptr<JoinedCmd> removeSelections();
+    static shared_ptr<JoinedCmd> removeSelections(Document *doc);
 
     QList<CmdPtr> events;
   };
@@ -182,12 +182,12 @@ namespace Commands {
       return make_shared<Set>(target, new_value);
     }
 
-    void undo() override {
+    void undo(Document *doc) override {
       qInfo() << "[Command] Undo set";
       (target_->*PropSetter)(old_value_);
     }
 
-    void redo() override {
+    void redo(Document *doc) override {
       qInfo() << "[Command] Do set";
       (target_->*PropSetter)(new_value_);
     };
@@ -211,12 +211,12 @@ namespace Commands {
       return make_shared<SetRef>(target, new_value);
     }
 
-    void undo() override {
+    void undo(Document *doc) override {
       qInfo() << "[Command] Undo setRef";
       (target_->*PropSetter)(old_value_);
     }
 
-    void redo() override {
+    void redo(Document *doc) override {
       qInfo() << "[Command] Do setRef";
       (target_->*PropSetter)(new_value_);
     };
@@ -236,7 +236,8 @@ namespace Commands {
   // Abbreviations for undo events
   typedef Commands::SetRef<Shape, QTransform, &Shape::transform, &Shape::setTransform> SetTransform;
   typedef Commands::Set<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotation;
-  typedef Commands::Set<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotation;
+  typedef Commands::Set<Shape, Shape *, &Shape::parent, &Shape::setParent> SetParent;
+  typedef Commands::Set<Shape, Layer *, &Shape::layer, &Shape::setLayer> SetLayer;
 }
 
 typedef Commands::CmdPtr CmdPtr;

@@ -7,7 +7,7 @@ namespace Controls {
 
   class Rect : public CanvasControl {
   public:
-    Rect(Document &scene_) noexcept: CanvasControl(scene_) {}
+    Rect(Canvas *canvas) noexcept: CanvasControl(canvas) {}
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 

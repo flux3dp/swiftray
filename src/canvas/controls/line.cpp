@@ -6,22 +6,22 @@
 using namespace Controls;
 
 bool Line::isActive() {
-  return scene().mode() == Document::Mode::LineDrawing;
+  return document().mode() == Document::Mode::LineDrawing;
 }
 
 bool Line::mouseMoveEvent(QMouseEvent *e) {
-  cursor_ = scene().getCanvasCoord(e->pos());
+  cursor_ = document().getCanvasCoord(e->pos());
   return true;
 }
 
 bool Line::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
-  path.moveTo(scene().mousePressedCanvasCoord());
-  path.lineTo(scene().getCanvasCoord(e->pos()));
+  path.moveTo(document().mousePressedCanvasCoord());
+  path.lineTo(document().getCanvasCoord(e->pos()));
   ShapePtr new_line = make_shared<PathShape>(path);
-  scene().execute(
-       Commands::AddShape::shared(scene().activeLayer(), new_line) +
-       Commands::Select::shared({new_line})
+  document().execute(
+       Commands::AddShape::shared(document().activeLayer(), new_line) +
+       Commands::Select::shared(&document(), {new_line})
   );
   exit();
   return true;
@@ -30,10 +30,10 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
 void Line::paint(QPainter *painter) {
   if (cursor_ == QPointF(0, 0))
     return;
-  QPen pen(scene().activeLayer()->color(), 3, Qt::SolidLine);
+  QPen pen(document().activeLayer()->color(), 3, Qt::SolidLine);
   pen.setCosmetic(true);
   painter->setPen(pen);
-  painter->drawLine(scene().mousePressedCanvasCoord(), cursor_);
+  painter->drawLine(document().mousePressedCanvasCoord(), cursor_);
 }
 
 bool Line::keyPressEvent(QKeyEvent *e) {
@@ -46,5 +46,5 @@ bool Line::keyPressEvent(QKeyEvent *e) {
 
 void Line::exit() {
   cursor_ = QPointF();
-  scene().setMode(Document::Mode::Selecting);
+  document().setMode(Document::Mode::Selecting);
 }

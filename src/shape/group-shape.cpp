@@ -2,9 +2,13 @@
 #include <layer.h>
 #include <shape/group-shape.h>
 
-GroupShape::GroupShape() : Shape() {}
+GroupShape::GroupShape() :
+     Shape(),
+     cache_(make_unique<CacheStack>(this)) {}
 
-GroupShape::GroupShape(QList<ShapePtr> &children) : Shape() {
+GroupShape::GroupShape(QList<ShapePtr> &children) :
+     Shape(),
+     cache_(make_unique<CacheStack>(this)) {
   children_.append(children);
   flushCache();
 }
@@ -62,18 +66,16 @@ void GroupShape::calcBoundingBox() const {
 
 void GroupShape::cache() const {
   if (!hasLayer()) return;
-  // TODO: (This breaks if the group is inside another group! Consider global transform)
-  cache_stack_.begin(transform_ * temp_transform_);
-  for (auto &shape : children_) {
-    cache_stack_.addShape(shape.get());
-  }
-  cache_stack_.end();
+  qInfo() << "Group caching" << this << " called";
+  // TODO: (This breaks if the group is inside another group! Consider using global transform)
+  // note that temp transform is not considered here
+  cache_->update();
 }
 
 void GroupShape::paint(QPainter *painter) const {
   boundingRect();
 
-  cache_stack_.paint(painter);
+  cache_->paint(painter);
 }
 
 ShapePtr GroupShape::clone() const {
@@ -82,14 +84,28 @@ ShapePtr GroupShape::clone() const {
   group->setRotation(rotation());
 
   for (auto &shape : children_) {
-    group->children_.push_back(shape->clone());
+    ShapePtr new_shape = shape->clone();
+    new_shape->setParent(group);
+    group->children_.push_back(new_shape);
   }
 
   return ShapePtr(group);
+}
+
+bool GroupShape::isParentSelected() const {
+  bool result = selected();
+  Shape *p = parent();
+  while (p != nullptr) {
+    result = p->selected();
+    p = p->parent();
+  }
+  return result;
 }
 
 const QList<ShapePtr> &GroupShape::children() const { return children_; }
 
 Shape::Type GroupShape::type() const { return Shape::Type::Group; }
 
-CacheStack &GroupShape::cacheStack() { return cache_stack_; }
+CacheStack &GroupShape::cacheStack() const {
+  return *cache_.get();
+}

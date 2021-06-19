@@ -3,56 +3,48 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 
+// TODO (remove this and make this logic to svgpp parser)
 int layer_color_counter = 0;
 
 // Constructors
-Layer::Layer(const QColor &color, const QString &name) {
-  color_ = color;
-  name_ = name;
-  speed_ = 20;
-  strength_ = 30;
-  repeat_ = 1;
-  is_visible_ = true;
-  step_height_ = 0;
-  is_diode_ = false;
-  target_height_ = 0;
-  cache_valid_ = false;
-  type_ = Type::Line;
-  calcPen();
-}
+Layer::Layer(Document *doc, const QColor &color, const QString &name) :
+     document_(doc),
+     color_(color),
+     name_(name),
+     speed_(20),
+     strength_(30),
+     repeat_(1),
+     is_visible_(true),
+     step_height_(0),
+     is_diode_(false),
+     target_height_(0),
+     cache_(make_unique<CacheStack>(this)),
+     cache_valid_(false),
+     type_(Type::Line) {}
+
+Layer::Layer(Document *doc, int layer_id) :
+     Layer(doc,
+           Layer::DefaultColors.at((layer_id - 1) % 17),
+           "Layer " + QString::number(layer_id)) {}
+
+Layer::Layer(Document *doc) :
+     Layer(doc, 1) {}
+
 
 Layer::Layer() :
-     Layer(Layer::DefaultColors.at((layer_color_counter++) % 17),
-           "Layer 1") {}
-
-Layer::Layer(int new_layer_id) :
-     Layer(Layer::DefaultColors.at((new_layer_id - 1) % 17),
-           "圖層 " + QString::number(new_layer_id)) {}
+     Layer(nullptr, 1) {}
 
 Layer::~Layer() = default;
 
-void Layer::cache() const {
-  cache_stack_.begin();
-  cache_stack_.setPen(dash_pen_, solid_pen_);
-  cache_stack_.setBrush(QBrush(color()));
-  cache_stack_.setForceFill(type_ == Type::FillLine || type_ == Type::Fill);
-
-  for (auto &shape : children_) {
-    cache_stack_.addShape(shape.get());
-  }
-
-  cache_stack_.end();
-  cache_valid_ = true;
-}
-
-int Layer::paint(QPainter *painter, int counter) const {
+int Layer::paint(QPainter *painter) const {
   if (!is_visible_) return 0;
-  // Update cache
-  if (!cache_valid_) cache();
-  dash_pen_.setDashOffset(0.3F * counter);
-  cache_stack_.setPen(dash_pen_, solid_pen_);
+  // Update cache if it's not valid
+  if (!cache_valid_) {
+    cache_->update();
+    cache_valid_ = true;
+  }
   // Draw shapes
-  return cache_stack_.paint(painter);
+  return cache_->paint(painter);
 }
 
 void Layer::addShape(const ShapePtr &shape) {
@@ -66,14 +58,6 @@ void Layer::removeShape(const ShapePtr &shape) {
     qInfo() << "[Layer] Failed to remove children";
   }
   flushCache();
-}
-
-void Layer::calcPen() {
-  dash_pen_ = QPen(color_, 2, Qt::DashLine);
-  dash_pen_.setDashPattern(QVector<qreal>(10, 3));
-  dash_pen_.setCosmetic(true);
-  solid_pen_ = QPen(color_, 2, Qt::SolidLine);
-  solid_pen_.setCosmetic(true);
 }
 
 // Getters
@@ -116,6 +100,14 @@ double Layer::targetHeight() const { return target_height_; }
 
 Layer::Type Layer::type() const { return type_; }
 
+Document &Layer::document() {
+  Q_ASSERT_X(document_ != nullptr,
+             "Layer",
+             "This layer does not belong to any document."
+             "The constructing process might be wrong.");
+  return *document_;
+}
+
 // Setters
 
 void Layer::setVisible(bool visible) {
@@ -124,7 +116,7 @@ void Layer::setVisible(bool visible) {
 
 void Layer::setColor(const QColor &color) {
   color_ = color;
-  calcPen();
+  flushCache();
 }
 
 void Layer::setType(Layer::Type type) {
@@ -160,12 +152,25 @@ void Layer::setStepHeight(double step_height) {
   step_height_ = step_height;
 }
 
-// Clone
-LayerPtr Layer::clone() {
-  LayerPtr layer = make_shared<Layer>(*this);
-  layer->children_.clear();
-  for (auto &shape : children_) {
-    layer->addShape(shape->clone());
-  }
-  return layer;
+void Layer::setDocument(Document *doc) {
+  document_ = doc;
 }
+
+// Clone
+
+LayerPtr Layer::clone() {
+  LayerPtr new_layer = make_shared<Layer>(document_, color(), name());
+  new_layer->setSpeed(speed());
+  new_layer->setStrength(strength());
+  new_layer->setRepeat(repeat());
+  new_layer->setVisible(isVisible());
+  new_layer->setStepHeight(stepHeight());
+  new_layer->setDiode(isDiode());
+  new_layer->setTargetHeight(targetHeight());
+  new_layer->setType(type());
+  for (auto &shape : children_) {
+    new_layer->addShape(shape->clone());
+  }
+  return new_layer;
+}
+

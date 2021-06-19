@@ -51,9 +51,7 @@ public:
 
   bool event(QEvent *e) override;
 
-  static Document &document();
-
-  static const QRectF &screenRect();
+  Document &document();
 
   Controls::Transform &transformControl() { return ctrl_transform_; }
 
@@ -118,11 +116,8 @@ public Q_SLOTS:
   void backToSelectMode();
 
 private:
-  static Document *current_doc_;
-  static QRectF screen_rect_;
+  unique_ptr<Document> current_doc_;
   bool ready;
-  int dash_counter_;
-  SVGPPParser svgpp_parser_;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
   Controls::Grid ctrl_grid_;
@@ -133,16 +128,17 @@ private:
   Controls::Rect ctrl_rect_;
   Controls::Text ctrl_text_;
   QList<Controls::CanvasControl *> ctrls_;
-
-  QTimer *timer;
+  SVGPPParser svgpp_parser_;
 
   QElapsedTimer fps_timer;
   int fps_count;
   float fps;
   QPoint widget_offset_;
   QSize widget_size_;
-  QThread *mem_thread_;
   Clipboard clipboard_;
+
+  QTimer *timer;
+  QThread *mem_thread_;
 
 private:
   MemoryMonitor mem_monitor_;

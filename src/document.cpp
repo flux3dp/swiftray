@@ -9,7 +9,9 @@ Document::Document() noexcept:
      scroll_x_(0),
      scroll_y_(0),
      scale_(1),
-     is_recording_undo_(true) {
+     is_recording_undo_(true),
+     screen_changed_(false),
+     frames_count_(0) {
   width_ = 3000;
   height_ = 2000;
   font_ = QFont("Tahoma", 200, QFont::Bold);
@@ -55,7 +57,7 @@ void Document::dumpStack(QList<LayerPtr> &stack) {
 void Document::undo() {
   if (undo2_stack_.isEmpty()) return;
   CmdPtr evt = undo2_stack_.last();
-  evt->undo();
+  evt->undo(this);
   undo2_stack_.pop_back();
   redo2_stack_ << evt;
 
@@ -69,9 +71,8 @@ void Document::undo() {
 
 void Document::redo() {
   if (redo2_stack_.isEmpty()) return;
-  qInfo() << "Stack" << redo2_stack_.size();
   CmdPtr evt = redo2_stack_.last();
-  evt->redo();
+  evt->redo(this);
   redo2_stack_.pop_back();
   undo2_stack_ << evt;
 
@@ -88,20 +89,21 @@ void Document::execute(Commands::BaseCmd *event) {
 
 void Document::execute(const CmdPtr &e) {
   redo2_stack_.clear();
-  e->redo();
+  e->redo(this);
   undo2_stack_.push_back(e);
 }
 
 
 void Document::addLayer() {
   qDebug() << "Add layer";
-  layers() << make_shared<Layer>(new_layer_id_++);
+  layers() << make_shared<Layer>(this, new_layer_id_++);
   active_layer_ = layers().last();
   emit layerChanged();
 }
 
 void Document::addLayer(LayerPtr &layer) {
-  layers() << layer->clone();
+  layer->setDocument(this);
+  layers() << layer;
   active_layer_ = layers().last();
 }
 
@@ -143,15 +145,17 @@ void Document::setHeight(qreal height) { height_ = height; }
 void Document::setScroll(QPointF scroll) {
   scroll_x_ = scroll.x();
   scroll_y_ = scroll.y();
+  screen_changed_ = true;
   volatility_timer.restart();
 }
 
-QRectF Document::screenRect(QSize screen_size) const {
-  return QRectF(getCanvasCoord(QPoint(0, 0)), getCanvasCoord(QPoint(screen_size.width(), screen_size.height())));
+void Document::setScreenSize(QSize size) {
+  screen_size_ = size;
 }
 
 void Document::setScale(qreal scale) {
   scale_ = scale;
+  screen_changed_ = true;
   volatility_timer.restart();
 }
 
@@ -201,7 +205,7 @@ void Document::reorderLayers(QList<LayerPtr> &new_order) {
 
 void Document::removeSelections() {
   // Remove shapes from its layer
-  for (auto &shape : selections_) { shape->layer().removeShape(shape); }
+  for (auto &shape : selections_) { shape->layer()->removeShape(shape); }
   setSelection(nullptr);
 }
 
@@ -232,7 +236,7 @@ void Document::setFont(QFont &font) {
   font_ = font;
 }
 
-bool Document::isVolatile() {
+bool Document::isVolatile() const {
   if (volatility_timer.elapsed() < 1000) { return true; }
   return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
 }
@@ -243,15 +247,22 @@ void Document::groupSelections() {
   if (selections().empty()) return;
 
   ShapePtr group_ptr = make_shared<GroupShape>(selections());
+  auto cmd = make_shared<JoinedCmd>();
+  for (auto &shape: selections()) {
+    cmd << Commands::SetParent::shared(shape.get(), group_ptr.get());
+    cmd << Commands::SetLayer::shared(shape.get(), nullptr);
+  }
   execute(
+       cmd +
        Commands::AddShape::shared(activeLayer(), group_ptr) +
-       Commands::JoinedCmd::removeSelections() +
-       Commands::Select::shared({group_ptr})
+       Commands::JoinedCmd::removeSelections(this) +
+       Commands::Select::shared(this, {group_ptr})
   );
 }
 
 void Document::ungroupSelections() {
   if (selections().empty()) return;
+  // todo support multiple groups
   ShapePtr group_ptr = selections().first();
   if (group_ptr->type() != Shape::Type::Group) return;
 
@@ -259,13 +270,36 @@ void Document::ungroupSelections() {
 
   auto cmd = make_shared<Commands::JoinedCmd>();
   for (auto &shape : group->children()) {
-    cmd << new Commands::SetTransform(shape.get(), shape->transform() * group->transform());
-    cmd << new Commands::SetRotation(shape.get(), shape->rotation() + group->rotation());
-    cmd << new Commands::AddShape(activeLayer(), shape);
+    cmd << Commands::SetTransform::shared(shape.get(), shape->transform() * group->transform());
+    cmd << Commands::SetRotation::shared(shape.get(), shape->rotation() + group->rotation());
+    cmd << Commands::SetParent::shared(shape.get(), nullptr);
+    cmd << Commands::AddShape::shared(activeLayer(), shape);
   }
 
-  cmd << new Commands::Select(group->children());
-  cmd << new Commands::RemoveShape(&group_ptr->layer(), group_ptr);
+  cmd << new Commands::Select(this, group->children());
+  cmd << new Commands::RemoveShape(group_ptr->layer(), group_ptr);
 
   execute(cmd);
+}
+
+void Document::paint(QPainter *painter) {
+  frames_count_++;
+
+  int object_count = 0;
+  for (const LayerPtr &layer : layers()) {
+    if (screen_changed_) layer->flushCache();
+    object_count += layer->paint(painter);
+  }
+
+  //TODO combine with resize event to this flag
+  screen_changed_ = false;
+}
+
+int Document::framesCount() const {
+  return frames_count_;
+}
+
+QRectF Document::screenRect() const {
+  return QRectF(getCanvasCoord(QPoint(0, 0)),
+                getCanvasCoord(QPoint(screen_size_.width(), screen_size_.height())));
 }

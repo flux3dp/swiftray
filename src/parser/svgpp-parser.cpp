@@ -2,15 +2,14 @@
 #include <parser/svgpp-common.h>
 #include <parser/svgpp-parser.h>
 
-SVGPPParser::SVGPPParser(Document &scene) : scene_(scene) {
-}
+#include <document.h>
 
-bool SVGPPParser::parse(QByteArray &data) {
+bool SVGPPParser::parse(Document *doc, QByteArray &data) {
   bool success = svgpp_parse(data);
   qInfo() << "Total layers" << svgpp_layers->size();
   for (auto &layer : *svgpp_layers) {
-    scene_.addLayer(layer);
+    doc->addLayer(layer);
   }
-  scene_.emitAllChanges();
+  doc->emitAllChanges();
   return success;
 }

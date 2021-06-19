@@ -22,7 +22,7 @@ public:
   // General attributes
   bool selected() const;
 
-  Layer &layer() const;
+  Layer *layer() const;
 
   QPointF pos() const;
 
@@ -32,17 +32,16 @@ public:
 
   qreal y() const;
 
-  void setX(qreal x);
-
-  void setY(qreal y);
-
-  void setPos(QPointF pos);
+  Shape *parent() const;
 
   void setRotation(qreal r);
 
   void setLayer(Layer *layer);
 
   void setSelected(bool selected);
+
+  void setParent(Shape *parent);
+
 
   // Bounding box
   QRectF boundingRect() const;
@@ -55,6 +54,8 @@ public:
   const QTransform &transform() const;
 
   const QTransform &tempTransform() const;
+
+  QTransform globalTransform() const;
 
   void applyTransform(const QTransform &transform);
 
@@ -77,8 +78,11 @@ public:
 
   virtual Type type() const;
 
+  virtual operator QString();
+
 private:
   Layer *layer_;
+  Shape *parent_;
   qreal rotation_;
   mutable bool bbox_need_recalc_;
 

@@ -7,7 +7,7 @@ namespace Controls {
 
   class Select : public CanvasControl {
   public:
-    Select(Document &scene_) noexcept;
+    Select(Canvas *canvas) noexcept;
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 

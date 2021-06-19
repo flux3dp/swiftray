@@ -20,7 +20,7 @@ public:
 
   void cache() const;
 
-  CacheStack &cacheStack();
+  bool isParentSelected() const;
 
   void paint(QPainter *painter) const override;
 
@@ -30,9 +30,11 @@ public:
 
   const QList<ShapePtr> &children() const;
 
+  CacheStack &cacheStack() const;
+
 private:
   QList<ShapePtr> children_;
-  mutable CacheStack cache_stack_;
+  mutable unique_ptr<CacheStack> cache_;
 };
 
 #endif // GROUPSHAPE_H

@@ -5,6 +5,10 @@
 #include <QList>
 #include <shape/path-shape.h>
 
+class GroupShape;
+
+class Document;
+
 // Rewrite to support transform dirty or content dirty, transform dirty does not require heavy recalculation
 
 class CacheStack {
@@ -21,7 +25,7 @@ public:
       Group
     };
 
-    explicit Cache(Type type);
+    Cache(CacheStack *stack, Type type);
 
     void merge(const QTransform &global_transform);
 
@@ -29,53 +33,60 @@ public:
 
     const QList<Shape *> &shapes() const;
 
+    // CacheFragment add shape
     void addShape(Shape *shape);
 
-    const QPixmap &fillCache(QPainter *painter, QBrush &brush);
+    void cacheFill();
 
-    // Path cache
-    QPainterPath joined_path_;
+    // Painting functions
+    void stroke(QPainter *painter, const QPen &pen);
+
+    void fill(QPainter *painter, const QPen &pen);
+
   private:
-    // Use weak pointer (no lifespan issue here)
+    /* Main properties */
     QList<Shape *> shapes_;
+    CacheStack *stack_;
     Type type_;
-    // Filling pixmap cache (filling is a computation heavy work for complex paths)
+
+    /* Cache properties */
+    QRectF bbox_;
     QPixmap cache_pixmap_;
     bool is_fill_cached_;
-    QRectF bbox_;
+    QPainterPath joined_path_;
   };
 
-  CacheStack();
+  CacheStack(GroupShape *group);
 
-  // Set required information for caches
-  void begin(const QTransform &global_transform = QTransform());
+  CacheStack(Layer *layer);
 
-  // Calculate the cache
-  void end();
-
-  // Categorize the shapes to different cache group
-  void addShape(Shape *shape);
+  void update();
 
   int paint(QPainter *painter);
 
-  void setBrush(const QBrush &brush);
+  bool isGroup() const;
 
-  void setPen(const QPen &dash_pen, const QPen &solid_pen);
+  bool isLayer() const;
 
-  void setForceFill(bool force_fill);
+  const Document &document() const;
 
-  void setForceSelection(bool force_selection);
-
+  const QColor &color() const;
 
   QTransform global_transform_;
   QList<Cache> caches_;
 
 private:
-  QPen dash_pen_;
-  QPen solid_pen_;
-  QBrush filling_brush_;
-  bool force_fill_;
-  bool force_selection_;
+  // Categorize the shapes to different cache group
+  void addShape(Shape *shape);
+
+  enum class Type {
+    Layer,
+    Group
+  };
+
+  Type type_;
+  GroupShape *group_;
+  Layer *layer_;
 };
 
 typedef CacheStack::Cache::Type CacheType;

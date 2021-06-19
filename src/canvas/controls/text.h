@@ -8,7 +8,7 @@ namespace Controls {
 
   class Text : public CanvasControl {
   public:
-    Text(Document &scene_) noexcept: CanvasControl(scene_) {}
+    Text(Canvas *canvas) noexcept: CanvasControl(canvas) {}
 
     bool mouseReleaseEvent(QMouseEvent *e) override;
 

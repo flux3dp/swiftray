@@ -9,7 +9,6 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-
 class Document : public QObject {
 Q_OBJECT
 public:
@@ -33,8 +32,6 @@ public:
 
   QList<ShapePtr> &selections();
 
-  QList<ShapePtr> &lastSelections();
-
   void setSelection(nullptr_t);
 
   void setSelection(ShapePtr &shape);
@@ -55,6 +52,10 @@ public:
 
   void removeLayer(LayerPtr &layer);
 
+  // Paint functions
+
+  void paint(QPainter *painter);
+
   // Dumps layers info
   void dumpStack(QList<LayerPtr> &stack);
 
@@ -69,7 +70,7 @@ public:
   // Coordinate functions:
   QPointF getCanvasCoord(QPointF window_coord) const;
 
-  QRectF screenRect(QSize screen_size) const;
+  QRectF screenRect() const;
 
   // Getters:
   Mode mode() const;
@@ -92,8 +93,11 @@ public:
 
   const QFont &font() const;
 
+  // Frames rendered after start
+  int framesCount() const;
+
   // Graphics should be drawn in lower quality is this return true
-  bool isVolatile();
+  bool isVolatile() const;
 
   // Setters:
   void setMode(Mode mode);
@@ -115,6 +119,8 @@ public:
   void setMousePressedScreenCoord(QPointF screen_coord);
 
   void setFont(QFont &font);
+
+  void setScreenSize(QSize size);
 
   /* Undo functions */
   void undo();
@@ -144,10 +150,10 @@ private:
   qreal height_;
 
   bool is_recording_undo_;
+  bool screen_changed_;
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;
-  QList<ShapePtr> last_selections_;
 
   QFont font_;
 
@@ -160,6 +166,10 @@ private:
 
   QList<CmdPtr> undo2_stack_;
   QList<CmdPtr> redo2_stack_;
+
+  QSize screen_size_;
+
+  int frames_count_;
 };
 
 #endif // SCENE_H

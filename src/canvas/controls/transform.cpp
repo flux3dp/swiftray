@@ -4,18 +4,22 @@
 
 using namespace Controls;
 
-Transform::Transform(Document &scene) noexcept: CanvasControl(scene) {
+Transform::Transform(Canvas *canvas) noexcept: CanvasControl(canvas) {
   active_control_ = Control::NONE;
-  connect((QObject *) (&this->scene()), SIGNAL(selectionsChanged()), this,
+  scale_x_to_apply_ = scale_y_to_apply_ = 1;
+  rotation_to_apply_ = 0;
+  translate_to_apply_ = QPointF();
+  //TODO fix connect document
+  connect((QObject *) (&document()), SIGNAL(selectionsChanged()), this,
           SLOT(updateSelections()));
 }
 
 bool Transform::isActive() {
-  return scene().selections().size() > 0 &&
-         (scene().mode() == Document::Mode::Selecting ||
-          scene().mode() == Document::Mode::Moving ||
-          scene().mode() == Document::Mode::Rotating ||
-          scene().mode() == Document::Mode::Transforming);
+  return !document().selections().isEmpty() &&
+         (document().mode() == Document::Mode::Selecting ||
+          document().mode() == Document::Mode::Moving ||
+          document().mode() == Document::Mode::Rotating ||
+          document().mode() == Document::Mode::Transforming);
 }
 
 QList<ShapePtr> &Transform::selections() { return selections_; }
@@ -23,7 +27,7 @@ QList<ShapePtr> &Transform::selections() { return selections_; }
 void Transform::updateSelections() {
   reset();
   selections().clear();
-  selections().append(scene().selections());
+  selections().append(document().selections());
   bbox_need_recalc_ = true;
   emit transformChanged();
 }
@@ -113,7 +117,7 @@ void Transform::applyRotate(bool temporarily) {
   if (!temporarily) {
     rotation_to_apply_ = 0;
     bbox_need_recalc_ = true;
-    scene().execute(cmd);
+    document().execute(cmd);
     emit transformChanged();
   }
 }
@@ -141,7 +145,7 @@ void Transform::applyScale(bool temporarily) {
   if (!temporarily) {
     scale_x_to_apply_ = scale_y_to_apply_ = 1;
     bbox_need_recalc_ = true;
-    scene().execute(cmd);
+    document().execute(cmd);
     emit transformChanged();
   }
 }
@@ -163,7 +167,7 @@ void Transform::applyMove(bool temporarily) {
   if (!temporarily) {
     bbox_need_recalc_ = true;
     translate_to_apply_ = QPointF();
-    scene().execute(cmd);
+    document().execute(cmd);
     emit transformChanged();
   }
 }
@@ -219,10 +223,10 @@ Transform::Control Transform::hitTest(QPointF clickPoint,
 }
 
 bool Transform::mousePressEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   reset();
 
-  active_control_ = hitTest(canvas_coord, 10 / scene().scale());
+  active_control_ = hitTest(canvas_coord, 10 / document().scale());
   if (active_control_ == Control::NONE)
     return false;
 
@@ -231,11 +235,11 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
                      2; // Rotate around rotated bbox center
     rotated_from_ = atan2(canvas_coord.y() - action_center_.y(),
                           canvas_coord.x() - action_center_.x());
-    scene().setMode(Document::Mode::Rotating);
+    document().setMode(Document::Mode::Rotating);
   } else {
     action_center_ = controls_[((int) active_control_ + 4) % 8];
     transformed_from_ = QSizeF(boundingRect().size());
-    scene().setMode(Document::Mode::Transforming);
+    document().setMode(Document::Mode::Transforming);
   }
   return true;
 }
@@ -246,7 +250,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) applyScale(false);
 
   reset();
-  scene().setMode(Document::Mode::Selecting);
+  document().setMode(Document::Mode::Selecting);
   return true;
 }
 
@@ -280,20 +284,20 @@ void Transform::calcScale(QPointF canvas_coord) {
 }
 
 bool Transform::mouseMoveEvent(QMouseEvent *e) {
-  QPointF canvas_coord = scene().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
 
   if (selections_.empty()) return false;
 
-  if (scene().mode() == Document::Mode::Selecting) {
+  if (document().mode() == Document::Mode::Selecting) {
     // Do move event if user actually dragged
-    if ((e->pos() - scene().mousePressedScreenCoord()).manhattanLength() > 3) {
-      scene().setMode(Document::Mode::Moving);
+    if ((e->pos() - document().mousePressedScreenCoord()).manhattanLength() > 3) {
+      document().setMode(Document::Mode::Moving);
     }
   }
 
-  switch (scene().mode()) {
+  switch (document().mode()) {
     case Document::Mode::Moving:
-      translate_to_apply_ = canvas_coord - scene().mousePressedCanvasCoord();
+      translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       applyMove(true);
       break;
     case Document::Mode::Rotating:
@@ -316,7 +320,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
 
 bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   Control cp =
-       hitTest(scene().getCanvasCoord(e->pos()), 10 / scene().scale());
+       hitTest(document().getCanvasCoord(e->pos()), 10 / document().scale());
 
   switch (cp) {
     case Control::ROTATION:
@@ -354,7 +358,7 @@ void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
   auto blue_pen = QPen(QBrush(sky_blue), 1, Qt::SolidLine);
   blue_pen.setCosmetic(true);
-  auto pt_pen = QPen(sky_blue, 10 / scene().scale(), Qt::PenStyle::SolidLine,
+  auto pt_pen = QPen(sky_blue, 10 / document().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
 
   if (selections().size() > 0) {

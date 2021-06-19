@@ -5,12 +5,6 @@
 #include "ui_layer-list-item.h"
 #include <command.h>
 
-/*LayerListItem::LayerListItem(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::LayerListItem) {
-    ui->setupUi(this);
-}*/
-
 LayerListItem::LayerListItem(QWidget *parent, LayerPtr &layer, bool active) :
      QWidget(parent),
      ui(new Ui::LayerListItem),
@@ -50,12 +44,12 @@ void LayerListItem::loadStyles() {
 
 void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
-    Canvas::document().execute(
+    layer_->document().execute(
          Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>::shared(layer_.get(), !layer_->isVisible())
     );
   });
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    Canvas::document().execute(
+    layer_->document().execute(
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>::shared(layer_.get(), (Layer::Type) index)
     );
   });
