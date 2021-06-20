@@ -1,4 +1,5 @@
 #include <gcode/toolpath-exporter.h>
+#include <QElapsedTimer>
 #include <QDebug>
 #include <iostream>
 #include <boost/range/irange.hpp>
@@ -15,9 +16,15 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
   gen_->home();
   gen_->useAbsolutePositioning();
 
+  // Generate bitmap canvas
+  layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
+  layer_bitmap_.fill(Qt::white);
+  bitmap_dirty_area_ = QRectF();
+
   for (auto &layer : layers) {
     if (!layer->isVisible()) return;
 
+    qInfo() << "[Export] Output layer: " << layer->name();
     for (int i = 0; i < layer->repeat(); i++) {
       convertLayer(layer);
     }
@@ -29,17 +36,13 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // TODO (Use layer_painter to manage transform over different sub objects)
   global_transform_ = QTransform();
   layer_polygons_.clear();
-  layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
-  layer_bitmap_.fill(Qt::white);
   layer_painter_ = make_unique<QPainter>(&layer_bitmap_);
+  layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
-  qInfo() << "Output Layer #" << layer->name();
-
   for (auto &shape : layer->children()) {
     convertShape(shape);
   }
-
   layer_painter_->end();
   sortPolygons();
   outputLayerGcode();
@@ -66,8 +69,6 @@ void ToolpathExporter::convertShape(const ShapePtr &shape) {
 }
 
 void ToolpathExporter::convertGroup(const GroupShape *group) {
-  qInfo() << "Convert Group" << group;
-
   global_transform_ = group->globalTransform();
   for (auto &shape : group->children()) {
     convertShape(shape);
@@ -76,7 +77,6 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
 }
 
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
-  qInfo() << "Convert Bitmap" << bmp;
   QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * bmp->transform() * global_transform_;
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
@@ -139,11 +139,8 @@ void ToolpathExporter::outputLayerPathGcode() {
 
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
-  qInfo() << "> layer bitmap" << bitmap_dirty_area_;
   bool reverse = false;
   QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
-  image.save("/Users/simon/Downloads/test.png", "PNG");
-  qInfo() << "Stride" << image.bytesPerLine();
 
   for (int y = bitmap_dirty_area_.top(); y <= bitmap_dirty_area_.bottom(); y++) {
     rasterBitmapRow(image.scanLine(y), (float) y / dpmm_, reverse, QPointF());
