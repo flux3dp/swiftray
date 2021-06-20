@@ -3,9 +3,6 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 
-// TODO (remove this and make this logic to svgpp parser)
-int layer_color_counter = 0;
-
 // Constructors
 Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      document_(doc),
@@ -26,10 +23,6 @@ Layer::Layer(Document *doc, int layer_id) :
      Layer(doc,
            Layer::DefaultColors.at((layer_id - 1) % 17),
            "Layer " + QString::number(layer_id)) {}
-
-Layer::Layer(Document *doc) :
-     Layer(doc, 1) {}
-
 
 Layer::Layer() :
      Layer(nullptr, 1) {}

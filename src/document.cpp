@@ -93,9 +93,8 @@ void Document::execute(const CmdPtr &e) {
   undo2_stack_.push_back(e);
 }
 
-
+// TODO (fix layer events)
 void Document::addLayer() {
-  qDebug() << "Add layer";
   layers() << make_shared<Layer>(this, new_layer_id_++);
   active_layer_ = layers().last();
   emit layerChanged();
@@ -105,6 +104,7 @@ void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
   layers() << layer;
   active_layer_ = layers().last();
+  if (is_recording_undo_) emit layerChanged();
 }
 
 void Document::removeLayer(LayerPtr &layer) {
@@ -170,12 +170,11 @@ LayerPtr &Document::activeLayer() {
 }
 
 bool Document::setActiveLayer(const QString &name) {
-  for (auto &layer : layers()) {
-    if (layer->name() == name) {
-      active_layer_ = layer;
-      emit layerChanged();
-      return true;
-    }
+  auto layer_ptr = findLayerByName(name);
+  if (layer_ptr != nullptr) {
+    active_layer_ = *layer_ptr;
+    emit layerChanged();
+    return true;
   }
 
   active_layer_ = layers().last();
@@ -302,4 +301,11 @@ int Document::framesCount() const {
 QRectF Document::screenRect() const {
   return QRectF(getCanvasCoord(QPoint(0, 0)),
                 getCanvasCoord(QPoint(screen_size_.width(), screen_size_.height())));
+}
+
+const LayerPtr *Document::findLayerByName(const QString &layer_name) {
+  for (auto &layer : layers_) {
+    if (layer->name() == layer_name) return &layer;
+  }
+  return nullptr;
 }

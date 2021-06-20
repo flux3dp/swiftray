@@ -122,6 +122,8 @@ public:
 
   void setScreenSize(QSize size);
 
+  const LayerPtr * findLayerByName(const QString &layer_name);
+
   /* Undo functions */
   void undo();
 

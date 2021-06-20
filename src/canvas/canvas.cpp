@@ -393,9 +393,11 @@ void Canvas::editIntersect() {
 void Canvas::editDifference() {}
 
 void Canvas::addEmptyLayer() {
-  document().addLayer();
+  int i = 1;
+  while (document().findLayerByName("Layer " + QString::number(i)) != nullptr) i++;
+  LayerPtr new_layer = make_shared<Layer>(&document(), i);
   document().execute(
-       new Commands::AddLayer(document().activeLayer())
+       new Commands::AddLayer(new_layer)
   );
 }
 

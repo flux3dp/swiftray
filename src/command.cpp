@@ -39,7 +39,7 @@ void RemoveLayer::redo(Document *doc) {
 }
 
 void AddShape::undo(Document *doc) {
-  qDebug() << "[Command] Undo remove shape" << shape_.get();
+  qDebug() << "[Command] Undo add shape" << shape_.get();
   layer_->removeShape(shape_);
 }
 
