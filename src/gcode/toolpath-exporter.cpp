@@ -93,7 +93,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
-    layer_painter_->setBrush(QBrush(current_layer_->color()));
+    layer_painter_->setBrush(Qt::black);
     layer_painter_->drawPath(transformed_path);
     layer_painter_->setBrush(Qt::NoBrush);
     bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
