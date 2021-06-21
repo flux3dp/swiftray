@@ -26,6 +26,7 @@ public:
     std::string str;
     str.append(boost::begin(text), boost::end(text));
     if (svgpp_active_layer_ != nullptr) {
+      qInfo() << "[SVGPP] Set Active Layer's Name to " << QString::fromStdString(str);
       svgpp_active_layer_->setName(QString::fromStdString(str));
     }
   }

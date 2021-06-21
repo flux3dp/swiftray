@@ -389,7 +389,6 @@ public:
                         QString::number(ease_color->get<0>(), 16).rightJustified(2, '0') +
                         QString::number((int) ease_color->get<1>(), 16).rightJustified(2, '0') +
                         QString::number((int) ease_color->get<2>(), 16).rightJustified(2, '0');
-        qInfo() << "Stroke color" << label;
         return label;
       }
     }

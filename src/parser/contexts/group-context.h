@@ -8,21 +8,27 @@
 
 class GroupContext : public BaseContext {
 public:
-  GroupContext(BaseContext const &parent) :
-       BaseContext(parent),
-       is_layer_(false),
-       data_color_(QColor()),
-       layer_ptr_(nullptr) {
-    qInfo() << "<g>";
+  explicit GroupContext(BaseContext const &parent) :
+       BaseContext(parent), is_sub_group_(false) {
+    data_color_ = Qt::black;
+    layer_ptr_ = nullptr;
+    qInfo() << "<g>" << this;
+  }
+
+  explicit GroupContext(const GroupContext &parent) :
+       BaseContext(parent), is_sub_group_(true) {
+    data_color_ = Qt::black;
+    layer_ptr_ = nullptr;
+    qInfo() << "<gg>" << this;
   }
 
   void set(svgpp::tag::attribute::data_strength, double val) {
-    qInfo() << "Data-Strength" << val;
+    qInfo() << "[SVGPP] Set layer data-Strength" << val;
     layer().setStrength(val);
   }
 
   void set(svgpp::tag::attribute::data_speed, double val) {
-    qInfo() << "Data-Speed" << val;
+    qInfo() << "[SVGPP] Set layer data-Speed" << val;
     layer().setSpeed(val);
   }
 
@@ -51,14 +57,15 @@ public:
   }
 
   void set(svgpp::tag::attribute::data_config_name, RangedChar fragment) {
-    qInfo() << "xlink::href"
+    // TODO (load layer config)
+    qInfo() << "[SVGPP] Layer config strong"
             << QString::fromStdString(
                  std::string(fragment.begin(), fragment.end()));
   }
 
   Layer &layer() {
     if (layer_ptr_ == nullptr) {
-      qInfo() << "Create an empty layer if this context should be linked with an layer";
+      qInfo() << "[SVGPP] Created an empty layer";
       layer_ptr_ = make_shared<Layer>();
     }
     svgpp_set_active_layer(layer_ptr_);
@@ -71,8 +78,15 @@ public:
       layer_ptr_->setType(Layer::Type::Mixed);
       svgpp_add_layer(layer_ptr_);
       svgpp_unset_active_layer();
+
+      layer_ptr_ = nullptr;
+      data_color_ = Qt::black;
     }
-    qInfo() << "</g>";
+    if (is_sub_group_) {
+      qInfo() << "</gg>";
+    } else {
+      qInfo() << "</g>";
+    }
   }
 
   string type() {
@@ -82,7 +96,7 @@ public:
   using BaseContext::set;
   using ObjectContext::set;
   using StylableContext::set;
-  bool is_layer_;
   QColor data_color_;
   LayerPtr layer_ptr_;
+  bool is_sub_group_;
 };
