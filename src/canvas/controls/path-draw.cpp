@@ -88,8 +88,8 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
   if (is_closing_curve_) {
     ShapePtr new_shape = make_shared<PathShape>(working_path_);
     document().execute(
-         Commands::AddShape::shared(document().activeLayer(), new_shape) +
-         Commands::Select::shared(&document(), {new_shape})
+         Commands::AddShape(document().activeLayer(), new_shape),
+         Commands::Select(&document(), {new_shape})
     );
     exit();
   }

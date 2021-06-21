@@ -21,8 +21,8 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   path.arcTo(rect_, 0, 360 * 16);
   ShapePtr new_oval = make_shared<PathShape>(path);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_oval) +
-       Commands::Select::shared(&document(), {new_oval})
+       Commands::AddShape(document().activeLayer(), new_oval),
+       Commands::Select(&document(), {new_oval})
   );
   exit();
   return true;

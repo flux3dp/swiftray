@@ -22,7 +22,7 @@ public:
   void cutFrom(Document &doc) {
     this->set(doc.selections());
     doc.execute(
-         Commands::JoinedCmd::removeSelections(&doc)
+         Commands::RemoveSelections(&doc)
     );
   }
 
@@ -39,8 +39,8 @@ public:
     }
 
     doc.execute(
-         Commands::JoinedCmd::addShapes(doc.activeLayer(), new_shapes) +
-         Commands::Select::shared(&doc, new_shapes)
+         Commands::AddShapes(doc.activeLayer(), new_shapes),
+         Commands::Select(&doc, new_shapes)
     );
   }
 

@@ -33,7 +33,7 @@ void LayerParamsPanel::registerEvents() {
   });
 }
 
-void LayerParamsPanel::updateLayer(LayerPtr layer) {
+void LayerParamsPanel::updateLayer(Layer *layer) {
   layer_ = layer;
   ui->spinBoxPower->setValue(layer->strength());
   ui->spinBoxSpeed->setValue(layer->speed());

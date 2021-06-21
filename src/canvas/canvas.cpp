@@ -273,7 +273,7 @@ void Canvas::editDelete() {
 
   // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
   document().execute(
-       JoinedCmd::removeSelections(&document())
+       Commands::RemoveSelections(&document())
   );
 }
 
@@ -343,9 +343,9 @@ void Canvas::editUnion() {
 
   ShapePtr new_shape = make_shared<PathShape>(result);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections(&document()) +
-       Commands::Select::shared(&document(), {new_shape})
+       Commands::AddShape(document().activeLayer(), new_shape),
+       Commands::RemoveSelections(&document()),
+       Commands::Select(&document(), {new_shape})
   );
 }
 
@@ -363,9 +363,9 @@ void Canvas::editSubtract() {
        b->transform().map(b->path())));
   ShapePtr new_shape = make_shared<PathShape>(new_path);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections(&document()) +
-       Commands::Select::shared(&document(), {new_shape})
+       Commands::AddShape(document().activeLayer(), new_shape),
+       Commands::RemoveSelections(&document()),
+       Commands::Select(&document(), {new_shape})
   );
 }
 
@@ -384,9 +384,9 @@ void Canvas::editIntersect() {
   new_path.closeSubpath();
   ShapePtr new_shape = make_shared<PathShape>(new_path);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_shape) +
-       Commands::JoinedCmd::removeSelections(&document()) +
-       Commands::Select::shared(&document(), {new_shape})
+       Commands::AddShape(document().activeLayer(), new_shape),
+       Commands::RemoveSelections(&document()),
+       Commands::Select(&document(), {new_shape})
   );
 }
 
@@ -397,7 +397,7 @@ void Canvas::addEmptyLayer() {
   while (document().findLayerByName("Layer " + QString::number(i)) != nullptr) i++;
   LayerPtr new_layer = make_shared<Layer>(&document(), i);
   document().execute(
-       new Commands::AddLayer(new_layer)
+      Commands::AddLayer(new_layer)
   );
 }
 

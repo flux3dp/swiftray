@@ -74,7 +74,7 @@ public:
 
   QList<LayerPtr> &layers();
 
-  LayerPtr &activeLayer();
+  Layer *activeLayer();
 
   QPointF scroll() const;
 
@@ -126,9 +126,16 @@ public:
 
   void redo();
 
-  void execute(Commands::BaseCmd *event);
+  void execute(Commands::BaseCmd *cmd);
 
-  void execute(const CmdPtr &e);
+  void execute(const CmdPtr &cmd);
+
+  void execute(initializer_list<CmdPtr> cmds);
+
+  template<typename... Args>
+  void execute(const CmdPtr cmd0, Args... args) {
+    execute({cmd0, args...});
+  }
 
   unique_ptr<CanvasTextEdit> text_box_;
 
@@ -157,7 +164,7 @@ private:
 
   Mode mode_;
   int new_layer_id_;
-  LayerPtr active_layer_;
+  Layer *active_layer_;
 
   QPointF mouse_pressed_screen_coord_;
   QElapsedTimer volatility_timer;

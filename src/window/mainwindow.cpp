@@ -142,7 +142,7 @@ void MainWindow::updateLayers() {
   ui->layerList->clear();
 
   for (auto &layer : boost::adaptors::reverse(canvas_->document().layers())) {
-    bool active = canvas_->document().activeLayer().get() == layer.get();
+    bool active = canvas_->document().activeLayer() == layer.get();
     auto *list_widget = new LayerListItem(ui->layerList->parentWidget(), layer, active);
     auto *list_item = new QListWidgetItem(ui->layerList);
     auto size = list_widget->size();

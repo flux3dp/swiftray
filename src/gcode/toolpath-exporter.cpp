@@ -82,7 +82,6 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   layer_painter_->setTransform(transform, false);
   layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
   layer_painter_->restore();
-  // TODO (Consider group transform)
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
 }
 
@@ -92,7 +91,6 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
-    // TODO (Consider group transform)
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
     layer_painter_->setBrush(QBrush(current_layer_->color()));

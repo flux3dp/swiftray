@@ -19,8 +19,8 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   ShapePtr new_rect = make_shared<PathShape>(path);
   document().setMode(Document::Mode::Selecting);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_rect) +
-       Commands::Select::shared(&document(), {new_rect})
+       Commands::AddShape(document().activeLayer(), new_rect),
+       Commands::Select(&document(), {new_rect})
   );
   return true;
 }

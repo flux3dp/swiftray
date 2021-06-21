@@ -37,11 +37,11 @@ bool Text::keyPressEvent(QKeyEvent *e) {
         document().text_box_->toPlainText().length() > 0) {
       qInfo() << "Create new text shape instance";
       document().execute(
-           Commands::AddShape::shared(document().activeLayer(), target_) +
-           Commands::Select::shared(&document(), {target_})
+           Commands::AddShape(document().activeLayer(), target_),
+           Commands::Select(&document(), {target_})
       );
     } else {
-      document().execute(Commands::Select::shared(&document(), {target_}));
+      document().execute(Commands::Select(&document(), {target_}));
     }
     exit();
     return true;

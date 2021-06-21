@@ -109,8 +109,8 @@ void Transform::applyRotate(bool temporarily) {
     } else {
       qDebug() << "[Transform] Apply rotation";
       shape->setTempTransform(QTransform());
-      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
-      cmd << new Commands::SetRotation(shape.get(), shape->rotation() + rotation_to_apply_);
+      cmd << Commands::SetTransform(shape.get(), shape->transform() * transform);
+      cmd << Commands::SetRotation(shape.get(), shape->rotation() + rotation_to_apply_);
     }
   }
 
@@ -138,7 +138,7 @@ void Transform::applyScale(bool temporarily) {
     } else {
       qDebug() << "[Transform] Apply scale";
       shape->setTempTransform(QTransform());
-      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
+      cmd << Commands::SetTransform(shape.get(), shape->transform() * transform);
     }
   }
 
@@ -160,7 +160,7 @@ void Transform::applyMove(bool temporarily) {
     } else {
       qDebug() << "[Transform] Apply move";
       shape->setTempTransform(QTransform());
-      cmd << new Commands::SetTransform(shape.get(), shape->transform() * transform);
+      cmd << Commands::SetTransform(shape.get(), shape->transform() * transform);
     }
   }
 

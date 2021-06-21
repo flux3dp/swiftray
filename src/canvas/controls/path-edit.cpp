@@ -11,6 +11,8 @@ using namespace Controls;
 PathEdit::PathEdit(Canvas *canvas) noexcept: CanvasControl(canvas), is_closed_shape_(false) {
   dragging_index_ = -1;
   target_ = nullptr;
+
+  // TODO: Listen to document::undo event
 }
 
 bool PathEdit::isActive() { return document().mode() == Document::Mode::PathEditing; }
@@ -124,9 +126,9 @@ bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
     return false;
 
   document().execute(
-       new Commands::SetRef<PathEdit, QPainterPath, &PathEdit::path, &PathEdit::setPath>(
-            this, path_));
-  target().setPath(path_);
+       Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
+            &target(), path_)
+  );
   return true;
 }
 
@@ -253,15 +255,13 @@ void PathEdit::setPath(const QPainterPath &path) {
 
 void PathEdit::endEditing() {
   document().execute(
-       Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>::shared(
-            &target(), path_) +
-       Commands::Select::shared(&document(), {target_})
+       Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
+            &target(), path_),
+       Commands::Select(&document(), {target_})
   );
   exit();
 }
 
 void PathEdit::exit() {
-  // TODO (Do more stuff for command undo)
-  // Maybe switch into another stack for undo/redo?
   target_ = nullptr;
 }

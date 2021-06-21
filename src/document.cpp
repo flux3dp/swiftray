@@ -85,20 +85,28 @@ void Document::redo() {
   emit layerChanged();
 }
 
-void Document::execute(Commands::BaseCmd *event) {
-  execute(CmdPtr(event));
+void Document::execute(Commands::BaseCmd *cmd) {
+  execute(CmdPtr(cmd));
 }
 
-void Document::execute(const CmdPtr &e) {
+void Document::execute(const CmdPtr &cmd) {
   redo2_stack_.clear();
-  e->redo(this);
-  undo2_stack_.push_back(e);
+  cmd->redo(this);
+  undo2_stack_.push_back(cmd);
+}
+
+void Document::execute(initializer_list<CmdPtr> cmds) {
+  auto joined = make_shared<JoinedCmd>();
+  for (auto cmd: cmds) {
+    joined << cmd;
+  }
+  execute(joined);
 }
 
 void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
   layers() << layer;
-  active_layer_ = layers().last();
+  active_layer_ = layers().last().get();
   if (is_recording_undo_) emit layerChanged();
 }
 
@@ -146,6 +154,7 @@ void Document::setScroll(QPointF scroll) {
 
 void Document::setScreenSize(QSize size) {
   screen_size_ = size;
+  screen_changed_ = true;
 }
 
 void Document::setScale(qreal scale) {
@@ -156,7 +165,7 @@ void Document::setScale(qreal scale) {
 
 void Document::setRecordingUndo(bool recording_undo) { is_recording_undo_ = recording_undo; }
 
-LayerPtr &Document::activeLayer() {
+Layer *Document::activeLayer() {
   Q_ASSERT_X(layers_.size() != 0, "Active Layer",
              "Access to active layer when there is no layer");
   Q_ASSERT_X(active_layer_ != nullptr, "Active Layer",
@@ -167,12 +176,12 @@ LayerPtr &Document::activeLayer() {
 bool Document::setActiveLayer(const QString &name) {
   auto layer_ptr = findLayerByName(name);
   if (layer_ptr != nullptr) {
-    active_layer_ = *layer_ptr;
+    active_layer_ = layer_ptr->get();
     emit layerChanged();
     return true;
   }
 
-  active_layer_ = layers().last();
+  active_layer_ = layers().last().get();
   return false;
 }
 
@@ -186,7 +195,7 @@ void Document::setActiveLayer(LayerPtr &target_layer) {
     Q_ASSERT_X(false, "Active Layer",
                "Invalid layer ptr when setting active layer");
   }
-  active_layer_ = target_layer;
+  active_layer_ = target_layer.get();
   emit layerChanged();
 }
 
@@ -237,14 +246,14 @@ void Document::groupSelections() {
   ShapePtr group_ptr = make_shared<GroupShape>(selections());
   auto cmd = make_shared<JoinedCmd>();
   for (auto &shape: selections()) {
-    cmd << Commands::SetParent::shared(shape.get(), group_ptr.get());
-    cmd << Commands::SetLayer::shared(shape.get(), nullptr);
+    cmd << new Commands::SetParentCmd(shape.get(), group_ptr.get());
+    cmd << new Commands::SetLayerCmd(shape.get(), nullptr);
   }
   execute(
-       cmd +
-       Commands::AddShape::shared(activeLayer(), group_ptr) +
-       Commands::JoinedCmd::removeSelections(this) +
-       Commands::Select::shared(this, {group_ptr})
+       cmd,
+       Commands::AddShape(activeLayer(), group_ptr),
+       Commands::RemoveSelections(this),
+       Commands::Select(this, {group_ptr})
   );
 }
 
@@ -258,14 +267,14 @@ void Document::ungroupSelections() {
 
   auto cmd = make_shared<Commands::JoinedCmd>();
   for (auto &shape : group->children()) {
-    cmd << Commands::SetTransform::shared(shape.get(), shape->transform() * group->transform());
-    cmd << Commands::SetRotation::shared(shape.get(), shape->rotation() + group->rotation());
-    cmd << Commands::SetParent::shared(shape.get(), nullptr);
-    cmd << Commands::AddShape::shared(activeLayer(), shape);
+    cmd << new Commands::SetTransformCmd(shape.get(), shape->transform() * group->transform());
+    cmd << new Commands::SetRotationCmd(shape.get(), shape->rotation() + group->rotation());
+    cmd << new Commands::SetParentCmd(shape.get(), nullptr);
+    cmd << Commands::AddShape(activeLayer(), shape);
   }
 
-  cmd << new Commands::Select(this, group->children());
-  cmd << new Commands::RemoveShape(group_ptr->layer(), group_ptr);
+  cmd << Commands::Select(this, group->children());
+  cmd << Commands::RemoveShape(group_ptr->layer(), group_ptr);
 
   execute(cmd);
 }
@@ -279,7 +288,6 @@ void Document::paint(QPainter *painter) {
     object_count += layer->paint(painter);
   }
 
-  //TODO combine with resize event to this flag
   screen_changed_ = false;
 }
 

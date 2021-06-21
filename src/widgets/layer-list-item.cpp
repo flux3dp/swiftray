@@ -45,12 +45,12 @@ void LayerListItem::loadStyles() {
 void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
-         Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>::shared(layer_.get(), !layer_->isVisible())
+         Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible())
     );
   });
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     layer_->document().execute(
-         Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>::shared(layer_.get(), (Layer::Type) index)
+         Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );
   });
 }

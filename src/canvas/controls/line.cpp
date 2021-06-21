@@ -20,8 +20,8 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   path.lineTo(document().getCanvasCoord(e->pos()));
   ShapePtr new_line = make_shared<PathShape>(path);
   document().execute(
-       Commands::AddShape::shared(document().activeLayer(), new_line) +
-       Commands::Select::shared(&document(), {new_line})
+       Commands::AddShape(document().activeLayer(), new_line),
+       Commands::Select(&document(), {new_line})
   );
   exit();
   return true;

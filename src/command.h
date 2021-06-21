@@ -28,9 +28,9 @@ namespace Commands {
 
   typedef shared_ptr<BaseCmd> CmdPtr;
 
-  class AddLayer : public BaseCmd {
+  class AddLayerCmd : public BaseCmd {
   public:
-    explicit AddLayer(LayerPtr &layer) : layer_(layer) {}
+    AddLayerCmd(const LayerPtr &layer) : layer_(layer) {}
 
     void undo(Document *doc) override;
 
@@ -39,9 +39,9 @@ namespace Commands {
     LayerPtr layer_;
   };
 
-  class RemoveLayer : public BaseCmd {
+  class RemoveLayerCmd : public BaseCmd {
   public:
-    explicit RemoveLayer(LayerPtr &layer) : layer_(layer) {}
+    RemoveLayerCmd(const LayerPtr &layer) : layer_(layer) {}
 
     void undo(Document *doc) override;
 
@@ -50,42 +50,27 @@ namespace Commands {
     LayerPtr layer_;
   };
 
-  class AddShape : public BaseCmd {
+  class AddShapeCmd : public BaseCmd {
   public:
-    AddShape(const LayerPtr &layer, const ShapePtr &shape) :
-         layer_(layer.get()), shape_(shape) {}
-
-    static shared_ptr<AddShape> shared(const LayerPtr &layer, const ShapePtr &shape) {
-      return make_shared<AddShape>(layer, shape);
-    }
-
-    void undo(Document *doc) override;
-
-    void redo(Document *doc) override;
-
-    // Shape events don't need to manage layer's lifecycle
-    Layer *layer_;
-    ShapePtr shape_;
-  };
-
-  class RemoveShape : public BaseCmd {
-  public:
-    explicit RemoveShape(const ShapePtr &shape) :
-         shape_(shape) { layer_ = shape->layer(); }
-
-    RemoveShape(const LayerPtr &layer, const ShapePtr &shape) :
-         layer_(layer.get()), shape_(shape) {}
-
-    RemoveShape(Layer *layer, const ShapePtr &shape) :
+    AddShapeCmd(Layer *layer, const ShapePtr &shape) :
          layer_(layer), shape_(shape) {}
 
-    static shared_ptr<RemoveShape> shared(const ShapePtr &shape) {
-      return make_shared<RemoveShape>(shape);
-    }
+    void undo(Document *doc) override;
 
-    static shared_ptr<RemoveShape> shared(const LayerPtr &layer, const ShapePtr &shape) {
-      return make_shared<RemoveShape>(layer, shape);
-    }
+    void redo(Document *doc) override;
+
+    // Shape events don't need to manage layer's lifecycle
+    Layer *layer_;
+    ShapePtr shape_;
+  };
+
+  class RemoveShapeCmd : public BaseCmd {
+  public:
+    explicit RemoveShapeCmd(const ShapePtr &shape) :
+         shape_(shape) { layer_ = shape->layer(); }
+
+    RemoveShapeCmd(Layer *layer, const ShapePtr &shape) :
+         layer_(layer), shape_(shape) {}
 
     void undo(Document *doc) override;
 
@@ -96,14 +81,10 @@ namespace Commands {
     ShapePtr shape_;
   };
 
-  class Select : public BaseCmd {
+  class SelectCmd : public BaseCmd {
   public:
 
-    explicit Select(Document *doc, const QList<ShapePtr> &new_selections_);
-
-    static shared_ptr<Select> shared(Document *doc, const QList<ShapePtr> &new_selections) {
-      return make_shared<Select>(doc, new_selections);
-    }
+    explicit SelectCmd(Document *doc, const QList<ShapePtr> &new_selections_);
 
     void undo(Document *doc) override;
 
@@ -120,16 +101,14 @@ namespace Commands {
 
     // Constructor for joining multiple events
     JoinedCmd(initializer_list<BaseCmd *> undo_events) {
-      for (auto &event : undo_events) {
+      for (auto &event : undo_events)
         events << CmdPtr(event);
-      }
     }
 
     // Constructor for joining multiple events (event ptr)
     JoinedCmd(initializer_list<CmdPtr> undo_events) {
-      for (auto &event : undo_events) {
+      for (auto &event : undo_events)
         events << event;
-      }
     }
 
     void undo(Document *doc) override {
@@ -144,42 +123,19 @@ namespace Commands {
       }
     }
 
-    static shared_ptr<JoinedCmd> addShapes(const LayerPtr &layer, const QList<ShapePtr> &shapes) {
-      auto evt = make_shared<JoinedCmd>();
-      for (auto &shape : shapes) {
-        evt->events << make_shared<AddShape>(layer, shape);
-      }
-      return evt;
-    }
-
-    static shared_ptr<JoinedCmd> removeShapes(const QList<ShapePtr> &shapes) {
-      auto evt = make_shared<JoinedCmd>();
-      for (auto &shape : shapes) {
-        evt->events << make_shared<RemoveShape>(shape);
-      }
-      return evt;
-    }
-
-    static shared_ptr<JoinedCmd> removeSelections(Document *doc);
-
     QList<CmdPtr> events;
   };
 
   typedef shared_ptr<JoinedCmd> JoinedPtr;
 
-// Event when object's property is changed, and the property can be "passed by value"
+  // Command when object's property is changed, and the property can be "passed by value"
   template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
        PropType)>
-  class Set : public BaseCmd {
+  class SetCmd : public BaseCmd {
   public:
 
-    explicit Set(T *target, PropType new_value) : target_(target), new_value_(new_value) {
+    explicit SetCmd(T *target, PropType new_value) : target_(target), new_value_(new_value) {
       old_value_ = (target_->*PropGetter)();
-    }
-
-
-    static shared_ptr<Set> shared(T *target, PropType new_value) {
-      return make_shared<Set>(target, new_value);
     }
 
     void undo(Document *doc) override {
@@ -197,18 +153,14 @@ namespace Commands {
     PropType old_value_;
   };
 
-  // Event when object's property is changed, and the property is usually "passed by reference"
+  // Command when object's property is changed, and the property is usually "passed by reference"
   template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
        const PropType &)>
-  class SetRef : public BaseCmd {
+  class SetRefCmd : public BaseCmd {
   public:
 
-    explicit SetRef(T *target, PropType new_value) : target_(target), new_value_(new_value) {
+    explicit SetRefCmd(T *target, PropType new_value) : target_(target), new_value_(new_value) {
       old_value_ = (target_->*PropGetter)();
-    }
-
-    static shared_ptr<SetRef> shared(T *target, PropType new_value) {
-      return make_shared<SetRef>(target, new_value);
     }
 
     void undo(Document *doc) override {
@@ -233,11 +185,60 @@ namespace Commands {
 
   JoinedPtr &operator<<(JoinedPtr &a, BaseCmd *b);
 
+
   // Abbreviations for undo events
-  typedef Commands::SetRef<Shape, QTransform, &Shape::transform, &Shape::setTransform> SetTransform;
-  typedef Commands::Set<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotation;
-  typedef Commands::Set<Shape, Shape *, &Shape::parent, &Shape::setParent> SetParent;
-  typedef Commands::Set<Shape, Layer *, &Shape::layer, &Shape::setLayer> SetLayer;
+  typedef Commands::SetRefCmd<Shape, QTransform, &Shape::transform, &Shape::setTransform> SetTransformCmd;
+  typedef Commands::SetCmd<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotationCmd;
+  typedef Commands::SetCmd<Shape, Shape *, &Shape::parent, &Shape::setParent> SetParentCmd;
+  typedef Commands::SetCmd<Shape, Layer *, &Shape::layer, &Shape::setLayer> SetLayerCmd;
+
+  // Abbreviations for generating commands
+  template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
+       PropType)>
+  CmdPtr Set(T *target, PropType new_value) {
+    return make_shared<SetCmd<T, PropType, PropGetter, PropSetter>>(target, new_value);
+  }
+
+  template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
+       const PropType &)>
+  CmdPtr SetRef(T *target, PropType new_value) {
+    return make_shared<SetRefCmd<T, PropType, PropGetter, PropSetter>>
+         (target, new_value);
+  }
+
+  CmdPtr SetTransform(Shape *shape, const QTransform &new_value);
+
+  CmdPtr SetLayer(Shape *shape, Layer *layer);
+
+  CmdPtr SetParent(Shape *shape, Shape *parent);
+
+  CmdPtr SetRotation(Shape *shape, qreal rotation);
+
+  CmdPtr AddShape(Layer *layer, const ShapePtr &shape);
+
+  CmdPtr RemoveShape(const ShapePtr &shape);
+
+  CmdPtr RemoveShape(Layer *layer, const ShapePtr &shape);
+
+  CmdPtr Select(Document *doc, const QList<ShapePtr> &new_selections);
+
+  template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
+       PropType)>
+  CmdPtr Set(T *target, PropType new_value);
+
+  template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
+       const PropType &)>
+  CmdPtr SetRef(T *target, PropType new_value);
+
+  CmdPtr AddShapes(Layer *layer, const QList<ShapePtr> &shapes);
+
+  CmdPtr RemoveShapes(const QList<ShapePtr> &shapes);
+
+  CmdPtr AddLayer(const LayerPtr &layer);
+
+  CmdPtr RemoveLayer(const LayerPtr &layer);
+
+  CmdPtr RemoveSelections(Document *doc);
 }
 
 typedef Commands::CmdPtr CmdPtr;
