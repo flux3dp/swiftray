@@ -70,12 +70,12 @@ const QTransform &Shape::tempTransform() const { return temp_transform_; }
 
 QTransform Shape::globalTransform() const {
   QTransform global_transform = transform_;
-  Shape *parent = parent_;
-  while (parent != nullptr) {
-    global_transform = global_transform * parent->transform();
-    parent = parent_->parent();
+  Shape *top_node = (Shape*) this;
+  while (top_node->parent() != nullptr) {
+    top_node = top_node->parent();
+    global_transform = global_transform * top_node->transform();
   }
-  return global_transform;
+  return global_transform * top_node->temp_transform_;
 }
 
 bool Shape::hitTest(QPointF, qreal) const {
