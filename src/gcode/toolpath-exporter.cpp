@@ -86,7 +86,7 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
 }
 
 void ToolpathExporter::convertPath(const PathShape *path) {
-  qInfo() << "Convert Path" << path;
+  // qInfo() << "Convert Path" << path;
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());;
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
@@ -115,7 +115,6 @@ void ToolpathExporter::outputLayerGcode() {
 }
 
 void ToolpathExporter::outputLayerPathGcode() {
-  qInfo() << "> layer path";
   QPointF current_pos;
   gen_->setLaserPower(current_layer_->strength());
 
