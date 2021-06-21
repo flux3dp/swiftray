@@ -11,11 +11,13 @@ Document::Document() noexcept:
      scale_(1),
      is_recording_undo_(true),
      screen_changed_(false),
-     frames_count_(0) {
-  width_ = 3000;
-  height_ = 2000;
-  font_ = QFont("Tahoma", 200, QFont::Bold);
-  addLayer();
+     frames_count_(0),
+     width_(3000),
+     height_(2000),
+     font_(QFont("Tahoma", 200, QFont::Bold)) {
+  auto layer1 = make_shared<Layer>(this, 1);
+  addLayer(layer1);
+
   connect(this, &Document::selectionsChanged, [=]() {
     for (auto &layer : layers_) {
       layer->flushCache();
@@ -91,13 +93,6 @@ void Document::execute(const CmdPtr &e) {
   redo2_stack_.clear();
   e->redo(this);
   undo2_stack_.push_back(e);
-}
-
-// TODO (fix layer events)
-void Document::addLayer() {
-  layers() << make_shared<Layer>(this, new_layer_id_++);
-  active_layer_ = layers().last();
-  emit layerChanged();
 }
 
 void Document::addLayer(LayerPtr &layer) {
@@ -200,12 +195,6 @@ QList<LayerPtr> &Document::layers() { return layers_; }
 void Document::reorderLayers(QList<LayerPtr> &new_order) {
   // TODO (Add undo event)
   layers_ = new_order;
-}
-
-void Document::removeSelections() {
-  // Remove shapes from its layer
-  for (auto &shape : selections_) { shape->layer()->removeShape(shape); }
-  setSelection(nullptr);
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {

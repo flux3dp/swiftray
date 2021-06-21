@@ -225,7 +225,6 @@ bool svgpp_parse(QByteArray &data) {
     svgpp_style_selector = new SVGStyleSelector();
 
     if (root) {
-      qInfo() << "SVG Element " << root;
       SVGPPDoc svgpp_doc(xml_doc);
       static const double resolution_dpi = 90;
       BaseContext context(svgpp_doc, resolution_dpi);

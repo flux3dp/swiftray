@@ -19,13 +19,13 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      cache_valid_(false),
      type_(Type::Line) {}
 
-Layer::Layer(Document *doc, int layer_id) :
+Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
-           Layer::DefaultColors.at((layer_id - 1) % 17),
-           "Layer " + QString::number(layer_id)) {}
+           Layer::DefaultColors[layer_counter - 1],
+           "Layer " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
-     Layer(nullptr, 1) {}
+     Layer(nullptr, Qt::black, "Layer") {}
 
 Layer::~Layer() = default;
 
@@ -166,4 +166,3 @@ LayerPtr Layer::clone() {
   }
   return new_layer;
 }
-

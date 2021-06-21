@@ -94,6 +94,8 @@ public:
 
   void setDocument(Document *doc);
 
+  void setLayerCounter(int i);
+
   static QList<QColor> DefaultColors;
 private:
   /** Main properties **/

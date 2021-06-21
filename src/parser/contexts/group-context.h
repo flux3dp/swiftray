@@ -8,9 +8,12 @@
 
 class GroupContext : public BaseContext {
 public:
-  GroupContext(BaseContext const &parent) : BaseContext(parent) {
+  GroupContext(BaseContext const &parent) :
+       BaseContext(parent),
+       is_layer_(false),
+       data_color_(QColor()),
+       layer_ptr_(nullptr) {
     qInfo() << "<g>";
-    layer_ptr_ = nullptr;
   }
 
   void set(svgpp::tag::attribute::data_strength, double val) {
@@ -55,7 +58,7 @@ public:
 
   Layer &layer() {
     if (layer_ptr_ == nullptr) {
-      qInfo() << "Create layer";
+      qInfo() << "Create an empty layer if this context should be linked with an layer";
       layer_ptr_ = make_shared<Layer>();
     }
     svgpp_set_active_layer(layer_ptr_);

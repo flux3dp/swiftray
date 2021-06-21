@@ -40,13 +40,10 @@ public:
 
   void emitAllChanges();
 
-  void removeSelections();
-
   // Test if any shape in the document hit by mouse
   ShapePtr hitTest(QPointF canvas_coord);
 
   // Layer functions:
-  void addLayer();
 
   void addLayer(LayerPtr &layer);
 
@@ -122,7 +119,7 @@ public:
 
   void setScreenSize(QSize size);
 
-  const LayerPtr * findLayerByName(const QString &layer_name);
+  const LayerPtr *findLayerByName(const QString &layer_name);
 
   /* Undo functions */
   void undo();
@@ -142,7 +139,6 @@ signals:
   void layerChanged();
 
   void modeChanged();
-
 
 private:
   qreal scroll_x_;
