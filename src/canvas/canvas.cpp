@@ -48,9 +48,9 @@ Canvas::Canvas(QQuickItem *parent)
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
   timer->start(16);
   // Set memory monitor
-  mem_monitor_.moveToThread(mem_thread_);
-  mem_thread_->start();
-  QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
+  //mem_monitor_.moveToThread(mem_thread_);
+  //mem_thread_->start();
+  //QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
   // Set document & mode
   document().setMode(Document::Mode::Selecting);
   // Register controls
@@ -71,6 +71,8 @@ Canvas::~Canvas() {
 
 void Canvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
+  QElapsedTimer t;
+  t.start();
   document().setRecordingUndo(false);
   bool success = svgpp_parser_.parse(&document(), svg_data);
   document().setRecordingUndo(true);
@@ -82,6 +84,7 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     ready = true;
     update();
   }
+  qInfo() << "[Parser] Took" << t.elapsed();
 }
 
 void Canvas::paint(QPainter *painter) {
@@ -338,7 +341,7 @@ void Canvas::editUnion() {
         shape->type() != Shape::Type::Text)
       return;
     result = result.united(shape->transform().map(
-         dynamic_cast<PathShape *>(shape.get())->path()));
+         ((PathShape *) shape.get())->path()));
   }
 
   ShapePtr new_shape = make_shared<PathShape>(result);
@@ -397,7 +400,7 @@ void Canvas::addEmptyLayer() {
   while (document().findLayerByName("Layer " + QString::number(i)) != nullptr) i++;
   LayerPtr new_layer = make_shared<Layer>(&document(), i);
   document().execute(
-      Commands::AddLayer(new_layer)
+       Commands::AddLayer(new_layer)
   );
 }
 
