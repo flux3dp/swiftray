@@ -1,11 +1,12 @@
 #include <QPainterPath>
 #include <canvas/controls/rect.h>
 #include <shape/path-shape.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
 bool Rect::isActive() {
-  return document().mode() == Document::Mode::RectDrawing;
+  return canvas().mode() == Canvas::Mode::RectDrawing;
 }
 
 bool Rect::mouseMoveEvent(QMouseEvent *e) {
@@ -17,7 +18,7 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addRect(rect_);
   ShapePtr new_rect = make_shared<PathShape>(path);
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_rect),
        Commands::Select(&document(), {new_rect})
@@ -43,5 +44,5 @@ bool Rect::keyPressEvent(QKeyEvent *e) {
 
 void Rect::exit() {
   rect_ = QRectF(0, 0, 0, 0);
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
 }

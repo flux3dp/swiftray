@@ -1,6 +1,7 @@
 #include <QDebug>
 
 #include <canvas/controls/select.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
@@ -9,7 +10,7 @@ Select::Select(Canvas *canvas) noexcept: CanvasControl(canvas) {
 }
 
 bool Select::isActive() {
-  return document().mode() == Document::Mode::MultiSelecting;
+  return canvas().mode() == Canvas::Mode::MultiSelecting;
 }
 
 bool Select::mouseMoveEvent(QMouseEvent *e) {
@@ -35,7 +36,7 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
     document().setSelections(selected);
   }
 
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
   selection_box_ = QRectF(0, 0, 0, 0);
   return true;
 }

@@ -59,7 +59,7 @@ namespace Controls {
       return bbox_angle_;
     }
 
-    void updateTransformFromUI(double new_x, double new_y, double new_r, double new_w, double new_h) {
+    void updateTransform(double new_x, double new_y, double new_r, double new_w, double new_h) {
       if (abs(new_x - x()) > 0.01 || abs(new_y - y()) > 0.01) {
         translate_to_apply_ = QPointF(new_x - x(), new_y - y());
         applyMove();
@@ -124,10 +124,6 @@ namespace Controls {
     void updateSelections();
 
     void updateBoundingRect();
-
-  signals:
-
-    void transformChanged();
   };
 
 }

@@ -93,6 +93,7 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   }
 
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
+  // TODO (Chanage the owner of text_box_ to mainwindow, and use event dispatch for updating text);
   canvas_->document().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
   canvas_->document().text_box_->setGeometry(10, 10, 200, 200);
   canvas_->document().text_box_->setStyleSheet("border:0");
@@ -177,29 +178,29 @@ void MainWindow::updateMode() {
   ui->actionDrawText->setChecked(false);
   ui->actionDrawPolygon->setChecked(false);
 
-  switch (canvas_->document().mode()) {
-    case Document::Mode::Selecting:
-    case Document::Mode::MultiSelecting:
+  switch (canvas_->mode()) {
+    case Canvas::Mode::Selecting:
+    case Canvas::Mode::MultiSelecting:
       ui->actionSelect->setChecked(true);
       break;
 
-    case Document::Mode::LineDrawing:
+    case Canvas::Mode::LineDrawing:
       ui->actionDrawLine->setChecked(true);
       break;
 
-    case Document::Mode::RectDrawing:
+    case Canvas::Mode::RectDrawing:
       ui->actionDrawRect->setChecked(true);
       break;
 
-    case Document::Mode::OvalDrawing:
+    case Canvas::Mode::OvalDrawing:
       ui->actionDrawOval->setChecked(true);
       break;
 
-    case Document::Mode::PathDrawing:
+    case Canvas::Mode::PathDrawing:
       ui->actionDrawPath->setChecked(true);
       break;
 
-    case Document::Mode::TextDrawing:
+    case Canvas::Mode::TextDrawing:
       ui->actionDrawText->setChecked(true);
       break;
 
@@ -216,7 +217,7 @@ void MainWindow::updateSidePanel() {
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // Add custom panels
-  transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, &canvas_->transformControl());
+  transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, canvas_);
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
   ui->objectParamDock->setWidget(transform_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());

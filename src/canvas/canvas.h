@@ -27,6 +27,20 @@ Q_OBJECT
   QML_ELEMENT
 
 public:
+  enum class Mode {
+    Selecting,
+    Moving,
+    MultiSelecting,
+    Transforming,
+    Rotating,
+    RectDrawing,
+    LineDrawing,
+    OvalDrawing,
+    PathDrawing,
+    PathEditing,
+    TextDrawing
+  };
+
   Canvas(QQuickItem *parent = 0);
 
   ~Canvas();
@@ -58,6 +72,13 @@ public:
   Clipboard &clipboard();
 
   void setDocument(Document *document);
+
+  Mode mode() const;
+
+  void setMode(Mode mode);
+
+  // Graphics should be drawn in lower quality is this return true
+  bool isVolatile() const;
 
 public slots:
 
@@ -109,6 +130,8 @@ public slots:
 
   void setFont(const QFont &font);
 
+  void emitAllChanges();
+
   shared_ptr<PreviewGenerator> exportGcode();
 
   void setWidgetSize(QSize widget_size);
@@ -116,6 +139,8 @@ public slots:
   void setWidgetOffset(QPoint offset);
 
   void backToSelectMode();
+
+  void startMemoryMonitor();
 
 private:
   unique_ptr<Document> doc_;
@@ -143,6 +168,10 @@ private:
   QThread *mem_thread_;
   MemoryMonitor mem_monitor_;
 
+  Mode mode_;
+
+  QElapsedTimer volatility_timer;
+
 signals:
 
   void selectionsChanged();
@@ -150,6 +179,8 @@ signals:
   void layerChanged();
 
   void modeChanged();
+
+  void transformChanged(qreal x, qreal y, qreal r, qreal w, qreal h);
 };
 
 #endif // VCANVAS_H

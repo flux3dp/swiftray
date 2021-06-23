@@ -10,6 +10,5 @@ bool SVGPPParser::parse(Document *doc, QByteArray &data) {
   for (auto &layer : *svgpp_layers) {
     doc->addLayer(layer);
   }
-  doc->emitAllChanges();
   return success;
 }

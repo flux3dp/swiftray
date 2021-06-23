@@ -1,15 +1,14 @@
 #include <QApplication>
 #include <QDebug>
 #include <QPainterPath>
-
 #include <canvas/controls/path-draw.h>
-#include <cmath>
 #include <shape/path-shape.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
 bool PathDraw::isActive() {
-  return document().mode() == Document::Mode::PathDrawing;
+  return canvas().mode() == Canvas::Mode::PathDrawing;
 }
 
 PathDraw::PathDraw(Canvas *canvas) noexcept: CanvasControl(canvas) {
@@ -109,11 +108,7 @@ bool PathDraw::hitOrigin(QPointF canvas_coord) {
 bool PathDraw::hitTest(QPointF canvas_coord) {
   for (int i = 0; i < working_path_.elementCount(); i++) {
     QPainterPath::Element ele = working_path_.elementAt(i);
-    if (ele.isMoveTo()) {
-      if ((ele - canvas_coord).manhattanLength() < 15 / document().scale()) {
-        return true;
-      }
-    } else if (ele.isLineTo()) {
+    if (ele.isMoveTo() || ele.isLineTo()) {
       if ((ele - canvas_coord).manhattanLength() < 15 / document().scale()) {
         return true;
       }
@@ -162,9 +157,7 @@ void PathDraw::paint(QPainter *painter) {
   painter->setPen(blue_pen);
   for (int i = 0; i < working_path_.elementCount(); i++) {
     QPainterPath::Element ele = working_path_.elementAt(i);
-    if (ele.isMoveTo()) {
-      painter->drawEllipse(ele, 5, 5);
-    } else if (ele.isLineTo()) {
+    if (ele.isMoveTo() || ele.isLineTo()) {
       painter->drawEllipse(ele, 5, 5);
     } else if (ele.isCurveTo()) {
       QPointF ele_end_point = working_path_.elementAt(i + 2);
@@ -188,5 +181,5 @@ void PathDraw::exit() {
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
 }

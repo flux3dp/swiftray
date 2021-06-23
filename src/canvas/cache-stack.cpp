@@ -101,7 +101,7 @@ void CacheStack::Cache::cacheFill() {
   // Get screen information
   QPainterPath screen_rect;
   screen_rect.addRect(stack_->document().screenRect());
-  float scale = stack_->document().scale() * (stack_->document().isVolatile() ? 0.5 : 2);
+  float scale = stack_->document().scale() * (stack_->canvas().isVolatile() ? 0.5 : 2);
   // Clip with screen_rect
   joined_path_ = joined_path_.intersected(screen_rect);
   bbox_ = joined_path_.boundingRect();
@@ -109,7 +109,7 @@ void CacheStack::Cache::cacheFill() {
   cache_pixmap_ = QPixmap(bbox_.size().toSize() * scale);
   cache_pixmap_.fill(QColor::fromRgba64(255, 255, 255, 0));
   QPainter cpaint(&cache_pixmap_);
-  cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !stack_->document().isVolatile());
+  cpaint.setRenderHint(QPainter::RenderHint::Antialiasing, !stack_->canvas().isVolatile());
   cpaint.setTransform(
        QTransform()
             .scale(scale, scale)
@@ -197,6 +197,8 @@ bool CacheStack::isGroup() const {
 bool CacheStack::isLayer() const {
   return type_ == Type::Layer;
 }
+
+const Canvas &CacheStack::canvas() const { return *document().canvas(); }
 
 const Document &CacheStack::document() const { return isGroup() ? group_->layer()->document() : layer_->document(); }
 

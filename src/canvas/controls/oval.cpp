@@ -3,11 +3,12 @@
 #include <canvas/controls/oval.h>
 #include <cmath>
 #include <shape/path-shape.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
 bool Oval::isActive() {
-  return document().mode() == Document::Mode::OvalDrawing;
+  return canvas().mode() == Canvas::Mode::OvalDrawing;
 }
 
 bool Oval::mouseMoveEvent(QMouseEvent *e) {
@@ -45,5 +46,5 @@ bool Oval::keyPressEvent(QKeyEvent *e) {
 
 void Oval::exit() {
   rect_ = QRectF(0, 0, 0, 0);
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
 }

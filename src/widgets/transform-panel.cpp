@@ -1,12 +1,13 @@
 #include "transform-panel.h"
 #include "ui_transform-panel.h"
 #include <widgets/spinbox-helper.h>
+#include <canvas/canvas.h>
 
-TransformPanel::TransformPanel(QWidget *parent, Controls::Transform *control) :
+TransformPanel::TransformPanel(QWidget *parent, Canvas *canvas) :
      QFrame(parent),
-     ctrl_(control),
+     canvas_(canvas),
      ui(new Ui::TransformPanel) {
-  assert(parent != nullptr && control != nullptr);
+  assert(parent != nullptr && canvas != nullptr);
   ui->setupUi(this);
   loadStyles();
   registerEvents();
@@ -32,18 +33,21 @@ void TransformPanel::registerEvents() {
       updateControl();
     }
   });
+
   connect(ui->spinBoxY, spin_event, [=](double value) {
     if (y_ != value) {
       y_ = value;
       updateControl();
     }
   });
+
   connect(ui->spinBoxR, spin_event, [=](double value) {
     if (r_ != value) {
       r_ = value;
       updateControl();
     }
   });
+
   connect(ui->spinBoxW, spin_event, [=](double value) {
     if (value == 0) return;
     if (w_ != value) {
@@ -51,6 +55,7 @@ void TransformPanel::registerEvents() {
       updateControl();
     }
   });
+
   connect(ui->spinBoxH, spin_event, [=](double value) {
     if (value == 0) return;
     if (h_ != value) {
@@ -58,25 +63,13 @@ void TransformPanel::registerEvents() {
       updateControl();
     }
   });
-}
 
-bool TransformPanel::isScaleLock() const {
-  return scale_lock_;
-}
-
-void TransformPanel::setScaleLock(bool scaleLock) {
-  scale_lock_ = scaleLock;
-}
-
-void TransformPanel::setTransformControl(Controls::Transform *ctrl) {
-  ctrl_ = ctrl;
-
-  connect(ctrl, &Controls::Transform::transformChanged, [=](void) {
-    x_ = ctrl_->x();
-    y_ = ctrl_->y();
-    w_ = ctrl_->width();
-    h_ = ctrl_->height();
-    r_ = ctrl_->rotation();
+  connect(canvas_, &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
+    x_ = x;
+    y_ = y;
+    r_ = r;
+    w_ = w;
+    h_ = h;
     ui->spinBoxX->setValue(x_);
     ui->spinBoxY->setValue(y_);
     ui->spinBoxR->setValue(r_);
@@ -85,7 +78,15 @@ void TransformPanel::setTransformControl(Controls::Transform *ctrl) {
   });
 }
 
+bool TransformPanel::isScaleLock() const {
+  return scale_locked_;
+}
+
+void TransformPanel::setScaleLock(bool scaleLock) {
+  scale_locked_ = scaleLock;
+}
+
 void TransformPanel::updateControl() {
-  ctrl_->updateTransformFromUI(x_, y_, r_, w_, h_);
+  canvas_->transformControl().updateTransform(x_, y_, r_, w_, h_);
 }
 

@@ -4,7 +4,6 @@
 #include <shape/group-shape.h>
 
 Document::Document() noexcept:
-     mode_(Mode::Selecting),
      new_layer_id_(1),
      scroll_x_(0),
      scroll_y_(0),
@@ -15,15 +14,10 @@ Document::Document() noexcept:
      width_(3000),
      height_(2000),
      font_(QFont("Tahoma", 200, QFont::Bold)),
-     active_layer_(nullptr) {
+     active_layer_(nullptr),
+     canvas_(nullptr) {
   auto layer1 = make_shared<Layer>(this, 1);
   addLayer(layer1);
-
-  connect(this, &Document::selectionsChanged, [=]() {
-    for (auto &layer : layers_) {
-      layer->flushCache();
-    }
-  });
 }
 
 void Document::setSelection(nullptr_t) {
@@ -68,8 +62,6 @@ void Document::undo() {
 
   // TODO (Fix mode change event and selection, and add layer)
   setActiveLayer(active_layer_name);
-  emit selectionsChanged();
-  emit layerChanged();
 }
 
 void Document::redo() {
@@ -82,8 +74,6 @@ void Document::redo() {
   QString active_layer_name = activeLayer()->name();
 
   setActiveLayer(active_layer_name);
-  emit selectionsChanged();
-  emit layerChanged();
 }
 
 void Document::execute(Commands::BaseCmd *cmd) {
@@ -108,26 +98,12 @@ void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
   layers() << layer;
   active_layer_ = layers().last().get();
-  if (is_recording_undo_) emit layerChanged();
 }
 
 void Document::removeLayer(LayerPtr &layer) {
   if (!layers().removeOne(layer)) {
     qInfo() << "Failed to remove layer";
   }
-}
-
-void Document::emitAllChanges() {
-  emit selectionsChanged();
-  emit layerChanged();
-  emit modeChanged();
-}
-
-Document::Mode Document::mode() const { return mode_; }
-
-void Document::setMode(Mode mode) {
-  mode_ = mode;
-  emit modeChanged();
 }
 
 QPointF Document::getCanvasCoord(QPointF window_coord) const {
@@ -150,7 +126,6 @@ void Document::setScroll(QPointF scroll) {
   scroll_x_ = scroll.x();
   scroll_y_ = scroll.y();
   screen_changed_ = true;
-  volatility_timer.restart();
 }
 
 void Document::setScreenSize(QSize size) {
@@ -161,7 +136,6 @@ void Document::setScreenSize(QSize size) {
 void Document::setScale(qreal scale) {
   scale_ = scale;
   screen_changed_ = true;
-  volatility_timer.restart();
 }
 
 void Document::setRecordingUndo(bool recording_undo) { is_recording_undo_ = recording_undo; }
@@ -178,7 +152,6 @@ bool Document::setActiveLayer(const QString &name) {
   auto layer_ptr = findLayerByName(name);
   if (layer_ptr != nullptr) {
     active_layer_ = layer_ptr->get();
-    emit layerChanged();
     return true;
   }
 
@@ -197,7 +170,6 @@ void Document::setActiveLayer(LayerPtr &target_layer) {
                "Invalid layer ptr when setting active layer");
   }
   active_layer_ = target_layer.get();
-  emit layerChanged();
 }
 
 QList<LayerPtr> &Document::layers() { return layers_; }
@@ -232,11 +204,6 @@ void Document::setMousePressedScreenCoord(QPointF screen_coord) {
 
 void Document::setFont(const QFont &font) {
   font_ = font;
-}
-
-bool Document::isVolatile() const {
-  if (volatility_timer.elapsed() < 1000) { return true; }
-  return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
 }
 
 const QFont &Document::font() const { return font_; }
@@ -306,4 +273,12 @@ const LayerPtr *Document::findLayerByName(const QString &layer_name) {
     if (layer->name() == layer_name) return &layer;
   }
   return nullptr;
+}
+
+const Canvas *Document::canvas() const {
+  return canvas_;
+}
+
+void Document::setCanvas(Canvas *canvas) {
+  canvas_ = canvas;
 }

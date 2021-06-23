@@ -5,6 +5,7 @@
 #include <canvas/controls/path-edit.h>
 #include <cfloat>
 #include <cmath>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
@@ -15,7 +16,7 @@ PathEdit::PathEdit(Canvas *canvas) noexcept: CanvasControl(canvas), is_closed_sh
   // TODO: Listen to document::undo event
 }
 
-bool PathEdit::isActive() { return document().mode() == Document::Mode::PathEditing; }
+bool PathEdit::isActive() { return canvas().mode() == Canvas::Mode::PathEditing; }
 
 bool PathEdit::mousePressEvent(QMouseEvent *e) {
   if (target_.get() == nullptr)
@@ -146,7 +147,7 @@ int PathEdit::hitTest(QPointF local_coord) {
 }
 
 void PathEdit::paint(QPainter *painter) {
-  if (document().mode() != Document::Mode::PathEditing)
+  if (canvas().mode() != Canvas::Mode::PathEditing)
     return;
   if (target_.get() == nullptr)
     return;

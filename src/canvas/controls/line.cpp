@@ -1,12 +1,13 @@
 #include <QPainterPath>
-#include <canvas/controls/line.h>
 #include <cmath>
+#include <canvas/controls/line.h>
 #include <shape/path-shape.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
 bool Line::isActive() {
-  return document().mode() == Document::Mode::LineDrawing;
+  return canvas().mode() == Canvas::Mode::LineDrawing;
 }
 
 bool Line::mouseMoveEvent(QMouseEvent *e) {
@@ -46,5 +47,5 @@ bool Line::keyPressEvent(QKeyEvent *e) {
 
 void Line::exit() {
   cursor_ = QPointF();
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
 }

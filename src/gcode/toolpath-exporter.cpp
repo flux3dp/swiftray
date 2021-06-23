@@ -12,6 +12,8 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
 }
 
 void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
+  QElapsedTimer t;
+  t.start();
   gen_->turnOffLaser();
   gen_->home();
   gen_->useAbsolutePositioning();
@@ -29,6 +31,7 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
       convertLayer(layer);
     }
   }
+  qInfo() << "[Export] Took " << t.elapsed();
 }
 
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {

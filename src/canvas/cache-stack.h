@@ -9,8 +9,9 @@ class GroupShape;
 
 class Document;
 
-// Rewrite to support transform dirty or content dirty, transform dirty does not require heavy recalculation
+class Canvas;
 
+// Rewrite to support transform dirty or content dirty, transform dirty does not require heavy recalculation
 class CacheStack {
 public:
   // Cache groups of shapes with similar properties
@@ -67,6 +68,8 @@ public:
   bool isGroup() const;
 
   bool isLayer() const;
+
+  const Canvas &canvas() const;
 
   const Document &document() const;
 

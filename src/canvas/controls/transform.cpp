@@ -19,10 +19,10 @@ Transform::Transform(Canvas *canvas) noexcept:
 
 bool Transform::isActive() {
   return !document().selections().isEmpty() &&
-         (document().mode() == Document::Mode::Selecting ||
-          document().mode() == Document::Mode::Moving ||
-          document().mode() == Document::Mode::Rotating ||
-          document().mode() == Document::Mode::Transforming);
+         (canvas().mode() == Canvas::Mode::Selecting ||
+          canvas().mode() == Canvas::Mode::Moving ||
+          canvas().mode() == Canvas::Mode::Rotating ||
+          canvas().mode() == Canvas::Mode::Transforming);
 }
 
 QList<ShapePtr> &Transform::selections() { return selections_; }
@@ -32,7 +32,7 @@ void Transform::updateSelections() {
   selections().clear();
   selections().append(document().selections());
   bbox_need_recalc_ = true;
-  emit transformChanged();
+  emit canvas().transformChanged(x(), y(), rotation(), width(), height());
 }
 
 void Transform::updateBoundingRect() {
@@ -121,7 +121,6 @@ void Transform::applyRotate(bool temporarily) {
     rotation_to_apply_ = 0;
     bbox_need_recalc_ = true;
     document().execute(cmd);
-    emit transformChanged();
   }
 }
 
@@ -149,7 +148,6 @@ void Transform::applyScale(bool temporarily) {
     scale_x_to_apply_ = scale_y_to_apply_ = 1;
     bbox_need_recalc_ = true;
     document().execute(cmd);
-    emit transformChanged();
   }
 }
 
@@ -171,7 +169,6 @@ void Transform::applyMove(bool temporarily) {
     bbox_need_recalc_ = true;
     translate_to_apply_ = QPointF();
     document().execute(cmd);
-    emit transformChanged();
   }
 }
 
@@ -238,22 +235,34 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
                      2; // Rotate around rotated bbox center
     rotated_from_ = atan2(canvas_coord.y() - action_center_.y(),
                           canvas_coord.x() - action_center_.x());
-    document().setMode(Document::Mode::Rotating);
+    canvas().setMode(Canvas::Mode::Rotating);
   } else {
     action_center_ = controls_[((int) active_control_ + 4) % 8];
     transformed_from_ = QSizeF(boundingRect().size());
-    document().setMode(Document::Mode::Transforming);
+    canvas().setMode(Canvas::Mode::Transforming);
   }
   return true;
 }
 
 bool Transform::mouseReleaseEvent(QMouseEvent *e) {
-  if (rotation_to_apply_ != 0) applyRotate(false);
-  if (translate_to_apply_ != QPointF()) applyMove(false);
-  if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) applyScale(false);
-
+  bool transform_changed = false;
+  if (rotation_to_apply_ != 0) {
+    transform_changed = true;
+    applyRotate(false);
+  }
+  if (translate_to_apply_ != QPointF()) {
+    transform_changed = true;
+    applyMove(false);
+  }
+  if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) {
+    transform_changed = true;
+    applyScale(false);
+  }
+  if (transform_changed) {
+    emit canvas().transformChanged(x(), y(), rotation(), width(), height());
+  }
   reset();
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
   return true;
 }
 
@@ -291,19 +300,19 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
 
   if (selections_.empty()) return false;
 
-  if (document().mode() == Document::Mode::Selecting) {
+  if (canvas().mode() == Canvas::Mode::Selecting) {
     // Do move event if user actually dragged
     if ((e->pos() - document().mousePressedScreenCoord()).manhattanLength() > 3) {
-      document().setMode(Document::Mode::Moving);
+      canvas().setMode(Canvas::Mode::Moving);
     }
   }
 
-  switch (document().mode()) {
-    case Document::Mode::Moving:
+  switch (canvas().mode()) {
+    case Canvas::Mode::Moving:
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       applyMove(true);
       break;
-    case Document::Mode::Rotating:
+    case Canvas::Mode::Rotating:
       rotation_to_apply_ = (atan2(canvas_coord.y() - action_center_.y(),
                                   canvas_coord.x() - action_center_.x()) -
                             rotated_from_) *
@@ -311,7 +320,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
       applyRotate(true);
       break;
 
-    case Document::Mode::Transforming:
+    case Canvas::Mode::Transforming:
       calcScale(canvas_coord);
       applyScale(true);
       break;

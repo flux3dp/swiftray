@@ -5,11 +5,12 @@
 #include <canvas/controls/text.h>
 #include <cmath>
 #include <shape/path-shape.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
 bool Text::isActive() {
-  return document().mode() == Document::Mode::TextDrawing;
+  return canvas().mode() == Canvas::Mode::TextDrawing;
 }
 
 bool Text::mouseReleaseEvent(QMouseEvent *e) {
@@ -68,7 +69,7 @@ void Text::exit() {
   target_ = nullptr;
   origin_ = QPointF();
   document().text_box_->clear();
-  document().setMode(Document::Mode::Selecting);
+  canvas().setMode(Canvas::Mode::Selecting);
 }
 
 TextShape &Text::target() {

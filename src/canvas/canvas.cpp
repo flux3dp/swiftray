@@ -43,25 +43,31 @@ Canvas::Canvas(QQuickItem *parent)
   setAcceptTouchEvents(true);
   setAntialiasing(true);
   setOpaquePainting(true);
+
+  // Set document & mode
   setDocument(new Document());
-  // Set main loop
+  setMode(Mode::Selecting);
+
+  // Set main loop and timers
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
   timer->start(16);
-  // Set memory monitor
-  //mem_monitor_.moveToThread(mem_thread_);
-  //mem_thread_->start();
-  //QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
-  // Set document & mode
-  document().setMode(Document::Mode::Selecting);
+  volatility_timer.start();
+
   // Register controls
   ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
          << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
          << &ctrl_text_;
+
   // FPS
   fps_count = 0;
   fps_timer.start();
 
-  qInfo() << "[Canvas] Rendering target = " << this->renderTarget();
+  // Register events
+  connect(this, &Canvas::selectionsChanged, [=]() {
+    for (auto &layer : document().layers()) {
+      layer->flushCache();
+    }
+  });
 }
 
 Canvas::~Canvas() {
@@ -82,6 +88,7 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     editSelectAll();
     forceActiveFocus();
     ready = true;
+    emitAllChanges();
     update();
   }
   qInfo() << "[Parser] Took" << t.elapsed();
@@ -147,7 +154,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
       return;
   }
 
-  if (document().mode() == Document::Mode::Selecting) {
+  if (mode() == Mode::Selecting) {
     ShapePtr hit = document().hitTest(canvas_coord);
 
     if (hit != nullptr) {
@@ -156,7 +163,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
       }
     } else {
       document().setSelection(nullptr);
-      document().setMode(Document::Mode::MultiSelecting);
+      setMode(Mode::MultiSelecting);
     }
   }
 }
@@ -174,7 +181,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
       return;
   }
 
-  document().setMode(Document::Mode::Selecting);
+  setMode(Mode::Selecting);
 }
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
@@ -182,31 +189,32 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
   ShapePtr hit = document().hitTest(canvas_coord);
-  if (document().mode() == Document::Mode::Selecting) {
+  if (mode() == Mode::Selecting) {
     if (hit != nullptr) {
       qInfo() << "Double clicked" << hit.get();
       switch (hit->type()) {
         case Shape::Type::Path:
           document().setSelection(nullptr);
           ctrl_path_edit_.setTarget(hit);
-          document().setMode(Document::Mode::PathEditing);
+          setMode(Mode::PathEditing);
           break;
         case Shape::Type::Text:
           document().setSelection(nullptr);
           ctrl_text_.setTarget(hit);
-          document().setMode(Document::Mode::TextDrawing);
+          setMode(Mode::TextDrawing);
           break;
         default:
           break;
       }
     }
-  } else if (document().mode() == Document::Mode::PathEditing) {
+  } else if (mode() == Mode::PathEditing) {
     ctrl_path_edit_.endEditing();
   }
 }
 
 void Canvas::wheelEvent(QWheelEvent *e) {
   document().setScroll(document().scroll() + e->pixelDelta() / 2.5);
+  volatility_timer.restart();
 }
 
 void Canvas::loop() {
@@ -240,6 +248,7 @@ bool Canvas::event(QEvent *e) {
         double orig_scale = document().scale();
         document().setScale(max(0.01, document().scale() + nge->value() / 2));
         document().setScroll(mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale);
+        volatility_timer.restart();
       }
 
       break;
@@ -252,26 +261,26 @@ bool Canvas::event(QEvent *e) {
 }
 
 void Canvas::editCut() {
-  if (document().mode() != Document::Mode::Selecting)
+  if (mode() != Mode::Selecting)
     return;
   clipboard().cutFrom(document());
 }
 
 void Canvas::editCopy() {
-  if (document().mode() != Document::Mode::Selecting)
+  if (mode() != Mode::Selecting)
     return;
   clipboard().set(document().selections());
 }
 
 void Canvas::editPaste() {
-  if (document().mode() != Document::Mode::Selecting)
+  if (mode() != Mode::Selecting)
     return;
   clipboard().pasteTo(document());
 }
 
 void Canvas::editDelete() {
   qInfo() << "Edit Delete";
-  if (document().mode() != Document::Mode::Selecting)
+  if (mode() != Mode::Selecting)
     return;
 
   // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
@@ -280,37 +289,43 @@ void Canvas::editDelete() {
   );
 }
 
-void Canvas::editUndo() { document().undo(); }
+void Canvas::editUndo() {
+  document().undo();
+  emit layerChanged();
+}
 
-void Canvas::editRedo() { document().redo(); }
+void Canvas::editRedo() {
+  document().redo();
+  emit layerChanged();
+}
 
 void Canvas::editDrawRect() {
   document().setSelection(nullptr);
-  document().setMode(Document::Mode::RectDrawing);
+  setMode(Mode::RectDrawing);
 }
 
 void Canvas::editDrawOval() {
   document().setSelection(nullptr);
-  document().setMode(Document::Mode::OvalDrawing);
+  setMode(Mode::OvalDrawing);
 }
 
 void Canvas::editDrawLine() {
   document().setSelection(nullptr);
-  document().setMode(Document::Mode::LineDrawing);
+  setMode(Mode::LineDrawing);
 }
 
 void Canvas::editDrawPath() {
   document().setSelection(nullptr);
-  document().setMode(Document::Mode::PathDrawing);
+  setMode(Mode::PathDrawing);
 }
 
 void Canvas::editDrawText() {
   document().setSelection(nullptr);
-  document().setMode(Document::Mode::TextDrawing);
+  setMode(Mode::TextDrawing);
 }
 
 void Canvas::editSelectAll() {
-  if (document().mode() != Document::Mode::Selecting)
+  if (mode() != Mode::Selecting)
     return;
   QList<ShapePtr> all_shapes;
 
@@ -402,6 +417,7 @@ void Canvas::addEmptyLayer() {
   document().execute(
        Commands::AddLayer(new_layer)
   );
+  emit layerChanged();
 }
 
 void Canvas::fitToWindow() {
@@ -428,6 +444,7 @@ void Canvas::importImage(QImage &image) {
 
 void Canvas::setActiveLayer(LayerPtr &layer) {
   document().setActiveLayer(layer);
+  emit layerChanged();
 }
 
 void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
@@ -492,11 +509,35 @@ void Canvas::backToSelectMode() {
 
 }
 
+void Canvas::startMemoryMonitor() {
+  mem_monitor_.moveToThread(mem_thread_);
+  mem_thread_->start();
+  QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
+}
+
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {
   doc_ = unique_ptr<Document>(document);
+  doc_->setCanvas(this);
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
-  connect(doc_.get(), &Document::layerChanged, this, &Canvas::layerChanged);
-  connect(doc_.get(), &Document::modeChanged, this, &Canvas::modeChanged);
 }
+
+Canvas::Mode Canvas::mode() const { return mode_; }
+
+void Canvas::setMode(Mode mode) {
+  mode_ = mode;
+  emit modeChanged();
+}
+
+void Canvas::emitAllChanges() {
+  emit layerChanged();
+  emit modeChanged();
+}
+
+
+bool Canvas::isVolatile() const {
+  if (volatility_timer.elapsed() < 1000) { return true; }
+  return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
+}
+

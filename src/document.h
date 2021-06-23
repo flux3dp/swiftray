@@ -1,3 +1,6 @@
+#ifndef DOCUMENT_H
+#define DOCUMENT_H
+
 #include <QPoint>
 #include <QWidget>
 #include <QElapsedTimer>
@@ -6,25 +9,11 @@
 #include <widgets/canvas-text-edit.h>
 #include <command.h>
 
-#ifndef SCENE_H
-#define SCENE_H
+class Canvas;
 
 class Document : public QObject {
 Q_OBJECT
 public:
-  enum class Mode {
-    Selecting,
-    Moving,
-    MultiSelecting,
-    Transforming,
-    Rotating,
-    RectDrawing,
-    LineDrawing,
-    OvalDrawing,
-    PathDrawing,
-    PathEditing,
-    TextDrawing
-  };
 
   Document() noexcept;
 
@@ -37,8 +26,6 @@ public:
   void setSelection(ShapePtr &shape);
 
   void setSelections(const QList<ShapePtr> &new_selections);
-
-  void emitAllChanges();
 
   // Test if any shape in the document hit by mouse
   ShapePtr hitTest(QPointF canvas_coord);
@@ -70,7 +57,6 @@ public:
   QRectF screenRect() const;
 
   // Getters:
-  Mode mode() const;
 
   QList<LayerPtr> &layers();
 
@@ -90,15 +76,12 @@ public:
 
   const QFont &font() const;
 
+  const Canvas *canvas() const;
+
   // Frames rendered after start
   int framesCount() const;
 
-  // Graphics should be drawn in lower quality is this return true
-  bool isVolatile() const;
-
   // Setters:
-  void setMode(Mode mode);
-
   bool setActiveLayer(const QString &name);
 
   void setActiveLayer(LayerPtr &layer);
@@ -112,6 +95,8 @@ public:
   void setScroll(QPointF scroll);
 
   void setScale(qreal scale);
+
+  void setCanvas(Canvas *canvas);
 
   void setMousePressedScreenCoord(QPointF screen_coord);
 
@@ -143,10 +128,6 @@ signals:
 
   void selectionsChanged();
 
-  void layerChanged();
-
-  void modeChanged();
-
 private:
   qreal scroll_x_;
   qreal scroll_y_;
@@ -162,12 +143,10 @@ private:
 
   QFont font_;
 
-  Mode mode_;
   int new_layer_id_;
   Layer *active_layer_;
 
   QPointF mouse_pressed_screen_coord_;
-  QElapsedTimer volatility_timer;
 
   QList<CmdPtr> undo2_stack_;
   QList<CmdPtr> redo2_stack_;
@@ -175,6 +154,8 @@ private:
   QSize screen_size_;
 
   int frames_count_;
+
+  Canvas *canvas_;
 };
 
-#endif // SCENE_H
+#endif // DOCUMENT_H
