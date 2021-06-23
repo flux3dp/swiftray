@@ -79,15 +79,12 @@ void Canvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
   QElapsedTimer t;
   t.start();
-  document().setRecordingUndo(false);
   bool success = svgpp_parser_.parse(&document(), svg_data);
-  document().setRecordingUndo(true);
   setAntialiasing(true);
 
   if (success) {
     editSelectAll();
     forceActiveFocus();
-    ready = true;
     emitAllChanges();
     update();
   }
@@ -118,7 +115,6 @@ void Canvas::paint(QPainter *painter) {
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
   painter->drawText(QPointF(10, 40), " Frames: #" + QString::number(document().framesCount()));
-  painter->drawText(QPointF(10, 60), "Mem: " + mem_monitor_.system_info_);
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;
     fps_timer.restart();
@@ -186,22 +182,21 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  qInfo() << "Mouse Double Click (screen)" << e->pos() << " -> (canvas)"
-          << canvas_coord;
   ShapePtr hit = document().hitTest(canvas_coord);
   if (mode() == Mode::Selecting) {
     if (hit != nullptr) {
-      qInfo() << "Double clicked" << hit.get();
       switch (hit->type()) {
+        case Shape::Type::Text:
+          qInfo() << "[Canvas] Double clicked text" << hit.get();
+          document().setSelection(hit);
+          ctrl_text_.setTarget(hit);
+          setMode(Mode::TextDrawing);
+          break;
         case Shape::Type::Path:
+          qInfo() << "[Canvas] Double clicked path" << hit.get();
           document().setSelection(nullptr);
           ctrl_path_edit_.setTarget(hit);
           setMode(Mode::PathEditing);
-          break;
-        case Shape::Type::Text:
-          document().setSelection(nullptr);
-          ctrl_text_.setTarget(hit);
-          setMode(Mode::TextDrawing);
           break;
         default:
           break;
@@ -291,12 +286,16 @@ void Canvas::editDelete() {
 
 void Canvas::editUndo() {
   document().undo();
-  emit layerChanged();
+  // emit layerChanged(); // TODO (Check if layers are really changed)
+  emit selectionsChanged(); // Force refresh all selection related components
+  emit undoCalled();
 }
 
 void Canvas::editRedo() {
   document().redo();
-  emit layerChanged();
+  // emit layerChanged(); // TODO (Check if layers are really changed)
+  emit selectionsChanged(); // Force refresh all selection related components
+  emit redoCalled();
 }
 
 void Canvas::editDrawRect() {
@@ -421,8 +420,6 @@ void Canvas::addEmptyLayer() {
 }
 
 void Canvas::fitToWindow() {
-  // Notes: we can even speed up by using half resolution:
-  //setTextureSize(QSize(width() / 2, height() / 2));
   qreal proper_scale = min((width() - 100) / document().width(),
                            (height() - 100) / document().height());
   QPointF proper_translate =
@@ -453,34 +450,20 @@ void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
 }
 
 void Canvas::setFont(const QFont &font) {
-  // TODO (Add undo for set font event)
-
-  // TODO (Add new_font default)
-
-  // Add text to scene when creating text object, set selection to the text object
-  // Set text font directly to font
-  // When scene selection is font, change font dialog
-  QFont new_font;
-  QList<ShapePtr> selections_;
-  selections_.append(document().selections());
-  if (!selections_.isEmpty()) {
-    for (auto &shape: selections_) {
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
       if (shape->type() == Shape::Type::Text) {
-        document().execute(
-             Commands::SetFont((TextShape *) shape.get(), font)
-        );
+        cmd << Commands::SetFont((TextShape *) shape.get(), font);
       }
     }
-    document().setSelections(selections_);
-    // TODO (Update ctrl_text_)
-  } else {
-    document().execute(
-         Commands::SetRef<Document, QFont, &Document::font, &Document::setFont>(
-              &document(),
-              font
-         )
-    );
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(font);
   }
+
+  font_ = font;
 }
 
 shared_ptr<PreviewGenerator> Canvas::exportGcode() {
@@ -491,7 +474,6 @@ shared_ptr<PreviewGenerator> Canvas::exportGcode() {
 }
 
 void Canvas::setWidgetSize(QSize widget_size) {
-  widget_size_ = widget_size;
   document().setScreenSize(widget_size);
   fitToWindow();
 }
@@ -506,7 +488,11 @@ Clipboard &Canvas::clipboard() {
 
 void Canvas::backToSelectMode() {
   // TODO (Add exit function to all controls)
-
+  switch (mode()) {
+    case Mode::TextDrawing:
+      ctrl_text_.exit();
+      break;
+  }
 }
 
 void Canvas::startMemoryMonitor() {
@@ -535,9 +521,9 @@ void Canvas::emitAllChanges() {
   emit modeChanged();
 }
 
-
 bool Canvas::isVolatile() const {
   if (volatility_timer.elapsed() < 1000) { return true; }
   return mode_ == Mode::Moving || mode_ == Mode::Rotating || mode_ == Mode::Transforming;
 }
 
+const QFont &Canvas::font() const { return font_; }

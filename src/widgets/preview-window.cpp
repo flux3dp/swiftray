@@ -43,7 +43,7 @@ void PreviewWindow::paintEvent(QPaintEvent *event) {
 }
 
 void PreviewWindow::registerEvents() {
-  connect(ui->progress, &QSlider::valueChanged, [=, this](int value) {
+  connect(ui->progress, &QSlider::valueChanged, [=](int value) {
     progress_ = value;
     update();
   });

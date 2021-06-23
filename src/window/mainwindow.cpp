@@ -7,7 +7,6 @@
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
 #include <shape/bitmap-shape.h>
-#include <widgets/spinbox-helper.h>
 #include <widgets/canvas-text-edit.h>
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
@@ -48,9 +47,6 @@ void MainWindow::loadQSS() {
   file.open(QFile::ReadOnly);
   QString styleSheet = QLatin1String(file.readAll());
   setStyleSheet(styleSheet);
-  ((SpinBoxHelper<QSpinBox> *) ui->spinBox_4)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->doubleSpinBox_6)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->doubleSpinBox_7)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void MainWindow::openFile() {
@@ -94,8 +90,8 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
 
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
   // TODO (Chanage the owner of text_box_ to mainwindow, and use event dispatch for updating text);
-  canvas_->document().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
-  canvas_->document().text_box_->setGeometry(10, 10, 200, 200);
+  canvas_->document().text_box_ = make_unique<CanvasTextEdit>(this);
+  canvas_->document().text_box_->setGeometry(0, 0, 0, 0);
   canvas_->document().text_box_->setStyleSheet("border:0");
   canvas_->fitToWindow();
   canvas_->setWidgetSize(ui->quickWidget->geometry().size());
@@ -219,7 +215,9 @@ void MainWindow::loadWidgets() {
   // Add custom panels
   transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, canvas_);
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
+  font_panel_ = make_unique<FontPanel>(ui->fontDock, canvas_);
   ui->objectParamDock->setWidget(transform_panel_.get());
+  ui->fontDock->setWidget(font_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
 
   // Add floating buttons
@@ -262,13 +260,12 @@ void MainWindow::registerEvents() {
   connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
-  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, canvas_, &Canvas::setFont);
 
   // Monitor custom widgets
   connect(add_layer_btn_.get(), &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
 
   // Complex callbacks
-  connect(ui->actionExportGcode, &QAction::triggered, [=, this]() {
+  connect(ui->actionExportGcode, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
     PreviewWindow *pw = new PreviewWindow(this);
     pw->setPreviewPath(gen);

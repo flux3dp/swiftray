@@ -6,6 +6,7 @@
 #include <widgets/layer-list-item.h>
 #include <widgets/transform-panel.h>
 #include <widgets/layer-params-panel.h>
+#include <widgets/font-panel.h>
 #include <canvas/canvas.h>
 
 #ifndef MAINWINDOW_H
@@ -60,6 +61,7 @@ private:
   Canvas *canvas_;
   unique_ptr<LayerParamsPanel> layer_params_panel_;
   unique_ptr<TransformPanel> transform_panel_;
+  unique_ptr<FontPanel> font_panel_;
   unique_ptr<QToolButton> add_layer_btn_;
 };
 

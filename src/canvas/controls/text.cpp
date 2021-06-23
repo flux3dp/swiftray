@@ -9,18 +9,21 @@
 
 using namespace Controls;
 
+Text::Text(Canvas *canvas) noexcept: CanvasControl(canvas) {
+  connect(canvas, &Canvas::undoCalled, this, &Text::exit);
+}
+
 bool Text::isActive() {
   return canvas().mode() == Canvas::Mode::TextDrawing;
 }
 
 bool Text::mouseReleaseEvent(QMouseEvent *e) {
-  origin_ = document().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
   document().text_box_->setFocus();
   if (target_ == nullptr) {
-    qInfo() << "Create virtual text shape";
-    ShapePtr new_shape = make_shared<TextShape>("", document().font());
+    ShapePtr new_shape = make_shared<TextShape>("", canvas().font());
     setTarget(new_shape);
-    target().setTransform(QTransform().translate(origin_.x(), origin_.y()));
+    target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
   }
   return true;
 }
@@ -41,8 +44,6 @@ bool Text::keyPressEvent(QKeyEvent *e) {
            Commands::AddShape(document().activeLayer(), target_),
            Commands::Select(&document(), {target_})
       );
-    } else {
-      document().execute(Commands::Select(&document(), {target_}));
     }
     exit();
     return true;
@@ -65,19 +66,14 @@ void Text::paint(QPainter *painter) {
 }
 
 void Text::exit() {
-  blink_counter = 0;
   target_ = nullptr;
-  origin_ = QPointF();
   document().text_box_->clear();
+  document().text_box_->window()->setFocus();
   canvas().setMode(Canvas::Mode::Selecting);
 }
 
 TextShape &Text::target() {
   return static_cast<TextShape &>(*target_.get());
-}
-
-bool Text::hasTarget() {
-  return target_ != nullptr;
 }
 
 void Text::setTarget(ShapePtr &new_target) {

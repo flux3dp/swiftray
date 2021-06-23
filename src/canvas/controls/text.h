@@ -2,13 +2,13 @@
 #include <canvas/controls/canvas-control.h>
 #include <shape/text-shape.h>
 
-#ifndef TEXTDRAWER_H
-#define TEXTDRAWER_H
+#ifndef TEXTCONTROL_H
+#define TEXTCONTROL_H
 namespace Controls {
 
   class Text : public CanvasControl {
   public:
-    Text(Canvas *canvas) noexcept: CanvasControl(canvas) {}
+    Text(Canvas *canvas) noexcept;
 
     bool mouseReleaseEvent(QMouseEvent *e) override;
 
@@ -26,13 +26,9 @@ namespace Controls {
 
     void setTarget(ShapePtr &target);
 
-    bool hasTarget();
-
   private:
-    QPointF origin_;
     ShapePtr target_;
-    int blink_counter;
   };
 
 }
-#endif // TEXTDRAWER_H
+#endif // TEXTCONTROL_H

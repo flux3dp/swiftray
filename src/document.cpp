@@ -8,7 +8,6 @@ Document::Document() noexcept:
      scroll_x_(0),
      scroll_y_(0),
      scale_(1),
-     is_recording_undo_(true),
      screen_changed_(false),
      frames_count_(0),
      width_(3000),
@@ -138,8 +137,6 @@ void Document::setScale(qreal scale) {
   screen_changed_ = true;
 }
 
-void Document::setRecordingUndo(bool recording_undo) { is_recording_undo_ = recording_undo; }
-
 Layer *Document::activeLayer() {
   Q_ASSERT_X(layers_.size() != 0, "Active Layer",
              "Access to active layer when there is no layer");
@@ -201,12 +198,6 @@ QPointF Document::mousePressedScreenCoord() const {
 void Document::setMousePressedScreenCoord(QPointF screen_coord) {
   mouse_pressed_screen_coord_ = screen_coord;
 }
-
-void Document::setFont(const QFont &font) {
-  font_ = font;
-}
-
-const QFont &Document::font() const { return font_; }
 
 void Document::groupSelections() {
   if (selections().empty()) return;

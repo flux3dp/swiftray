@@ -22,7 +22,7 @@ SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
-FILE(GLOB WIDGETS_CPP2 "src/widgets/*.cpp")
+FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
 
 SET(SOURCES
         src/layer.cpp
@@ -30,7 +30,7 @@ SET(SOURCES
         src/command.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
-        ${WIDGETS_CPP2}
+        ${WIDGETS_CPP}
         src/canvas/cache-stack.cpp
         src/window/main.cpp
         src/window/mainwindow.cpp

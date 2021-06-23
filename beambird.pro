@@ -45,6 +45,7 @@ SOURCES += \
         src/undo.cpp \
         src/document.cpp \
         src/layer.cpp \
+        src/widgets/font-panel.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
 
@@ -77,6 +78,7 @@ HEADERS += \
     $$files(src/parser/generators/*.h) \
     $$files(src/gcoder/*.h) \
     $$files(src/widgets/*.h) \
+    src/widgets/font-panel.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h
 
@@ -87,6 +89,7 @@ INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
 FORMS += \
+    src/widgets/font-panel.ui \
     src/widgets/layer-list-item.ui \
     src/widgets/layer-params-panel.ui \
     src/widgets/preview-window.ui \

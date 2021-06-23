@@ -20,8 +20,8 @@
 #include <gcode/generators/preview-generator.h>
 
 /*The canvas should be designed to handle multiple documents,
-  carefully choose what you want to put in the canvas,
-  and what you want to put in the document. */
+  carefully choose what properties you want to put in the canvas,
+  and what properties you want to put in the document. */
 class Canvas : public QQuickPaintedItem {
 Q_OBJECT
   QML_ELEMENT
@@ -71,14 +71,17 @@ public:
 
   Clipboard &clipboard();
 
-  void setDocument(Document *document);
-
   Mode mode() const;
 
-  void setMode(Mode mode);
+  const QFont &font() const;
 
   // Graphics should be drawn in lower quality is this return true
   bool isVolatile() const;
+
+  // Setters
+  void setDocument(Document *document);
+
+  void setMode(Mode mode);
 
 public slots:
 
@@ -143,8 +146,14 @@ public slots:
   void startMemoryMonitor();
 
 private:
+  // Basic attributes
   unique_ptr<Document> doc_;
-  bool ready;
+  Mode mode_;
+  QFont font_;
+  Clipboard clipboard_;
+  SVGPPParser svgpp_parser_;
+
+  // Control components
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
   Controls::Grid ctrl_grid_;
@@ -155,22 +164,19 @@ private:
   Controls::Rect ctrl_rect_;
   Controls::Text ctrl_text_;
   QList<Controls::CanvasControl *> ctrls_;
-  SVGPPParser svgpp_parser_;
 
+
+  // Display attributes
+  QPoint widget_offset_;
+  QElapsedTimer volatility_timer;
+
+  // Monitor attributes
   QElapsedTimer fps_timer;
   int fps_count;
   float fps;
-  QPoint widget_offset_;
-  QSize widget_size_;
-  Clipboard clipboard_;
-
   QTimer *timer;
   QThread *mem_thread_;
   MemoryMonitor mem_monitor_;
-
-  Mode mode_;
-
-  QElapsedTimer volatility_timer;
 
 signals:
 
@@ -179,6 +185,10 @@ signals:
   void layerChanged();
 
   void modeChanged();
+
+  void undoCalled();
+
+  void redoCalled();
 
   void transformChanged(qreal x, qreal y, qreal r, qreal w, qreal h);
 };

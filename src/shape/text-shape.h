@@ -14,6 +14,8 @@ public:
 
   Shape::Type type() const override;
 
+  shared_ptr<Shape> clone() const override;
+
   QString text();
 
   void setText(QString text);

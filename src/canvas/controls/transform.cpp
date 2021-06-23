@@ -13,7 +13,6 @@ Transform::Transform(Canvas *canvas) noexcept:
      rotation_to_apply_(0),
      translate_to_apply_(QPointF()) {
 
-  //TODO fix connect document
   connect(canvas, &Canvas::selectionsChanged, this, &Transform::updateSelections);
 }
 
@@ -28,6 +27,7 @@ bool Transform::isActive() {
 QList<ShapePtr> &Transform::selections() { return selections_; }
 
 void Transform::updateSelections() {
+  qInfo() << "[Transform] Update selections";
   reset();
   selections().clear();
   selections().append(document().selections());
