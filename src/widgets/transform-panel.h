@@ -14,15 +14,13 @@ class TransformPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit TransformPanel(QWidget *parent, Controls::Transform *control);
+  explicit TransformPanel(QWidget *parent, Canvas *canvas);
 
   ~TransformPanel();
 
   bool isScaleLock() const;
 
   void setScaleLock(bool scaleLock);
-
-  void setTransformControl(Controls::Transform *ctrl);
 
   void updateControl();
 
@@ -37,8 +35,8 @@ private:
   double r_;
   double w_;
   double h_;
-  bool scale_lock_;
-  Controls::Transform *ctrl_;
+  bool scale_locked_;
+  Canvas *canvas_;
 };
 
 #endif // TRANSFORM_WIDGET_H
