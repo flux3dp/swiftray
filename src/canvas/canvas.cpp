@@ -114,7 +114,7 @@ void Canvas::paint(QPainter *painter) {
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40), " Frames: #" + QString::number(document().framesCount()));
+  painter->drawText(QPointF(10, 40), "Frames: #" + QString::number(document().framesCount()));
   if (fps_timer.elapsed() > 3000) {
     fps_count = 0;
     fps_timer.restart();
@@ -286,14 +286,14 @@ void Canvas::editDelete() {
 
 void Canvas::editUndo() {
   document().undo();
-  // emit layerChanged(); // TODO (Check if layers are really changed)
+  emit layerChanged(); // TODO (Check if layers are really changed)
   emit selectionsChanged(); // Force refresh all selection related components
   emit undoCalled();
 }
 
 void Canvas::editRedo() {
   document().redo();
-  // emit layerChanged(); // TODO (Check if layers are really changed)
+  emit layerChanged(); // TODO (Check if layers are really changed)
   emit selectionsChanged(); // Force refresh all selection related components
   emit redoCalled();
 }
@@ -464,6 +464,21 @@ void Canvas::setFont(const QFont &font) {
   }
 
   font_ = font;
+}
+
+void Canvas::setLineHeight(float line_height) {
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        cmd << Commands::SetLineHeight((TextShape *) shape.get(), line_height);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setLineHeight(line_height);
+  }
 }
 
 shared_ptr<PreviewGenerator> Canvas::exportGcode() {

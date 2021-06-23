@@ -166,6 +166,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::updateMode() {
+  // TODO: use action group to do button state exclusive
   ui->actionSelect->setChecked(false);
   ui->actionDrawRect->setChecked(false);
   ui->actionDrawLine->setChecked(false);
@@ -223,7 +224,7 @@ void MainWindow::loadWidgets() {
   // Add floating buttons
   add_layer_btn_ = make_unique<QToolButton>(ui->layerList);
   add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
-  add_layer_btn_->setGeometry(QRect(215, 190, 35, 35));
+  add_layer_btn_->setGeometry(QRect(215, 180, 35, 35));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->raise();
   add_layer_btn_->show();

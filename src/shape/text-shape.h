@@ -16,23 +16,27 @@ public:
 
   shared_ptr<Shape> clone() const override;
 
-  QString text();
+  // Getters
 
-  void setText(QString text);
+  QString text();
 
   const QFont &font() const;
 
-  void setFont(const QFont &font);
-
-  float lineHeight();
-
-  void setLineHeight(float line_height);
+  float lineHeight() const;
 
   void makeCursorRect(int cursor);
 
-  bool isEditing();
+  bool isEditing() const;
+
+  // Setters
 
   void setEditing(bool editing);
+
+  void setText(QString text);
+
+  void setFont(const QFont &font);
+
+  void setLineHeight(float line_height);
 
 private:
   bool editing_;

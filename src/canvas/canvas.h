@@ -141,6 +141,8 @@ public slots:
 
   void setWidgetOffset(QPoint offset);
 
+  void setLineHeight(float line_height);
+
   void backToSelectMode();
 
   void startMemoryMonitor();

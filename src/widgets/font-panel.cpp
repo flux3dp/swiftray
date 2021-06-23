@@ -8,6 +8,7 @@ FontPanel::FontPanel(QWidget *parent, Canvas *canvas) :
      QWidget(parent),
      canvas_(canvas),
      ui(new Ui::FontPanel) {
+  assert(parent != nullptr && canvas != nullptr);
   ui->setupUi(this);
   loadStyles();
   registerEvents();
@@ -36,8 +37,7 @@ void FontPanel::registerEvents() {
     ui->fontComboBox->setCurrentFont(font_);
   });
 
-  // TODO (Add line height event)
-  //connect(ui->lineHeight, spin_event, canvas_, &Canvas::setLineHeight);
+  connect(ui->lineHeight, spin_event, canvas_, &Canvas::setLineHeight);
 
   connect(ui->bold, &QCheckBox::toggled, [=](bool checked) {
     font_.setBold(checked);

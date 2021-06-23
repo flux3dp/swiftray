@@ -21,6 +21,7 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   document().text_box_->setFocus();
   if (target_ == nullptr) {
+    // Create a virtual target
     ShapePtr new_shape = make_shared<TextShape>("", canvas().font());
     setTarget(new_shape);
     target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
@@ -39,7 +40,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
     target().setEditing(false);
     if (!target().hasLayer() &&
         document().text_box_->toPlainText().length() > 0) {
-      qInfo() << "Create new text shape instance";
+      // Add the virtual target the layer
       document().execute(
            Commands::AddShape(document().activeLayer(), target_),
            Commands::Select(&document(), {target_})

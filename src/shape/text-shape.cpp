@@ -17,9 +17,9 @@ QString TextShape::text() { return lines_.join("\n"); }
 
 const QFont &TextShape::font() const { return font_; }
 
-bool TextShape::isEditing() { return editing_; }
+bool TextShape::isEditing() const { return editing_; }
 
-float TextShape::lineHeight() { return line_height_; }
+float TextShape::lineHeight() const { return line_height_; }
 
 void TextShape::setLineHeight(float line_height) { line_height_ = line_height; }
 

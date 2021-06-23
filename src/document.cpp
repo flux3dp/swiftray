@@ -51,7 +51,10 @@ void Document::dumpStack(QList<LayerPtr> &stack) {
 }
 
 void Document::undo() {
-  if (undo2_stack_.isEmpty()) return;
+  if (undo2_stack_.isEmpty()) {
+    qDebug() << "[Document] There is no command to undo!";
+    return;
+  }
   CmdPtr evt = undo2_stack_.last();
   evt->undo(this);
   undo2_stack_.pop_back();

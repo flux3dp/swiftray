@@ -214,6 +214,9 @@ namespace Commands {
   constexpr CmdPtr (*SetFont)(TextShape *, QFont) =
   &SetRef<TextShape, QFont, &TextShape::font, &TextShape::setFont>;
 
+  constexpr CmdPtr (*SetLineHeight)(TextShape *, float) =
+  &Set<TextShape, float, &TextShape::lineHeight, &TextShape::setLineHeight>;
+
   constexpr CmdPtr (*SetRotation)(Shape *, qreal) =
   &Set<Shape, qreal, &TextShape::rotation, &TextShape::setRotation>;
 
