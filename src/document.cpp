@@ -14,7 +14,8 @@ Document::Document() noexcept:
      frames_count_(0),
      width_(3000),
      height_(2000),
-     font_(QFont("Tahoma", 200, QFont::Bold)) {
+     font_(QFont("Tahoma", 200, QFont::Bold)),
+     active_layer_(nullptr) {
   auto layer1 = make_shared<Layer>(this, 1);
   addLayer(layer1);
 
@@ -96,7 +97,7 @@ void Document::execute(const CmdPtr &cmd) {
 }
 
 void Document::execute(initializer_list<CmdPtr> cmds) {
-  auto joined = make_shared<JoinedCmd>();
+  auto joined = Commands::Joined();
   for (auto cmd: cmds) {
     joined << cmd;
   }
@@ -229,7 +230,7 @@ void Document::setMousePressedScreenCoord(QPointF screen_coord) {
   mouse_pressed_screen_coord_ = screen_coord;
 }
 
-void Document::setFont(QFont &font) {
+void Document::setFont(const QFont &font) {
   font_ = font;
 }
 
@@ -244,10 +245,10 @@ void Document::groupSelections() {
   if (selections().empty()) return;
 
   ShapePtr group_ptr = make_shared<GroupShape>(selections());
-  auto cmd = make_shared<JoinedCmd>();
+  auto cmd = Commands::Joined();
   for (auto &shape: selections()) {
-    cmd << new Commands::SetParentCmd(shape.get(), group_ptr.get());
-    cmd << new Commands::SetLayerCmd(shape.get(), nullptr);
+    cmd << Commands::SetParent(shape.get(), group_ptr.get());
+    cmd << Commands::SetLayer(shape.get(), nullptr);
   }
   execute(
        cmd,
@@ -265,11 +266,11 @@ void Document::ungroupSelections() {
 
   auto *group = (GroupShape *) group_ptr.get();
 
-  auto cmd = make_shared<Commands::JoinedCmd>();
+  auto cmd = Commands::Joined();
   for (auto &shape : group->children()) {
-    cmd << new Commands::SetTransformCmd(shape.get(), shape->transform() * group->transform());
-    cmd << new Commands::SetRotationCmd(shape.get(), shape->rotation() + group->rotation());
-    cmd << new Commands::SetParentCmd(shape.get(), nullptr);
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * group->transform());
+    cmd << Commands::SetRotation(shape.get(), shape->rotation() + group->rotation());
+    cmd << Commands::SetParent(shape.get(), nullptr);
     cmd << Commands::AddShape(activeLayer(), shape);
   }
 

@@ -2,9 +2,11 @@
 #include "ui_transform-panel.h"
 #include <widgets/spinbox-helper.h>
 
-TransformPanel::TransformPanel(QWidget *parent) :
+TransformPanel::TransformPanel(QWidget *parent, Controls::Transform *control) :
      QFrame(parent),
+     ctrl_(control),
      ui(new Ui::TransformPanel) {
+  assert(parent != nullptr && control != nullptr);
   ui->setupUi(this);
   loadStyles();
   registerEvents();

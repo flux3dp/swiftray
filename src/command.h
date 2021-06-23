@@ -3,6 +3,7 @@
 
 #include <layer.h>
 #include <shape/shape.h>
+#include <shape/text-shape.h>
 
 // TODO add mode change command if we need to do redo in certain modes..
 // TODO simplify command usage
@@ -185,13 +186,6 @@ namespace Commands {
 
   JoinedPtr &operator<<(JoinedPtr &a, BaseCmd *b);
 
-
-  // Abbreviations for undo events
-  typedef Commands::SetRefCmd<Shape, QTransform, &Shape::transform, &Shape::setTransform> SetTransformCmd;
-  typedef Commands::SetCmd<Shape, qreal, &Shape::rotation, &Shape::setRotation> SetRotationCmd;
-  typedef Commands::SetCmd<Shape, Shape *, &Shape::parent, &Shape::setParent> SetParentCmd;
-  typedef Commands::SetCmd<Shape, Layer *, &Shape::layer, &Shape::setLayer> SetLayerCmd;
-
   // Abbreviations for generating commands
   template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
        PropType)>
@@ -206,13 +200,22 @@ namespace Commands {
          (target, new_value);
   }
 
-  CmdPtr SetTransform(Shape *shape, const QTransform &new_value);
+  // Abbreviations for specific set
+  constexpr CmdPtr
+  (*SetTransform)(Shape *, QTransform) =
+  &SetRef<Shape, QTransform, &Shape::transform, &Shape::setTransform>;
 
-  CmdPtr SetLayer(Shape *shape, Layer *layer);
+  constexpr CmdPtr (*SetParent)(Shape *, Shape *) =
+  &Set<Shape, Shape *, &Shape::parent, &Shape::setParent>;
 
-  CmdPtr SetParent(Shape *shape, Shape *parent);
+  constexpr CmdPtr (*SetLayer)(Shape *, Layer *) =
+  &Set<Shape, Layer *, &Shape::layer, &Shape::setLayer>;
 
-  CmdPtr SetRotation(Shape *shape, qreal rotation);
+  constexpr CmdPtr (*SetFont)(TextShape *, QFont) =
+  &SetRef<TextShape, QFont, &TextShape::font, &TextShape::setFont>;
+
+  constexpr CmdPtr (*SetRotation)(Shape *, qreal) =
+  &Set<Shape, qreal, &TextShape::rotation, &TextShape::setRotation>;
 
   CmdPtr AddShape(Layer *layer, const ShapePtr &shape);
 
@@ -239,11 +242,11 @@ namespace Commands {
   CmdPtr RemoveLayer(const LayerPtr &layer);
 
   CmdPtr RemoveSelections(Document *doc);
+
+  JoinedPtr Joined();
 }
 
 typedef Commands::CmdPtr CmdPtr;
-typedef Commands::JoinedPtr JoinedPtr;
-typedef Commands::JoinedCmd JoinedCmd;
 typedef Commands::BaseCmd BaseCmd;
 
 #endif

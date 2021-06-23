@@ -28,7 +28,7 @@ public:
 
   void resizeEvent(QResizeEvent *event) override;
 
-  void loadQML();
+  void loadCanvas();
 
   void loadQSS();
 
@@ -36,7 +36,7 @@ public:
 
 private slots:
 
-  void quickWidgetStatusChanged(QQuickWidget::Status);
+  void canvasLoaded(QQuickWidget::Status status);
 
   void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
 
@@ -50,13 +50,14 @@ private slots:
 
   void openImageFile();
 
+  void registerEvents();
+
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
                          const QModelIndex &destinationParent, int destinationRow);
 
 private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
-  Document *doc_;
   unique_ptr<LayerParamsPanel> layer_params_panel_;
   unique_ptr<TransformPanel> transform_panel_;
   unique_ptr<QToolButton> add_layer_btn_;

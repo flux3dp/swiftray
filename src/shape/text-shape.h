@@ -18,9 +18,9 @@ public:
 
   void setText(QString text);
 
-  QFont font();
+  const QFont &font() const;
 
-  void setFont(QFont font);
+  void setFont(const QFont &font);
 
   float lineHeight();
 

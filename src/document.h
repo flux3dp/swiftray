@@ -115,7 +115,7 @@ public:
 
   void setMousePressedScreenCoord(QPointF screen_coord);
 
-  void setFont(QFont &font);
+  void setFont(const QFont &font);
 
   void setScreenSize(QSize size);
 

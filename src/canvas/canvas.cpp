@@ -23,7 +23,6 @@ QList<QColor> Layer::DefaultColors = QList<QColor>(
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
-       current_doc_(make_unique<Document>()),
        ctrl_transform_(Controls::Transform(this)),
        ctrl_select_(Controls::Select(this)),
        ctrl_grid_(Controls::Grid(this)),
@@ -44,6 +43,7 @@ Canvas::Canvas(QQuickItem *parent)
   setAcceptTouchEvents(true);
   setAntialiasing(true);
   setOpaquePainting(true);
+  setDocument(new Document());
   // Set main loop
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
   timer->start(16);
@@ -360,11 +360,11 @@ void Canvas::editSubtract() {
       document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
-  PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
+  auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
+  auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
-  ShapePtr new_shape = make_shared<PathShape>(new_path);
+  auto new_shape = make_shared<PathShape>(new_path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_shape),
        Commands::RemoveSelections(&document()),
@@ -380,8 +380,8 @@ void Canvas::editIntersect() {
       document().selections().at(1)->type() != Shape::Type::Path)
     return;
 
-  PathShape *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
-  PathShape *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
+  auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
+  auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).intersected(
        b->transform().map(b->path())));
   new_path.closeSubpath();
@@ -437,29 +437,33 @@ void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
 
 void Canvas::setFont(const QFont &font) {
   // TODO (Add undo for set font event)
+
+  // TODO (Add new_font default)
+
+  // Add text to scene when creating text object, set selection to the text object
+  // Set text font directly to font
+  // When scene selection is font, change font dialog
   QFont new_font;
-  if (!document().selections().isEmpty() &&
-      document().selections().at(0)->type() == Shape::Type::Text) {
-    TextShape *t = dynamic_cast<TextShape *>(document().selections().at(0).get());
-    new_font = t->font();
-    new_font.setFamily(font.family());
-    t->setFont(new_font);
-    ShapePtr shape = document().selections().at(0);
-    document().setSelection(shape);
-  }
-  if (document().mode() == Document::Mode::TextDrawing) {
-    if (ctrl_text_.hasTarget()) {
-      new_font = ctrl_text_.target().font();
-      new_font.setFamily(font.family());
-      ctrl_text_.target().setFont(new_font);
-    } else {
-      new_font = document().font();
-      new_font.setFamily(font.family());
-      ctrl_text_.target().setFont(new_font);
-      document().setFont(new_font);
+  QList<ShapePtr> selections_;
+  selections_.append(document().selections());
+  if (!selections_.isEmpty()) {
+    for (auto &shape: selections_) {
+      if (shape->type() == Shape::Type::Text) {
+        document().execute(
+             Commands::SetFont((TextShape *) shape.get(), font)
+        );
+      }
     }
+    document().setSelections(selections_);
+    // TODO (Update ctrl_text_)
+  } else {
+    document().execute(
+         Commands::SetRef<Document, QFont, &Document::font, &Document::setFont>(
+              &document(),
+              font
+         )
+    );
   }
-  document().setFont(new_font);
 }
 
 shared_ptr<PreviewGenerator> Canvas::exportGcode() {
@@ -488,4 +492,11 @@ void Canvas::backToSelectMode() {
 
 }
 
-Document &Canvas::document() { return *current_doc_.get(); }
+Document &Canvas::document() { return *doc_.get(); }
+
+void Canvas::setDocument(Document *document) {
+  doc_ = unique_ptr<Document>(document);
+  connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
+  connect(doc_.get(), &Document::layerChanged, this, &Canvas::layerChanged);
+  connect(doc_.get(), &Document::modeChanged, this, &Canvas::modeChanged);
+}

@@ -14,24 +14,29 @@
 #include <widgets/preview-window.h>
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget *parent) :
+     QMainWindow(parent),
+     ui(new Ui::MainWindow),
+     canvas_(nullptr) {
   ui->setupUi(this);
-  connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::quickWidgetStatusChanged);
-  connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
-  connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
-  loadQML();
   loadQSS();
+  loadCanvas();
   loadWidgets();
+  registerEvents();
+  updateLayers();
   updateMode();
+  updateSidePanel();
 }
 
-void MainWindow::loadQML() {
+void MainWindow::loadCanvas() {
 #if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
   // QPaintedItem in Qt6 does not support Metal rendering yet, so it will be slow using metal RHI
   qInfo() << "Falling back to OpenGLRhi in QT6";
   ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
   connect(ui->quickWidget, &QQuickWidget::sceneGraphError, this, &MainWindow::sceneGraphError);
 #endif
+  connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::canvasLoaded);
+
   QUrl source("qrc:/src/window/main.qml");
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
@@ -77,7 +82,7 @@ void MainWindow::openImageFile() {
   }
 }
 
-void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
+void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   if (status == QQuickWidget::Error) {
     const auto widgetErrors = this->ui->quickWidget->errors();
 
@@ -87,53 +92,11 @@ void MainWindow::quickWidgetStatusChanged(QQuickWidget::Status status) {
     Q_ASSERT_X(false, "QQuickWidget Initialization", "QQuickWidget failed to initialize");
   }
 
-  // Set the owner of vcanvas
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
-  connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
-  connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
-  connect(ui->actionPaste, &QAction::triggered, canvas_, &Canvas::editPaste);
-  connect(ui->actionUndo, &QAction::triggered, canvas_, &Canvas::editUndo);
-  connect(ui->actionRedo, &QAction::triggered, canvas_, &Canvas::editRedo);
-  connect(ui->actionSelect_All, &QAction::triggered, canvas_, &Canvas::editSelectAll);
-  connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
-  connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
-  connect(ui->actionExportGcode, &QAction::triggered, [=, this]() {
-    auto gen = canvas_->exportGcode();
-    PreviewWindow *pw = new PreviewWindow(this);
-    pw->setPreviewPath(gen);
-    pw->show();
-  });
-  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
-  connect(ui->actionDrawRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
-  connect(ui->actionDrawOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
-  connect(ui->actionDrawLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
-  connect(ui->actionDrawPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
-  connect(ui->actionDrawText, &QAction::triggered, canvas_, &Canvas::editDrawText);
-  connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
-  connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &Canvas::editUnion);
-  connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &Canvas::editSubtract);
-  connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &Canvas::editIntersect);
-  connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &Canvas::editDifference);
-  connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
-  connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
-  // TODO (connect with vcanvas instead of document, ui files should decouple with document)
-  connect(&canvas_->document(), &Document::layerChanged, this, &MainWindow::updateLayers);
-  connect(&canvas_->document(), &Document::modeChanged, this, &MainWindow::updateMode);
-  connect(&canvas_->document(), &Document::selectionsChanged, this, &MainWindow::updateSidePanel);
-  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](const QFont &font) {
-    canvas_->setFont(font);
-  });
-  connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
-  connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
-    canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
-  });
   canvas_->document().text_box_ = make_unique<CanvasTextEdit>(ui->inputFrame);
   canvas_->document().text_box_->setGeometry(10, 10, 200, 200);
   canvas_->document().text_box_->setStyleSheet("border:0");
   canvas_->fitToWindow();
-  updateLayers();
-  updateMode();
-  updateSidePanel();
   canvas_->setWidgetSize(ui->quickWidget->geometry().size());
   canvas_->setWidgetOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
@@ -157,9 +120,8 @@ void MainWindow::updateLayers() {
   if (ui->layerList->currentItem()) {
     ui->layerList->scrollToItem(ui->layerList->currentItem(), QAbstractItemView::PositionAtCenter);
   }
-  if (layer_params_panel_ != nullptr) {
-    layer_params_panel_->updateLayer(canvas_->document().activeLayer());
-  }
+
+  layer_params_panel_->updateLayer(canvas_->document().activeLayer());
 }
 
 void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
@@ -251,25 +213,67 @@ void MainWindow::updateSidePanel() {
   setOSXWindowTitleColor(this);
 }
 
-
 void MainWindow::loadWidgets() {
-  transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock);
+  assert(canvas_ != nullptr);
+  // Add custom panels
+  transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, &canvas_->transformControl());
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
   ui->objectParamDock->setWidget(transform_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
-  if (canvas_ != nullptr && !canvas_->document().layers().isEmpty()) {
-    layer_params_panel_->updateLayer(canvas_->document().activeLayer());
-  }
+
+  // Add floating buttons
   add_layer_btn_ = make_unique<QToolButton>(ui->layerList);
   add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
-  QRect geometry = QRect(215, 190, 35, 35);
-  qInfo() << "GEO" << geometry;
-  add_layer_btn_->setGeometry(geometry);
+  add_layer_btn_->setGeometry(QRect(215, 190, 35, 35));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->raise();
   add_layer_btn_->show();
-  connect(add_layer_btn_.get(), &QAbstractButton::clicked, [=]() {
-    canvas_->addEmptyLayer();
+}
+
+void MainWindow::registerEvents() {
+  // Monitor canvas events
+  connect(canvas_, &Canvas::layerChanged, this, &MainWindow::updateLayers);
+  connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
+  connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSidePanel);
+
+  // Monitor UI events
+  connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
+  connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
+  connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
+  connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
+  connect(ui->actionPaste, &QAction::triggered, canvas_, &Canvas::editPaste);
+  connect(ui->actionUndo, &QAction::triggered, canvas_, &Canvas::editUndo);
+  connect(ui->actionRedo, &QAction::triggered, canvas_, &Canvas::editRedo);
+  connect(ui->actionSelect_All, &QAction::triggered, canvas_, &Canvas::editSelectAll);
+  connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
+  connect(ui->actionDrawRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
+  connect(ui->actionDrawOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
+  connect(ui->actionDrawLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
+  connect(ui->actionDrawPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
+  connect(ui->actionDrawText, &QAction::triggered, canvas_, &Canvas::editDrawText);
+  connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
+  connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &Canvas::editUnion);
+  connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &Canvas::editSubtract);
+  connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &Canvas::editIntersect);
+  connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &Canvas::editDifference);
+  connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
+  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, canvas_, &Canvas::setFont);
+
+  // Monitor custom widgets
+  connect(add_layer_btn_.get(), &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
+
+  // Complex callbacks
+  connect(ui->actionExportGcode, &QAction::triggered, [=, this]() {
+    auto gen = canvas_->exportGcode();
+    PreviewWindow *pw = new PreviewWindow(this);
+    pw->setPreviewPath(gen);
+    pw->show();
   });
-  transform_panel_->setTransformControl(&canvas_->transformControl());
+  connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
+    canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
+  });
 }

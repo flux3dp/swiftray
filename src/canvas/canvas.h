@@ -57,7 +57,9 @@ public:
 
   Clipboard &clipboard();
 
-public Q_SLOTS:
+  void setDocument(Document *document);
+
+public slots:
 
   void editCut();
 
@@ -116,7 +118,7 @@ public Q_SLOTS:
   void backToSelectMode();
 
 private:
-  unique_ptr<Document> current_doc_;
+  unique_ptr<Document> doc_;
   bool ready;
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
@@ -139,13 +141,15 @@ private:
 
   QTimer *timer;
   QThread *mem_thread_;
-
-private:
   MemoryMonitor mem_monitor_;
 
 signals:
 
-  void rightAlignedChanged();
+  void selectionsChanged();
+
+  void layerChanged();
+
+  void modeChanged();
 };
 
 #endif // VCANVAS_H

@@ -15,7 +15,7 @@ Shape::Type TextShape::type() const { return Shape::Type::Text; }
 
 QString TextShape::text() { return lines_.join("\n"); }
 
-QFont TextShape::font() { return font_; }
+const QFont &TextShape::font() const { return font_; }
 
 bool TextShape::isEditing() { return editing_; }
 
@@ -30,7 +30,7 @@ void TextShape::setText(QString text) {
   makePath();
 }
 
-void TextShape::setFont(QFont font) {
+void TextShape::setFont(const QFont &font) {
   font_ = font;
   makePath();
 }

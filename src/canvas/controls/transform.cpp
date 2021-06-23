@@ -1,17 +1,20 @@
 #include <QDebug>
 #include <QObject>
 #include <canvas/controls/transform.h>
+#include <canvas/canvas.h>
 
 using namespace Controls;
 
-Transform::Transform(Canvas *canvas) noexcept: CanvasControl(canvas) {
-  active_control_ = Control::NONE;
-  scale_x_to_apply_ = scale_y_to_apply_ = 1;
-  rotation_to_apply_ = 0;
-  translate_to_apply_ = QPointF();
+Transform::Transform(Canvas *canvas) noexcept:
+     CanvasControl(canvas),
+     active_control_(Control::NONE),
+     scale_x_to_apply_(1),
+     scale_y_to_apply_(1),
+     rotation_to_apply_(0),
+     translate_to_apply_(QPointF()) {
+
   //TODO fix connect document
-  connect((QObject *) (&document()), SIGNAL(selectionsChanged()), this,
-          SLOT(updateSelections()));
+  connect(canvas, &Canvas::selectionsChanged, this, &Transform::updateSelections);
 }
 
 bool Transform::isActive() {
@@ -101,7 +104,7 @@ void Transform::applyRotate(bool temporarily) {
             .rotate(rotation_to_apply_)
             .translate(-action_center_.x(), -action_center_.y());
 
-  auto cmd = make_shared<JoinedCmd>();
+  auto cmd = Commands::Joined();
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
@@ -130,7 +133,7 @@ void Transform::applyScale(bool temporarily) {
             .scale(scale_x_to_apply_, scale_y_to_apply_)
             .rotate(-bbox_angle_)
             .translate(-action_center_.x(), -action_center_.y());
-  auto cmd = make_shared<JoinedCmd>();
+  auto cmd = Commands::Joined();
 
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
@@ -153,7 +156,7 @@ void Transform::applyScale(bool temporarily) {
 void Transform::applyMove(bool temporarily) {
   QTransform transform = QTransform().translate(translate_to_apply_.x(),
                                                 translate_to_apply_.y());
-  auto cmd = make_shared<JoinedCmd>();
+  auto cmd = Commands::Joined();
   for (ShapePtr &shape : selections()) {
     if (temporarily) {
       shape->setTempTransform(transform);

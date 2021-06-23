@@ -86,23 +86,6 @@ CmdPtr Commands::RemoveSelections(Document *doc) {
          Commands::RemoveShapes(selections);
 }
 
-
-CmdPtr Commands::SetTransform(Shape *shape, const QTransform &new_value) {
-  return make_shared<SetTransformCmd>(shape, new_value);
-}
-
-CmdPtr Commands::SetLayer(Shape *shape, Layer *layer) {
-  return make_shared<SetLayerCmd>(shape, layer);
-}
-
-CmdPtr Commands::SetParent(Shape *shape, Shape *parent) {
-  return make_shared<SetParentCmd>(shape, parent);
-}
-
-CmdPtr Commands::SetRotation(Shape *shape, qreal rotation) {
-  return make_shared<SetRotationCmd>(shape, rotation);
-}
-
 CmdPtr Commands::AddShape(Layer *layer, const ShapePtr &shape) {
   return make_shared<AddShapeCmd>(layer, shape);
 }
@@ -141,4 +124,8 @@ CmdPtr Commands::AddLayer(const LayerPtr &layer) {
 
 CmdPtr Commands::RemoveLayer(const LayerPtr &layer) {
   return make_shared<RemoveLayerCmd>(layer);
+}
+
+JoinedPtr Commands::Joined() {
+  return make_shared<Commands::JoinedCmd>();
 }
