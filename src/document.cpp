@@ -29,8 +29,7 @@ void Document::setSelection(ShapePtr &shape) {
 
 void Document::setSelections(const QList<ShapePtr> &new_selections) {
   for (auto &shape : selections_) { shape->setSelected(false); }
-  selections_.clear();
-  selections_.append(new_selections);
+  selections_ = new_selections;
   for (auto &shape : selections_) { shape->setSelected(true); }
   emit selectionsChanged();
 }
@@ -98,12 +97,12 @@ void Document::execute(initializer_list<CmdPtr> cmds) {
 
 void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
-  layers() << layer;
+  layers_ << layer;
   active_layer_ = layers().last().get();
 }
 
 void Document::removeLayer(LayerPtr &layer) {
-  if (!layers().removeOne(layer)) {
+  if (!layers_.removeOne(layer)) {
     qInfo() << "Failed to remove layer";
   }
 }
@@ -172,9 +171,9 @@ void Document::setActiveLayer(LayerPtr &target_layer) {
   active_layer_ = target_layer.get();
 }
 
-QList<LayerPtr> &Document::layers() { return layers_; }
+const QList<LayerPtr> &Document::layers() const { return layers_; }
 
-void Document::reorderLayers(QList<LayerPtr> &new_order) {
+void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
   // TODO (Add undo event)
   layers_ = new_order;
 }

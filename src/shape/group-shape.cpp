@@ -9,7 +9,7 @@ GroupShape::GroupShape() :
 GroupShape::GroupShape(QList<ShapePtr> &children) :
      Shape(),
      cache_(make_unique<CacheStack>(this)) {
-  children_.append(children);
+  children_ = children;
   flushCache();
 }
 

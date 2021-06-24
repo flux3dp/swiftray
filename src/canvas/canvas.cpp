@@ -456,8 +456,11 @@ void Canvas::setActiveLayer(LayerPtr &layer) {
 }
 
 void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
-  // TODO (Add undo for set layer order);
-  document().reorderLayers(new_order);
+  document().execute(
+       Commands::SetRef<Document, QList<LayerPtr>, &Document::layers, &Document::setLayersOrder>(
+            doc_.get(), new_order
+       )
+  );
 }
 
 void Canvas::setFont(const QFont &font) {

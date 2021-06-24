@@ -28,8 +28,7 @@ QList<ShapePtr> &Transform::selections() { return selections_; }
 
 void Transform::updateSelections() {
   reset();
-  selections().clear();
-  selections().append(document().selections());
+  selections_ = document().selections();
   bbox_need_recalc_ = true;
   emit canvas().transformChanged(x(), y(), rotation(), width(), height());
 }

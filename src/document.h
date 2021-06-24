@@ -43,7 +43,7 @@ public:
   // Dumps layers info
   void dumpStack(QList<LayerPtr> &stack);
 
-  void reorderLayers(QList<LayerPtr> &new_order);
+  void setLayersOrder(const QList<LayerPtr> &new_order);
 
   // Group functions
 
@@ -58,7 +58,7 @@ public:
 
   // Getters:
 
-  QList<LayerPtr> &layers();
+  const QList<LayerPtr> &layers() const;
 
   Layer *activeLayer();
 

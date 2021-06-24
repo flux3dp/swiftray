@@ -29,6 +29,7 @@ SET(SOURCES
         src/layer.cpp
         src/document.cpp
         src/command.cpp
+        src/clipboard.cpp
         ${CONTROLS_CPP}
         ${SHAPES_CPP}
         ${WIDGETS_CPP}
