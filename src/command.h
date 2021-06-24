@@ -98,31 +98,15 @@ namespace Commands {
   class JoinedCmd : public BaseCmd {
   public:
 
-    JoinedCmd() {}
+    JoinedCmd() = default;
 
-    // Constructor for joining multiple events
-    JoinedCmd(initializer_list<BaseCmd *> undo_events) {
-      for (auto &event : undo_events)
-        events << CmdPtr(event);
-    }
+    JoinedCmd(initializer_list<BaseCmd *> undo_events);
 
-    // Constructor for joining multiple events (event ptr)
-    JoinedCmd(initializer_list<CmdPtr> undo_events) {
-      for (auto &event : undo_events)
-        events << event;
-    }
+    JoinedCmd(initializer_list<CmdPtr> undo_events);
 
-    void undo(Document *doc) override {
-      for (int i = events.size() - 1; i >= 0; i--) {
-        events.at(i)->undo(doc);
-      }
-    }
+    void undo(Document *doc) override;
 
-    void redo(Document *doc) override {
-      for (auto &event : events) {
-        event->redo(doc);
-      }
-    }
+    void redo(Document *doc) override;
 
     QList<CmdPtr> events;
   };
@@ -250,6 +234,5 @@ namespace Commands {
 }
 
 typedef Commands::CmdPtr CmdPtr;
-typedef Commands::BaseCmd BaseCmd;
 
 #endif

@@ -129,3 +129,23 @@ CmdPtr Commands::RemoveLayer(const LayerPtr &layer) {
 JoinedPtr Commands::Joined() {
   return make_shared<Commands::JoinedCmd>();
 }
+
+Commands::JoinedCmd::JoinedCmd(initializer_list<Commands::BaseCmd *> undo_events) {
+  for (auto &event : undo_events) events << CmdPtr(event);
+}
+
+Commands::JoinedCmd::JoinedCmd(initializer_list<Commands::CmdPtr> undo_events) {
+  for (auto &event : undo_events) events << event;
+}
+
+void Commands::JoinedCmd::undo(Document *doc) {
+  for (int i = events.size() - 1; i >= 0; i--) {
+    events.at(i)->undo(doc);
+  }
+}
+
+void Commands::JoinedCmd::redo(Document *doc) {
+  for (auto &event : events) {
+    event->redo(doc);
+  }
+}
