@@ -32,8 +32,6 @@ namespace Controls {
 
     bool isActive() override;
 
-    void endEditing();
-
     void moveElementTo(int index, QPointF local_coord);
 
     void exit() override;

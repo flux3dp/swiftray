@@ -238,9 +238,8 @@ void PathEdit::setTarget(ShapePtr &edit_target) {
 
 bool PathEdit::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
-    endEditing();
+    exit();
   }
-
   return true;
 }
 
@@ -254,15 +253,14 @@ void PathEdit::setPath(const QPainterPath &path) {
   target().setPath(path);
 }
 
-void PathEdit::endEditing() {
-  document().execute(
-       Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
-            &target(), path_),
-       Commands::Select(&document(), {target_})
-  );
-  exit();
-}
-
 void PathEdit::exit() {
-  target_ = nullptr;
+  if (target_ != nullptr) {
+    document().execute(
+         Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
+              (PathShape *) target_.get(), path_),
+         Commands::Select(&document(), {target_})
+    );
+    target_ = nullptr;
+  }
+  canvas().setMode(Canvas::Mode::Selecting);
 }
