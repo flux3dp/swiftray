@@ -203,7 +203,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
       }
     }
   } else if (mode() == Mode::PathEditing) {
-    ctrl_path_edit_.endEditing();
+    ctrl_path_edit_.exit();
   }
 }
 
@@ -349,16 +349,16 @@ void Canvas::editUngroup() {
 }
 
 void Canvas::editUnion() {
-  if (document().selections().size() < 2)
-    return;
+  assert(document().selections().size() > 0);
   QPainterPath result;
 
   for (auto &shape : document().selections()) {
-    if (shape->type() != Shape::Type::Path &&
-        shape->type() != Shape::Type::Text)
-      return;
-    result = result.united(shape->transform().map(
-         ((PathShape *) shape.get())->path()));
+    auto polygons = shape->transform().map(dynamic_cast<PathShape *>(shape.get())->path()).toSubpathPolygons();
+    for (QPolygonF &poly : polygons) {
+      QPainterPath p;
+      p.addPolygon(poly);
+      result = result.united(p);
+    }
   }
 
   ShapePtr new_shape = make_shared<PathShape>(result);
@@ -370,12 +370,7 @@ void Canvas::editUnion() {
 }
 
 void Canvas::editSubtract() {
-  if (document().selections().size() != 2)
-    return;
-
-  if (document().selections().at(0)->type() != Shape::Type::Path ||
-      document().selections().at(1)->type() != Shape::Type::Path)
-    return;
+  assert(document().selections().size() == 2);
 
   auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
   auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
@@ -390,12 +385,7 @@ void Canvas::editSubtract() {
 }
 
 void Canvas::editIntersect() {
-  if (document().selections().size() != 2)
-    return;
-
-  if (document().selections().at(0)->type() != Shape::Type::Path ||
-      document().selections().at(1)->type() != Shape::Type::Path)
-    return;
+  assert(document().selections().size() == 2);
 
   auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
   auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
@@ -410,7 +400,25 @@ void Canvas::editIntersect() {
   );
 }
 
-void Canvas::editDifference() {}
+void Canvas::editDifference() {
+  assert(document().selections().size() == 2);
+
+  auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
+  auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
+
+  QPainterPath intersection(a->transform().map(a->path()).intersected(
+       b->transform().map(b->path())));
+  intersection.closeSubpath();
+  ShapePtr new_shape_a = make_shared<PathShape>(a->transform().map(a->path()).subtracted(intersection));
+  ShapePtr new_shape_b = make_shared<PathShape>(b->transform().map(b->path()).subtracted(intersection));
+  document().execute(
+       Commands::AddShape(document().activeLayer(), new_shape_a),
+       Commands::AddShape(document().activeLayer(), new_shape_b),
+       Commands::RemoveSelections(&document()),
+       Commands::Select(&document(), {new_shape_a, new_shape_b})
+  );
+
+}
 
 void Canvas::addEmptyLayer() {
   int i = 1;
