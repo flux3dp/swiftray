@@ -143,9 +143,13 @@ int CacheStack::paint(QPainter *painter) {
   bool always_select = isGroup() ? group_->isParentSelected() : false;
 
   QPen dash_pen(color(), 2, Qt::DashLine);
-  dash_pen.setDashPattern(QVector<qreal>(10, 3));
-  dash_pen.setCosmetic(true);
+  if (isGroup()) {
+    dash_pen.setDashPattern(QVector<qreal>({18, 3, 9, 3}));
+  } else {
+    // dash_pen.setDashPattern(QVector<qreal>({8, 2}));
+  }
   dash_pen.setDashOffset(document().framesCount());
+  dash_pen.setCosmetic(true);
   QPen solid_pen(color(), 2, Qt::SolidLine);
   solid_pen.setCosmetic(true);
   QBrush brush(color());
