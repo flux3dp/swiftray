@@ -5,16 +5,15 @@
 #include <shape/shape.h>
 #include <shape/text-shape.h>
 
-// TODO add mode change command if we need to do redo in certain modes..
-// TODO simplify command usage
-// TODO create batch command for add / remove shapes
-class Document;
-// TODO (Move implementation to command.cpp)
-namespace Commands {
-  class JoinedCmd;
+// TODO (Create batch command for add / remove shapes)
 
+class Document;
+namespace Commands {
   class BaseCmd {
   public:
+
+    // BaseCmd represent a class template for undoable commands, along with undo() / redo() implementation
+    BaseCmd() = default;
 
     virtual void undo(Document *doc) {
       Q_ASSERT_X(false, "Commands", "This command did not implement undo");
@@ -23,8 +22,6 @@ namespace Commands {
     virtual void redo(Document *doc) {
       Q_ASSERT_X(false, "Commands", "This command did not implement redo");
     }
-
-    shared_ptr<JoinedCmd> operator+(BaseCmd *another_event);
   };
 
   typedef shared_ptr<BaseCmd> CmdPtr;
@@ -53,6 +50,9 @@ namespace Commands {
 
   class AddShapeCmd : public BaseCmd {
   public:
+
+    // AddShapeCmd
+    // Note: The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
     AddShapeCmd(Layer *layer, const ShapePtr &shape) :
          layer_(layer), shape_(shape) {}
 
@@ -60,7 +60,6 @@ namespace Commands {
 
     void redo(Document *doc) override;
 
-    // Shape events don't need to manage layer's lifecycle
     Layer *layer_;
     ShapePtr shape_;
   };
@@ -77,7 +76,6 @@ namespace Commands {
 
     void redo(Document *doc) override;
 
-    // Shape events don't need to manage layer's lifecycle
     Layer *layer_;
     ShapePtr shape_;
   };
@@ -98,6 +96,8 @@ namespace Commands {
   class JoinedCmd : public BaseCmd {
   public:
 
+    // JoinedCmd
+    // A group of commands that can be considered as a single step in undo/redo
     JoinedCmd() = default;
 
     JoinedCmd(initializer_list<BaseCmd *> undo_events);

@@ -5,9 +5,6 @@
 using namespace Commands;
 
 // Operators
-JoinedPtr Commands::operator+(const CmdPtr &a, const CmdPtr &b) {
-  return JoinedPtr(new JoinedCmd({a, b}));
-}
 
 JoinedPtr &Commands::operator<<(JoinedPtr &a, const CmdPtr &b) {
   a->events << b;
@@ -59,10 +56,8 @@ void RemoveShapeCmd::redo(Document *doc) {
 }
 
 SelectCmd::SelectCmd(Document *doc, const QList<ShapePtr> &new_selections) {
-  old_selections_.clear();
-  old_selections_.append(doc->selections());
-  new_selections_.clear();
-  new_selections_.append(new_selections);
+  old_selections_ = doc->selections();
+  new_selections_ = new_selections;
 }
 
 void SelectCmd::undo(Document *doc) {
@@ -80,10 +75,11 @@ void SelectCmd::redo(Document *doc) {
 }
 
 CmdPtr Commands::RemoveSelections(Document *doc) {
-  QList<ShapePtr> selections;
-  selections.append(doc->selections());
-  return Commands::Select(doc, {}) +
-         Commands::RemoveShapes(selections);
+  QList<ShapePtr> selections = doc->selections();
+  auto evt = make_shared<JoinedCmd>();
+  evt << Commands::Select(doc, {});
+  evt << Commands::RemoveShapes(selections);
+  return evt;
 }
 
 CmdPtr Commands::AddShape(Layer *layer, const ShapePtr &shape) {
