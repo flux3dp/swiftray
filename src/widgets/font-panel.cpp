@@ -19,7 +19,6 @@ void FontPanel::loadStyles() {
   ((SpinBoxHelper<QSpinBox> *) ui->fontSize)->lineEdit()->setStyleSheet("padding: 0 8px;");
   ((SpinBoxHelper<QDoubleSpinBox> *) ui->letterSpacing)->lineEdit()->setStyleSheet("padding: 0 8px;");
   ((SpinBoxHelper<QDoubleSpinBox> *) ui->lineHeight)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ui->fontComboBox->setStyleSheet("padding: 0px 10px 0px 10px");
 }
 
 void FontPanel::registerEvents() {
