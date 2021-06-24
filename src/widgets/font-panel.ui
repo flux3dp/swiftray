@@ -74,7 +74,7 @@
          <number>5</number>
         </property>
         <item>
-         <widget class="QFontComboBox" name="fontComboBox">
+         <widget class="QFontComboBox2" name="fontComboBox">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -254,6 +254,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QFontComboBox2</class>
+   <extends>QFontComboBox</extends>
+   <header>widgets/qfontcombobox2.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

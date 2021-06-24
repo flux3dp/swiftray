@@ -19,13 +19,14 @@ void FontPanel::loadStyles() {
   ((SpinBoxHelper<QSpinBox> *) ui->fontSize)->lineEdit()->setStyleSheet("padding: 0 8px;");
   ((SpinBoxHelper<QDoubleSpinBox> *) ui->letterSpacing)->lineEdit()->setStyleSheet("padding: 0 8px;");
   ((SpinBoxHelper<QDoubleSpinBox> *) ui->lineHeight)->lineEdit()->setStyleSheet("padding: 0 8px;");
+  ui->fontComboBox->setStyleSheet("padding: 0px 10px 0px 10px");
 }
 
 void FontPanel::registerEvents() {
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
   auto spin_int_event = QOverload<int>::of(&QSpinBox::valueChanged);
 
-  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, canvas_, &Canvas::setFont);
+  connect(ui->fontComboBox, &QFontComboBox2::currentFontChanged, canvas_, &Canvas::setFont);
 
   connect(ui->fontSize, spin_int_event, [=](double value) {
     font_.setPointSize(value);

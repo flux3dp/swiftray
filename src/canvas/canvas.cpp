@@ -285,10 +285,13 @@ void Canvas::editDelete() {
 }
 
 void Canvas::editUndo() {
+  QElapsedTimer t;
+  t.start();
   document().undo();
   emit layerChanged(); // TODO (Check if layers are really changed)
   emit selectionsChanged(); // Force refresh all selection related components
   emit undoCalled();
+  qInfo() << "[Undo] Took" << t.elapsed() << "ms";
 }
 
 void Canvas::editRedo() {

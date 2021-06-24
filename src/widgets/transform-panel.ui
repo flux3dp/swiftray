@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>256</width>
+    <width>265</width>
     <height>82</height>
    </rect>
   </property>
@@ -53,7 +53,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QDoubleSpinBox" name="spinBoxX">
+        <widget class="QDoubleSpinBox2" name="spinBoxX">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>3</horstretch>
@@ -70,7 +70,7 @@
           <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>3000.000000000000000</double>
+          <double>9999.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -95,7 +95,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QDoubleSpinBox" name="spinBoxW">
+        <widget class="QDoubleSpinBox2" name="spinBoxW">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>3</horstretch>
@@ -141,7 +141,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QDoubleSpinBox" name="spinBoxY">
+        <widget class="QDoubleSpinBox2" name="spinBoxY">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>3</horstretch>
@@ -158,7 +158,7 @@
           <double>0.000000000000000</double>
          </property>
          <property name="maximum">
-          <double>2000.000000000000000</double>
+          <double>9999.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -183,7 +183,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QDoubleSpinBox" name="spinBoxH">
+        <widget class="QDoubleSpinBox2" name="spinBoxH">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>3</horstretch>
@@ -232,7 +232,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QDoubleSpinBox" name="spinBoxR">
+        <widget class="QDoubleSpinBox2" name="spinBoxR">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
            <horstretch>3</horstretch>
@@ -273,6 +273,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QDoubleSpinBox2</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>widgets/qdoublespinbox2.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../qml.qrc"/>
  </resources>

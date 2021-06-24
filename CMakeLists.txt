@@ -9,6 +9,7 @@ FIND_PACKAGE(Qt5 COMPONENTS OpenGL REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Gui REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Svg REQUIRED)
 FIND_PACKAGE(Qt5Gui COMPONENTS Private REQUIRED)
+FIND_PACKAGE(Qt5Widgets COMPONENTS Private REQUIRED)
 FIND_PACKAGE(Qt5Svg COMPONENTS Private REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
 FIND_PACKAGE(Boost 1.70 REQUIRED)
@@ -44,6 +45,7 @@ SET(SOURCES
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
+        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIRS}
         third_party
@@ -59,9 +61,9 @@ qt5_add_resources(SOURCES qml.qrc)
 
 add_executable(beambird ${SOURCES})
 target_link_libraries(beambird Qt::Core)
-target_link_libraries(beambird Qt::Widgets)
 target_link_libraries(beambird Qt::Quick)
 target_link_libraries(beambird Qt::QuickWidgets)
 target_link_libraries(beambird Qt::OpenGL)
 target_link_libraries(beambird Qt::Gui)
 target_link_libraries(beambird Qt::Svg)
+target_link_libraries(beambird Qt::Widgets)

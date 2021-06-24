@@ -27,7 +27,6 @@ bool Transform::isActive() {
 QList<ShapePtr> &Transform::selections() { return selections_; }
 
 void Transform::updateSelections() {
-  qInfo() << "[Transform] Update selections";
   reset();
   selections().clear();
   selections().append(document().selections());

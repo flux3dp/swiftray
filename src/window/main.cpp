@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
     return mainCLI(argc, argv);
   }
   app.setAttribute(Qt::AA_UseHighDpiPixmaps);
+
   //app.setStyle("fusion");
 
   // Force anti-aliasing
