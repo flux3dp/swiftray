@@ -45,7 +45,7 @@ private slots:
 
   void updateMode();
 
-  void updateSidePanel();
+  void updateSelections();
 
   void openFile();
 

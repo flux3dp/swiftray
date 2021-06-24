@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
   registerEvents();
   updateLayers();
   updateMode();
-  updateSidePanel();
+  updateSelections();
 }
 
 void MainWindow::loadCanvas() {
@@ -206,8 +206,20 @@ void MainWindow::updateMode() {
   }
 }
 
-void MainWindow::updateSidePanel() {
+void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
+  bool all_group = items.size() > 0;
+  bool all_path = items.size() > 0;
+  for (auto &shape : canvas_->document().selections()) {
+    if (shape->type() != Shape::Type::Group) all_group = false;
+    if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
+  }
+  ui->actionGroupBtn->setEnabled(items.size() > 1);
+  ui->actionUngroupBtn->setEnabled(all_group);
+  ui->actionUnionBtn->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
+  ui->actionSubtractBtn->setEnabled(items.size() == 2 && all_path);
+  ui->actionDiffBtn->setEnabled(items.size() == 2 && all_path);
+  ui->actionIntersectBtn->setEnabled(items.size() == 2 && all_path);
   setOSXWindowTitleColor(this);
 }
 
@@ -234,7 +246,7 @@ void MainWindow::registerEvents() {
   // Monitor canvas events
   connect(canvas_, &Canvas::layerChanged, this, &MainWindow::updateLayers);
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
-  connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSidePanel);
+  connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
 
   // Monitor UI events
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
