@@ -70,7 +70,7 @@ const QTransform &Shape::tempTransform() const { return temp_transform_; }
 
 QTransform Shape::globalTransform() const {
   QTransform global_transform = transform_;
-  Shape *top_node = (Shape*) this;
+  Shape *top_node = (Shape *) this;
   while (top_node->parent() != nullptr) {
     top_node = top_node->parent();
     global_transform = global_transform * top_node->transform();
@@ -141,4 +141,14 @@ void Shape::setParent(Shape *parent) {
 
 Shape::operator QString() {
   return "Shape(" + QString::number((int) type()) + ")";
+}
+
+bool Shape::isParentSelected() const {
+  bool result = selected();
+  Shape *p = parent();
+  while (p != nullptr) {
+    result = p->selected();
+    p = p->parent();
+  }
+  return result;
 }

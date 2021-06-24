@@ -36,6 +36,7 @@ bool PathShape::hitTest(QPointF global_coord, qreal tolerance) const {
 }
 
 bool PathShape::hitTest(QRectF global_coord_rect) const {
+  // TODO (Test revese transform to map rect back to local coord)
   QPainterPath new_path = transform().map(path_);
   // TODO (Consider cases that the path is not closed)
   return new_path.intersects(global_coord_rect) &&

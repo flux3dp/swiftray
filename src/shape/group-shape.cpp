@@ -92,16 +92,6 @@ ShapePtr GroupShape::clone() const {
   return ShapePtr(group);
 }
 
-bool GroupShape::isParentSelected() const {
-  bool result = selected();
-  Shape *p = parent();
-  while (p != nullptr) {
-    result = p->selected();
-    p = p->parent();
-  }
-  return result;
-}
-
 const QList<ShapePtr> &GroupShape::children() const { return children_; }
 
 Shape::Type GroupShape::type() const { return Shape::Type::Group; }

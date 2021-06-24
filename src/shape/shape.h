@@ -65,6 +65,8 @@ public:
 
   bool hasLayer() const;
 
+  bool isParentSelected() const;
+
   // Virtual functions
   virtual void calcBoundingBox() const;
 
@@ -79,6 +81,7 @@ public:
   virtual Type type() const;
 
   virtual operator QString();
+
 
 private:
   Layer *layer_;

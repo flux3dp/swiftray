@@ -14,14 +14,18 @@ BitmapShape::BitmapShape(const BitmapShape &orig) : Shape() {
 }
 
 bool BitmapShape::hitTest(QPointF global_coord, qreal tolerance) const {
-  QPointF local_coord = transform().inverted().map(global_coord);
   return hitTest(QRectF(global_coord.x() - tolerance,
                         global_coord.y() - tolerance, tolerance * 2,
                         tolerance * 2));
 }
 
 bool BitmapShape::hitTest(QRectF global_coord_rect) const {
-  return boundingRect().intersects(global_coord_rect);
+  QPainterPath local_rect;
+  local_rect.addRect(global_coord_rect);
+  local_rect = transform().inverted().map(local_rect);
+  QPainterPath image_rect;
+  image_rect.addRect(image().rect());
+  return image_rect.intersects(local_rect);
 }
 
 void BitmapShape::calcBoundingBox() const {
@@ -45,7 +49,7 @@ QImage &BitmapShape::image() const {
     p.end();
 
     p.begin(&tinted_image_);
-    p.setCompositionMode(QPainter::CompositionMode_ColorBurn);
+    p.setCompositionMode(QPainter::CompositionMode_SoftLight);
     p.drawImage(0, 0, mask);
     p.end();
   }
@@ -57,6 +61,8 @@ void BitmapShape::paint(QPainter *painter) const {
   painter->setTransform(temp_transform_, true);
   painter->setTransform(transform(), true);
   painter->drawImage(0, 0, image());
+  // TODO (pass selection state with set pen or no pen?)
+  painter->drawRect(image().rect());
   painter->restore();
 }
 

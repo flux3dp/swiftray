@@ -61,7 +61,7 @@ public:
   void disable_rendering() {}
 
   static bool unknown_attribute_error(std::string name) {
-    qInfo() << "Unknown attribute" << QString::fromStdString(name);
+    qInfo() << "[SVGPP] Unknown attribute" << QString::fromStdString(name);
     return true;
   }
 

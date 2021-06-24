@@ -20,8 +20,6 @@ public:
 
   void cache() const;
 
-  bool isParentSelected() const;
-
   void paint(QPainter *painter) const override;
 
   ShapePtr clone() const override;

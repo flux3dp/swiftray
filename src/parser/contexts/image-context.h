@@ -1,4 +1,7 @@
-
+#include <QImage>
+#include <QByteArray>
+#include <parser/svgpp-common.h>
+#include <shape/bitmap-shape.h>
 #include <parser/contexts/base-context.h>
 
 #pragma once
@@ -7,6 +10,9 @@ class ImageContext : public BaseContext {
 public:
   ImageContext(BaseContext const &parent) : BaseContext(parent) {
     qInfo() << "Enter image";
+    width_ = 0;
+    height_ = 0;
+    bitmap_ = nullptr;
   }
 
   boost::optional<double> const &width() const { return width_; }
@@ -22,9 +28,12 @@ public:
   }
 
   void set(tag::attribute::xlink::href, RangedChar fragment) {
-    qInfo() << "xlink::href"
-            << QString::fromStdString(
-                 std::string(fragment.begin(), fragment.end()));
+    auto str = std::string(fragment.begin(), fragment.end());
+    auto substr = std::string(fragment.begin() + 22, fragment.end());
+    qInfo() << "xlink::href (from string)" << substr.size();
+    QImage img = QImage::fromData(QByteArray::fromBase64(QString::fromStdString(substr).toUtf8()));
+    qInfo() << "image size" << img.size();
+    bitmap_ = make_shared<BitmapShape>(img);
   }
 
   void set(tag::attribute::x, double val) { x_ = val; }
@@ -35,7 +44,19 @@ public:
 
   void set(tag::attribute::height, double val) { height_ = val; }
 
-  void on_exit_element() {}
+  void on_exit_element() {
+    QString bitmap_layer_name("Bitmap");
+    BitmapShape *new_shape = (BitmapShape *) bitmap_.get();
+    if (width_ == 0) width_ = new_shape->pixmap()->width();
+    if (height_ == 0) height_ = new_shape->pixmap()->height();
+    new_shape->setTransform(
+         qtransform() * QTransform().translate(x_, y_).scale(
+              width_ / new_shape->pixmap()->width(),
+              height_ / new_shape->pixmap()->height())
+
+    );
+    svgpp_add_shape(bitmap_, bitmap_layer_name);
+  }
 
   string type() {
     return "image";
@@ -44,5 +65,6 @@ public:
 private:
   std::string fragment_id_;
   double x_, y_;
-  boost::optional<double> width_, height_;
+  double width_, height_;
+  shared_ptr<Shape> bitmap_;
 };

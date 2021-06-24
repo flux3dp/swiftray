@@ -145,8 +145,6 @@ int CacheStack::paint(QPainter *painter) {
   QPen dash_pen(color(), 2, Qt::DashLine);
   if (isGroup()) {
     dash_pen.setDashPattern(QVector<qreal>({18, 3, 9, 3}));
-  } else {
-    // dash_pen.setDashPattern(QVector<qreal>({8, 2}));
   }
   dash_pen.setDashOffset(document().framesCount());
   dash_pen.setCosmetic(true);
@@ -175,7 +173,10 @@ int CacheStack::paint(QPainter *painter) {
         break;
       default:
         for (auto &shape : cache.shapes()) {
+          bool use_dash = always_select || (!isGroup() && shape->selected());
+          painter->setPen(use_dash ? dash_pen : Qt::NoPen);
           shape->paint(painter);
+          painter->setPen(Qt::NoPen);
         }
     }
   }
