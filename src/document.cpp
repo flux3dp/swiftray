@@ -221,23 +221,21 @@ void Document::groupSelections() {
 
 void Document::ungroupSelections() {
   if (selections().empty()) return;
-  // todo support multiple groups
-  ShapePtr group_ptr = selections().first();
-  if (group_ptr->type() != Shape::Type::Group) return;
-
-  auto *group = (GroupShape *) group_ptr.get();
-
   auto cmd = Commands::Joined();
-  for (auto &shape : group->children()) {
-    cmd << Commands::SetTransform(shape.get(), shape->transform() * group->transform());
-    cmd << Commands::SetRotation(shape.get(), shape->rotation() + group->rotation());
-    cmd << Commands::SetParent(shape.get(), nullptr);
-    cmd << Commands::AddShape(activeLayer(), shape);
+  QList<ShapePtr> shapes_added_back;
+  for (auto &shape: selections()) {
+    if (shape->type() != Shape::Type::Group) return;
+    auto *group = (GroupShape *) shape.get();
+    for (auto &shape : group->children()) {
+      cmd << Commands::SetTransform(shape.get(), shape->transform() * group->transform());
+      cmd << Commands::SetRotation(shape.get(), shape->rotation() + group->rotation());
+      cmd << Commands::SetParent(shape.get(), nullptr);
+      cmd << Commands::AddShape(activeLayer(), shape);
+      shapes_added_back << shape;
+    }
+    cmd << Commands::RemoveShape(shape->layer(), shape);
   }
-
-  cmd << Commands::Select(this, group->children());
-  cmd << Commands::RemoveShape(group_ptr->layer(), group_ptr);
-
+  cmd << Commands::Select(this, shapes_added_back);
   execute(cmd);
 }
 
