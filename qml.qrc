@@ -42,5 +42,6 @@
         <file>images/icon-valign-bot.png</file>
         <file>images/icon-plus-01.png</file>
         <file>styles/beambird.qss</file>
+        <file>resources/beamo.json</file>
     </qresource>
 </RCC>

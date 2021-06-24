@@ -3,13 +3,21 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 
+// Layer colors
+constexpr char const *kLayerColors[17] = {
+     "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
+     "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
+     "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
+     "#607D8B", "#9E9E9E"
+};
+
 // Constructors
 Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      document_(doc),
      color_(color),
      name_(name),
      speed_(20),
-     strength_(30),
+     power_(30),
      repeat_(1),
      is_visible_(true),
      step_height_(0),
@@ -21,7 +29,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
 
 Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
-           Layer::DefaultColors[layer_counter - 1],
+           kLayerColors[layer_counter - 1],
            "Layer " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
@@ -67,8 +75,8 @@ int Layer::speed() const {
   return speed_;
 }
 
-int Layer::strength() const {
-  return strength_;
+int Layer::power() const {
+  return power_;
 }
 
 const QString &Layer::name() const {
@@ -130,7 +138,7 @@ void Layer::setSpeed(int speed) {
 }
 
 void Layer::setStrength(int strength) {
-  strength_ = strength;
+  power_ = strength;
 }
 
 void Layer::setRepeat(int repeat) {
@@ -154,7 +162,7 @@ void Layer::setDocument(Document *doc) {
 LayerPtr Layer::clone() {
   LayerPtr new_layer = make_shared<Layer>(document_, color(), name());
   new_layer->setSpeed(speed());
-  new_layer->setStrength(strength());
+  new_layer->setStrength(power());
   new_layer->setRepeat(repeat());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());

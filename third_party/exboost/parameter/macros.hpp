@@ -22,7 +22,7 @@
 
 #define EXBOOST_PARAMETER_FUN_TEMPLATE_HEAD0(n)
 
-#if ! defined(BOOST_NO_SFINAE) && ! BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x592))
+#if !defined(BOOST_NO_SFINAE) && !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x592))
 
 # define EXBOOST_PARAMETER_MATCH_TYPE(n, param)           \
             BOOST_PP_EXPR_IF(n, typename) param::match  \
@@ -32,7 +32,7 @@
 
 #else
 
-# define EXBOOST_PARAMETER_MATCH_TYPE(n, param) param
+# define EXBOOST_PARAMETER_MATCH_TYPE(n, ParamSettings) ParamSettings
 
 #endif
 

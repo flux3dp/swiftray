@@ -11,6 +11,7 @@ PreviewWindow::PreviewWindow(QWidget *parent) :
   progress_ = 50;
   preview_path_ = nullptr;
   ui->setupUi(this);
+  setWindowTitle("Preview Path");
   registerEvents();
 }
 

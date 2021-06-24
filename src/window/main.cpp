@@ -26,6 +26,10 @@ int main(int argc, char *argv[]) {
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
 
+  QCoreApplication::setOrganizationName("FLUX");
+  QCoreApplication::setOrganizationDomain("flux3dp.com");
+  QCoreApplication::setApplicationName("beambird");
+
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
     return mainCLI(argc, argv);
   }

@@ -119,7 +119,7 @@ void ToolpathExporter::outputLayerGcode() {
 
 void ToolpathExporter::outputLayerPathGcode() {
   QPointF current_pos;
-  gen_->setLaserPower(current_layer_->strength());
+  gen_->setLaserPower(current_layer_->power());
 
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;

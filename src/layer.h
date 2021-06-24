@@ -61,7 +61,7 @@ public:
 
   int speed() const;
 
-  int strength() const;
+  int power() const;
 
   double stepHeight() const;
 
@@ -96,7 +96,6 @@ public:
 
   void setLayerCounter(int i);
 
-  static QList<QColor> DefaultColors;
 private:
   /** Main properties **/
   Document *document_;
@@ -110,7 +109,7 @@ private:
   double step_height_;
   int repeat_;
   int speed_;
-  int strength_;
+  int power_;
 
   /** Main properties **/
   mutable bool cache_valid_;

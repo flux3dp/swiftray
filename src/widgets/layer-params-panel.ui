@@ -75,7 +75,7 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QComboBox" name="comboBox_2">
+        <widget class="QComboBox" name="presetComboBox">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -96,6 +96,11 @@
          <item>
           <property name="text">
            <string>Acrylic 3mm</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Customized</string>
           </property>
          </item>
         </widget>

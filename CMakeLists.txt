@@ -42,7 +42,7 @@ SET(SOURCES
         src/parser/svgpp-external-impl.cpp
         src/gcode/toolpath-exporter.cpp
         src/window/osxwindow.mm
-        src/parser/css/svg-style-selector.h)
+        src/parser/css/svg-style-selector.h src/settings/param-settings.cpp src/settings/param-settings.h)
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}

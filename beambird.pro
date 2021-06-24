@@ -46,6 +46,7 @@ SOURCES += \
         src/document.cpp \
         src/layer.cpp \
         src/widgets/font-panel.cpp \
+    src/widgets/preset-manager.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
 
@@ -79,6 +80,7 @@ HEADERS += \
     $$files(src/gcoder/*.h) \
     $$files(src/widgets/*.h) \
     src/widgets/font-panel.h \
+    src/widgets/preset-manager.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h
 
@@ -92,6 +94,7 @@ FORMS += \
     src/widgets/font-panel.ui \
     src/widgets/layer-list-item.ui \
     src/widgets/layer-params-panel.ui \
+    src/widgets/preset-manager.ui \
     src/widgets/preview-window.ui \
     src/widgets/transform-panel.ui \
     src/window/mainwindow.ui
