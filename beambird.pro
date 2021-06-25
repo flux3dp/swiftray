@@ -46,7 +46,8 @@ SOURCES += \
         src/document.cpp \
         src/layer.cpp \
         src/widgets/font-panel.cpp \
-    src/widgets/preset-manager.cpp \
+        src/widgets/preset-manager.cpp \
+        src/window/gcode-player.cpp \
         src/window/main.cpp \
         src/window/mainwindow.cpp \
 
@@ -81,6 +82,7 @@ HEADERS += \
     $$files(src/widgets/*.h) \
     src/widgets/font-panel.h \
     src/widgets/preset-manager.h \
+    src/window/gcode-player.h \
     src/window/mainwindow.h \
     src/window/osxwindow.h
 
@@ -97,6 +99,7 @@ FORMS += \
     src/widgets/preset-manager.ui \
     src/widgets/preview-window.ui \
     src/widgets/transform-panel.ui \
+    src/widgets/gcode-player.ui \
     src/window/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

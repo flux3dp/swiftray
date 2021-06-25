@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>GCodePlayer</class>
+    <widget class="QFrame" name="GCodePlayer">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>171</width>
+                <height>200</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Dialog</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+            <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_2">
+                    <property name="topMargin">
+                        <number>5</number>
+                    </property>
+                    <property name="bottomMargin">
+                        <number>5</number>
+                    </property>
+                    <item>
+                        <widget class="QComboBox" name="portComboBox">
+                            <property name="sizePolicy">
+                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                    <horstretch>2</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                        </widget>
+                    </item>
+                    <item>
+                        <widget class="QComboBox" name="baudComboBox">
+                            <item>
+                                <property name="text">
+                                    <string>9600</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>12800</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>25600</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>51200</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>57600</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>102400</string>
+                                </property>
+                            </item>
+                            <item>
+                                <property name="text">
+                                    <string>204800</string>
+                                </property>
+                            </item>
+                        </widget>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <widget class="QPlainTextEdit" name="gcodeText"/>
+            </item>
+            <item>
+                <widget class="QProgressBar" name="progressBar">
+                    <property name="value">
+                        <number>24</number>
+                    </property>
+                </widget>
+            </item>
+            <item>
+                <widget class="QPushButton" name="executeBtn">
+                    <property name="text">
+                        <string>Execute</string>
+                    </property>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+    <resources/>
+    <connections/>
+</ui>

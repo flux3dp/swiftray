@@ -8,7 +8,7 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
   global_transform_ = QTransform();
   gen_ = generator;
   dpmm_ = 10;
-  travel_speed_ = 6000;
+  travel_speed_ = 100;
 }
 
 void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {

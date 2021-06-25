@@ -8,6 +8,7 @@ FIND_PACKAGE(Qt5 COMPONENTS QuickWidgets REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS OpenGL REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Gui REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Svg REQUIRED)
+FIND_PACKAGE(Qt5 COMPONENTS SerialPort REQUIRED)
 FIND_PACKAGE(Qt5Gui COMPONENTS Private REQUIRED)
 FIND_PACKAGE(Qt5Widgets COMPONENTS Private REQUIRED)
 FIND_PACKAGE(Qt5Svg COMPONENTS Private REQUIRED)
@@ -31,8 +32,8 @@ SET(SOURCES
         src/command.cpp
         src/clipboard.cpp
         ${CONTROLS_CPP}
-        ${SHAPES_CPP}
         ${WIDGETS_CPP}
+        ${SHAPES_CPP}
         src/canvas/cache-stack.cpp
         src/window/main.cpp
         src/window/mainwindow.cpp
@@ -68,3 +69,4 @@ target_link_libraries(beambird Qt::OpenGL)
 target_link_libraries(beambird Qt::Gui)
 target_link_libraries(beambird Qt::Svg)
 target_link_libraries(beambird Qt::Widgets)
+target_link_libraries(beambird Qt::SerialPort)

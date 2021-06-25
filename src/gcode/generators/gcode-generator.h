@@ -25,7 +25,7 @@ public:
       y_ = y;
     }
     if (speed_ != speed) {
-      str_stream_ << "F" << speed;
+      str_stream_ << "F" << speed * 60; // mm/s to mm/min
       speed_ = speed;
     }
     str_stream_ << std::endl;

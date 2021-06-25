@@ -11,6 +11,8 @@
 #include <window/mainwindow.h>
 #include <window/osxwindow.h>
 #include <widgets/preview-window.h>
+#include <gcode/toolpath-exporter.h>
+#include <gcode/generators/gcode-generator.h>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -243,8 +245,10 @@ void MainWindow::loadWidgets() {
   // Add custom panels
   transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, canvas_);
   layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents, canvas_);
+  gcode_player_ = make_unique<GCodePlayer>(ui->serialPortDock);
   font_panel_ = make_unique<FontPanel>(ui->fontDock, canvas_);
   ui->objectParamDock->setWidget(transform_panel_.get());
+  ui->serialPortDock->setWidget(gcode_player_.get());
   ui->fontDock->setWidget(font_panel_.get());
   ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
 
@@ -308,6 +312,11 @@ void MainWindow::registerEvents() {
     PreviewWindow *pw = new PreviewWindow(this);
     pw->setPreviewPath(gen);
     pw->show();
+
+    auto gen_gcode = make_shared<GCodeGenerator>();
+    ToolpathExporter exporter(gen_gcode.get());
+    exporter.convertStack(canvas_->document().layers());
+    gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   });
   connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
     canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
