@@ -3,8 +3,17 @@
 #include <shape/bitmap-shape.h>
 
 BitmapShape::BitmapShape(QImage &image) : Shape() {
-  QImage grayscale = image.convertToFormat(QImage::Format_Grayscale8);
-  bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(grayscale));
+  // Process transparent image grayscale
+  for (int yy = 0; yy < image.height(); yy++) {
+    uchar *scan = image.scanLine(yy);
+    int depth = 4;
+    for (int xx = 0; xx < image.width(); xx++) {
+      QRgb *rgbpixel = reinterpret_cast<QRgb *>(scan + xx * depth);
+      int gray = qGray(*rgbpixel);
+      *rgbpixel = QColor(gray, gray, gray, qAlpha(*rgbpixel)).rgba();
+    }
+  }
+  bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
 BitmapShape::BitmapShape(const BitmapShape &orig) : Shape() {
