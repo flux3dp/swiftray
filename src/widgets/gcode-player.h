@@ -3,6 +3,9 @@
 
 #include <QDialog>
 #include <QFrame>
+#include <QSerialPort>
+#include <QThread>
+#include <connection/serialport-thread.h>
 
 namespace Ui {
   class GCodePlayer;
@@ -18,10 +21,17 @@ public:
 
   void loadSettings();
 
+  void registerEvents();
+
+  void setSerialPort();
+
   void setGCode(const QString &string);
+
+  void showError(const QString &string);
 
 private:
   Ui::GCodePlayer *ui;
+  SerialPortThread thread_;
 };
 
 #endif // GCODEPLAYER_H

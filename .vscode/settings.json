@@ -107,7 +107,9 @@
         "cfenv": "cpp",
         "cinttypes": "cpp",
         "__memory": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "qwidget": "cpp",
+        "qframe": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

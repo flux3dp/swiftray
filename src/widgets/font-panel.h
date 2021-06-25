@@ -1,7 +1,7 @@
 #ifndef FONTPANEL_H
 #define FONTPANEL_H
 
-#include <QWidget>
+#include <QFrame>
 #include <QFont>
 
 class Canvas;
@@ -10,7 +10,7 @@ namespace Ui {
   class FontPanel;
 }
 
-class FontPanel : public QWidget {
+class FontPanel : public QFrame {
 Q_OBJECT
 
 public:

@@ -101,7 +101,7 @@ void CacheStack::Cache::cacheFill() {
   // Get screen information
   QPainterPath screen_rect;
   screen_rect.addRect(stack_->document().screenRect());
-  float scale = stack_->document().scale() * (stack_->canvas().isVolatile() ? 0.5 : 2);
+  float scale = stack_->document().scale() * (stack_->canvas().isVolatile() ? 1 : 2);
   // Clip with screen_rect
   joined_path_ = joined_path_.intersected(screen_rect);
   bbox_ = joined_path_.boundingRect();

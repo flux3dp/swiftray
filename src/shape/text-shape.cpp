@@ -21,7 +21,10 @@ bool TextShape::isEditing() const { return editing_; }
 
 float TextShape::lineHeight() const { return line_height_; }
 
-void TextShape::setLineHeight(float line_height) { line_height_ = line_height; }
+void TextShape::setLineHeight(float line_height) {
+  line_height_ = line_height;
+  makePath();
+}
 
 void TextShape::setText(QString text) {
   lines_ = text.split("\n");

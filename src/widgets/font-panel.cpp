@@ -5,7 +5,7 @@
 #include <widgets/spinbox-helper.h>
 
 FontPanel::FontPanel(QWidget *parent, Canvas *canvas) :
-     QWidget(parent),
+     QFrame(parent),
      canvas_(canvas),
      ui(new Ui::FontPanel) {
   assert(parent != nullptr && canvas != nullptr);
@@ -56,7 +56,7 @@ void FontPanel::registerEvents() {
 
   connect(canvas_, &Canvas::selectionsChanged, this, [=]() {
     for (auto &shape : canvas_->document().selections()) {
-      if (shape->type() == Shape::Type::Text) {
+      if (shape->type() == ::Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
         setFont(t->font(), t->lineHeight());
         break;

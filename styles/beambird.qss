@@ -28,6 +28,7 @@ QDockWidget {
   border: 1px solid #CCC;
   color: #555;
   background: #F0F0F0;
+  font-weight: bold;
 }
 
 QDockWidget > QFrame {

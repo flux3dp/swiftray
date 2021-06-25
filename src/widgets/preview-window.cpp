@@ -33,13 +33,17 @@ void PreviewWindow::paintEvent(QPaintEvent *event) {
   auto pen_red = QPen(Qt::red, 0, Qt::SolidLine);
   for (int i = 0; i < ui->progress->value(); i++) {
     if (paths[i].power_ > 0) {
-      painter.setPen(pen_red);
-    } else {
       painter.setPen(pen_black);
+    } else {
+      painter.setPen(pen_red);
     }
     painter.drawLine(current_pos, paths[i].target_);
     current_pos = paths[i].target_;
   }
+  auto end_pen = QPen(Qt::red, 2, Qt::SolidLine);
+  end_pen.setCosmetic(true);
+  painter.setPen(end_pen);
+  painter.drawEllipse(current_pos, 2, 2);
   QWidget::paintEvent(event);
 }
 

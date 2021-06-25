@@ -31,6 +31,7 @@ SET(SOURCES
         src/document.cpp
         src/command.cpp
         src/clipboard.cpp
+        src/connection/serialport-thread.cpp
         ${CONTROLS_CPP}
         ${WIDGETS_CPP}
         ${SHAPES_CPP}

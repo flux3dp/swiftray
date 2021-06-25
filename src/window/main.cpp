@@ -33,7 +33,11 @@ int main(int argc, char *argv[]) {
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
     return mainCLI(argc, argv);
   }
+
   app.setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+  //QFont font("Source Sans Pro");
+  //QApplication::setFont(font);
 
   //app.setStyle("fusion");
 
