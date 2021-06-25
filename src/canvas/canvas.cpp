@@ -23,6 +23,7 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_rect_(Controls::Rect(this)),
        ctrl_text_(Controls::Text(this)),
        svgpp_parser_(SVGPPParser()),
+       widget_(nullptr),
        fps(0),
        timer(new QTimer(this)),
        mem_thread_(new QThread(this)) {
@@ -58,6 +59,10 @@ Canvas::Canvas(QQuickItem *parent)
       layer->flushCache();
     }
   });
+
+  connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
+
+  connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
 }
 
 Canvas::~Canvas() {
@@ -424,7 +429,12 @@ void Canvas::addEmptyLayer() {
   emit layerChanged();
 }
 
-void Canvas::fitToWindow() {
+void Canvas::resize() {
+  if (widget_) {
+    document().setScreenSize(widget_->geometry().size());
+    widget_offset_ = widget_->parentWidget()->mapToParent(widget_->geometry().topLeft());
+  }
+
   qreal proper_scale = min((width() - 100) / document().width(),
                            (height() - 100) / document().height());
   QPointF proper_translate =
@@ -494,15 +504,6 @@ shared_ptr<PreviewGenerator> Canvas::exportGcode() {
   ToolpathExporter exporter(gen.get());
   exporter.convertStack(document().layers());
   return gen;
-}
-
-void Canvas::setWidgetSize(QSize widget_size) {
-  document().setScreenSize(widget_size);
-  fitToWindow();
-}
-
-void Canvas::setWidgetOffset(QPoint offset) {
-  widget_offset_ = offset;
 }
 
 Clipboard &Canvas::clipboard() {
@@ -625,4 +626,8 @@ void Canvas::editVAlignBottom() {
   }
   document().execute(cmd);
   emit selectionsChanged();
+}
+
+void Canvas::setWidget(QQuickWidget *widget) {
+  widget_ = widget;
 }

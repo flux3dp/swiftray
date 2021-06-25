@@ -2,6 +2,7 @@
 #define VCANVAS_H
 
 #include <QtQuick>
+#include <QQuickWidget>
 #include <canvas/controls/canvas-control.h>
 #include <canvas/controls/grid.h>
 #include <canvas/controls/line.h>
@@ -148,7 +149,7 @@ public slots:
 
   void setLayerOrder(QList<LayerPtr> &order);
 
-  void fitToWindow();
+  void resize();
 
   void setFont(const QFont &font);
 
@@ -156,13 +157,11 @@ public slots:
 
   shared_ptr<PreviewGenerator> exportGcode();
 
-  void setWidgetSize(QSize widget_size);
-
-  void setWidgetOffset(QPoint offset);
-
   void setLineHeight(float line_height);
 
   void backToSelectMode();
+
+  void setWidget(QQuickWidget *widget);
 
   void startMemoryMonitor();
 
@@ -198,6 +197,8 @@ private:
   QTimer *timer;
   QThread *mem_thread_;
   MemoryMonitor mem_monitor_;
+
+  QQuickWidget *widget_;
 
 signals:
 

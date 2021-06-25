@@ -28,8 +28,6 @@ public:
 
   bool event(QEvent *e) override;
 
-  void resizeEvent(QResizeEvent *event) override;
-
   void loadCanvas();
 
   void loadQSS();

@@ -91,13 +91,11 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   }
 
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
+  canvas_->setWidget(ui->quickWidget);
   // TODO (Chanage the owner of text_box_ to mainwindow, and use event dispatch for updating text);
   canvas_->document().text_box_ = make_unique<CanvasTextEdit>(this);
   canvas_->document().text_box_->setGeometry(0, 0, 0, 0);
   canvas_->document().text_box_->setStyleSheet("border:0");
-  canvas_->fitToWindow();
-  canvas_->setWidgetSize(ui->quickWidget->geometry().size());
-  canvas_->setWidgetOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::updateLayers() {
@@ -156,12 +154,6 @@ bool MainWindow::event(QEvent *e) {
   }
 
   return QMainWindow::event(e);
-}
-
-void MainWindow::resizeEvent(QResizeEvent *event) {
-  QMainWindow::resizeEvent(event);
-  canvas_->setWidgetSize(ui->quickWidget->geometry().size());
-  canvas_->setWidgetOffset(ui->quickWidget->parentWidget()->mapToParent(ui->quickWidget->geometry().topLeft()));
 }
 
 void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &message) {
