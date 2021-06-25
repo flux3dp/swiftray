@@ -21,7 +21,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      repeat_(1),
      is_visible_(true),
      step_height_(0),
-     is_diode_(false),
+     use_diode_(false),
      target_height_(0),
      cache_(make_unique<CacheStack>(this)),
      cache_valid_(false),
@@ -87,8 +87,8 @@ bool Layer::isVisible() const {
   return is_visible_;
 }
 
-bool Layer::isDiode() const {
-  return is_diode_;
+bool Layer::isUseDiode() const {
+  return use_diode_;
 }
 
 void Layer::flushCache() {
@@ -145,8 +145,8 @@ void Layer::setRepeat(int repeat) {
   repeat_ = repeat;
 }
 
-void Layer::setDiode(bool is_diode) {
-  is_diode_ = is_diode;
+void Layer::setUseDiode(bool is_diode) {
+  use_diode_ = is_diode;
 }
 
 void Layer::setStepHeight(double step_height) {
@@ -166,7 +166,7 @@ LayerPtr Layer::clone() {
   new_layer->setRepeat(repeat());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());
-  new_layer->setDiode(isDiode());
+  new_layer->setUseDiode(isUseDiode());
   new_layer->setTargetHeight(targetHeight());
   new_layer->setType(type());
   for (auto &shape : children_) {

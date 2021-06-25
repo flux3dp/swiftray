@@ -5,9 +5,12 @@
 
 using namespace Controls;
 
+// TODO (rewrite since it's too long)
+
 Transform::Transform(Canvas *canvas) noexcept:
      CanvasControl(canvas),
      active_control_(Control::NONE),
+     scale_locked_(false),
      scale_x_to_apply_(1),
      scale_y_to_apply_(1),
      rotation_to_apply_(0),
@@ -94,13 +97,13 @@ QRectF Transform::boundingRect() {
   return bounding_rect_;
 }
 
-void Transform::applyRotate(bool temporarily) {
+void Transform::applyRotate(QPointF center, double rotation, bool temporarily) {
   qDebug() << "Transform rotated";
   QTransform transform =
        QTransform()
-            .translate(action_center_.x(), action_center_.y())
-            .rotate(rotation_to_apply_)
-            .translate(-action_center_.x(), -action_center_.y());
+            .translate(center.x(), center.y())
+            .rotate(rotation)
+            .translate(-center.x(), -center.y());
 
   auto cmd = Commands::Joined();
 
@@ -122,14 +125,14 @@ void Transform::applyRotate(bool temporarily) {
   }
 }
 
-void Transform::applyScale(bool temporarily) {
+void Transform::applyScale(QPointF center, double scale_x, double scale_y, bool temporarily) {
   QTransform transform =
        QTransform()
-            .translate(action_center_.x(), action_center_.y())
+            .translate(center.x(), center.y())
             .rotate(bbox_angle_)
-            .scale(scale_x_to_apply_, scale_y_to_apply_)
+            .scale(scale_x, scale_y)
             .rotate(-bbox_angle_)
-            .translate(-action_center_.x(), -action_center_.y());
+            .translate(-center.x(), -center.y());
   auto cmd = Commands::Joined();
 
   for (ShapePtr &shape : selections()) {
@@ -229,8 +232,7 @@ bool Transform::mousePressEvent(QMouseEvent *e) {
     return false;
 
   if (active_control_ == Control::ROTATION) {
-    action_center_ = (controls_[0] + controls_[4]) /
-                     2; // Rotate around rotated bbox center
+    action_center_ = (controls_[0] + controls_[4]) / 2; // Rotate around rotated bbox center
     rotated_from_ = atan2(canvas_coord.y() - action_center_.y(),
                           canvas_coord.x() - action_center_.x());
     canvas().setMode(Canvas::Mode::Rotating);
@@ -246,15 +248,15 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   bool transform_changed = false;
   if (rotation_to_apply_ != 0) {
     transform_changed = true;
-    applyRotate(false);
+    applyRotate(action_center_, rotation_to_apply_);
   }
   if (translate_to_apply_ != QPointF()) {
     transform_changed = true;
-    applyMove(false);
+    applyMove();
   }
   if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) {
     transform_changed = true;
-    applyScale(false);
+    applyScale(action_center_, scale_x_to_apply_, scale_y_to_apply_);
   }
   if (transform_changed) {
     emit canvas().transformChanged(x(), y(), rotation(), width(), height());
@@ -286,10 +288,16 @@ void Transform::calcScale(QPointF canvas_coord) {
   scale_x_to_apply_ = d.x() / transformed_from_.width();
   scale_y_to_apply_ = d.y() / transformed_from_.height();
 
-  if (active_control_ == Control::N || active_control_ == Control::S) {
-    scale_x_to_apply_ = 1;
-  } else if (active_control_ == Control::W || active_control_ == Control::E) {
-    scale_y_to_apply_ = 1;
+  if (scale_locked_) {
+    double min_scale = max(scale_x_to_apply_, scale_y_to_apply_);
+    scale_x_to_apply_ = min_scale;
+    scale_y_to_apply_ = min_scale;
+  } else {
+    if (active_control_ == Control::N || active_control_ == Control::S) {
+      scale_x_to_apply_ = 1;
+    } else if (active_control_ == Control::W || active_control_ == Control::E) {
+      scale_y_to_apply_ = 1;
+    }
   }
 }
 
@@ -315,12 +323,12 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
                                   canvas_coord.x() - action_center_.x()) -
                             rotated_from_) *
                            180 / 3.1415926;
-      applyRotate(true);
+      applyRotate(action_center_, rotation_to_apply_, true);
       break;
 
     case Canvas::Mode::Transforming:
       calcScale(canvas_coord);
-      applyScale(true);
+      applyScale(action_center_, scale_x_to_apply_, scale_y_to_apply_, true);
       break;
     default:
       return false;
@@ -392,4 +400,13 @@ void Transform::reset() {
 bool Transform::keyPressEvent(QKeyEvent *e) {
   /// Transform box does not handle all key events
   return false;
+}
+
+bool Transform::isScaleLock() const {
+  return scale_locked_;
+}
+
+void Transform::setScaleLock(bool scale_lock) {
+  qInfo() << "Set scale lock" << scale_lock;
+  scale_locked_ = scale_lock;
 }

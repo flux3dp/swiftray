@@ -43,5 +43,6 @@
         <file>images/icon-plus-01.png</file>
         <file>styles/beambird.qss</file>
         <file>resources/beamo.json</file>
+        <file>resources/default.json</file>
     </qresource>
 </RCC>

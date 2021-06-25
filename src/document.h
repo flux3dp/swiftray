@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QElapsedTimer>
 #include <layer.h>
+#include <document-settings.h>
 #include <shape/shape.h>
 #include <widgets/canvas-text-edit.h>
 #include <command.h>
@@ -77,6 +78,8 @@ public:
   const QFont &font() const;
 
   const Canvas *canvas() const;
+
+  DocumentSettings &settings();
 
   // Frames rendered after start
   int framesCount() const;
@@ -153,6 +156,8 @@ private:
   int frames_count_;
 
   Canvas *canvas_;
+
+  DocumentSettings settings_;
 };
 
 #endif // DOCUMENT_H

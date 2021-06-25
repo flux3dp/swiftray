@@ -55,7 +55,7 @@ public:
 
   bool isVisible() const;
 
-  bool isDiode() const;
+  bool isUseDiode() const;
 
   int repeat() const;
 
@@ -74,7 +74,7 @@ public:
 
   void setColor(const QColor &color);
 
-  void setDiode(bool is_diode);
+  void setUseDiode(bool is_diode);
 
   void setTargetHeight(double height);
 
@@ -103,7 +103,7 @@ private:
   QString name_;
   QList<ShapePtr> children_;
   Type type_;
-  bool is_diode_;
+  bool use_diode_;
   bool is_visible_;
   double target_height_;
   double step_height_;

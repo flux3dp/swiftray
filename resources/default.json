@@ -1,0 +1,87 @@
+{
+  "data": [
+    {
+      "name": "Wood 3mm Cutting",
+      "power": 45,
+      "speed": 5
+    },
+    {
+      "name": "Wood 5mm Cutting",
+      "power": 55,
+      "speed": 4,
+      "repeat": 2
+    },
+    {
+      "name": "Wood Engraving",
+      "power": 25,
+      "speed": 150
+    },
+    {
+      "name": "Acrylic 3mm Cutting",
+      "power": 55,
+      "speed": 4
+    },
+    {
+      "name": "Acrylic 5mm Cutting",
+      "power": 55,
+      "speed": 5,
+      "repeat": 2
+    },
+    {
+      "name": "Acrylic Engraving",
+      "power": 25,
+      "speed": 150
+    },
+    {
+      "name": "Leather 3mm Cutting",
+      "power": 60,
+      "speed": 3
+    },
+    {
+      "name": "Leather 5mm Cutting",
+      "power": 60,
+      "speed": 3,
+      "repeat": 2
+    },
+    {
+      "name": "Leather Engraving",
+      "power": 30,
+      "speed": 150
+    },
+    {
+      "name": "Fabric 3mm cutting",
+      "power": 50,
+      "speed": 20
+    },
+    {
+      "name": "Fabric 5mm cutting",
+      "power": 50,
+      "speed": 20
+    },
+    {
+      "name": "Fabric Engraving",
+      "power": 20,
+      "speed": 150
+    },
+    {
+      "name": "Rubber Engraving",
+      "power": 50,
+      "speed": 140
+    },
+    {
+      "name": "Glass Engraving",
+      "power": 35,
+      "speed": 150
+    },
+    {
+      "name": "Metal Engraving",
+      "power": 50,
+      "speed": 80
+    },
+    {
+      "name": "Stainless Diode Engraving",
+      "power": 100,
+      "speed": 4
+    }
+  ]
+}

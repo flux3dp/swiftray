@@ -41,7 +41,7 @@ public:
   }
 
   void set(svgpp::tag::attribute::data_diode, int val) {
-    layer().setDiode(val);
+    layer().setUseDiode(val);
   }
 
   void set(svgpp::tag::attribute::data_zstep, double val) {

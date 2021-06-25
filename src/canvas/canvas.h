@@ -53,6 +53,8 @@ public:
 
   void keyPressEvent(QKeyEvent *e) override;
 
+  void keyReleaseEvent(QKeyEvent *e) override;
+
   void mousePressEvent(QMouseEvent *e) override;
 
   void mouseMoveEvent(QMouseEvent *e) override;
@@ -120,6 +122,23 @@ public slots:
   void editIntersect();
 
   void editDifference();
+
+  void editHFlip();
+
+  void editVFlip();
+
+  void editHAlignLeft();
+
+  void editHAlignCenter();
+
+  void editHAlignRight();
+
+  void editVAlignTop();
+
+  void editVAlignMid();
+
+  void editVAlignBottom();
+
 
   void addEmptyLayer();
 

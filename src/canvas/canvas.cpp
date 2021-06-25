@@ -112,7 +112,7 @@ void Canvas::paint(QPainter *painter) {
 }
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
-  // qInfo() << "Key press" << e;
+  transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
 
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyPressEvent(e))
@@ -127,6 +127,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
     document().setSelection(nullptr);
   }
+}
+
+void Canvas::keyReleaseEvent(QKeyEvent *e) {
+  transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {
@@ -546,3 +550,79 @@ bool Canvas::isVolatile() const {
 }
 
 const QFont &Canvas::font() const { return font_; }
+
+void Canvas::editHFlip() {
+  transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);
+  emit selectionsChanged();
+}
+
+void Canvas::editVFlip() {
+  transformControl().applyScale(transformControl().boundingRect().center(), 1, -1, false);
+  emit selectionsChanged();
+}
+
+void Canvas::editHAlignLeft() {
+  auto cmd = Commands::Joined();
+  double left = transformControl().boundingRect().left();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(left - shape->boundingRect().left(), 0);
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}
+
+void Canvas::editHAlignCenter() {
+  auto cmd = Commands::Joined();
+  double center_x = transformControl().boundingRect().center().x();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(center_x - shape->boundingRect().center().x(), 0);
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}
+
+void Canvas::editHAlignRight() {
+  auto cmd = Commands::Joined();
+  double right = transformControl().boundingRect().right();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(right - shape->boundingRect().right(), 0);
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}
+
+void Canvas::editVAlignTop() {
+  auto cmd = Commands::Joined();
+  double top = transformControl().boundingRect().top();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(0, top - shape->boundingRect().top());
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}
+
+void Canvas::editVAlignMid() {
+  auto cmd = Commands::Joined();
+  double center_y = transformControl().boundingRect().center().y();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(0, center_y - shape->boundingRect().center().y());
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}
+
+void Canvas::editVAlignBottom() {
+  auto cmd = Commands::Joined();
+  double bottom = transformControl().boundingRect().bottom();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(0, bottom - shape->boundingRect().bottom());
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
+}

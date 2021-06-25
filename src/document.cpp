@@ -273,3 +273,7 @@ const Canvas *Document::canvas() const {
 void Document::setCanvas(Canvas *canvas) {
   canvas_ = canvas;
 }
+
+DocumentSettings &Document::settings() {
+  return settings_;
+}

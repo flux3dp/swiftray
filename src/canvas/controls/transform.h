@@ -66,14 +66,12 @@ namespace Controls {
       }
       if (abs(new_r - rotation()) > 0.01) {
         rotation_to_apply_ = new_r - rotation();
-        action_center_ = boundingRect().center();
-        applyRotate();
+        applyRotate(boundingRect().center(), rotation_to_apply_);
       }
       if (abs(new_w - width()) > 0.01 || abs(new_h - height()) > 0.01) {
         scale_x_to_apply_ = new_w / width();
         scale_y_to_apply_ = new_h / height();
-        action_center_ = boundingRect().center();
-        applyScale();
+        applyScale(boundingRect().center(), scale_x_to_apply_, scale_y_to_apply_);
       }
     }
 
@@ -93,10 +91,14 @@ namespace Controls {
       return boundingRect().height();
     }
 
-  private:
-    void applyRotate(bool temporarily = false);
+    bool isScaleLock() const;
 
-    void applyScale(bool temporarily = false);
+    void setScaleLock(bool scale_lock);
+
+    void applyScale(QPointF center, double scale_x, double scale_y, bool temporarily = false);
+
+  private:
+    void applyRotate(QPointF center, double rotation, bool temporarily = false);
 
     Control hitTest(QPointF clickPoint, float tolerance);
 
@@ -119,6 +121,8 @@ namespace Controls {
 
     qreal bbox_angle_;
     bool bbox_need_recalc_;
+
+    bool scale_locked_;
   public slots:
 
     void updateSelections();
