@@ -14,7 +14,7 @@ class LayerParamsPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit LayerParamsPanel(QWidget *parent = nullptr);
+  explicit LayerParamsPanel(QWidget *parent, Canvas *canvas);
 
   ~LayerParamsPanel();
 
@@ -31,8 +31,10 @@ private:
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
+  Canvas *canvas_;
   unique_ptr<PresetManager> preset_manager_;
   unique_ptr<ParamSettings> param_settings_;
+  int preset_previous_index_;
 };
 
 #endif // LAYER_PARAMS_PANEL_H

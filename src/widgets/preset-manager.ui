@@ -94,6 +94,12 @@
        </property>
        <item>
         <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
           <string>Enabled Parameters</string>
          </property>
@@ -238,7 +244,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QFrame" name="frame">
+    <widget class="QFrame" name="editor">
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
@@ -247,7 +253,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_5">
       <item>
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="paramTitle">
         <property name="font">
          <font>
           <weight>75</weight>
@@ -300,7 +306,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBox"/>
+             <widget class="QSpinBox" name="power"/>
             </item>
            </layout>
           </item>
@@ -314,7 +320,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBox_2"/>
+             <widget class="QSpinBox" name="speed"/>
             </item>
            </layout>
           </item>
@@ -356,7 +362,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QSpinBox" name="spinBox_3"/>
+             <widget class="QSpinBox" name="repeat"/>
             </item>
            </layout>
           </item>
@@ -382,7 +388,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+             <widget class="QDoubleSpinBox" name="stepHeight"/>
             </item>
            </layout>
           </item>

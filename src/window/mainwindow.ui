@@ -279,7 +279,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionHFip"/>
+   <addaction name="actionHFlip"/>
    <addaction name="actionVFlip"/>
   </widget>
   <widget class="QDockWidget" name="fontDock">
@@ -810,7 +810,7 @@
     <string>DiffBtn</string>
    </property>
   </action>
-  <action name="actionHFip">
+  <action name="actionHFlip">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-hflip.png</normaloff>:/images/icon-hflip.png</iconset>

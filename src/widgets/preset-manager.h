@@ -7,11 +7,13 @@ namespace Ui {
   class PresetManager;
 }
 
+class LayerParamsPanel;
+
 class PresetManager : public QDialog {
 Q_OBJECT
 
 public:
-  explicit PresetManager(QWidget *parent = nullptr);
+  explicit PresetManager(QWidget *parent);
 
   ~PresetManager();
 
@@ -23,6 +25,7 @@ public:
 
 private:
   Ui::PresetManager *ui;
+  LayerParamsPanel *layer_panel_;
 };
 
 #endif // PRESETMANAGER_H

@@ -28,14 +28,14 @@ public:
 
     static ParamSet fromJson(const QJsonObject &obj);
 
-    QJsonObject toJson();
+    QJsonObject toJson() const;
   };
 
-  ParamSettings() {
+  ParamSettings(QString machine_model = "default", bool force_default = false) : machine_model_(machine_model) {
     QSettings settings;
-    QJsonObject obj = settings.value("parameters/user").value<QJsonDocument>().object();
-    if (obj["data"].isNull()) {
-      QFile file(":/resources/beamo.json");
+    QJsonObject obj = settings.value("parameters/user/" + machine_model).value<QJsonDocument>().object();
+    if (obj["data"].isNull() || force_default) {
+      QFile file(":/resources/" + machine_model + ".json");
       file.open(QFile::ReadOnly);
       loadJson(QJsonDocument::fromJson(file.readAll()).object());
     } else {
@@ -45,16 +45,16 @@ public:
 
   void loadJson(const QJsonObject &obj) {
     QJsonArray data = obj["data"].toArray();
-    params.clear();
+    params_.clear();
     for (QJsonValue item : data) {
       ParamSet param = ParamSet::fromJson(item.toObject());
-      params << param;
+      params_ << param;
     }
   }
 
   QJsonObject toJson() {
     QJsonArray data;
-    for (auto &param : params) {
+    for (auto &param : params_) {
       data << param.toJson();
     }
     QJsonObject obj;
@@ -62,7 +62,12 @@ public:
     return obj;
   }
 
-  QList<ParamSet> params;
+  const QList<ParamSet> &params() {
+    return params_;
+  }
+
+  QList<ParamSet> params_;
+  QString machine_model_;
 };
 
 #endif //PARAM_SETTINGS_H

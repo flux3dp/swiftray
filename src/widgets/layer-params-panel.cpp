@@ -1,14 +1,19 @@
 #include <QDebug>
 #include "layer-params-panel.h"
 #include "ui_layer-params-panel.h"
+#include <widgets/preset-manager.h>
 #include <widgets/spinbox-helper.h>
-#include "preset-manager.h"
 #include <settings/param-settings.h>
+#include <canvas/canvas.h>
+#include <document.h>
 
-LayerParamsPanel::LayerParamsPanel(QWidget *parent) :
+LayerParamsPanel::LayerParamsPanel(QWidget *parent, Canvas *canvas) :
      QFrame(parent),
      ui(new Ui::LayerParamsPanel),
-     param_settings_(make_unique<ParamSettings>()) {
+     canvas_(canvas),
+     param_settings_(nullptr),
+     layer_(nullptr),
+     preset_previous_index_(0) {
   ui->setupUi(this);
   loadStyles();
   registerEvents();
@@ -26,8 +31,11 @@ void LayerParamsPanel::loadStyles() {
 }
 
 void LayerParamsPanel::loadSettings() {
+  QString machine_model = canvas_->document().settings().machine_model;
+  qInfo() << "Loading model" << machine_model;
+  param_settings_ = make_unique<ParamSettings>(machine_model);
   ui->presetComboBox->clear();
-  for (auto &param: param_settings_->params) {
+  for (auto &param: param_settings_->params()) {
     ui->presetComboBox->addItem(param.name, param.toJson());
   }
   ui->presetComboBox->addItem("More...");
@@ -44,15 +52,17 @@ void LayerParamsPanel::registerEvents() {
     if (layer_ != nullptr) layer_->setRepeat(repeat);
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    if (index == ui->presetComboBox->count() - 1) {
+    if (index == ui->presetComboBox->count() - 1 && index > 0) {
       preset_manager_ = make_unique<PresetManager>(this);
       preset_manager_->show();
+      ui->presetComboBox->setCurrentIndex(preset_previous_index_);
     } else {
       auto p = ParamSettings::ParamSet::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->spinBoxPower->setValue(p.power);
       ui->spinBoxSpeed->setValue(p.speed);
       ui->spinBoxRepeat->setValue(p.repeat);
     }
+    preset_previous_index_ = index;
   });
 }
 

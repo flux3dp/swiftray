@@ -143,6 +143,7 @@ bool MainWindow::event(QEvent *e) {
 
     case QEvent::NativeGesture:
     case QEvent::KeyPress:
+    case QEvent::KeyRelease:
       canvas_->event(e);
       return true;
 
@@ -223,6 +224,16 @@ void MainWindow::updateSelections() {
   ui->actionSubtractBtn->setEnabled(items.size() == 2 && all_path);
   ui->actionDiffBtn->setEnabled(items.size() == 2 && all_path);
   ui->actionIntersectBtn->setEnabled(items.size() == 2 && all_path);
+  ui->actionHFlip->setEnabled(!items.empty());
+  ui->actionVFlip->setEnabled(!items.empty());
+
+  ui->actionAlignTop->setEnabled(items.size() > 1);
+  ui->actionAlignVCenter->setEnabled(items.size() > 1);
+  ui->actionAlignBottom->setEnabled(items.size() > 1);
+  ui->actionAlignLeft->setEnabled(items.size() > 1);
+  ui->actionAlignHCenter->setEnabled(items.size() > 1);
+  ui->actionAlignRight->setEnabled(items.size() > 1);
+
   setOSXWindowTitleColor(this);
 }
 
@@ -230,7 +241,7 @@ void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // Add custom panels
   transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, canvas_);
-  layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents);
+  layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents, canvas_);
   font_panel_ = make_unique<FontPanel>(ui->fontDock, canvas_);
   ui->objectParamDock->setWidget(transform_panel_.get());
   ui->fontDock->setWidget(font_panel_.get());
@@ -275,6 +286,16 @@ void MainWindow::registerEvents() {
   connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &Canvas::editDifference);
   connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->actionHFlip, &QAction::triggered, canvas_, &Canvas::editHFlip);
+  connect(ui->actionVFlip, &QAction::triggered, canvas_, &Canvas::editVFlip);
+  connect(ui->actionAlignTop, &QAction::triggered, canvas_, &Canvas::editVAlignTop);
+  // TODO (Use one naming convention);
+  connect(ui->actionAlignVCenter, &QAction::triggered, canvas_, &Canvas::editVAlignMid);
+  connect(ui->actionAlignBottom, &QAction::triggered, canvas_, &Canvas::editVAlignBottom);
+  connect(ui->actionAlignLeft, &QAction::triggered, canvas_, &Canvas::editHAlignLeft);
+  connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editHAlignCenter);
+  connect(ui->actionAlignRight, &QAction::triggered, canvas_, &Canvas::editHAlignRight);
+
   connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
 
   // Monitor custom widgets
