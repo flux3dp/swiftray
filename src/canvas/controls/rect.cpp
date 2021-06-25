@@ -23,11 +23,12 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
        Commands::AddShape(document().activeLayer(), new_rect),
        Commands::Select(&document(), {new_rect})
   );
+  exit();
   return true;
 }
 
 void Rect::paint(QPainter *painter) {
-  QPen pen(document().activeLayer()->color(), 3, Qt::SolidLine);
+  QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
   painter->setPen(pen);
   painter->drawRect(rect_);

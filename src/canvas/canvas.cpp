@@ -516,6 +516,12 @@ void Canvas::backToSelectMode() {
     case Mode::TextDrawing:
       ctrl_text_.exit();
       break;
+    case Mode::OvalDrawing:
+      ctrl_oval_.exit();
+      break;
+    case Mode::RectDrawing:
+      ctrl_rect_.exit();
+      break;
   }
 }
 

@@ -30,7 +30,7 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void Oval::paint(QPainter *painter) {
-  QPen pen(document().activeLayer()->color(), 3, Qt::SolidLine);
+  QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
   painter->setPen(pen);
   painter->drawArc(rect_, 0, 360 * 16);
