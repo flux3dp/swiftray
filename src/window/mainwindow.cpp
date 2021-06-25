@@ -105,6 +105,7 @@ void MainWindow::updateLayers() {
     bool active = canvas_->document().activeLayer() == layer.get();
     LayerPtr editable_layer = layer;
     auto *list_widget = new LayerListItem(ui->layerList->parentWidget(),
+                                          canvas_,
                                           editable_layer,
                                           active);
     auto *list_item = new QListWidgetItem(ui->layerList);

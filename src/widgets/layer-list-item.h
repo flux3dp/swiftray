@@ -5,26 +5,34 @@
 #include <layer.h>
 
 namespace Ui {
-class LayerListItem;
+  class LayerListItem;
 }
 
 class LayerListItem : public QWidget {
-    Q_OBJECT
+Q_OBJECT
 
-  public:
-    // explicit LayerListItem(QWidget *parent = nullptr);
-    LayerListItem(QWidget *parent, LayerPtr &layer, bool active);
-    void paintEvent(QPaintEvent *event) override;
-    ~LayerListItem();
-    LayerPtr layer_;
+public:
+  // explicit LayerListItem(QWidget *parent = nullptr);
+  LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, bool active);
 
-  private:
-    void createIcon();
-    void loadStyles();
-    void registerEvents();
+  void paintEvent(QPaintEvent *event) override;
 
-    Ui::LayerListItem *ui;
-    bool active_;
+  ~LayerListItem();
+
+  LayerPtr layer_;
+
+  void mouseDoubleClickEvent(QMouseEvent *event) override;
+
+private:
+  void createIcon();
+
+  void loadStyles();
+
+  void registerEvents();
+
+  Canvas *canvas_;
+  Ui::LayerListItem *ui;
+  bool active_;
 };
 
 #endif // LAYER_WIDGET_H

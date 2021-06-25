@@ -1,12 +1,16 @@
 #include <QDebug>
 #include <QStyleOption>
+#include <QInputDialog>
+#include <QColorDialog>
+#include <QLineEdit>
 #include <widgets/layer-list-item.h>
 #include <canvas/canvas.h>
 #include "ui_layer-list-item.h"
 #include <command.h>
 
-LayerListItem::LayerListItem(QWidget *parent, LayerPtr &layer, bool active) :
+LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, bool active) :
      QWidget(parent),
+     canvas_(canvas),
      ui(new Ui::LayerListItem),
      layer_(layer),
      active_(active) {
@@ -53,6 +57,30 @@ void LayerListItem::registerEvents() {
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );
   });
+}
+
+void LayerListItem::mouseDoubleClickEvent(QMouseEvent *event) {
+  if (event->localPos().x() < 60) {
+    QColor color = QColorDialog::getColor(layer_->color(), this, "Set layer color");
+    if (color != layer_->color()) {
+      layer_->document().execute(
+           Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), color)
+      );
+    }
+  } else {
+    bool ok;
+    QString text = QInputDialog::getText(this, "Rename Layer",
+                                         tr("Layer name:"), QLineEdit::Normal,
+                                         layer_->name(), &ok);
+    if (ok && !text.isEmpty() && text != layer_->name()) {
+      ui->labelName->setText(text);
+      layer_->document().execute(
+           Commands::SetRef<Layer, QString, &Layer::name, &Layer::setName>(layer_.get(), text)
+      );
+    }
+  }
+  // TODO (Fix event flow)
+  emit canvas_->layerChanged();
 }
 
 void LayerListItem::paintEvent(QPaintEvent *event) {
