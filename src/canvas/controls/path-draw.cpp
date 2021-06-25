@@ -127,6 +127,7 @@ void PathDraw::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
   auto blue_pen = QPen(sky_blue, 2, Qt::SolidLine);
   auto black_pen = QPen(document().activeLayer()->color(), 2, Qt::SolidLine);
+  float point_size = 4 / document().scale();
   blue_pen.setCosmetic(true);
   black_pen.setCosmetic(true);
   painter->setPen(black_pen);
@@ -140,13 +141,14 @@ void PathDraw::paint(QPainter *painter) {
         painter->setPen(blue_pen);
         painter->drawLine(cursor_, curve_target_);
         painter->drawLine(curve_target_ * 2 - cursor_, curve_target_);
-        painter->drawEllipse(curve_target_ * 2 - cursor_, 3, 3);
-        painter->drawEllipse(curve_target_, 5, 5);
-        painter->drawEllipse(cursor_, 3, 3);
+        painter->drawEllipse(curve_target_ * 2 - cursor_, point_size, point_size);
+        painter->drawEllipse(curve_target_, point_size, point_size);
+        painter->drawEllipse(cursor_, point_size, point_size);
       } else {
         QPainterPath wp_clone = working_path_;
         wp_clone.cubicTo(last_ctrl_pt_, cursor_, cursor_);
         painter->drawPath(wp_clone);
+        painter->drawEllipse(cursor_, point_size, point_size);
       }
     } else {
       painter->drawPath(working_path_);
@@ -158,10 +160,10 @@ void PathDraw::paint(QPainter *painter) {
   for (int i = 0; i < working_path_.elementCount(); i++) {
     QPainterPath::Element ele = working_path_.elementAt(i);
     if (ele.isMoveTo() || ele.isLineTo()) {
-      painter->drawEllipse(ele, 5, 5);
+      painter->drawEllipse(ele, point_size, point_size);
     } else if (ele.isCurveTo()) {
       QPointF ele_end_point = working_path_.elementAt(i + 2);
-      painter->drawEllipse(ele_end_point, 5, 5);
+      painter->drawEllipse(ele_end_point, point_size, point_size);
     }
   }
 }
