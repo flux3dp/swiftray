@@ -21,12 +21,19 @@ MainWindow::MainWindow(QWidget *parent) :
      canvas_(nullptr) {
   ui->setupUi(this);
   loadQSS();
+  loadSettings();
   loadCanvas();
   loadWidgets();
   registerEvents();
   updateLayers();
   updateMode();
   updateSelections();
+}
+
+void MainWindow::loadSettings() {
+  QSettings settings;
+  restoreGeometry(settings.value("window/geometry").toByteArray());
+  restoreState(settings.value("window/windowState").toByteArray());
 }
 
 void MainWindow::loadCanvas() {
@@ -92,11 +99,10 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
 
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
   canvas_->setWidget(ui->quickWidget);
-  // TODO (Chanage the owner of text_box_ to mainwindow, and use event dispatch for updating text);
-  // If the canvastextedit's parent is mainwindow, it will be automatically deleted (don't need unique_ptr)
-  canvas_->document().text_box_ = make_unique<CanvasTextEdit>(this);
-  canvas_->document().text_box_->setGeometry(0, 0, 0, 0);
-  canvas_->document().text_box_->setStyleSheet("border:0");
+  // TODO (Chanage the owner of text_box_ to mainwindow)
+  canvas_->text_input_ = new CanvasTextEdit(this);
+  canvas_->text_input_->setGeometry(0, 0, 0, 0);
+  canvas_->text_input_->setStyleSheet("border:0");
 }
 
 void MainWindow::updateLayers() {
@@ -236,17 +242,19 @@ void MainWindow::updateSelections() {
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // Add custom panels
-  transform_panel_ = make_unique<TransformPanel>(ui->objectParamDock, canvas_);
-  layer_params_panel_ = make_unique<LayerParamsPanel>(ui->layerDockContents, canvas_);
-  gcode_player_ = make_unique<GCodePlayer>(ui->serialPortDock);
-  font_panel_ = make_unique<FontPanel>(ui->fontDock, canvas_);
-  ui->objectParamDock->setWidget(transform_panel_.get());
-  ui->serialPortDock->setWidget(gcode_player_.get());
-  ui->fontDock->setWidget(font_panel_.get());
-  ui->layerDockContents->layout()->addWidget(layer_params_panel_.get());
+  transform_panel_ = new TransformPanel(ui->objectParamDock, canvas_);
+  layer_params_panel_ = new LayerParamsPanel(ui->layerDockContents, canvas_);
+  gcode_player_ = new GCodePlayer(ui->serialPortDock);
+  font_panel_ = new FontPanel(ui->fontDock, canvas_);
+  doc_panel_ = new DocPanel(ui->documentDock, canvas_);
+  ui->objectParamDock->setWidget(transform_panel_);
+  ui->serialPortDock->setWidget(gcode_player_);
+  ui->fontDock->setWidget(font_panel_);
+  ui->layerDockContents->layout()->addWidget(layer_params_panel_);
+  ui->documentDock->setWidget(doc_panel_);
 
   // Add floating buttons
-  add_layer_btn_ = make_unique<QToolButton>(ui->layerList);
+  add_layer_btn_ = new QToolButton(ui->layerList);
   add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
   add_layer_btn_->setGeometry(QRect(215, 180, 35, 35));
   add_layer_btn_->setIconSize(QSize(24, 24));
@@ -297,7 +305,7 @@ void MainWindow::registerEvents() {
   connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
 
   // Monitor custom widgets
-  connect(add_layer_btn_.get(), &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
+  connect(add_layer_btn_, &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
 
   // Complex callbacks
   connect(ui->actionExportGcode, &QAction::triggered, [=]() {
@@ -314,4 +322,11 @@ void MainWindow::registerEvents() {
   connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
     canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+  QSettings settings;
+  settings.setValue("window/geometry", saveGeometry());
+  settings.setValue("window/windowState", saveState());
+  QMainWindow::closeEvent(event);
 }

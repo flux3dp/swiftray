@@ -7,7 +7,6 @@
 #include <layer.h>
 #include <document-settings.h>
 #include <shape/shape.h>
-#include <widgets/components/canvas-text-edit.h>
 #include <command.h>
 
 class Canvas;
@@ -122,8 +121,6 @@ public:
   void execute(const CmdPtr cmd0, Args... args) {
     execute({cmd0, args...});
   }
-
-  unique_ptr<CanvasTextEdit> text_box_;
 
 signals:
 

@@ -49,46 +49,12 @@ QMainWindow::separator {
   border: 1px solid #CCC;
 }
 
-#objectFrame1 {
-  border: 0;
-  background: #FFFFFF;
-  border-bottom: 1px solid #CCC;
-}
-
-#objectFrame1 QLine {
-  border: 0;
-  border-bottom: 1px solid #CCC;
-}
-
-#objectFrame1 QToolButton {
-  background: none;
-  border: 0;
-  border-radius: 3px;
-  qproperty-iconSize: 20px;
-}
-
-#objectFrame1 QToolButton:hover {
-  background: #CCC;
-}
-
-#objectFrame2 {
-  border: 0;
-}
-
 QSpinBox {
   height: 25px;
 }
 
 QDoubleSpinBox {
   height: 25px;
-}
-
-#objectFrame3 {
-  border: 0;
-}
-
-#objectFrame4 {
-  border: 0;
 }
 
 #parameterLabelFrame {
@@ -159,5 +125,9 @@ QToolButton:checked {
 }
 
 #fontDock QFrame {
+  border: 0;
+}
+
+#documentDock QFrame {
   border: 0;
 }

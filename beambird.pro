@@ -39,6 +39,8 @@ SOURCES += \
         $$files(src/canvas/controls/*.cpp) \
         $$files(src/shape/*.cpp) \
         $$files(src/widgets/*.cpp) \
+        $$files(src/widgets/panels/*.cpp) \
+        $$files(src/widgets/components/*.cpp) \
         $$files(src/parser/*.cpp) \
         $$files(src/canvas/*.cpp) \
         $$files(src/gcode/*.cpp) \
@@ -78,12 +80,9 @@ HEADERS += \
     $$files(src/parser/generators/*.h) \
     $$files(src/gcoder/*.h) \
     $$files(src/widgets/*.h) \
-    src/widgets/doc-settings-panel.h \
-    src/widgets/font-panel.h \
-    src/widgets/preset-manager.h \
-    src/windows/gcode-player.h \
-    src/windows/mainwindow.h \
-    src/windows/osxwindow.h
+    $$files(src/widgets/panels/*.h) \
+    $$files(src/widgets/components/*.h) \
+    $$files(src/widgets/windows/*.h)
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
@@ -93,7 +92,7 @@ DEPENDPATH += C:/cygwin64/usr/include
 
 FORMS += \
     src/widgets/components/layer-list-item.ui \
-    src/widgets/panels/doc-settings-panel.ui \
+    src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/transform-panel.ui \

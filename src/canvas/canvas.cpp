@@ -277,7 +277,6 @@ void Canvas::editDelete() {
   if (mode() != Mode::Selecting)
     return;
 
-  // TODO (Check all selection events to accompany with document.removeSelections and setSelections)
   document().execute(
        Commands::RemoveSelections(&document())
   );
@@ -636,4 +635,8 @@ void Canvas::editVAlignBottom() {
 
 void Canvas::setWidget(QQuickWidget *widget) {
   widget_ = widget;
+}
+
+CanvasTextEdit *Canvas::textInput() const {
+  return text_input_;
 }

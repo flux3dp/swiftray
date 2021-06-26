@@ -19,7 +19,7 @@ bool Text::isActive() {
 
 bool Text::mouseReleaseEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  document().text_box_->setFocus();
+  canvas().textInput()->setFocus();
   if (target_ == nullptr) {
     // Create a virtual target
     ShapePtr new_shape = make_shared<TextShape>("", canvas().font());
@@ -39,7 +39,7 @@ bool Text::keyPressEvent(QKeyEvent *e) {
     if (target_ == nullptr) return false;
     target().setEditing(false);
     if (!target().hasLayer() &&
-        document().text_box_->toPlainText().length() > 0) {
+        canvas().textInput()->toPlainText().length() > 0) {
       // Add the virtual target the layer
       document().execute(
            Commands::AddShape(document().activeLayer(), target_),
@@ -55,10 +55,9 @@ bool Text::keyPressEvent(QKeyEvent *e) {
 void Text::paint(QPainter *painter) {
   if (target_ == nullptr)
     return;
-  QString text =
-       document().text_box_->toPlainText() + document().text_box_->preeditString();
+  QString text = canvas().textInput()->toPlainText() + canvas().textInput()->preeditString();
   target().setText(text);
-  target().makeCursorRect(document().text_box_->textCursor().position());
+  target().makeCursorRect(canvas().textInput()->textCursor().position());
   target().setEditing(true);
   QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
@@ -68,8 +67,8 @@ void Text::paint(QPainter *painter) {
 
 void Text::exit() {
   target_ = nullptr;
-  document().text_box_->clear();
-  document().text_box_->window()->setFocus();
+  canvas().textInput()->clear();
+  canvas().textInput()->window()->setFocus();
   emit canvas().selectionsChanged();
   canvas().setMode(Canvas::Mode::Selecting);
 }
@@ -81,6 +80,6 @@ TextShape &Text::target() {
 void Text::setTarget(ShapePtr &new_target) {
   target_ = new_target;
   if (target_ != nullptr) {
-    document().text_box_->setPlainText(target().text());
+    canvas().textInput()->setPlainText(target().text());
   }
 }

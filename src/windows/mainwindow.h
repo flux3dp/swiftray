@@ -6,6 +6,7 @@
 #include <widgets/components/layer-list-item.h>
 #include <widgets/panels/transform-panel.h>
 #include <widgets/panels/layer-params-panel.h>
+#include <widgets/panels/doc-panel.h>
 #include <windows/gcode-player.h>
 #include <widgets/panels/font-panel.h>
 #include <canvas/canvas.h>
@@ -34,6 +35,10 @@ public:
 
   void loadWidgets();
 
+  void loadSettings();
+
+  void closeEvent(QCloseEvent *event) override;
+
 private slots:
 
   void canvasLoaded(QQuickWidget::Status status);
@@ -58,11 +63,12 @@ private slots:
 private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
-  unique_ptr<LayerParamsPanel> layer_params_panel_;
-  unique_ptr<TransformPanel> transform_panel_;
-  unique_ptr<GCodePlayer> gcode_player_;
-  unique_ptr<FontPanel> font_panel_;
-  unique_ptr<QToolButton> add_layer_btn_;
+  LayerParamsPanel *layer_params_panel_;
+  TransformPanel *transform_panel_;
+  GCodePlayer *gcode_player_;
+  DocPanel *doc_panel_;
+  FontPanel *font_panel_;
+  QToolButton *add_layer_btn_;
 };
 
 #endif // MAINWINDOW_H

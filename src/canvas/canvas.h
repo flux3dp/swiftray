@@ -13,11 +13,12 @@
 #include <canvas/controls/rect.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
-#include <document.h>
-#include <parser/svgpp-parser.h>
-#include <shape/shape.h>
 #include <canvas/memory-monitor.h>
+#include <widgets/components/canvas-text-edit.h>
+#include <document.h>
 #include <clipboard.h>
+#include <shape/shape.h>
+#include <parser/svgpp-parser.h>
 #include <gcode/generators/preview-generator.h>
 
 /*The canvas should be designed to handle multiple documents,
@@ -77,6 +78,8 @@ public:
   Mode mode() const;
 
   const QFont &font() const;
+
+  CanvasTextEdit *textInput() const;
 
   // Graphics should be drawn in lower quality is this return true
   bool isVolatile() const;
@@ -199,6 +202,11 @@ private:
   MemoryMonitor mem_monitor_;
 
   QQuickWidget *widget_;
+
+  friend class MainWindow;
+
+protected:
+  CanvasTextEdit *text_input_;
 
 signals:
 
