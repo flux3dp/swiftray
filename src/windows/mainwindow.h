@@ -3,11 +3,11 @@
 #include <QQuickWidget>
 #include <QListWidget>
 #include <QToolButton>
-#include <widgets/layer-list-item.h>
-#include <widgets/transform-panel.h>
-#include <widgets/layer-params-panel.h>
-#include <widgets/gcode-player.h>
-#include <widgets/font-panel.h>
+#include <widgets/components/layer-list-item.h>
+#include <widgets/panels/transform-panel.h>
+#include <widgets/panels/layer-params-panel.h>
+#include <windows/gcode-player.h>
+#include <widgets/panels/font-panel.h>
 #include <canvas/canvas.h>
 
 #ifndef MAINWINDOW_H

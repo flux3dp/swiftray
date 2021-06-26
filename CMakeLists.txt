@@ -24,9 +24,11 @@ SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
-FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
+FILE(GLOB WIDGETS_PANELS_CPP "src/widgets/panels/*.cpp")
+FILE(GLOB WIDGETS_COMPONENTS_CPP "src/widgets/components/*.cpp")
 FILE(GLOB SETTINGS_CPP "src/settings/*.cpp")
 FILE(GLOB CONNECTION_CPP "src/connection/*.cpp")
+FILE(GLOB WINDOWS_CPP "src/windows/*.cpp")
 
 SET(SOURCES
         src/layer.cpp
@@ -35,12 +37,12 @@ SET(SOURCES
         src/clipboard.cpp
         ${CONNECTION_CPP}
         ${CONTROLS_CPP}
-        ${WIDGETS_CPP}
+        ${WIDGETS_PANELS_CPP}
+        ${WIDGETS_COMPONENTS_CPP}
         ${SHAPES_CPP}
         ${SETTINGS_CPP}
+        ${WINDOWS_CPP}
         src/canvas/cache-stack.cpp
-        src/windows/main.cpp
-        src/windows/mainwindow.cpp
         src/canvas/canvas.cpp
         src/parser/svgpp-parser.cpp
         src/parser/svgpp-impl.cpp

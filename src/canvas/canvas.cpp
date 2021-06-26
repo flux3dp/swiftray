@@ -9,7 +9,7 @@
 #include <shape/group-shape.h>
 #include <shape/path-shape.h>
 #include <gcode/toolpath-exporter.h>
-#include <widgets/preview-window.h>
+#include <windows/preview-window.h>
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),

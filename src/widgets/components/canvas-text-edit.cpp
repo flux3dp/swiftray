@@ -1,5 +1,5 @@
 #include <QDebug>
-#include <widgets/canvas-text-edit.h>
+#include <widgets/components/canvas-text-edit.h>
 
 CanvasTextEdit::CanvasTextEdit(QWidget *parent) : QPlainTextEdit(parent) {
 

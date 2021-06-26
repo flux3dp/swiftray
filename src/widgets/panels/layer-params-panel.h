@@ -4,7 +4,7 @@
 #include <QFrame>
 #include <layer.h>
 #include <settings/param-settings.h>
-#include "preset-manager.h"
+#include "windows/preset-manager.h"
 
 namespace Ui {
   class LayerParamsPanel;

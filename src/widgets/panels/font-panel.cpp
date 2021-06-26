@@ -2,7 +2,7 @@
 #include "font-panel.h"
 #include "ui_font-panel.h"
 #include <canvas/canvas.h>
-#include <widgets/spinbox-helper.h>
+#include <widgets/components/spinbox-helper.h>
 
 FontPanel::FontPanel(QWidget *parent, Canvas *canvas) :
      QFrame(parent),

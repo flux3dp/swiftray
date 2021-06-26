@@ -92,14 +92,14 @@ INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
 FORMS += \
-    src/widgets/doc-settings-panel.ui \
-    src/widgets/font-panel.ui \
-    src/widgets/layer-list-item.ui \
-    src/widgets/layer-params-panel.ui \
-    src/widgets/preset-manager.ui \
-    src/widgets/preview-window.ui \
-    src/widgets/transform-panel.ui \
-    src/widgets/gcode-player.ui \
+    src/widgets/components/layer-list-item.ui \
+    src/widgets/panels/doc-settings-panel.ui \
+    src/widgets/panels/font-panel.ui \
+    src/widgets/panels/layer-params-panel.ui \
+    src/widgets/panels/transform-panel.ui \
+    src/windows/preset-manager.ui \
+    src/windows/preview-window.ui \
+    src/windows/gcode-player.ui \
     src/windows/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm

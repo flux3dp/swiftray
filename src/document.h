@@ -7,7 +7,7 @@
 #include <layer.h>
 #include <document-settings.h>
 #include <shape/shape.h>
-#include <widgets/canvas-text-edit.h>
+#include <widgets/components/canvas-text-edit.h>
 #include <command.h>
 
 class Canvas;

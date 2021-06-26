@@ -3,7 +3,7 @@
 #include <QInputDialog>
 #include <QColorDialog>
 #include <QLineEdit>
-#include <widgets/layer-list-item.h>
+#include <widgets/components/layer-list-item.h>
 #include <canvas/canvas.h>
 #include "ui_layer-list-item.h"
 #include <command.h>

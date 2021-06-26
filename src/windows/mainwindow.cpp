@@ -7,10 +7,10 @@
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
 #include <shape/bitmap-shape.h>
-#include <widgets/canvas-text-edit.h>
+#include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
 #include <windows/osxwindow.h>
-#include <widgets/preview-window.h>
+#include <windows/preview-window.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include "ui_mainwindow.h"

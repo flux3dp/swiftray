@@ -1,5 +1,5 @@
 
-#include <widgets/qfontcombobox2.h>
+#include <widgets/components/qfontcombobox2.h>
 
 #include <QStringListModel>
 #include <QItemDelegate>
@@ -10,7 +10,7 @@
 #include <QDesktopWidget>
 #include <QtWidgets/private/qcombobox_p.h>
 #include <QtWidgets/private/qdesktopwidget_p.h>
-#include <QtGui/qfontdatabase.h>
+#include <qfontdatabase.h>
 #include <QDebug>
 
 #include <windows/osxwindow.h>

@@ -1,8 +1,8 @@
 #include <QDebug>
 #include "layer-params-panel.h"
 #include "ui_layer-params-panel.h"
-#include <widgets/preset-manager.h>
-#include <widgets/spinbox-helper.h>
+#include <windows/preset-manager.h>
+#include <widgets/components/spinbox-helper.h>
 #include <settings/param-settings.h>
 #include <canvas/canvas.h>
 #include <document.h>

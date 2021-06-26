@@ -2,9 +2,9 @@
 #ifndef QFONTCOMBOBOX2_H
 #define QFONTCOMBOBOX2_H
 
-#include <QtWidgets/qtwidgetsglobal.h>
-#include <QtWidgets/qcombobox.h>
-#include <QtGui/qfontdatabase.h>
+#include <qtwidgetsglobal.h>
+#include <qcombobox.h>
+#include <qfontdatabase.h>
 
 QT_REQUIRE_CONFIG(fontcombobox);
 QT_BEGIN_NAMESPACE

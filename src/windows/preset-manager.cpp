@@ -5,7 +5,7 @@
 #include <settings/param-settings.h>
 #include "preset-manager.h"
 #include "ui_preset-manager.h"
-#include <widgets/layer-params-panel.h>
+#include <widgets/panels/layer-params-panel.h>
 
 PresetManager::PresetManager(QWidget *parent) :
      QDialog(parent),
