@@ -93,6 +93,7 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   canvas_ = ui->quickWidget->rootObject()->findChildren<Canvas *>().first();
   canvas_->setWidget(ui->quickWidget);
   // TODO (Chanage the owner of text_box_ to mainwindow, and use event dispatch for updating text);
+  // If the canvastextedit's parent is mainwindow, it will be automatically deleted (don't need unique_ptr)
   canvas_->document().text_box_ = make_unique<CanvasTextEdit>(this);
   canvas_->document().text_box_->setGeometry(0, 0, 0, 0);
   canvas_->document().text_box_->setStyleSheet("border:0");
