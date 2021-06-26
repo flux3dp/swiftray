@@ -8,8 +8,8 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <shape/bitmap-shape.h>
 #include <widgets/canvas-text-edit.h>
-#include <window/mainwindow.h>
-#include <window/osxwindow.h>
+#include <windows/mainwindow.h>
+#include <windows/osxwindow.h>
 #include <widgets/preview-window.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
@@ -38,7 +38,7 @@ void MainWindow::loadCanvas() {
 #endif
   connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::canvasLoaded);
 
-  QUrl source("qrc:/src/window/main.qml");
+  QUrl source("qrc:/src/windows/main.qml");
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
   ui->quickWidget->show();

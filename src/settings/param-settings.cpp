@@ -1,7 +1,3 @@
-//
-// Created by Simon on 2021/6/24.
-//
-
 #include "param-settings.h"
 
 ParamSettings::ParamSet ParamSettings::ParamSet::fromJson(const QJsonObject &obj) {

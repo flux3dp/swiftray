@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>src/window/main.qml</file>
+        <file>src/windows/main.qml</file>
         <file>images/icon-adjust.png</file>
         <file>images/icon-group.png</file>
         <file>images/icon-intersect.png</file>

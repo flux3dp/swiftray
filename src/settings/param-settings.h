@@ -1,7 +1,3 @@
-//
-// Created by Simon on 2021/6/24.
-//
-
 #ifndef PARAM_SETTINGS_H
 #define PARAM_SETTINGS_H
 

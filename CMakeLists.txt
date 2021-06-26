@@ -25,26 +25,29 @@ SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
 FILE(GLOB WIDGETS_CPP "src/widgets/*.cpp")
+FILE(GLOB SETTINGS_CPP "src/settings/*.cpp")
+FILE(GLOB CONNECTION_CPP "src/connection/*.cpp")
 
 SET(SOURCES
         src/layer.cpp
         src/document.cpp
         src/command.cpp
         src/clipboard.cpp
-        src/connection/serialport-thread.cpp
+        ${CONNECTION_CPP}
         ${CONTROLS_CPP}
         ${WIDGETS_CPP}
         ${SHAPES_CPP}
+        ${SETTINGS_CPP}
         src/canvas/cache-stack.cpp
-        src/window/main.cpp
-        src/window/mainwindow.cpp
+        src/windows/main.cpp
+        src/windows/mainwindow.cpp
         src/canvas/canvas.cpp
         src/parser/svgpp-parser.cpp
         src/parser/svgpp-impl.cpp
         src/parser/svgpp-external-impl.cpp
         src/gcode/toolpath-exporter.cpp
-        src/window/osxwindow.mm
-        src/parser/css/svg-style-selector.h src/settings/param-settings.cpp src/settings/param-settings.h)
+        src/windows/osxwindow.mm
+        )
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}

@@ -13,7 +13,7 @@
 #include <QtGui/qfontdatabase.h>
 #include <QDebug>
 
-#include <window/osxwindow.h>
+#include <windows/osxwindow.h>
 
 static QFontDatabase::WritingSystem writingSystemFromScript(QLocale::Script script) {
   switch (script) {

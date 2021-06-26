@@ -7,8 +7,8 @@
 #include <QTranslator>
 #include <QDebug>
 #include <canvas/canvas.h>
-#include <window/osxwindow.h>
-#include <window/mainwindow.h>
+#include <windows/osxwindow.h>
+#include <windows/mainwindow.h>
 
 int mainCLI(int argc, char *argv[]) {
   qInfo() << "Vecty CLI interface";

@@ -70,6 +70,7 @@ void Text::exit() {
   target_ = nullptr;
   document().text_box_->clear();
   document().text_box_->window()->setFocus();
+  emit canvas().selectionsChanged();
   canvas().setMode(Canvas::Mode::Selecting);
 }
 

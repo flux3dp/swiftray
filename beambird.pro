@@ -42,14 +42,12 @@ SOURCES += \
         $$files(src/parser/*.cpp) \
         $$files(src/canvas/*.cpp) \
         $$files(src/gcode/*.cpp) \
+        $$files(src/windows/*.cpp) \
+        $$files(src/connection/*.cpp) \
+        $$files(src/settings/*.cpp) \
         src/undo.cpp \
         src/document.cpp \
-        src/layer.cpp \
-        src/widgets/font-panel.cpp \
-        src/widgets/preset-manager.cpp \
-        src/window/gcode-player.cpp \
-        src/window/main.cpp \
-        src/window/mainwindow.cpp \
+        src/layer.cpp
 
 RESOURCES += qml.qrc
 
@@ -80,11 +78,12 @@ HEADERS += \
     $$files(src/parser/generators/*.h) \
     $$files(src/gcoder/*.h) \
     $$files(src/widgets/*.h) \
+    src/widgets/doc-settings-panel.h \
     src/widgets/font-panel.h \
     src/widgets/preset-manager.h \
-    src/window/gcode-player.h \
-    src/window/mainwindow.h \
-    src/window/osxwindow.h
+    src/windows/gcode-player.h \
+    src/windows/mainwindow.h \
+    src/windows/osxwindow.h
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
@@ -93,6 +92,7 @@ INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
 
 FORMS += \
+    src/widgets/doc-settings-panel.ui \
     src/widgets/font-panel.ui \
     src/widgets/layer-list-item.ui \
     src/widgets/layer-params-panel.ui \
@@ -100,6 +100,6 @@ FORMS += \
     src/widgets/preview-window.ui \
     src/widgets/transform-panel.ui \
     src/widgets/gcode-player.ui \
-    src/window/mainwindow.ui
+    src/windows/mainwindow.ui
 
 OBJECTIVE_SOURCES += src/window/osxwindow.mm
