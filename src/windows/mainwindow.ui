@@ -104,6 +104,8 @@
     <addaction name="actionClear"/>
     <addaction name="actionGroup"/>
     <addaction name="actionUngroup"/>
+    <addaction name="separator"/>
+    <addaction name="actionMachineSettings"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -863,6 +865,16 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionMachine_Settings">
+   <property name="text">
+    <string>Machine Settings</string>
+   </property>
+  </action>
+  <action name="actionMachineSettings">
+   <property name="text">
+    <string>Machine Settings</string>
    </property>
   </action>
  </widget>

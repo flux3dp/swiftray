@@ -27,11 +27,11 @@ public:
     QJsonObject toJson() const;
   };
 
-  ParamSettings(QString machine_model = "default", bool force_default = false) : machine_model_(machine_model) {
+  ParamSettings(QString machine_id = "default", bool force_default = false) : machine_id_(machine_id) {
     QSettings settings;
-    QJsonObject obj = settings.value("parameters/user/" + machine_model).value<QJsonDocument>().object();
+    QJsonObject obj = settings.value("parameters/user/" + machine_id).value<QJsonDocument>().object();
     if (obj["data"].isNull() || force_default) {
-      QFile file(":/resources/" + machine_model + ".json");
+      QFile file(":/resources/parameters/default.json");
       file.open(QFile::ReadOnly);
       loadJson(QJsonDocument::fromJson(file.readAll()).object());
     } else {
@@ -63,7 +63,7 @@ public:
   }
 
   QList<ParamSet> params_;
-  QString machine_model_;
+  QString machine_id_;
 };
 
 #endif //PARAM_SETTINGS_H

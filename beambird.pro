@@ -49,7 +49,9 @@ SOURCES += \
         $$files(src/settings/*.cpp) \
         src/undo.cpp \
         src/document.cpp \
-        src/layer.cpp
+        src/layer.cpp \
+        src/windows/machine-manager.cpp \
+        src/windows/new-machine-dialog.cpp
 
 RESOURCES += qml.qrc
 
@@ -82,7 +84,9 @@ HEADERS += \
     $$files(src/widgets/*.h) \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
-    $$files(src/widgets/windows/*.h)
+    $$files(src/widgets/windows/*.h) \
+    src/windows/machine-manager.h \
+    src/windows/new-machine-dialog.h
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
@@ -96,6 +100,8 @@ FORMS += \
     src/widgets/panels/font-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/transform-panel.ui \
+    src/windows/machine-manager.ui \
+    src/windows/new-machine-dialog.ui \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \
     src/windows/gcode-player.ui \

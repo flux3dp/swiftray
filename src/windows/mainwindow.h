@@ -9,6 +9,7 @@
 #include <widgets/panels/doc-panel.h>
 #include <windows/gcode-player.h>
 #include <widgets/panels/font-panel.h>
+#include <windows/machine-manager.h>
 #include <canvas/canvas.h>
 
 #ifndef MAINWINDOW_H
@@ -69,6 +70,7 @@ private:
   DocPanel *doc_panel_;
   FontPanel *font_panel_;
   QToolButton *add_layer_btn_;
+  MachineManager *machine_manager_;
 };
 
 #endif // MAINWINDOW_H

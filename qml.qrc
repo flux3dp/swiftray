@@ -41,8 +41,11 @@
         <file>images/icon-setting.png</file>
         <file>images/icon-valign-bot.png</file>
         <file>images/icon-plus-01.png</file>
+        <file>images/beamo.png</file>
+        <file>images/beambox.png</file>
         <file>styles/beambird.qss</file>
-        <file>resources/beamo.json</file>
-        <file>resources/default.json</file>
+        <file>resources/parameters/beamo.json</file>
+        <file>resources/parameters/default.json</file>
+        <file>resources/machines.json</file>
     </qresource>
 </RCC>

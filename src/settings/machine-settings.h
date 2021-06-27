@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QJsonDocument>
 #include <QPointF>
+#include <QIcon>
 
 class MachineSettings {
 public:
@@ -25,18 +26,18 @@ public:
       RUIDA_2020
     };
   public:
+    QString id;
     QString name;
-    QString model_id;
-
-    // Only modifiable if model_id is not recognized
-    int width;
-    int height;
-
-    OriginType origin;
-    bool home_on_start;
+    QString model;
+    QString icon;
 
     BoardType board_type;
+    OriginType origin;
+    int width;
+    int height;
+    bool home_on_start;
     QPointF red_pointer_offset;
+
 
     // Functions
     static MachineSet fromJson(const QJsonObject &obj);
@@ -75,6 +76,11 @@ public:
 
   const QList<MachineSet> &machines() {
     return machines_;
+  }
+
+  void save() {
+    QSettings settings;
+    settings.setValue("machines", toJson());
   }
 
   QList<MachineSet> machines_;

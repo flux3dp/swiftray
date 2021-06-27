@@ -3,8 +3,11 @@
 MachineSettings::MachineSet MachineSettings::MachineSet::fromJson(const QJsonObject &obj) {
   MachineSet m;
 
+  m.id = obj["id"].toString();
   m.name = obj["name"].toString();
-  m.model_id = obj["modelId"].toString();
+  m.model = obj["model"].toString();
+
+  m.icon = obj["icon"].toString();
 
   m.width = obj["width"].toInt();
   m.height = obj["height"].toInt();
@@ -22,11 +25,13 @@ MachineSettings::MachineSet MachineSettings::MachineSet::fromJson(const QJsonObj
 
 QJsonObject MachineSettings::MachineSet::toJson() const {
   QJsonObject obj;
+  obj["id"] = id;
   obj["name"] = name;
-  obj["modelId"] = model_id;
+  obj["model"] = model;
   obj["width"] = width;
   obj["height"] = height;
   obj["origin"] = (int) origin;
+  obj["icon"] = icon;
   obj["homeOnStart"] = home_on_start;
   obj["boardType"] = (int) board_type;
   obj["redPointerOffsetX"] = red_pointer_offset.x();

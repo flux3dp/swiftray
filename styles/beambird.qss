@@ -131,3 +131,11 @@ QToolButton:checked {
 #documentDock QFrame {
   border: 0;
 }
+
+#MachineManager QFrame {
+    border: 0;
+}
+
+#MachineManager QListWidget {
+    border: 1px solid #CCC;
+}

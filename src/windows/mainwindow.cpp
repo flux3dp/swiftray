@@ -247,6 +247,7 @@ void MainWindow::loadWidgets() {
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, canvas_);
   doc_panel_ = new DocPanel(ui->documentDock, canvas_);
+  machine_manager_ = new MachineManager(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -308,6 +309,9 @@ void MainWindow::registerEvents() {
   connect(add_layer_btn_, &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
 
   // Complex callbacks
+  connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
+    machine_manager_->show();
+  });
   connect(ui->actionExportGcode, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
     PreviewWindow *pw = new PreviewWindow(this);

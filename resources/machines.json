@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "name": "FLUX beamo",
+      "model": "FBM1",
+      "icon": ":/images/beamo.png",
+      "width": 300,
+      "height": 210,
+      "origin": 0,
+      "homeOnStart": true,
+      "boardType": 0
+    },
+    {
+      "name": "FLUX Beambox 40W",
+      "model": "FBCT",
+      "icon": ":/images/beambox.png",
+      "width": 400,
+      "height": 375,
+      "origin": 0,
+      "homeOnStart": true,
+      "boardType": 0
+    },
+    {
+      "name": "FLUX Beambox 50W",
+      "model": "FBPT",
+      "icon": ":/images/beambox.png",
+      "width": 600,
+      "height": 375,
+      "origin": 0,
+      "homeOnStart": true,
+      "boardType": 0
+    }
+  ]
+}
