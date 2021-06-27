@@ -8,6 +8,7 @@
 #include <QSettings>
 #include <QJsonDocument>
 
+// TODO (Redesign logic to PresetSettings -> PresetSet -> Param)
 
 class ParamSettings {
 public:

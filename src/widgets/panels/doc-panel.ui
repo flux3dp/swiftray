@@ -55,7 +55,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Model</string>
+           <string>Machine</string>
           </property>
          </widget>
         </item>

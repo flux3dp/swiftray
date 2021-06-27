@@ -16,6 +16,8 @@ public:
 
   ~DocPanel();
 
+  void loadSettings();
+
   void registerEvents();
 
 private:
