@@ -18,37 +18,37 @@ TransformPanel::~TransformPanel() {
 }
 
 void TransformPanel::loadStyles() {
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->spinBoxX)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->spinBoxY)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->spinBoxR)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->spinBoxW)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->spinBoxH)->lineEdit()->setStyleSheet("padding: 0 3px;");
+  ((SpinBoxHelper<QDoubleSpinBox> *) ui->xSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
+  ((SpinBoxHelper<QDoubleSpinBox> *) ui->ySpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
+  ((SpinBoxHelper<QDoubleSpinBox> *) ui->rotationSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
+  ((SpinBoxHelper<QDoubleSpinBox> *) ui->widthSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
+  ((SpinBoxHelper<QDoubleSpinBox> *) ui->heightSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
 }
 
 void TransformPanel::registerEvents() {
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
-  connect(ui->spinBoxX, spin_event, [=](double value) {
+  connect(ui->xSpinBox, spin_event, [=](double value) {
     if (x_ != value) {
       x_ = value;
       updateControl();
     }
   });
 
-  connect(ui->spinBoxY, spin_event, [=](double value) {
+  connect(ui->ySpinBox, spin_event, [=](double value) {
     if (y_ != value) {
       y_ = value;
       updateControl();
     }
   });
 
-  connect(ui->spinBoxR, spin_event, [=](double value) {
+  connect(ui->rotationSpinBox, spin_event, [=](double value) {
     if (r_ != value) {
       r_ = value;
       updateControl();
     }
   });
 
-  connect(ui->spinBoxW, spin_event, [=](double value) {
+  connect(ui->widthSpinBox, spin_event, [=](double value) {
     if (value == 0) return;
     if (w_ != value) {
       w_ = value;
@@ -56,7 +56,7 @@ void TransformPanel::registerEvents() {
     }
   });
 
-  connect(ui->spinBoxH, spin_event, [=](double value) {
+  connect(ui->heightSpinBox, spin_event, [=](double value) {
     if (value == 0) return;
     if (h_ != value) {
       h_ = value;
@@ -70,11 +70,11 @@ void TransformPanel::registerEvents() {
     r_ = r;
     w_ = w;
     h_ = h;
-    ui->spinBoxX->setValue(x_);
-    ui->spinBoxY->setValue(y_);
-    ui->spinBoxR->setValue(r_);
-    ui->spinBoxW->setValue(w_);
-    ui->spinBoxH->setValue(h_);
+    ui->xSpinBox->setValue(x_);
+    ui->ySpinBox->setValue(y_);
+    ui->rotationSpinBox->setValue(r_);
+    ui->widthSpinBox->setValue(w_);
+    ui->heightSpinBox->setValue(h_);
   });
 }
 

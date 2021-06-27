@@ -31,20 +31,10 @@ void PresetManager::loadSettings() {
     param_item->setText(param.name);
     ui->enabledList->addItem(param_item);
   }
-  // TODO (Access canvas here to get machine model)
-  ParamSettings default_settings("beamo", true);
-  qInfo() << "Settings" << default_settings.toJson();
-  ui->defaultList->clear();
-  for (auto &param : default_settings.params_) {
-    QListWidgetItem *param_item = new QListWidgetItem;
-    param_item->setData(Qt::UserRole, param.toJson());
-    param_item->setText(param.name);
-    ui->defaultList->addItem(param_item);
-  }
 }
 
 void PresetManager::registerEvents() {
-  connect(ui->addLayerBtn, &QAbstractButton::clicked, [=]() {
+  connect(ui->addParamBtn, &QAbstractButton::clicked, [=]() {
     QListWidgetItem *param_item = new QListWidgetItem;
     ParamSettings::ParamSet param;
     param.name = "New Custom Parameter";
@@ -56,17 +46,6 @@ void PresetManager::registerEvents() {
     auto obj = item->data(Qt::UserRole).toJsonObject();
     auto param = ParamSettings::ParamSet::fromJson(obj);
     ui->editor->setEnabled(true);
-    ui->paramTitle->setText(param.name);
-    ui->speed->setValue(param.speed);
-    ui->power->setValue(param.power);
-    ui->repeat->setValue(param.repeat);
-    ui->stepHeight->setValue(param.step_height);
-  });
-
-  connect(ui->defaultList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
-    auto obj = item->data(Qt::UserRole).toJsonObject();
-    auto param = ParamSettings::ParamSet::fromJson(obj);
-    ui->editor->setEnabled(false);
     ui->paramTitle->setText(param.name);
     ui->speed->setValue(param.speed);
     ui->power->setValue(param.power);

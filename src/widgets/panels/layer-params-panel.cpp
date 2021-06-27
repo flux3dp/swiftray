@@ -25,9 +25,9 @@ LayerParamsPanel::~LayerParamsPanel() {
 }
 
 void LayerParamsPanel::loadStyles() {
-  ((SpinBoxHelper<QSpinBox> *) ui->spinBoxPower)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QSpinBox> *) ui->spinBoxRepeat)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QSpinBox> *) ui->spinBoxSpeed)->lineEdit()->setStyleSheet("padding: 0 8px;");
+  ((SpinBoxHelper<QSpinBox> *) ui->powerSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+  ((SpinBoxHelper<QSpinBox> *) ui->repeatSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+  ((SpinBoxHelper<QSpinBox> *) ui->speedSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void LayerParamsPanel::loadSettings() {
@@ -42,13 +42,13 @@ void LayerParamsPanel::loadSettings() {
 }
 
 void LayerParamsPanel::registerEvents() {
-  connect(ui->spinBoxPower, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
+  connect(ui->powerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
     if (layer_ != nullptr) layer_->setStrength(strength);
   });
-  connect(ui->spinBoxSpeed, QOverload<int>::of(&QSpinBox::valueChanged), [=](int speed) {
+  connect(ui->speedSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int speed) {
     if (layer_ != nullptr) layer_->setSpeed(speed);
   });
-  connect(ui->spinBoxRepeat, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
+  connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
     if (layer_ != nullptr) layer_->setRepeat(repeat);
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
@@ -58,9 +58,9 @@ void LayerParamsPanel::registerEvents() {
       ui->presetComboBox->setCurrentIndex(preset_previous_index_);
     } else {
       auto p = ParamSettings::ParamSet::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
-      ui->spinBoxPower->setValue(p.power);
-      ui->spinBoxSpeed->setValue(p.speed);
-      ui->spinBoxRepeat->setValue(p.repeat);
+      ui->powerSpinBox->setValue(p.power);
+      ui->speedSpinBox->setValue(p.speed);
+      ui->repeatSpinBox->setValue(p.repeat);
     }
     preset_previous_index_ = index;
   });
@@ -68,7 +68,7 @@ void LayerParamsPanel::registerEvents() {
 
 void LayerParamsPanel::updateLayer(Layer *layer) {
   layer_ = layer;
-  ui->spinBoxPower->setValue(layer->power());
-  ui->spinBoxSpeed->setValue(layer->speed());
-  ui->spinBoxRepeat->setValue(layer->repeat());
+  ui->powerSpinBox->setValue(layer->power());
+  ui->speedSpinBox->setValue(layer->speed());
+  ui->repeatSpinBox->setValue(layer->repeat());
 }

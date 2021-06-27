@@ -3,6 +3,7 @@
 #include <windows/new-machine-dialog.h>
 #include <settings/machine-settings.h>
 #include <QListWidgetItem>
+#include <widgets/components/spinbox-helper.h>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
 
@@ -13,42 +14,13 @@ MachineManager::MachineManager(QWidget *parent) :
   ui->machineList->setIconSize(QSize(32, 32));
   loadSettings();
   loadWidgets();
+  loadStyles();
   registerEvents();
 }
 
-void MachineManager::registerEvents() {
-  connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
-    auto *dialog = new NewMachineDialog(this);
-    if (dialog->exec() == 0) return;
-    QListWidgetItem *machine_item = new QListWidgetItem;
-    auto machine = dialog->machine();
-    qInfo() << "New item" << machine.toJson();
-    machine_item->setData(Qt::UserRole, machine.toJson());
-    machine_item->setText(machine.name);
-    machine_item->setIcon(QIcon(machine.icon));
-    ui->machineList->addItem(machine_item);
-    qInfo() << "Count" << ui->machineList->count();
-    save();
-  });
-  connect(ui->machineList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
-    auto obj = item->data(Qt::UserRole).toJsonObject();
-    auto param = MachineSettings::MachineSet::fromJson(obj);
-    ui->editorTabs->setEnabled(true);
-    ui->nameLineEdit->setText(param.name);
-    ui->modelComboBox->setCurrentText(param.model);
-    ui->widthSpinBox->setValue(param.width);
-    ui->heightSpinBox->setValue(param.height);
-    ui->controllerComboBox->setCurrentIndex((int) param.board_type);
-  });
-  connect(ui->nameLineEdit, &QLineEdit::textChanged, [=](QString text) {
-    auto item = ui->machineList->currentItem();
-    item->setText(text);
-    auto mach = MachineSettings::MachineSet::fromJson(item->data(Qt::UserRole).toJsonObject());
-    mach.name = text;
-    item->setData(Qt::UserRole, mach.toJson());
-    save();
-  });
-};
+MachineManager::~MachineManager() {
+  delete ui;
+}
 
 void MachineManager::loadSettings() {
   MachineSettings settings;
@@ -63,13 +35,56 @@ void MachineManager::loadSettings() {
   }
 }
 
+
+void MachineManager::loadStyles() {
+  ((SpinBoxHelper<QSpinBox> *) ui->widthSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+  ((SpinBoxHelper<QSpinBox> *) ui->heightSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
+}
+
 void MachineManager::loadWidgets() {
   ui->editorTabs->setEnabled(false);
 }
 
-MachineManager::~MachineManager() {
-  delete ui;
-}
+void MachineManager::registerEvents() {
+  connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
+    auto *dialog = new NewMachineDialog(this);
+    if (dialog->exec() == 0) return;
+    QListWidgetItem *machine_item = new QListWidgetItem;
+    auto machine = dialog->machine();
+    machine_item->setData(Qt::UserRole, machine.toJson());
+    machine_item->setText(machine.name);
+    machine_item->setIcon(QIcon(machine.icon));
+    ui->machineList->addItem(machine_item);
+    save();
+  });
+
+  connect(ui->removeBtn, &QAbstractButton::clicked, [=]() {
+    if (ui->machineList->currentItem() != nullptr) {
+      ui->machineList->removeItemWidget(ui->machineList->currentItem());
+      save();
+    }
+  });
+
+  connect(ui->machineList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
+    auto obj = item->data(Qt::UserRole).toJsonObject();
+    auto param = MachineSettings::MachineSet::fromJson(obj);
+    ui->editorTabs->setEnabled(true);
+    ui->nameLineEdit->setText(param.name);
+    ui->modelComboBox->setCurrentText(param.model);
+    ui->widthSpinBox->setValue(param.width);
+    ui->heightSpinBox->setValue(param.height);
+    ui->controllerComboBox->setCurrentIndex((int) param.board_type);
+  });
+
+  connect(ui->nameLineEdit, &QLineEdit::textChanged, [=](QString text) {
+    auto item = ui->machineList->currentItem();
+    item->setText(text);
+    auto mach = MachineSettings::MachineSet::fromJson(item->data(Qt::UserRole).toJsonObject());
+    mach.name = text;
+    item->setData(Qt::UserRole, mach.toJson());
+    save();
+  });
+};
 
 void MachineManager::save() {
   MachineSettings settings;

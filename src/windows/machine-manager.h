@@ -17,6 +17,8 @@ public:
 
   void loadSettings();
 
+  void loadStyles();
+
   void loadWidgets();
 
   void registerEvents();

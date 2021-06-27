@@ -53,7 +53,7 @@
                                 </widget>
                             </item>
                             <item>
-                                <widget class="QDoubleSpinBox2" name="spinBoxX">
+                                <widget class="QDoubleSpinBox2" name="xSpinBox">
                                     <property name="sizePolicy">
                                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                                             <horstretch>3</horstretch>
@@ -95,7 +95,7 @@
                                 </widget>
                             </item>
                             <item>
-                                <widget class="QDoubleSpinBox2" name="spinBoxW">
+                                <widget class="QDoubleSpinBox2" name="widthSpinBox">
                                     <property name="sizePolicy">
                                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                                             <horstretch>3</horstretch>
@@ -141,7 +141,7 @@
                                 </widget>
                             </item>
                             <item>
-                                <widget class="QDoubleSpinBox2" name="spinBoxY">
+                                <widget class="QDoubleSpinBox2" name="ySpinBox">
                                     <property name="sizePolicy">
                                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                                             <horstretch>3</horstretch>
@@ -183,7 +183,7 @@
                                 </widget>
                             </item>
                             <item>
-                                <widget class="QDoubleSpinBox2" name="spinBoxH">
+                                <widget class="QDoubleSpinBox2" name="heightSpinBox">
                                     <property name="sizePolicy">
                                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                                             <horstretch>3</horstretch>
@@ -232,7 +232,7 @@
                                 </widget>
                             </item>
                             <item>
-                                <widget class="QDoubleSpinBox2" name="spinBoxR">
+                                <widget class="QDoubleSpinBox2" name="rotationSpinBox">
                                     <property name="sizePolicy">
                                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                                             <horstretch>3</horstretch>
@@ -253,7 +253,7 @@
                         </layout>
                     </item>
                     <item>
-                        <widget class="QToolButton" name="btnLock">
+                        <widget class="QToolButton" name="lockBtn">
                             <property name="sizePolicy">
                                 <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                                     <horstretch>0</horstretch>
@@ -264,7 +264,7 @@
                                 <string>...</string>
                             </property>
                             <property name="icon">
-                                <iconset resource="../../qml.qrc">
+                                <iconset resource="../../../qml.qrc">
                                     <normaloff>:/images/icon-lock.png</normaloff>:/images/icon-lock.png
                                 </iconset>
                             </property>
@@ -282,7 +282,7 @@
         </customwidget>
     </customwidgets>
     <resources>
-        <include location="../../qml.qrc"/>
+        <include location="../../../qml.qrc"/>
     </resources>
     <connections/>
 </ui>

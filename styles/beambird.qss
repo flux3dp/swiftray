@@ -89,12 +89,6 @@ QDoubleSpinBox {
   background-color: #F0F0F0;
 }
 
-#layerWidgetFrame QToolButton {
-  border-width: 0px;
-  border-radius: 0px;
-  background: none;
-}
-
 #btnHide {
   opacity: 0
 }
@@ -103,7 +97,7 @@ QDoubleSpinBox {
   opacity: 1
 }
 
-QToolButton {
+QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objectParamDock QToolButton  {
   border-width: 0px;
   border-radius: 0px;
 }
