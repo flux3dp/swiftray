@@ -1,8 +1,8 @@
 QToolBar {
   background-color: #F0F0F0;
   spacing: 8px;
-  border-right: 1px solid #CCC;
-  border-bottom: 1px solid #CCC;
+  border-right: 1px solid #CCCCCC;
+  border-bottom: 1px solid #CCCCCC;
 }
 
 #tabWidget {
@@ -11,12 +11,12 @@ QToolBar {
 
 #layerTab {
   border: 0;
-  border-left: 1px solid #CCC;
+  border-left: 1px solid #CCCCCC;
 }
 
 #objectTab {
   border: 0;
-  border-left: 1px solid #CCC;
+  border-left: 1px solid #CCCCCC;
   background: #F8F8F8;
 }
 
@@ -25,8 +25,8 @@ QToolBar {
 }
 
 QDockWidget {
-  border: 1px solid #CCC;
-  color: #555;
+  border: 1px solid #CCCCCC;
+  color: #555555;
   background: #F0F0F0;
   font-weight: bold;
 }
@@ -46,7 +46,7 @@ QDockWidget::title {
 }
 
 QMainWindow::separator {
-  border: 1px solid #CCC;
+  border: 1px solid #CCCCCC;
 }
 
 QSpinBox {
@@ -59,8 +59,8 @@ QDoubleSpinBox {
 
 #parameterLabelFrame {
   border: 0;
-  border-top: 1px solid #CCC;
-  border-bottom: 1px solid #CCC;
+  border-top: 1px solid #CCCCCC;
+  border-bottom: 1px solid #CCCCCC;
   background: #F0F0F0;
 }
 
@@ -78,7 +78,7 @@ QDoubleSpinBox {
 
 #layerList {
   border: 0;
-  border-bottom: 1px solid #CCC;
+  border-bottom: 1px solid #CCCCCC;
 }
 
 #layerWidgetFrame {
@@ -90,11 +90,11 @@ QDoubleSpinBox {
 }
 
 #btnHide {
-  opacity: 0
+  opacity: 0;
 }
 
 #btnHide:hover {
-  opacity: 1
+  opacity: 1;
 }
 
 QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objectParamDock QToolButton  {
@@ -103,19 +103,19 @@ QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objec
 }
 
 QToolButton:hover {
-  background: #CCC;
+  background: #CCCCCC;
 }
 
 QToolButton:pressed {
-  background: #BBB;
+  background: #BBBBBB;
 }
 
-QToolButton:focused {
-  background: #555;
+QToolButton:focus {
+  background: #555555;
 }
 
 QToolButton:checked {
-  background: #BBB;
+  background: #BBBBBB;
 }
 
 #fontDock QFrame {
@@ -126,10 +126,41 @@ QToolButton:checked {
   border: 0;
 }
 
-#MachineManager QFrame {
-    border: 0;
+QListWidget {
+    border: 1px solid #CCCCCC;
 }
 
-#MachineManager QListWidget {
-    border: 1px solid #CCC;
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    font: bold 0px;
+    color: #CCCCCC;
+    height: 0px;
+    padding: 0px;
+    background-color: none;
+}
+
+#paramListControl QToolButton {
+    background-color: #FF0000;
+    background: #FF0000;
+    margin: 0;
+}
+
+#paramSettingsListControl, #paramControlBar, #machineListControl {
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
+    border: 1px solid #CCCCCC;
+    padding-bottom: -1px;
+    margin-top: -1px;
+}
+
+#machineListControl QToolButton, #paramSettingsListControl QToolButton, #paramControlBar QToolButton{
+    border: 1px solid #CCCCCC;
+    border-top: 0px;
+    border-left: 0px;
+    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
+    font: 15px;
+}
+
+#machineListControl QToolButton:hover , #paramSettingsListControl QToolButton:hover, #paramControlBar QToolButton:hover{
+    background-color: #CCCCCC;
 }

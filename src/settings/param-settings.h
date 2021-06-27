@@ -19,8 +19,17 @@ public:
     int repeat;
     double step_height;
     double target_height;
-    bool is_diode;
+    bool use_diode;
     bool use_autofocus;
+
+    ParamSet() :
+         power(20),
+         speed(20),
+         repeat(1),
+         step_height(0),
+         target_height(0),
+         use_diode(false),
+         use_autofocus(false) {}
 
     static ParamSet fromJson(const QJsonObject &obj);
 

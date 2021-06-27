@@ -104,7 +104,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="../../qml.qrc">:/images/icon-cursor-01.png</pixmap>
+         <pixmap resource="../../../qml.qrc">:/images/icon-cursor-01.png</pixmap>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -178,7 +178,7 @@
          <string>...</string>
         </property>
         <property name="icon">
-         <iconset resource="../../qml.qrc">
+         <iconset resource="../../../qml.qrc">
           <normaloff>:/images/icon-eyeopen.png</normaloff>
           <normalon>:/images/icon-eyeclose.png</normalon>:/images/icon-eyeopen.png</iconset>
         </property>
@@ -202,7 +202,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../qml.qrc"/>
+  <include location="../../../qml.qrc"/>
  </resources>
  <connections/>
 </ui>

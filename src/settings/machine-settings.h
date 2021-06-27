@@ -47,7 +47,7 @@ public:
 
   MachineSettings() {
     QSettings settings;
-    QJsonObject obj = settings.value("machines").value<QJsonDocument>().object();
+    QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
     loadJson(obj);
   }
 
@@ -80,7 +80,7 @@ public:
 
   void save() {
     QSettings settings;
-    settings.setValue("machines", toJson());
+    settings.setValue("machines/machines", QJsonDocument(toJson()));
   }
 
   QList<MachineSet> machines_;

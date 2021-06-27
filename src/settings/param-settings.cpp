@@ -8,7 +8,7 @@ ParamSettings::ParamSet ParamSettings::ParamSet::fromJson(const QJsonObject &obj
   p.repeat = obj["repeat"].toInt(1);
   p.step_height = obj["step_height"].toDouble();
   p.target_height = obj["target_height"].toDouble();
-  p.is_diode = obj["isUseDiode"].toBool();
+  p.use_diode = obj["isUseDiode"].toBool();
   p.use_autofocus = obj["useAutofocus"].toBool();
   return p;
 }
@@ -21,7 +21,7 @@ QJsonObject ParamSettings::ParamSet::toJson() const {
   obj["repeat"] = repeat;
   obj["step_height"] = step_height;
   obj["target_height"] = target_height;
-  obj["isUseDiode"] = is_diode;
+  obj["isUseDiode"] = use_diode;
   obj["useAutofocus"] = use_autofocus;
   return obj;
 }

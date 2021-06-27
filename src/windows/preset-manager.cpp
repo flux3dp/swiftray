@@ -19,28 +19,32 @@ PresetManager::PresetManager(QWidget *parent) :
   // TODO (Block moving default parameters when it's already in userlist)
 }
 
-void PresetManager::loadStyles() {}
+void PresetManager::loadStyles() {
+  ui->groupBox->setTitle(" ");
+}
 
 void PresetManager::loadSettings() {
   ParamSettings settings;
   qInfo() << "Settings" << settings.toJson();
   ui->enabledList->clear();
   for (auto &param : settings.params_) {
-    QListWidgetItem *param_item = new QListWidgetItem;
-    param_item->setData(Qt::UserRole, param.toJson());
-    param_item->setText(param.name);
-    ui->enabledList->addItem(param_item);
+    QListWidgetItem *item = new QListWidgetItem(param.name);
+    item->setData(Qt::UserRole, param.toJson());
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    ui->enabledList->addItem(item);
   }
 }
 
 void PresetManager::registerEvents() {
   connect(ui->addParamBtn, &QAbstractButton::clicked, [=]() {
-    QListWidgetItem *param_item = new QListWidgetItem;
     ParamSettings::ParamSet param;
     param.name = "New Custom Parameter";
-    param_item->setData(Qt::UserRole, param.toJson());
-    param_item->setText(param.name);
-    ui->enabledList->addItem("New Custom Parameter");
+    QListWidgetItem *item = new QListWidgetItem(param.name);
+    item->setData(Qt::UserRole, param.toJson());
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    ui->enabledList->addItem(item);
+    ui->enabledList->setCurrentItem(item);
+    ui->enabledList->scrollToItem(item, QAbstractItemView::PositionAtCenter);
   });
   connect(ui->enabledList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
     auto obj = item->data(Qt::UserRole).toJsonObject();
