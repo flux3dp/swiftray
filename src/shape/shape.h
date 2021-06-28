@@ -9,6 +9,8 @@ using namespace std;
 
 class Layer;
 
+class DocumentSerializer;
+
 class Shape {
 public:
   enum class Type {
@@ -82,6 +84,7 @@ public:
 
   virtual operator QString();
 
+  friend class DocumentSerializer;
 
 private:
   Layer *layer_;

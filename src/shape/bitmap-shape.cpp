@@ -2,7 +2,11 @@
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 
-BitmapShape::BitmapShape(QImage &image) : Shape() {
+BitmapShape::BitmapShape() : Shape(), tinted_signature(0) {
+
+}
+
+BitmapShape::BitmapShape(QImage &image) : Shape(), tinted_signature(0) {
   // Process transparent image grayscale
   for (int yy = 0; yy < image.height(); yy++) {
     uchar *scan = image.scanLine(yy);
@@ -16,7 +20,7 @@ BitmapShape::BitmapShape(QImage &image) : Shape() {
   bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
-BitmapShape::BitmapShape(const BitmapShape &orig) : Shape() {
+BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig), tinted_signature(0) {
   bitmap_ = make_unique<QPixmap>(*orig.bitmap_);
   setLayer(orig.layer());
   setTransform(orig.transform());
@@ -43,6 +47,7 @@ void BitmapShape::calcBoundingBox() const {
 }
 
 QImage &BitmapShape::image() const {
+  assert(bitmap_.get() != nullptr);
   std::uintptr_t parent_color = hasLayer() ? 0 : layer()->color().value();
   std::uintptr_t bitmap_address =
        reinterpret_cast<std::uintptr_t>(bitmap_.get());

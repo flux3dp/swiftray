@@ -6,6 +6,8 @@
 
 class Document;
 
+class DocumentSerializer;
+
 class Layer {
 public:
   enum class Type {
@@ -95,6 +97,8 @@ public:
   void setDocument(Document *doc);
 
   void setLayerCounter(int i);
+
+  friend class DocumentSerializer;
 
 private:
   /** Main properties **/

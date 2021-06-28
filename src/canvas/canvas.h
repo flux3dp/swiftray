@@ -168,6 +168,8 @@ public slots:
 
   void startMemoryMonitor();
 
+  void save(QDataStream &out);
+
 private:
   // Basic attributes
   unique_ptr<Document> doc_;

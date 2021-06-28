@@ -10,6 +10,7 @@
 #include <shape/path-shape.h>
 #include <gcode/toolpath-exporter.h>
 #include <windows/preview-window.h>
+#include <document-serializer.h>
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -537,6 +538,7 @@ Document &Canvas::document() { return *doc_.get(); }
 void Canvas::setDocument(Document *document) {
   doc_ = unique_ptr<Document>(document);
   doc_->setCanvas(this);
+  resize();
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
 }
 
@@ -641,4 +643,9 @@ void Canvas::setWidget(QQuickWidget *widget) {
 
 CanvasTextEdit *Canvas::textInput() const {
   return text_input_;
+}
+
+void Canvas::save(QDataStream &out) {
+  DocumentSerializer ds(out);
+  ds.serializeDocument(document());
 }

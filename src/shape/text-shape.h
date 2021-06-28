@@ -38,6 +38,8 @@ public:
 
   void setLineHeight(float line_height);
 
+  friend class DocumentSerializer;
+
 private:
   bool editing_;
   float line_height_;

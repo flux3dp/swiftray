@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QFile>
 #include <boost/range/adaptor/reversed.hpp>
 #include <document.h>
 #include <shape/group-shape.h>

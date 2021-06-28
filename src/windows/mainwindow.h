@@ -71,6 +71,8 @@ private:
   FontPanel *font_panel_;
   QToolButton *add_layer_btn_;
   MachineManager *machine_manager_;
+
+  void saveFile();
 };
 
 #endif // MAINWINDOW_H

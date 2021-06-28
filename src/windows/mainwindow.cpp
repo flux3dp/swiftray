@@ -13,6 +13,7 @@
 #include <windows/preview-window.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
+#include <document-serializer.h>
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -59,7 +60,8 @@ void MainWindow::loadQSS() {
 }
 
 void MainWindow::openFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".", tr("SVG Files (*.svg)", "BVG Files (*.bvg)"));
+  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".",
+                                                   tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -69,7 +71,15 @@ void MainWindow::openFile() {
   if (file.open(QFile::ReadOnly)) {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
-    canvas_->loadSVG(data);
+    if (file_name.endsWith(".bb")) {
+      QDataStream stream(data);
+      DocumentSerializer ds(stream);
+      canvas_->setDocument(ds.deserializeDocument());
+      canvas_->emitAllChanges();
+      emit canvas_->selectionsChanged();
+    } else {
+      canvas_->loadSVG(data);
+    }
   }
 }
 
@@ -84,6 +94,17 @@ void MainWindow::openImageFile() {
   if (image.load(file_name)) {
     qInfo() << "File size:" << image.size();
     canvas_->importImage(image);
+  }
+}
+
+void MainWindow::saveFile() {
+  QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
+  QFile file(file_name);
+  if (file.open(QFile::ReadWrite)) {
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    qInfo() << "Saved";
   }
 }
 
@@ -271,6 +292,7 @@ void MainWindow::registerEvents() {
 
   // Monitor UI events
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
+  connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);

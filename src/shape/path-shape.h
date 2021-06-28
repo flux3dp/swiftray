@@ -43,11 +43,12 @@ public:
 
   void setFilled(bool filled);
 
+  friend class DocumentSerializer;
+
 private:
   bool filled_;
 
 private:
-  QHash<int, NodeType> node_types_;
   mutable QRectF hit_test_rect_;
 
 protected:

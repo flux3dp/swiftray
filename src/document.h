@@ -11,6 +11,8 @@
 
 class Canvas;
 
+class DocumentSerializer;
+
 class Document : public QObject {
 Q_OBJECT
 public:
@@ -121,6 +123,8 @@ public:
   void execute(const CmdPtr cmd0, Args... args) {
     execute({cmd0, args...});
   }
+
+  friend class DocumentSerializer;
 
 signals:
 

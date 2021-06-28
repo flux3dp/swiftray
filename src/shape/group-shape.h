@@ -30,6 +30,8 @@ public:
 
   CacheStack &cacheStack() const;
 
+  friend class DocumentSerializer;
+
 private:
   QList<ShapePtr> children_;
   mutable unique_ptr<CacheStack> cache_;
