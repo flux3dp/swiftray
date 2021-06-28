@@ -88,7 +88,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QToolButton" name="addParamSettingsBtn">
+           <widget class="QToolButton" name="addPresetBtn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -107,7 +107,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="removeParamSettingsBtn">
+           <widget class="QToolButton" name="removePresetBtn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -400,7 +400,17 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="power"/>
+               <widget class="QSpinBox" name="power">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -414,7 +424,17 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="speed"/>
+               <widget class="QSpinBox" name="speed">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> mm/s</string>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -456,7 +476,14 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="repeat"/>
+               <widget class="QSpinBox" name="repeat">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> times</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -482,7 +509,14 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="stepHeight"/>
+               <widget class="QDoubleSpinBox" name="stepHeight">
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> mm</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>

@@ -53,7 +53,9 @@ void LayerParamsPanel::registerEvents() {
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     if (index == ui->presetComboBox->count() - 1 && index > 0) {
       preset_manager_ = new PresetManager(this);
-      preset_manager_->exec();
+      if (preset_manager_->exec() == 1) {
+        preset_manager_->save();
+      }
       // TODO (Check if index available, or use string as recover index);
       loadSettings();
       ui->presetComboBox->setCurrentIndex(preset_previous_index_);

@@ -28,6 +28,14 @@ void DocPanel::loadSettings() {
 
 void DocPanel::registerEvents() {
   ui->advanceFeatureToggle->setContent(ui->fluxFeatures);
+  connect(ui->modelComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+    auto data = ui->modelComboBox->itemData(index);
+    auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
+    // TODO (change width/height to QSize)
+    canvas_->document().setWidth(machine.width * 10);
+    canvas_->document().setHeight(machine.height * 10);
+    canvas_->resize();
+  });
 }
 
 DocPanel::~DocPanel() {

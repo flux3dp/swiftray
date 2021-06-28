@@ -17,7 +17,6 @@ PresetManager::PresetManager(QWidget *parent) :
   loadSettings();
   loadStyles();
   registerEvents();
-  // TODO (Block moving default parameters when it's already in userlist)
 }
 
 PresetManager::~PresetManager() {
@@ -52,7 +51,31 @@ void PresetManager::registerEvents() {
     ui->paramList->scrollToBottom();
     ui->paramList->setCurrentRow(ui->paramList->count() - 1);
     updatePresetData();
-    save();
+  });
+
+
+  connect(ui->removeParamBtn, &QAbstractButton::clicked, [=]() {
+    qInfo() << "Remove param" << ui->paramList->currentItem();
+    auto item = ui->paramList->currentItem();
+    ui->paramList->takeItem(ui->paramList->row(item));
+    updatePresetData();
+  });
+
+
+  connect(ui->addPresetBtn, &QAbstractButton::clicked, [=]() {
+    PresetSettings::Preset preset;
+    preset.name = "New Preset";
+    auto item = new QListWidgetItem(preset.name);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    item->setData(Qt::UserRole, preset.toJson());
+    ui->presetList->addItem(item);
+    ui->presetList->scrollToBottom();
+    ui->presetList->setCurrentRow(ui->presetList->count() - 1);
+  });
+
+  connect(ui->removePresetBtn, &QAbstractButton::clicked, [=]() {
+    auto item = ui->presetList->currentItem();
+    ui->presetList->takeItem(ui->presetList->row(item));
   });
 
   connect(ui->paramList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
@@ -80,7 +103,6 @@ void PresetManager::registerEvents() {
     if (item->text() != preset.name) {
       preset.name = item->text();
       item->setData(Qt::UserRole, preset.toJson());
-      save();
     }
   });
 
@@ -92,7 +114,6 @@ void PresetManager::registerEvents() {
       param.name = item->text();
       item->setData(Qt::UserRole, param.toJson());
       updatePresetData();
-      save();
     }
   });
 }
