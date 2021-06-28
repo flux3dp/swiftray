@@ -3,7 +3,7 @@
 #include "ui_layer-params-panel.h"
 #include <windows/preset-manager.h>
 #include <widgets/components/spinbox-helper.h>
-#include <settings/param-settings.h>
+#include <settings/preset-settings.h>
 #include <canvas/canvas.h>
 #include <document.h>
 
@@ -11,7 +11,6 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, Canvas *canvas) :
      QFrame(parent),
      ui(new Ui::LayerParamsPanel),
      canvas_(canvas),
-     param_settings_(nullptr),
      layer_(nullptr),
      preset_previous_index_(0) {
   ui->setupUi(this);
@@ -30,11 +29,14 @@ void LayerParamsPanel::loadStyles() {
 void LayerParamsPanel::loadSettings() {
   QString machine_model = canvas_->document().settings().machine_model;
   qInfo() << "Loading model" << machine_model;
-  param_settings_ = make_unique<ParamSettings>(machine_model);
-  ui->presetComboBox->clear();
-  for (auto &param: param_settings_->params()) {
-    ui->presetComboBox->addItem(param.name, param.toJson());
+  PresetSettings preset;
+  if (preset.presets().size() > 0) {
+    ui->presetComboBox->clear();
+    for (auto &param: preset.presets().first().params) {
+      ui->presetComboBox->addItem(param.name, param.toJson());
+    }
   }
+
   ui->presetComboBox->addItem("More...");
 }
 
@@ -50,11 +52,13 @@ void LayerParamsPanel::registerEvents() {
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     if (index == ui->presetComboBox->count() - 1 && index > 0) {
-      preset_manager_ = make_unique<PresetManager>(this);
-      preset_manager_->show();
+      preset_manager_ = new PresetManager(this);
+      preset_manager_->exec();
+      // TODO (Check if index available, or use string as recover index);
+      loadSettings();
       ui->presetComboBox->setCurrentIndex(preset_previous_index_);
     } else {
-      auto p = ParamSettings::ParamSet::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
+      auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->powerSpinBox->setValue(p.power);
       ui->speedSpinBox->setValue(p.speed);
       ui->repeatSpinBox->setValue(p.repeat);

@@ -2,6 +2,7 @@
 #define PRESETMANAGER_H
 
 #include <QDialog>
+#include <settings/preset-settings.h>
 
 namespace Ui {
   class PresetManager;
@@ -22,6 +23,12 @@ public:
   void loadSettings();
 
   void registerEvents();
+
+  void showPreset();
+
+  void updatePresetData();
+
+  void save();
 
 private:
   Ui::PresetManager *ui;

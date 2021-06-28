@@ -1,11 +1,12 @@
 #include <QDebug>
 #include <QSettings>
-#include <QJsonDocument>
 #include <QJsonObject>
-#include <settings/param-settings.h>
 #include "preset-manager.h"
 #include "ui_preset-manager.h"
 #include <widgets/panels/layer-params-panel.h>
+
+// General concept: store state in the ui, and finally save the settings from ui state
+// If we generate ui from states, the cost is rather high
 
 PresetManager::PresetManager(QWidget *parent) :
      QDialog(parent),
@@ -19,36 +20,45 @@ PresetManager::PresetManager(QWidget *parent) :
   // TODO (Block moving default parameters when it's already in userlist)
 }
 
+PresetManager::~PresetManager() {
+  delete ui;
+}
+
 void PresetManager::loadStyles() {
   ui->groupBox->setTitle(" ");
 }
 
 void PresetManager::loadSettings() {
-  ParamSettings settings;
+  PresetSettings settings;
   qInfo() << "Settings" << settings.toJson();
-  ui->enabledList->clear();
-  for (auto &param : settings.params_) {
-    QListWidgetItem *item = new QListWidgetItem(param.name);
-    item->setData(Qt::UserRole, param.toJson());
+  ui->presetList->clear();
+  ui->paramList->clear();
+  for (auto &preset : settings.presets()) {
+    QListWidgetItem *item = new QListWidgetItem(preset.name);
+    item->setData(Qt::UserRole, preset.toJson());
     item->setFlags(item->flags() | Qt::ItemIsEditable);
-    ui->enabledList->addItem(item);
+    ui->presetList->addItem(item);
   }
 }
 
 void PresetManager::registerEvents() {
   connect(ui->addParamBtn, &QAbstractButton::clicked, [=]() {
-    ParamSettings::ParamSet param;
+    PresetSettings::Param param;
     param.name = "New Custom Parameter";
-    QListWidgetItem *item = new QListWidgetItem(param.name);
-    item->setData(Qt::UserRole, param.toJson());
+    auto item = new QListWidgetItem(param.name);
     item->setFlags(item->flags() | Qt::ItemIsEditable);
-    ui->enabledList->addItem(item);
-    ui->enabledList->setCurrentItem(item);
-    ui->enabledList->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+    item->setData(Qt::UserRole, param.toJson());
+    ui->paramList->addItem(item);
+    ui->paramList->scrollToBottom();
+    ui->paramList->setCurrentRow(ui->paramList->count() - 1);
+    updatePresetData();
+    save();
   });
-  connect(ui->enabledList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
+
+  connect(ui->paramList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
+    if (item == nullptr) return;
     auto obj = item->data(Qt::UserRole).toJsonObject();
-    auto param = ParamSettings::ParamSet::fromJson(obj);
+    auto param = PresetSettings::Param::fromJson(obj);
     ui->editor->setEnabled(true);
     ui->paramTitle->setText(param.name);
     ui->speed->setValue(param.speed);
@@ -56,9 +66,66 @@ void PresetManager::registerEvents() {
     ui->repeat->setValue(param.repeat);
     ui->stepHeight->setValue(param.step_height);
   });
+
+  connect(ui->presetList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
+    if (item == nullptr) return;
+    showPreset();
+  });
+
+  // Todo (Swap to itemDelegate https://stackoverflow.com/questions/22049129/qt-signal-for-when-qlistwidget-row-is-edited)
+  connect(ui->presetList, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
+    if (item == nullptr) return;
+    auto obj = item->data(Qt::UserRole).toJsonObject();
+    auto preset = PresetSettings::Preset::fromJson(obj);
+    if (item->text() != preset.name) {
+      preset.name = item->text();
+      item->setData(Qt::UserRole, preset.toJson());
+      save();
+    }
+  });
+
+  connect(ui->paramList, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
+    if (item == nullptr) return;
+    auto obj = item->data(Qt::UserRole).toJsonObject();
+    auto param = PresetSettings::Param::fromJson(obj);
+    if (item->text() != param.name) {
+      param.name = item->text();
+      item->setData(Qt::UserRole, param.toJson());
+      updatePresetData();
+      save();
+    }
+  });
 }
 
-PresetManager::~PresetManager() {
-  delete ui;
-  qInfo() << "Dialog Destructed";
+void PresetManager::updatePresetData() {
+  PresetSettings::Preset p;
+  for (int i = 0; i < ui->paramList->count(); i++) {
+    auto data = ui->paramList->item(i)->data(Qt::UserRole).toJsonObject();
+    p.params << PresetSettings::Param::fromJson(data);
+  }
+  ui->presetList->currentItem()->setData(Qt::UserRole, p.toJson());
+}
+
+void PresetManager::save() {
+  PresetSettings settings;
+  settings.presets_.clear();
+  for (int i = 0; i < ui->presetList->count(); i++) {
+    auto data = ui->presetList->item(i)->data(Qt::UserRole).toJsonObject();
+    settings.presets_ << PresetSettings::Preset::fromJson(data);
+  }
+  settings.save();
+  qInfo() << "Saving" << settings.toJson();
+}
+
+void PresetManager::showPreset() {
+  auto item = ui->presetList->currentItem();
+  auto obj = item->data(Qt::UserRole).toJsonObject();
+  auto preset = PresetSettings::Preset::fromJson(obj);
+  ui->paramList->clear();
+  for (auto &param : preset.params) {
+    QListWidgetItem *item = new QListWidgetItem(param.name);
+    item->setData(Qt::UserRole, param.toJson());
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    ui->paramList->addItem(item);
+  }
 }

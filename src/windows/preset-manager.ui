@@ -58,7 +58,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QListWidget" name="listWidget"/>
+        <widget class="QListWidget" name="presetList"/>
        </item>
        <item>
         <widget class="QFrame" name="paramSettingsListControl">
@@ -180,7 +180,7 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QListWidget" name="enabledList">
+            <widget class="QListWidget" name="paramList">
              <property name="dragEnabled">
               <bool>true</bool>
              </property>

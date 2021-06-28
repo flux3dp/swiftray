@@ -3,7 +3,7 @@
 
 #include <QFrame>
 #include <layer.h>
-#include <settings/param-settings.h>
+#include <settings/preset-settings.h>
 #include "windows/preset-manager.h"
 
 namespace Ui {
@@ -32,8 +32,7 @@ private:
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
   Canvas *canvas_;
-  unique_ptr<PresetManager> preset_manager_;
-  unique_ptr<ParamSettings> param_settings_;
+  PresetManager *preset_manager_;
   int preset_previous_index_;
 };
 
