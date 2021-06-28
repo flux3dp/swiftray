@@ -119,6 +119,9 @@
            <property name="enabled">
             <bool>true</bool>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
            <property name="suffix">
             <string> %</string>
            </property>
@@ -143,6 +146,9 @@
          </item>
          <item>
           <widget class="QSpinBox" name="speedSpinBox">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
            <property name="suffix">
             <string> mm/s</string>
            </property>
@@ -167,6 +173,9 @@
          </item>
          <item>
           <widget class="QSpinBox" name="repeatSpinBox">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
            <property name="suffix">
             <string> times</string>
            </property>

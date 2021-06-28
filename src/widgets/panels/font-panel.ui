@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>221</width>
-    <height>213</height>
+    <height>243</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -142,6 +142,9 @@
         </item>
         <item>
          <widget class="QSpinBox" name="fontSizeSpinBox">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
           <property name="suffix">
            <string/>
           </property>
@@ -215,6 +218,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="lineHeightSpinBox">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
           <property name="decimals">
            <number>1</number>
           </property>
@@ -251,6 +257,9 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="letterSpacingSpinBox">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
           <property name="decimals">
            <number>1</number>
           </property>

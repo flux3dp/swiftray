@@ -18,11 +18,6 @@ TransformPanel::~TransformPanel() {
 }
 
 void TransformPanel::loadStyles() {
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->xSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->ySpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->rotationSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->widthSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->heightSpinBox)->lineEdit()->setStyleSheet("padding: 0 3px;");
 }
 
 void TransformPanel::registerEvents() {

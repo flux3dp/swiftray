@@ -16,9 +16,6 @@ FontPanel::FontPanel(QWidget *parent, Canvas *canvas) :
 }
 
 void FontPanel::loadStyles() {
-  ((SpinBoxHelper<QSpinBox> *) ui->fontSizeSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->letterSpacingSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QDoubleSpinBox> *) ui->lineHeightSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void FontPanel::registerEvents() {

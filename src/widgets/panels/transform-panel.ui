@@ -60,11 +60,14 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::NoButtons</enum>
          </property>
          <property name="suffix">
-          <string/>
+          <string> mm</string>
          </property>
          <property name="minimum">
           <double>0.000000000000000</double>
@@ -102,8 +105,17 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+         <property name="suffix">
+          <string> mm</string>
          </property>
          <property name="minimum">
           <double>0.000000000000000</double>
@@ -148,11 +160,14 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::NoButtons</enum>
          </property>
          <property name="suffix">
-          <string/>
+          <string> mm</string>
          </property>
          <property name="minimum">
           <double>0.000000000000000</double>
@@ -190,8 +205,14 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+         <property name="suffix">
+          <string> mm</string>
          </property>
          <property name="minimum">
           <double>0.000000000000000</double>
@@ -238,6 +259,9 @@
            <horstretch>3</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
          <property name="buttonSymbols">
           <enum>QAbstractSpinBox::NoButtons</enum>

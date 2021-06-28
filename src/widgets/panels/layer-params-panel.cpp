@@ -25,9 +25,6 @@ LayerParamsPanel::~LayerParamsPanel() {
 }
 
 void LayerParamsPanel::loadStyles() {
-  ((SpinBoxHelper<QSpinBox> *) ui->powerSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QSpinBox> *) ui->repeatSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QSpinBox> *) ui->speedSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void LayerParamsPanel::loadSettings() {
