@@ -226,6 +226,8 @@ bool Canvas::event(QEvent *e) {
       for (auto &control : ctrls_) {
         if (control->isActive() &&
             control->hoverEvent(dynamic_cast<QHoverEvent *>(e), &cursor)) {
+          // TODO (Hack this to mainwindow support global cursor)
+          // Local cursor has a bug..
           setCursor(cursor);
           break;
         }

@@ -60,11 +60,11 @@ void TransformPanel::registerEvents() {
   });
 
   connect(canvas_, &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
-    x_ = x;
-    y_ = y;
+    x_ = x / 10;
+    y_ = y / 10;
     r_ = r;
-    w_ = w;
-    h_ = h;
+    w_ = w / 10;
+    h_ = h / 10;
     ui->xSpinBox->setValue(x_);
     ui->ySpinBox->setValue(y_);
     ui->rotationSpinBox->setValue(r_);
@@ -82,6 +82,6 @@ void TransformPanel::setScaleLock(bool scaleLock) {
 }
 
 void TransformPanel::updateControl() {
-  canvas_->transformControl().updateTransform(x_, y_, r_, w_, h_);
+  canvas_->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
 }
 
