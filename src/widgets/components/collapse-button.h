@@ -1,6 +1,9 @@
 #include <QToolButton>
 #include <QApplication>
 #include <QDebug>
+#include <QPropertyAnimation>
+#include <QAbstractAnimation>
+#include <QParallelAnimationGroup>
 
 #pragma once
 

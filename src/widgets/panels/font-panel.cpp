@@ -3,12 +3,13 @@
 #include "ui_font-panel.h"
 #include <canvas/canvas.h>
 #include <widgets/components/spinbox-helper.h>
+#include <windows/mainwindow.h>
 
-FontPanel::FontPanel(QWidget *parent, Canvas *canvas) :
+FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
-     canvas_(canvas),
+     main_window_(main_window),
      ui(new Ui::FontPanel) {
-  assert(parent != nullptr && canvas != nullptr);
+  assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
   loadStyles();
   registerEvents();
@@ -22,7 +23,7 @@ void FontPanel::registerEvents() {
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
   auto spin_int_event = QOverload<int>::of(&QSpinBox::valueChanged);
 
-  connect(ui->fontComboBox, &QFontComboBox2::currentFontChanged, canvas_, &Canvas::setFont);
+  connect(ui->fontComboBox, &QFontComboBox2::currentFontChanged, main_window_->canvas(), &Canvas::setFont);
 
   connect(ui->fontSizeSpinBox, spin_int_event, [=](double value) {
     font_.setPointSize(value);
@@ -34,7 +35,7 @@ void FontPanel::registerEvents() {
     ui->fontComboBox->setCurrentFont(font_);
   });
 
-  connect(ui->lineHeightSpinBox, spin_event, canvas_, &Canvas::setLineHeight);
+  connect(ui->lineHeightSpinBox, spin_event, main_window_->canvas(), &Canvas::setLineHeight);
 
   connect(ui->boldCheckBox, &QCheckBox::toggled, [=](bool checked) {
     font_.setBold(checked);
@@ -51,8 +52,8 @@ void FontPanel::registerEvents() {
     ui->fontComboBox->setCurrentFont(font_);
   });
 
-  connect(canvas_, &Canvas::selectionsChanged, this, [=]() {
-    for (auto &shape : canvas_->document().selections()) {
+  connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {
+    for (auto &shape : main_window_->canvas()->document().selections()) {
       if (shape->type() == ::Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
         setFont(t->font(), t->lineHeight());

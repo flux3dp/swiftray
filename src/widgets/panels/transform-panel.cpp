@@ -1,13 +1,13 @@
 #include "transform-panel.h"
 #include "ui_transform-panel.h"
 #include <widgets/components/spinbox-helper.h>
-#include <canvas/canvas.h>
+#include <windows/mainwindow.h>
 
-TransformPanel::TransformPanel(QWidget *parent, Canvas *canvas) :
+TransformPanel::TransformPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
-     canvas_(canvas),
+     main_window_(main_window),
      ui(new Ui::TransformPanel) {
-  assert(parent != nullptr && canvas != nullptr);
+  assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
   loadStyles();
   registerEvents();
@@ -59,7 +59,7 @@ void TransformPanel::registerEvents() {
     }
   });
 
-  connect(canvas_, &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
+  connect(main_window_->canvas(), &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
     x_ = x / 10;
     y_ = y / 10;
     r_ = r;
@@ -82,6 +82,6 @@ void TransformPanel::setScaleLock(bool scaleLock) {
 }
 
 void TransformPanel::updateControl() {
-  canvas_->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
+  main_window_->canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
 }
 

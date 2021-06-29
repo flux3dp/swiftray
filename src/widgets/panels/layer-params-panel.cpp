@@ -6,11 +6,12 @@
 #include <settings/preset-settings.h>
 #include <canvas/canvas.h>
 #include <document.h>
+#include <windows/mainwindow.h>
 
-LayerParamsPanel::LayerParamsPanel(QWidget *parent, Canvas *canvas) :
+LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      ui(new Ui::LayerParamsPanel),
-     canvas_(canvas),
+     main_window_(main_window),
      layer_(nullptr),
      preset_previous_index_(0) {
   ui->setupUi(this);
@@ -27,7 +28,7 @@ void LayerParamsPanel::loadStyles() {
 }
 
 void LayerParamsPanel::loadSettings() {
-  QString machine_model = canvas_->document().settings().machine_model;
+  QString machine_model = main_window_->canvas()->document().settings().machine_model;
   qInfo() << "Loading model" << machine_model;
   PresetSettings preset;
   if (preset.presets().size() > 0) {
@@ -36,7 +37,6 @@ void LayerParamsPanel::loadSettings() {
       ui->presetComboBox->addItem(param.name, param.toJson());
     }
   }
-
   ui->presetComboBox->addItem("More...");
 }
 
@@ -53,19 +53,21 @@ void LayerParamsPanel::registerEvents() {
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     if (index == ui->presetComboBox->count() - 1 && index > 0) {
       preset_manager_ = new PresetManager(this);
+      int index_to_recover = preset_previous_index_;
       if (preset_manager_->exec() == 1) {
         preset_manager_->save();
+        emit main_window_->presetSettingsChanged();
+        loadSettings();
       }
-      // TODO (Check if index available, or use string as recover index);
-      loadSettings();
-      ui->presetComboBox->setCurrentIndex(preset_previous_index_);
-    } else {
+      ui->presetComboBox->setCurrentIndex(index_to_recover);
+      return;
+    } else if (index >= 0) {
       auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->powerSpinBox->setValue(p.power);
       ui->speedSpinBox->setValue(p.speed);
       ui->repeatSpinBox->setValue(p.repeat);
+      preset_previous_index_ = index;
     }
-    preset_previous_index_ = index;
   });
 }
 

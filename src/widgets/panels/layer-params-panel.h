@@ -6,6 +6,8 @@
 #include <settings/preset-settings.h>
 #include "windows/preset-manager.h"
 
+class MainWindow;
+
 namespace Ui {
   class LayerParamsPanel;
 }
@@ -14,7 +16,7 @@ class LayerParamsPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit LayerParamsPanel(QWidget *parent, Canvas *canvas);
+  explicit LayerParamsPanel(QWidget *parent, MainWindow *main_window);
 
   ~LayerParamsPanel();
 
@@ -31,7 +33,7 @@ private:
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
-  Canvas *canvas_;
+  MainWindow *main_window_;
   PresetManager *preset_manager_;
   int preset_previous_index_;
 };

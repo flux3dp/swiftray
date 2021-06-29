@@ -40,6 +40,14 @@ public:
 
   void closeEvent(QCloseEvent *event) override;
 
+  Canvas *canvas() const;
+
+signals:
+
+  void presetSettingsChanged();
+
+  void machineChanged();
+
 private slots:
 
   void canvasLoaded(QQuickWidget::Status status);

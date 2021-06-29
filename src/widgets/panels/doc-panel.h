@@ -2,7 +2,8 @@
 #define DOCSETTINGSPANEL_H
 
 #include <QFrame>
-#include <canvas/canvas.h>
+
+class MainWindow;
 
 namespace Ui {
   class DocPanel;
@@ -12,7 +13,7 @@ class DocPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit DocPanel(QWidget *parent, Canvas *canvas);
+  explicit DocPanel(QWidget *parent, MainWindow *main_window);
 
   ~DocPanel();
 
@@ -22,7 +23,7 @@ public:
 
 private:
   Ui::DocPanel *ui;
-  Canvas *canvas_;
+  MainWindow *main_window_;
 };
 
 #endif // DOCSETTINGSPANEL_H

@@ -2,10 +2,12 @@
 #include "ui_doc-panel.h"
 #include <settings/machine-settings.h>
 #include <settings/preset-settings.h>
+#include <windows/mainwindow.h>
 
-DocPanel::DocPanel(QWidget *parent, Canvas *canvas) :
+
+DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
-     canvas_(canvas),
+     main_window_(main_window),
      ui(new Ui::DocPanel) {
   ui->setupUi(this);
   loadSettings();
@@ -32,9 +34,13 @@ void DocPanel::registerEvents() {
     auto data = ui->modelComboBox->itemData(index);
     auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
     // TODO (change width/height to QSize)
-    canvas_->document().setWidth(machine.width * 10);
-    canvas_->document().setHeight(machine.height * 10);
-    canvas_->resize();
+    main_window_->canvas()->document().setWidth(machine.width * 10);
+    main_window_->canvas()->document().setHeight(machine.height * 10);
+    main_window_->canvas()->resize();
+  });
+
+  connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
+    loadSettings();
   });
 }
 

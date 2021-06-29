@@ -4,7 +4,7 @@
 #include <QFrame>
 #include <QFont>
 
-class Canvas;
+class MainWindow;
 
 namespace Ui {
   class FontPanel;
@@ -14,7 +14,7 @@ class FontPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit FontPanel(QWidget *parent, Canvas *canvas);
+  explicit FontPanel(QWidget *parent, MainWindow *main_window);
 
   ~FontPanel();
 
@@ -28,7 +28,7 @@ public:
 
 private:
   Ui::FontPanel *ui;
-  Canvas *canvas_;
+  MainWindow *main_window_;
   QFont font_;
 };
 

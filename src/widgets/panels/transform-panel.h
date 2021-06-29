@@ -6,6 +6,8 @@
 #include <shape/shape.h>
 #include <canvas/controls/transform.h>
 
+class MainWindow;
+
 namespace Ui {
   class TransformPanel;
 }
@@ -14,7 +16,7 @@ class TransformPanel : public QFrame {
 Q_OBJECT
 
 public:
-  explicit TransformPanel(QWidget *parent, Canvas *canvas);
+  explicit TransformPanel(QWidget *parent, MainWindow *main_window);
 
   ~TransformPanel();
 
@@ -36,7 +38,7 @@ private:
   double w_;
   double h_;
   bool scale_locked_;
-  Canvas *canvas_;
+  MainWindow *main_window_;
 };
 
 #endif // TRANSFORM_WIDGET_H

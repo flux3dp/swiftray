@@ -263,11 +263,11 @@ void MainWindow::updateSelections() {
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // Add custom panels
-  transform_panel_ = new TransformPanel(ui->objectParamDock, canvas_);
-  layer_params_panel_ = new LayerParamsPanel(ui->layerDockContents, canvas_);
+  transform_panel_ = new TransformPanel(ui->objectParamDock, this);
+  layer_params_panel_ = new LayerParamsPanel(ui->layerDockContents, this);
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
-  font_panel_ = new FontPanel(ui->fontDock, canvas_);
-  doc_panel_ = new DocPanel(ui->documentDock, canvas_);
+  font_panel_ = new FontPanel(ui->fontDock, this);
+  doc_panel_ = new DocPanel(ui->documentDock, this);
   machine_manager_ = new MachineManager(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
@@ -346,6 +346,7 @@ void MainWindow::registerEvents() {
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   });
   connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
+    // TODO (Add more UI logic here to prevent redrawing all list widget)
     canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
 }
@@ -355,4 +356,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   settings.setValue("window/geometry", saveGeometry());
   settings.setValue("window/windowState", saveState());
   QMainWindow::closeEvent(event);
+}
+
+Canvas *MainWindow::canvas() const {
+  return canvas_;
 }
