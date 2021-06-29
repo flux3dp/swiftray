@@ -8,11 +8,21 @@
 // TODO (Create batch command for add / remove shapes)
 
 class Document;
+
+/**
+    \namespace Commands
+    \brief Undoable commands.
+*/
 namespace Commands {
+
+  /**
+      \class BaseCmd
+      \brief A class template for undoable commands, along with undo() / redo() implementation
+  */
   class BaseCmd {
   public:
 
-    // BaseCmd represent a class template for undoable commands, along with undo() / redo() implementation
+    // BaseCmd 
     BaseCmd() = default;
 
     virtual void undo(Document *doc) {
@@ -26,6 +36,11 @@ namespace Commands {
 
   typedef shared_ptr<BaseCmd> CmdPtr;
 
+
+  /**
+      \class AddLayerCmd
+      \brief Command for adding layers.
+  */
   class AddLayerCmd : public BaseCmd {
   public:
     AddLayerCmd(const LayerPtr &layer) : layer_(layer) {}
@@ -37,6 +52,10 @@ namespace Commands {
     LayerPtr layer_;
   };
 
+  /**
+      \class RemoveLayerCmd
+      \brief Command for removing layers.
+  */  
   class RemoveLayerCmd : public BaseCmd {
   public:
     RemoveLayerCmd(const LayerPtr &layer) : layer_(layer) {}
@@ -48,11 +67,13 @@ namespace Commands {
     LayerPtr layer_;
   };
 
+  /**
+      \class AddShapeCmd
+      \brief Command for adding shapes.
+      The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
+  */  
   class AddShapeCmd : public BaseCmd {
   public:
-
-    // AddShapeCmd
-    // Note: The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
     AddShapeCmd(Layer *layer, const ShapePtr &shape) :
          layer_(layer), shape_(shape) {}
 
@@ -64,6 +85,11 @@ namespace Commands {
     ShapePtr shape_;
   };
 
+  /**
+      \class RemoveShapeCmd
+      \brief Command for removing shapes.
+      The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
+  */  
   class RemoveShapeCmd : public BaseCmd {
   public:
     explicit RemoveShapeCmd(const ShapePtr &shape) :
@@ -79,7 +105,11 @@ namespace Commands {
     Layer *layer_;
     ShapePtr shape_;
   };
-
+  
+  /**
+      \class SelectCmd
+      \brief Command for selection changes in document.
+  */  
   class SelectCmd : public BaseCmd {
   public:
 
@@ -93,11 +123,13 @@ namespace Commands {
     QList<ShapePtr> new_selections_;
   };
 
+  /**
+      \class JoinedCmd
+      \brief A group of commands that can be considered as a single step in undo/redo
+  */  
   class JoinedCmd : public BaseCmd {
   public:
 
-    // JoinedCmd
-    // A group of commands that can be considered as a single step in undo/redo
     JoinedCmd() = default;
 
     JoinedCmd(initializer_list<BaseCmd *> undo_events);
@@ -113,7 +145,10 @@ namespace Commands {
 
   typedef shared_ptr<JoinedCmd> JoinedPtr;
 
-  // Command when object's property is changed, and the property can be "passed by value"
+  /**
+      \class SetCmd
+      \brief Command for changing objects' property, and the property can be "passed by value"
+  */
   template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
        PropType)>
   class SetCmd : public BaseCmd {
@@ -138,7 +173,10 @@ namespace Commands {
     PropType old_value_;
   };
 
-  // Command when object's property is changed, and the property is usually "passed by reference"
+  /**
+      \class SetRefCmd
+      \brief Command for changing objects' property, and the property is usually "passed by reference"
+  */
   template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
        const PropType &)>
   class SetRefCmd : public BaseCmd {

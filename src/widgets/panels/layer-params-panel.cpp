@@ -2,9 +2,7 @@
 #include "layer-params-panel.h"
 #include "ui_layer-params-panel.h"
 #include <windows/preset-manager.h>
-#include <widgets/components/spinbox-helper.h>
 #include <settings/preset-settings.h>
-#include <canvas/canvas.h>
 #include <document.h>
 #include <windows/mainwindow.h>
 

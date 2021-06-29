@@ -1,22 +1,19 @@
 #include <QDebug>
 #include <document.h>
 
-/*
-We use a *single file* for the serializer to maintain different file versions.
-
-If we add new properties to the document/layer/shape objects in new versions, 
-we can extend the serializer instead of adding a lot if/else to different classes.
-
-We can also use JSON, which is easier for backward-compatiblity and debug, but the performance may be slow.
-
-We may also use JSON partially to support volatile classes.
-
-JSON (O): Document settings, memo, metadata
-JSON (X): QPainterShape, QPixmap
-
+/**
+ *  \class DocumentSerializer
+ *  \brief Save and load documents as binary format.
+ * 
+ *  We use a *single file* for the serializer to maintain different file versions,
+ *  so if we add new properties to the document/layer/shape objects in new versions,
+ *  we can extend the serializer instead of adding a lot if/else to different classes.
+ *  Notes: We can also use JSON, which is easier for backward-compatiblity and debug, but the performance may be slow.
+ *  Notes: We may also use JSON partially to support volatile classes.
+ *  JSON (O): Document settings, memo, metadata
+ *  JSON (X): QPainterShape, QPixmap
+ *  TODO (Add JSON Serializer for debugging scenes)
 */
-
-//TODO (Add JSON Serializer for debugging scenes)
 
 class DocumentSerializer {
 public:

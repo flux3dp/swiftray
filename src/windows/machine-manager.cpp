@@ -3,7 +3,6 @@
 #include <windows/new-machine-dialog.h>
 #include <settings/machine-settings.h>
 #include <QListWidgetItem>
-#include <widgets/components/spinbox-helper.h>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
 
@@ -37,8 +36,6 @@ void MachineManager::loadSettings() {
 
 
 void MachineManager::loadStyles() {
-  ((SpinBoxHelper<QSpinBox> *) ui->widthSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
-  ((SpinBoxHelper<QSpinBox> *) ui->heightSpinBox)->lineEdit()->setStyleSheet("padding: 0 8px;");
 }
 
 void MachineManager::loadWidgets() {

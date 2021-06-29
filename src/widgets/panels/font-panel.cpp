@@ -2,7 +2,6 @@
 #include "font-panel.h"
 #include "ui_font-panel.h"
 #include <canvas/canvas.h>
-#include <widgets/components/spinbox-helper.h>
 #include <windows/mainwindow.h>
 
 FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :

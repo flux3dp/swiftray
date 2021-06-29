@@ -13,6 +13,10 @@ class Canvas;
 
 class DocumentSerializer;
 
+/**
+  \class Document
+  \brief Document state store for layers, shapes, document specfic settings and current view state.
+*/
 class Document : public QObject {
 Q_OBJECT
 public:

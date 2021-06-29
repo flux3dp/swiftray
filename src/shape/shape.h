@@ -11,6 +11,10 @@ class Layer;
 
 class DocumentSerializer;
 
+/**
+    \class Shape
+    \brief A base class for shape objects that contains transform and parent information
+*/
 class Shape {
 public:
   enum class Type {
@@ -52,24 +56,40 @@ public:
 
   void flushCache();
 
-  // Transform related
+  /**
+   * @return Raw transform
+   */
   const QTransform &transform() const;
 
   const QTransform &tempTransform() const;
-
+  /**
+   * @return The transform combines with group parents' transform (if any)
+   */
   QTransform globalTransform() const;
 
+  /**
+   * Combine current transform with a new transform.
+   * @param transform The new transform
+   */
   void applyTransform(const QTransform &transform);
 
+  /**
+   * Set current transform to a new transform.
+   * @param transform The new transform
+   */
   void setTransform(const QTransform &transform);
 
+  /**
+   * Set temporarily transform that hasn't been commited during moving / rotating / scaling stage for displaying objects.
+   * @param transform The new transform
+   */
   void setTempTransform(const QTransform &transform);
 
   bool hasLayer() const;
 
   bool isParentSelected() const;
 
-  // Virtual functions
+  /** Calculate bounding box of the shape if the cache is invalid */
   virtual void calcBoundingBox() const;
 
   virtual shared_ptr<Shape> clone() const;
@@ -80,6 +100,7 @@ public:
 
   virtual void paint(QPainter *painter) const;
 
+  /** Returns shape type in Shape::Type */
   virtual Type type() const;
 
   virtual operator QString();
@@ -87,16 +108,25 @@ public:
   friend class DocumentSerializer;
 
 private:
+  /** Usually if shape belongs to a layer then the parent is null */
   Layer *layer_;
+  /** Usually if shape belongs to a parent (group) then the layer is null */
   Shape *parent_;
+  /** Rotation stores how the objects has been rotated, so the user can reverse the rotation after some operations */
   qreal rotation_;
+  /** A flag indicate whether the bounding box is currently valid */
   mutable bool bbox_need_recalc_;
 
 protected:
+  /** Temporarily transform that hasn't been commited during moving / rotating / scaling stage for displaying objects. */
   QTransform temp_transform_;
+  /** Shape transform including offset, scale, rotate and kew */
   QTransform transform_;
+  /** Cached bounding box with rotation */
   mutable QPolygonF rotated_bbox_;
+  /** Cached bounding box */
   mutable QRectF bbox_;
+  /** Whether the object is selected by user */
   bool selected_;
 };
 

@@ -8,6 +8,11 @@
 
 class Canvas;
 
+
+/**
+  \namespace Controls
+  \brief In-canvas controls with its own painting and event handling functions.
+*/
 namespace Controls {
   class CanvasControl : public QObject {
   Q_OBJECT

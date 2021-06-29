@@ -5,6 +5,7 @@
     <excludeRoots>
       <file path="$PROJECT_DIR$/.qt_for_python" />
       <file path="$PROJECT_DIR$/.vscode/ipch" />
+      <file path="$PROJECT_DIR$/docs" />
     </excludeRoots>
   </component>
 </project>

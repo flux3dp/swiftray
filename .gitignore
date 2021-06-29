@@ -9,4 +9,5 @@ cmake-build-debug/
 .idea/workspace.xml
 workspace.xml
 .name
-docs/*
+docs/html/*
+docs/latex/*
