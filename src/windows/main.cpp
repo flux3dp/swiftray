@@ -2,7 +2,6 @@
 #include <QWidget>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
-
 #include <QLocale>
 #include <QTranslator>
 #include <QDebug>
@@ -25,7 +24,6 @@ int mainCLI(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication app(argc, argv);
-
   QCoreApplication::setOrganizationName("FLUX");
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("beambird");
@@ -35,17 +33,13 @@ int main(int argc, char *argv[]) {
   }
 
   app.setAttribute(Qt::AA_UseHighDpiPixmaps);
-
   //QFont font("Source Sans Pro");
   //QApplication::setFont(font);
-
   //app.setStyle("fusion");
-
   // Force anti-aliasing
   QSurfaceFormat format = QSurfaceFormat::defaultFormat();
   format.setSamples(8);
   QSurfaceFormat::setDefaultFormat(format);
-
   QTranslator translator;
   const QStringList uiLanguages = QLocale::system().uiLanguages();
 
@@ -74,6 +68,8 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
   MainWindow win;
   win.show();
+#ifdef Q_OS_MACOS
   setOSXWindowTitleColor(&win);
+#endif
   return app.exec();
 }

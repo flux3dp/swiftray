@@ -1,11 +1,18 @@
 #include "gcode-player.h"
 #include "ui_gcode-player.h"
-#include <QSerialPortInfo>
 #include <QMessageBox>
+
+#ifndef Q_OS_IOS
+
+#include <QSerialPortInfo>
+
+#endif
 
 GCodePlayer::GCodePlayer(QWidget *parent) :
      QFrame(parent),
+#ifndef Q_OS_IOS
      thread_(SerialPortThread(this)),
+#endif
      ui(new Ui::GCodePlayer) {
   ui->setupUi(this);
   loadSettings();
@@ -13,12 +20,15 @@ GCodePlayer::GCodePlayer(QWidget *parent) :
 }
 
 void GCodePlayer::loadSettings() {
+#ifndef Q_OS_IOS
   const auto infos = QSerialPortInfo::availablePorts();
   for (const QSerialPortInfo &info : infos)
     ui->portComboBox->addItem(info.portName());
+#endif
 }
 
 void GCodePlayer::registerEvents() {
+#ifndef Q_OS_IOS
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
     thread_.playGcode(ui->portComboBox->currentText(),
                       ui->baudComboBox->currentText().toInt(),
@@ -26,6 +36,7 @@ void GCodePlayer::registerEvents() {
   });
 
   connect(&thread_, &SerialPortThread::error, this, &GCodePlayer::showError);
+#endif
 }
 
 void GCodePlayer::showError(const QString &msg) {

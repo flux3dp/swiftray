@@ -464,7 +464,7 @@
   </widget>
   <widget class="QDockWidget" name="serialPortDock">
    <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+    <set>QDockWidget::AllDockWidgetFeatures</set>
    </property>
    <property name="windowTitle">
     <string>Serial Port</string>

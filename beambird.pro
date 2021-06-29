@@ -6,8 +6,15 @@ QT += gui
 QT += gui-private
 QT += svg
 QT += svg-private
+ios {
+} else {
+QT += serialport
+}
+
+QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 
 CONFIG += c++17
+LIBS += -L"/usr/lib"
 LIBS += -L"/usr/local/lib"
 LIBS += -L"/usr/local/opt/libxml2/lib"
 LIBS += -lxml2
@@ -45,13 +52,16 @@ SOURCES += \
         $$files(src/canvas/*.cpp) \
         $$files(src/gcode/*.cpp) \
         $$files(src/windows/*.cpp) \
-        $$files(src/connection/*.cpp) \
         $$files(src/settings/*.cpp) \
-        src/undo.cpp \
         src/document.cpp \
         src/layer.cpp \
-        src/windows/machine-manager.cpp \
-        src/windows/new-machine-dialog.cpp
+        src/command.cpp \
+        src/clipboard.cpp
+
+ios {
+} else {
+    SOURCES += $$files(src/connection/*.cpp)
+}
 
 RESOURCES += qml.qrc
 
@@ -69,12 +79,9 @@ QML_DESIGNER_IMPORT_PATH =
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+!isEmpty(target.path):INSTALLS += target
 
 HEADERS += \
-    src/document.h \
-    src/layer.h \
-    src/command.h \
     $$files(src/canvas/*.h) \
     $$files(src/canvas/controls/*.h) \
     $$files(src/shape/*.h) \
@@ -84,15 +91,24 @@ HEADERS += \
     $$files(src/widgets/*.h) \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
-    $$files(src/widgets/windows/*.h) \
-    src/windows/machine-manager.h \
-    src/windows/new-machine-dialog.h
+    $$files(src/windows/*.h) \
+    src/document.h \
+    src/layer.h \
+    src/command.h \
+    src/clipboard.h
+
+ios {
+} else {
+    SOURCES += $$files(src/connection/*.h)
+}
+
 
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
-
+win32 {
 INCLUDEPATH += C:/cygwin64/usr/include
 DEPENDPATH += C:/cygwin64/usr/include
+}
 
 FORMS += \
     src/widgets/components/layer-list-item.ui \
@@ -107,4 +123,7 @@ FORMS += \
     src/windows/gcode-player.ui \
     src/windows/mainwindow.ui
 
-OBJECTIVE_SOURCES += src/window/osxwindow.mm
+ios {
+} else {
+OBJECTIVE_SOURCES += src/windows/osxwindow.mm
+}

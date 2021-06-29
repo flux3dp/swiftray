@@ -268,7 +268,11 @@ void QFontComboBox2Private::_q_updateModel() {
       if (bool(filters & QFontComboBox2::MonospacedFonts) != fdb.isFixedPitch(list.at(i)))
         continue;
     }
+#ifdef Q_OS_MACOS
     result += familyNameFromPostScriptName(list.at(i));
+#else
+    result += list.at(i);
+#endif
     if (list.at(i) == fi.family() || list.at(i).startsWith(fi.family() + QLatin1String(" [")))
       offset = result.count() - 1;
   }

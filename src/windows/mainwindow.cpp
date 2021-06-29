@@ -71,6 +71,7 @@ void MainWindow::openFile() {
   if (file.open(QFile::ReadOnly)) {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
+
     if (file_name.endsWith(".bb")) {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
@@ -97,9 +98,18 @@ void MainWindow::openImageFile() {
   }
 }
 
+void MainWindow::imageSelected(const QString &file_name) {
+  QImage image;
+  if (image.load(file_name)) {
+    qInfo() << "File size:" << image.size();
+    canvas_->importImage(image);
+  }
+}
+
 void MainWindow::saveFile() {
   QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
   QFile file(file_name);
+
   if (file.open(QFile::ReadWrite)) {
     QDataStream stream(&file);
     canvas_->save(stream);
@@ -256,8 +266,9 @@ void MainWindow::updateSelections() {
   ui->actionAlignLeft->setEnabled(items.size() > 1);
   ui->actionAlignHCenter->setEnabled(items.size() > 1);
   ui->actionAlignRight->setEnabled(items.size() > 1);
-
+#ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
+#endif
 }
 
 void MainWindow::loadWidgets() {
@@ -274,7 +285,9 @@ void MainWindow::loadWidgets() {
   ui->fontDock->setWidget(font_panel_);
   ui->layerDockContents->layout()->addWidget(layer_params_panel_);
   ui->documentDock->setWidget(doc_panel_);
-
+#ifdef Q_OS_IOS
+  ui->serialPortDock->setVisible(false);
+#endif
   // Add floating buttons
   add_layer_btn_ = new QToolButton(ui->layerList);
   add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
@@ -289,7 +302,6 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::layerChanged, this, &MainWindow::updateLayers);
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
-
   // Monitor UI events
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
