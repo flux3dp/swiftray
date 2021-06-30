@@ -5,8 +5,8 @@
 #include <QToolButton>
 #include <widgets/components/layer-list-item.h>
 #include <widgets/panels/transform-panel.h>
-#include <widgets/panels/layer-params-panel.h>
 #include <widgets/panels/doc-panel.h>
+#include <widgets/panels/layer-panel.h>
 #include <windows/gcode-player.h>
 #include <widgets/panels/font-panel.h>
 #include <windows/machine-manager.h>
@@ -54,8 +54,6 @@ private slots:
 
   void sceneGraphError(QQuickWindow::SceneGraphError error, const QString &message);
 
-  void updateLayers();
-
   void updateMode();
 
   void updateSelections();
@@ -66,20 +64,16 @@ private slots:
 
   void registerEvents();
 
-  void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
-                         const QModelIndex &destinationParent, int destinationRow);
-
   void imageSelected(const QImage image);
 
 private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
-  LayerParamsPanel *layer_params_panel_;
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;
-  QToolButton *add_layer_btn_;
+  LayerPanel *layer_panel_;
   MachineManager *machine_manager_;
 
   void saveFile();

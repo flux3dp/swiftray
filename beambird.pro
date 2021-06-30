@@ -18,6 +18,9 @@ LIBS += -L"/usr/lib"
 LIBS += -L"/usr/local/lib"
 LIBS += -L"/usr/local/opt/libxml2/lib"
 LIBS += -lxml2
+ios {
+    LIBS += -framework Foundation -framework UIKit
+}
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
@@ -56,7 +59,8 @@ SOURCES += \
         src/document.cpp \
         src/layer.cpp \
         src/command.cpp \
-        src/clipboard.cpp
+        src/clipboard.cpp \
+        src/widgets/panels/layer-panel.cpp
 
 ios {
 } else {
@@ -95,7 +99,8 @@ HEADERS += \
     src/document.h \
     src/layer.h \
     src/command.h \
-    src/clipboard.h
+    src/clipboard.h \
+    src/widgets/panels/layer-panel.h
 
 ios {
 } else {
@@ -114,6 +119,7 @@ FORMS += \
     src/widgets/components/layer-list-item.ui \
     src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
+    src/widgets/panels/layer-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/transform-panel.ui \
     src/windows/machine-manager.ui \
@@ -124,6 +130,11 @@ FORMS += \
     src/windows/mainwindow.ui
 
 ios {
+OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {
 OBJECTIVE_SOURCES += src/windows/osxwindow.mm
 }
+
+DISTFILES += \
+    src/windows/SetupScreen.qml \
+    src/windows/SetupScreenForm.ui.qml

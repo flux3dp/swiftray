@@ -4,8 +4,6 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
-#include <QAbstractItemView>
-#include <boost/range/adaptor/reversed.hpp>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
@@ -33,7 +31,6 @@ MainWindow::MainWindow(QWidget *parent) :
   loadCanvas();
   loadWidgets();
   registerEvents();
-  updateLayers();
   updateMode();
   updateSelections();
 }
@@ -146,44 +143,6 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   canvas_->text_input_->setStyleSheet("border:0");
 }
 
-void MainWindow::updateLayers() {
-  ui->layerList->clear();
-
-  for (auto &layer : boost::adaptors::reverse(canvas_->document().layers())) {
-    bool active = canvas_->document().activeLayer() == layer.get();
-    LayerPtr editable_layer = layer;
-    auto *list_widget = new LayerListItem(ui->layerList->parentWidget(),
-                                          canvas_,
-                                          editable_layer,
-                                          active);
-    auto *list_item = new QListWidgetItem(ui->layerList);
-    auto size = list_widget->size();
-    list_item->setSizeHint(size);
-    ui->layerList->setItemWidget(list_item, list_widget);
-
-    if (active) {
-      ui->layerList->setCurrentItem(list_item);
-    }
-  }
-
-  if (ui->layerList->currentItem()) {
-    ui->layerList->scrollToItem(ui->layerList->currentItem(), QAbstractItemView::PositionAtCenter);
-  }
-
-  layer_params_panel_->updateLayer(canvas_->document().activeLayer());
-}
-
-void MainWindow::layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
-                                   const QModelIndex &destinationParent, int destinationRow) {
-  QList<LayerPtr> new_order;
-
-  for (int i = ui->layerList->count() - 1; i >= 0; i--) {
-    new_order << dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(ui->layerList->item(i)))->layer_;
-  }
-
-  canvas_->setLayerOrder(new_order);
-}
-
 bool MainWindow::event(QEvent *e) {
   switch (e->type()) {
     case QEvent::CursorChange:
@@ -287,7 +246,7 @@ void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // Add custom panels
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
-  layer_params_panel_ = new LayerParamsPanel(ui->layerDockContents, this);
+  layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
@@ -295,23 +254,15 @@ void MainWindow::loadWidgets() {
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
-  ui->layerDockContents->layout()->addWidget(layer_params_panel_);
+  ui->layerDock->setWidget(layer_panel_);
   ui->documentDock->setWidget(doc_panel_);
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
-  // Add floating buttons
-  add_layer_btn_ = new QToolButton(ui->layerList);
-  add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
-  add_layer_btn_->setGeometry(QRect(215, 180, 35, 35));
-  add_layer_btn_->setIconSize(QSize(24, 24));
-  add_layer_btn_->raise();
-  add_layer_btn_->show();
 }
 
 void MainWindow::registerEvents() {
   // Monitor canvas events
-  connect(canvas_, &Canvas::layerChanged, this, &MainWindow::updateLayers);
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   // Monitor UI events
@@ -348,9 +299,6 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignLeft, &QAction::triggered, canvas_, &Canvas::editHAlignLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editHAlignCenter);
   connect(ui->actionAlignRight, &QAction::triggered, canvas_, &Canvas::editHAlignRight);
-  connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
-  // Monitor custom widgets
-  connect(add_layer_btn_, &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
   // Complex callbacks
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
@@ -364,10 +312,6 @@ void MainWindow::registerEvents() {
     ToolpathExporter exporter(gen_gcode.get());
     exporter.convertStack(canvas_->document().layers());
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
-  });
-  connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
-    // TODO (Add more UI logic here to prevent redrawing all list widget)
-    canvas_->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
 }
 
