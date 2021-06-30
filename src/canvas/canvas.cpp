@@ -447,6 +447,13 @@ void Canvas::resize() {
 }
 
 void Canvas::importImage(QImage &image) {
+#ifdef Q_OS_IOS
+  if (image.width() > 500) {
+    float scale = 500.0 / image.width();
+    qInfo() << "Scale" << scale << "Size" << image.size();
+    image = image.scaled(image.width() * scale, image.height() * scale);
+  }
+#endif
   ShapePtr new_shape = make_shared<BitmapShape>(image);
   qreal scale = min(1.0, min(document().height() / image.height(),
                              document().width() / image.width()));

@@ -69,7 +69,7 @@ private slots:
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
                          const QModelIndex &destinationParent, int destinationRow);
 
-  void imageSelected(const QString &file);
+  void imageSelected(const QImage image);
 
 private:
   Ui::MainWindow *ui;

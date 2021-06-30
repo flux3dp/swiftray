@@ -14,6 +14,13 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
+
+#ifdef Q_OS_IOS
+
+#include <widgets/components/ios-image-picker.h>
+
+#endif
+
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -45,7 +52,6 @@ void MainWindow::loadCanvas() {
   connect(ui->quickWidget, &QQuickWidget::sceneGraphError, this, &MainWindow::sceneGraphError);
 #endif
   connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::canvasLoaded);
-
   QUrl source("qrc:/src/windows/main.qml");
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
@@ -85,6 +91,13 @@ void MainWindow::openFile() {
 }
 
 void MainWindow::openImageFile() {
+#ifdef Q_OS_IOS
+  // TODO (Possible leak here?)
+  ImagePicker *p = new ImagePicker();
+  connect(p, &ImagePicker::imageSelected, this, &MainWindow::imageSelected);
+  p->show();
+  return;
+#endif
   QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
 
   if (!QFile::exists(file_name))
@@ -98,12 +111,9 @@ void MainWindow::openImageFile() {
   }
 }
 
-void MainWindow::imageSelected(const QString &file_name) {
-  QImage image;
-  if (image.load(file_name)) {
-    qInfo() << "File size:" << image.size();
-    canvas_->importImage(image);
-  }
+void MainWindow::imageSelected(const QImage image) {
+  QImage my_image = image;
+  canvas_->importImage(my_image);
 }
 
 void MainWindow::saveFile() {
@@ -247,10 +257,13 @@ void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
   bool all_group = items.size() > 0;
   bool all_path = items.size() > 0;
+
   for (auto &shape : canvas_->document().selections()) {
     if (shape->type() != Shape::Type::Group) all_group = false;
+
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
   }
+
   ui->actionGroupBtn->setEnabled(items.size() > 1);
   ui->actionUngroupBtn->setEnabled(all_group);
   ui->actionUnionBtn->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
@@ -259,7 +272,6 @@ void MainWindow::updateSelections() {
   ui->actionIntersectBtn->setEnabled(items.size() == 2 && all_path);
   ui->actionHFlip->setEnabled(!items.empty());
   ui->actionVFlip->setEnabled(!items.empty());
-
   ui->actionAlignTop->setEnabled(items.size() > 1);
   ui->actionAlignVCenter->setEnabled(items.size() > 1);
   ui->actionAlignBottom->setEnabled(items.size() > 1);
@@ -336,12 +348,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignLeft, &QAction::triggered, canvas_, &Canvas::editHAlignLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editHAlignCenter);
   connect(ui->actionAlignRight, &QAction::triggered, canvas_, &Canvas::editHAlignRight);
-
   connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &MainWindow::layerOrderChanged);
-
   // Monitor custom widgets
   connect(add_layer_btn_, &QAbstractButton::clicked, canvas_, &Canvas::addEmptyLayer);
-
   // Complex callbacks
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
@@ -351,7 +360,6 @@ void MainWindow::registerEvents() {
     PreviewWindow *pw = new PreviewWindow(this);
     pw->setPreviewPath(gen);
     pw->show();
-
     auto gen_gcode = make_shared<GCodeGenerator>();
     ToolpathExporter exporter(gen_gcode.get());
     exporter.convertStack(canvas_->document().layers());
