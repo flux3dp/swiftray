@@ -36,16 +36,6 @@ bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 
 bool Text::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
-    if (target_ == nullptr) return false;
-    target().setEditing(false);
-    if (!target().hasLayer() &&
-        canvas().textInput()->toPlainText().length() > 0) {
-      // Add the virtual target the layer
-      document().execute(
-           Commands::AddShape(document().activeLayer(), target_),
-           Commands::Select(&document(), {target_})
-      );
-    }
     exit();
     return true;
   }
@@ -66,6 +56,17 @@ void Text::paint(QPainter *painter) {
 }
 
 void Text::exit() {
+  if (target_ != nullptr) {
+    target().setEditing(false);
+    if (!target().hasLayer() &&
+        canvas().textInput()->toPlainText().length() > 0) {
+      // Add the virtual target the layer
+      document().execute(
+           Commands::AddShape(document().activeLayer(), target_),
+           Commands::Select(&document(), {target_})
+      );
+    }
+  }
   target_ = nullptr;
   canvas().textInput()->clear();
   canvas().textInput()->window()->setFocus();
