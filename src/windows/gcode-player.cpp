@@ -4,6 +4,7 @@
 
 #ifndef Q_OS_IOS
 
+#include <QTimer>
 #include <QSerialPortInfo>
 
 #endif
@@ -17,6 +18,10 @@ GCodePlayer::GCodePlayer(QWidget *parent) :
   ui->setupUi(this);
   loadSettings();
   registerEvents();
+
+  QTimer *timer = new QTimer(this);
+  connect(timer, &QTimer::timeout, this, &GCodePlayer::loadSettings);
+  timer->start(3000);
 }
 
 void GCodePlayer::loadSettings() {
@@ -24,6 +29,7 @@ void GCodePlayer::loadSettings() {
   const auto infos = QSerialPortInfo::availablePorts();
   for (const QSerialPortInfo &info : infos)
     ui->portComboBox->addItem(info.portName());
+  ui->portComboBox->setCurrentIndex(ui->portComboBox->count() - 1);
 #endif
 }
 

@@ -22,6 +22,8 @@ void SerialPortThread::run() {
   serial.close();
   serial.setPortName(port_);
   serial.setBaudRate(baudrate_);
+
+  qInfo() << "Connecting" << port_ << baudrate_;
   auto open_result = serial.open(QIODevice::ReadWrite);
   if (!open_result) {
     emit error(tr("Unable to connect serial port"));
@@ -31,17 +33,15 @@ void SerialPortThread::run() {
   }
   qInfo() << "Success connect!" << open_result;
   while (current_line_ < gcode_.size()) {
-    const QByteArray data = QString(gcode_[current_line_]).toUtf8();
-    serial_.write(data);
+    qInfo() << "Sending " << gcode_[current_line_];
+    const QByteArray data = QString(gcode_[current_line_] + "\n").toUtf8();
+    serial.write(data);
     qInfo() << "Success write!";
 
     if (serial.waitForBytesWritten(wait_timeout_)) {
       if (serial.waitForReadyRead(wait_timeout_)) {
         QByteArray resp_data = serial.readAll();
-        while (serial.waitForReadyRead(10))
-          resp_data += serial.readAll();
-
-        const QString response = QString::fromUtf8(resp_data);
+        QString response = QString::fromUtf8(resp_data);
         qInfo() << "Response" << response;
       }
     }

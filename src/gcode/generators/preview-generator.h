@@ -21,8 +21,8 @@ public:
   PreviewGenerator() : BaseGenerator() {
   }
 
-  void moveTo(float x, float y, float speed) override {
-    if (x_ == x && y_ == y && speed_ == speed)
+  void moveTo(float x, float y, float speed, float power) override {
+    if (x_ == x && y_ == y && speed_ == speed && power_ == power)
       return;
     if (x_ != x) {
       x_ = x;
@@ -32,6 +32,9 @@ public:
     }
     if (speed_ != speed) {
       speed_ = speed;
+    }
+    if (power_ != power) {
+      power_ = power;
     }
     paths_ << Path(QPointF(x_, y_), speed_, power_);
     str_stream_ << std::endl;

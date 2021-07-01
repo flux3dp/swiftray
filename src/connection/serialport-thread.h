@@ -37,12 +37,10 @@ private:
   QString port_;
   int baudrate_;
 
-  unsigned long int wait_timeout_ = 50;
+  unsigned long int wait_timeout_ = 1000;
   QMutex mutex_;
   QWaitCondition cond_;
   bool quit_ = false;
-
-  QSerialPort serial_;
 
   QStringList gcode_;
   int current_line_ = 0;

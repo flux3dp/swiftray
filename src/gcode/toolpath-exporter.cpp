@@ -31,6 +31,7 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
       convertLayer(layer);
     }
   }
+  gen_->home();
   qInfo() << "[Export] Took " << t.elapsed();
 }
 
@@ -119,28 +120,28 @@ void ToolpathExporter::outputLayerGcode() {
 
 void ToolpathExporter::outputLayerPathGcode() {
   QPointF current_pos;
-  gen_->setLaserPower(current_layer_->power());
 
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
+    gen_->setLaserPower(current_layer_->power());
 
     current_pos = poly.first();
-    gen_->turnOffLaser();
-    gen_->moveTo(current_pos.x() / 10.0, current_pos.y() / 10.0, travel_speed_);
-    gen_->turnOnLaser();
+    gen_->moveTo(current_pos.x() / 10.0, current_pos.y() / 10.0, travel_speed_, 0);
 
     for (QPointF &point : poly) {
-      gen_->moveTo(point.x() / 10.0, point.y() / 10.0, current_layer_->speed());
+      gen_->moveTo(point.x() / 10.0, point.y() / 10.0, current_layer_->speed(), current_layer_->power());
     }
 
     gen_->turnOffLaser();
   }
+  gen_->turnOffLaser();
 }
 
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
   bool reverse = false;
   QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
+  gen_->setLaserPower(current_layer_->power());
 
   for (int y = bitmap_dirty_area_.top(); y <= bitmap_dirty_area_.bottom(); y++) {
     rasterBitmapRow(image.scanLine(y), (float) y / dpmm_, reverse, QPointF());
@@ -189,7 +190,7 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
     pixels_count = head - tail + 1;
   }
 
-  gen_->moveTo(start_x, global_coord_y, travel_speed_);
+  gen_->moveTo(start_x, global_coord_y, travel_speed_, 0);
   gen_->setSpeed(current_layer_->speed());
   gen_->beginHighSpeedRastering(pixels_count);
   auto x_range = reverse ? boost::irange(head, tail - 1, -1) : boost::irange(head, tail + 1, 1);
@@ -225,7 +226,9 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
   bool y_moved = false;
   auto x_range = reverse ? boost::irange(x_max - 1, x_min, -1) : boost::irange(x_min, x_max - 1, 1);
 
-  gen_->setLaserPower(0);
+  gen_->turnOnLaser();
+
+  bool laser_should_be_on = false;
 
   for (int x : x_range) {
     float p = data[x] > 127 ? 255 : 0;
@@ -236,39 +239,34 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
     float global_coord_x = pixel_size * (reverse ? x + 1 : x) - offset.x();
 
     if (laser_pwm == 0) {
-      if (laser_pwm != gen_->power()) {
-        gen_->moveToX(global_coord_x);
-        gen_->setLaserPower(0);
+      if (laser_should_be_on) {
+        gen_->moveTo(global_coord_x, global_coord_y, current_layer_->speed(), current_layer_->power());
         x_moved = true;
+        laser_should_be_on = false;
       } else {
         continue;
       }
     } else {
-      if (laser_pwm != gen_->power()) {
-        if (!y_moved) {
-          gen_->turnOffLaser();
-          gen_->moveTo(global_coord_x, global_coord_y, current_layer_->speed());
-          y_moved = true;
-        }
-
-        gen_->moveToX(global_coord_x);
-        gen_->setLaserPower(laser_pwm);
+      if (!laser_should_be_on) {
+        gen_->moveTo(global_coord_x, global_coord_y, current_layer_->speed(), 0);
         x_moved = true;
+        laser_should_be_on = true;
       }
     }
   }
 
-  if (gen_->power() > 0) {
+  if (laser_should_be_on) {
     // If the last pixel is still powered on
-    gen_->moveToX(*(x_range.end() - 1) * pixel_size - offset.x());
+    qreal final_x = *(x_range.end() - 1) * pixel_size - offset.x();
+    gen_->moveTo(final_x, global_coord_y, current_layer_->speed(), current_layer_->power());
     x_moved = true;
   }
 
   if (x_moved) {
-    float buffer_x = reverse ? std::max(0.0, gen_->x() - 25.0) :
-                     std::min(0.0 + MACHINE_MAX_X, gen_->x() + 25.0);
-    gen_->turnOffLaser();
-    gen_->moveToX(buffer_x);
+    float buffer_x = reverse ? std::max(0.0, gen_->x() - 10.0) :
+                     std::min(0.0 + MACHINE_MAX_X, gen_->x() + 10.0);
+    gen_->moveTo(buffer_x, global_coord_y, current_layer_->speed(), 0);
+
   }
 
   return x_moved;
