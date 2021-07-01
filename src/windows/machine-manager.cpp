@@ -57,7 +57,8 @@ void MachineManager::registerEvents() {
 
   connect(ui->removeBtn, &QAbstractButton::clicked, [=]() {
     if (ui->machineList->currentItem() != nullptr) {
-      ui->machineList->removeItemWidget(ui->machineList->currentItem());
+      auto item = ui->machineList->currentItem();
+      ui->machineList->takeItem(ui->machineList->row(item));
       save();
     }
   });

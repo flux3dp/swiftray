@@ -27,6 +27,7 @@ GCodePlayer::GCodePlayer(QWidget *parent) :
 void GCodePlayer::loadSettings() {
 #ifndef Q_OS_IOS
   const auto infos = QSerialPortInfo::availablePorts();
+  ui->portComboBox->clear();
   for (const QSerialPortInfo &info : infos)
     ui->portComboBox->addItem(info.portName());
   ui->portComboBox->setCurrentIndex(ui->portComboBox->count() - 1);
