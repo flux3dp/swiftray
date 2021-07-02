@@ -47,5 +47,6 @@
         <file>resources/parameters/beamo.json</file>
         <file>resources/parameters/default.json</file>
         <file>resources/machines.json</file>
+        <file>i18n/zh-Hant-TW.qm</file>
     </qresource>
 </RCC>

@@ -60,17 +60,17 @@ SOURCES += \
         src/layer.cpp \
         src/command.cpp \
         src/clipboard.cpp \
-        src/widgets/panels/layer-panel.cpp
 
 ios {
 } else {
-    SOURCES += $$files(src/connection/*.cpp)
+    SOURCES += \
+            src/connection/serialport-thread.cpp
 }
 
 RESOURCES += qml.qrc
 
 TRANSLATIONS += \
-    beambird_zh_TW.ts
+    i18n/zh-Hant-TW.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 
@@ -94,17 +94,24 @@ HEADERS += \
     $$files(src/gcoder/*.h) \
     $$files(src/widgets/*.h) \
     $$files(src/widgets/panels/*.h) \
-    $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
+    src/widgets/components/canvas-text-edit.h \
+    src/widgets/components/layer-list-item.h \
+    src/widgets/components/qdoublespinbox2.h \
+    src/widgets/components/qfontcombobox2.h \
     src/document.h \
     src/layer.h \
     src/command.h \
     src/clipboard.h \
-    src/widgets/panels/layer-panel.h
 
 ios {
+    SOURCES += \
+            src/widgets/components/ios-image-picker.h \
+
 } else {
-    SOURCES += $$files(src/connection/*.h)
+    SOURCES += \
+            src/connection/serialport-thread.h \
+
 }
 
 
@@ -138,3 +145,9 @@ OBJECTIVE_SOURCES += src/windows/osxwindow.mm
 DISTFILES += \
     src/windows/SetupScreen.qml \
     src/windows/SetupScreenForm.ui.qml
+
+TR_EXCLUDE += $$PWD/third_party/* \
+             /usr/local/include/* \
+             /usr/local/opt/libxml2/include/* \
+             /usr/local/include/boost/* \
+             /Users/simon/Dev/qt5/qtbase/*
