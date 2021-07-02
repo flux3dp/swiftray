@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QWidget>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QLocale>
@@ -8,6 +7,10 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
+
+#ifdef Q_OS_MACOS
+#define MACOS
+#endif
 
 int mainCLI(int argc, char *argv[]) {
   qInfo() << "Vecty CLI interface";
@@ -44,9 +47,10 @@ int main(int argc, char *argv[]) {
   const QStringList uiLanguages = QLocale::system().uiLanguages();
 
   for (const QString &locale : uiLanguages) {
-    const QString baseName = "vecty_" + QLocale(locale).name();
-
-    if (translator.load(":/i18n/" + baseName)) {
+    const QString baseName = QLocale(locale).name();
+    qInfo() << "Loading language" << locale;
+    if (translator.load(":/i18n/" + locale)) {
+      qInfo() << "Success loaded";
       app.installTranslator(&translator);
       break;
     }
@@ -63,12 +67,12 @@ int main(int argc, char *argv[]) {
           QCoreApplication::exit(-1);
   }, Qt::QueuedConnection);
   engine.load(url);*/
-  QCoreApplication::setOrganizationName("QtProject");
-  QCoreApplication::setApplicationName("Application Example");
+  QCoreApplication::setOrganizationName("FLUX");
+  QCoreApplication::setApplicationName("Beam Bird");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
   MainWindow win;
   win.show();
-#ifdef Q_OS_MACOS
+#ifdef MACOS
   setOSXWindowTitleColor(&win);
 #endif
   return app.exec();

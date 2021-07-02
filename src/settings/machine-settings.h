@@ -14,10 +14,10 @@ class MachineSettings {
 public:
   struct MachineSet {
     enum class OriginType {
-      TopLeft,
-      TopRight,
-      BottomLeft,
-      BottomRight
+      RearLeft,
+      RearRight,
+      FrontLeft,
+      FrontRight
     };
     enum class BoardType {
       FLUX_2020,
