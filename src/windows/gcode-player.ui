@@ -66,6 +66,11 @@
        </item>
        <item>
         <property name="text">
+         <string>115200</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>204800</string>
         </property>
        </item>
@@ -85,6 +90,9 @@
    </item>
    <item>
     <widget class="QPushButton" name="executeBtn">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="text">
       <string>Execute</string>
      </property>

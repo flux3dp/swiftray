@@ -120,10 +120,10 @@ void ToolpathExporter::outputLayerGcode() {
 
 void ToolpathExporter::outputLayerPathGcode() {
   QPointF current_pos;
-
+  gen_->setLaserPower(current_layer_->power());
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
-    gen_->setLaserPower(current_layer_->power());
+
 
     current_pos = poly.first();
     gen_->moveTo(current_pos.x() / 10.0, current_pos.y() / 10.0, travel_speed_, 0);
@@ -132,8 +132,9 @@ void ToolpathExporter::outputLayerPathGcode() {
       gen_->moveTo(point.x() / 10.0, point.y() / 10.0, current_layer_->speed(), current_layer_->power());
     }
 
-    gen_->turnOffLaser();
+    //gen_->turnOffLaser();
   }
+  gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
   gen_->turnOffLaser();
 }
 
@@ -224,7 +225,7 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
   int MACHINE_MAX_X = 300;
   bool x_moved = false;
   bool y_moved = false;
-  auto x_range = reverse ? boost::irange(x_max - 1, x_min, -1) : boost::irange(x_min, x_max - 1, 1);
+  auto x_range = reverse ? boost::irange(x_max, x_min, -1) : boost::irange(x_min, x_max, 1);
 
   gen_->turnOnLaser();
 
@@ -236,11 +237,12 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
 
     if (laser_pwm < 0.01) laser_pwm = 0;
 
-    float global_coord_x = pixel_size * (reverse ? x + 1 : x) - offset.x();
+    float global_coord_x = pixel_size * x - offset.x();
 
     if (laser_pwm == 0) {
       if (laser_should_be_on) {
-        gen_->moveTo(global_coord_x, global_coord_y, current_layer_->speed(), current_layer_->power());
+        gen_->moveTo(global_coord_x + (reverse ? pixel_size : -pixel_size), global_coord_y, current_layer_->speed(),
+                     current_layer_->power());
         x_moved = true;
         laser_should_be_on = false;
       } else {
@@ -257,9 +259,10 @@ bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y
 
   if (laser_should_be_on) {
     // If the last pixel is still powered on
-    qreal final_x = *(x_range.end() - 1) * pixel_size - offset.x();
+    qreal final_x = *(x_range.end()) * pixel_size - offset.x();
     gen_->moveTo(final_x, global_coord_y, current_layer_->speed(), current_layer_->power());
     x_moved = true;
+    qInfo() << "Move to final with laser" << final_x << reverse;
   }
 
   if (x_moved) {

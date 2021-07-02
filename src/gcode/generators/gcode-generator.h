@@ -1,5 +1,6 @@
 #include <sstream>
 #include <gcode/generators/base-generator.h>
+#include <settings/machine-settings.h>
 
 #ifndef GCODE_GENERATOR_H
 #define GCODE_GENERATOR_H
@@ -9,10 +10,28 @@ Basic GCode Generator for Grbl like machines.
 */
 class GCodeGenerator : public BaseGenerator {
 public:
-  GCodeGenerator() : BaseGenerator() {
+  GCodeGenerator(const MachineSettings::MachineSet &machine) : BaseGenerator() {
+    machine_width_ = machine.width;
+    machine_height_ = machine.height;
+    machine_origin_ = machine.origin;
   }
 
   void moveTo(float x, float y, float speed, float power) override {
+    // Coordinate transform for different origin type
+    switch (machine_origin_) {
+      case MachineSettings::MachineSet::OriginType::RearLeft:
+        break;
+      case MachineSettings::MachineSet::OriginType::RearRight:
+        x = machine_width_ - x;
+        break;
+      case MachineSettings::MachineSet::OriginType::FrontLeft:
+        y = machine_height_ - y;
+        break;
+      case MachineSettings::MachineSet::OriginType::FrontRight:
+        y = machine_height_ - y;
+        x = machine_width_ - x;
+        break;
+    }
     if (x_ == x && y_ == y && speed_ == speed && power_ == power)
       return;
     str_stream_ << "G1";
@@ -64,6 +83,11 @@ public:
     str_stream_ << "$H" << std::endl;
     x_ = y_ = 0;
   }
+
+private:
+  int machine_width_;
+  int machine_height_;
+  MachineSettings::MachineSet::OriginType machine_origin_;
 };
 
 #endif
