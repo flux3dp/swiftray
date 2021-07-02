@@ -156,7 +156,6 @@ bool MainWindow::event(QEvent *e) {
       return true;
 
     default:
-      // qInfo() << "Event" << e;
       break;
   }
 
@@ -250,7 +249,7 @@ void MainWindow::loadWidgets() {
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
-  machine_manager_ = new MachineManager(this);
+  machine_manager_ = new MachineManager(this, this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -308,7 +307,7 @@ void MainWindow::registerEvents() {
     PreviewWindow *pw = new PreviewWindow(this);
     pw->setPreviewPath(gen);
     pw->show();
-    auto gen_gcode = make_shared<GCodeGenerator>();
+    auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
     ToolpathExporter exporter(gen_gcode.get());
     exporter.convertStack(canvas_->document().layers());
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));

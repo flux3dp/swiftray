@@ -46,7 +46,7 @@ signals:
 
   void presetSettingsChanged();
 
-  void machineChanged();
+  void machineSettingsChanged();
 
 private slots:
 

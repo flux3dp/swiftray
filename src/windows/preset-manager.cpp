@@ -84,10 +84,10 @@ void PresetManager::registerEvents() {
     auto param = PresetSettings::Param::fromJson(obj);
     ui->editor->setEnabled(true);
     ui->paramTitle->setText(param.name);
-    ui->speed->setValue(param.speed);
-    ui->power->setValue(param.power);
-    ui->repeat->setValue(param.repeat);
-    ui->stepHeight->setValue(param.step_height);
+    ui->speedSpinBox->setValue(param.speed);
+    ui->powerSpinBox->setValue(param.power);
+    ui->repeatSpinBox->setValue(param.repeat);
+    ui->stepHeightSpinBox->setValue(param.step_height);
   });
 
   connect(ui->presetList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {

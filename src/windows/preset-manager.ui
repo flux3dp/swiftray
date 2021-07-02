@@ -400,7 +400,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="power">
+               <widget class="QSpinBox" name="powerSpinBox">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -424,7 +424,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="speed">
+               <widget class="QSpinBox" name="speedSpinBox">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -476,7 +476,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="repeat">
+               <widget class="QSpinBox" name="repeatSpinBox">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -509,7 +509,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="stepHeight">
+               <widget class="QDoubleSpinBox" name="stepHeightSpinBox">
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -550,8 +550,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>258</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -566,8 +566,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>326</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

@@ -2,6 +2,7 @@
 #define DOCSETTINGSPANEL_H
 
 #include <QFrame>
+#include <settings/machine-settings.h>
 
 class MainWindow;
 
@@ -20,6 +21,10 @@ public:
   void loadSettings();
 
   void registerEvents();
+
+  void updateScene();
+
+  MachineSettings::MachineSet currentMachine();
 
 private:
   Ui::DocPanel *ui;

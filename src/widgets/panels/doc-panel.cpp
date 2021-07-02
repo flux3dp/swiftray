@@ -12,14 +12,25 @@ DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
   ui->setupUi(this);
   loadSettings();
   registerEvents();
+  updateScene();
+}
+
+DocPanel::~DocPanel() {
+  QSettings settings;
+  settings.setValue("defaultMachine", ui->machineComboBox->currentText());
+  delete ui;
 }
 
 void DocPanel::loadSettings() {
-  MachineSettings settings;
-  ui->modelComboBox->clear();
-  for (auto &mach : settings.machines_) {
-    ui->modelComboBox->addItem(QIcon(mach.icon), " " + mach.name, mach.toJson());
+  QSettings settings;
+  MachineSettings machine_settings;
+  QString current_machine = settings.value("defaultMachine").toString();
+  ui->machineComboBox->clear();
+  for (auto &mach : machine_settings.machines_) {
+    ui->machineComboBox->addItem(QIcon(mach.icon), " " + mach.name, mach.toJson());
   }
+  ui->machineComboBox->setCurrentText(current_machine);
+  updateScene();
 
   PresetSettings preset_settings;
   ui->presetComboBox->clear();
@@ -30,20 +41,40 @@ void DocPanel::loadSettings() {
 
 void DocPanel::registerEvents() {
   ui->advanceFeatureToggle->setContent(ui->fluxFeatures);
-  connect(ui->modelComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    auto data = ui->modelComboBox->itemData(index);
-    auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
-    // TODO (change width/height to QSize)
-    main_window_->canvas()->document().setWidth(machine.width * 10);
-    main_window_->canvas()->document().setHeight(machine.height * 10);
-    main_window_->canvas()->resize();
+  connect(ui->machineComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+    if (index == -1) return;
+    updateScene();
+    QSettings settings;
+    settings.setValue("defaultMachine", ui->machineComboBox->currentText());
   });
 
   connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
     loadSettings();
   });
+
+  connect(main_window_, &MainWindow::machineSettingsChanged, [=]() {
+    loadSettings();
+  });
 }
 
-DocPanel::~DocPanel() {
-  delete ui;
+void DocPanel::updateScene() {
+  if (ui->machineComboBox->count() == 0) return;
+  auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
+  auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
+  // TODO (change width/height to QSize)
+  main_window_->canvas()->document().setWidth(machine.width * 10);
+  main_window_->canvas()->document().setHeight(machine.height * 10);
+  main_window_->canvas()->resize();
+}
+
+
+MachineSettings::MachineSet DocPanel::currentMachine() {
+  if (ui->machineComboBox->count() == 0) {
+    MachineSettings::MachineSet m;
+    m.origin = MachineSettings::MachineSet::OriginType::RearLeft;
+    return m;
+  }
+  auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
+  auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
+  return machine;
 }
