@@ -167,7 +167,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="generalTab">
         <attribute name="title">
@@ -196,6 +196,9 @@
                <horstretch>2</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
              </property>
             </widget>
            </item>
@@ -251,6 +254,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="widthSpinBox">
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="suffix">
               <string> mm</string>
              </property>
@@ -275,6 +281,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="heightSpinBox">
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
              <property name="suffix">
               <string> mm</string>
              </property>

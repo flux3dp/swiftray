@@ -42,6 +42,7 @@ void MachineManager::loadSettings() {
 
 
 void MachineManager::loadStyles() {
+  ui->nameLineEdit->setStyleSheet("padding-left: 3px");
 }
 
 void MachineManager::loadWidgets() {
