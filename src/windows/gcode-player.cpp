@@ -11,17 +11,10 @@
 
 GCodePlayer::GCodePlayer(QWidget *parent) :
      QFrame(parent),
-#ifndef Q_OS_IOS
-     thread_(SerialPortThread(this)),
-#endif
      ui(new Ui::GCodePlayer) {
   ui->setupUi(this);
   loadSettings();
   registerEvents();
-
-  QTimer *timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &GCodePlayer::loadSettings);
-  timer->start(3000);
 }
 
 void GCodePlayer::loadSettings() {
@@ -37,12 +30,17 @@ void GCodePlayer::loadSettings() {
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
-    thread_.playGcode(ui->portComboBox->currentText(),
-                      ui->baudComboBox->currentText().toInt(),
-                      ui->gcodeText->toPlainText().split("\n"));
+    auto job = new SerialJob(this, ui->portComboBox->currentText(),
+                             ui->baudComboBox->currentText().toInt(),
+                             ui->gcodeText->toPlainText().split("\n"));
+    jobs_ << job;
+    connect(job, &SerialJob::error, this, &GCodePlayer::showError);
+    job->start();
   });
 
-  connect(&thread_, &SerialPortThread::error, this, &GCodePlayer::showError);
+  QTimer *timer = new QTimer(this);
+  connect(timer, &QTimer::timeout, this, &GCodePlayer::loadSettings);
+  timer->start(3000);
 #endif
 }
 

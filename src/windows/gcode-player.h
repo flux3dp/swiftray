@@ -8,7 +8,7 @@
 #ifndef Q_OS_IOS
 
 #include <QSerialPort>
-#include <connection/serialport-thread.h>
+#include <connection/serial-job.h>
 
 #endif
 
@@ -38,7 +38,7 @@ private:
   Ui::GCodePlayer *ui;
 
 #ifndef Q_OS_IOS
-  SerialPortThread thread_;
+  QList<SerialJob *> jobs_;
 #endif
 };
 

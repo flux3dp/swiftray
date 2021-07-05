@@ -407,6 +407,5 @@ bool Transform::isScaleLock() const {
 }
 
 void Transform::setScaleLock(bool scale_lock) {
-  qInfo() << "Set scale lock" << scale_lock;
   scale_locked_ = scale_lock;
 }
