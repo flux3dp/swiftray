@@ -170,6 +170,7 @@ public slots:
 
   void save(QDataStream &out);
 
+
 private:
   // Basic attributes
   unique_ptr<Document> doc_;
@@ -223,6 +224,8 @@ signals:
   void redoCalled();
 
   void transformChanged(qreal x, qreal y, qreal r, qreal w, qreal h);
+
+  void cursorChanged(Qt::CursorShape cursor);
 };
 
 #endif // VCANVAS_H

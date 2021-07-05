@@ -312,6 +312,14 @@ void MainWindow::registerEvents() {
     exporter.convertStack(canvas_->document().layers());
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   });
+
+  connect(canvas_, &Canvas::cursorChanged, [=](Qt::CursorShape cursor) {
+    if (cursor == Qt::ArrowCursor) {
+      unsetCursor();
+    } else {
+      setCursor(cursor);
+    }
+  });
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
