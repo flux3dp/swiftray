@@ -129,12 +129,22 @@ void ToolpathExporter::outputLayerPathGcode() {
     gen_->moveTo(current_pos.x() / 10.0, current_pos.y() / 10.0, travel_speed_, 0);
 
     for (QPointF &point : poly) {
-      gen_->moveTo(point.x() / 10.0, point.y() / 10.0, current_layer_->speed(), current_layer_->power());
+      if ((point - current_pos).manhattanLength() > 50) { //5mm
+        int segments = max(2.0, sqrt(pow(point.x() - current_pos.x(), 2) +
+                                     pow(point.y() - current_pos.y(), 2)) / 50);
+        for (int i = 1; i <= segments; i++) {
+          QPointF insert_point = (i * point + (segments - i) * current_pos) / float(segments);
+          gen_->moveTo(insert_point.x() / 10, insert_point.y() / 10, current_layer_->speed(), current_layer_->power());
+        }
+      } else {
+        gen_->moveTo(point.x() / 10.0, point.y() / 10.0, current_layer_->speed(), current_layer_->power());
+      }
+      current_pos = point;
     }
 
     //gen_->turnOffLaser();
   }
-  gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
+  // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
   gen_->turnOffLaser();
 }
 

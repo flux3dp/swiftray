@@ -7,6 +7,7 @@
 #include <QSerialPort>
 #include <QTimer>
 #include <QByteArray>
+#include <QVariant>
 
 #include <connection/base-job.h>
 
@@ -16,35 +17,17 @@ constexpr int kGrblTimeout = 5000;
 class SerialJob : public BaseJob {
 Q_OBJECT
 public:
-  SerialJob(QObject *parent, QString port, int baudrate, QStringList gcode) : BaseJob(parent) {
-    port_ = port;
-    baudrate_ = baudrate;
-    gcode_ = gcode;
-    grbl_ready_ = false;
-    timeout_timer_ = new QTimer(this);
-    connect(this, &SerialJob::startConnection, this, &SerialJob::startTimer);
-    connect(this, &SerialJob::successConnection, this, &SerialJob::stopTimer);
-    connect(timeout_timer_, &QTimer::timeout, this, &SerialJob::timeout);
-  }
+  SerialJob(QObject *parent, QString endpoint, QVariant gcode);
 
-  ~SerialJob() {
-    mutex_.lock();
-    mutex_.unlock();
-    wait(wait_timeout_);
-  }
+  ~SerialJob();
 
-  void start() {
-    const QMutexLocker locker(&mutex_);
-    if (!isRunning()) {
-      QThread::start();
-    } else {
-      Q_ASSERT_X(false, "SerialJob", "Already running");
-    }
-  }
+  void start() override;
 
-  float progress() override {
-    return current_line_ / gcode_.size();
-  }
+  void pause() override;
+
+  void resume() override;
+
+  float progress();
 
 signals:
 
@@ -68,21 +51,21 @@ private:
 
   void parseResponse(QString line);
 
-  QSerialPort *serial_;
-  QString port_;
-  int baudrate_;
-
-  unsigned long int wait_timeout_ = 1000;
-  QStringList gcode_;
-  int current_line_;
 
   QByteArray unprocssed_response_;
-
-  bool grbl_ready_;
-
-  int block_buffer_;
-
+  QSerialPort *serial_;
+  QString port_;
+  QStringList gcode_;
   QTimer *timeout_timer_;
+  bool grbl_ready_;
+  int baudrate_;
+  int block_buffer_;
+  int current_line_;
+  unsigned long int wait_timeout_ = 1000;
+
+  bool pause_flag_;
+  bool resume_flag_;
+  bool on_hold_;
 };
 
 #endif

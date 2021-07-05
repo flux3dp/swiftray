@@ -30,12 +30,24 @@ void GCodePlayer::loadSettings() {
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
-    auto job = new SerialJob(this, ui->portComboBox->currentText(),
-                             ui->baudComboBox->currentText().toInt(),
+    auto job = new SerialJob(this,
+                             ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
                              ui->gcodeText->toPlainText().split("\n"));
     jobs_ << job;
     connect(job, &SerialJob::error, this, &GCodePlayer::showError);
     job->start();
+    ui->pauseBtn->setEnabled(true);
+  });
+
+  connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
+    auto job = jobs_.last();
+    if (job->status() == SerialJob::Status::RUNNING) {
+      job->pause();
+      ui->pauseBtn->setText(tr("Resume"));
+    } else {
+      job->resume();
+      ui->pauseBtn->setText(tr("Pause"));
+    }
   });
 
   QTimer *timer = new QTimer(this);
