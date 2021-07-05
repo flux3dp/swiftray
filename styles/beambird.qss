@@ -27,7 +27,7 @@ QToolBar {
 QDockWidget {
   border: 1px solid #CCCCCC;
   color: #555555;
-  background: #F0F0F0;
+  background: blue;
 }
 
 QDockWidget > QFrame {
@@ -39,8 +39,8 @@ QDockWidget > QWidget {
 }
 
 QDockWidget::title {
-  text-align: center; /* align the text to the left */
-  background: #F0F0F0;
+  text-align: center;
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
   padding-left: 5px;
 }
 

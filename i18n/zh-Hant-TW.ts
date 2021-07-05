@@ -150,7 +150,7 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="94"/>
+        <location filename="../src/windows/gcode-player.ui" line="97"/>
         <source>Execute</source>
         <translation>送出工作</translation>
     </message>
@@ -303,78 +303,78 @@
         <translation>名稱</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="218"/>
+        <location filename="../src/windows/machine-manager.ui" line="221"/>
         <source>Model</source>
         <translation>型號</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="248"/>
+        <location filename="../src/windows/machine-manager.ui" line="251"/>
         <source>Width</source>
         <translation>作業區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="255"/>
-        <location filename="../src/windows/machine-manager.ui" line="279"/>
+        <location filename="../src/windows/machine-manager.ui" line="261"/>
+        <location filename="../src/windows/machine-manager.ui" line="288"/>
         <source> mm</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="272"/>
+        <location filename="../src/windows/machine-manager.ui" line="278"/>
         <source>Height</source>
         <translation>作業區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="302"/>
+        <location filename="../src/windows/machine-manager.ui" line="311"/>
         <source>Controller</source>
         <translation>控制器</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="319"/>
+        <location filename="../src/windows/machine-manager.ui" line="328"/>
         <source>FLUX</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="324"/>
+        <location filename="../src/windows/machine-manager.ui" line="333"/>
         <source>GRBL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="329"/>
+        <location filename="../src/windows/machine-manager.ui" line="338"/>
         <source>M2NANO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="334"/>
+        <location filename="../src/windows/machine-manager.ui" line="343"/>
         <source>RUIDA</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="358"/>
+        <location filename="../src/windows/machine-manager.ui" line="367"/>
         <source>Advanced</source>
         <translation>進階</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="364"/>
+        <location filename="../src/windows/machine-manager.ui" line="373"/>
         <source>Origin</source>
         <translation>原點</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="381"/>
+        <location filename="../src/windows/machine-manager.ui" line="390"/>
         <source>Rear Left</source>
         <translation>左上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="388"/>
+        <location filename="../src/windows/machine-manager.ui" line="397"/>
         <source>Rear Right</source>
         <translation>右上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="402"/>
+        <location filename="../src/windows/machine-manager.ui" line="411"/>
         <source>Front Left</source>
         <translation>左下</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="409"/>
+        <location filename="../src/windows/machine-manager.ui" line="418"/>
         <source>Front Right</source>
         <translation type="unfinished">右下</translation>
     </message>
@@ -569,7 +569,7 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="574"/>
         <source>R</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">旋轉</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="586"/>
@@ -919,6 +919,15 @@
         <location filename="../src/windows/preview-window.ui" line="14"/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../src/layer.cpp" line="34"/>
+        <location filename="../src/layer.cpp" line="37"/>
+        <source>Layer</source>
+        <translation type="unfinished">圖層</translation>
     </message>
 </context>
 <context>

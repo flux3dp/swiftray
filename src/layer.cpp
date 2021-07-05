@@ -2,6 +2,7 @@
 #include <layer.h>
 #include <shape/shape.h>
 #include <canvas/canvas.h>
+#include <QObject>
 
 // Layer colors
 constexpr char const *kLayerColors[17] = {
@@ -30,10 +31,10 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
 Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
            kLayerColors[layer_counter - 1],
-           "Layer " + QString::number(layer_counter)) {}
+           QObject::tr("Layer") + " " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
-     Layer(nullptr, Qt::black, "Layer") {}
+     Layer(nullptr, Qt::black, QObject::tr("Layer")) {}
 
 Layer::~Layer() = default;
 
