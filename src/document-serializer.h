@@ -22,6 +22,8 @@ public:
        in(stream) {}
 
   void serializeDocument(Document &doc) {
+    out << QString("NINJAV1.1");
+    out << QSize(doc.width(), doc.height());
     out << doc.layers().size();
     for (auto &layer : doc.layers()) {
       serializeLayer(layer);
@@ -29,7 +31,15 @@ public:
   }
 
   Document *deserializeDocument() {
+    QString doc_version;
+    in >> doc_version;
+    qInfo() << "Doc Version" << doc_version;
     Document *doc = new Document;
+    QSize doc_size;
+    in >> doc_size;
+    doc->setWidth(doc_size.width());
+    doc->setHeight(doc_size.height());
+
     int layers_size;
     in >> layers_size;
     doc->layers_.clear();
