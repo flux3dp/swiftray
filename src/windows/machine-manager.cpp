@@ -1,26 +1,20 @@
 #include <QAction>
 #include <QDebug>
-#include <windows/mainwindow.h>
 #include <windows/new-machine-dialog.h>
 #include <settings/machine-settings.h>
 #include <QListWidgetItem>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
 
-MachineManager::MachineManager(QWidget *parent, MainWindow *main_window) :
+MachineManager::MachineManager(QWidget *parent) :
      QDialog(parent),
-     main_window_(main_window),
-     ui(new Ui::MachineManager) {
+     ui(new Ui::MachineManager),
+     BaseContainer() {
   ui->setupUi(this);
   ui->machineList->
        setIconSize(QSize(32, 32)
   );
-
-  loadSettings();
-  loadWidgets();
-  loadStyles();
-  registerEvents();
-
+  initializeContainer();
 }
 
 MachineManager::~MachineManager() {
@@ -51,7 +45,6 @@ void MachineManager::loadWidgets() {
 
 void MachineManager::registerEvents() {
   connect(this, &QDialog::accepted, this, &MachineManager::save);
-  connect(this, &QDialog::accepted, main_window_, &MainWindow::machineSettingsChanged);
 
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
     auto *dialog = new NewMachineDialog(this);

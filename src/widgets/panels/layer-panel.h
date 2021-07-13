@@ -11,15 +11,11 @@ namespace Ui {
   class LayerPanel;
 }
 
-class LayerPanel : public QFrame {
+class LayerPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
   explicit LayerPanel(QWidget *parent, MainWindow *main_window_);
-
-  void loadWidgets();
-
-  void registerEvents();
 
   void resizeEvent(QResizeEvent *) override;
 
@@ -30,11 +26,13 @@ private slots:
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
                          const QModelIndex &destinationParent, int destinationRow);
 
-
   void updateLayers();
 
-
 private:
+  void loadWidgets() override;
+
+  void registerEvents() override;
+
   Ui::LayerPanel *ui;
 
   QToolButton *add_layer_btn_;

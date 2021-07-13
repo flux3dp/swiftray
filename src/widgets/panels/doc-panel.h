@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <settings/machine-settings.h>
+#include <widgets/base-container.h>
 
 class MainWindow;
 
@@ -10,7 +11,7 @@ namespace Ui {
   class DocPanel;
 }
 
-class DocPanel : public QFrame {
+class DocPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
@@ -18,15 +19,16 @@ public:
 
   ~DocPanel();
 
-  void loadSettings();
-
-  void registerEvents();
-
   void updateScene();
 
   MachineSettings::MachineSet currentMachine();
 
 private:
+  void loadSettings() override;
+
+  void registerEvents() override;
+
+
   Ui::DocPanel *ui;
   MainWindow *main_window_;
 };

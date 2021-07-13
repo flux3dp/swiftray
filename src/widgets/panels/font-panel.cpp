@@ -7,12 +7,12 @@
 FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      main_window_(main_window),
-     ui(new Ui::FontPanel) {
+     ui(new Ui::FontPanel),
+     BaseContainer() {
   assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
-  loadStyles();
-  registerEvents();
   setFont(QFont("Tahoma", 150, QFont::Bold), 1.5);
+  initializeContainer();
 }
 
 void FontPanel::loadStyles() {

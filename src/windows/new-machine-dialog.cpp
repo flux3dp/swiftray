@@ -5,11 +5,11 @@
 
 NewMachineDialog::NewMachineDialog(QWidget *parent) :
      QDialog(parent),
-     ui(new Ui::NewMachineDialog) {
+     ui(new Ui::NewMachineDialog),
+     BaseContainer() {
   ui->setupUi(this);
   ui->machineList->setIconSize(QSize(80, 80));
-  loadSettings();
-  registerEvents();
+  initializeContainer();
 }
 
 void NewMachineDialog::registerEvents() {

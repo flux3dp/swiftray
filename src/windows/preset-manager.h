@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <settings/preset-settings.h>
+#include <widgets/base-container.h>
 
 namespace Ui {
   class PresetManager;
@@ -10,19 +11,13 @@ namespace Ui {
 
 class LayerParamsPanel;
 
-class PresetManager : public QDialog {
+class PresetManager : public QDialog, BaseContainer {
 Q_OBJECT
 
 public:
   explicit PresetManager(QWidget *parent);
 
   ~PresetManager();
-
-  void loadStyles();
-
-  void loadSettings();
-
-  void registerEvents();
 
   void showPreset();
 
@@ -31,6 +26,13 @@ public:
   void save();
 
 private:
+
+  void loadStyles() override;
+
+  void loadSettings() override;
+
+  void registerEvents() override;
+
   Ui::PresetManager *ui;
   LayerParamsPanel *layer_panel_;
 };

@@ -7,12 +7,13 @@
 
 PreviewWindow::PreviewWindow(QWidget *parent) :
      QDialog(parent),
-     ui(new Ui::PreviewWindow) {
+     ui(new Ui::PreviewWindow),
+     BaseContainer() {
   progress_ = 50;
   preview_path_ = nullptr;
   ui->setupUi(this);
   setWindowTitle("Preview Path");
-  registerEvents();
+  initializeContainer();
 }
 
 PreviewWindow::~PreviewWindow() {

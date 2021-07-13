@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <shape/shape.h>
 #include <canvas/controls/transform.h>
+#include <widgets/base-container.h>
 
 class MainWindow;
 
@@ -12,7 +13,7 @@ namespace Ui {
   class TransformPanel;
 }
 
-class TransformPanel : public QFrame {
+class TransformPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
@@ -27,9 +28,9 @@ public:
   void updateControl();
 
 private:
-  void loadStyles();
+  void loadStyles() override;
 
-  void registerEvents();
+  void registerEvents() override;
 
   Ui::TransformPanel *ui;
   double x_;

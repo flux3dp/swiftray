@@ -11,11 +11,10 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      ui(new Ui::LayerParamsPanel),
      main_window_(main_window),
      layer_(nullptr),
-     preset_previous_index_(0) {
+     preset_previous_index_(0),
+     BaseContainer() {
   ui->setupUi(this);
-  loadStyles();
-  registerEvents();
-  loadSettings();
+  initializeContainer();
 }
 
 LayerParamsPanel::~LayerParamsPanel() {

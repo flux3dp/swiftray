@@ -11,12 +11,11 @@
 PresetManager::PresetManager(QWidget *parent) :
      QDialog(parent),
      layer_panel_((LayerParamsPanel *) parent),
-     ui(new Ui::PresetManager) {
+     ui(new Ui::PresetManager),
+     BaseContainer() {
   ui->setupUi(this);
   setWindowTitle("Preset Manager");
-  loadSettings();
-  loadStyles();
-  registerEvents();
+  initializeContainer();
 }
 
 PresetManager::~PresetManager() {

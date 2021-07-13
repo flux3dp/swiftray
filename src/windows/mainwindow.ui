@@ -83,11 +83,18 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExportGcode"/>
+    </widget>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="menuExport"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
-    <addaction name="actionExportGcode"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
     <property name="title">
@@ -113,8 +120,14 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuMachine">
+    <property name="title">
+     <string>Machine</string>
+    </property>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
+   <addaction name="menuMachine"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
@@ -830,14 +843,6 @@
     <string>VFlip</string>
    </property>
   </action>
-  <action name="actionExportGcode">
-   <property name="text">
-    <string>Export Gcode</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+E</string>
-   </property>
-  </action>
   <action name="actionMachine_Settings">
    <property name="text">
     <string>Machine Settings</string>
@@ -846,6 +851,24 @@
   <action name="actionMachineSettings">
    <property name="text">
     <string>Machine Settings</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+  </action>
+  <action name="actionHi">
+   <property name="text">
+    <string>Hi</string>
+   </property>
+  </action>
+  <action name="actionExportGcode">
+   <property name="text">
+    <string>Gcode</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
  </widget>

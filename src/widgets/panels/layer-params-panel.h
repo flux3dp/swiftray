@@ -4,7 +4,8 @@
 #include <QFrame>
 #include <layer.h>
 #include <settings/preset-settings.h>
-#include "windows/preset-manager.h"
+#include <widgets/base-container.h>
+#include <windows/preset-manager.h>
 
 class MainWindow;
 
@@ -12,7 +13,7 @@ namespace Ui {
   class LayerParamsPanel;
 }
 
-class LayerParamsPanel : public QFrame {
+class LayerParamsPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
@@ -25,11 +26,11 @@ public slots:
   void updateLayer(Layer *layer);
 
 private:
-  void loadStyles();
+  void loadStyles() override;
 
-  void loadSettings();
+  void loadSettings() override;
 
-  void registerEvents();
+  void registerEvents() override;
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;

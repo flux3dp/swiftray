@@ -5,11 +5,11 @@
 TransformPanel::TransformPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      main_window_(main_window),
-     ui(new Ui::TransformPanel) {
+     ui(new Ui::TransformPanel),
+     BaseContainer() {
   assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
-  loadStyles();
-  registerEvents();
+  initializeContainer();
 }
 
 TransformPanel::~TransformPanel() {

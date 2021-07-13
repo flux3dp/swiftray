@@ -9,6 +9,7 @@
 
 #include <QSerialPort>
 #include <connection/serial-job.h>
+#include <widgets/base-container.h>
 
 #endif
 
@@ -16,17 +17,14 @@ namespace Ui {
   class GCodePlayer;
 }
 
-class GCodePlayer : public QFrame {
+class GCodePlayer : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
+
   explicit GCodePlayer(QWidget *parent = nullptr);
 
   ~GCodePlayer();
-
-  void loadSettings();
-
-  void registerEvents();
 
   void setSerialPort();
 
@@ -35,6 +33,11 @@ public:
   void showError(const QString &string);
 
 private:
+
+  void loadSettings() override;
+
+  void registerEvents() override;
+
   Ui::GCodePlayer *ui;
 
 #ifndef Q_OS_IOS

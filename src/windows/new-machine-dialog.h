@@ -3,12 +3,13 @@
 
 #include <QDialog>
 #include <settings/machine-settings.h>
+#include <widgets/base-container.h>
 
 namespace Ui {
   class NewMachineDialog;
 }
 
-class NewMachineDialog : public QDialog {
+class NewMachineDialog : public QDialog, BaseContainer {
 Q_OBJECT
 
 public:
@@ -16,13 +17,14 @@ public:
 
   ~NewMachineDialog();
 
-  void loadSettings();
-
-  void registerEvents();
-
   MachineSettings::MachineSet machine() const;
 
 private:
+
+  void loadSettings() override;
+
+  void registerEvents() override;
+
   Ui::NewMachineDialog *ui;
 };
 

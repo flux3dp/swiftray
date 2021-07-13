@@ -8,11 +8,11 @@
 DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      main_window_(main_window),
-     ui(new Ui::DocPanel) {
+     ui(new Ui::DocPanel),
+     BaseContainer() {
   ui->setupUi(this);
-  loadSettings();
-  registerEvents();
   updateScene();
+  initializeContainer();
 }
 
 DocPanel::~DocPanel() {

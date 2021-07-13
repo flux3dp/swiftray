@@ -8,10 +8,10 @@
 LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      main_window_(main_window),
-     ui(new Ui::LayerPanel) {
+     ui(new Ui::LayerPanel),
+     BaseContainer() {
   ui->setupUi(this);
-  loadWidgets();
-  registerEvents();
+  initializeContainer();
   updateLayers();
 }
 

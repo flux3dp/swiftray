@@ -11,10 +11,10 @@
 
 GCodePlayer::GCodePlayer(QWidget *parent) :
      QFrame(parent),
-     ui(new Ui::GCodePlayer) {
+     ui(new Ui::GCodePlayer),
+     BaseContainer() {
   ui->setupUi(this);
-  loadSettings();
-  registerEvents();
+  initializeContainer();
 }
 
 void GCodePlayer::loadSettings() {

@@ -24,13 +24,12 @@
 MainWindow::MainWindow(QWidget *parent) :
      QMainWindow(parent),
      ui(new Ui::MainWindow),
-     canvas_(nullptr) {
+     canvas_(nullptr),
+     BaseContainer() {
   ui->setupUi(this);
   loadQSS();
-  loadSettings();
   loadCanvas();
-  loadWidgets();
-  registerEvents();
+  initializeContainer();
   updateMode();
   updateSelections();
 }
@@ -243,13 +242,14 @@ void MainWindow::updateSelections() {
 
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
-  // Add custom panels
+  // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
-  machine_manager_ = new MachineManager(this, this);
+  machine_manager_ = new MachineManager(this);
+  preferences_window_ = new PreferencesWindow(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -298,7 +298,14 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignLeft, &QAction::triggered, canvas_, &Canvas::editHAlignLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editHAlignCenter);
   connect(ui->actionAlignRight, &QAction::triggered, canvas_, &Canvas::editHAlignRight);
+
+  connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
+
   // Complex callbacks
+  connect(ui->actionPreferences, &QAction::triggered, [=]() {
+    preferences_window_->show();
+  });
+
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
   });

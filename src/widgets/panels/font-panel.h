@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QFont>
+#include <widgets/base-container.h>
 
 class MainWindow;
 
@@ -10,7 +11,7 @@ namespace Ui {
   class FontPanel;
 }
 
-class FontPanel : public QFrame {
+class FontPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
@@ -18,15 +19,15 @@ public:
 
   ~FontPanel();
 
-  void loadStyles();
-
-  void registerEvents();
-
   QFont font();
 
   void setFont(QFont font, float line_height);
 
 private:
+  void loadStyles() override;
+
+  void registerEvents() override;
+
   Ui::FontPanel *ui;
   MainWindow *main_window_;
   QFont font_;
