@@ -1,5 +1,5 @@
-#ifndef VCANVAS_H
-#define VCANVAS_H
+#ifndef CANVAS_H
+#define CANVAS_H
 
 #include <QtQuick>
 #include <QQuickWidget>
@@ -177,7 +177,7 @@ private:
   Mode mode_;
   QFont font_;
   Clipboard clipboard_;
-  SVGPPParser svgpp_parser_;
+  Parser::SVGPPParser svgpp_parser_;
 
   // Control components
   Controls::Transform ctrl_transform_;
@@ -228,4 +228,4 @@ signals:
   void cursorChanged(Qt::CursorShape cursor);
 };
 
-#endif // VCANVAS_H
+#endif // CANVAS_H

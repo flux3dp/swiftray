@@ -3,6 +3,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class UseContext : public BaseContext {
 public:
   UseContext(BaseContext const &parent) : BaseContext(parent) {
@@ -41,3 +43,5 @@ private:
   double x_, y_;
   boost::optional<double> width_, height_;
 };
+
+}

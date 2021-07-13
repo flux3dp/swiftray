@@ -23,7 +23,7 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_path_edit_(Controls::PathEdit(this)),
        ctrl_rect_(Controls::Rect(this)),
        ctrl_text_(Controls::Text(this)),
-       svgpp_parser_(SVGPPParser()),
+       svgpp_parser_(Parser::SVGPPParser()),
        widget_(nullptr),
        fps(0),
        timer(new QTimer(this)),

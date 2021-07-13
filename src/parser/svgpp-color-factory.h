@@ -2,6 +2,8 @@
 
 #include <svgpp/factory/integer_color.hpp>
 
+namespace Parser {
+
 typedef boost::tuple<unsigned char, unsigned char, unsigned char> color_t;
 
 struct ColorFactoryBase {
@@ -13,3 +15,5 @@ struct ColorFactoryBase {
 };
 
 typedef svgpp::factory::color::percentage_adapter<ColorFactoryBase> ColorFactory;
+
+}

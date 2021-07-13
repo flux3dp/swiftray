@@ -5,6 +5,8 @@
 #ifndef SVGPP_DOC_H
 #define SVGPP_DOC_H
 
+namespace Parser {
+
 class SVGPPDoc {
 public:
   class FollowRef;
@@ -59,5 +61,7 @@ private:
   SVGPPDoc &svgpp_doc_;
   SVGPPDoc::followed_refs_t::iterator lock_;
 };
+
+}
 
 #endif

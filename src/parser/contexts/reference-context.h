@@ -4,6 +4,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class ReferencedSymbolOrSvgContext : public BaseContext {
 public:
   ReferencedSymbolOrSvgContext(UseContext &referencing)
@@ -20,3 +22,5 @@ public:
 private:
   UseContext &referencing_;
 };
+
+}

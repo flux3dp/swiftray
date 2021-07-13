@@ -32,6 +32,8 @@
 #include <QString>
 #include <layer.h>
 
+namespace Parser {
+
 using namespace svgpp;
 
 extern QList<LayerPtr> *svgpp_layers;
@@ -48,4 +50,5 @@ void svgpp_set_active_layer(LayerPtr &layer);
 
 void svgpp_unset_active_layer();
 
+}
 #endif

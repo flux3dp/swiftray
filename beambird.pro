@@ -60,11 +60,12 @@ SOURCES += \
         src/layer.cpp \
         src/command.cpp \
         src/clipboard.cpp \
+        src/connection/base-job.cpp
 
 ios {
 } else {
     SOURCES += \
-            src/connection/serialport-thread.cpp
+            src/connection/serial-job.cpp
 }
 
 RESOURCES += qml.qrc
@@ -95,23 +96,21 @@ HEADERS += \
     $$files(src/widgets/*.h) \
     $$files(src/widgets/panels/*.h) \
     $$files(src/windows/*.h) \
+    $$files(src/*.h) \
+    src/connection/base-job.h \
     src/widgets/components/canvas-text-edit.h \
     src/widgets/components/layer-list-item.h \
     src/widgets/components/qdoublespinbox2.h \
     src/widgets/components/qfontcombobox2.h \
-    src/document.h \
-    src/layer.h \
-    src/command.h \
-    src/clipboard.h \
+    src/widgets/components/task-list-item.h
 
 ios {
-    SOURCES += \
+    HEADERS += \
             src/widgets/components/ios-image-picker.h \
 
 } else {
-    SOURCES += \
-            src/connection/serialport-thread.h \
-
+    HEADERS += \
+            src/connection/serial-job.h
 }
 
 
@@ -124,13 +123,17 @@ DEPENDPATH += C:/cygwin64/usr/include
 
 FORMS += \
     src/widgets/components/layer-list-item.ui \
+    src/widgets/components/task-list-item.ui \
     src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
     src/widgets/panels/layer-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
+    src/widgets/panels/spooler-panel.ui \
     src/widgets/panels/transform-panel.ui \
     src/windows/machine-manager.ui \
+    src/windows/machine-monitor.ui \
     src/windows/new-machine-dialog.ui \
+    src/windows/preferences-window.ui \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \
     src/windows/gcode-player.ui \

@@ -20,6 +20,8 @@
 
 using namespace svgpp;
 
+namespace Parser {
+
 struct ChildContextFactories {
   template<class ParentContext, class ElementTag, class Enable = void>
   struct apply {
@@ -278,4 +280,6 @@ void svgpp_add_shape(ShapePtr &shape, QString &color_string) {
     svgpp_layers->last()->addShape(shape);
     svgpp_layer_map->insert(color_string, svgpp_layers->last().get());
   }
+}
+
 }

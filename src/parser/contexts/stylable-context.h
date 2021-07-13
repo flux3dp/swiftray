@@ -3,6 +3,8 @@
 
 #pragma once
 
+namespace Parser {
+
 using namespace svgpp;
 
 inline color_t BlackColor() { return color_t(0, 0, 0); }
@@ -413,3 +415,5 @@ private:
   Style style_;
   NoninheritedStyle parentStyle_;
 };
+
+}

@@ -5,7 +5,7 @@
 #include <parser/contexts/svgpp-doc.h>
 
 #pragma once
-
+namespace Parser {
 
 class BaseContext : public StylableContext, public ObjectContext, public TransformableContext {
 public:
@@ -84,3 +84,5 @@ private:
   SVGPPDoc &doc_;
 
 };
+
+}

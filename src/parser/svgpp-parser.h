@@ -9,11 +9,15 @@
 
 class Document;
 
+namespace Parser {
+
 class SVGPPParser {
 public:
   SVGPPParser() {};
 
   bool parse(Document *doc, QByteArray &data);
 };
+
+}
 
 #endif // SVGPP_PARSER_H

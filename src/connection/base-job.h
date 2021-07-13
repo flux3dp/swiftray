@@ -34,7 +34,7 @@ public:
 
   virtual void resume() {};
 
-  virtual float progress() {};
+  virtual float progress() { return 1.0; };
 
   Status status() {
     return status_;

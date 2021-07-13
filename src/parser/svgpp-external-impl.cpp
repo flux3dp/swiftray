@@ -7,9 +7,9 @@ SVGPP_PARSE_PATH_DATA_IMPL(const char *, double)
 
 SVGPP_PARSE_TRANSFORM_IMPL(const char *, double)
 
-SVGPP_PARSE_PAINT_IMPL(const char *, ColorFactory, factory::icc_color::default_factory)
+SVGPP_PARSE_PAINT_IMPL(const char *, Parser::ColorFactory, svgpp::factory::icc_color::default_factory)
 
-SVGPP_PARSE_COLOR_IMPL(const char *, ColorFactory, factory::icc_color::default_factory)
+SVGPP_PARSE_COLOR_IMPL(const char *, Parser::ColorFactory, svgpp::factory::icc_color::default_factory)
 
 SVGPP_PARSE_PRESERVE_ASPECT_RATIO_IMPL(const char *)
 

@@ -6,6 +6,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class GroupContext : public BaseContext {
 public:
   explicit GroupContext(BaseContext const &parent) :
@@ -100,3 +102,5 @@ public:
   LayerPtr layer_ptr_;
   bool is_sub_group_;
 };
+
+}

@@ -169,7 +169,14 @@ RECURSIVE              = YES
 EXCLUDE                =
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       =
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        = AttributeTraversal \
+                         APLViewController \
+                         IRIPaint \
+                         MemoryMonitor \
+                         NoninheritedStyle \
+                         processed_elements_t \
+                         processed_elements_with_symbol_t \
+                         ChildContextFactories::apply
 EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       = *
 EXAMPLE_RECURSIVE      = NO

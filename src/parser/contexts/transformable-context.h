@@ -9,6 +9,8 @@
 
 #pragma once
 
+namespace Parser {
+
 namespace ublas = boost::numeric::ublas;
 typedef ublas::matrix<double> matrix_t;
 
@@ -77,3 +79,5 @@ public:
 
   matrix_t transform_;
 };
+
+}

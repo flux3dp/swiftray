@@ -4,6 +4,8 @@
 
 #include <document.h>
 
+namespace Parser {
+
 bool SVGPPParser::parse(Document *doc, QByteArray &data) {
   bool success = svgpp_parse(data);
   qInfo() << "Total layers" << svgpp_layers->size();
@@ -11,4 +13,6 @@ bool SVGPPParser::parse(Document *doc, QByteArray &data) {
     doc->addLayer(layer);
   }
   return success;
+}
+
 }

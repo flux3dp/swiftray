@@ -27,7 +27,7 @@ public:
 
   void resume() override;
 
-  float progress();
+  float progress() override;
 
 signals:
 

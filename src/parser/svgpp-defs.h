@@ -7,6 +7,8 @@
 #include <shape/shape.h>
 #include <parser/css/svg-style-selector.h>
 
+namespace Parser {
+
 typedef boost::variant<tag::value::none, tag::value::currentColor, color_t>
      SolidPaint;
 typedef boost::iterator_range<const char *> RangedChar;
@@ -26,5 +28,7 @@ struct IRIPaint {
 typedef boost::variant<SolidPaint, IRIPaint> SVGPPPaint;
 
 extern SVGStyleSelector *svgpp_style_selector;
+
+}
 
 #endif

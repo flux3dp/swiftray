@@ -4,6 +4,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class TextContext : public BaseContext {
 public:
   TextContext(BaseContext const &parent) : BaseContext(parent), x_(0), y_(0) {
@@ -41,3 +43,5 @@ private:
   std::string text_content_;
   double x_, y_;
 };
+
+}

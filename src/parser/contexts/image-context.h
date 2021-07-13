@@ -6,6 +6,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class ImageContext : public BaseContext {
 public:
   ImageContext(BaseContext const &parent) : BaseContext(parent) {
@@ -68,3 +70,5 @@ private:
   double width_, height_;
   shared_ptr<Shape> bitmap_;
 };
+
+}

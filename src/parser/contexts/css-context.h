@@ -8,6 +8,8 @@
 #include <parser/contexts/base-context.h>
 #include <parser/svgpp-defs.h>
 
+namespace Parser {
+
 class CSSContext : public BaseContext {
 public:
   CSSContext(BaseContext const &parent) : BaseContext(parent) {
@@ -39,5 +41,7 @@ public:
 private:
   std::string fragment_id_;
 };
+
+}
 
 #endif

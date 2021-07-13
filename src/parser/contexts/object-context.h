@@ -2,6 +2,8 @@
 
 #pragma once
 
+namespace Parser {
+
 class ObjectContext {
 public:
   void set(tag::attribute::width, double val) {};
@@ -42,3 +44,5 @@ public:
 private:
   double empty;
 };
+
+}

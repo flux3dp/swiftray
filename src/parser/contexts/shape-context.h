@@ -10,6 +10,8 @@
 
 #pragma once
 
+namespace Parser {
+
 namespace ublas = boost::numeric::ublas;
 typedef ublas::matrix<double> matrix_t;
 
@@ -160,3 +162,5 @@ private:
 
   QPainterPath working_path_;
 };
+
+}
