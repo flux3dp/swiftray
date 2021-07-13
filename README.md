@@ -30,3 +30,7 @@ Open the .pro project file in the root directory, and click run.
 
 1. Use Modern C++ as possible as you can.
 2. Reduce logic implementation in widgets and QML codes, to maintain low coupling with Qt Framework.
+
+# Document
+
+Run `$> doxygen Doxygen` and view docs/index.html
