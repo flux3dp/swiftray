@@ -425,7 +425,7 @@ void Canvas::editDifference() {
 
 void Canvas::addEmptyLayer() {
   int i = 1;
-  while (document().findLayerByName("Layer " + QString::number(i)) != nullptr) i++;
+  while (document().findLayerByName(tr("Layer ") + QString::number(i)) != nullptr) i++;
   LayerPtr new_layer = make_shared<Layer>(&document(), i);
   document().execute(
        Commands::AddLayer(new_layer)
