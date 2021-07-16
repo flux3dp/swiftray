@@ -29,7 +29,7 @@ jobs:
     - name: Download and install Boost
       uses: MarkusJx/install-boost@v1.0.1
       with:
-        boost_version: 1.70.0
+        boost_version: 1.73.0
         
     - name: Googletest installer
       uses: MarkusJx/googletest-installer@v1.1
