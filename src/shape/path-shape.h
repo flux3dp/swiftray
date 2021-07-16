@@ -1,5 +1,4 @@
-#ifndef PATHSHAPE_H
-#define PATHSHAPE_H
+#pragma once
 
 #include <shape/shape.h>
 
@@ -23,8 +22,6 @@ public:
 
   virtual ~PathShape();
 
-  void calcBoundingBox() const override;
-
   ShapePtr clone() const override;
 
   bool hitTest(QPointF global_coord, qreal tolerance) const override;
@@ -46,13 +43,11 @@ public:
   friend class DocumentSerializer;
 
 private:
-  bool filled_;
+  void calcBoundingBox() const override;
 
-private:
+  bool filled_;
   mutable QRectF hit_test_rect_;
 
 protected:
   QPainterPath path_;
 };
-
-#endif // PATHSHAPE_H

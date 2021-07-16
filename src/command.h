@@ -1,5 +1,4 @@
-#ifndef COMMAND_H
-#define COMMAND_H
+#pragma once
 
 #include <layer.h>
 #include <shape/shape.h>
@@ -55,7 +54,7 @@ namespace Commands {
   /**
       \class RemoveLayerCmd
       \brief Command for removing layers.
-  */  
+  */
   class RemoveLayerCmd : public BaseCmd {
   public:
     RemoveLayerCmd(const LayerPtr &layer) : layer_(layer) {}
@@ -71,7 +70,7 @@ namespace Commands {
       \class AddShapeCmd
       \brief Command for adding shapes.
       The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
-  */  
+  */
   class AddShapeCmd : public BaseCmd {
   public:
     AddShapeCmd(Layer *layer, const ShapePtr &shape) :
@@ -89,7 +88,7 @@ namespace Commands {
       \class RemoveShapeCmd
       \brief Command for removing shapes.
       The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
-  */  
+  */
   class RemoveShapeCmd : public BaseCmd {
   public:
     explicit RemoveShapeCmd(const ShapePtr &shape) :
@@ -105,11 +104,11 @@ namespace Commands {
     Layer *layer_;
     ShapePtr shape_;
   };
-  
+
   /**
       \class SelectCmd
       \brief Command for selection changes in document.
-  */  
+  */
   class SelectCmd : public BaseCmd {
   public:
 
@@ -126,7 +125,7 @@ namespace Commands {
   /**
       \class JoinedCmd
       \brief A group of commands that can be considered as a single step in undo/redo
-  */  
+  */
   class JoinedCmd : public BaseCmd {
   public:
 
@@ -272,5 +271,3 @@ namespace Commands {
 }
 
 typedef Commands::CmdPtr CmdPtr;
-
-#endif

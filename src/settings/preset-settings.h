@@ -1,5 +1,4 @@
-#ifndef PARAM_SETTINGS_H
-#define PARAM_SETTINGS_H
+#pragma once
 
 #include <QString>
 #include <QFile>
@@ -91,5 +90,3 @@ public:
 
   QList<Preset> presets_;
 };
-
-#endif //PARAM_SETTINGS_H

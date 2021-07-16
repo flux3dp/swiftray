@@ -1,5 +1,4 @@
-#ifndef SVGPP_PARSER_H
-#define SVGPP_PARSER_H
+#pragma once
 
 #include <QPainterPath>
 
@@ -11,13 +10,11 @@ class Document;
 
 namespace Parser {
 
-class SVGPPParser {
-public:
-  SVGPPParser() {};
+  class SVGPPParser {
+  public:
+    SVGPPParser() {};
 
-  bool parse(Document *doc, QByteArray &data);
-};
+    bool parse(Document *doc, QByteArray &data);
+  };
 
 }
-
-#endif // SVGPP_PARSER_H

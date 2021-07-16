@@ -1,5 +1,4 @@
-#ifndef LAYER_WIDGET_H
-#define LAYER_WIDGET_H
+#pragma once
 
 #include <QWidget>
 #include <layer.h>
@@ -34,5 +33,3 @@ private:
   Ui::LayerListItem *ui;
   bool active_;
 };
-
-#endif // LAYER_WIDGET_H

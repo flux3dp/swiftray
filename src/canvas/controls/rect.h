@@ -1,8 +1,8 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 
-#ifndef RECT_H
-#define RECT_H
 namespace Controls {
 
   class Rect : public CanvasControl {
@@ -26,4 +26,3 @@ namespace Controls {
   };
 
 }
-#endif // RECT_H

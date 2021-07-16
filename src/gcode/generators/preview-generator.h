@@ -1,8 +1,7 @@
+#pragma once
+
 #include <sstream>
 #include <gcode/generators/base-generator.h>
-
-#ifndef PREVIEW_GENERATOR_H
-#define PREVIEW_GENERATOR_H
 
 /*
 Generator for the preview
@@ -70,5 +69,3 @@ public:
 
   QList<Path> paths_;
 };
-
-#endif

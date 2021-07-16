@@ -1,10 +1,9 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <QObject>
 #include <QPainter>
 #include <document.h>
-
-#ifndef CANVAS_CONTROL_H
-#define CANVAS_CONTROL_H
 
 class Canvas;
 
@@ -17,7 +16,7 @@ namespace Controls {
   class CanvasControl : public QObject {
   Q_OBJECT
   public:
-    CanvasControl(Canvas *parent);
+    explicit CanvasControl(Canvas *parent);
 
     virtual bool mousePressEvent(QMouseEvent *e);
 
@@ -43,25 +42,4 @@ namespace Controls {
   private:
     Canvas *canvas_;
   };
-
-  // Possible control classes
-  class Grid;
-
-  class Line;
-
-  class Oval;
-
-  class PathDraw;
-
-  class PathEdit;
-
-  class Rect;
-
-  class Select;
-
-  class Text;
-
-  class Transform;
-
 }
-#endif // CANVAS_CONTROL_H

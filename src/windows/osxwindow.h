@@ -1,13 +1,12 @@
-#include <QMainWindow>
-#include <QString>
+#pragma once
 
 #ifdef Q_OS_MACOS
-#ifndef OSXWINDOW_H
-#define OSXWINDOW_H
+
+#include <QMainWindow>
+#include <QString>
 
 void setOSXWindowTitleColor(QMainWindow *win);
 
 QString familyNameFromPostScriptName(QString name);
 
-#endif // OSXWINDOW_H
 #endif

@@ -1,8 +1,7 @@
+#pragma once
+
 #include <QDebug>
 #include <sstream>
-
-#ifndef BASE_GENERATOR_H
-#define BASE_GENERATOR_H
 
 #define NO_BASIC_IMPL Q_ASSERT_X(false, "BaseGenerator", "Basic feature not implemented");
 
@@ -79,5 +78,3 @@ protected:
   float power_;
   float speed_;
 };
-
-#endif

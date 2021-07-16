@@ -1,5 +1,4 @@
-#ifndef MACHINEMANAGER_H
-#define MACHINEMANAGER_H
+#pragma once
 
 #include <QDialog>
 #include <settings/machine-settings.h>
@@ -38,5 +37,3 @@ private:
 
   Ui::MachineManager *ui;
 };
-
-#endif // MACHINEMANAGER_H

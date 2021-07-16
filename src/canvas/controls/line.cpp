@@ -1,5 +1,4 @@
 #include <QPainterPath>
-#include <cmath>
 #include <canvas/controls/line.h>
 #include <shape/path-shape.h>
 #include <canvas/canvas.h>

@@ -1,5 +1,4 @@
-#ifndef GROUPSHAPE_H
-#define GROUPSHAPE_H
+#pragma once
 
 #include <shape/shape.h>
 #include <canvas/cache-stack.h>
@@ -12,13 +11,9 @@ public:
 
   GroupShape(QList<ShapePtr> &children);
 
-  void calcBoundingBox() const override;
-
   bool hitTest(QPointF global_coord, qreal tolerance) const override;
 
   bool hitTest(QRectF global_coord_rect) const override;
-
-  void cache() const;
 
   void paint(QPainter *painter) const override;
 
@@ -28,13 +23,21 @@ public:
 
   const QList<ShapePtr> &children() const;
 
-  CacheStack &cacheStack() const;
-
   friend class DocumentSerializer;
 
+  friend class CacheStack;
+
+protected:
+
+  CacheStack &cacheStack() const;
+
 private:
+
+  void calcBoundingBox() const override;
+
+  void cache() const;
+
+
   QList<ShapePtr> children_;
   mutable unique_ptr<CacheStack> cache_;
 };
-
-#endif // GROUPSHAPE_H

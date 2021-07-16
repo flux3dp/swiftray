@@ -1,7 +1,5 @@
 #include <QPainterPath>
-
 #include <canvas/controls/grid.h>
-#include <cmath>
 #include <shape/path-shape.h>
 
 using namespace Controls;

@@ -1,8 +1,7 @@
+#pragma once
+
 #include <shape/shape.h>
 #include <canvas/cache-stack.h>
-
-#ifndef LAYER_H
-#define LAYER_H
 
 class Document;
 
@@ -121,5 +120,3 @@ private:
 };
 
 typedef shared_ptr<Layer> LayerPtr;
-
-#endif // LAYER_H

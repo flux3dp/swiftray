@@ -1,6 +1,4 @@
-#ifndef BASE_CONTAINER_H
-#define BASE_CONTAINER_H
-
+#pragma once
 
 /**
     \class BaseContainer
@@ -19,7 +17,7 @@ public:
   }
 
 protected:
-  
+
   /** Overridable function for "Adding widgets programmatically" */
   virtual void loadWidgets() {};
 
@@ -32,5 +30,3 @@ protected:
   /** Overridable function for "Connect events" */
   virtual void registerEvents() {};
 };
-
-#endif

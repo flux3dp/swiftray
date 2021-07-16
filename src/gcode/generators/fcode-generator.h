@@ -1,3 +1,5 @@
+#pragma once
+
 #include <sstream>
 #include <gcode/generators/base-generator.h>
 
@@ -13,5 +15,3 @@ public:
 
   }
 };
-
-#endif

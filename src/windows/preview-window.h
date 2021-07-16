@@ -1,5 +1,4 @@
-#ifndef PREVIEWWINDOW_H
-#define PREVIEWWINDOW_H
+#pragma once
 
 #include <QDialog>
 #include <gcode/generators/preview-generator.h>
@@ -32,5 +31,3 @@ private:
   int progress_;
   std::shared_ptr<PreviewGenerator> preview_path_;
 };
-
-#endif // PREVIEWWINDOW_H

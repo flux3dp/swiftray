@@ -1,8 +1,7 @@
+#pragma once
+
 #include <QFont>
 #include <shape/path-shape.h>
-
-#ifndef TEXTSHAPE_H
-#define TEXTSHAPE_H
 
 class TextShape : public PathShape {
 public:
@@ -51,5 +50,3 @@ private:
 };
 
 typedef shared_ptr<TextShape *> TextShapePtr;
-
-#endif // TEXTSHAPE_H

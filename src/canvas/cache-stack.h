@@ -1,5 +1,4 @@
-#ifndef CACHE_STACK_H
-#define CACHE_STACK_H
+#pragma once
 
 #include <QDebug>
 #include <QList>
@@ -75,8 +74,6 @@ public:
 
   const QColor &color() const;
 
-  QTransform global_transform_;
-  QList<Cache> caches_;
 
 private:
   // Categorize the shapes to different cache group
@@ -90,8 +87,8 @@ private:
   Type type_;
   GroupShape *group_;
   Layer *layer_;
+  QTransform global_transform_;
+  QList<Cache> caches_;
 };
 
 typedef CacheStack::Cache::Type CacheType;
-
-#endif

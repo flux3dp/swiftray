@@ -1,13 +1,13 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 
-#ifndef CONTROL_OVAL_H
-#define CONTROL_OVAL_H
 namespace Controls {
 
   class Oval : public CanvasControl {
   public:
-    Oval(Canvas *canvas) noexcept: CanvasControl(canvas) {}
+    explicit Oval(Canvas *canvas) : CanvasControl(canvas) {}
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 
@@ -26,4 +26,3 @@ namespace Controls {
   };
 
 }
-#endif // CONTROL_OVAL_H

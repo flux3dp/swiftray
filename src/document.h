@@ -1,5 +1,4 @@
-#ifndef DOCUMENT_H
-#define DOCUMENT_H
+#pragma once
 
 #include <QPoint>
 #include <QWidget>
@@ -164,5 +163,3 @@ private:
 
   DocumentSettings settings_;
 };
-
-#endif // DOCUMENT_H

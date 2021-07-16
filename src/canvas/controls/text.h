@@ -1,9 +1,9 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 #include <shape/text-shape.h>
 
-#ifndef TEXTCONTROL_H
-#define TEXTCONTROL_H
 namespace Controls {
 
   class Text : public CanvasControl {
@@ -31,4 +31,3 @@ namespace Controls {
   };
 
 }
-#endif // TEXTCONTROL_H

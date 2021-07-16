@@ -1,13 +1,13 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 
-#ifndef CONTROL_LINE_H
-#define CONTROL_LINE_H
 namespace Controls {
 
   class Line : public CanvasControl {
   public:
-    Line(Canvas *canvas) noexcept: CanvasControl(canvas) {}
+    explicit Line(Canvas *canvas) : CanvasControl(canvas) {}
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 
@@ -26,5 +26,3 @@ namespace Controls {
   };
 
 }
-
-#endif // CONTROL_LINE_H

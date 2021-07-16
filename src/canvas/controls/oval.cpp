@@ -1,5 +1,4 @@
 #include <QPainterPath>
-
 #include <canvas/controls/oval.h>
 #include <cmath>
 #include <shape/path-shape.h>

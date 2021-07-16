@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QList>
 #include <QPainter>
 #include <layer.h>
@@ -5,9 +7,6 @@
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
 #include <gcode/generators/base-generator.h>
-
-#ifndef TOOLPATH_EXPORTER_H
-#define TOOLPATH_EXPORTER_H
 
 class ToolpathExporter {
 public:
@@ -49,5 +48,3 @@ private:
   float travel_speed_;
   QRectF bitmap_dirty_area_;
 };
-
-#endif

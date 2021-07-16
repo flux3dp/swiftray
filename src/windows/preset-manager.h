@@ -1,5 +1,4 @@
-#ifndef PRESETMANAGER_H
-#define PRESETMANAGER_H
+#pragma once
 
 #include <QDialog>
 #include <settings/preset-settings.h>
@@ -36,5 +35,3 @@ private:
   Ui::PresetManager *ui;
   LayerParamsPanel *layer_panel_;
 };
-
-#endif // PRESETMANAGER_H

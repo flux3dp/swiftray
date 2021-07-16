@@ -1,5 +1,4 @@
-#ifndef CANVAS_H
-#define CANVAS_H
+#pragma once
 
 #include <QtQuick>
 #include <QQuickWidget>
@@ -227,5 +226,3 @@ signals:
 
   void cursorChanged(Qt::CursorShape cursor);
 };
-
-#endif // CANVAS_H

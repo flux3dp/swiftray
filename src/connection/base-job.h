@@ -1,9 +1,8 @@
+#pragma once
+
 #include <QMutex>
 #include <QThread>
 #include <QVariant>
-
-#ifndef BASEJOB_H
-#define BASEJOB_H
 
 /**
     \class BaseJob
@@ -26,19 +25,17 @@ public:
 
   BaseJob(QObject *parent, QString endpoint, QVariant data);
 
-  ~BaseJob() {}
+  ~BaseJob();
 
-  virtual void start() {};
+  virtual void start();
 
-  virtual void pause() {};
+  virtual void pause();
 
-  virtual void resume() {};
+  virtual void resume();
 
-  virtual float progress() { return 1.0; };
+  virtual float progress();
 
-  Status status() {
-    return status_;
-  }
+  Status status();
 
 signals:
 
@@ -48,13 +45,9 @@ signals:
 
 protected:
 
-  void setStatus(Status status) {
-    status_ = status;
-  }
+  void setStatus(Status status);
 
   QMutex mutex_;
 
   Status status_;
 };
-
-#endif

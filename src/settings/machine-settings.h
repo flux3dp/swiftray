@@ -1,5 +1,4 @@
-#ifndef MACH_SETTINGS_H
-#define MACH_SETTINGS_H
+#pragma once
 
 #include <QString>
 #include <QFile>
@@ -85,5 +84,3 @@ public:
 
   QList<MachineSet> machines_;
 };
-
-#endif //MACH_SETTINGS_H

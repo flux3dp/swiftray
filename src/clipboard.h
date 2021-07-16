@@ -1,5 +1,4 @@
-#ifndef CLIPBOARD_H
-#define CLIPBOARD_H
+#pragma once
 
 #include <QList>
 #include <shape/shape.h>
@@ -21,5 +20,3 @@ private:
   QList<ShapePtr> shapes_;
   QPointF paste_shift_;
 };
-
-#endif

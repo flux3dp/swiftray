@@ -11,7 +11,7 @@ bool PathDraw::isActive() {
   return canvas().mode() == Canvas::Mode::PathDrawing;
 }
 
-PathDraw::PathDraw(Canvas *canvas) noexcept: CanvasControl(canvas) {
+PathDraw::PathDraw(Canvas *canvas) : CanvasControl(canvas) {
   curve_target_ = invalid_point;
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;

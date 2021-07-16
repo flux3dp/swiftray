@@ -1,5 +1,4 @@
-#ifndef MACHINEMONITOR_H
-#define MACHINEMONITOR_H
+#pragma once
 
 #include <QDialog>
 #include <widgets/base-container.h>
@@ -19,5 +18,3 @@ public:
 private:
   Ui::MachineMonitor *ui;
 };
-
-#endif // MACHINEMONITOR_H

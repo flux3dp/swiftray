@@ -1,5 +1,4 @@
-#ifndef PREFERENCESWINDOW_H
-#define PREFERENCESWINDOW_H
+#pragma once
 
 #include <QDialog>
 #include <widgets/base-container.h>
@@ -19,5 +18,3 @@ public:
 private:
   Ui::PreferencesWindow *ui;
 };
-
-#endif // PREFERENCESWINDOW_H

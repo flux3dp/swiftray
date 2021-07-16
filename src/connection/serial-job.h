@@ -1,5 +1,4 @@
-#ifndef SERIALPORT_THREAD
-#define SERIALPORT_THREAD
+#pragma once
 
 #include <QMutex>
 #include <QThread>
@@ -67,5 +66,3 @@ private:
   bool resume_flag_;
   bool on_hold_;
 };
-
-#endif

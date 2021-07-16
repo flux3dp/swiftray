@@ -1,9 +1,9 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 #include <shape/path-shape.h>
 
-#ifndef CONTROL_PATH_EDIT_H
-#define CONTROL_PATH_EDIT_H
 namespace Controls {
 
   class PathEdit : public CanvasControl {
@@ -59,4 +59,3 @@ namespace Controls {
   };
 
 }
-#endif // CONTROL_PATH_EDIT_H

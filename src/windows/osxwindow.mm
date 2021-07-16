@@ -1,4 +1,6 @@
 #include <windows/osxwindow.h>
+#include <QMainWindow>
+#include <QString>
 #include <AppKit/AppKit.h>
 
 void setOSXWindowTitleColor(QMainWindow *w) {

@@ -1,5 +1,4 @@
-#ifndef SVGCOMMON_H
-#define SVGCOMMON_H
+#pragma once
 
 // Boost mpl parameters
 #define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
@@ -34,21 +33,20 @@
 
 namespace Parser {
 
-using namespace svgpp;
+  using namespace svgpp;
 
-extern QList<LayerPtr> *svgpp_layers;
-extern QMap<QString, Layer *> *svgpp_layer_map;
-extern LayerPtr svgpp_active_layer_;
+  extern QList<LayerPtr> *svgpp_layers;
+  extern QMap<QString, Layer *> *svgpp_layer_map;
+  extern LayerPtr svgpp_active_layer_;
 
-bool svgpp_parse(QByteArray &data);
+  bool svgpp_parse(QByteArray &data);
 
-void svgpp_add_layer(LayerPtr &layer);
+  void svgpp_add_layer(LayerPtr &layer);
 
-void svgpp_add_shape(ShapePtr &shape, QString &layer_name);
+  void svgpp_add_shape(ShapePtr &shape, QString &layer_name);
 
-void svgpp_set_active_layer(LayerPtr &layer);
+  void svgpp_set_active_layer(LayerPtr &layer);
 
-void svgpp_unset_active_layer();
+  void svgpp_unset_active_layer();
 
 }
-#endif

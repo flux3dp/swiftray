@@ -1,9 +1,8 @@
+#pragma once
+
 #include <QPainter>
 #include <QPainterPath>
 #include <QRectF>
-
-#ifndef SHAPE_H
-#define SHAPE_H
 
 using namespace std;
 
@@ -62,6 +61,7 @@ public:
   const QTransform &transform() const;
 
   const QTransform &tempTransform() const;
+
   /**
    * @return The transform combines with group parents' transform (if any)
    */
@@ -89,9 +89,6 @@ public:
 
   bool isParentSelected() const;
 
-  /** Calculate bounding box of the shape if the cache is invalid */
-  virtual void calcBoundingBox() const;
-
   virtual shared_ptr<Shape> clone() const;
 
   virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
@@ -106,6 +103,10 @@ public:
   virtual operator QString();
 
   friend class DocumentSerializer;
+
+protected:
+  /** Calculate bounding box of the shape if the cache is invalid */
+  virtual void calcBoundingBox() const;
 
 private:
   /** Usually if shape belongs to a layer then the parent is null */
@@ -131,4 +132,3 @@ protected:
 };
 
 typedef shared_ptr<Shape> ShapePtr;
-#endif // SHAPE_H

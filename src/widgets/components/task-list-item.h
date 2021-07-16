@@ -1,22 +1,19 @@
-#ifndef TASKLISTITEM_H
-#define TASKLISTITEM_H
+#pragma once
 
 #include <QWidget>
 
 namespace Ui {
-class TaskListItem;
+  class TaskListItem;
 }
 
-class TaskListItem : public QWidget
-{
-    Q_OBJECT
+class TaskListItem : public QWidget {
+Q_OBJECT
 
 public:
-    explicit TaskListItem(QWidget *parent = nullptr);
-    ~TaskListItem();
+  explicit TaskListItem(QWidget *parent = nullptr);
+
+  ~TaskListItem();
 
 private:
-    Ui::TaskListItem *ui;
+  Ui::TaskListItem *ui;
 };
-
-#endif // TASKLISTITEM_H

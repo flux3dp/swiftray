@@ -1,9 +1,8 @@
+#pragma once
+
 #include <QPainter>
 #include <QPixmap>
 #include <shape/shape.h>
-
-#ifndef BITMAPSHAPE_H
-#define BITMAPSHAPE_H
 
 class BitmapShape : public Shape {
 public:
@@ -12,8 +11,6 @@ public:
   BitmapShape(QImage &image);
 
   BitmapShape(const BitmapShape &orig);
-
-  void calcBoundingBox() const override;
 
   ShapePtr clone() const override;
 
@@ -32,9 +29,9 @@ public:
   friend class DocumentSerializer;
 
 private:
+  void calcBoundingBox() const override;
+
   unique_ptr<QPixmap> bitmap_;
   mutable QImage tinted_image_;            // Cache object
   mutable std::uintptr_t tinted_signature; // Cache object
 };
-
-#endif // BITMAPSHAPE_H

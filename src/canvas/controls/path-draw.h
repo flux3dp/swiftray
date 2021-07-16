@@ -1,15 +1,15 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 
-#ifndef CONTROL_PATH_DRAW_H
-#define CONTROL_PATH_DRAW_H
 namespace Controls {
 
   constexpr QPointF invalid_point(-1, -1);
 
   class PathDraw : public CanvasControl {
   public:
-    PathDraw(Canvas *canvas) noexcept;
+    explicit PathDraw(Canvas *canvas);
 
     bool mousePressEvent(QMouseEvent *e) override;
 
@@ -41,4 +41,3 @@ namespace Controls {
   };
 
 }
-#endif // CONTROL_PATH_DRAW_H

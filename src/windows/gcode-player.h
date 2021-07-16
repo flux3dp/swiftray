@@ -1,5 +1,4 @@
-#ifndef GCODEPLAYER_H
-#define GCODEPLAYER_H
+#pragma once
 
 #include <QDialog>
 #include <QFrame>
@@ -44,5 +43,3 @@ private:
   QList<SerialJob *> jobs_;
 #endif
 };
-
-#endif // GCODEPLAYER_H

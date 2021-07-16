@@ -1,8 +1,8 @@
+#pragma once
+
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
 
-#ifndef MULTISELECTIONBOX_H
-#define MULTISELECTIONBOX_H
 namespace Controls {
 
   class Select : public CanvasControl {
@@ -22,5 +22,3 @@ namespace Controls {
   };
 
 }
-
-#endif // MULTISELECTIONBOX_H

@@ -1,9 +1,8 @@
+#pragma once
+
 #include <sstream>
 #include <gcode/generators/base-generator.h>
 #include <settings/machine-settings.h>
-
-#ifndef GCODE_GENERATOR_H
-#define GCODE_GENERATOR_H
 
 /*
 Basic GCode Generator for Grbl like machines.
@@ -89,5 +88,3 @@ private:
   int machine_height_;
   MachineSettings::MachineSet::OriginType machine_origin_;
 };
-
-#endif

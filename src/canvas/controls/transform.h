@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QHoverEvent>
 #include <QMouseEvent>
 #include <canvas/controls/canvas-control.h>
@@ -5,9 +7,6 @@
 #include <cmath>
 #include <limits>
 #include <shape/shape.h>
-
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
 
 namespace Controls {
 
@@ -131,5 +130,3 @@ namespace Controls {
   };
 
 }
-
-#endif
