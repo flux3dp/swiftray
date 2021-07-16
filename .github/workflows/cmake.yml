@@ -27,7 +27,6 @@ jobs:
       uses: jurplel/install-qt-action@v2.13.2
       with:
         version: 5.15.2
-        cached: true
         
     - name: Googletest installer
       uses: MarkusJx/googletest-installer@v1.1
