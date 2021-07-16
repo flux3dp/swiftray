@@ -1,4 +1,4 @@
-
+// TODO (Adapt this file from Qt 6)
 #include <widgets/components/qfontcombobox2.h>
 
 #include <QStringListModel>
@@ -7,9 +7,7 @@
 #include <QPainter>
 #include <QEvent>
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QtWidgets/private/qcombobox_p.h>
-#include <QtWidgets/private/qdesktopwidget_p.h>
 #include <qfontdatabase.h>
 #include <QDebug>
 
@@ -433,10 +431,10 @@ void QFontComboBox2::setCurrentFont(const QFont &font) {
 bool QFontComboBox2::event(QEvent *e) {
   if (e->type() == QEvent::Resize) {
     QListView *lview = qobject_cast<QListView *>(view());
-    QDesktopWidget *widget = (QDesktopWidget *) lview;
+
     if (lview) {
       lview->window()->setFixedWidth(qMin(width() * 5 / 3,
-                                          widget->availableGeometry(widget).width()));
+                                          lview->width()));
     }
   }
   return QComboBox::event(e);
