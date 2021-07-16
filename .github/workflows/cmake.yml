@@ -21,9 +21,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: Googletest installer
-      uses: MarkusJx/googletest-installer@v1.1
-      
     - name: Install Qt
       # You may pin to the exact commit or the version.
       # uses: jurplel/install-qt-action@a10f4d43af43348aab618414b68a9d32cb008977
@@ -31,6 +28,9 @@ jobs:
       with:
         version: 5.15.2
         cached: true
+        
+    - name: Googletest installer
+      uses: MarkusJx/googletest-installer@v1.1
         
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
