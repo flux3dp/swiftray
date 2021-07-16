@@ -22,19 +22,22 @@ SET(CMAKE_AUTOUIC ON)
 SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 #SET(CMAKE_CXX_FLAGS "-O2")
 
-FILE(GLOB SHAPES_CPP "src/shape/*.cpp")
-FILE(GLOB CONTROLS_CPP "src/canvas/controls/*.cpp")
-FILE(GLOB WIDGETS_PANELS_CPP "src/widgets/panels/*.cpp")
-FILE(GLOB WIDGETS_COMPONENTS_CPP "src/widgets/components/*.cpp")
-FILE(GLOB SETTINGS_CPP "src/settings/*.cpp")
-FILE(GLOB CONNECTION_CPP "src/connection/*.cpp")
-FILE(GLOB WINDOWS_CPP "src/windows/*.cpp")
+GET_FILENAME_COMPONENT(SRC_DIR "src" REALPATH)
+GET_FILENAME_COMPONENT(QRC_PATH "qml.qrc" REALPATH)
+
+FILE(GLOB SHAPES_CPP "${SRC_DIR}/shape/*.cpp")
+FILE(GLOB CONTROLS_CPP "${SRC_DIR}/canvas/controls/*.cpp")
+FILE(GLOB WIDGETS_PANELS_CPP "${SRC_DIR}/widgets/panels/*.cpp")
+FILE(GLOB WIDGETS_COMPONENTS_CPP "${SRC_DIR}/widgets/components/*.cpp")
+FILE(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
+FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
+FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 
 SET(SOURCES
-        src/layer.cpp
-        src/document.cpp
-        src/command.cpp
-        src/clipboard.cpp
+        ${SRC_DIR}/layer.cpp
+        ${SRC_DIR}/document.cpp
+        ${SRC_DIR}/command.cpp
+        ${SRC_DIR}/clipboard.cpp
         ${CONNECTION_CPP}
         ${CONTROLS_CPP}
         ${WIDGETS_PANELS_CPP}
@@ -42,13 +45,13 @@ SET(SOURCES
         ${SHAPES_CPP}
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}
-        src/canvas/cache-stack.cpp
-        src/canvas/canvas.cpp
-        src/parser/svgpp-parser.cpp
-        src/parser/svgpp-impl.cpp
-        src/parser/svgpp-external-impl.cpp
-        src/gcode/toolpath-exporter.cpp
-        src/windows/osxwindow.mm
+        ${SRC_DIR}/canvas/cache-stack.cpp
+        ${SRC_DIR}/canvas/canvas.cpp
+        ${SRC_DIR}/parser/svgpp-parser.cpp
+        ${SRC_DIR}/parser/svgpp-impl.cpp
+        ${SRC_DIR}/parser/svgpp-external-impl.cpp
+        ${SRC_DIR}/gcode/toolpath-exporter.cpp
+        ${SRC_DIR}/windows/osxwindow.mm
         )
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
@@ -57,17 +60,16 @@ INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIRS}
         third_party
-        src
+        ${SRC_DIR}
         /usr/local/opt/libxml2/include)
-
 
 link_libraries(${LIBXML2_LIBRARY}
         ${BOOST_LIBRARIES}
         "-framework AppKit")
 
-qt5_add_resources(SOURCES qml.qrc)
+qt5_add_resources(SOURCES "qml.qrc")
 
-add_executable(beambird ${SOURCES})
+add_executable(beambird ${SRC_DIR}/main.cpp ${SOURCES})
 target_link_libraries(beambird Qt::Core)
 target_link_libraries(beambird Qt::Quick)
 target_link_libraries(beambird Qt::QuickWidgets)
@@ -76,3 +78,5 @@ target_link_libraries(beambird Qt::Gui)
 target_link_libraries(beambird Qt::Svg)
 target_link_libraries(beambird Qt::Widgets)
 target_link_libraries(beambird Qt::SerialPort)
+
+add_subdirectory(tests)

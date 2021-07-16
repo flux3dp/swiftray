@@ -29,7 +29,8 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   QCoreApplication::setOrganizationName("FLUX");
   QCoreApplication::setOrganizationDomain("flux3dp.com");
-  QCoreApplication::setApplicationName("beambird");
+  QCoreApplication::setApplicationName("Beam Studio Native");
+  QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
     return mainCLI(argc, argv);
@@ -67,9 +68,6 @@ int main(int argc, char *argv[]) {
           QCoreApplication::exit(-1);
   }, Qt::QueuedConnection);
   engine.load(url);*/
-  QCoreApplication::setOrganizationName("FLUX");
-  QCoreApplication::setApplicationName("Beam Bird");
-  QCoreApplication::setApplicationVersion(QT_VERSION_STR);
   MainWindow win;
   win.show();
 #ifdef MACOS
