@@ -22,11 +22,14 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Install Qt
-      # You may pin to the exact commit or the version.
-      # uses: jurplel/install-qt-action@a10f4d43af43348aab618414b68a9d32cb008977
       uses: jurplel/install-qt-action@v2.13.2
       with:
         version: 5.15.2
+        
+    - name: Download and install Boost
+      uses: MarkusJx/install-boost@v1.0.1
+      with:
+        boost_version: 1.70.0
         
     - name: Googletest installer
       uses: MarkusJx/googletest-installer@v1.1
