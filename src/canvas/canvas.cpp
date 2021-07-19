@@ -536,12 +536,6 @@ void Canvas::backToSelectMode() {
   }
 }
 
-void Canvas::startMemoryMonitor() {
-  mem_monitor_.moveToThread(mem_thread_);
-  mem_thread_->start();
-  QTimer::singleShot(0, &mem_monitor_, &MemoryMonitor::doWork);
-}
-
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {

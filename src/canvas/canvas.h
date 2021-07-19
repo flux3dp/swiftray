@@ -164,8 +164,6 @@ public slots:
 
   void setWidget(QQuickWidget *widget);
 
-  void startMemoryMonitor();
-
   void save(QDataStream &out);
 
 
@@ -200,7 +198,6 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
-  MemoryMonitor mem_monitor_;
 
   QQuickWidget *widget_;
 
