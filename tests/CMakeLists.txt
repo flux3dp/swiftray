@@ -10,7 +10,7 @@ enable_testing()
 find_package(Threads REQUIRED)
 
 SET(TEST_SOURCE ${SOURCES})
-qt5_add_resources(TEST_SOURCE "qml.qrc")
+qt5_add_resources(TEST_SOURCE "../qml.qrc")
 
 add_executable(UnitTest main.cpp ${TEST_SOURCE} ${GTestFiles})
 target_link_libraries(UnitTest gtest_main)
