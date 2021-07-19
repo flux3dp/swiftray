@@ -50,7 +50,6 @@ SET(SOURCES
         ${SRC_DIR}/parser/svgpp-impl.cpp
         ${SRC_DIR}/parser/svgpp-external-impl.cpp
         ${SRC_DIR}/gcode/toolpath-exporter.cpp
-        ${SRC_DIR}/windows/osxwindow.mm
         )
 
 INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
@@ -65,6 +64,13 @@ INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
 link_libraries(${LIBXML2_LIBRARY}
         ${BOOST_LIBRARIES}
         "-framework AppKit")
+
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        SET(SOURCES
+                ${SOURCES}
+                ${SRC_DIR}/windows/osxwindow.mm
+        )
+ENDIF()
 
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
