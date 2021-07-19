@@ -12,7 +12,6 @@
 #include <canvas/controls/rect.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
-#include <canvas/memory-monitor.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <document.h>
 #include <clipboard.h>
