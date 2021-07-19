@@ -62,10 +62,11 @@ INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         /usr/local/opt/libxml2/include)
 
 link_libraries(${LIBXML2_LIBRARY}
-        ${BOOST_LIBRARIES}
-        "-framework AppKit")
+        ${BOOST_LIBRARIES})
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        link_libraries("-framework AppKit")
+
         SET(SOURCES
                 ${SOURCES}
                 ${SRC_DIR}/windows/osxwindow.mm
