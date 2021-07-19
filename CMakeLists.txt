@@ -23,7 +23,6 @@ SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
 #SET(CMAKE_CXX_FLAGS "-O2")
 
 GET_FILENAME_COMPONENT(SRC_DIR "src" REALPATH)
-GET_FILENAME_COMPONENT(QRC_PATH "qml.qrc" REALPATH)
 
 FILE(GLOB SHAPES_CPP "${SRC_DIR}/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "${SRC_DIR}/canvas/controls/*.cpp")
@@ -67,9 +66,10 @@ link_libraries(${LIBXML2_LIBRARY}
         ${BOOST_LIBRARIES}
         "-framework AppKit")
 
-qt5_add_resources(SOURCES "qml.qrc")
+SET(MAIN_SOURCE ${SOURCES})
+qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
-add_executable(beambird ${SRC_DIR}/main.cpp ${SOURCES})
+add_executable(beambird ${SRC_DIR}/main.cpp ${MAIN_SOURCE})
 target_link_libraries(beambird Qt::Core)
 target_link_libraries(beambird Qt::Quick)
 target_link_libraries(beambird Qt::QuickWidgets)
