@@ -2,7 +2,6 @@
 
 #include <windows/mainwindow.h>
 #include <gtest/gtest.h>
-#include <gmock/gmock-matchers.h>
 #include <QByteArray>
 #include <QDebug>
 #include <gcode/generators/gcode-generator.h>
