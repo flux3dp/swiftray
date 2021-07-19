@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <iostream>
+#include <cmath>
 #include <boost/range/irange.hpp>
 
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
