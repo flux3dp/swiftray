@@ -22,7 +22,7 @@ void FontPanel::registerEvents() {
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
   auto spin_int_event = QOverload<int>::of(&QSpinBox::valueChanged);
 
-  connect(ui->fontComboBox, &QFontComboBox2::currentFontChanged, main_window_->canvas(), &Canvas::setFont);
+  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, main_window_->canvas(), &Canvas::setFont);
 
   connect(ui->fontSizeSpinBox, spin_int_event, [=](double value) {
     font_.setPointSize(value);

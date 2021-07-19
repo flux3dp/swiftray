@@ -65,13 +65,13 @@ link_libraries(${LIBXML2_LIBRARY}
         ${BOOST_LIBRARIES})
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        link_libraries("-framework AppKit")
+    link_libraries("-framework AppKit")
 
-        SET(SOURCES
-                ${SOURCES}
-                ${SRC_DIR}/windows/osxwindow.mm
-        )
-ENDIF()
+    SET(SOURCES
+            ${SOURCES}
+            ${SRC_DIR}/windows/osxwindow.mm
+            )
+ENDIF ()
 
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
