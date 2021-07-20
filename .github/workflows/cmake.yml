@@ -11,6 +11,7 @@ env:
   BUILD_TYPE: Release
   BOOST_ROOT: ${{github.workspace}}/3rdparty/boost
   BOOST_URL: https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download
+  QT_DEBUG_PLUGINS: 1
 
 
 jobs:
@@ -62,6 +63,12 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+      
+    - name: ABC Install
+      uses: LyricWulf/abc@v1.1.0
+      with:
+        # Apt dependencies
+        linux: libxcb-xinerama0
 
     - name: Test
       working-directory: ${{github.workspace}}/build
