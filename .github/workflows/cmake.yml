@@ -68,7 +68,7 @@ jobs:
       uses: LyricWulf/abc@v1.1.0
       with:
         # Apt dependencies
-        linux: libxcb-xinerama0 libxcb-icccm4-dev libxcb-image
+        linux: libxcb-xinerama0 libxcb-icccm4-dev libxcb-image0
 
     - name: Test
       working-directory: ${{github.workspace}}/build
