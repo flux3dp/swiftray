@@ -12,6 +12,7 @@ env:
   BOOST_ROOT: ${{github.workspace}}/3rdparty/boost
   BOOST_URL: https://sourceforge.net/projects/boost/files/boost/1.72.0/boost_1_72_0.tar.bz2/download
   QT_DEBUG_PLUGINS: 1
+  DISPLAY: ':99'
 
 
 jobs:
@@ -70,6 +71,11 @@ jobs:
         # Apt dependencies
         linux: libfontconfig1-dev libfreetype6-dev libx11-dev libx11-xcb-dev libxext-dev libxfixes-dev libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-sync0-dev libxcb-xfixes0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-xinerama0 libxkbcommon-dev libxkbcommon-x11-dev
 
+    - name: Xvfb install and run
+      run: |
+        sudo apt-get install -y xvfb
+        Xvfb -ac ${{ env.DISPLAY }} -screen 0 1280x780x24 &
+          
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.  
