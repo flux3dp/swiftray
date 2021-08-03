@@ -1,6 +1,15 @@
-# BeamBird
+# Swiftray
 
-Powerful and fast laser engraver/cutter tool based on C++.
+Swiftray is a free and open-sourced software for grbl-based laser cutters and engravers. 
+
+**Features**
+
+- Layer controls - cut and engrave simultaneously
+- Divide by color - efficient workflows for third party design software
+- Hack as you like - you can modify all codes to match you self-built lasers
+- Blazing performance - written in C++
+- Low memory usage - even runnable on embedded system
+- Cross-platform - compiles on Windows, macOS, and Linux
 
 ## Dependencies
 
@@ -31,6 +40,12 @@ Open the .pro project file in the root directory, and click run.
 1. Use Modern C++ as possible as you can.
 2. Reduce logic implementation in widgets and QML codes, to maintain low coupling with Qt Framework.
 
-# Document
+## Document
 
 Run `$> doxygen Doxygen` and view docs/index.html
+
+## Affiliation
+
+Swiftray is community developed, commercially supported for long-term development.
+
+Swiftray is brought to you by the development team at FLUX Inc.
