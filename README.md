@@ -14,6 +14,7 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 ## Dependencies
 
 - Compilers must support C++17 standards.
+- Boost 1.7.0
 - Qt Framework 5.15
 - Qt Creator
 - Qt Framework and Creator can be installed via [online installer](https://www.qt.io/download-open-source)
