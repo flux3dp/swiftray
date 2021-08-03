@@ -14,7 +14,6 @@ qt5_add_resources(TEST_SOURCE "../qml.qrc")
 
 add_executable(UnitTest main.cpp ${TEST_SOURCE} ${GTestFiles})
 target_link_libraries(UnitTest gtest_main)
-target_link_libraries(beambird Qt::Core)
 target_link_libraries(UnitTest Qt::Core)
 target_link_libraries(UnitTest Qt::Quick)
 target_link_libraries(UnitTest Qt::QuickWidgets)

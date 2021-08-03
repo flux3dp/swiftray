@@ -60,6 +60,7 @@ SOURCES += \
         src/layer.cpp \
         src/command.cpp \
         src/clipboard.cpp \
+        src/main.cpp \
         src/connection/base-job.cpp
 
 ios {
@@ -144,10 +145,6 @@ OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {
 OBJECTIVE_SOURCES += src/windows/osxwindow.mm
 }
-
-DISTFILES += \
-    src/windows/SetupScreen.qml \
-    src/windows/SetupScreenForm.ui.qml
 
 TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/include/* \

@@ -69,21 +69,20 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
     SET(SOURCES
             ${SOURCES}
-            ${SRC_DIR}/windows/osxwindow.mm
-            )
+            ${SRC_DIR}/windows/osxwindow.mm)
 ENDIF ()
 
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
-add_executable(beambird ${SRC_DIR}/main.cpp ${MAIN_SOURCE})
-target_link_libraries(beambird Qt::Core)
-target_link_libraries(beambird Qt::Quick)
-target_link_libraries(beambird Qt::QuickWidgets)
-target_link_libraries(beambird Qt::OpenGL)
-target_link_libraries(beambird Qt::Gui)
-target_link_libraries(beambird Qt::Svg)
-target_link_libraries(beambird Qt::Widgets)
-target_link_libraries(beambird Qt::SerialPort)
+add_executable(swiftray ${SRC_DIR}/main.cpp ${MAIN_SOURCE})
+target_link_libraries(swiftray Qt::Core)
+target_link_libraries(swiftray Qt::Quick)
+target_link_libraries(swiftray Qt::QuickWidgets)
+target_link_libraries(swiftray Qt::OpenGL)
+target_link_libraries(swiftray Qt::Gui)
+target_link_libraries(swiftray Qt::Svg)
+target_link_libraries(swiftray Qt::Widgets)
+target_link_libraries(swiftray Qt::SerialPort)
 
 add_subdirectory(tests)
