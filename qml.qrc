@@ -5,30 +5,30 @@
         <file>images/icon-group.png</file>
         <file>images/icon-intersect.png</file>
         <file>images/icon-nodetype-2.png</file>
-        <file>images/icon-shoot-01.png</file>
-        <file>images/icon-valign-mid.png</file>
-        <file>images/icon-cursor-01.png</file>
-        <file>images/icon-halign-left.png</file>
+        <file>images/icon-shoot.png</file>
+        <file>images/icon-alignvcenter.png</file>
+        <file>images/icon-select.png</file>
+        <file>images/icon-alignhleft.png</file>
         <file>images/icon-layerlock.png</file>
-        <file>images/icon-oval-01.png</file>
+        <file>images/icon-oval.png</file>
         <file>images/icon-subtract.png</file>
-        <file>images/icon-valign-top.png</file>
+        <file>images/icon-alignvtop.png</file>
         <file>images/icon-diff.png</file>
-        <file>images/icon-halign-mid.png</file>
+        <file>images/icon-alignhcenter.png</file>
         <file>images/icon-layers.png</file>
-        <file>images/icon-photo-01.png</file>
-        <file>images/icon-text-01.png</file>
+        <file>images/icon-photo.png</file>
+        <file>images/icon-text.png</file>
         <file>images/icon-vdist.png</file>
-        <file>images/icon-draw-01.png</file>
-        <file>images/icon-halign-right.png</file>
-        <file>images/icon-line-01.png</file>
-        <file>images/icon-polygon-01.png</file>
+        <file>images/icon-path.png</file>
+        <file>images/icon-alignhright.png</file>
+        <file>images/icon-line.png</file>
+        <file>images/icon-polygon.png</file>
         <file>images/icon-ungroup.png</file>
         <file>images/icon-vflip.png</file>
         <file>images/icon-export.png</file>
         <file>images/icon-hdist.png</file>
         <file>images/icon-lock.png</file>
-        <file>images/icon-rect-01.png</file>
+        <file>images/icon-rect.png</file>
         <file>images/icon-union.png</file>
         <file>images/icon-eyeclose.png</file>
         <file>images/icon-hflip.png</file>
@@ -39,11 +39,54 @@
         <file>images/icon-import.png</file>
         <file>images/icon-nodetype-1.png</file>
         <file>images/icon-setting.png</file>
-        <file>images/icon-valign-bot.png</file>
-        <file>images/icon-plus-01.png</file>
+        <file>images/icon-alignvbottom.png</file>
+        <file>images/icon-plus.png</file>
         <file>images/beamo.png</file>
         <file>images/beambox.png</file>
-        <file>styles/beambird.qss</file>
+        <file>images/dark/icon-adjust.png</file>
+        <file>images/dark/icon-group.png</file>
+        <file>images/dark/icon-intersect.png</file>
+        <file>images/dark/icon-nodetype-2.png</file>
+        <file>images/dark/icon-shoot.png</file>
+        <file>images/dark/icon-alignvcenter.png</file>
+        <file>images/dark/icon-select.png</file>
+        <file>images/dark/icon-alignhleft.png</file>
+        <file>images/dark/icon-layerlock.png</file>
+        <file>images/dark/icon-oval.png</file>
+        <file>images/dark/icon-subtract.png</file>
+        <file>images/dark/icon-alignvtop.png</file>
+        <file>images/dark/icon-diff.png</file>
+        <file>images/dark/icon-alignhcenter.png</file>
+        <file>images/dark/icon-layers.png</file>
+        <file>images/dark/icon-photo.png</file>
+        <file>images/dark/icon-text.png</file>
+        <file>images/dark/icon-vdist.png</file>
+        <file>images/dark/icon-path.png</file>
+        <file>images/dark/icon-alignhright.png</file>
+        <file>images/dark/icon-line.png</file>
+        <file>images/dark/icon-polygon.png</file>
+        <file>images/dark/icon-ungroup.png</file>
+        <file>images/dark/icon-vflip.png</file>
+        <file>images/dark/icon-export.png</file>
+        <file>images/dark/icon-hdist.png</file>
+        <file>images/dark/icon-lock.png</file>
+        <file>images/dark/icon-rect.png</file>
+        <file>images/dark/icon-union.png</file>
+        <file>images/dark/icon-eyeclose.png</file>
+        <file>images/dark/icon-hflip.png</file>
+        <file>images/dark/icon-nodetype-0.png</file>
+        <file>images/dark/icon-rotate.png</file>
+        <file>images/dark/icon-unlock.png</file>
+        <file>images/dark/icon-eyeopen.png</file>
+        <file>images/dark/icon-import.png</file>
+        <file>images/dark/icon-nodetype-1.png</file>
+        <file>images/dark/icon-setting.png</file>
+        <file>images/dark/icon-alignvbottom.png</file>
+        <file>images/dark/icon-plus.png</file>
+        <file>images/dark/beamo.png</file>
+        <file>images/dark/beambox.png</file>
+        <file>styles/swiftray-dark.qss</file>
+        <file>styles/swiftray-light.qss</file>
         <file>resources/parameters/beamo.json</file>
         <file>resources/parameters/default.json</file>
         <file>resources/machines.json</file>

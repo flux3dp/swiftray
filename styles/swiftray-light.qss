@@ -1,0 +1,164 @@
+QToolBar {
+    background-color: #F0F0F0;
+    spacing: 8px;
+    border-right: 1px solid #CCCCCC;
+    border-bottom: 1px solid #CCCCCC;
+  }
+  
+  #tabWidget {
+    border: 0;
+  }
+  
+  #layerTab {
+    border: 0;
+    border-left: 1px solid #CCCCCC;
+  }
+  
+  #objectTab {
+    border: 0;
+    border-left: 1px solid #CCCCCC;
+    background: #F8F8F8;
+  }
+  
+  #scrollAreaWidgetContent {
+    /*background: #F8F8F8*/
+  }
+  
+  QDockWidget {
+    border: 1px solid #CCCCCC;
+    color: #555555;
+    background: blue;
+  }
+  
+  QDockWidget > QFrame {
+    background: #F0F0F0;
+  }
+  
+  QDockWidget > QWidget {
+    background: #F0F0F0;
+  }
+  
+  QDockWidget::title {
+    text-align: center;
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
+    padding-left: 5px;
+  }
+  
+  QMainWindow::separator {
+    border: 1px solid #CCCCCC;
+  }
+  
+  QSpinBox {
+    height: 25px;
+  }
+  
+  QDoubleSpinBox {
+    height: 25px;
+  }
+  
+  #parameterLabelFrame {
+    border: 0;
+    border-top: 1px solid #CCCCCC;
+    border-bottom: 1px solid #CCCCCC;
+    background: #F0F0F0;
+  }
+  
+  #parameterFrame {
+    border: 0;
+  }
+  
+  #parameterFrame QSpinBox {
+    height: 25px;
+  }
+  
+  #scrollAreaWidgetContents {
+    background: #F0F0F0;
+  }
+  
+  #layerList {
+    border: 0;
+    border-bottom: 1px solid #CCCCCC;
+  }
+  
+  #layerWidgetFrame {
+    border: 0;
+  }
+  
+  #layerWidgetFrame:hover {
+    background-color: #F0F0F0;
+  }
+  
+  #btnHide {
+    opacity: 0;
+  }
+  
+  #btnHide:hover {
+    opacity: 1;
+  }
+  
+  QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objectParamDock QToolButton  {
+    border-width: 0px;
+    border-radius: 0px;
+  }
+  
+  QToolButton:hover {
+    background: #CCCCCC;
+  }
+  
+  QToolButton:pressed {
+    background: #BBBBBB;
+  }
+  
+  QToolButton:focus {
+    background: #555555;
+  }
+  
+  QToolButton:checked {
+    background: #BBBBBB;
+  }
+  
+  #fontDock QFrame {
+    border: 0;
+  }
+  
+  #documentDock QFrame {
+    border: 0;
+  }
+  
+  QListWidget {
+      border: 1px solid #CCCCCC;
+  }
+  
+  QGroupBox::title {
+      subcontrol-origin: margin;
+      subcontrol-position: top left;
+      font: bold 0px;
+      height: 0px;
+      padding: 0px;
+      background-color: none;
+  }
+  
+  #paramListControl QToolButton {
+      background-color: #FF0000;
+      background: #FF0000;
+      margin: 0;
+  }
+  
+  #paramSettingsListControl, #paramControlBar, #machineListControl {
+      background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
+      border: 1px solid #CCCCCC;
+      padding-bottom: -1px;
+      margin-top: -1px;
+  }
+  
+  #machineListControl QToolButton, #paramSettingsListControl QToolButton, #paramControlBar QToolButton{
+      border: 1px solid #CCCCCC;
+      border-top: 0px;
+      border-left: 0px;
+      background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #F8F8F8, stop: 1 #F0F0F0);
+      font: 15px;
+  }
+  
+  #machineListControl QToolButton:hover , #paramSettingsListControl QToolButton:hover, #paramControlBar QToolButton:hover{
+      background-color: #CCCCCC;
+  }
