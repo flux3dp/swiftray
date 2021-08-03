@@ -109,8 +109,8 @@
     <addaction name="separator"/>
     <addaction name="actionSelect_All"/>
     <addaction name="actionClear"/>
-    <addaction name="actionGroup"/>
-    <addaction name="actionUngroup"/>
+    <addaction name="actionGroupMenu"/>
+    <addaction name="actionUngroupMenu"/>
     <addaction name="separator"/>
     <addaction name="actionMachineSettings"/>
    </widget>
@@ -159,13 +159,13 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSelect"/>
-   <addaction name="actionDrawPhoto"/>
-   <addaction name="actionDrawText"/>
-   <addaction name="actionDrawRect"/>
-   <addaction name="actionDrawOval"/>
-   <addaction name="actionDrawPolygon"/>
-   <addaction name="actionDrawLine"/>
-   <addaction name="actionDrawPath"/>
+   <addaction name="actionPhoto"/>
+   <addaction name="actionText"/>
+   <addaction name="actionRect"/>
+   <addaction name="actionOval"/>
+   <addaction name="actionPolygon"/>
+   <addaction name="actionLine"/>
+   <addaction name="actionPath"/>
   </widget>
   <widget class="QToolBar" name="toolBarGroup">
    <property name="minimumSize">
@@ -195,8 +195,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionGroupBtn"/>
-   <addaction name="actionUngroupBtn"/>
+   <addaction name="actionGroup"/>
+   <addaction name="actionUngroup"/>
   </widget>
   <widget class="QToolBar" name="toolBarAlign">
    <property name="minimumSize">
@@ -226,12 +226,12 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionAlignLeft"/>
+   <addaction name="actionAlignHLeft"/>
    <addaction name="actionAlignHCenter"/>
-   <addaction name="actionAlignRight"/>
-   <addaction name="actionAlignTop"/>
+   <addaction name="actionAlignHRight"/>
+   <addaction name="actionAlignVTop"/>
    <addaction name="actionAlignVCenter"/>
-   <addaction name="actionAlignBottom"/>
+   <addaction name="actionAlignVBottom"/>
   </widget>
   <widget class="QToolBar" name="toolBarBool">
    <property name="minimumSize">
@@ -261,10 +261,10 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionUnionBtn"/>
-   <addaction name="actionSubtractBtn"/>
-   <addaction name="actionIntersectBtn"/>
-   <addaction name="actionDiffBtn"/>
+   <addaction name="actionUnion"/>
+   <addaction name="actionSubtract"/>
+   <addaction name="actionIntersect"/>
+   <addaction name="actionDiff"/>
   </widget>
   <widget class="QToolBar" name="toolBarFlip">
    <property name="minimumSize">
@@ -556,8 +556,7 @@
    </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-cursor-01.png</normaloff>
-     <normalon>:/images/icon-cursor-01.png</normalon>:/images/icon-cursor-01.png</iconset>
+     <normaloff>:/images/icon-select.png</normaloff>:/images/icon-select.png</iconset>
    </property>
    <property name="text">
     <string>Select</string>
@@ -569,12 +568,12 @@
     <string>V</string>
    </property>
   </action>
-  <action name="actionDrawRect">
+  <action name="actionRect">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-rect-01.png</normaloff>:/images/icon-rect-01.png</iconset>
    </property>
    <property name="text">
@@ -587,12 +586,12 @@
     <string>R</string>
    </property>
   </action>
-  <action name="actionDrawOval">
+  <action name="actionOval">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-oval-01.png</normaloff>:/images/icon-oval-01.png</iconset>
    </property>
    <property name="text">
@@ -610,9 +609,9 @@
     <string>About</string>
    </property>
   </action>
-  <action name="actionDrawPhoto">
+  <action name="actionPhoto">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-photo-01.png</normaloff>:/images/icon-photo-01.png</iconset>
    </property>
    <property name="text">
@@ -625,12 +624,12 @@
     <string>P</string>
    </property>
   </action>
-  <action name="actionDrawText">
+  <action name="actionText">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-text-01.png</normaloff>:/images/icon-text-01.png</iconset>
    </property>
    <property name="text">
@@ -651,7 +650,7 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="actionGroup">
+  <action name="actionGroupMenu">
    <property name="text">
     <string>Group</string>
    </property>
@@ -659,7 +658,7 @@
     <string>Ctrl+G</string>
    </property>
   </action>
-  <action name="actionUngroup">
+  <action name="actionUngroupMenu">
    <property name="text">
     <string>Ungroup</string>
    </property>
@@ -667,28 +666,31 @@
     <string>Ctrl+Shift+G</string>
    </property>
   </action>
-  <action name="actionDrawLine">
+  <action name="actionLine">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-line-01.png</normaloff>:/images/icon-line-01.png</iconset>
+     <normaloff>:/images/icon-line.png</normaloff>:/images/icon-line.png</iconset>
    </property>
    <property name="text">
     <string>DrawLine</string>
+   </property>
+   <property name="toolTip">
+    <string>Line</string>
    </property>
    <property name="shortcut">
     <string>L</string>
    </property>
   </action>
-  <action name="actionDrawPath">
+  <action name="actionPath">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-draw-01.png</normaloff>:/images/icon-draw-01.png</iconset>
+     <normaloff>:/images/icon-path.png</normaloff>:/images/icon-path.png</iconset>
    </property>
    <property name="text">
     <string>Path</string>
@@ -697,27 +699,22 @@
     <string>D</string>
    </property>
   </action>
-  <action name="actionDrawPolygon">
+  <action name="actionPolygon">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-polygon-01.png</normaloff>:/images/icon-polygon-01.png</iconset>
+     <normaloff>:/images/icon-polygon.png</normaloff>:/images/icon-polygon.png</iconset>
    </property>
    <property name="text">
-    <string>DrawPolygon</string>
+    <string>Polygon</string>
    </property>
    <property name="shortcut">
     <string>P</string>
    </property>
   </action>
-  <action name="actionactionUnion">
-   <property name="text">
-    <string>actionUnion</string>
-   </property>
-  </action>
-  <action name="actionGroupBtn">
+  <action name="actionGroup">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-group.png</normaloff>:/images/icon-group.png</iconset>
@@ -726,7 +723,7 @@
     <string>GroupBtn</string>
    </property>
   </action>
-  <action name="actionUngroupBtn">
+  <action name="actionUngroup">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-ungroup.png</normaloff>:/images/icon-ungroup.png</iconset>
@@ -737,7 +734,7 @@
   </action>
   <action name="actionAlignVCenter">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-valign-mid.png</normaloff>:/images/icon-valign-mid.png</iconset>
    </property>
    <property name="text">
@@ -746,50 +743,50 @@
   </action>
   <action name="actionAlignHCenter">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-halign-mid.png</normaloff>:/images/icon-halign-mid.png</iconset>
    </property>
    <property name="text">
     <string>AlignHCenter</string>
    </property>
   </action>
-  <action name="actionAlignLeft">
+  <action name="actionAlignHLeft">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-halign-left.png</normaloff>:/images/icon-halign-left.png</iconset>
    </property>
    <property name="text">
     <string>AlignLeft</string>
    </property>
   </action>
-  <action name="actionAlignRight">
+  <action name="actionAlignHRight">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-halign-right.png</normaloff>:/images/icon-halign-right.png</iconset>
    </property>
    <property name="text">
     <string>AlignRight</string>
    </property>
   </action>
-  <action name="actionAlignTop">
+  <action name="actionAlignVTop">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-valign-top.png</normaloff>:/images/icon-valign-top.png</iconset>
    </property>
    <property name="text">
     <string>AlignTop</string>
    </property>
   </action>
-  <action name="actionAlignBottom">
+  <action name="actionAlignVBottom">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-valign-bot.png</normaloff>:/images/icon-valign-bot.png</iconset>
    </property>
    <property name="text">
     <string>AlignBottom</string>
    </property>
   </action>
-  <action name="actionUnionBtn">
+  <action name="actionUnion">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-union.png</normaloff>:/images/icon-union.png</iconset>
@@ -798,7 +795,7 @@
     <string>UnionBtn</string>
    </property>
   </action>
-  <action name="actionSubtractBtn">
+  <action name="actionSubtract">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-subtract.png</normaloff>:/images/icon-subtract.png</iconset>
@@ -807,7 +804,7 @@
     <string>SubtractBtn</string>
    </property>
   </action>
-  <action name="actionIntersectBtn">
+  <action name="actionIntersect">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-intersect.png</normaloff>:/images/icon-intersect.png</iconset>
@@ -816,7 +813,7 @@
     <string>IntersectBtn</string>
    </property>
   </action>
-  <action name="actionDiffBtn">
+  <action name="actionDiff">
    <property name="icon">
     <iconset resource="../../qml.qrc">
      <normaloff>:/images/icon-diff.png</normaloff>:/images/icon-diff.png</iconset>

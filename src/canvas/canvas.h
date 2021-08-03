@@ -129,17 +129,17 @@ public slots:
 
   void editVFlip();
 
-  void editHAlignLeft();
+  void editAlignHLeft();
 
-  void editHAlignCenter();
+  void editAlignHCenter();
 
-  void editHAlignRight();
+  void editAlignHRight();
 
-  void editVAlignTop();
+  void editAlignVTop();
 
-  void editVAlignMid();
+  void editAlignVCenter();
 
-  void editVAlignBottom();
+  void editAlignVBottom();
 
 
   void addEmptyLayer();
@@ -200,6 +200,8 @@ private:
   QThread *mem_thread_;
 
   QQuickWidget *widget_;
+
+  const QColor backgroundColor();
 
   friend class MainWindow;
 

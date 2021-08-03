@@ -6,6 +6,7 @@
 #include <QString>
 
 void setOSXWindowTitleColor(QMainWindow *win);
+bool isDarkMode();
 
 QString familyNameFromPostScriptName(QString name);
 

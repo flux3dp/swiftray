@@ -10,6 +10,7 @@
 #include <shape/path-shape.h>
 #include <gcode/toolpath-exporter.h>
 #include <windows/preview-window.h>
+#include <windows/osxwindow.h>
 #include <document-serializer.h>
 
 Canvas::Canvas(QQuickItem *parent)
@@ -90,7 +91,7 @@ void Canvas::loadSVG(QByteArray &svg_data) {
 void Canvas::paint(QPainter *painter) {
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
-  painter->fillRect(0, 0, width(), height(), QColor("#F0F0F0"));
+  painter->fillRect(0, 0, width(), height(), backgroundColor());
   // Move to scroll and scale
   painter->translate(document().scroll());
   painter->scale(document().scale(), document().scale());
@@ -574,7 +575,7 @@ void Canvas::editVFlip() {
   emit selectionsChanged();
 }
 
-void Canvas::editHAlignLeft() {
+void Canvas::editAlignHLeft() {
   auto cmd = Commands::Joined();
   double left = transformControl().boundingRect().left();
   for (auto &shape : document().selections()) {
@@ -585,7 +586,7 @@ void Canvas::editHAlignLeft() {
   emit selectionsChanged();
 }
 
-void Canvas::editHAlignCenter() {
+void Canvas::editAlignHCenter() {
   auto cmd = Commands::Joined();
   double center_x = transformControl().boundingRect().center().x();
   for (auto &shape : document().selections()) {
@@ -596,7 +597,7 @@ void Canvas::editHAlignCenter() {
   emit selectionsChanged();
 }
 
-void Canvas::editHAlignRight() {
+void Canvas::editAlignHRight() {
   auto cmd = Commands::Joined();
   double right = transformControl().boundingRect().right();
   for (auto &shape : document().selections()) {
@@ -607,7 +608,7 @@ void Canvas::editHAlignRight() {
   emit selectionsChanged();
 }
 
-void Canvas::editVAlignTop() {
+void Canvas::editAlignVTop() {
   auto cmd = Commands::Joined();
   double top = transformControl().boundingRect().top();
   for (auto &shape : document().selections()) {
@@ -618,7 +619,7 @@ void Canvas::editVAlignTop() {
   emit selectionsChanged();
 }
 
-void Canvas::editVAlignMid() {
+void Canvas::editAlignVCenter() {
   auto cmd = Commands::Joined();
   double center_y = transformControl().boundingRect().center().y();
   for (auto &shape : document().selections()) {
@@ -629,7 +630,7 @@ void Canvas::editVAlignMid() {
   emit selectionsChanged();
 }
 
-void Canvas::editVAlignBottom() {
+void Canvas::editAlignVBottom() {
   auto cmd = Commands::Joined();
   double bottom = transformControl().boundingRect().bottom();
   for (auto &shape : document().selections()) {
@@ -651,4 +652,13 @@ CanvasTextEdit *Canvas::textInput() const {
 void Canvas::save(QDataStream &out) {
   DocumentSerializer ds(out);
   ds.serializeDocument(document());
+}
+
+const QColor Canvas::backgroundColor() {
+#ifdef Q_OS_MACOS
+  if (isDarkMode()) {
+    return QColor("#333333");
+  }
+#endif
+  return QColor("#F0F0F0");
 }

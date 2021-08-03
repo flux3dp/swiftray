@@ -55,10 +55,53 @@ void MainWindow::loadCanvas() {
 }
 
 void MainWindow::loadQSS() {
-  QFile file(":/styles/beambird.qss");
+  bool is_dark = false;
+#ifdef Q_OS_MACOS
+  is_dark = isDarkMode();
+#endif
+  QFile file(is_dark ?
+             ":/styles/swiftray-dark.qss" :
+             ":/styles/swiftray-light.qss");
   file.open(QFile::ReadOnly);
   QString styleSheet = QLatin1String(file.readAll());
   setStyleSheet(styleSheet);
+
+  QAction *actions_with_icon[] = {
+       ui->actionGroup,
+       ui->actionUngroup,
+       ui->actionSelect,
+       ui->actionRect,
+       ui->actionOval,
+       ui->actionLine,
+       ui->actionPath,
+       ui->actionText,
+       ui->actionPhoto,
+       ui->actionPolygon,
+       ui->actionUnion,
+       ui->actionSubtract,
+       ui->actionIntersect,
+       ui->actionDiff,
+       ui->actionGroup,
+       ui->actionUngroup,
+       ui->actionHFlip,
+       ui->actionVFlip,
+       ui->actionAlignVTop,
+       ui->actionAlignVCenter,
+       ui->actionAlignVBottom,
+       ui->actionAlignHLeft,
+       ui->actionAlignHCenter,
+       ui->actionAlignHRight,
+       nullptr,
+  };
+  for (int i = 0; actions_with_icon[i]; i++) {
+    auto name = actions_with_icon[i]->objectName().mid(6).toLower();
+    qDebug() << "[Action] icon-" << name;
+    if (is_dark) {
+      actions_with_icon[i]->setIcon(QIcon(":/images/dark/icon-" + name));
+    } else {
+      actions_with_icon[i]->setIcon(QIcon(":/images/icon-" + name));
+    }
+  }
 }
 
 void MainWindow::openFile() {
@@ -172,12 +215,12 @@ MainWindow::~MainWindow() {
 void MainWindow::updateMode() {
   // TODO: use action group to do button state exclusive
   ui->actionSelect->setChecked(false);
-  ui->actionDrawRect->setChecked(false);
-  ui->actionDrawLine->setChecked(false);
-  ui->actionDrawOval->setChecked(false);
-  ui->actionDrawPath->setChecked(false);
-  ui->actionDrawText->setChecked(false);
-  ui->actionDrawPolygon->setChecked(false);
+  ui->actionRect->setChecked(false);
+  ui->actionLine->setChecked(false);
+  ui->actionOval->setChecked(false);
+  ui->actionPath->setChecked(false);
+  ui->actionText->setChecked(false);
+  ui->actionPolygon->setChecked(false);
 
   switch (canvas_->mode()) {
     case Canvas::Mode::Selecting:
@@ -186,23 +229,23 @@ void MainWindow::updateMode() {
       break;
 
     case Canvas::Mode::LineDrawing:
-      ui->actionDrawLine->setChecked(true);
+      ui->actionLine->setChecked(true);
       break;
 
     case Canvas::Mode::RectDrawing:
-      ui->actionDrawRect->setChecked(true);
+      ui->actionRect->setChecked(true);
       break;
 
     case Canvas::Mode::OvalDrawing:
-      ui->actionDrawOval->setChecked(true);
+      ui->actionOval->setChecked(true);
       break;
 
     case Canvas::Mode::PathDrawing:
-      ui->actionDrawPath->setChecked(true);
+      ui->actionPath->setChecked(true);
       break;
 
     case Canvas::Mode::TextDrawing:
-      ui->actionDrawText->setChecked(true);
+      ui->actionText->setChecked(true);
       break;
 
     default:
@@ -221,20 +264,20 @@ void MainWindow::updateSelections() {
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
   }
 
-  ui->actionGroupBtn->setEnabled(items.size() > 1);
-  ui->actionUngroupBtn->setEnabled(all_group);
-  ui->actionUnionBtn->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
-  ui->actionSubtractBtn->setEnabled(items.size() == 2 && all_path);
-  ui->actionDiffBtn->setEnabled(items.size() == 2 && all_path);
-  ui->actionIntersectBtn->setEnabled(items.size() == 2 && all_path);
+  ui->actionGroup->setEnabled(items.size() > 1);
+  ui->actionUngroup->setEnabled(all_group);
+  ui->actionUnion->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
+  ui->actionSubtract->setEnabled(items.size() == 2 && all_path);
+  ui->actionDiff->setEnabled(items.size() == 2 && all_path);
+  ui->actionIntersect->setEnabled(items.size() == 2 && all_path);
   ui->actionHFlip->setEnabled(!items.empty());
   ui->actionVFlip->setEnabled(!items.empty());
-  ui->actionAlignTop->setEnabled(items.size() > 1);
+  ui->actionAlignVTop->setEnabled(items.size() > 1);
   ui->actionAlignVCenter->setEnabled(items.size() > 1);
-  ui->actionAlignBottom->setEnabled(items.size() > 1);
-  ui->actionAlignLeft->setEnabled(items.size() > 1);
+  ui->actionAlignVBottom->setEnabled(items.size() > 1);
+  ui->actionAlignHLeft->setEnabled(items.size() > 1);
   ui->actionAlignHCenter->setEnabled(items.size() > 1);
-  ui->actionAlignRight->setEnabled(items.size() > 1);
+  ui->actionAlignHRight->setEnabled(items.size() > 1);
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
@@ -277,27 +320,26 @@ void MainWindow::registerEvents() {
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
-  connect(ui->actionDrawRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
-  connect(ui->actionDrawOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
-  connect(ui->actionDrawLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
-  connect(ui->actionDrawPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
-  connect(ui->actionDrawText, &QAction::triggered, canvas_, &Canvas::editDrawText);
-  connect(ui->actionDrawPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
-  connect(ui->actionUnionBtn, &QAction::triggered, canvas_, &Canvas::editUnion);
-  connect(ui->actionSubtractBtn, &QAction::triggered, canvas_, &Canvas::editSubtract);
-  connect(ui->actionIntersectBtn, &QAction::triggered, canvas_, &Canvas::editIntersect);
-  connect(ui->actionDiffBtn, &QAction::triggered, canvas_, &Canvas::editDifference);
-  connect(ui->actionGroupBtn, &QAction::triggered, canvas_, &Canvas::editGroup);
-  connect(ui->actionUngroupBtn, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->actionRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
+  connect(ui->actionOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
+  connect(ui->actionLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
+  connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
+  connect(ui->actionText, &QAction::triggered, canvas_, &Canvas::editDrawText);
+  connect(ui->actionPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
+  connect(ui->actionUnion, &QAction::triggered, canvas_, &Canvas::editUnion);
+  connect(ui->actionSubtract, &QAction::triggered, canvas_, &Canvas::editSubtract);
+  connect(ui->actionIntersect, &QAction::triggered, canvas_, &Canvas::editIntersect);
+  connect(ui->actionDiff, &QAction::triggered, canvas_, &Canvas::editDifference);
+  connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionHFlip, &QAction::triggered, canvas_, &Canvas::editHFlip);
   connect(ui->actionVFlip, &QAction::triggered, canvas_, &Canvas::editVFlip);
-  connect(ui->actionAlignTop, &QAction::triggered, canvas_, &Canvas::editVAlignTop);
-  // TODO (Use one naming convention);
-  connect(ui->actionAlignVCenter, &QAction::triggered, canvas_, &Canvas::editVAlignMid);
-  connect(ui->actionAlignBottom, &QAction::triggered, canvas_, &Canvas::editVAlignBottom);
-  connect(ui->actionAlignLeft, &QAction::triggered, canvas_, &Canvas::editHAlignLeft);
-  connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editHAlignCenter);
-  connect(ui->actionAlignRight, &QAction::triggered, canvas_, &Canvas::editHAlignRight);
+  connect(ui->actionAlignVTop, &QAction::triggered, canvas_, &Canvas::editAlignVTop);
+  connect(ui->actionAlignVCenter, &QAction::triggered, canvas_, &Canvas::editAlignVCenter);
+  connect(ui->actionAlignVBottom, &QAction::triggered, canvas_, &Canvas::editAlignVBottom);
+  connect(ui->actionAlignHLeft, &QAction::triggered, canvas_, &Canvas::editAlignHLeft);
+  connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
+  connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
 
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 

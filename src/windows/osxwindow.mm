@@ -1,7 +1,13 @@
 #include <windows/osxwindow.h>
 #include <QMainWindow>
 #include <QString>
+#include <QDebug>
 #include <AppKit/AppKit.h>
+
+bool isDarkMode() {
+  NSString *name = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  return [name isEqual:@"Dark"];
+}
 
 void setOSXWindowTitleColor(QMainWindow *w) {
   NSView *view = (NSView *) w->effectiveWinId();
