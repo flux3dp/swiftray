@@ -55,11 +55,7 @@ void MainWindow::loadCanvas() {
 }
 
 void MainWindow::loadQSS() {
-  bool is_dark = false;
-#ifdef Q_OS_MACOS
-  is_dark = isDarkMode();
-#endif
-  QFile file(is_dark ?
+  QFile file(isDarkMode() ?
              ":/styles/swiftray-dark.qss" :
              ":/styles/swiftray-light.qss");
   file.open(QFile::ReadOnly);
@@ -96,7 +92,7 @@ void MainWindow::loadQSS() {
   for (int i = 0; actions_with_icon[i]; i++) {
     auto name = actions_with_icon[i]->objectName().mid(6).toLower();
     qDebug() << "[Action] icon-" << name;
-    if (is_dark) {
+    if (isDarkMode()) {
       actions_with_icon[i]->setIcon(QIcon(":/images/dark/icon-" + name));
     } else {
       actions_with_icon[i]->setIcon(QIcon(":/images/icon-" + name));
@@ -380,4 +376,11 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 
 Canvas *MainWindow::canvas() const {
   return canvas_;
+}
+
+bool isDarkMode() {
+#ifdef Q_OS_MACOS
+  return isOSXDarkMode();
+#endif
+  return false;
 }

@@ -110,6 +110,7 @@ void Canvas::paint(QPainter *painter) {
   // Calculate FPS
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
+  if (isDarkMode()) painter->setPen(Qt::white);
   painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
   painter->drawText(QPointF(10, 40), "Frames: #" + QString::number(document().framesCount()));
   if (fps_timer.elapsed() > 3000) {
@@ -655,10 +656,6 @@ void Canvas::save(QDataStream &out) {
 }
 
 const QColor Canvas::backgroundColor() {
-#ifdef Q_OS_MACOS
-  if (isDarkMode()) {
-    return QColor("#333333");
-  }
-#endif
+  if (isDarkMode()) return QColor("#454545");
   return QColor("#F0F0F0");
 }

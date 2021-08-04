@@ -1,5 +1,6 @@
 #include <QPainterPath>
 #include <canvas/controls/grid.h>
+#include <windows/osxwindow.h>
 #include <shape/path-shape.h>
 
 using namespace Controls;
@@ -9,7 +10,8 @@ bool Grid::isActive() {
 }
 
 void Grid::paint(QPainter *painter) {
-  painter->fillRect(0, 0, document().width(), document().height(), Qt::white);
+  painter->fillRect(0, 0, document().width(), document().height(),
+                    isDarkMode() ? QColor("#F0F0F0") : Qt::white);
   QPen grey_pen(QColor("#DDD"), 1, Qt::SolidLine);
   QPen black_pen(QColor("#333"), 1, Qt::SolidLine);
   QPen black_thick_pen(QColor("#333"), 2, Qt::SolidLine);

@@ -4,7 +4,7 @@
 #include <QDebug>
 #include <AppKit/AppKit.h>
 
-bool isDarkMode() {
+bool isOSXDarkMode() {
   NSString *name = [[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
   return [name isEqual:@"Dark"];
 }
