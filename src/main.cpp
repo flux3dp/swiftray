@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
   }
 
   app.setAttribute(Qt::AA_UseHighDpiPixmaps);
+  app.setWindowIcon(QIcon(":/images/icon.png"));
   //QFont font("Source Sans Pro");
   //QApplication::setFont(font);
   //app.setStyle("fusion");

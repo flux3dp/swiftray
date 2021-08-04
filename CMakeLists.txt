@@ -75,7 +75,12 @@ ENDIF ()
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
-add_executable(swiftray ${SRC_DIR}/main.cpp ${MAIN_SOURCE})
+set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/images/icon.rc")
+set(MACOSX_BUNDLE_ICON_FILE images/icon.icns)
+set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
+set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+add_executable(swiftray ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
 target_link_libraries(swiftray Qt::Core)
 target_link_libraries(swiftray Qt::Quick)
 target_link_libraries(swiftray Qt::QuickWidgets)
