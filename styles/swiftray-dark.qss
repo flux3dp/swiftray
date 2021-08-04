@@ -101,6 +101,10 @@ QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objec
   border-radius: 0px;
 }
 
+#toolBar QToolButton {
+  border-right: 1px solid #222;
+}
+
 QToolButton:hover {
   background: #555555;
 }
