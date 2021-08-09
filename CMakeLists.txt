@@ -13,6 +13,7 @@ FIND_PACKAGE(Qt5Gui COMPONENTS Private REQUIRED)
 FIND_PACKAGE(Qt5Widgets COMPONENTS Private REQUIRED)
 FIND_PACKAGE(Qt5Svg COMPONENTS Private REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
+FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Boost 1.70 REQUIRED)
 
 SET(CMAKE_CXX_STANDARD 17)
@@ -52,20 +53,26 @@ SET(SOURCES
         ${SRC_DIR}/gcode/toolpath-exporter.cpp
         )
 
-INCLUDE_DIRECTORIES(${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+INCLUDE_DIRECTORIES(
+        ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
         ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
         third_party
         ${SRC_DIR}
-        /usr/local/opt/libxml2/include)
+        /usr/local/opt/libxml2/include
+)
 
-link_libraries(${LIBXML2_LIBRARY}
-        ${BOOST_LIBRARIES})
+LINK_LIBRARIES(
+        ${LIBXML2_LIBRARY}
+        ${BOOST_LIBRARIES}
+        ${OpenCV_LIBRARIES}
+)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    link_libraries("-framework AppKit")
+    LINK_LIBRARIES("-framework AppKit")
 
     SET(SOURCES
             ${SOURCES}

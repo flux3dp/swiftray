@@ -85,6 +85,8 @@
         <file>images/dark/icon-plus.png</file>
         <file>images/dark/beamo.png</file>
         <file>images/dark/beambox.png</file>
+        <file>images/icon.icns</file>
+        <file>images/icon.png</file>
         <file>styles/swiftray-dark.qss</file>
         <file>styles/swiftray-light.qss</file>
         <file>resources/parameters/beamo.json</file>
