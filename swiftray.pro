@@ -17,6 +17,7 @@ CONFIG += c++17
 LIBS += -L"/usr/lib"
 LIBS += -L"/usr/local/lib"
 LIBS += -L"/usr/local/opt/libxml2/lib"
+LIBS += -L"/usr/local/opt/opencv/lib"
 LIBS += -lxml2
 ios {
     LIBS += -framework Foundation -framework UIKit
@@ -25,6 +26,7 @@ INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
 INCLUDEPATH += /usr/local/opt/libxml2/include
+INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
 
 # Remove -Wall and -Wextra flag
 QMAKE_CFLAGS_WARN_ON -= -Wall
