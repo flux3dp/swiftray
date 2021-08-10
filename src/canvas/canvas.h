@@ -141,6 +141,7 @@ public slots:
 
   void editAlignVBottom();
 
+  void editRelativeMove(qreal dx, qreal dy);
 
   void addEmptyLayer();
 
