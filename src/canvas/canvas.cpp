@@ -23,6 +23,7 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_path_draw_(Controls::PathDraw(this)),
        ctrl_path_edit_(Controls::PathEdit(this)),
        ctrl_rect_(Controls::Rect(this)),
+       ctrl_polygon_(Controls::Polygon(this)),
        ctrl_text_(Controls::Text(this)),
        svgpp_parser_(Parser::SVGPPParser()),
        widget_(nullptr),
@@ -47,7 +48,7 @@ Canvas::Canvas(QQuickItem *parent)
   volatility_timer.start();
 
   // Register controls
-  ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_oval_
+  ctrls_ << &ctrl_transform_ << &ctrl_select_ << &ctrl_rect_ << &ctrl_polygon_ << &ctrl_oval_
          << &ctrl_line_ << &ctrl_path_draw_ << &ctrl_path_edit_
          << &ctrl_text_;
 
@@ -353,6 +354,11 @@ void Canvas::editDrawRect() {
   setMode(Mode::RectDrawing);
 }
 
+void Canvas::editDrawPolygon() {
+  document().setSelection(nullptr);
+  setMode(Mode::PolygonDrawing);
+}
+
 void Canvas::editDrawOval() {
   document().setSelection(nullptr);
   setMode(Mode::OvalDrawing);
@@ -576,6 +582,9 @@ void Canvas::backToSelectMode() {
       break;
     case Mode::RectDrawing:
       ctrl_rect_.exit();
+      break;
+    case Mode::PolygonDrawing:
+      ctrl_polygon_.exit();
       break;
   }
 }

@@ -10,6 +10,7 @@
 #include <canvas/controls/path-draw.h>
 #include <canvas/controls/path-edit.h>
 #include <canvas/controls/rect.h>
+#include <canvas/controls/polygon.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -35,6 +36,7 @@ public:
     Rotating,
     RectDrawing,
     LineDrawing,
+    PolygonDrawing,
     OvalDrawing,
     PathDrawing,
     PathEditing,
@@ -108,6 +110,8 @@ public slots:
   void editUngroup();
 
   void editDrawRect();
+
+  void editDrawPolygon();
 
   void editDrawOval();
 
@@ -186,6 +190,7 @@ private:
   Controls::PathEdit ctrl_path_edit_;
   Controls::Rect ctrl_rect_;
   Controls::Text ctrl_text_;
+  Controls::Polygon ctrl_polygon_;
   QList<Controls::CanvasControl *> ctrls_;
 
 

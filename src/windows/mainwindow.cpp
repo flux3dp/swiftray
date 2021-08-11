@@ -222,6 +222,10 @@ void MainWindow::updateMode() {
       ui->actionText->setChecked(true);
       break;
 
+    case Canvas::Mode::PolygonDrawing:
+      ui->actionPolygon->setChecked(true);
+      break;
+
     default:
       break;
   }
@@ -295,6 +299,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
   connect(ui->actionRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
+  connect(ui->actionPolygon, &QAction::triggered, canvas_, &Canvas::editDrawPolygon);
   connect(ui->actionOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
   connect(ui->actionLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
