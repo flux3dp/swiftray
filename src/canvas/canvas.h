@@ -204,7 +204,10 @@ private:
 
   const QColor backgroundColor();
 
-  friend class MainWindow;
+  QPointF getTopLeftScrollBoundary();
+  QPointF getBottomRightScrollBoundary();
+
+    friend class MainWindow;
 
 protected:
   CanvasTextEdit *text_input_;

@@ -238,8 +238,48 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   }
 }
 
+/**
+ *
+ * @return  upper bound value (positive value) for document scroll
+ */
+QPointF Canvas::getTopLeftScrollBoundary() {
+
+  qreal scrollX_max = 1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
+  qreal scrollY_max = 1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
+
+  return QPointF{scrollX_max, scrollY_max};
+}
+
+/**
+ *
+ * @return  lower bound value (negative value) for document scroll
+ */
+QPointF Canvas::getBottomRightScrollBoundary() {
+  qreal scrollX_min = (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
+  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(), 2 * document().height() * document().scale() - height());
+
+  return QPointF{scrollX_min, scrollY_min};
+}
+
 void Canvas::wheelEvent(QWheelEvent *e) {
-  document().setScroll(document().scroll() + e->pixelDelta() / 2.5);
+  qreal newScrollX = document().scroll().x() + e->pixelDelta().x() / 2.5;
+  qreal newScrollY = document().scroll().y() + e->pixelDelta().y() / 2.5;
+
+  // Restrict the range of scroll
+  QPointF top_left_bound = getTopLeftScrollBoundary();
+  QPointF bottom_right_bound = getBottomRightScrollBoundary();
+  if (e->pixelDelta().x() > 0 && newScrollX > top_left_bound.x()) {
+    newScrollX = top_left_bound.x();
+  } else if (e->pixelDelta().x() < 0 && newScrollX < bottom_right_bound.x() ) {
+    newScrollX = bottom_right_bound.x();
+  }
+  if (e->pixelDelta().y() > 0 && newScrollY > top_left_bound.y()) {
+    newScrollY = top_left_bound.y();
+  } else if (e->pixelDelta().y() < 0 && newScrollY < bottom_right_bound.y() ) {
+    newScrollY = bottom_right_bound.y();
+  }
+
+  document().setScroll({newScrollX, newScrollY});
   volatility_timer.restart();
 }
 
@@ -276,8 +316,27 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        document().setScale(max(0.01, document().scale() + nge->value() / 2));
-        document().setScroll(mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale);
+        double new_scale = max(0.1, document().scale() + nge->value() / 2);
+        document().setScale(new_scale);
+
+        QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
+
+        // Restrict the scroll range (might not be necessary)
+        QPointF top_left_bound = getTopLeftScrollBoundary();
+        QPointF bottom_right_bound = getBottomRightScrollBoundary();
+        if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+          new_scroll.setX(top_left_bound.x());
+        } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x() ) {
+          new_scroll.setX(bottom_right_bound.x());
+        }
+        if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+          new_scroll.setY(top_left_bound.y());
+        } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y() ) {
+          new_scroll.setY(bottom_right_bound.y());
+        }
+
+
+        document().setScroll(new_scroll);
         volatility_timer.restart();
       }
 
