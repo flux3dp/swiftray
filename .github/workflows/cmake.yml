@@ -52,6 +52,13 @@ jobs:
         cd $BOOST_ROOT && cp -r boost_*/* .
         rm -rf boost_*/* download.tar.bz2 download.tar
       shell: bash
+    - name: Setup OpenCV
+      # You may pin to the exact commit or the version.
+      # uses: Dovyski/setup-opencv-action@24af96460aeb1d3127f13698550f6a21ebb6a22c
+      uses: Dovyski/setup-opencv-action@v1
+      with:
+        # OpenCV version to be installed.
+        opencv-version: 4.0.0
         
     - name: Googletest installer
       uses: MarkusJx/googletest-installer@v1.1
