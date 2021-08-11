@@ -127,6 +127,35 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
       return;
   }
 
+  if (e->key() == Qt::Key::Key_Up) {
+    if (e->isAutoRepeat()) {
+      editRelativeMove(0, -10);
+    } else {
+      editRelativeMove(0, -1);
+    }
+  }
+  if (e->key() == Qt::Key::Key_Down) {
+    if (e->isAutoRepeat()) {
+      editRelativeMove(0, 10);
+    } else {
+      editRelativeMove(0, 1);
+    }
+  }
+  if (e->key() == Qt::Key::Key_Left) {
+    if (e->isAutoRepeat()) {
+      editRelativeMove(-10, 0);
+    } else {
+      editRelativeMove(-1, 0);
+    }
+  }
+  if (e->key() == Qt::Key::Key_Right) {
+    if (e->isAutoRepeat()) {
+      editRelativeMove(10, 0);
+    } else {
+      editRelativeMove(1, 0);
+    }
+  }
+
   if (e->key() == Qt::Key::Key_Delete || e->key() == Qt::Key::Key_Backspace ||
       e->key() == Qt::Key::Key_Back) {
     editDelete();
@@ -287,6 +316,19 @@ void Canvas::editDelete() {
   document().execute(
        Commands::RemoveSelections(&document())
   );
+}
+
+void Canvas::editRelativeMove(qreal dx, qreal dy) {
+  if (mode() != Mode::Selecting)
+    return;
+
+  auto cmd = Commands::Joined();
+  for (auto &shape : document().selections()) {
+    QTransform new_transform = QTransform().translate(dx, dy);
+    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
+  }
+  document().execute(cmd);
+  emit selectionsChanged();
 }
 
 void Canvas::editUndo() {
