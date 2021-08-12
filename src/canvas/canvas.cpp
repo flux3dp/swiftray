@@ -128,35 +128,6 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
       return;
   }
 
-  if (e->key() == Qt::Key::Key_Up) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(0, -10);
-    } else {
-      editRelativeMove(0, -1);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Down) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(0, 10);
-    } else {
-      editRelativeMove(0, 1);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Left) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(-10, 0);
-    } else {
-      editRelativeMove(-1, 0);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Right) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(10, 0);
-    } else {
-      editRelativeMove(1, 0);
-    }
-  }
-
   if (e->key() == Qt::Key::Key_Delete || e->key() == Qt::Key::Key_Backspace ||
       e->key() == Qt::Key::Key_Back) {
     editDelete();
@@ -245,8 +216,10 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
  */
 QPointF Canvas::getTopLeftScrollBoundary() {
 
-  qreal scrollX_max = 1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
-  qreal scrollY_max = 1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
+  qreal scrollX_max =
+       1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
+  qreal scrollY_max =
+       1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
 
   return QPointF{scrollX_max, scrollY_max};
 }
@@ -256,8 +229,10 @@ QPointF Canvas::getTopLeftScrollBoundary() {
  * @return  lower bound value (negative value) for document scroll
  */
 QPointF Canvas::getBottomRightScrollBoundary() {
-  qreal scrollX_min = (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
-  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(), 2 * document().height() * document().scale() - height());
+  qreal scrollX_min =
+       (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
+  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(),
+                                 2 * document().height() * document().scale() - height());
 
   return QPointF{scrollX_min, scrollY_min};
 }
@@ -376,19 +351,6 @@ void Canvas::editDelete() {
   document().execute(
        Commands::RemoveSelections(&document())
   );
-}
-
-void Canvas::editRelativeMove(qreal dx, qreal dy) {
-  if (mode() != Mode::Selecting)
-    return;
-
-  auto cmd = Commands::Joined();
-  for (auto &shape : document().selections()) {
-    QTransform new_transform = QTransform().translate(dx, dy);
-    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
-  }
-  document().execute(cmd);
-  emit selectionsChanged();
 }
 
 void Canvas::editUndo() {
