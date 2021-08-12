@@ -33,7 +33,7 @@ public:
 
   void loadCanvas();
 
-  void loadQSS();
+  void loadStyles() override;
 
   void closeEvent(QCloseEvent *event) override;
 

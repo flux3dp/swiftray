@@ -27,7 +27,6 @@ MainWindow::MainWindow(QWidget *parent) :
      canvas_(nullptr),
      BaseContainer() {
   ui->setupUi(this);
-  loadQSS();
   loadCanvas();
   initializeContainer();
   updateMode();
@@ -54,7 +53,7 @@ void MainWindow::loadCanvas() {
   ui->quickWidget->show();
 }
 
-void MainWindow::loadQSS() {
+void MainWindow::loadStyles() {
   QFile file(isDarkMode() ?
              ":/styles/swiftray-dark.qss" :
              ":/styles/swiftray-light.qss");
@@ -62,40 +61,19 @@ void MainWindow::loadQSS() {
   QString styleSheet = QLatin1String(file.readAll());
   setStyleSheet(styleSheet);
 
-  QAction *actions_with_icon[] = {
-       ui->actionGroup,
-       ui->actionUngroup,
-       ui->actionSelect,
-       ui->actionRect,
-       ui->actionOval,
-       ui->actionLine,
-       ui->actionPath,
-       ui->actionText,
-       ui->actionPhoto,
-       ui->actionPolygon,
-       ui->actionUnion,
-       ui->actionSubtract,
-       ui->actionIntersect,
-       ui->actionDiff,
-       ui->actionGroup,
-       ui->actionUngroup,
-       ui->actionHFlip,
-       ui->actionVFlip,
-       ui->actionAlignVTop,
-       ui->actionAlignVCenter,
-       ui->actionAlignVBottom,
-       ui->actionAlignHLeft,
-       ui->actionAlignHCenter,
-       ui->actionAlignHRight,
-       nullptr,
+  QList<QToolBar *> toolbars = {
+       ui->toolBar,
+       ui->toolBarAlign,
+       ui->toolBarBool,
+       ui->toolBarGroup,
+       ui->toolBarFlip
   };
-  for (int i = 0; actions_with_icon[i]; i++) {
-    auto name = actions_with_icon[i]->objectName().mid(6).toLower();
-    qDebug() << "[Action] icon-" << name;
-    if (isDarkMode()) {
-      actions_with_icon[i]->setIcon(QIcon(":/images/dark/icon-" + name));
-    } else {
-      actions_with_icon[i]->setIcon(QIcon(":/images/icon-" + name));
+  for (QToolBar *toolbar : toolbars) {
+    for (QAction *action: toolbar->actions()) {
+      auto name = action->objectName().mid(6).toLower();
+      action->setIcon(QIcon(
+           (isDarkMode() ? ":/images/dark/icon-" : ":/images/icon-") + name
+      ));
     }
   }
 }
@@ -244,6 +222,10 @@ void MainWindow::updateMode() {
       ui->actionText->setChecked(true);
       break;
 
+    case Canvas::Mode::PolygonDrawing:
+      ui->actionPolygon->setChecked(true);
+      break;
+
     default:
       break;
   }
@@ -317,6 +299,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
   connect(ui->actionRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
+  connect(ui->actionPolygon, &QAction::triggered, canvas_, &Canvas::editDrawPolygon);
   connect(ui->actionOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
   connect(ui->actionLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
