@@ -145,8 +145,6 @@ public slots:
 
   void editAlignVBottom();
 
-  void editRelativeMove(qreal dx, qreal dy);
-
   void addEmptyLayer();
 
   void importImage(QImage &image);
@@ -210,9 +208,10 @@ private:
   const QColor backgroundColor();
 
   QPointF getTopLeftScrollBoundary();
+
   QPointF getBottomRightScrollBoundary();
 
-    friend class MainWindow;
+  friend class MainWindow;
 
 protected:
   CanvasTextEdit *text_input_;
