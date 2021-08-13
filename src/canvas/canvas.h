@@ -4,6 +4,7 @@
 #include <QQuickWidget>
 #include <canvas/controls/canvas-control.h>
 #include <canvas/controls/grid.h>
+#include <canvas/controls/ruler.h>
 #include <canvas/controls/line.h>
 #include <canvas/controls/select.h>
 #include <canvas/controls/oval.h>
@@ -182,6 +183,7 @@ private:
   Controls::Transform ctrl_transform_;
   Controls::Select ctrl_select_;
   Controls::Grid ctrl_grid_;
+  Controls::Ruler ctrl_ruler_;
   Controls::Line ctrl_line_;
   Controls::Oval ctrl_oval_;
   Controls::PathDraw ctrl_path_draw_;

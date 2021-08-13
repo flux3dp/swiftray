@@ -18,6 +18,7 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_transform_(Controls::Transform(this)),
        ctrl_select_(Controls::Select(this)),
        ctrl_grid_(Controls::Grid(this)),
+       ctrl_ruler_(Controls::Ruler(this)),
        ctrl_line_(Controls::Line(this)),
        ctrl_oval_(Controls::Oval(this)),
        ctrl_path_draw_(Controls::PathDraw(this)),
@@ -108,6 +109,9 @@ void Canvas::paint(QPainter *painter) {
   }
 
   painter->restore();
+
+  ctrl_ruler_.paint(painter);
+
   // Calculate FPS
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
@@ -292,7 +296,7 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        double new_scale = max(0.1, document().scale() + nge->value() / 2);
+        double new_scale = min(10.0, max(0.1, document().scale() + nge->value() / 2));
         document().setScale(new_scale);
 
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
