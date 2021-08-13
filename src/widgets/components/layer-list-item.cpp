@@ -23,9 +23,9 @@ LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, b
   loadStyles();
   registerEvents();
 
-  ui->btnLock->setVisible(false);
-  lockLayerAction_->setEnabled(true);
-  unlockLayerAction_->setEnabled(false);
+  ui->btnLock->setVisible(layer_->isLocked());
+  lockLayerAction_->setEnabled(!layer_->isLocked());
+  unlockLayerAction_->setEnabled(layer_->isLocked());
 }
 
 LayerListItem::~LayerListItem() {
