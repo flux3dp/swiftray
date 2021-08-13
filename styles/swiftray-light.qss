@@ -95,6 +95,15 @@ QToolBar {
   #btnHide:hover {
     opacity: 1;
   }
+
+  #btnLock {
+    opacity: 0;
+  }
+  
+  #btnLock:hover {
+    opacity: 1;
+  }
+  
   
   QToolBar QToolButton, QListWidget QToolButton, #documentDock QToolButton, #objectParamDock QToolButton  {
     border-width: 0px;

@@ -158,3 +158,7 @@ bool Shape::isParentSelected() const {
   }
   return result;
 }
+
+bool Shape::isLayerLocked() const {
+  return this->hasLayer() && layer_->isLocked();
+}
