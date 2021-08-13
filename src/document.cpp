@@ -29,9 +29,16 @@ void Document::setSelection(ShapePtr &shape) {
 }
 
 void Document::setSelections(const QList<ShapePtr> &new_selections) {
+  QList<ShapePtr> selection_list;
   for (auto &shape : selections_) { shape->setSelected(false); }
-  selections_ = new_selections;
-  for (auto &shape : selections_) { shape->setSelected(true); }
+  for (auto &shape : new_selections) {
+    if (!(shape->isLayerLocked())) {
+      shape->setSelected(true);
+      selection_list.push_back(shape);
+    } 
+  }
+
+  selections_ = selection_list;
   emit selectionsChanged();
 }
 
