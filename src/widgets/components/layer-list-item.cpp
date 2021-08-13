@@ -17,9 +17,15 @@ LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, b
   ui->setupUi(this);
   ui->labelName->setText(layer->name());
   ui->comboBox->setCurrentIndex((int) layer->type());
+
+  setContextMenu();
   createIcon();
   loadStyles();
   registerEvents();
+
+  ui->btnLock->setVisible(layer_->isLocked());
+  lockLayerAction_->setEnabled(!layer_->isLocked());
+  unlockLayerAction_->setEnabled(layer_->isLocked());
 }
 
 LayerListItem::~LayerListItem() {
@@ -52,11 +58,27 @@ void LayerListItem::registerEvents() {
          Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible())
     );
   });
+  connect(ui->btnLock, &QAbstractButton::clicked, this, &LayerListItem::onUnlockLayer);
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     layer_->document().execute(
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );
   });
+}
+
+void LayerListItem::setContextMenu() {
+  popMenu_ = new QMenu(this);
+  // Add QActions for context menu
+  lockLayerAction_ =  popMenu_->addAction(tr("&Lock"));
+  unlockLayerAction_ =  popMenu_->addAction(tr("&Unlock"));
+  addAction(lockLayerAction_);
+  addAction(unlockLayerAction_);
+  connect(lockLayerAction_, &QAction::triggered, this, &LayerListItem::onLockLayer);
+  connect(unlockLayerAction_, &QAction::triggered, this, &LayerListItem::onUnlockLayer);
+
+  setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(this, &QWidget::customContextMenuRequested,
+          this, &LayerListItem::showPopMenu);
 }
 
 void LayerListItem::mouseDoubleClickEvent(QMouseEvent *event) {
@@ -89,4 +111,26 @@ void LayerListItem::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
   QWidget::paintEvent(event);
+}
+
+void LayerListItem::onLockLayer() {
+  layer_->document().setSelection(nullptr);
+  layer_->setLocked(true);
+  ui->btnLock->setVisible(true);
+  lockLayerAction_->setEnabled(false);
+  unlockLayerAction_->setEnabled(true);
+}
+
+void LayerListItem::onUnlockLayer() {
+  layer_->setLocked(false);
+  ui->btnLock->setVisible(false);
+  lockLayerAction_->setEnabled(true);
+  unlockLayerAction_->setEnabled(false);
+}
+
+void LayerListItem::showPopMenu(const QPoint& ) // SLOT Function
+{
+  if(popMenu_){
+      popMenu_->exec(QCursor::pos());
+  }
 }

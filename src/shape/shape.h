@@ -89,6 +89,9 @@ public:
 
   bool isParentSelected() const;
 
+  /** Whether the layer of the object is locked */
+  bool isLayerLocked() const;
+
   virtual shared_ptr<Shape> clone() const;
 
   virtual bool hitTest(QPointF global_coord, qreal tolerance) const;

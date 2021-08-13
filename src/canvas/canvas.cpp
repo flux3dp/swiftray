@@ -375,6 +375,10 @@ void Canvas::editRedo() {
 }
 
 void Canvas::editDrawRect() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::RectDrawing);
 }
@@ -385,21 +389,37 @@ void Canvas::editDrawPolygon() {
 }
 
 void Canvas::editDrawOval() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::OvalDrawing);
 }
 
 void Canvas::editDrawLine() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::LineDrawing);
 }
 
 void Canvas::editDrawPath() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::PathDrawing);
 }
 
 void Canvas::editDrawText() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::TextDrawing);
 }

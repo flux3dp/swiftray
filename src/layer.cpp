@@ -20,6 +20,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      speed_(20),
      power_(30),
      repeat_(1),
+     is_locked_(false),
      is_visible_(true),
      step_height_(0),
      use_diode_(false),
@@ -84,6 +85,10 @@ const QString &Layer::name() const {
   return name_;
 }
 
+bool Layer::isLocked() const {
+    return is_locked_;
+}
+
 bool Layer::isVisible() const {
   return is_visible_;
 }
@@ -111,6 +116,10 @@ Document &Layer::document() {
 }
 
 // Setters
+
+void Layer::setLocked(bool isLocked) {
+    is_locked_ = isLocked;
+}
 
 void Layer::setVisible(bool visible) {
   is_visible_ = visible;
@@ -165,6 +174,7 @@ LayerPtr Layer::clone() {
   new_layer->setSpeed(speed());
   new_layer->setStrength(power());
   new_layer->setRepeat(repeat());
+  new_layer->setLocked(isLocked());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());
   new_layer->setUseDiode(isUseDiode());
