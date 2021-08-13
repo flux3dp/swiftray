@@ -126,6 +126,10 @@ void MainWindow::openFile() {
 }
 
 void MainWindow::openImageFile() {
+  if (canvas_->document().activeLayer()->isLocked()) {
+    emit canvas_->modeChanged();
+    return;
+  }
 #ifdef Q_OS_IOS
   // TODO (Possible leak here?)
   ImagePicker *p = new ImagePicker();
