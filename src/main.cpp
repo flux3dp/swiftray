@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
   //QApplication::setFont(font);
   //app.setStyle("fusion");
   // Force anti-aliasing
-  QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+  /*QSurfaceFormat format = QSurfaceFormat::defaultFormat();
   format.setSamples(8);
-  QSurfaceFormat::setDefaultFormat(format);
+  QSurfaceFormat::setDefaultFormat(format);*/
   QTranslator translator;
   const QStringList uiLanguages = QLocale::system().uiLanguages();
 
