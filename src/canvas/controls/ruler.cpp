@@ -14,9 +14,8 @@ bool Ruler::isActive() {
 
 qreal Ruler::getScaleStep() {
   qreal step = 1000; // 100 mm
-  while (step * document().scale() >= 20) {
-    int result;
-
+  qreal result;
+  while (step * document().scale() > 20) {
     result = step / 2;
     if (result * document().scale() < 20) {
       return result;
@@ -31,13 +30,12 @@ qreal Ruler::getScaleStep() {
 }
 
 
-void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness) {
-  QPen black_pen(QColor("#333"), 1, Qt::SolidLine);
-  black_pen.setCosmetic(true);
+void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness,
+                                const QPen& line_pen, const QColor& ruler_color) {
 
-  painter->fillRect(QRectF{double(thickness), 0, canvas().width() - thickness, double(thickness)}, QColor("#DDD"));
+  painter->fillRect(QRectF{double(thickness), 0, canvas().width() - thickness, double(thickness)}, ruler_color);
 
-  painter->setPen(black_pen);
+  painter->setPen(line_pen);
   qreal x = document().scroll().x();
   for (int i = 0;; i++) {
     if (x > canvas().width()) {
@@ -52,7 +50,7 @@ void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness) {
     } else {
       painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 5);
     }
-    x += step*document().scale();
+    x += step * document().scale();
   }
   x = document().scroll().x();
   for (int i = 0;; i--) {
@@ -68,12 +66,13 @@ void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness) {
     } else {
       painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 5);
     }
-    x -= step*document().scale();
+    x -= step * document().scale();
   }
 
   painter->drawLine(thickness, thickness, canvas().width(), thickness);
 }
-void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness) {
+void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness,
+                              const QPen& line_pen, const QColor& ruler_color) {
 
   auto TextToVertical = [](const QString &str) {
     QString result;
@@ -84,12 +83,9 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness) {
     return result;
   };
 
-  QPen black_pen(QColor("#333"), 1, Qt::SolidLine);
-  black_pen.setCosmetic(true);
+  painter->fillRect(QRectF{0, double(thickness), double(thickness), canvas().height() - thickness}, ruler_color);
 
-  painter->fillRect(QRectF{0, double(thickness), double(thickness), canvas().height() - thickness}, QColor("#DDD"));
-
-  painter->setPen(black_pen);
+  painter->setPen(line_pen);
   qreal y = document().scroll().y();
   for (int i = 0;; i++) {
     if (y > canvas().height()) {
@@ -106,7 +102,7 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness) {
     } else {
       painter->drawLine(thickness, y_in_pixel, thickness - 5, y_in_pixel);
     }
-    y += step*document().scale();
+    y += step * document().scale();
   }
   y = document().scroll().y();
   for (int i = 0;; i--) {
@@ -124,7 +120,7 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness) {
     } else {
       painter->drawLine(thickness, y_in_pixel, thickness - 5, y_in_pixel);
     }
-    y -= step*document().scale();
+    y -= step * document().scale();
   }
 
   painter->drawLine(thickness, thickness, thickness, canvas().height());
@@ -134,10 +130,23 @@ void Ruler::paint(QPainter *painter) {
 
   qreal ruler_width = 20;
 
-  int step = getScaleStep();
+  qreal step = getScaleStep();
 
-  drawHorizontalRuler(painter, step, ruler_width);
-  drawVerticalRuler(painter, step, ruler_width);
+  QPen line_pen;
+  line_pen.setWidth(1);
+  line_pen.setStyle(Qt::SolidLine);
+  QColor ruler_color;
+  if (isDarkMode()) {
+    line_pen.setColor("#F0F0F0");
+    ruler_color.setNamedColor("#454545");
+  } else {
+    line_pen.setColor("#333");
+    ruler_color.setNamedColor("#DDD");
+  }
+  line_pen.setCosmetic(true);
 
-  painter->fillRect(QRectF{0, 0, ruler_width, ruler_width}, QColor("#DDD"));
+  drawHorizontalRuler(painter, step, ruler_width, line_pen, ruler_color);
+  drawVerticalRuler(painter, step, ruler_width, line_pen, ruler_color);
+
+  painter->fillRect(QRectF{0, 0, ruler_width, ruler_width}, ruler_color);
 }
