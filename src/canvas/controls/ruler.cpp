@@ -41,7 +41,7 @@ void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness,
     if (x > canvas().width()) {
       break;
     }
-    int x_in_pixel = int(x);
+    int x_in_pixel = round(x);
     if (i % 10 == 0) {
       painter->drawText(QPointF{double(x_in_pixel+5),  10}, QString::number(i * step / 10));
       painter->drawLine(x_in_pixel, thickness, x_in_pixel, 0);
@@ -57,7 +57,7 @@ void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness,
     if (x < 0) {
       break;
     }
-    int x_in_pixel = int(x);
+    int x_in_pixel = round(x);
     if (i % 10 == 0) {
       painter->drawText(QPointF{double(x_in_pixel+5),  10}, QString::number(i * step / 10));
       painter->drawLine(x_in_pixel, thickness, x_in_pixel, 0);
@@ -91,7 +91,7 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness,
     if (y > canvas().height()) {
       break;
     }
-    int y_in_pixel = int(y);
+    int y_in_pixel = round(y);
     if (i % 10 == 0) {
       QString verticalValue = TextToVertical(QString::number(i * step / 10));
       QRect rect{1, y_in_pixel + 5, 10, 100};
@@ -109,7 +109,7 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness,
     if (y < 0) {
       break;
     }
-    int y_in_pixel = int(y);
+    int y_in_pixel = round(y);
     if (i % 10 == 0) {
       QString verticalValue = TextToVertical(QString::number(i * step / 10));
       QRect rect{1, y_in_pixel + 5, 10, 100};
