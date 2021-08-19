@@ -20,9 +20,9 @@ signals:
 
 public slots:
 
-  void createStandardeProfile(QString brand, QString model);
+  void createStandardProfile(const QString brand, const QString model);
 
-  void createOtherProfile(QString name, int width, int height, int origin);
+  void createOtherProfile(const QString name, int width, int height, int origin);
 
   void close();
 

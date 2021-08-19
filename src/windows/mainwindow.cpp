@@ -1,6 +1,5 @@
 #include <QDebug>
 #include <QFileDialog>
-#include <QListWidget>
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
@@ -12,7 +11,6 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
-#include <widgets/components/ios-image-picker.h>
 
 #include "ui_mainwindow.h"
 
@@ -209,8 +207,8 @@ void MainWindow::updateMode() {
 
 void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
-  bool all_group = items.size() > 0;
-  bool all_path = items.size() > 0;
+  bool all_group = !items.empty();
+  bool all_path = !items.empty();
 
   for (auto &shape : canvas_->document().selections()) {
     if (shape->type() != Shape::Type::Group) all_group = false;
