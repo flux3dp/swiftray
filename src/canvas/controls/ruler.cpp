@@ -36,37 +36,37 @@ void Ruler::drawHorizontalRuler(QPainter *painter, qreal step, int thickness,
   painter->fillRect(QRectF{double(thickness), 0, canvas().width() - thickness, double(thickness)}, ruler_color);
 
   painter->setPen(line_pen);
-  qreal x = document().scroll().x();
+  qreal x_anchor = document().scroll().x();
+  qreal x;
   for (int i = 0;; i++) {
+    x = x_anchor + i * step * document().scale();
     if (x > canvas().width()) {
       break;
     }
-    int x_in_pixel = round(x);
+
     if (i % 10 == 0) {
-      painter->drawText(QPointF{double(x_in_pixel+5),  10}, QString::number(i * step / 10));
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, 0);
+      painter->drawText(QPointF{double(x+5),  10}, QString::number(i * step / 10));
+      painter->drawLine(QLineF{x, double(thickness), x, 0});
     } else if (i % 2 == 0) {
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 10);
+      painter->drawLine(QLineF{x, double(thickness), x, double(thickness - 10)});
     } else {
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 5);
+      painter->drawLine(QLineF{x, double(thickness), x, double(thickness - 5)});
     }
-    x += step * document().scale();
   }
-  x = document().scroll().x();
   for (int i = 0;; i--) {
+    x = x_anchor + i * step * document().scale();
     if (x < 0) {
       break;
     }
-    int x_in_pixel = round(x);
+
     if (i % 10 == 0) {
-      painter->drawText(QPointF{double(x_in_pixel+5),  10}, QString::number(i * step / 10));
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, 0);
+      painter->drawText(QPointF{double(x+5),  10}, QString::number(i * step / 10));
+      painter->drawLine(QLineF{x, double(thickness), x, 0});
     } else if (i % 2 == 0) {
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 10);
+      painter->drawLine(QLineF{x, double(thickness), x, double(thickness - 10)});
     } else {
-      painter->drawLine(x_in_pixel, thickness, x_in_pixel, thickness - 5);
+      painter->drawLine(QLineF{x, double(thickness), x, double(thickness - 5)});
     }
-    x -= step * document().scale();
   }
 
   painter->drawLine(thickness, thickness, canvas().width(), thickness);
@@ -86,41 +86,41 @@ void Ruler::drawVerticalRuler(QPainter *painter, qreal step, int thickness,
   painter->fillRect(QRectF{0, double(thickness), double(thickness), canvas().height() - thickness}, ruler_color);
 
   painter->setPen(line_pen);
-  qreal y = document().scroll().y();
+  qreal y_anchor = document().scroll().y();
+  qreal y;
   for (int i = 0;; i++) {
+    y = y_anchor + i * step * document().scale();
     if (y > canvas().height()) {
       break;
     }
-    int y_in_pixel = round(y);
+
     if (i % 10 == 0) {
       QString verticalValue = TextToVertical(QString::number(i * step / 10));
-      QRect rect{1, y_in_pixel + 5, 10, 100};
+      QRectF rect{1, y + 5, 10, 100};
       painter->drawText(rect, 0, verticalValue);
-      painter->drawLine(thickness, y_in_pixel, 0, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, 0, y});
     } else if (i % 2 == 0) {
-      painter->drawLine(thickness, y_in_pixel, thickness - 10, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, double(thickness - 10), y});
     } else {
-      painter->drawLine(thickness, y_in_pixel, thickness - 5, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, double(thickness - 5), y});
     }
-    y += step * document().scale();
   }
-  y = document().scroll().y();
   for (int i = 0;; i--) {
+    y = y_anchor + i * step * document().scale();
     if (y < 0) {
       break;
     }
-    int y_in_pixel = round(y);
+
     if (i % 10 == 0) {
       QString verticalValue = TextToVertical(QString::number(i * step / 10));
-      QRect rect{1, y_in_pixel + 5, 10, 100};
+      QRectF rect{1, y + 5, 10, 100};
       painter->drawText(rect, 0, verticalValue);
-      painter->drawLine(thickness, y_in_pixel, 0, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, 0, y});
     } else if (i % 2 == 0) {
-      painter->drawLine(thickness, y_in_pixel, thickness - 10, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, double(thickness - 10), y});
     } else {
-      painter->drawLine(thickness, y_in_pixel, thickness - 5, y_in_pixel);
+      painter->drawLine(QLineF{double(thickness), y, double(thickness - 5), y});
     }
-    y -= step * document().scale();
   }
 
   painter->drawLine(thickness, thickness, thickness, canvas().height());
