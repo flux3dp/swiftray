@@ -5,6 +5,10 @@
 
 namespace Controls {
 
+  /**
+   \class Line
+   \brief The Line class represents the drawing control for lines
+   */
   class Line : public CanvasControl {
   public:
     explicit Line(Canvas *canvas) : CanvasControl(canvas) {}
