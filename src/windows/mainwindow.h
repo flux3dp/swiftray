@@ -14,6 +14,7 @@
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
 #include <windows/gcode-player.h>
+#include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
 
@@ -61,6 +62,8 @@ private slots:
 
   void imageSelected(const QImage image);
 
+  void showWelcomeDialog();
+
 private:
 
   void loadWidgets() override;
@@ -77,6 +80,7 @@ private:
   FontPanel *font_panel_;
   LayerPanel *layer_panel_;
   MachineManager *machine_manager_;
+  WelcomeDialog *welcome_dialog_;
   PreferencesWindow *preferences_window_;
 
   void saveFile();

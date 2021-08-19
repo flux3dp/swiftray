@@ -1,13 +1,71 @@
+#include <windows/osxwindow.h>
 #include "machine-settings.h"
 
-MachineSettings::MachineSet MachineSettings::MachineSet::fromJson(const QJsonObject &obj) {
+typedef MachineSettings::MachineSet MachineSet;
+
+QList<MachineSet> MachineSettings::machineDatabase_;
+
+MachineSettings::MachineSettings() {
+  QSettings settings;
+  QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
+  loadJson(obj);
+}
+
+void MachineSettings::loadJson(const QJsonObject &obj) {
+  if (obj["data"].isNull()) {
+    qWarning() << "[MachineSettings] Cannot load machine settings";
+    return;
+  }
+  QJsonArray data = obj["data"].toArray();
+  machines_.clear();
+  for (QJsonValue item : data) {
+    MachineSet machine = MachineSet::fromJson(item.toObject());
+    machines_ << machine;
+  }
+}
+
+QJsonObject MachineSettings::toJson() {
+  QJsonArray data;
+  for (auto &mach : machines_) {
+    data << mach.toJson();
+  }
+  QJsonObject obj;
+  obj["data"] = data;
+  return obj;
+}
+
+QList<MachineSet> &MachineSettings::machines() {
+  return machines_;
+}
+
+void MachineSettings::save() {
+  QSettings settings;
+  settings.setValue("machines/machines", QJsonDocument(toJson()));
+}
+
+QIcon MachineSet::icon() const {
+  if (!isDarkMode()) return QIcon(icon_url);
+  auto img = QImage(icon_url).convertToFormat(QImage::Format::Format_ARGB32);
+  for (int y = 0; y < img.height(); ++y) {
+    for (int x = 0; x < img.width(); ++x) {
+      QRgb color = img.pixel(x, y);
+      color = qRgba(255, 255, 255, qAlpha(color));
+      img.setPixel(x, y, color);
+    }
+  }
+
+  return QIcon(QPixmap::fromImage(img));
+}
+
+MachineSet MachineSet::fromJson(const QJsonObject &obj) {
   MachineSet m;
 
   m.id = obj["id"].toString();
   m.name = obj["name"].toString();
+  m.brand = obj["brand"].toString();
   m.model = obj["model"].toString();
 
-  m.icon = obj["icon"].toString();
+  m.icon_url = obj["icon"].toString();
 
   m.width = obj["width"].toInt();
   m.height = obj["height"].toInt();
@@ -23,7 +81,7 @@ MachineSettings::MachineSet MachineSettings::MachineSet::fromJson(const QJsonObj
   return m;
 }
 
-QJsonObject MachineSettings::MachineSet::toJson() const {
+QJsonObject MachineSet::toJson() const {
   QJsonObject obj;
   obj["id"] = id;
   obj["name"] = name;
@@ -31,10 +89,53 @@ QJsonObject MachineSettings::MachineSet::toJson() const {
   obj["width"] = width;
   obj["height"] = height;
   obj["origin"] = (int) origin;
-  obj["icon"] = icon;
+  obj["icon"] = icon_url;
   obj["homeOnStart"] = home_on_start;
   obj["boardType"] = (int) board_type;
   obj["redPointerOffsetX"] = red_pointer_offset.x();
   obj["redPointerOffsetY"] = red_pointer_offset.y();
   return obj;
+}
+
+QList<MachineSet> MachineSettings::database() {
+  if (machineDatabase_.empty()) {
+    QFile file(":/resources/machines.json");
+    file.open(QFile::ReadOnly);
+    auto data = QJsonDocument::fromJson(file.readAll()).object()["data"].toArray();
+    for (QJsonValue item : data) {
+      MachineSettings::machineDatabase_ << MachineSet::fromJson(item.toObject());
+    }
+  }
+  return MachineSettings::machineDatabase_;
+}
+
+MachineSet MachineSettings::findPreset(QString brand, QString model) {
+  for (MachineSet m : MachineSettings::database()) {
+    if (m.brand == brand && m.model == model) {
+      return m;
+    }
+  }
+  return MachineSet();
+}
+
+QStringList MachineSettings::brands() {
+  QList<QString> result;
+  for (MachineSet m : MachineSettings::database()) {
+    if (!result.contains(m.brand)) {
+      result << m.brand;
+    }
+  }
+  result << tr("Other");
+  return QStringList(result);
+}
+
+QStringList MachineSettings::models(QString brand) {
+  QList<QString> result;
+  for (MachineSet m : MachineSettings::database()) {
+    if (m.brand == brand) {
+      result << m.model;
+    }
+  }
+  result << tr("Other");
+  return QStringList(result);
 }
