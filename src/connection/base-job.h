@@ -33,7 +33,7 @@ public:
 
   virtual void resume();
 
-  virtual float progress();
+  virtual int progress();
 
   Status status();
 

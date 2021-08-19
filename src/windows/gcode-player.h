@@ -31,6 +31,8 @@ public:
 
   void showError(const QString &string);
 
+  void updateProgress();
+
 private:
 
   void loadSettings() override;

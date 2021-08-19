@@ -33,15 +33,20 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Beam Studio Native");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
+  // CLI
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
     return mainCLI(argc, argv);
   }
 
+  // Set app icon
   app.setWindowIcon(QIcon(":/images/icon.png"));
+  
   // Force anti-aliasing
-  QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+  
+  /*QSurfaceFormat format = QSurfaceFormat::defaultFormat();
   format.setSamples(8);
-  QSurfaceFormat::setDefaultFormat(format);
+  QSurfaceFormat::setDefaultFormat(format);*/
+  
   // Set translator
   QTranslator translator;
   const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -56,7 +61,11 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+  
+  // Load Canvas to QML Engine
   qmlRegisterType<Canvas>("Vecty", 1, 0, "Canvas");
+  
+  // Load MainWindow
   MainWindow win;
   win.show();
 #ifdef MACOS
