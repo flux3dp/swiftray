@@ -22,6 +22,8 @@ public:
 
   void start() override;
 
+  void stop() override;
+
   void pause() override;
 
   void resume() override;
@@ -67,5 +69,6 @@ private:
 
   bool pause_flag_;
   bool resume_flag_;
+  bool stop_flag_;
   bool on_hold_;
 };

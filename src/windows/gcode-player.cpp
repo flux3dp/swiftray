@@ -30,14 +30,21 @@ void GCodePlayer::loadSettings() {
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
-    auto job = new SerialJob(this,
-                             ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
-                             ui->gcodeText->toPlainText().split("\n"));
-    jobs_ << job;
-    connect(job, &SerialJob::error, this, &GCodePlayer::showError);
-    connect(job, &SerialJob::progressChanged, this, &GCodePlayer::updateProgress);
-    job->start();
-    ui->pauseBtn->setEnabled(true);
+    if (!jobs_.isEmpty() && jobs_.last()->status() == SerialJob::Status::RUNNING) {
+      jobs_.last()->stop();
+      ui->pauseBtn->setEnabled(false);
+      ui->executeBtn->setText(tr("Execute"));
+    } else {
+      auto job = new SerialJob(this,
+                              ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
+                              ui->gcodeText->toPlainText().split("\n"));
+      jobs_ << job;
+      connect(job, &SerialJob::error, this, &GCodePlayer::showError);
+      connect(job, &SerialJob::progressChanged, this, &GCodePlayer::updateProgress);
+      job->start();
+      ui->pauseBtn->setEnabled(true);
+      ui->executeBtn->setText(tr("Stop"));
+    }
   });
 
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
@@ -62,6 +69,9 @@ void GCodePlayer::showError(const QString &msg) {
   msgbox.setText("Serial Port Error");
   msgbox.setInformativeText(msg);
   msgbox.exec();
+  ui->pauseBtn->setEnabled(false);
+  ui->executeBtn->setText(tr("Execute"));
+  ui->pauseBtn->setText(tr("Pause"));
 }
 
 void GCodePlayer::updateProgress() {

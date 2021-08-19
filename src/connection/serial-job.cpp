@@ -14,6 +14,7 @@ SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant gcode) :
   grbl_ready_ = false;
   pause_flag_ = false;
   resume_flag_ = false;
+  stop_flag_ = false;
   on_hold_ = false;
   connect(this, &SerialJob::startConnection, this, &SerialJob::startTimer);
   connect(this, &SerialJob::successConnection, this, &SerialJob::stopTimer);
@@ -45,6 +46,10 @@ void SerialJob::pause() {
 
 void SerialJob::resume() {
   resume_flag_ = true;
+}
+
+void SerialJob::stop() {
+  stop_flag_ = true;
 }
 
 void SerialJob::run() {
@@ -98,6 +103,15 @@ void SerialJob::run() {
       block_buffer_ += 1;
       resume_flag_ = false;
       on_hold_ = false;
+    } else if (stop_flag_) {
+      setStatus(Status::STOPPED);
+      serial_->write("\x18");
+      serial_->waitForReadyRead(wait_timeout_);
+      qInfo() << "[SerialPort] Serial Port Stop";
+      stop_flag_ = false;
+      progressValue_ = 0;
+      emit progressChanged();
+      break;
     }
     if (on_hold_) continue;
     const QByteArray data = QString(gcode_[current_line_] + "\n").toUtf8();

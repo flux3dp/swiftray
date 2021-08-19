@@ -17,6 +17,8 @@ int BaseJob::progress() { return 1; };
 
 void BaseJob::start() {};
 
+void BaseJob::stop() {};
+
 void BaseJob::pause() {};
 
 void BaseJob::resume() {};
