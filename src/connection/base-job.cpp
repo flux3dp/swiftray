@@ -13,7 +13,7 @@ void BaseJob::setStatus(BaseJob::Status status) {
   status_ = status;
 }
 
-float BaseJob::progress() { return 1.0; };
+int BaseJob::progress() { return 1; };
 
 void BaseJob::start() {};
 
