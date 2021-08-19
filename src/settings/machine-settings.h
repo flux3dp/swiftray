@@ -21,8 +21,8 @@ public:
       FrontRight
     };
     enum class BoardType {
-      FLUX_2020,
       GRBL_2020,
+      FLUX_2020,
       M2NANO_7,
       RUIDA_2020
     };

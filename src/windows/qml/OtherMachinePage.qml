@@ -42,6 +42,20 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             width: parent.width / 2
 
+            RowLayout {
+
+                Text {
+                    text: qsTr("Name")
+                    font.pixelSize: 12
+                    Layout.preferredWidth: 60
+                }
+
+                TextField {
+                    id: textBoxName
+                    text: "My Machine"
+                    Layout.preferredWidth: 150
+                }
+            }
 
             RowLayout {
 
@@ -142,7 +156,6 @@ Item {
         }
 
 
-
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -162,7 +175,11 @@ Item {
             highlighted: true
             Layout.alignment: Qt.AlignHCenter
             onHoveredChanged: opacity = hovered ? 0.8 : 1
-            onClicked: stackView.push(setupSuccessfulPage)
+            onClicked: {
+                createOtherProfile(textBoxName.text, spinBoxWidth.value, spinBoxHeight.value,
+                                   topLeft.checked ? 0 : (topRight.checked ? 1 : (bottomLeft.checked ? 2 : 3)));
+                stackView.push(setupSuccessfulPage)
+            }
             Layout.preferredWidth: 220
         }
 

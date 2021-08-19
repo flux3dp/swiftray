@@ -8,7 +8,7 @@
       "height": 210,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 1
     },
     {
       "brand": "FLUX",
@@ -18,7 +18,7 @@
       "height": 375,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 1
     },
     {
       "brand": "FLUX",
@@ -28,7 +28,7 @@
       "height": 375,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 1
     },
     {
       "brand": "Ortur",

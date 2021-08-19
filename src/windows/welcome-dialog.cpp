@@ -20,17 +20,25 @@ WelcomeDialog::WelcomeDialog(QWidget *parent) :
 
 void WelcomeDialog::createStandardProfile(const QString brand, const QString model) {
   qInfo() << "Standard Profile" << brand << model;
-  MachineSettings::MachineSet newMach = MachineSettings::findPreset(brand, model);
-  assert(!newMach.brand.isEmpty());
-  MachineSettings m;
-  newMach.name = brand + " " + model;
-  m.machines() << newMach;
-  m.save();
+  auto m = MachineSettings::findPreset(brand, model);
+  assert(!m.brand.isEmpty());
+  MachineSettings settings;
+  m.name = brand + " " + model;
+  settings.machines() << m;
+  settings.save();
   emit settingsChanged();
 }
 
 void WelcomeDialog::createOtherProfile(const QString name, int width, int height, int origin) {
   qInfo() << "Other Profile" << name << width << height << origin;
+  MachineSettings settings;
+  MachineSettings::MachineSet m;
+  m.name = name;
+  m.width = width;
+  m.height = height;
+  m.origin = (MachineSettings::MachineSet::OriginType) origin;
+  settings.machines() << m;
+  settings.save();
   emit settingsChanged();
 }
 

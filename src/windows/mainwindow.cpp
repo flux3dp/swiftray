@@ -339,8 +339,7 @@ bool isDarkMode() {
 }
 
 void MainWindow::showWelcomeDialog() {
-  MachineSettings m;
-  if (!m.machines().empty()) return;
+  if (!MachineSettings().machines().empty()) return;
   QTimer::singleShot(0, [=]() {
     welcome_dialog_->show();
     welcome_dialog_->activateWindow();
