@@ -30,7 +30,7 @@ namespace Controls {
     virtual void paint(QPainter *painter);
 
     /**
-    Return if the control is active in current canvas state
+    * Return if the control is active in current canvas state
     */
     virtual bool isActive();
 
