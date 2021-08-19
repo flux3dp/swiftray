@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <QMenu>
 #include <layer.h>
 
 namespace Ui {
@@ -29,7 +30,19 @@ private:
 
   void registerEvents();
 
+  void setContextMenu();
+
+  void showPopMenu(const QPoint& );
+
+  void onLockLayer();
+
+  void onUnlockLayer();
+
   Canvas *canvas_;
+  QMenu *popMenu_;
+  QAction *lockLayerAction_;
+  QAction *unlockLayerAction_;
+
   Ui::LayerListItem *ui;
   bool active_;
 };

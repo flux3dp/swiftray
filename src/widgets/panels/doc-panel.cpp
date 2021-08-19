@@ -1,9 +1,10 @@
-#include "doc-panel.h"
-#include "ui_doc-panel.h"
+#include <QImage>
+#include <QIcon>
 #include <settings/machine-settings.h>
 #include <settings/preset-settings.h>
 #include <windows/mainwindow.h>
-
+#include "doc-panel.h"
+#include "ui_doc-panel.h"
 
 DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -26,8 +27,9 @@ void DocPanel::loadSettings() {
   MachineSettings machine_settings;
   QString current_machine = settings.value("defaultMachine").toString();
   ui->machineComboBox->clear();
-  for (auto &mach : machine_settings.machines_) {
-    ui->machineComboBox->addItem(QIcon(mach.icon), " " + mach.name, mach.toJson());
+  for (auto &mach : machine_settings.machines()) {
+    if (mach.name.isEmpty()) continue;
+    ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
   }
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();

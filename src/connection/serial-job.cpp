@@ -35,8 +35,8 @@ void SerialJob::start() {
   }
 }
 
-float SerialJob::progress() {
-  return current_line_ / gcode_.size();
+int SerialJob::progress() {
+  return progressValue_;
 }
 
 void SerialJob::pause() {
@@ -107,6 +107,9 @@ void SerialJob::run() {
     serial_->waitForBytesWritten(wait_timeout_);
     serial_->waitForReadyRead(wait_timeout_);
     current_line_++;
+    progressValue_ = (int)(100 * current_line_ / gcode_.size());
+
+    emit progressChanged();
   }
   while (block_buffer_ > 0) {
     qInfo() << "[SerialPort] All sent - waiting buffer to be cleared - left" << block_buffer_;
@@ -125,7 +128,7 @@ void SerialJob::receive() {
   QString resp_str = QString::fromUtf8(resp_data);
   int processed_chars = 0;
   for (int i = 0; i < resp_str.length(); i++) {
-    if (resp_str[i] == "\n") {
+    if (resp_str[i] == '\n') {
       parseResponse(resp_str.right(resp_str.length() - processed_chars).left(i - processed_chars));
       processed_chars = i + 1;
     }

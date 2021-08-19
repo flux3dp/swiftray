@@ -398,8 +398,25 @@ void Transform::reset() {
 }
 
 bool Transform::keyPressEvent(QKeyEvent *e) {
-  /// Transform box does not handle all key events
-  return false;
+  switch (e->key()) {
+    case Qt::Key::Key_Up:
+      translate_to_apply_ = QPointF(0, e->isAutoRepeat() ? -10 : -1);
+      break;
+    case Qt::Key::Key_Down:
+      translate_to_apply_ = QPointF(0, e->isAutoRepeat() ? 10 : 1);
+      break;
+    case Qt::Key::Key_Left:
+      translate_to_apply_ = QPointF(e->isAutoRepeat() ? -10 : -1, 0);
+      break;
+    case Qt::Key::Key_Right:
+      translate_to_apply_ = QPointF(e->isAutoRepeat() ? 10 : 1, 0);
+      break;
+    default:
+      return false;
+  }
+  applyMove();
+  emit canvas().transformChanged(x(), y(), rotation(), width(), height());
+  return true;
 }
 
 bool Transform::isScaleLock() const {

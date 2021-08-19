@@ -54,6 +54,8 @@ public:
 
   Type type() const;
 
+  bool isLocked() const;
+
   bool isVisible() const;
 
   bool isUseDiode() const;
@@ -89,6 +91,8 @@ public:
 
   void setType(Type type);
 
+  void setLocked(bool isLocked);
+
   void setVisible(bool visible);
 
   void setStepHeight(double step_height);
@@ -107,6 +111,7 @@ private:
   QList<ShapePtr> children_;
   Type type_;
   bool use_diode_;
+  bool is_locked_;
   bool is_visible_;
   double target_height_;
   double step_height_;

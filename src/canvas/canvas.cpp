@@ -18,6 +18,7 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_transform_(Controls::Transform(this)),
        ctrl_select_(Controls::Select(this)),
        ctrl_grid_(Controls::Grid(this)),
+       ctrl_ruler_(Controls::Ruler(this)),
        ctrl_line_(Controls::Line(this)),
        ctrl_oval_(Controls::Oval(this)),
        ctrl_path_draw_(Controls::PathDraw(this)),
@@ -108,6 +109,9 @@ void Canvas::paint(QPainter *painter) {
   }
 
   painter->restore();
+
+  ctrl_ruler_.paint(painter);
+
   // Calculate FPS
   fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
   painter->setPen(Qt::black);
@@ -126,35 +130,6 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyPressEvent(e))
       return;
-  }
-
-  if (e->key() == Qt::Key::Key_Up) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(0, -10);
-    } else {
-      editRelativeMove(0, -1);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Down) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(0, 10);
-    } else {
-      editRelativeMove(0, 1);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Left) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(-10, 0);
-    } else {
-      editRelativeMove(-1, 0);
-    }
-  }
-  if (e->key() == Qt::Key::Key_Right) {
-    if (e->isAutoRepeat()) {
-      editRelativeMove(10, 0);
-    } else {
-      editRelativeMove(1, 0);
-    }
   }
 
   if (e->key() == Qt::Key::Key_Delete || e->key() == Qt::Key::Key_Backspace ||
@@ -245,8 +220,10 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
  */
 QPointF Canvas::getTopLeftScrollBoundary() {
 
-  qreal scrollX_max = 1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
-  qreal scrollY_max = 1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
+  qreal scrollX_max =
+       1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
+  qreal scrollY_max =
+       1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
 
   return QPointF{scrollX_max, scrollY_max};
 }
@@ -256,8 +233,10 @@ QPointF Canvas::getTopLeftScrollBoundary() {
  * @return  lower bound value (negative value) for document scroll
  */
 QPointF Canvas::getBottomRightScrollBoundary() {
-  qreal scrollX_min = (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
-  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(), 2 * document().height() * document().scale() - height());
+  qreal scrollX_min =
+       (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
+  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(),
+                                 2 * document().height() * document().scale() - height());
 
   return QPointF{scrollX_min, scrollY_min};
 }
@@ -317,7 +296,7 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        double new_scale = max(0.1, document().scale() + nge->value() / 2);
+        double new_scale = min(30.0, max(0.1, document().scale() + nge->value() / 2));
         document().setScale(new_scale);
 
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
@@ -378,19 +357,6 @@ void Canvas::editDelete() {
   );
 }
 
-void Canvas::editRelativeMove(qreal dx, qreal dy) {
-  if (mode() != Mode::Selecting)
-    return;
-
-  auto cmd = Commands::Joined();
-  for (auto &shape : document().selections()) {
-    QTransform new_transform = QTransform().translate(dx, dy);
-    cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
-  }
-  document().execute(cmd);
-  emit selectionsChanged();
-}
-
 void Canvas::editUndo() {
   QElapsedTimer t;
   t.start();
@@ -409,6 +375,10 @@ void Canvas::editRedo() {
 }
 
 void Canvas::editDrawRect() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::RectDrawing);
 }
@@ -419,21 +389,37 @@ void Canvas::editDrawPolygon() {
 }
 
 void Canvas::editDrawOval() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::OvalDrawing);
 }
 
 void Canvas::editDrawLine() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::LineDrawing);
 }
 
 void Canvas::editDrawPath() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::PathDrawing);
 }
 
 void Canvas::editDrawText() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::TextDrawing);
 }

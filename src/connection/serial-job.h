@@ -26,13 +26,15 @@ public:
 
   void resume() override;
 
-  float progress() override;
+  int progress() override;
 
 signals:
 
   void startConnection();
 
   void successConnection();
+
+  void progressChanged();
 
 private slots:
 
@@ -60,6 +62,7 @@ private:
   int baudrate_;
   int block_buffer_;
   int current_line_;
+  int progressValue_;
   unsigned long int wait_timeout_ = 1000;
 
   bool pause_flag_;

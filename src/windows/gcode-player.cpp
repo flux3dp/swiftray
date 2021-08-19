@@ -35,6 +35,7 @@ void GCodePlayer::registerEvents() {
                              ui->gcodeText->toPlainText().split("\n"));
     jobs_ << job;
     connect(job, &SerialJob::error, this, &GCodePlayer::showError);
+    connect(job, &SerialJob::progressChanged, this, &GCodePlayer::updateProgress);
     job->start();
     ui->pauseBtn->setEnabled(true);
   });
@@ -61,6 +62,11 @@ void GCodePlayer::showError(const QString &msg) {
   msgbox.setText("Serial Port Error");
   msgbox.setInformativeText(msg);
   msgbox.exec();
+}
+
+void GCodePlayer::updateProgress() {
+  ui->progressBarLabel->setText(QString::number(jobs_.last()->progress())+"%");
+  ui->progressBar->setValue(jobs_.last()->progress());
 }
 
 void GCodePlayer::setGCode(const QString &gcode) {

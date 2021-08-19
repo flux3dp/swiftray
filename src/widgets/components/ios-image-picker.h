@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef Q_OS_IOS
+
 #include <QObject>
 #include <QImage>
 
@@ -17,3 +19,5 @@ signals:
 
   void imageSelected(const QImage image);
 };
+
+#endif

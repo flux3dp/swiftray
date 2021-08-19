@@ -153,3 +153,7 @@ TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/opt/libxml2/include/* \
              /usr/local/include/boost/* \
              /Users/simon/Dev/qt5/qtbase/*
+
+
+QML_IMPORT_PATH = src/windows \
+                  src/windows/qml
