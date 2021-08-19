@@ -5,10 +5,6 @@
 
 namespace Controls {
 
-  /**
-   \class Oval
-   \brief The Oval class represents the drawing control for ovals
-   */
   class Oval : public CanvasControl {
   public:
     explicit Oval(Canvas *canvas) : CanvasControl(canvas) {}

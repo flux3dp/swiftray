@@ -7,11 +7,12 @@
 
 class Canvas;
 
+
+/**
+  \namespace Controls
+  \brief In-canvas controls with its own painting and event handling functions.
+*/
 namespace Controls {
-  /**
-   \class CanvasControl
-   \brief The CanvasControl class represents a interactive / display component inside a canvas.
-   */
   class CanvasControl : public QObject {
   Q_OBJECT
   public:
@@ -29,9 +30,7 @@ namespace Controls {
 
     virtual void paint(QPainter *painter);
 
-    /**
-    * Return if the control is active in current canvas state
-    */
+    // Return if the control is active in the correct mode
     virtual bool isActive();
 
     virtual void exit();
