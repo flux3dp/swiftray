@@ -10,13 +10,13 @@ class Document;
 
 /**
     \namespace Commands
-    \brief Undoable commands.
+    \brief A command represent a scene operation with undo/redo implementation.
 */
 namespace Commands {
 
   /**
       \class BaseCmd
-      \brief A class template for undoable commands, along with undo() / redo() implementation
+      \brief BaseCmd represents the template for all commands
   */
   class BaseCmd {
   public:
@@ -38,7 +38,7 @@ namespace Commands {
 
   /**
       \class AddLayerCmd
-      \brief Command for adding layers.
+      \brief AddLayerCmd add layers and manages lifecycles of layers.
   */
   class AddLayerCmd : public BaseCmd {
   public:
@@ -53,7 +53,7 @@ namespace Commands {
 
   /**
       \class RemoveLayerCmd
-      \brief Command for removing layers.
+      \brief RemoveLayerCmd remove layers and manages lifecycles of layers.
   */
   class RemoveLayerCmd : public BaseCmd {
   public:
@@ -68,8 +68,7 @@ namespace Commands {
 
   /**
       \class AddShapeCmd
-      \brief Command for adding shapes.
-      The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
+      \brief AddShapeCmd adds shapes and manages lifecycles of shapes.
   */
   class AddShapeCmd : public BaseCmd {
   public:
@@ -86,8 +85,7 @@ namespace Commands {
 
   /**
       \class RemoveShapeCmd
-      \brief Command for removing shapes.
-      The command needs to manage shapes' lifecycle, but doesn't need to manage layers' lifecycle
+      \brief RemoveShapeCmd removes shapes and manages lifecycles of shapes
   */
   class RemoveShapeCmd : public BaseCmd {
   public:
@@ -107,7 +105,7 @@ namespace Commands {
 
   /**
       \class SelectCmd
-      \brief Command for selection changes in document.
+      \brief SelectCmd change selections.
   */
   class SelectCmd : public BaseCmd {
   public:
@@ -124,7 +122,7 @@ namespace Commands {
 
   /**
       \class JoinedCmd
-      \brief A group of commands that can be considered as a single step in undo/redo
+      \brief JoinedCmd represents <b>a group of commands</b> that can be considered as a single step in undo/redo
   */
   class JoinedCmd : public BaseCmd {
   public:
@@ -146,7 +144,7 @@ namespace Commands {
 
   /**
       \class SetCmd
-      \brief Command for changing objects' property, and the property can be "passed by value"
+      \brief SetCmd changes a property of an object, and the property can be <b>passed by value</b>
   */
   template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
        PropType)>
@@ -174,7 +172,7 @@ namespace Commands {
 
   /**
       \class SetRefCmd
-      \brief Command for changing objects' property, and the property is usually "passed by reference"
+      \brief SetRef changes a property of an object, and the property is usually <b>passed by reference</b>
   */
   template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
        const PropType &)>
@@ -241,6 +239,8 @@ namespace Commands {
   constexpr CmdPtr (*SetRotation)(Shape *, qreal) =
   &Set<Shape, qreal, &TextShape::rotation, &TextShape::setRotation>;
 
+
+  // Construct the command object within namespace functions for better readability in other places
   CmdPtr AddShape(Layer *layer, const ShapePtr &shape);
 
   CmdPtr RemoveShape(const ShapePtr &shape);

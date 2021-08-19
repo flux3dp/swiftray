@@ -10,9 +10,20 @@
 #include <QIcon>
 #include <QStringList>
 
+
+/**
+ *  \class MachineSettings
+ *  \brief Manage machine settings
+ *
+ *  MachineSettings automatically load app settings when constructed.
+*/
 class MachineSettings : public QObject {
 Q_OBJECT
 public:
+  /**
+      \class MachineSet
+      \brief The MachineSet class represents a machine config that stores name, width, height... etc
+  */
   struct MachineSet {
     enum class OriginType {
       RearLeft,

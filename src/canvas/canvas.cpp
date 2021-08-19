@@ -250,12 +250,12 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF bottom_right_bound = getBottomRightScrollBoundary();
   if (e->pixelDelta().x() > 0 && newScrollX > top_left_bound.x()) {
     newScrollX = top_left_bound.x();
-  } else if (e->pixelDelta().x() < 0 && newScrollX < bottom_right_bound.x() ) {
+  } else if (e->pixelDelta().x() < 0 && newScrollX < bottom_right_bound.x()) {
     newScrollX = bottom_right_bound.x();
   }
   if (e->pixelDelta().y() > 0 && newScrollY > top_left_bound.y()) {
     newScrollY = top_left_bound.y();
-  } else if (e->pixelDelta().y() < 0 && newScrollY < bottom_right_bound.y() ) {
+  } else if (e->pixelDelta().y() < 0 && newScrollY < bottom_right_bound.y()) {
     newScrollY = bottom_right_bound.y();
   }
 
@@ -306,12 +306,12 @@ bool Canvas::event(QEvent *e) {
         QPointF bottom_right_bound = getBottomRightScrollBoundary();
         if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
           new_scroll.setX(top_left_bound.x());
-        } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x() ) {
+        } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
           new_scroll.setX(bottom_right_bound.x());
         }
         if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
           new_scroll.setY(top_left_bound.y());
-        } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y() ) {
+        } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
           new_scroll.setY(bottom_right_bound.y());
         }
 

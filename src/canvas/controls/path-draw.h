@@ -7,6 +7,10 @@ namespace Controls {
 
   constexpr QPointF invalid_point(-1, -1);
 
+  /**
+   \class PathDraw
+   \brief The PathDraw class represents the drawing control for paths (drawing only)
+   */
   class PathDraw : public CanvasControl {
   public:
     explicit PathDraw(Canvas *canvas);

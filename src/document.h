@@ -14,7 +14,7 @@ class DocumentSerializer;
 
 /**
   \class Document
-  \brief Document state store for layers, shapes, document specfic settings and current view state.
+  \brief The Document class represents a store for layers, shapes, document settings and editing states.
 */
 class Document : public QObject {
 Q_OBJECT
