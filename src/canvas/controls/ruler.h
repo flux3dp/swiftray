@@ -15,7 +15,7 @@ namespace Controls {
 
     private:
         qreal getScaleStep();
-        void drawHorizontalRuler(QPainter *painter, qreal step, int thickness);
-        void drawVerticalRuler(QPainter *painter, qreal step, int thickness);
+        void drawHorizontalRuler(QPainter *painter, qreal step, int thickness, const QPen& line_pen, const QColor& ruler_color);
+        void drawVerticalRuler(QPainter *painter, qreal step, int thickness, const QPen& line_pen, const QColor& ruler_color);
     };
 }
