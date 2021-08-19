@@ -12,12 +12,7 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
-
-#ifdef Q_OS_IOS
-
 #include <widgets/components/ios-image-picker.h>
-
-#endif
 
 #include "ui_mainwindow.h"
 
@@ -31,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
   initializeContainer();
   updateMode();
   updateSelections();
+  showWelcomeDialog();
 }
 
 void MainWindow::loadSettings() {
@@ -69,7 +65,7 @@ void MainWindow::loadStyles() {
        ui->toolBarFlip
   };
   for (QToolBar *toolbar : toolbars) {
-    for (QAction *action: toolbar->actions()) {
+    for (QAction *action : toolbar->actions()) {
       auto name = action->objectName().mid(6).toLower();
       action->setIcon(QIcon(
            (isDarkMode() ? ":/images/dark/icon-" : ":/images/icon-") + name
@@ -108,6 +104,7 @@ void MainWindow::openImageFile() {
     emit canvas_->modeChanged();
     return;
   }
+
 #ifdef Q_OS_IOS
   // TODO (Possible leak here?)
   ImagePicker *p = new ImagePicker();
@@ -191,48 +188,23 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::updateMode() {
-  // TODO: use action group to do button state exclusive
-  ui->actionSelect->setChecked(false);
-  ui->actionRect->setChecked(false);
-  ui->actionLine->setChecked(false);
-  ui->actionOval->setChecked(false);
-  ui->actionPath->setChecked(false);
-  ui->actionText->setChecked(false);
-  ui->actionPolygon->setChecked(false);
-
-  switch (canvas_->mode()) {
-    case Canvas::Mode::Selecting:
-    case Canvas::Mode::MultiSelecting:
-      ui->actionSelect->setChecked(true);
-      break;
-
-    case Canvas::Mode::LineDrawing:
-      ui->actionLine->setChecked(true);
-      break;
-
-    case Canvas::Mode::RectDrawing:
-      ui->actionRect->setChecked(true);
-      break;
-
-    case Canvas::Mode::OvalDrawing:
-      ui->actionOval->setChecked(true);
-      break;
-
-    case Canvas::Mode::PathDrawing:
-      ui->actionPath->setChecked(true);
-      break;
-
-    case Canvas::Mode::TextDrawing:
-      ui->actionText->setChecked(true);
-      break;
-
-    case Canvas::Mode::PolygonDrawing:
-      ui->actionPolygon->setChecked(true);
-      break;
-
-    default:
-      break;
+  for (QAction *action : ui->toolBar->actions()) {
+    action->setChecked(false);
   }
+
+  const map<Canvas::Mode, QAction *> actionMap = {
+       {Canvas::Mode::Selecting,      ui->actionSelect},
+       {Canvas::Mode::MultiSelecting, ui->actionSelect},
+       {Canvas::Mode::LineDrawing,    ui->actionLine},
+       {Canvas::Mode::RectDrawing,    ui->actionRect},
+       {Canvas::Mode::OvalDrawing,    ui->actionOval},
+       {Canvas::Mode::PathDrawing,    ui->actionPath},
+       {Canvas::Mode::TextDrawing,    ui->actionText},
+       {Canvas::Mode::PolygonDrawing, ui->actionPolygon},
+  };
+
+  auto actionIter = actionMap.find(canvas_->mode());
+  if (actionIter != actionMap.end()) actionIter->second->setChecked(true);
 }
 
 void MainWindow::updateSelections() {
@@ -275,6 +247,7 @@ void MainWindow::loadWidgets() {
   doc_panel_ = new DocPanel(ui->documentDock, this);
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
+  welcome_dialog_ = new WelcomeDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -323,16 +296,12 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHLeft, &QAction::triggered, canvas_, &Canvas::editAlignHLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
-
+  connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
+  connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
-
   // Complex callbacks
-  connect(ui->actionPreferences, &QAction::triggered, [=]() {
-    preferences_window_->show();
-  });
-
-  connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
-    machine_manager_->show();
+  connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
+    emit machineSettingsChanged();
   });
   connect(ui->actionExportGcode, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
@@ -344,7 +313,6 @@ void MainWindow::registerEvents() {
     exporter.convertStack(canvas_->document().layers());
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   });
-
   connect(canvas_, &Canvas::cursorChanged, [=](Qt::CursorShape cursor) {
     if (cursor == Qt::ArrowCursor) {
       unsetCursor();
@@ -370,4 +338,14 @@ bool isDarkMode() {
   return isOSXDarkMode();
 #endif
   return false;
+}
+
+void MainWindow::showWelcomeDialog() {
+  MachineSettings m;
+  if (!m.machines().empty()) return;
+  QTimer::singleShot(0, [=]() {
+    welcome_dialog_->show();
+    welcome_dialog_->activateWindow();
+    welcome_dialog_->raise();
+  });
 }

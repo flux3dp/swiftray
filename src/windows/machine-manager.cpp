@@ -23,13 +23,12 @@ MachineManager::~MachineManager() {
 
 void MachineManager::loadSettings() {
   MachineSettings settings;
-  qInfo() << "Settings" << settings.toJson();
   ui->machineList->clear();
-  for (auto &machine : settings.machines_) {
+  for (auto &machine : settings.machines()) {
     QListWidgetItem *param_item = new QListWidgetItem;
     param_item->setData(Qt::UserRole, machine.toJson());
     param_item->setText(machine.name);
-    param_item->setIcon(QIcon(machine.icon));
+    param_item->setIcon(machine.icon());
     ui->machineList->addItem(param_item);
   }
 }
@@ -53,7 +52,7 @@ void MachineManager::registerEvents() {
     auto machine = dialog->machine();
     machine_item->setData(Qt::UserRole, machine.toJson());
     machine_item->setText(machine.name);
-    machine_item->setIcon(QIcon(machine.icon));
+    machine_item->setIcon(machine.icon());
     ui->machineList->addItem(machine_item);
   });
 
@@ -69,7 +68,6 @@ void MachineManager::registerEvents() {
     auto mach = MachineSettings::MachineSet::fromJson(obj);
     ui->editorTabs->setEnabled(true);
     ui->nameLineEdit->setText(mach.name);
-    ui->modelComboBox->setCurrentText(mach.model);
     ui->widthSpinBox->setValue(mach.width);
     ui->heightSpinBox->setValue(mach.height);
     ui->controllerComboBox->setCurrentIndex((int) mach.board_type);
@@ -143,10 +141,15 @@ void MachineManager::originChanged(MachineSettings::MachineSet::OriginType origi
 
 void MachineManager::save() {
   MachineSettings settings;
-  settings.machines_.clear();
+  settings.machines().clear();
   for (int i = 0; i < ui->machineList->count(); i++) {
     auto data = ui->machineList->item(i)->data(Qt::UserRole).toJsonObject();
-    settings.machines_ << MachineSettings::MachineSet::fromJson(data);
+    settings.machines() << MachineSettings::MachineSet::fromJson(data);
   }
   settings.save();
+}
+
+void MachineManager::show() {
+  loadSettings();
+  QDialog::show();
 }

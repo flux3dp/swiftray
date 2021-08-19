@@ -205,42 +205,6 @@
           </layout>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
-           <property name="bottomMargin">
-            <number>3</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="modelLabel">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-               <horstretch>1</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>Model</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QComboBox" name="modelComboBox">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-               <horstretch>2</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="editable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <property name="rightMargin">
             <number>0</number>
@@ -325,22 +289,7 @@
              </property>
              <item>
               <property name="text">
-               <string>FLUX</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
                <string>GRBL</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>M2NANO</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>RUIDA</string>
               </property>
              </item>
             </widget>

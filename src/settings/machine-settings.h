@@ -8,8 +8,10 @@
 #include <QJsonDocument>
 #include <QPointF>
 #include <QIcon>
+#include <QStringList>
 
-class MachineSettings {
+class MachineSettings : public QObject {
+Q_OBJECT
 public:
   struct MachineSet {
     enum class OriginType {
@@ -27,8 +29,9 @@ public:
   public:
     QString id;
     QString name;
+    QString brand;
     QString model;
-    QString icon;
+    QString icon_url;
 
     BoardType board_type;
     OriginType origin;
@@ -37,50 +40,33 @@ public:
     bool home_on_start;
     QPointF red_pointer_offset;
 
-
-    // Functions
     static MachineSet fromJson(const QJsonObject &obj);
 
     QJsonObject toJson() const;
+
+    QIcon icon() const;
   };
 
-  MachineSettings() {
-    QSettings settings;
-    QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
-    loadJson(obj);
-  }
+  MachineSettings();
 
-  void loadJson(const QJsonObject &obj) {
-    if (obj["data"].isNull()) {
-      qWarning() << "[MachineSettings] Cannot load machine settings";
-      return;
-    }
-    QJsonArray data = obj["data"].toArray();
-    machines_.clear();
-    for (QJsonValue item : data) {
-      MachineSet machine = MachineSet::fromJson(item.toObject());
-      machines_ << machine;
-    }
-  }
+  QList<MachineSet> &machines();
 
-  QJsonObject toJson() {
-    QJsonArray data;
-    for (auto &mach : machines_) {
-      data << mach.toJson();
-    }
-    QJsonObject obj;
-    obj["data"] = data;
-    return obj;
-  }
+  void save();
 
-  const QList<MachineSet> &machines() {
-    return machines_;
-  }
+  static MachineSet findPreset(QString brand, QString model);
 
-  void save() {
-    QSettings settings;
-    settings.setValue("machines/machines", QJsonDocument(toJson()));
-  }
+  static QList<MachineSet> database();
+
+  Q_INVOKABLE static QStringList brands();
+
+  Q_INVOKABLE static QStringList models(QString brand);
+
+private:
+  static QList<MachineSet> machineDatabase_;
+
+  void loadJson(const QJsonObject &obj);
+
+  QJsonObject toJson();
 
   QList<MachineSet> machines_;
 };
