@@ -21,14 +21,9 @@
 #include <parser/svgpp-parser.h>
 #include <gcode/generators/preview-generator.h>
 
-/**
-  \class Canvas
-  \brief The Canvas class represents a canvas that display shapes and handle interactive events with its controls
-
-  The canvas should be designed to handle multiple documents,
+/*The canvas should be designed to handle multiple documents,
   carefully choose what properties you want to put in the canvas,
-  and what properties you want to put in the document.
-*/
+  and what properties you want to put in the document. */
 class Canvas : public QQuickPaintedItem {
 Q_OBJECT
   QML_ELEMENT

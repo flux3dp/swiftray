@@ -36,6 +36,7 @@ void CacheStack::update() {
   }
 }
 
+// Categorize the shapes to different cache group
 void CacheStack::addShape(Shape *shape) {
   CacheType cache_type;
   auto layer_type = isLayer() ? layer_->type() : group_->layer()->type();
@@ -88,6 +89,7 @@ void CacheStack::Cache::addShape(Shape *shape) {
   shapes_.push_back(shape);
 }
 
+// CacheFragment merging all path shape into one joined path
 void CacheStack::Cache::merge(const QTransform &global_transform) {
   if (type_ > Type::NonSelectedFilledPaths) return;
   const QRectF &screen_rect = stack_->document().screenRect();

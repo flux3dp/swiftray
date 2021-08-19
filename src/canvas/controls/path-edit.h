@@ -6,10 +6,6 @@
 
 namespace Controls {
 
-  /**
-   \class PathEdit
-   \brief The PathEdit class represents the editing control for PathShape (slightly diffrent from the PathDraw)
-   */
   class PathEdit : public CanvasControl {
   public:
     class PathNode {
