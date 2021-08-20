@@ -4,9 +4,14 @@
 #include <gcode/generators/preview-generator.h>
 #include <widgets/base-container.h>
 
+#include <QGraphicsView>
+#include <QGestureEvent>
+
+
 namespace Ui {
   class PreviewWindow;
 }
+
 
 class PreviewWindow : public QDialog, BaseContainer {
 Q_OBJECT
@@ -16,8 +21,6 @@ public:
   explicit PreviewWindow(QWidget *parent = nullptr);
 
   ~PreviewWindow();
-
-  void paintEvent(QPaintEvent *event) override;
 
   PreviewGenerator *previewPath() const;
 
@@ -30,4 +33,5 @@ private:
   Ui::PreviewWindow *ui;
   int progress_;
   std::shared_ptr<PreviewGenerator> preview_path_;
+  QGraphicsView* path_graphics_view_;
 };
