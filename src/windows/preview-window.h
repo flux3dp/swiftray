@@ -26,6 +26,8 @@ public:
 
   void setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_path);
 
+  void setRequiredTime(const QString &required_time);
+
 private:
 
   void registerEvents() override;

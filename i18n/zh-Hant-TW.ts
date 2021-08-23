@@ -169,23 +169,25 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="140"/>
-        <location filename="../src/windows/gcode-player.cpp" line="36"/>
+        <location filename="../src/windows/gcode-player.cpp" line="37"/>
+        <location filename="../src/windows/gcode-player.cpp" line="74"/>
         <source>Execute</source>
         <translation>送出工作</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="156"/>
-        <location filename="../src/windows/gcode-player.cpp" line="59"/>
+        <location filename="../src/windows/gcode-player.cpp" line="58"/>
+        <location filename="../src/windows/gcode-player.cpp" line="75"/>
         <source>Pause</source>
         <translation type="unfinished">暫停工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="48"/>
+        <location filename="../src/windows/gcode-player.cpp" line="47"/>
         <source>Stop</source>
         <translation type="unfinished">停止工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="56"/>
+        <location filename="../src/windows/gcode-player.cpp" line="55"/>
         <source>Resume</source>
         <translation type="unfinished">繼續工作</translation>
     </message>
@@ -349,78 +351,62 @@
         <translation>名稱</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="221"/>
         <source>Model</source>
-        <translation>型號</translation>
+        <translation type="vanished">型號</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="251"/>
+        <location filename="../src/windows/machine-manager.ui" line="215"/>
         <source>Width</source>
         <translation>作業區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="261"/>
-        <location filename="../src/windows/machine-manager.ui" line="288"/>
+        <location filename="../src/windows/machine-manager.ui" line="225"/>
+        <location filename="../src/windows/machine-manager.ui" line="252"/>
         <source> mm</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="278"/>
+        <location filename="../src/windows/machine-manager.ui" line="242"/>
         <source>Height</source>
         <translation>作業區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="311"/>
+        <location filename="../src/windows/machine-manager.ui" line="275"/>
         <source>Controller</source>
         <translation>控制器</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="328"/>
-        <source>FLUX</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/machine-manager.ui" line="333"/>
+        <location filename="../src/windows/machine-manager.ui" line="292"/>
         <source>GRBL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="338"/>
-        <source>M2NANO</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/machine-manager.ui" line="343"/>
-        <source>RUIDA</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/machine-manager.ui" line="367"/>
+        <location filename="../src/windows/machine-manager.ui" line="316"/>
         <source>Advanced</source>
         <translation>進階</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="373"/>
+        <location filename="../src/windows/machine-manager.ui" line="322"/>
         <source>Origin</source>
         <translation>原點</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="390"/>
+        <location filename="../src/windows/machine-manager.ui" line="339"/>
         <source>Rear Left</source>
         <translation>左上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="397"/>
+        <location filename="../src/windows/machine-manager.ui" line="346"/>
         <source>Rear Right</source>
         <translation>右上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="411"/>
+        <location filename="../src/windows/machine-manager.ui" line="360"/>
         <source>Front Left</source>
         <translation>左下</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="418"/>
+        <location filename="../src/windows/machine-manager.ui" line="367"/>
         <source>Front Right</source>
         <translation type="unfinished">右下</translation>
     </message>
@@ -450,6 +436,28 @@
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="56"/>
         <source>[Door] [Flow]</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MachineSettings</name>
+    <message>
+        <location filename="../src/settings/machine-settings.cpp" line="128"/>
+        <location filename="../src/settings/machine-settings.cpp" line="139"/>
+        <source>Other</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MachineSetupPage</name>
+    <message>
+        <location filename="../src/windows/qml/MachineSetupPage.qml" line="69"/>
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/MachineSetupPage.qml" line="95"/>
+        <source>Next</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -863,17 +871,17 @@
         <translation>機器設定</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="83"/>
+        <location filename="../src/windows/mainwindow.cpp" line="77"/>
         <source>SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="118"/>
+        <location filename="../src/windows/mainwindow.cpp" line="113"/>
         <source>Image Files (*.png *.jpg)</source>
         <translation>圖片檔案 (*.png *,jpg)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="137"/>
+        <location filename="../src/windows/mainwindow.cpp" line="132"/>
         <source>Scene File (*.bb)</source>
         <translation>場景檔案 (*.bb)</translation>
     </message>
@@ -903,6 +911,34 @@
     <message>
         <location filename="../src/windows/new-machine-dialog.ui" line="82"/>
         <source>FLUX Beambox 50W</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OtherMachinePage</name>
+    <message>
+        <location filename="../src/windows/qml/OtherMachinePage.qml" line="48"/>
+        <source>Name</source>
+        <translation type="unfinished">名稱</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/OtherMachinePage.qml" line="63"/>
+        <source>Width</source>
+        <translation type="unfinished">作業區域寬度</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/OtherMachinePage.qml" line="86"/>
+        <source>Height</source>
+        <translation type="unfinished">作業區域高度</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/OtherMachinePage.qml" line="112"/>
+        <source>Origin</source>
+        <translation type="unfinished">原點</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/OtherMachinePage.qml" line="174"/>
+        <source>Create Machine Profile</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1041,6 +1077,16 @@
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/windows/preview-window.ui" line="43"/>
+        <source>TextLabel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/windows/preview-window.cpp" line="181"/>
+        <source>Required Time</source>
+        <translation type="unfinished">所需時間</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -1059,7 +1105,7 @@
         <translation type="unfinished">無法連接 SerialPort</translation>
     </message>
     <message>
-        <location filename="../src/connection/serial-job.cpp" line="179"/>
+        <location filename="../src/connection/serial-job.cpp" line="181"/>
         <source>GRBL connection timeout</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1069,6 +1115,14 @@
     <message>
         <source>Unable to connect serial port</source>
         <translation type="vanished">無法連接 SerialPort</translation>
+    </message>
+</context>
+<context>
+    <name>SetupSuccessfulPage</name>
+    <message>
+        <location filename="../src/windows/qml/SetupSuccessfulPage.qml" line="63"/>
+        <source>Let&apos;s Start!</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1140,6 +1194,26 @@
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="288"/>
         <source>...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>WelcomeDialog</name>
+    <message>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="71"/>
+        <source>Welcome!
+This is your first time using Swiftray,
+what would you like to do first?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="91"/>
+        <source>Setup My Machine Profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="102"/>
+        <source>Play Around!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
