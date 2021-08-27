@@ -96,9 +96,6 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
   }
 }
 
-
-
-
 PreviewWindow::PreviewWindow(QWidget *parent) :
      QDialog(parent),
      ui(new Ui::PreviewWindow),
@@ -126,9 +123,7 @@ PreviewWindow::~PreviewWindow() {
   delete ui;
 }
 
-
 void PreviewWindow::registerEvents() {
-
   connect(ui->progress, &QSlider::valueChanged, [=](int value) {
       progress_ = value;
 
@@ -175,4 +170,8 @@ void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_pa
   ui->progress->setMaximum(preview_path_->paths().size());
   ui->progress->setValue(preview_path_->paths().size());
   update();
+}
+
+void PreviewWindow::setRequiredTime(const QString &required_time) {
+  ui->requiredTime->setText(tr("Required Time")+": "+required_time);
 }

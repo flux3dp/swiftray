@@ -25,6 +25,10 @@ public:
 
   ~GCodePlayer();
 
+  void calcRequiredTime(const QString &string);
+
+  QString requiredTime() const;
+
   void setSerialPort();
 
   void setGCode(const QString &string);
@@ -40,6 +44,8 @@ private:
   void registerEvents() override;
 
   Ui::GCodePlayer *ui;
+
+  float required_time_;
 
 #ifndef Q_OS_IOS
   QList<SerialJob *> jobs_;
