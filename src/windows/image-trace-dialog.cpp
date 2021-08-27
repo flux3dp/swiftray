@@ -39,23 +39,24 @@ void ImageTraceDialog::reset() {
  * @brief reset Potrace params
  */
 void ImageTraceDialog::resetParams() {
-  ui->cutoffSpinBox->setValue(0);
-  ui->cutoffSlider->setValue(0);
-  ui->thresholdSlider->setValue(128);
-  ui->thresholdSpinBox->setValue(128);
+  setCutoffSliderWithoutEmit(0);
+  setCutoffSpinboxWithoutEmit(0);
+  setThresholdSliderWithoutEmit(128);
+  setThresholdSpinboxWithoutEmit(128);
   ui->ignoreSpinBox->setValue(2);
   ui->smoothnessDoubleSpinBox->setValue(1.0);
   ui->optimizeDoubleSpinBox->setValue(0.2);
 }
 
 void ImageTraceDialog::onCutoffChanged(int new_cutoff_val) {
-  ui->cutoffSpinBox->setValue(new_cutoff_val);
-  ui->cutoffSlider->setValue(new_cutoff_val);
+  setCutoffSliderWithoutEmit(new_cutoff_val);
+  setCutoffSpinboxWithoutEmit(new_cutoff_val);
   // Cutoff (low threshold) should always <= (high) threshold
   if (new_cutoff_val > ui->thresholdSlider->value()) {
-    ui->thresholdSlider->setValue(new_cutoff_val);
-    ui->thresholdSpinBox->setValue(new_cutoff_val);
+    setThresholdSliderWithoutEmit(new_cutoff_val);
+    setThresholdSpinboxWithoutEmit(new_cutoff_val);
   }
+
   if (ui->bgImageComboBox->currentIndex() == 1) {
     updateBackgroundDisplay();
   }
@@ -63,12 +64,12 @@ void ImageTraceDialog::onCutoffChanged(int new_cutoff_val) {
 }
 
 void ImageTraceDialog::onThresholdChanged(int new_thres_val) {
-  ui->thresholdSlider->setValue(new_thres_val);
-  ui->thresholdSpinBox->setValue(new_thres_val);
+  setThresholdSpinboxWithoutEmit(new_thres_val);
+  setThresholdSliderWithoutEmit(new_thres_val);
   // Cutoff (low threshold) should always <= (high) threshold
   if (new_thres_val < ui->cutoffSlider->value()) {
-    ui->cutoffSlider->setValue(new_thres_val);
-    ui->cutoffSpinBox->setValue(new_thres_val);
+    setCutoffSliderWithoutEmit(new_thres_val);
+    setCutoffSpinboxWithoutEmit(new_thres_val);
   }
   if (ui->bgImageComboBox->currentIndex() == 1) {
     updateBackgroundDisplay();
@@ -245,7 +246,6 @@ void ImageTraceDialog::updateImageTrace() {
     if (src_image_grayscale_.isNull()) {
       return;
     }
-
     QRectF select_area = ui->traceGraphicsView->scene()->selectionArea().boundingRect();
     QPointF offset(0, 0);
     if (select_area.size().toSize() != QSize(0, 0)) {
@@ -282,4 +282,26 @@ void ImageTraceDialog::updateImageTrace() {
     qInfo() << e.what();
     return;
   }
+}
+
+
+void ImageTraceDialog::setCutoffSpinboxWithoutEmit(int cutoff) {
+  ui->cutoffSpinBox->blockSignals(true);
+  ui->cutoffSpinBox->setValue(cutoff);
+  ui->cutoffSpinBox->blockSignals(false);
+}
+void ImageTraceDialog::setCutoffSliderWithoutEmit(int cutoff) {
+  ui->cutoffSlider->blockSignals(true);
+  ui->cutoffSlider->setValue(cutoff);
+  ui->cutoffSlider->blockSignals(false);
+}
+void ImageTraceDialog::setThresholdSpinboxWithoutEmit(int thres) {
+  ui->thresholdSpinBox->blockSignals(true);
+  ui->thresholdSpinBox->setValue(thres);
+  ui->thresholdSpinBox->blockSignals(false);
+}
+void ImageTraceDialog::setThresholdSliderWithoutEmit(int thres) {
+  ui->thresholdSlider->blockSignals(true);
+  ui->thresholdSlider->setValue(thres);
+  ui->thresholdSlider->blockSignals(false);
 }

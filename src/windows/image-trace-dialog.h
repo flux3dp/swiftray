@@ -21,13 +21,13 @@ public:
     void reset();
     void resetParams();
     void loadImage(const QImage *img);
-    void onCutoffChanged(int new_cutoff_val);
-    void onThresholdChanged(int new_thres_val);
     void updateBackgroundDisplay();
     void updateImageTrace();
 
 public slots:
     void onSelectPartialStateChanged(int state);
+    void onCutoffChanged(int new_cutoff_val);
+    void onThresholdChanged(int new_thres_val);
 
 private:
 
@@ -39,4 +39,10 @@ private:
     QImage ImageBinarize(const QImage &image, int threshold, int cutoff);
     QImage createSubImage(QImage* image, const QRect & rect);
     std::shared_ptr<QxPotrace> potrace_;
+
+    // used to prevent duplicate signals
+    void setCutoffSpinboxWithoutEmit(int cutoff);
+    void setCutoffSliderWithoutEmit(int cutoff);
+    void setThresholdSpinboxWithoutEmit(int thres);
+    void setThresholdSliderWithoutEmit(int thres);
 };
