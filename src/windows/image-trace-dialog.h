@@ -2,10 +2,8 @@
 
 #include <QDialog>
 #include <widgets//base-container.h>
-#include <opencv2/opencv.hpp>
 #include <memory>
 #include <QxPotrace/include/qxpotrace.h>
-#include <QGraphicsPathItem>
 
 
 QT_BEGIN_NAMESPACE
@@ -20,6 +18,7 @@ public:
 
     ~ImageTraceDialog() override;
 
+    void reset();
     void resetParams();
     void loadImage(const QImage *img);
     void onCutoffChanged(int new_cutoff_val);
@@ -34,5 +33,10 @@ private:
 
     Ui::ImageTraceDialog *ui;
     void registerEvents() override;
+
+    QImage src_image_grayscale_;
     QImage ImageToGrayscale(const QImage &image);
+    QImage ImageBinarize(const QImage &image, int threshold, int cutoff);
+    QImage createSubImage(QImage* image, const QRect & rect);
+    std::shared_ptr<QxPotrace> potrace_;
 };

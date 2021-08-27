@@ -14,6 +14,7 @@ protected:
     void pinchGestureHandler(QPinchGesture *pg);
 
     qreal scaleFactor = 1;
+    qreal min_scale_ = 1;
     bool zooming_ = false;
     QPointF zoom_fixed_point_scene_; // the cursor location in scene when start zooming
     QPointF zoom_fixed_point_view_;  // initial zoom cursor location in view coord

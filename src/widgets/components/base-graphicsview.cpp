@@ -47,7 +47,7 @@ void BaseGraphicsView::pinchGestureHandler(QPinchGesture *pinch_gesture) {
       zoom_fixed_point_scene_ = mapToScene(pinch_gesture->centerPoint().toPoint());
       zooming_ = true;
     }
-    if (this->scaleFactor * pinch_gesture->scaleFactor() >= 1) {
+    if (this->scaleFactor * pinch_gesture->scaleFactor() >= min_scale_) {
       this->scaleFactor *= pinch_gesture->scaleFactor();
       this->scale(pinch_gesture->scaleFactor(), pinch_gesture->scaleFactor());
 

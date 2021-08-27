@@ -303,6 +303,7 @@ void MainWindow::registerEvents() {
     QImage *image = new QImage;
     bool success = image->load(fileName);
     qDebug() << "File loaded succesfully " << success ;
+    this->image_trace_dialog_->reset();
     this->image_trace_dialog_->loadImage(image);
     this->image_trace_dialog_->show();
   });
