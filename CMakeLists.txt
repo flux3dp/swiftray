@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(vecty)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 FIND_PACKAGE(Qt5 COMPONENTS Core REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Widgets REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Quick REQUIRED)
@@ -15,6 +17,7 @@ FIND_PACKAGE(Qt5Svg COMPONENTS Private REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Boost 1.70 REQUIRED)
+FIND_PACKAGE(Potrace REQUIRED)
 
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_AUTOMOC ON)
@@ -32,6 +35,8 @@ FILE(GLOB WIDGETS_COMPONENTS_CPP "${SRC_DIR}/widgets/components/*.cpp")
 FILE(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
 FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
+FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
+
 
 SET(SOURCES
         ${SRC_DIR}/layer.cpp
@@ -45,6 +50,7 @@ SET(SOURCES
         ${SHAPES_CPP}
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}
+        ${QXPOTRACE_CPP}
         ${SRC_DIR}/canvas/cache-stack.cpp
         ${SRC_DIR}/canvas/canvas.cpp
         ${SRC_DIR}/parser/svgpp-parser.cpp
@@ -63,12 +69,14 @@ INCLUDE_DIRECTORIES(
         third_party
         ${SRC_DIR}
         /usr/local/opt/libxml2/include
+        ${POTRACE_INCLUDE_DIRS}
 )
 
 LINK_LIBRARIES(
         ${LIBXML2_LIBRARY}
         ${BOOST_LIBRARIES}
         ${OpenCV_LIBRARIES}
+        ${POTRACE_LIBRARIES}
 )
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -86,6 +94,7 @@ set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/images/icon.rc")
 set(MACOSX_BUNDLE_ICON_FILE images/icon.icns)
 set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
 set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
 
 add_executable(swiftray ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
 target_link_libraries(swiftray Qt::Core)

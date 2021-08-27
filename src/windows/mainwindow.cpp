@@ -246,6 +246,7 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
+  image_trace_dialog_ = new ImageTraceDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -296,6 +297,16 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionTrace, &QAction::triggered, [=]() {
+    QString filter = QString("Supported Files (*.shp *.kml *.jpg *.png );;All files (*)");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select File(s)"), QDir::homePath(), filter);
+    QImage *image = new QImage;
+    bool success = image->load(fileName);
+    qDebug() << "File loaded succesfully " << success ;
+    this->image_trace_dialog_->loadImage(image);
+    this->image_trace_dialog_->show();
+  });
+
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
