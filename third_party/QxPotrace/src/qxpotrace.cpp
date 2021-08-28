@@ -16,32 +16,6 @@
 #define BM_UPUT(bm, x, y, b) ((b) ? BM_USET(bm, x, y) : BM_UCLR(bm, x, y))
 #define BM_PUT(bm, x, y, b) (bm_safe(bm, x, y) ? BM_UPUT(bm, x, y, b) : 0)
 
-class PotraceBitmap
-{
-public:
-    PotraceBitmap(int width, int height)
-        : bitmap_(new potrace_bitmap_t)
-    {
-      bitmap_->w = width;
-      bitmap_->h = height;
-      bitmap_->dy = (width + BM_WORDBITS - 1) / BM_WORDBITS;
-      map_.resize(bitmap_->dy * height);
-      bitmap_->map = map_.data();
-    }
-    PotraceBitmap(PotraceBitmap&& other) = default;
-    PotraceBitmap(const PotraceBitmap& other) = default;
-    ~PotraceBitmap() = default;
-
-    potrace_bitmap_t* data() const
-    {
-      return bitmap_.get();
-    }
-
-protected:
-    std::unique_ptr<potrace_bitmap_t> bitmap_;
-    std::vector<potrace_word> map_;
-};
-
 /**
  * @param image
  * @param bitmap internal memory block should have been allocated
@@ -50,25 +24,28 @@ protected:
  */
 void imageToBinarizedBitmap(const QImage &image, potrace_bitmap_t* bitmap, int cutoff, int threshold)
 {
-  bool apply_alpha = image.hasAlphaChannel();
+  if (image.isNull()) {
+    return;
+  }
 
-  int pi = 0;
+  bool apply_alpha = image.hasAlphaChannel();
+  if (apply_alpha) {
+    Q_ASSERT_X(image.format() == QImage::Format_ARGB32, "qxpotrace", "input image must be ARGB32/Grayscale8");
+  } else {
+    Q_ASSERT_X(image.format() == QImage::Format_Grayscale8, "qxpotrace", "input image must be ARGB32/Grayscale8");
+  }
+
   for (int y = 0; y < image.height(); ++y) {
     for (int x = 0; x < image.width(); ++x) {
-      int bm_x = pi % image.width();
-      int bm_y = pi / image.width();
+      QRgb pixel = image.pixel(x, y);
+      int grayscale_val = qGray(pixel);
       int bm_p;
-      QRgb pixel_rgb = image.pixel(x, y);
-      int pixel_val;
       if (apply_alpha) {
-        pixel_val = 255 - (255 - qGray(pixel_rgb)) * qAlpha(pixel_rgb) / 255;
-      } else {
-        pixel_val = qGray(pixel_rgb);
+        grayscale_val = 255 - (255 - grayscale_val) * qAlpha(pixel) / 255;
       }
-      bm_p = pixel_val < cutoff ? 0 :
-                pixel_val <= threshold ? 1 : 0;
-      BM_PUT(bitmap,bm_x, bm_y, bm_p);
-      ++pi;
+      bm_p = grayscale_val < cutoff ? 0 :
+             grayscale_val <= threshold ? 1 : 0;
+      BM_PUT(bitmap, x, y, bm_p);
     }
   }
   return;
@@ -127,7 +104,7 @@ void QxPotrace::convert_paths_recursively(potrace_path_s* current_contour_p) {
  * @brief Generate contours of image,
  *        NOTE: All intermediate memory should be freed at the end of the function
  *              Only result contours is left
- * @param image
+ * @param image           should be in RGBA or grayscale8 format
  * @param low_thres       equals to cutoff in lightburn
  * @param high_thres      equals to threshold in lightburn
  * @param turd_size       equals to ignore less than in lightburn
@@ -151,7 +128,7 @@ bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
   // Set params
   using unique_trace_param_t = std::unique_ptr<potrace_param_t, decltype(&potrace_param_free)>;
   unique_trace_param_t trace_params(
-          potrace_param_default(),
+          potrace_param_default(), // return newly allocated param struct
           &potrace_param_free);
   trace_params->alphamax = smooth;
   trace_params->opttolerance = curve_tolerance;
@@ -160,7 +137,7 @@ bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
   // Start image tracing
   using unique_trace_state_t = std::unique_ptr<potrace_state_t, decltype(&potrace_state_free)>;
   unique_trace_state_t trace_state(
-          potrace_trace(trace_params.get(), bitmap.get()), // call libpotrace trace API
+          potrace_trace(trace_params.get(), bitmap.get()), // call libpotrace trace API and return newly allocated state struct
           &potrace_state_free);
   if (!trace_state || trace_state->status != POTRACE_STATUS_OK) {
     return false;

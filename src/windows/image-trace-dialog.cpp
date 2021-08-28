@@ -148,26 +148,26 @@ void ImageTraceDialog::loadImage(const QImage *img) {
 }
 
 /**
- * @brief   Convert rgb/rgba image to grayscale 8 image
- *          NOTE: transparent area (alpha = 0) -> white (255)
+ * @brief Convert rgb/rgba image to grayscale image and also keep alpha channel
  * @param image source image
- * @return
+ * @return RGBA32/Grascale8 image
  */
 QImage ImageTraceDialog::ImageToGrayscale(const QImage &image)
 {
-  QImage result_img = image.convertToFormat(QImage::Format_Grayscale8);
-
+  QImage result_img;
   bool apply_alpha = image.hasAlphaChannel();
   if (apply_alpha) {
-    for (int y = 0; y < image.height(); ++y) {
-      for (int x = 0; x < image.width(); ++x) {
-        if (qAlpha(image.pixel(x, y)) == 0) { // transparent -> consider as white
-          result_img.setPixel(x, y, qRgb(255, 255, 255));
-        } else {
-          // apply alpha (opacity)
-          int gray_val = 255 - (255 - qGray(result_img.pixel(x, y))) * qAlpha(image.pixel(x, y)) / 255;
-          result_img.setPixel(x, y, qRgb(gray_val, gray_val, gray_val));
-        }
+    result_img = image.convertToFormat(QImage::Format_ARGB32);
+  } else {
+    result_img = image.convertToFormat(QImage::Format_Grayscale8);
+  }
+
+  if (apply_alpha) {
+    for (int y = 0; y < result_img.height(); ++y) {
+      for (int x = 0; x < result_img.width(); ++x) {
+        QRgb pixel = result_img.pixel(x, y);
+        uint ci = uint(qGray(pixel));
+        result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
       }
     }
   }
@@ -186,13 +186,18 @@ QImage ImageTraceDialog::ImageToGrayscale(const QImage &image)
 QImage ImageTraceDialog::ImageBinarize(const QImage &image, int threshold, int cutoff)
 {
   QImage result_img{image.width(), image.height(), QImage::Format_Grayscale8};
+  bool apply_alpha = image.hasAlphaChannel();
 
   for (int y = 0; y < image.height(); ++y) {
     for (int x = 0; x < image.width(); ++x) {
+      int grayscale_val = qGray(image.pixel(x, y));
+      if (apply_alpha) {
+        grayscale_val = 255 - (255 - grayscale_val) * qAlpha(image.pixel(x, y)) / 255;
+      }
       result_img.setPixel(x, y,
-               qGray(image.pixel(x, y)) < cutoff ? qRgb(255, 255, 255) :
-                              qGray(image.pixel(x, y)) <= threshold ? qRgb(0, 0, 0) :
-                                  qRgb(255, 255, 255));
+                          grayscale_val < cutoff ? qRgb(255, 255, 255) :
+                          grayscale_val <= threshold ? qRgb(0, 0, 0) :
+                          qRgb(255, 255, 255));
     }
   }
   return result_img;

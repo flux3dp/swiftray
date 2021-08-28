@@ -25,12 +25,17 @@ signals:
     void selectionAreaChanged();
 
 private:
-    // Or use enum
-    constexpr static int BACKGROUND_IMAGE_Z_INDEX = 0;
-    constexpr static int SELECTION_RECT_Z_INDEX = 1;
-    constexpr static int IMAGE_TRACE_Z_INDEX = 2;
+    constexpr static int ITEM_ID_KEY = 0;
 
-    QGraphicsPixmapItem* bg_image_item_ = nullptr;
-    QGraphicsRectItem* selection_area_rect_item_ = nullptr;
-    QGraphicsPathItem* contours_path_item_ = nullptr;
+    constexpr static int BACKGROUND_IMAGE_Z_INDEX = 0;
+    constexpr static char BACKGROUND_IMAGE_ITEM_ID[] = "BACKGROUND";
+    constexpr static int SELECTION_RECT_Z_INDEX = 1;
+    constexpr static char SELECTION_RECT_ITEM_ID[] = "SELECT_RECT";
+    constexpr static int IMAGE_TRACE_Z_INDEX = 2;
+    constexpr static char IMAGE_TRACE_ITEM_ID[] = "TRACE";
+
+    // Might replace the following with a template function
+    QGraphicsPixmapItem* getBackgroundPixmapItem();
+    QGraphicsRectItem* getSelectionAreaRectItem();
+    QGraphicsPathItem* getTraceContourPathsItem();
 };

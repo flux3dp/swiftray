@@ -24,9 +24,6 @@ ImageTraceGraphicsView::ImageTraceGraphicsView(QGraphicsScene *scene, QWidget *p
 
 void ImageTraceGraphicsView::reset() {
   //this->clearSelectionArea();
-  bg_image_item_ = nullptr;
-  contours_path_item_ = nullptr;
-  selection_area_rect_item_ = nullptr;
   QGraphicsScene* new_scene = new QGraphicsScene();
   this->setScene(new_scene);
   this->resetTransform();
@@ -38,7 +35,6 @@ void ImageTraceGraphicsView::mousePressEvent(QMouseEvent *event) {
   }
   BaseGraphicsView::mousePressEvent(event);
 }
-
 
 void ImageTraceGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
   if (dragMode() == RubberBandDrag) {
@@ -56,10 +52,10 @@ void ImageTraceGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
 void ImageTraceGraphicsView::clearSelectionArea() {
   QPainterPath empty_path;
   this->scene()->setSelectionArea(empty_path);
-  if (selection_area_rect_item_ && selection_area_rect_item_->scene()) {
-    selection_area_rect_item_->scene()->removeItem(selection_area_rect_item_);
+  auto item = getSelectionAreaRectItem();
+  if (item) {
+    scene()->removeItem(item);
   }
-  selection_area_rect_item_ = nullptr;
 }
 
 /**
@@ -67,13 +63,15 @@ void ImageTraceGraphicsView::clearSelectionArea() {
  * @param background_pixmap
  */
 void ImageTraceGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
-  if (bg_image_item_ && bg_image_item_->scene()) {
-    this->scene()->removeItem(bg_image_item_);
+  auto item = getBackgroundPixmapItem();
+  if (item) {
+    item->setPixmap(background_pixmap);
+  } else {
+    // If not exist -> create and add a new graphics item
+    item = this->scene()->addPixmap(background_pixmap);
+    item->setData(ITEM_ID_KEY, BACKGROUND_IMAGE_ITEM_ID);
+    item->setZValue(BACKGROUND_IMAGE_Z_INDEX); // overlapped by any other items
   }
-  bg_image_item_ = nullptr;
-  bg_image_item_ = new QGraphicsPixmapItem(background_pixmap);
-  bg_image_item_->setZValue(BACKGROUND_IMAGE_Z_INDEX); // overlapped by any other items
-  this->scene()->addItem(bg_image_item_);
 }
 
 /**
@@ -81,28 +79,66 @@ void ImageTraceGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
  * @param contours
  */
 void ImageTraceGraphicsView::updateTrace(QPainterPath contours) {
-  if (contours_path_item_ && contours_path_item_->scene()) {
-    contours_path_item_->scene()->removeItem(contours_path_item_);
+  auto item = getTraceContourPathsItem();
+  if (item) {
+    item->setPath(contours);
+  } else {
+    item = this->scene()->addPath(contours, QPen{Qt::green});
+    item->setData(ITEM_ID_KEY, IMAGE_TRACE_ITEM_ID);
+    item->setZValue(IMAGE_TRACE_Z_INDEX); // top-most
   }
-  contours_path_item_ = nullptr;
-  this->contours_path_item_ = this->scene()->addPath(contours, QPen{Qt::green});
-  this->contours_path_item_->setZValue(IMAGE_TRACE_Z_INDEX); // top-most
 }
 
 /**
  * @brief clear old and draw new selection area
  */
 void ImageTraceGraphicsView::drawSelectionArea() {
-  if (selection_area_rect_item_ && selection_area_rect_item_->scene()) {
-    selection_area_rect_item_->scene()->removeItem(selection_area_rect_item_);
-  }
-  selection_area_rect_item_ = nullptr;
+  auto item = getSelectionAreaRectItem();
+
   // Only draw when selection area exists (nonzero)
   if (this->scene()->selectionArea().boundingRect().size().toSize() != QSize(0, 0)) {
-    selection_area_rect_item_ = this->scene()->addRect(
-            this->scene()->selectionArea().boundingRect(),
-            QPen(QColor(Qt::red)));
-    selection_area_rect_item_->setZValue(SELECTION_RECT_Z_INDEX); // on top of background image but under trace contour
+    if (item) {
+      item->setRect(scene()->selectionArea().boundingRect());
+    } else {
+      item = scene()->addRect(
+              scene()->selectionArea().boundingRect(),
+              QPen(QColor(Qt::red)));
+      item->setData(ITEM_ID_KEY, SELECTION_RECT_ITEM_ID);
+      item->setZValue(SELECTION_RECT_Z_INDEX); // on top of background image but under trace contour
+    }
+  } else {
+    if (item) {
+      scene()->removeItem(item);
+    }
   }
 }
 
+QGraphicsPixmapItem* ImageTraceGraphicsView::getBackgroundPixmapItem() {
+  for (auto item: scene()->items()) {
+    if (item->data(ITEM_ID_KEY).toString().compare(QString(BACKGROUND_IMAGE_ITEM_ID)) == 0 &&
+        qgraphicsitem_cast<QGraphicsPixmapItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsPixmapItem *>(item);
+    }
+  }
+  return nullptr;
+}
+
+QGraphicsRectItem* ImageTraceGraphicsView::getSelectionAreaRectItem() {
+  for (auto item: scene()->items()) {
+    if (item->data(ITEM_ID_KEY).toString().compare(QString(SELECTION_RECT_ITEM_ID)) == 0 &&
+        qgraphicsitem_cast<QGraphicsRectItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsRectItem *>(item);
+    }
+  }
+  return nullptr;
+}
+
+QGraphicsPathItem* ImageTraceGraphicsView::getTraceContourPathsItem() {
+  for (auto item: scene()->items()) {
+    if (item->data(ITEM_ID_KEY).toString().compare(QString(IMAGE_TRACE_ITEM_ID)) == 0 &&
+        qgraphicsitem_cast<QGraphicsPathItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsPathItem *>(item);
+    }
+  }
+  return nullptr;
+}
