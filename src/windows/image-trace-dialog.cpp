@@ -208,6 +208,45 @@ QImage ImageTraceDialog::ImageBinarize(const QImage &image, int threshold, int c
 }
 
 /**
+ * @brief Fade rgb/rgba image
+ * @param image source image
+ * @return RGBA32/Grascale8 image
+ */
+QImage ImageTraceDialog::FadeImage(const QImage &image)
+{
+  QImage result_img = image;
+  bool apply_alpha = image.hasAlphaChannel();
+  if (apply_alpha) {
+    if (image.format() != QImage::Format_ARGB32) {
+      result_img = image.convertToFormat(QImage::Format_ARGB32);
+    }
+  } else {
+    if (image.format() != QImage::Format_Grayscale8) {
+      result_img = image.convertToFormat(QImage::Format_Grayscale8);
+    }
+  }
+
+  //if (apply_alpha) {
+    for (int y = 0; y < result_img.height(); ++y) {
+      for (int x = 0; x < result_img.width(); ++x) {
+        QRgb pixel = result_img.pixel(x, y);
+        uint ci = uint(qGray(pixel));
+        ci = (ci + 50) > 255 ? 255 : (ci + 50);
+        if (apply_alpha) {
+          if (qAlpha(pixel) != 0) {
+            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
+          }
+        } else {
+            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
+        }
+      }
+    }
+  //} else {  
+  //}
+  return result_img;
+}
+
+/**
  * @brief Select partial image and return as a new QImage
  * @param image
  * @param rect
@@ -233,16 +272,19 @@ void ImageTraceDialog::updateBackgroundDisplay() {
             QPixmap::fromImage(src_image_grayscale_));
   } else if (ui->bgImageComboBox->currentIndex() == 1) { // binarized
     ui->traceGraphicsView->updateBackgroundPixmap(
-QPixmap::fromImage(
-          ImageBinarize(src_image_grayscale_,
+      QPixmap::fromImage(
+        ImageBinarize(src_image_grayscale_,
                       ui->thresholdSpinBox->value(),
-                        ui->cutoffSpinBox->value()
-                )
-              )
+                      ui->cutoffSpinBox->value()
+        )
+      )
     );
   } else { // faded
     ui->traceGraphicsView->updateBackgroundPixmap(
-            QPixmap::fromImage(src_image_grayscale_));
+      QPixmap::fromImage(
+        FadeImage(src_image_grayscale_)
+      )
+    );
   }
 }
 
