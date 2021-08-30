@@ -9,13 +9,22 @@
 #include <widgets/components/image-trace-graphicsview.h>
 #include <QxPotrace/include/qxpotrace.h>
 
+#include <QOpenGLWidget>
+#include <QSurfaceFormat>
+
 
 ImageTraceDialog::ImageTraceDialog(QWidget *parent) :
         QDialog(parent), ui(new Ui::ImageTraceDialog) {
   ui->setupUi(this);
 
-  registerEvents();
+  // Use OpenGL for better performance
+  QOpenGLWidget *gl = new QOpenGLWidget();
+  QSurfaceFormat format;
+  format.setSamples(1);
+  gl->setFormat(format);
+  ui->traceGraphicsView->setViewport(gl);
 
+  registerEvents();
   reset();
 }
 
@@ -24,7 +33,6 @@ ImageTraceDialog::~ImageTraceDialog() {
 }
 
 void ImageTraceDialog::reset() {
-
   ui->traceGraphicsView->reset();
   src_image_grayscale_ = QImage();
   potrace_ = std::make_shared<QxPotrace>();
@@ -33,6 +41,7 @@ void ImageTraceDialog::reset() {
   resetParams();
   ui->bgImageComboBox->setCurrentIndex(0);
   ui->selectPartialCheckBox->setCheckState(Qt::Unchecked);
+  ui->showPointsCheckbox->setChecked(false);
 }
 
 /**
@@ -327,12 +336,9 @@ void ImageTraceDialog::updateImageTrace() {
 
     QPainterPath contours = potrace_->getContours();
     contours.translate(offset.x(), offset.y());
+    ui->traceGraphicsView->setShowPoints(ui->showPointsCheckbox->isChecked());
     ui->traceGraphicsView->updateTrace(contours);
-    if (ui->showPointsCheckbox->isChecked()) {
-      ui->traceGraphicsView->updateAnchorPoints(contours, true);
-    } else {
-      ui->traceGraphicsView->updateAnchorPoints(contours, false);
-    }
+
   } catch (const std::exception& e) {
     qInfo() << e.what();
     return;
@@ -345,16 +351,19 @@ void ImageTraceDialog::setCutoffSpinboxWithoutEmit(int cutoff) {
   ui->cutoffSpinBox->setValue(cutoff);
   ui->cutoffSpinBox->blockSignals(false);
 }
+
 void ImageTraceDialog::setCutoffSliderWithoutEmit(int cutoff) {
   ui->cutoffSlider->blockSignals(true);
   ui->cutoffSlider->setValue(cutoff);
   ui->cutoffSlider->blockSignals(false);
 }
+
 void ImageTraceDialog::setThresholdSpinboxWithoutEmit(int thres) {
   ui->thresholdSpinBox->blockSignals(true);
   ui->thresholdSpinBox->setValue(thres);
   ui->thresholdSpinBox->blockSignals(false);
 }
+
 void ImageTraceDialog::setThresholdSliderWithoutEmit(int thres) {
   ui->thresholdSlider->blockSignals(true);
   ui->thresholdSlider->setValue(thres);

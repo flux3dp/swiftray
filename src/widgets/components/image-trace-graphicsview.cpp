@@ -6,6 +6,60 @@
 
 #include <QDebug>
 
+ImageTraceGraphicsView::QGraphicsContourPathsItem::QGraphicsContourPathsItem():
+        QGraphicsPathItem() {
+}
+
+ImageTraceGraphicsView::QGraphicsContourPathsItem::QGraphicsContourPathsItem(
+        const QPainterPath &path, QGraphicsItem *parent):
+        QGraphicsPathItem(path, parent) {
+}
+
+ImageTraceGraphicsView::QGraphicsContourPathsItem::QGraphicsContourPathsItem(
+        QGraphicsItem *parent):
+        QGraphicsPathItem(parent){
+}
+
+QRectF ImageTraceGraphicsView::QGraphicsContourPathsItem::boundingRect() const {
+  return QGraphicsPathItem::boundingRect();
+}
+
+void ImageTraceGraphicsView::QGraphicsContourPathsItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
+
+  // Draw trace contours
+  QPen pen{Qt::green, 2};
+  pen.setCosmetic(true);
+  setPen(pen);
+  QGraphicsPathItem::paint(painter, option, widget);
+
+  // Draw endpoints on contours
+  if (show_points_) {
+    QBrush brush{QColor{Qt::green}};
+    painter->setBrush(brush);
+    for (auto i = 0; i < path().elementCount(); i++) {
+      if (path().elementAt(i).isCurveTo()) {
+        // curveTo point is the first middle point of cubic curve
+        // For cubic curve, there are one curveTo and one moveTo middle point
+        // they both aren't on the path -> ignore
+      } else {
+        QPointF p = QPointF(path().elementAt(i));
+        // Scale the size of circle points based on scale of GraphicsView to maintain a fixed size
+        painter->drawEllipse(QRectF(
+                p.x() - (5.0 / qAbs(painter->deviceTransform().m22())),
+                p.y() - (5.0 / qAbs(painter->deviceTransform().m22())),
+                10.0 / qAbs(painter->deviceTransform().m22()),
+                10.0 / qAbs(painter->deviceTransform().m22()))
+        );
+        if (path().elementAt(i+1).isCurveTo()) {
+          // WARNING: MUST ensure contours only contain cubic curves and lines!
+          i += 2; // ignore two bezier middle points (not on the path)
+        }
+      }
+    }
+  }
+}
+
+
 ImageTraceGraphicsView::ImageTraceGraphicsView(QWidget *parent)
         : BaseGraphicsView(parent)
 {
@@ -23,10 +77,9 @@ ImageTraceGraphicsView::ImageTraceGraphicsView(QGraphicsScene *scene, QWidget *p
 }
 
 void ImageTraceGraphicsView::reset() {
-  //this->clearSelectionArea();
   QGraphicsScene* new_scene = new QGraphicsScene();
-  this->setScene(new_scene);
-  this->resetTransform();
+  setScene(new_scene);
+  resetTransform();
 }
 
 void ImageTraceGraphicsView::mousePressEvent(QMouseEvent *event) {
@@ -38,7 +91,6 @@ void ImageTraceGraphicsView::mousePressEvent(QMouseEvent *event) {
 
 void ImageTraceGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
   if (dragMode() == RubberBandDrag) {
-    // TODO: Handle select partial image for image trace
     drawSelectionArea();
     emit selectionAreaChanged();
   }
@@ -51,7 +103,7 @@ void ImageTraceGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
  */
 void ImageTraceGraphicsView::clearSelectionArea() {
   QPainterPath empty_path;
-  this->scene()->setSelectionArea(empty_path);
+  scene()->setSelectionArea(empty_path);
   auto item = getSelectionAreaRectItem();
   if (item) {
     scene()->removeItem(item);
@@ -68,7 +120,7 @@ void ImageTraceGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
     item->setPixmap(background_pixmap);
   } else {
     // If not exist -> create and add a new graphics item
-    item = this->scene()->addPixmap(background_pixmap);
+    item = scene()->addPixmap(background_pixmap);
     item->setData(ITEM_ID_KEY, BACKGROUND_IMAGE_ITEM_ID);
     item->setZValue(BACKGROUND_IMAGE_Z_INDEX); // overlapped by any other items
   }
@@ -79,52 +131,27 @@ void ImageTraceGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
  * @param contours
  */
 void ImageTraceGraphicsView::updateTrace(const QPainterPath& contours) {
-  auto item = getTraceContourPathsItem();
-  if (item) {
-    item->setPath(contours);
+  auto contour_item = getTraceContourPathsItem();
+  if (contour_item) {
+    contour_item->setPath(contours);
   } else {
-    item = this->scene()->addPath(contours, QPen{Qt::green});
-    item->setData(ITEM_ID_KEY, IMAGE_TRACE_ITEM_ID);
-    item->setZValue(IMAGE_TRACE_Z_INDEX); // top-most
+    contour_item = new QGraphicsContourPathsItem(contours);
+    contour_item->setPen(QPen(Qt::yellow, 2));
+    scene()->addItem(contour_item);
+    contour_item->setData(ITEM_ID_KEY, IMAGE_TRACE_ITEM_ID);
+    contour_item->setZValue(IMAGE_TRACE_Z_INDEX); // top-most
   }
 }
 
 /**
- * @brief clear and draw anchor points on contours
- *        middle points of bezier (cubic curve) are ignored
- * @param contours
- * @param show_points
+ * @brief switch on/off display of endpoints on trace contours
+ * @param enable
  */
-void ImageTraceGraphicsView::updateAnchorPoints(const QPainterPath& contours, bool show_points) {
-  // Clear points shown on scene
-  auto anchor_item = getTraceContourAnchorItem();
-  while (anchor_item) {
-    scene()->removeItem(anchor_item);
-    anchor_item = getTraceContourAnchorItem();
-  }
-
-  QPen pen{Qt::green, 1};
-  QBrush brush{QColor{Qt::green}};
-  pen.setCosmetic(true);
-  if (show_points) {
-    for (auto i = 0; i < contours.elementCount(); i++) {
-      QGraphicsEllipseItem* anchor_item;
-      if (contours.elementAt(i).isCurveTo()) {
-        // curveTo point is the first middle point of cubic curve
-        // For cubic curve, there are one curveTo and one moveTo middle point
-        // they both aren't on the path -> ignore
-      } else {
-        anchor_item = scene()->addEllipse(
-                QPointF(contours.elementAt(i)).x() - 1,
-                QPointF(contours.elementAt(i)).y() - 1, 2, 2, pen, brush);
-        anchor_item->setData(ITEM_ID_KEY, ANCHOR_POINTS_ITEM_ID);
-        anchor_item->setZValue(ANCHOR_POINTS_Z_INDEX);
-        if (contours.elementAt(i+1).isCurveTo()) {
-          // WARNING: MUST ensure contours only contain cubic curves and lines!
-          i += 2; // ignore two bezier middle points (not on the path)
-        }
-      }
-    }
+void ImageTraceGraphicsView::setShowPoints(bool enable) {
+  auto contour_item = getTraceContourPathsItem();
+  if (contour_item) {
+    contour_item->setShowPoints(enable);
+    contour_item->update();
   }
 }
 
@@ -135,7 +162,7 @@ void ImageTraceGraphicsView::drawSelectionArea() {
   auto item = getSelectionAreaRectItem();
 
   // Only draw when selection area exists (nonzero)
-  if (this->scene()->selectionArea().boundingRect().size().toSize() != QSize(0, 0)) {
+  if (scene()->selectionArea().boundingRect().size().toSize() != QSize(0, 0)) {
     if (item) {
       item->setRect(scene()->selectionArea().boundingRect());
     } else {
@@ -172,21 +199,11 @@ QGraphicsRectItem* ImageTraceGraphicsView::getSelectionAreaRectItem() {
   return nullptr;
 }
 
-QGraphicsPathItem* ImageTraceGraphicsView::getTraceContourPathsItem() {
+ImageTraceGraphicsView::QGraphicsContourPathsItem* ImageTraceGraphicsView::getTraceContourPathsItem() {
   for (auto item: scene()->items()) {
     if (item->data(ITEM_ID_KEY).toString().compare(QString(IMAGE_TRACE_ITEM_ID)) == 0 &&
-        qgraphicsitem_cast<QGraphicsPathItem *>(item)) {
-      return qgraphicsitem_cast<QGraphicsPathItem *>(item);
-    }
-  }
-  return nullptr;
-}
-
-QGraphicsEllipseItem* ImageTraceGraphicsView::getTraceContourAnchorItem() {
-  for (auto item: scene()->items()) {
-    if (item->data(ITEM_ID_KEY).toString().compare(QString(ANCHOR_POINTS_ITEM_ID)) == 0 &&
-        qgraphicsitem_cast<QGraphicsEllipseItem *>(item)) {
-      return qgraphicsitem_cast<QGraphicsEllipseItem *>(item);
+        qgraphicsitem_cast<QGraphicsContourPathsItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsContourPathsItem *>(item);
     }
   }
   return nullptr;
