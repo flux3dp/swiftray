@@ -61,19 +61,19 @@ void QxPotrace::convert_potrace_path_to_QPainterPath(potrace_path_t *contour) {
   potrace_dpoint_t (*points)[3] = contour->curve.c;
   if (num_points > 0) {
     // Move to initial pos of a new contour
-    contours.moveTo(points[num_points-1][2].x, points[num_points-1][2].y);
+    contours_.moveTo(points[num_points-1][2].x, points[num_points-1][2].y);
   }
   for (int i = 0; i < num_points; ++i) {
     switch (tags[i]) {
       case POTRACE_CORNER:
         // sharp corner
-        contours.lineTo(points[i][1].x, points[i][1].y);
-        contours.lineTo(points[i][2].x, points[i][2].y);
+        contours_.lineTo(points[i][1].x, points[i][1].y);
+        contours_.lineTo(points[i][2].x, points[i][2].y);
         break;
 
       case POTRACE_CURVETO:
         // Bezier curve
-        contours.cubicTo(points[i][0].x, points[i][0].y,
+        contours_.cubicTo(points[i][0].x, points[i][0].y,
                          points[i][1].x, points[i][1].y,
                          points[i][2].x, points[i][2].y);
         break;
@@ -143,10 +143,10 @@ bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
     return false;
   }
 
-  // TODO: Store all curves with each curve as a vector of QPainterPath
-  contours.clear();
+  contours_.clear();
   potrace_path_s* first_contour_node_p = trace_state->plist;
   if (first_contour_node_p != NULL) {
+    // convert all contours into a QPainterPath
     convert_paths_recursively(first_contour_node_p);
   }
 

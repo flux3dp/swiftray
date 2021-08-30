@@ -125,6 +125,10 @@ void ImageTraceDialog::registerEvents() {
   connect(ui->traceGraphicsView, &ImageTraceGraphicsView::selectionAreaChanged, this, [=]() {
     this->updateImageTrace();
   });
+
+  connect(ui->showPointsCheckbox, &QCheckBox::stateChanged,this, [=]() {
+      this->updateImageTrace();
+  });
 }
 
 /**
@@ -282,7 +286,11 @@ void ImageTraceDialog::updateImageTrace() {
     QPainterPath contours = potrace_->getContours();
     contours.translate(offset.x(), offset.y());
     ui->traceGraphicsView->updateTrace(contours);
-
+    if (ui->showPointsCheckbox->isChecked()) {
+      ui->traceGraphicsView->updateAnchorPoints(contours, true);
+    } else {
+      ui->traceGraphicsView->updateAnchorPoints(contours, false);
+    }
   } catch (const std::exception& e) {
     qInfo() << e.what();
     return;

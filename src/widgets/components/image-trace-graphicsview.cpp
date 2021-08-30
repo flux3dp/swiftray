@@ -78,7 +78,7 @@ void ImageTraceGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
  * @brief clear and draw new trace contours
  * @param contours
  */
-void ImageTraceGraphicsView::updateTrace(QPainterPath contours) {
+void ImageTraceGraphicsView::updateTrace(const QPainterPath& contours) {
   auto item = getTraceContourPathsItem();
   if (item) {
     item->setPath(contours);
@@ -86,6 +86,45 @@ void ImageTraceGraphicsView::updateTrace(QPainterPath contours) {
     item = this->scene()->addPath(contours, QPen{Qt::green});
     item->setData(ITEM_ID_KEY, IMAGE_TRACE_ITEM_ID);
     item->setZValue(IMAGE_TRACE_Z_INDEX); // top-most
+  }
+}
+
+/**
+ * @brief clear and draw anchor points on contours
+ *        middle points of bezier (cubic curve) are ignored
+ * @param contours
+ * @param show_points
+ */
+void ImageTraceGraphicsView::updateAnchorPoints(const QPainterPath& contours, bool show_points) {
+  // Clear points shown on scene
+  auto anchor_item = getTraceContourAnchorItem();
+  while (anchor_item) {
+    scene()->removeItem(anchor_item);
+    anchor_item = getTraceContourAnchorItem();
+  }
+
+  QPen pen{Qt::green, 1};
+  QBrush brush{QColor{Qt::green}};
+  pen.setCosmetic(true);
+  if (show_points) {
+    for (auto i = 0; i < contours.elementCount(); i++) {
+      QGraphicsEllipseItem* anchor_item;
+      if (contours.elementAt(i).isCurveTo()) {
+        // curveTo point is the first middle point of cubic curve
+        // For cubic curve, there are one curveTo and one moveTo middle point
+        // they both aren't on the path -> ignore
+      } else {
+        anchor_item = scene()->addEllipse(
+                QPointF(contours.elementAt(i)).x() - 1,
+                QPointF(contours.elementAt(i)).y() - 1, 2, 2, pen, brush);
+        anchor_item->setData(ITEM_ID_KEY, ANCHOR_POINTS_ITEM_ID);
+        anchor_item->setZValue(ANCHOR_POINTS_Z_INDEX);
+        if (contours.elementAt(i+1).isCurveTo()) {
+          // WARNING: MUST ensure contours only contain cubic curves and lines!
+          i += 2; // ignore two bezier middle points (not on the path)
+        }
+      }
+    }
   }
 }
 
@@ -138,6 +177,16 @@ QGraphicsPathItem* ImageTraceGraphicsView::getTraceContourPathsItem() {
     if (item->data(ITEM_ID_KEY).toString().compare(QString(IMAGE_TRACE_ITEM_ID)) == 0 &&
         qgraphicsitem_cast<QGraphicsPathItem *>(item)) {
       return qgraphicsitem_cast<QGraphicsPathItem *>(item);
+    }
+  }
+  return nullptr;
+}
+
+QGraphicsEllipseItem* ImageTraceGraphicsView::getTraceContourAnchorItem() {
+  for (auto item: scene()->items()) {
+    if (item->data(ITEM_ID_KEY).toString().compare(QString(ANCHOR_POINTS_ITEM_ID)) == 0 &&
+        qgraphicsitem_cast<QGraphicsEllipseItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsEllipseItem *>(item);
     }
   }
   return nullptr;
