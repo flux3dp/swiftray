@@ -97,16 +97,10 @@ void ImageTraceDialog::onSelectPartialStateChanged(int check_state) {
 }
 
 void ImageTraceDialog::registerEvents() {
-  connect(ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked, [=](){
-    // TODO: Convert trace paths to shape on Canvas
-
-    this->reset();
-    this->close();
-  });
-  connect(ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked, [=]() {
-    this->reset();
-    this->close();
-  });
+  connect(ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked,
+          this, &ImageTraceDialog::accept);
+  connect(ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked,
+          this, &ImageTraceDialog::reject);
 
   connect(ui->cutoffSpinBox, qOverload<int>(&QSpinBox::valueChanged),
           this, &ImageTraceDialog::onCutoffChanged);
@@ -159,6 +153,21 @@ void ImageTraceDialog::loadImage(const QImage *img) {
     return;
   }
 }
+
+void ImageTraceDialog::loadImage(const QImage &img) {
+  src_image_grayscale_ = ImageToGrayscale(img);
+  try {
+    ui->traceGraphicsView->scene()->setSceneRect(0, 0,
+                                                 src_image_grayscale_.width(),
+                                                 src_image_grayscale_.height());
+    updateBackgroundDisplay();
+    updateImageTrace();
+  } catch (const std::exception& e) {
+    qInfo() << e.what();
+    return;
+  }
+}
+
 
 /**
  * @brief Convert rgb/rgba image to grayscale image and also keep alpha channel
@@ -334,10 +343,10 @@ void ImageTraceDialog::updateImageTrace() {
       }
     }
 
-    QPainterPath contours = potrace_->getContours();
-    contours.translate(offset.x(), offset.y());
+    contours_ = potrace_->getContours();
+    contours_.translate(offset.x(), offset.y());
     ui->traceGraphicsView->setShowPoints(ui->showPointsCheckbox->isChecked());
-    ui->traceGraphicsView->updateTrace(contours);
+    ui->traceGraphicsView->updateTrace(contours_);
 
   } catch (const std::exception& e) {
     qInfo() << e.what();
@@ -368,4 +377,8 @@ void ImageTraceDialog::setThresholdSliderWithoutEmit(int thres) {
   ui->thresholdSlider->blockSignals(true);
   ui->thresholdSlider->setValue(thres);
   ui->thresholdSlider->blockSignals(false);
+}
+
+bool ImageTraceDialog::shouldDeleteImg() {
+  return ui->deleteImgCheckBox->isChecked();
 }

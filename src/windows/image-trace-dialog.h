@@ -21,8 +21,12 @@ public:
     void reset();
     void resetParams();
     void loadImage(const QImage *img);
+    void loadImage(const QImage &img);
     void updateBackgroundDisplay();
     void updateImageTrace();
+
+    QPainterPath getTrace() { return contours_; }
+    bool shouldDeleteImg();
 
 public slots:
     void onSelectPartialStateChanged(int state);
@@ -40,6 +44,7 @@ private:
     QImage FadeImage(const QImage &image);
     QImage createSubImage(QImage* image, const QRect & rect);
     std::shared_ptr<QxPotrace> potrace_;
+    QPainterPath contours_;
 
     // used to prevent duplicate signals
     void setCutoffSpinboxWithoutEmit(int cutoff);
