@@ -14,7 +14,7 @@
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="20"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="58"/>
@@ -77,7 +77,7 @@
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="26"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="139"/>
@@ -115,47 +115,47 @@
     <message>
         <location filename="../src/windows/gcode-player.ui" line="14"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="39"/>
         <source>9600</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="44"/>
         <source>12800</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="49"/>
         <source>25600</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="54"/>
         <source>51200</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="59"/>
         <source>57600</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="64"/>
         <source>102400</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="69"/>
         <source>115200</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="74"/>
         <source>204800</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="98"/>
@@ -169,43 +169,25 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="140"/>
-<<<<<<< HEAD
         <location filename="../src/windows/gcode-player.cpp" line="37"/>
         <location filename="../src/windows/gcode-player.cpp" line="74"/>
-=======
-        <location filename="../src/windows/gcode-player.cpp" line="36"/>
-        <location filename="../src/windows/gcode-player.cpp" line="73"/>
->>>>>>> abf2bc6... temp1
         <source>Execute</source>
         <translation>送出工作</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="156"/>
-<<<<<<< HEAD
         <location filename="../src/windows/gcode-player.cpp" line="58"/>
         <location filename="../src/windows/gcode-player.cpp" line="75"/>
-=======
-        <location filename="../src/windows/gcode-player.cpp" line="57"/>
-        <location filename="../src/windows/gcode-player.cpp" line="74"/>
->>>>>>> abf2bc6... temp1
         <source>Pause</source>
         <translation type="unfinished">暫停工作</translation>
     </message>
     <message>
-<<<<<<< HEAD
         <location filename="../src/windows/gcode-player.cpp" line="47"/>
-=======
-        <location filename="../src/windows/gcode-player.cpp" line="46"/>
->>>>>>> abf2bc6... temp1
         <source>Stop</source>
         <translation type="unfinished">停止工作</translation>
     </message>
     <message>
-<<<<<<< HEAD
         <location filename="../src/windows/gcode-player.cpp" line="55"/>
-=======
-        <location filename="../src/windows/gcode-player.cpp" line="54"/>
->>>>>>> abf2bc6... temp1
         <source>Resume</source>
         <translation type="unfinished">繼續工作</translation>
     </message>
@@ -214,43 +196,84 @@
     <name>ImageTraceDialog</name>
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="14"/>
-        <source>ImageTrace</source>
-        <translation type="unfinished"></translation>
+        <source>Image Trace</source>
+        <translation>向量化描圖</translation>
     </message>
     <message>
-        <location filename="../src/windows/image-trace-dialog.ui" line="53"/>
+        <location filename="../src/windows/image-trace-dialog.ui" line="259"/>
+        <source>Show Points</source>
+        <translatorcomment>顯示端點</translatorcomment>
+        <translation>顯示端點</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="106"/>
+        <source>Smoothness</source>
+        <translatorcomment>平滑度</translatorcomment>
+        <translation>平滑度</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="266"/>
+        <source>Select partial</source>
+        <translatorcomment>選擇部分進行向量化</translatorcomment>
+        <translation>選擇部分區域</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="158"/>
         <source>Cutoff</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>低閥值</translatorcomment>
+        <translation>低閥值</translation>
     </message>
     <message>
-        <location filename="../src/windows/image-trace-dialog.ui" line="93"/>
-        <source>Threshold</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/image-trace-dialog.ui" line="133"/>
-        <source>Ignore less than</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/image-trace-dialog.ui" line="170"/>
+        <location filename="../src/windows/image-trace-dialog.ui" line="184"/>
         <source>Optimize</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>優化</translatorcomment>
+        <translation>簡化路徑</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="191"/>
+        <source>Threshold</source>
+        <translatorcomment>高閥值</translatorcomment>
+        <translation>高閥值</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="202"/>
+        <source>Grayscale Image</source>
+        <translatorcomment>灰階背景圖</translatorcomment>
+        <translation>灰階化背景</translation>
     </message>
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="207"/>
-        <source>Smoothness</source>
-        <translation type="unfinished"></translation>
+        <source>Binarized Image</source>
+        <translatorcomment>二值化背景圖</translatorcomment>
+        <translation>二值化背景</translation>
     </message>
     <message>
-        <location filename="../src/windows/image-trace-dialog.ui" line="250"/>
+        <location filename="../src/windows/image-trace-dialog.ui" line="212"/>
         <source>Fade Image</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>淡化背景圖</translatorcomment>
+        <translation>淡化背景</translation>
     </message>
     <message>
-        <location filename="../src/windows/image-trace-dialog.cpp" line="9"/>
-        <source>Trace Image</source>
-        <translation type="unfinished"></translation>
+        <location filename="../src/windows/image-trace-dialog.ui" line="245"/>
+        <source>Ignore less than</source>
+        <translatorcomment>忽略過小區域</translatorcomment>
+        <translation>濾除過小區域</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.ui" line="252"/>
+        <source>Delete image after trace</source>
+        <translatorcomment>向量化後刪除圖片</translatorcomment>
+        <translation>向量化後刪除圖片</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.cpp" line="139"/>
+        <source>Ok</source>
+        <translation>確定</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/image-trace-dialog.cpp" line="140"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -258,7 +281,7 @@
     <message>
         <location filename="../src/widgets/components/layer-list-item.ui" line="29"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.ui" line="126"/>
@@ -290,7 +313,7 @@
         <location filename="../src/widgets/components/layer-list-item.ui" line="178"/>
         <location filename="../src/widgets/components/layer-list-item.ui" line="205"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="72"/>
@@ -313,7 +336,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-panel.ui" line="14"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -321,22 +344,22 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="14"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="93"/>
         <source>Wood 3mm</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="98"/>
         <source>Acrylic 3mm</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="103"/>
         <source>Customized</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="113"/>
@@ -346,7 +369,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="126"/>
         <source> %</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="143"/>
@@ -356,7 +379,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="153"/>
         <source> mm/s</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="170"/>
@@ -379,7 +402,7 @@
     <message>
         <location filename="../src/windows/machine-manager.ui" line="22"/>
         <source>&quot;Machines&quot; allows you to set work area and etc.</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="85"/>
@@ -424,7 +447,7 @@
         <location filename="../src/windows/machine-manager.ui" line="225"/>
         <location filename="../src/windows/machine-manager.ui" line="252"/>
         <source> mm</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="242"/>
@@ -514,22 +537,9 @@
     <message>
         <location filename="../src/windows/qml/MachineSetupPage.qml" line="69"/>
         <source></source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
-<<<<<<< HEAD
-=======
-        <location filename="../src/windows/qml/MachineSetupPage.qml" line="69"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/qml/MachineSetupPage.qml" line="69"/>
-        <source></source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
->>>>>>> abf2bc6... temp1
         <location filename="../src/windows/qml/MachineSetupPage.qml" line="95"/>
         <source>Next</source>
         <translation type="unfinished"></translation>
@@ -556,12 +566,6 @@
         <location filename="../src/windows/mainwindow.ui" line="101"/>
         <source>&amp;Edit</source>
         <translation>編輯</translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="105"/>
-        <location filename="../src/windows/mainwindow.ui" line="629"/>
-        <source>Image</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="127"/>
@@ -769,6 +773,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../src/windows/mainwindow.ui" line="881"/>
+        <source>Trace</source>
+        <translation>向量化描圖</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="105"/>
+        <location filename="../src/windows/mainwindow.ui" line="629"/>
+        <source>Image</source>
+        <translation>影像</translation>
+    </message>
+    <message>
         <location filename="../src/windows/mainwindow.ui" line="632"/>
         <location filename="../src/windows/mainwindow.ui" line="722"/>
         <source>P</source>
@@ -828,7 +843,7 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="692"/>
         <source>L</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="704"/>
@@ -931,18 +946,13 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Export Gcode</source>
+        <translation type="vanished">輸出 Gcode</translation>
+    </message>
+    <message>
         <location filename="../src/windows/mainwindow.ui" line="876"/>
         <source>Ctrl+E</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="881"/>
-        <source>Trace</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export Gcode</source>
-        <translation type="vanished">輸出 Gcode</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="853"/>
@@ -1159,11 +1169,7 @@
     </message>
     <message>
         <location filename="../src/windows/preview-window.ui" line="43"/>
-        <source>TextLabel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/preview-window.cpp" line="181"/>
+        <location filename="../src/windows/preview-window.cpp" line="176"/>
         <source>Required Time</source>
         <translation type="unfinished">所需時間</translation>
     </message>

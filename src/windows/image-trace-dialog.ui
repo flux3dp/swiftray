@@ -50,13 +50,6 @@
        <property name="sizeConstraint">
         <enum>QLayout::SetFixedSize</enum>
        </property>
-       <item row="6" column="1">
-        <widget class="QCheckBox" name="showPointsCheckbox">
-         <property name="text">
-          <string>Show Points</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="2">
         <widget class="QSlider" name="cutoffSlider">
          <property name="sizePolicy">
@@ -150,13 +143,6 @@
          </property>
          <property name="maximum">
           <number>255</number>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QCheckBox" name="selectPartialCheckBox">
-         <property name="text">
-          <string>Select partial</string>
          </property>
         </widget>
        </item>
@@ -267,6 +253,20 @@
          </property>
         </widget>
        </item>
+       <item row="6" column="1" colspan="2">
+        <widget class="QCheckBox" name="showPointsCheckbox">
+         <property name="text">
+          <string>Show Points</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <widget class="QCheckBox" name="selectPartialCheckBox">
+         <property name="text">
+          <string>Select partial</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
      <item>
@@ -300,6 +300,20 @@
    <header location="global">widgets/components/image-trace-graphicsview.h</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>cutoffSpinBox</tabstop>
+  <tabstop>cutoffSlider</tabstop>
+  <tabstop>thresholdSpinBox</tabstop>
+  <tabstop>thresholdSlider</tabstop>
+  <tabstop>ignoreSpinBox</tabstop>
+  <tabstop>optimizeDoubleSpinBox</tabstop>
+  <tabstop>smoothnessDoubleSpinBox</tabstop>
+  <tabstop>bgImageComboBox</tabstop>
+  <tabstop>showPointsCheckbox</tabstop>
+  <tabstop>selectPartialCheckBox</tabstop>
+  <tabstop>deleteImgCheckBox</tabstop>
+  <tabstop>traceGraphicsView</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

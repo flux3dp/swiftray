@@ -24,7 +24,8 @@ ImageTraceDialog::ImageTraceDialog(QWidget *parent) :
   gl->setFormat(format);
   ui->traceGraphicsView->setViewport(gl);
 
-  registerEvents();
+  initializeContainer();
+
   reset();
 }
 
@@ -132,6 +133,11 @@ void ImageTraceDialog::registerEvents() {
   connect(ui->showPointsCheckbox, &QCheckBox::stateChanged,this, [=]() {
       this->updateImageTrace();
   });
+}
+
+void ImageTraceDialog::loadStyles() {
+  ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Ok"));
+  ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
 }
 
 /**
