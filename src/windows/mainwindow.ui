@@ -92,6 +92,7 @@
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionPreferences"/>
+    <addaction name="actionPreview"/>
     <addaction name="menuExport"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
@@ -879,6 +880,11 @@
   <action name="actionTrace">
    <property name="text">
     <string>Trace</string>
+   </property>
+  </action>
+  <action name="actionPreview">
+   <property name="text">
+    <string>Preview</string>
    </property>
   </action>
  </widget>

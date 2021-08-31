@@ -128,6 +128,42 @@ void MainWindow::imageSelected(const QImage image) {
   canvas_->importImage(my_image);
 }
 
+void MainWindow::exportGCodeFile() {
+  PreviewWindow *pw = new PreviewWindow(this);
+  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter exporter(gen_gcode.get());
+  exporter.convertStack(canvas_->document().layers());
+
+  QString default_save_dir;
+  QSettings settings;
+  if ( ! settings.contains("defaultSaveDir")) {
+    QStringList desktop_dir = QStandardPaths::standardLocations(
+            QStandardPaths::StandardLocation::DesktopLocation);
+    settings.setValue("defaultSaveDir", desktop_dir.at(0));
+  }
+  default_save_dir = settings.value("defaultSaveDir").toString();
+
+  QString filter = tr("GCode Files (*.gcode);; All files (*.*)");
+  QString file_name = QFileDialog::getSaveFileName(this,
+                                                   tr("Save GCode"),
+                                                   default_save_dir + "/" + tr("untitled.gcode"),
+                                                   filter, &filter);
+  if (file_name.isEmpty()) {
+    return;
+  }
+  QFile file(file_name);
+  if (file.open(QFile::WriteOnly)) {
+    QTextStream stream(&file);
+    stream << QString::fromStdString(gen_gcode->toString()).toUtf8();
+    file.close();
+
+    // update default save dir
+    QFileInfo file_info{file_name};
+    settings.setValue("defaultSaveDir", file_info.absoluteDir().absolutePath());
+  }
+}
+
+
 void MainWindow::saveFile() {
   QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
   QFile file(file_name);
@@ -337,7 +373,8 @@ void MainWindow::registerEvents() {
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
     emit machineSettingsChanged();
   });
-  connect(ui->actionExportGcode, &QAction::triggered, [=]() {
+  connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
+  connect(ui->actionPreview, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
     PreviewWindow *pw = new PreviewWindow(this);
     auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
