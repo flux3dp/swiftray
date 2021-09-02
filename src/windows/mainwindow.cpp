@@ -304,12 +304,13 @@ void MainWindow::registerEvents() {
   connect(ui->actionExportGcode, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
     PreviewWindow *pw = new PreviewWindow(this);
-    pw->setPreviewPath(gen);
-    pw->show();
     auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
     ToolpathExporter exporter(gen_gcode.get());
     exporter.convertStack(canvas_->document().layers());
     gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+    pw->setPreviewPath(gen);
+    pw->setRequiredTime(gcode_player_->requiredTime());
+    pw->show();
   });
   connect(canvas_, &Canvas::cursorChanged, [=](Qt::CursorShape cursor) {
     if (cursor == Qt::ArrowCursor) {

@@ -18,6 +18,7 @@ public:
     PAUSED,
     PAUSING,
     RESUMING,
+    STOPPED,
     FINISHED,
     ERROR_STOPPED,
     ERROR_PAUSED
@@ -28,6 +29,8 @@ public:
   ~BaseJob();
 
   virtual void start();
+
+  virtual void stop();
 
   virtual void pause();
 
