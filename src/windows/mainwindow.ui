@@ -107,6 +107,12 @@
      </property>
      <addaction name="actionTrace"/>
     </widget>
+    <widget class="QMenu" name="menuPath">
+     <property name="title">
+      <string>Path</string>
+     </property>
+     <addaction name="actionPathOffset"/>
+    </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
@@ -119,9 +125,11 @@
     <addaction name="actionGroupMenu"/>
     <addaction name="actionUngroupMenu"/>
     <addaction name="separator"/>
+    <addaction name="menuImage"/>
+    <addaction name="menuPath"/>
+    <addaction name="separator"/>
     <addaction name="actionMachineSettings"/>
     <addaction name="separator"/>
-    <addaction name="menuImage"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -885,6 +893,11 @@
   <action name="actionPreview">
    <property name="text">
     <string>Preview</string>
+   </property>
+  </action>
+  <action name="actionPathOffset">
+   <property name="text">
+    <string>Offset</string>
    </property>
   </action>
  </widget>
