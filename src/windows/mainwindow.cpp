@@ -209,11 +209,13 @@ void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
   bool all_group = !items.empty();
   bool all_path = !items.empty();
+  bool image = false;
 
   for (auto &shape : canvas_->document().selections()) {
     if (shape->type() != Shape::Type::Group) all_group = false;
 
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
+    if (shape->type() == Shape::Type::Bitmap) image = true;
   }
 
   ui->actionGroup->setEnabled(items.size() > 1);
@@ -230,6 +232,7 @@ void MainWindow::updateSelections() {
   ui->actionAlignHLeft->setEnabled(items.size() > 1);
   ui->actionAlignHCenter->setEnabled(items.size() > 1);
   ui->actionAlignHRight->setEnabled(items.size() > 1);
+  ui->actionTrace->setEnabled(items.size() == 1 && image);
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
@@ -246,6 +249,7 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
+  image_trace_dialog_ = new ImageTraceDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -296,6 +300,38 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionTrace, &QAction::triggered, [=]() {
+    QList<ShapePtr> &items = canvas_->document().selections();
+    Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
+    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionTrace", "MUST only be enabled when an image is selected");
+
+    ShapePtr selected_img_shape = items.at(0);
+    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
+    this->image_trace_dialog_->reset();
+    this->image_trace_dialog_->loadImage(bitmap->image());
+    int dialogRet = this->image_trace_dialog_->exec();
+    if(dialogRet == QDialog::Accepted) {
+      // Add trace contours to canvas
+      ShapePtr new_shape = make_shared<PathShape>(this->image_trace_dialog_->getTrace());
+      QTransform offset = new_shape->transform();
+      offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
+      new_shape->setTransform(offset);
+      if (this->image_trace_dialog_->shouldDeleteImg()) {
+        canvas_->document().execute(
+                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
+                Commands::Select(&(canvas_->document()), {new_shape}),
+                Commands::RemoveShape(selected_img_shape)
+        );
+      } else {
+        canvas_->document().execute(
+                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
+                Commands::Select(&(canvas_->document()), {new_shape})
+        );
+      }
+    }
+    this->image_trace_dialog_->reset();
+  });
+
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {

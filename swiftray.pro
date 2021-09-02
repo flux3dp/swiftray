@@ -63,7 +63,8 @@ SOURCES += \
         src/command.cpp \
         src/clipboard.cpp \
         src/main.cpp \
-        src/connection/base-job.cpp
+        src/connection/base-job.cpp \
+        $$files(third_party/QxPotrace/qxpotrace.cpp)
 
 ios {
 } else {
@@ -105,7 +106,8 @@ HEADERS += \
     src/widgets/components/layer-list-item.h \
     src/widgets/components/qdoublespinbox2.h \
     src/widgets/components/qfontcombobox2.h \
-    src/widgets/components/task-list-item.h
+    src/widgets/components/task-list-item.h \
+    $$files(third_party/QxPotrace/qxpotrace.h)
 
 ios {
     HEADERS += \
@@ -140,7 +142,8 @@ FORMS += \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \
     src/windows/gcode-player.ui \
-    src/windows/mainwindow.ui
+    src/windows/mainwindow.ui \
+    src/windows/image-trace-dialog.ui
 
 ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm

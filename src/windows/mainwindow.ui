@@ -76,7 +76,7 @@
      <x>0</x>
      <y>0</y>
      <width>1250</width>
-     <height>25</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -100,6 +100,12 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <widget class="QMenu" name="menuImage">
+     <property name="title">
+      <string>Image</string>
+     </property>
+     <addaction name="actionTrace"/>
+    </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
@@ -113,6 +119,8 @@
     <addaction name="actionUngroupMenu"/>
     <addaction name="separator"/>
     <addaction name="actionMachineSettings"/>
+    <addaction name="separator"/>
+    <addaction name="menuImage"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -866,6 +874,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionTrace">
+   <property name="text">
+    <string>Trace</string>
    </property>
   </action>
  </widget>
