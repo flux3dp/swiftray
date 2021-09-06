@@ -26,7 +26,7 @@ private:
     void registerEvents() override;
     void loadStyles() override;
 
-    ClipperLib::Paths convert_for_clipper();
+    ClipperLib::Paths convert_for_clipper(bool closed);
     void convert_from_clipper(ClipperLib::Paths clipper_result);
 
     static constexpr qreal scale_factor = 100;

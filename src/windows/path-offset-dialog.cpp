@@ -69,6 +69,7 @@ void PathOffsetDialog::addPath(QPolygonF path) {
   if (path.isClosed()) {
     ui->graphicsView->scene()->addPolygon(path);
   } else {
+    // NOTE: open polygon can't be added directly to graphicsscene
     QPainterPath open_path;
     open_path.addPolygon(path);
     QGraphicsPathItem *contour = new QGraphicsPathItem(open_path);
@@ -78,9 +79,15 @@ void PathOffsetDialog::addPath(QPolygonF path) {
 
 }
 
-ClipperLib::Paths PathOffsetDialog::convert_for_clipper() {
+ClipperLib::Paths PathOffsetDialog::convert_for_clipper(bool closed) {
   ClipperLib::Paths clipper_paths;
   for (auto polygon_path: path_list_) {
+    if (closed && !polygon_path.isClosed()) {
+      continue;
+    }
+    if (!closed && polygon_path.isClosed()) {
+      continue;
+    }
     ClipperLib::Path clipper_path;
     for (auto point: scale_up_.map(polygon_path).toPolygon()) {
       clipper_path.push_back(ClipperLib::IntPoint{point.x(), point.y()});
@@ -113,15 +120,16 @@ void PathOffsetDialog::updatePathOffset() {
   }
 
   ClipperLib::ClipperOffset clipper_offset;
-  // TODO: Separate closed path & open path
-  //       QPolygon.isClosed()
-  ClipperLib::Paths input_clipper_paths = convert_for_clipper();
+  // Separate closed and open source polygons
+  ClipperLib::Paths input_clipper_paths = convert_for_clipper(false);
+  ClipperLib::Paths input_closed_clipper_paths = convert_for_clipper(true);
 
   if (ui->cornerComboBox->currentIndex() == 1) {
     clipper_offset.AddPaths(input_clipper_paths, ClipperLib::jtRound, ClipperLib::etOpenRound);
+    clipper_offset.AddPaths(input_closed_clipper_paths, ClipperLib::jtRound, ClipperLib::etOpenRound);
   } else {
-    // TODO: apply different EndType and JoinType to closed path & open path
-    //clipper_offset.AddPaths(input_clipper_paths, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
+    clipper_offset.AddPaths(input_clipper_paths, ClipperLib::jtMiter, ClipperLib::etOpenSquare);
+    clipper_offset.AddPaths(input_closed_clipper_paths, ClipperLib::jtMiter, ClipperLib::etClosedLine);
   }
   ClipperLib::Paths output_clipper_paths;
   clipper_offset.Execute(output_clipper_paths, ui->distanceDoubleSpinBox->value() * scale_factor);
@@ -130,26 +138,42 @@ void PathOffsetDialog::updatePathOffset() {
   if (offset_path_list_.count() == 0) {
     return;
   }
-  //find the outward offset
-  int max_path_index = 0;
-  QSizeF max_bound{0, 0};
+
+  // Separate outward offset and inward offset
+  QList<QPolygonF> inward;
+  QList<QPolygonF> outward;
+  QList<int> processed_idx_list;
   for (auto i = 0; i < offset_path_list_.count(); i++) {
-    auto offset_path = offset_path_list_.at(i);
-    if (max_bound.width() <= offset_path.boundingRect().width() &&
-        max_bound.height() <= offset_path.boundingRect().height()) {
-      max_bound.setWidth(offset_path.boundingRect().width());
-      max_bound.setHeight(offset_path.boundingRect().height());
-      max_path_index = i;
+    if (processed_idx_list.contains(i)) { // filter out processed item
+      continue;
+    }
+    bool is_contained_by = false; // whether i is inside any other path
+    for (auto j = i + 1; j < offset_path_list_.count(); j++) {
+      if (processed_idx_list.contains(j)) { // filter out processed item
+        continue;
+      }
+      if (offset_path_list_.at(i).containsPoint(offset_path_list_.at(j).first(), Qt::OddEvenFill)) {
+        // i contains j -> j is an inward
+        inward.push_back(offset_path_list_.at(j));
+        processed_idx_list.push_back(j);
+      }
+      else if (offset_path_list_.at(j).containsPoint(offset_path_list_.at(i).first(), Qt::OddEvenFill)) {
+        // j contains i -> i is an inward
+        is_contained_by = true;
+        break; // exit current i-th loop
+      }
+    }
+    if (is_contained_by) {
+      inward.push_back(offset_path_list_.at(i));
+    } else {
+      outward.push_back(offset_path_list_.at(i));
     }
   }
-  if (ui->directionComboBox->currentIndex() == 1) {
-    // only keep inward offset (delete outward offset)
-    offset_path_list_.removeAt(max_path_index);
+  // Only keep inward/outward offset depending on user selection
+  if (ui->directionComboBox->currentIndex() == 0) {
+    offset_path_list_ = outward;
   } else {
-    // only keep outward offset
-    auto outward_path_offset = offset_path_list_.at(max_path_index);
-    offset_path_list_.clear();
-    offset_path_list_.push_back(outward_path_offset);
+    offset_path_list_ = inward;
   }
 
   // draw new result
