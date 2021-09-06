@@ -11,6 +11,7 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
+#include <windows/path-offset-dialog.h>
 
 #include "ui_mainwindow.h"
 
@@ -340,9 +341,32 @@ void MainWindow::registerEvents() {
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
   connect(ui->actionPathOffset, &QAction::triggered, [=]() {
-    // open a dialog
-    // params: offset direction, corner, offset distance
-    // add new path shape to canvas
+    QList<ShapePtr> &shapes = canvas_->document().selections();
+    PathOffsetDialog *dialog = new PathOffsetDialog();
+    // initialize dialog
+    for (auto &shape : shapes) {
+      auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
+      auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
+      for (QPolygonF &poly : polygons) {
+        dialog->addPath(poly);
+      }
+    }
+    dialog->updatePathOffset();
+
+    // output result
+    int dialogRet = dialog->exec();
+    if(dialogRet == QDialog::Accepted) {
+      QPainterPath p;
+      for (auto polygon :dialog->getResult()) {
+        p.addPolygon(polygon);
+      }
+      ShapePtr new_shape = make_shared<PathShape>(p);
+      canvas_->document().execute(
+              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
+              Commands::Select(&(canvas_->document()), {new_shape})
+      );
+    }
+    delete dialog;
   });
   connect(ui->actionTrace, &QAction::triggered, [=]() {
     QList<ShapePtr> &items = canvas_->document().selections();

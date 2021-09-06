@@ -36,7 +36,7 @@ FILE(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
 FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
-
+FILE(GLOB CLIPPER_CPP "third_party/clipper/clipper.cpp")
 
 SET(SOURCES
         ${SRC_DIR}/layer.cpp
@@ -51,6 +51,7 @@ SET(SOURCES
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}
         ${QXPOTRACE_CPP}
+        ${CLIPPER_CPP}
         ${SRC_DIR}/canvas/cache-stack.cpp
         ${SRC_DIR}/canvas/canvas.cpp
         ${SRC_DIR}/parser/svgpp-parser.cpp

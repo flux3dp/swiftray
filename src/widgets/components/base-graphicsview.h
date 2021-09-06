@@ -9,6 +9,7 @@ public:
     BaseGraphicsView(QGraphicsScene *scene = nullptr, QWidget *parent = nullptr);
     bool event(QEvent *e) override;
 
+    void setMinScale(qreal min_scale) { min_scale_ = min_scale; }
 protected:
     void gestureHandler(QGestureEvent *ge);
     void pinchGestureHandler(QPinchGesture *pg);
