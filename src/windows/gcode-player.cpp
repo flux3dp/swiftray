@@ -8,6 +8,8 @@
 #include <QSerialPortInfo>
 #include <QtMath>
 
+#include <QDebug>
+
 #endif
 
 GCodePlayer::GCodePlayer(QWidget *parent) :
@@ -31,31 +33,39 @@ void GCodePlayer::loadSettings() {
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
-    if (!jobs_.isEmpty() && jobs_.last()->status() == SerialJob::Status::RUNNING) {
+    // Determine the behaviour of executeBtn based on state: Start / Stop
+    if (!jobs_.isEmpty() && jobs_.last()->isRunning() && jobs_.last()->status() == SerialJob::Status::RUNNING) {
+      // STOP
       jobs_.last()->stop();
-      ui->pauseBtn->setEnabled(false);
-      ui->executeBtn->setText(tr("Execute"));
     } else {
+      if (!jobs_.isEmpty() && jobs_.last()->isFinished()) {
+        // Delete finished/stopped job first
+        jobs_.pop_back();
+      }
+      // START
       auto job = new SerialJob(this,
-                              ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
-                              ui->gcodeText->toPlainText().split("\n"));
+                               ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
+                               ui->gcodeText->toPlainText().split("\n"));
       jobs_ << job;
+      qRegisterMetaType<BaseJob::Status>();
+      qRegisterMetaType<uint32_t>();
       connect(job, &SerialJob::error, this, &GCodePlayer::showError);
       connect(job, &SerialJob::progressChanged, this, &GCodePlayer::updateProgress);
+      connect(job, &SerialJob::statusChanged, this, &GCodePlayer::onStatusChanged);
       job->start();
-      ui->pauseBtn->setEnabled(true);
-      ui->executeBtn->setText(tr("Stop"));
     }
   });
 
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
+    // Pause / Resume
+    if (jobs_.isEmpty()) {
+      return;
+    }
     auto job = jobs_.last();
     if (job->status() == SerialJob::Status::RUNNING) {
       job->pause();
-      ui->pauseBtn->setText(tr("Resume"));
     } else {
       job->resume();
-      ui->pauseBtn->setText(tr("Pause"));
     }
   });
 
@@ -73,6 +83,50 @@ void GCodePlayer::showError(const QString &msg) {
   ui->pauseBtn->setEnabled(false);
   ui->executeBtn->setText(tr("Execute"));
   ui->pauseBtn->setText(tr("Pause"));
+}
+
+void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
+  switch (new_status) {
+    case BaseJob::Status::READY:
+      break;
+    case BaseJob::Status::RUNNING:
+      qInfo() << "Running";
+      ui->pauseBtn->setEnabled(true);
+      ui->pauseBtn->setText(tr("Pause"));
+      ui->executeBtn->setEnabled(true);
+      ui->executeBtn->setText(tr("Stop"));
+      break;
+    case BaseJob::Status::PAUSED:
+      qInfo() << "Paused";
+      ui->pauseBtn->setEnabled(true);
+      ui->pauseBtn->setText(tr("Resume"));
+      break;
+    case BaseJob::Status::FINISHED:
+      qInfo() << "Finished";
+      ui->pauseBtn->setEnabled(false);
+      ui->pauseBtn->setText(tr("Pause"));
+      ui->executeBtn->setText(tr("Execute"));
+      ui->executeBtn->setEnabled(true);
+      updateProgress();
+      break;
+    case BaseJob::Status::STOPPING:
+    case BaseJob::Status::ERROR_STOPPING:
+      qInfo() << "Stopping";
+      ui->pauseBtn->setEnabled(false);
+      ui->executeBtn->setEnabled(false);
+      break;
+    case BaseJob::Status::STOPPED:
+    case BaseJob::Status::ERROR_STOPPED:
+      qInfo() << "Stopped";
+      ui->pauseBtn->setEnabled(false);
+      ui->pauseBtn->setText(tr("Pause"));
+      ui->executeBtn->setText(tr("Execute"));
+      ui->executeBtn->setEnabled(true);
+      updateProgress();
+      break;
+    default:
+      break;
+  }
 }
 
 void GCodePlayer::updateProgress() {

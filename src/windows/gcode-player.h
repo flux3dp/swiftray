@@ -37,6 +37,8 @@ public:
 
   void updateProgress();
 
+  void onStatusChanged(BaseJob::Status new_status);
+
 private:
 
   void loadSettings() override;
