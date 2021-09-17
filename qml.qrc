@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>src/windows/main.qml</file>
+        <file>src/windows/qml/MaintenanceDialog.qml</file>
         <file>src/windows/qml/WelcomeDialog.qml</file>
         <file>src/windows/qml/OtherMachinePage.qml</file>
         <file>src/windows/qml/SetupSuccessfulPage.qml</file>
