@@ -86,6 +86,7 @@ private:
   ImageTraceDialog *image_trace_dialog_;
 
   void saveFile();
+  void exportGCodeFile();
 };
 
 #endif // MAINWINDOW_H
