@@ -29,6 +29,7 @@ Canvas::Canvas(QQuickItem *parent)
        svgpp_parser_(Parser::SVGPPParser()),
        widget_(nullptr),
        fps(0),
+       font_(QFont("Tahoma", 200, QFont::Bold)),
        timer(new QTimer(this)),
        mem_thread_(new QThread(this)) {
 
