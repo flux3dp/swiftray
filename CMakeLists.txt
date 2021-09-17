@@ -37,7 +37,6 @@ FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
 
-
 SET(SOURCES
         ${SRC_DIR}/layer.cpp
         ${SRC_DIR}/document.cpp
@@ -87,6 +86,9 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
             ${SRC_DIR}/windows/osxwindow.mm)
 ENDIF ()
 
+# Build third_party libraries
+ADD_SUBDIRECTORY(third_party/clipper)
+
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
@@ -105,5 +107,7 @@ target_link_libraries(swiftray Qt::Gui)
 target_link_libraries(swiftray Qt::Svg)
 target_link_libraries(swiftray Qt::Widgets)
 target_link_libraries(swiftray Qt::SerialPort)
+
+target_link_libraries(swiftray CLIPPER)
 
 add_subdirectory(tests)

@@ -1,0 +1,1 @@
+ADD_LIBRARY(CLIPPER clipper.cpp)

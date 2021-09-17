@@ -143,7 +143,8 @@ FORMS += \
     src/windows/preview-window.ui \
     src/windows/gcode-player.ui \
     src/windows/mainwindow.ui \
-    src/windows/image-trace-dialog.ui
+    src/windows/image-trace-dialog.ui \
+    src/windows/path-offset-dialog.ui
 
 ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm

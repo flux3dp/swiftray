@@ -11,6 +11,7 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
+#include <windows/path-offset-dialog.h>
 
 #include "ui_mainwindow.h"
 
@@ -245,13 +246,15 @@ void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
   bool all_group = !items.empty();
   bool all_path = !items.empty();
-  bool image = false;
+  bool all_image = !items.empty();
+  bool all_geometry = !items.empty();
 
   for (auto &shape : canvas_->document().selections()) {
     if (shape->type() != Shape::Type::Group) all_group = false;
 
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
-    if (shape->type() == Shape::Type::Bitmap) image = true;
+    if (shape->type() != Shape::Type::Path) all_geometry = false;
+    if (shape->type() != Shape::Type::Bitmap) all_image = false;
   }
 
   ui->actionGroup->setEnabled(items.size() > 1);
@@ -268,7 +271,8 @@ void MainWindow::updateSelections() {
   ui->actionAlignHLeft->setEnabled(items.size() > 1);
   ui->actionAlignHCenter->setEnabled(items.size() > 1);
   ui->actionAlignHRight->setEnabled(items.size() > 1);
-  ui->actionTrace->setEnabled(items.size() == 1 && image);
+  ui->actionTrace->setEnabled(items.size() == 1 && all_image);
+  ui->actionPathOffset->setEnabled(all_geometry);
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
@@ -336,6 +340,34 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionPathOffset, &QAction::triggered, [=]() {
+    QList<ShapePtr> &shapes = canvas_->document().selections();
+    PathOffsetDialog *dialog = new PathOffsetDialog();
+    // initialize dialog
+    for (auto &shape : shapes) {
+      auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
+      auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
+      for (QPolygonF &poly : polygons) {
+        dialog->addPath(poly);
+      }
+    }
+    dialog->updatePathOffset();
+
+    // output result
+    int dialogRet = dialog->exec();
+    if(dialogRet == QDialog::Accepted) {
+      QPainterPath p;
+      for (auto polygon :dialog->getResult()) {
+        p.addPolygon(polygon);
+      }
+      ShapePtr new_shape = make_shared<PathShape>(p);
+      canvas_->document().execute(
+              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
+              Commands::Select(&(canvas_->document()), {new_shape})
+      );
+    }
+    delete dialog;
+  });
   connect(ui->actionTrace, &QAction::triggered, [=]() {
     QList<ShapePtr> &items = canvas_->document().selections();
     Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
