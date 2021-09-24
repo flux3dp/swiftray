@@ -3,12 +3,14 @@
 #include <QDialog>
 #include <QFrame>
 #include <QThread>
+#include <QQuickItem>
 
 #ifndef Q_OS_IOS
 
 #include <QSerialPort>
 #include <connection/serial-job.h>
 #include <widgets/base-container.h>
+#include <settings/maintenance-controller.h>
 
 #endif
 
@@ -37,6 +39,11 @@ public:
 
   void updateProgress();
 
+  static QString portName();
+
+  static QString baudRate();
+
+private slots:
   void onStatusChanged(BaseJob::Status new_status);
 
 private:

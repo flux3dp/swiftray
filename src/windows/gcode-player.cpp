@@ -12,11 +12,14 @@
 
 #endif
 
+GCodePlayer *gcode_player_ = nullptr;
+
 GCodePlayer::GCodePlayer(QWidget *parent) :
      QFrame(parent),
      ui(new Ui::GCodePlayer),
      BaseContainer() {
   ui->setupUi(this);
+  gcode_player_ = this;
   initializeContainer();
 }
 
@@ -27,6 +30,9 @@ void GCodePlayer::loadSettings() {
   for (const QSerialPortInfo &info : infos)
     ui->portComboBox->addItem(info.portName());
   ui->portComboBox->setCurrentIndex(ui->portComboBox->count() - 1);
+  qmlRegisterType<MaintenanceController>("MaintenanceController", 1, 0, "MaintenanceController");
+  ui->maintenanceController->setSource(QUrl("qrc:/src/windows/qml/MaintenanceDialog.qml"));
+  ui->maintenanceController->show();
 #endif
 }
 
@@ -206,6 +212,15 @@ QString GCodePlayer::requiredTime() const {
   return required_time_str;
 }
 
+QString GCodePlayer::portName() {
+  return gcode_player_->ui->portComboBox->currentText();
+}
+
+QString GCodePlayer::baudRate() {
+  return gcode_player_->ui->baudComboBox->currentText();
+}
+
 GCodePlayer::~GCodePlayer() {
+  gcode_player_ = nullptr;
   delete ui;
 }

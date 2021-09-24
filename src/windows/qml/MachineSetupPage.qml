@@ -22,7 +22,7 @@ Item {
         if (comboBoxBrand.currentText == "Other" || comboBoxModel.currentText == "Other") {
             stackView.push(otherMachinePage);
         } else {
-            createStandardeProfile(comboBoxBrand.currentText, comboBoxModel.currentText);
+            createStandardProfile(comboBoxBrand.currentText, comboBoxModel.currentText);
             stackView.push(setupSuccessfulPage);
         }
     }
