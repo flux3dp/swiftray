@@ -166,10 +166,10 @@ void SerialJob::run() {
       if (last_alarm_code_ == 3 || last_alarm_code_ == 6) {
         if (status() != Status::STOPPING) {
           // user cancel (3 for normal motion, 6 for homing cycle)
-          // already in STOPPING status here
+          // Not an error
+          setStatus(Status::STOPPING);
           emit startWaiting(5000); // set timeout for any transient state
           // expect/wait for a grbl reset (hello) msg
-          setStatus(Status::STOPPING);
         }
       }
       if (last_alarm_code_ >= 7 && last_alarm_code_ <= 9) {
@@ -182,18 +182,16 @@ void SerialJob::run() {
       }
 
       if (grbl_reset_condition_detected_) {
-        // NOTE: user abort should be handled in above condition
-        // detected a reset unexpectedly -> stopped immediately
         grbl_reset_condition_detected_ = false;
         if (status() == Status::ERROR_STOPPING) {
-          emit error(tr("GRBL reset"));
+          //emit error(tr("GRBL reset"));
           throw "ERROR_STOPPED GRBL_RESET";
         } else if (status() == Status::STOPPING) {
           throw "STOPPED USER_ABORT";
         }
       }
       if (timeout_occurred_) { // No response
-        // send a force stop cmd in case the machine is still working
+        // send a force stop cmd in case the machine is still working?
         //qInfo() << "Send a force stop cmd when no response";
         //serial_->write_some("\x18");
         emit error(tr("Machine no response"));
