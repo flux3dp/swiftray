@@ -1,10 +1,7 @@
 #include "SerialPort.h"
 
-#include <connection/serial-job.h>
 
-#include <QDebug>
-
-SerialPort::SerialPort(SerialJob *job) : job_(job), end_of_line_char_('\n')
+SerialPort::SerialPort() : end_of_line_char_('\n')
 {
 
 }
@@ -109,7 +106,7 @@ void SerialPort::on_receive_(const boost::system::error_code& ec, size_t bytes_t
   for (unsigned int i = 0; i < bytes_transferred; ++i) {
     char c = read_buf_raw_[i];
     if (c == end_of_line_char_) {
-      this->on_receive_(read_buf_str_);
+      emit responseReceived(QString::fromStdString(read_buf_str_));
       read_buf_str_.clear();
     }
     else {
@@ -117,16 +114,6 @@ void SerialPort::on_receive_(const boost::system::error_code& ec, size_t bytes_t
     }
   }
 
-  async_read_some_();
-}
-
-/**
- * @brief The actual handler for processing received data
- * @param data
- */
-void SerialPort::on_receive_(const std::string &data)
-{
-  job_->parseResponse(QString::fromStdString(data));
-  //qInfo() << "SerialPort::on_receive_() : " << QString::fromStdString(data);
+  async_read_some_(); // start the next read
 }
 

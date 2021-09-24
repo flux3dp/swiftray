@@ -57,8 +57,6 @@ struct systemCmdState {
     systemCmdCommState comm_state;
 };
 
-class SerialPort;
-
 class SerialJob : public BaseJob {
 Q_OBJECT
 public:

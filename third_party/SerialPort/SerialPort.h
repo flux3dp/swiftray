@@ -1,4 +1,10 @@
 #pragma once
+/**
+ * Source Reference: https://gist.github.com/yoggy/3323808
+ *
+ * Modified by FLUX Inc. for Qt framework
+ *
+ */
 
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
@@ -8,18 +14,16 @@
 #include <boost/thread.hpp>
 
 #include <string>
-#include <vector>
 
-#include <connection/serial-job.h>
+#include <QObject>
 
 typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
 
 #define SERIAL_PORT_READ_BUF_SIZE 256
 
-class SerialJob;
-
-class SerialPort
+class SerialPort : public QObject
 {
+    Q_OBJECT
 protected:
     boost::asio::io_context io_context_;
     serial_port_ptr port_;
@@ -34,10 +38,8 @@ private:
     SerialPort(const SerialPort &p);
     SerialPort &operator=(const SerialPort &p);
 
-    SerialJob *job_;
-
 public:
-    SerialPort(SerialJob *job);
+    SerialPort();
     virtual ~SerialPort(void);
 
     char end_of_line_char() const;
@@ -51,8 +53,10 @@ public:
 
     void clear_buf() { read_buf_str_.clear(); }
 
+signals:
+    void responseReceived(QString resp);
+
 protected:
     virtual void async_read_some_();
     virtual void on_receive_(const boost::system::error_code& ec, size_t bytes_transferred);
-    virtual void on_receive_(const std::string &data);
 };

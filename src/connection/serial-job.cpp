@@ -28,7 +28,8 @@ SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant gcode) :
   system_cmd_state_.cmd = systemCmd::kNull;
   system_cmd_state_.comm_state = systemCmdCommState::kIdle;
 
-  serial_ = std::make_unique<SerialPort>(this);
+  serial_ = std::make_unique<SerialPort>();
+  connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
 
   pause_flag_ = false;
   resume_flag_ = false;
