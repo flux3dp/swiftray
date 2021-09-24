@@ -441,8 +441,6 @@ void SerialJob::ctrlCmdNonblockingSend(ctrlCmd cmd) {
 
 void SerialJob::systemCmdNonblockingSend(systemCmd cmd) {
   std::string cmd_str;
-  system_cmd_state_.cmd = cmd;
-  system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
   switch (cmd) {
     case systemCmd::kHelpMsg:
       cmd_str = "$\n";
@@ -465,6 +463,8 @@ void SerialJob::systemCmdNonblockingSend(systemCmd cmd) {
   if (cmd_str.empty()) {
     return;
   }
+  system_cmd_state_.cmd = cmd;
+  system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
   serial_->write_some(cmd_str);
 }
 
@@ -472,8 +472,6 @@ void SerialJob::systemCmdNonblockingSend(systemCmd cmd) {
 void SerialJob::systemCmdBlockingSend(systemCmd cmd) {
   std::string cmd_str;
   int timeout = kGrblTimeout; //default
-  system_cmd_state_.cmd = cmd;
-  system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
   switch (cmd) {
     case systemCmd::kHelpMsg:
       cmd_str = "$\n";
@@ -497,6 +495,8 @@ void SerialJob::systemCmdBlockingSend(systemCmd cmd) {
   if (cmd_str.empty()) {
     return;
   }
+  system_cmd_state_.cmd = cmd;
+  system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
   serial_->write_some(cmd_str);
 
   emit startWaiting(timeout);
