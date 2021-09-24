@@ -401,7 +401,7 @@ void SerialJob::gcodeCmdNonblockingSend(std::string cmd) {
   if (cmd.empty()) return;
   serial_->write_some(cmd);
   gcode_cmd_comm_state_ = gcodeCmdCommState::kWaitingResp;
-  emit startWaiting(kGrblTimeout);
+  //emit startWaiting(kGrblTimeout);
   planner_block_unexecuted_count_++; // only gcode cmd might be added to planner block
 }
 
