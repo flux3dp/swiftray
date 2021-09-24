@@ -381,9 +381,7 @@ void MainWindow::registerEvents() {
     if(dialogRet == QDialog::Accepted) {
       // Add trace contours to canvas
       ShapePtr new_shape = make_shared<PathShape>(this->image_trace_dialog_->getTrace());
-      QTransform offset = new_shape->transform();
-      offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
-      new_shape->setTransform(offset);
+      new_shape->applyTransform(bitmap->transform());
       if (this->image_trace_dialog_->shouldDeleteImg()) {
         canvas_->document().execute(
                 Commands::AddShape(canvas_->document().activeLayer(), new_shape),
