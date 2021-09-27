@@ -35,11 +35,16 @@ protected:
     char end_of_line_char_;
 
 private:
-    SerialPort(const SerialPort &p);
-    SerialPort &operator=(const SerialPort &p);
+    SerialPort();
 
 public:
-    SerialPort();
+    static SerialPort& getInstance()
+    {
+      static SerialPort serial_port_;
+      return serial_port_;
+    }
+    SerialPort(SerialPort const&)     = delete;
+    void operator=(SerialPort const&) = delete;
     virtual ~SerialPort(void);
 
     char end_of_line_char() const;
@@ -47,6 +52,7 @@ public:
 
     virtual bool start(const char *com_port_name, int baud_rate=9600);
     virtual void stop();
+    bool isConnected();
 
     int write_some(const std::string &buf);
     int write_some(const char *buf, const int &size);
@@ -54,7 +60,9 @@ public:
     void clear_buf() { read_buf_str_.clear(); }
 
 signals:
+    void connected();
     void responseReceived(QString resp);
+    void disconnected();
 
 protected:
     virtual void async_read_some_();

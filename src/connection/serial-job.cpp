@@ -28,8 +28,9 @@ SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant gcode) :
   system_cmd_state_.cmd = systemCmd::kNull;
   system_cmd_state_.comm_state = systemCmdCommState::kIdle;
 
-  serial_ = std::make_unique<SerialPort>();
-  connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
+  //serial_ = std::make_unique<SerialPort>();
+  //connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
+  connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
 
   pause_flag_ = false;
   resume_flag_ = false;
@@ -85,6 +86,9 @@ void SerialJob::stop() {
 void SerialJob::run() {
   mutex_.lock();
 
+
+
+  // TODO: Move the following connection funcion into mainwindow
   QString full_port_path;
   if (port_.startsWith("tty")) { // Linux/macOSX
     full_port_path += "/dev/";
@@ -93,7 +97,8 @@ void SerialJob::run() {
     full_port_path = port_;
   }
   qInfo() << "[SerialPort] Connecting" << port_ << baudrate_;
-  bool rv = serial_->start(full_port_path.toStdString().c_str(), baudrate_);
+  bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate_);
+  //bool rv = serial_->start(full_port_path.toStdString().c_str(), baudrate_);
   if (rv == false) {
     emit error(tr("Unable to connect serial port"));
     qWarning() << "[SerialPort] Failed to connect..";
@@ -101,21 +106,32 @@ void SerialJob::run() {
     setStatus(Status::ERROR_STOPPED);
     return;
   }
-  qInfo() << "[SerialPort] Success connect!";
-
   //serial_->end_of_line_char('\n'); // not necessary
+  qInfo() << "[SerialPort] Success connect!";
+  // ====================================================
+
+  // Check whether the serial port is open (connected)
+  if (!SerialPort::getInstance().isConnected()) {
+    emit error(tr("Serial port not connected"));
+    mutex_.unlock();
+    setStatus(Status::ERROR_STOPPED);
+    return;
+  }
+
   //connect(serial_, &QSerialPort::readyRead, this, &SerialJob::receive);
   //unprocssed_response_.clear();
 
   // Poll until grbl is ready
   waiting_first_ok_ = true;
-  serial_->write_some("\n"); // A 'ok' resp indicates grbl is ready
+  SerialPort::getInstance().write_some("\n"); // A 'ok' resp indicates grbl is ready
+  //serial_->write_some("\n"); // A 'ok' resp indicates grbl is ready
   auto wait_cnt = 4;
   while (waiting_first_ok_) {
     sleep(1);
     wait_cnt--;
     if (wait_cnt == 0) {
-      serial_->write_some("\n"); // A 'ok' resp indicates grbl is ready
+      SerialPort::getInstance().write_some("\n");
+      //serial_->write_some("\n"); // A 'ok' resp indicates grbl is ready
       wait_cnt = 4;
     }
   }
@@ -126,7 +142,8 @@ void SerialJob::run() {
 
     systemCmdBlockingSend(systemCmd::kHelpMsg);
     //unprocssed_response_.clear();
-    serial_->clear_buf();
+    SerialPort::getInstance().clear_buf();
+    //serial_->clear_buf();
     systemCmdBlockingSend(systemCmd::kBuildInfo);
 
     setStatus(Status::RUNNING);
@@ -278,7 +295,8 @@ void SerialJob::run() {
     }
 #endif
 
-    serial_->stop();
+    SerialPort::getInstance().stop();
+    //serial_->stop();
     mutex_.unlock();
     progressValue_ = 100;
     setStatus(Status::FINISHED);
@@ -290,7 +308,8 @@ void SerialJob::run() {
     } else if (status() == Status::STOPPING) {
       setStatus(Status::STOPPED);
     }
-    serial_->stop();
+    SerialPort::getInstance().stop();
+    //serial_->stop();
     mutex_.unlock();
   }
 }
@@ -399,7 +418,8 @@ void SerialJob::timeout() {
 
 void SerialJob::gcodeCmdNonblockingSend(std::string cmd) {
   if (cmd.empty()) return;
-  serial_->write_some(cmd);
+  SerialPort::getInstance().write_some(cmd);
+  //serial_->write_some(cmd);
   gcode_cmd_comm_state_ = gcodeCmdCommState::kWaitingResp;
   //emit startWaiting(kGrblTimeout);
   planner_block_unexecuted_count_++; // only gcode cmd might be added to planner block
@@ -436,7 +456,8 @@ void SerialJob::ctrlCmdNonblockingSend(ctrlCmd cmd) {
   if (cmd_str.empty()) {
     return;
   }
-  serial_->write_some(cmd_str);
+  SerialPort::getInstance().write_some(cmd_str);
+  //serial_->write_some(cmd_str);
 }
 
 void SerialJob::systemCmdNonblockingSend(systemCmd cmd) {
@@ -465,7 +486,8 @@ void SerialJob::systemCmdNonblockingSend(systemCmd cmd) {
   }
   system_cmd_state_.cmd = cmd;
   system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
-  serial_->write_some(cmd_str);
+  SerialPort::getInstance().write_some(cmd_str);
+  //serial_->write_some(cmd_str);
 }
 
 
@@ -497,7 +519,8 @@ void SerialJob::systemCmdBlockingSend(systemCmd cmd) {
   }
   system_cmd_state_.cmd = cmd;
   system_cmd_state_.comm_state = systemCmdCommState::kWaitingResp;
-  serial_->write_some(cmd_str);
+  SerialPort::getInstance().write_some(cmd_str);
+  //serial_->write_some(cmd_str);
 
   emit startWaiting(timeout);
   while (system_cmd_state_.cmd != systemCmd::kNull && !timeout_occurred_) {

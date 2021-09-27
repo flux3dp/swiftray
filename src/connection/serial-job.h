@@ -115,7 +115,7 @@ private:
   friend class SerialPort;
 
   //QByteArray unprocssed_response_;
-  std::unique_ptr<SerialPort> serial_;
+  //std::unique_ptr<SerialPort> serial_;
   QString port_;
   QStringList gcode_;
   QTimer *timeout_timer_;

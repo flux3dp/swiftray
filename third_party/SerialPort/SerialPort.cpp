@@ -3,7 +3,13 @@
 
 SerialPort::SerialPort() : end_of_line_char_('\n')
 {
-
+  /*
+  if (port_) {
+    qInfo() << "error : port is already opened...";
+    return false;
+  }
+  */
+  port_ = serial_port_ptr(new boost::asio::serial_port(io_context_));
 }
 
 SerialPort::~SerialPort(void)
@@ -21,16 +27,21 @@ void SerialPort::end_of_line_char(const char &c)
   this->end_of_line_char_ = c;
 }
 
+/**
+ * @brief Connect to the serial device
+ * @param com_port_name
+ * @param baud_rate
+ * @return
+ */
 bool SerialPort::start(const char *com_port_name, int baud_rate)
 {
   boost::system::error_code ec;
 
-  if (port_) {
+  if (port_ && port_->is_open()) {
     qInfo() << "error : port is already opened...";
     return false;
   }
 
-  port_ = serial_port_ptr(new boost::asio::serial_port(io_context_));
   port_->open(com_port_name, ec);
   if (ec) {
     qInfo() << "error : port_->open() failed...com_port_name="
@@ -50,9 +61,14 @@ bool SerialPort::start(const char *com_port_name, int baud_rate)
   // NOTE: The following line is necessary for async_read_some to work
   boost::thread t(boost::bind(&boost::asio::io_context::run, &io_context_));
 
+  emit connected();
+
   return true;
 }
 
+/**
+ * @brief Disconnect from the serial device
+ */
 void SerialPort::stop()
 {
   boost::mutex::scoped_lock look(mutex_);
@@ -64,6 +80,17 @@ void SerialPort::stop()
   }
   io_context_.stop();
   io_context_.reset();
+
+  clear_buf();
+
+  emit disconnected();
+}
+
+bool SerialPort::isConnected() {
+  if (port_ && port_->is_open()) {
+    return true;
+  }
+  return false;
 }
 
 int SerialPort::write_some(const std::string &buf)
