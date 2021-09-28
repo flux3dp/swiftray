@@ -372,9 +372,13 @@ bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   return false;
 }
 
+/**
+ * @brief Draw bounding box and control points of selections
+ * @param painter
+ */
 void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-  auto blue_pen = QPen(QBrush(sky_blue), 1, Qt::SolidLine);
+  auto blue_pen = QPen(QBrush(sky_blue), 2, Qt::SolidLine);
   blue_pen.setCosmetic(true);
   auto pt_pen = QPen(sky_blue, 10 / document().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
