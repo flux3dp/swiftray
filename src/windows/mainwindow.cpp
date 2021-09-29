@@ -383,9 +383,7 @@ void MainWindow::registerEvents() {
     if(dialogRet == QDialog::Accepted) {
       QImage sharpened_image = this->image_sharpen_dialog_->getSharpenedImage();
       ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
-      QTransform offset = new_shape->transform();
-      offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
-      new_shape->setTransform(offset);
+      new_shape->applyTransform(bitmap->transform());
       canvas_->document().execute(
               Commands::AddShape(canvas_->document().activeLayer(), new_shape),
               Commands::Select(&(canvas_->document()), {new_shape}),
