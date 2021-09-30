@@ -7,6 +7,7 @@
 
 #include <QTimer>
 #include <QSerialPortInfo>
+#include <SerialPort/SerialPort.h>
 #include <QtMath>
 
 #endif
@@ -25,58 +26,75 @@ MaintenanceController::~MaintenanceController() {
   }
 }
 
-void MaintenanceController::connectSerialPort() {
-  QString job_str = "M5\n$H";
-  qInfo() << "Connect serial port!";
-  qInfo() << GCodePlayer::baudRate();
+void MaintenanceController::homing() {
+  QString job_str = "\n$H";
+  qInfo() << "Homing!";
   sendJob(job_str);
+}
+void MaintenanceController::connectSerialPort() {
+  //QString job_str = "M5\n$H";
+  //qInfo() << "Connect serial port!";
+  //qInfo() << GCodePlayer::baudRate();
+  //sendJob(job_str);
 }
 
 void MaintenanceController::laserPulse() {
   QString job_str = "M5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
-  qInfo() << "Connect serial port! laser pulse!";
+  qInfo() << "laser pulse!";
   sendJob(job_str);
 }
 
 void MaintenanceController::moveRelatively(float x, float y) {
   QString job_str = "M5\nG91\nG1F1200S0\nG1X" + QString::number(x) + "Y" + QString::number(y) + "\nG90";
-  qInfo() << "Connect serial port! moveRelatively, " << "X: " << x << " Y: " << y;
+  qInfo() << "moveRelatively, " << "X: " << x << " Y: " << y;
   sendJob(job_str);
 }
 
 void MaintenanceController::moveTo(float x, float y) {
   QString job_str = "M5\nG90\nG1F1200S0\nG1X" + QString::number(x) + "Y" + QString::number(y) + "\nG90";
-  qInfo() << "Connect serial port! moveTo, " << "X: " << x << " Y: " << y;
+  qInfo() << "moveTo, " << "X: " << x << " Y: " << y;
   sendJob(job_str);
 }
 
 void MaintenanceController::moveX(float x) {
   QString job_str = "M5\nG90\nG1F1200S0\nG1X" + QString::number(x) + "\nG90";
-  qInfo() << "Connect serial port! moveX: " << x ;
+  qInfo() << "moveX: " << x ;
   sendJob(job_str);
 }
 
 void MaintenanceController::moveY(float y) {
   QString job_str = "M5\nG90\nG1F1200S0\nG1Y" + QString::number(y) + "\nG90";
-  qInfo() << "Connect serial port! moveY: " << y;
+  qInfo() << "moveY: " << y;
   sendJob(job_str);
 }
 
 void MaintenanceController::sendJob(QString &job_str) {
+  if (!SerialPort::getInstance().isConnected()) {
+    return;
+  }
+  QStringList cmd_list = job_str.split("\n");
+  // Directly access serial port
+  // TODO: Wait for ok for each cmd
+  //       (Connect the responseReceive signal of SerialPort)
+  for (auto cmd: cmd_list) {
+    SerialPort::getInstance().write_some((cmd + "\n").toStdString());
+  }
+  /*
   auto job = new SerialJob(this,
                         GCodePlayer::portName() + ":" + GCodePlayer::baudRate(),
                         job_str.split("\n"));
   jobs_ << job;
   job->start();
+  */
 }
 
 
-/*void MaintenanceController::send(const QString &gcode_line) const {
-  /*if (!job_) {
-    connectSerialPort();
-  }*/
-
- // jobs_.last()->send(gcode_line);
+//void MaintenanceController::send(const QString &gcode_line) const {
+//  if (!job_) {
+//    connectSerialPort();
+//  }
+//
+//  jobs_.last()->send(gcode_line);
 //}
 
 void MaintenanceController::testLog(const QString &str) const {
