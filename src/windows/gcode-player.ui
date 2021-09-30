@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>299</width>
-    <height>262</height>
+    <height>300</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -91,6 +91,31 @@
     </layout>
    </item>
    <item>
+    <widget class="QPushButton" name="connectBtn">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="text">
+      <string>Connect</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+     <property name="default">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QQuickWidget" name="maintenanceController">
      <property name="resizeMode">
       <enum>QQuickWidget::SizeRootObjectToView</enum>
@@ -153,14 +178,14 @@
      <item row="0" column="0">
       <widget class="QPushButton" name="executeBtn">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="text">
         <string>Execute</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="0" column="2">
       <widget class="QPushButton" name="pauseBtn">
        <property name="enabled">
         <bool>false</bool>
@@ -173,6 +198,16 @@
        </property>
        <property name="text">
         <string>Pause</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QPushButton" name="stopBtn">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Stop</string>
        </property>
       </widget>
      </item>

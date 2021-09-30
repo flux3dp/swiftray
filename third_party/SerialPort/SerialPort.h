@@ -17,7 +17,9 @@
 
 #include <QObject>
 
-typedef boost::shared_ptr<boost::asio::serial_port> serial_port_ptr;
+typedef std::unique_ptr<boost::asio::serial_port> serial_port_ptr;
+typedef std::unique_ptr<boost::asio::io_context> io_context_ptr;
+
 
 #define SERIAL_PORT_READ_BUF_SIZE 256
 
@@ -25,13 +27,12 @@ class SerialPort : public QObject
 {
     Q_OBJECT
 protected:
-    boost::asio::io_context io_context_;
+    io_context_ptr io_context_;
     serial_port_ptr port_;
-    boost::mutex mutex_;
 
+    boost::mutex mutex_;
     char read_buf_raw_[SERIAL_PORT_READ_BUF_SIZE];
     std::string read_buf_str_;
-
     char end_of_line_char_;
 
 private:

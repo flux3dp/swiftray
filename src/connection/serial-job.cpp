@@ -86,30 +86,6 @@ void SerialJob::stop() {
 void SerialJob::run() {
   mutex_.lock();
 
-
-
-  // TODO: Move the following connection funcion into mainwindow
-  QString full_port_path;
-  if (port_.startsWith("tty")) { // Linux/macOSX
-    full_port_path += "/dev/";
-    full_port_path += port_;
-  } else { // Windows COMx
-    full_port_path = port_;
-  }
-  qInfo() << "[SerialPort] Connecting" << port_ << baudrate_;
-  bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate_);
-  //bool rv = serial_->start(full_port_path.toStdString().c_str(), baudrate_);
-  if (rv == false) {
-    emit error(tr("Unable to connect serial port"));
-    qWarning() << "[SerialPort] Failed to connect..";
-    mutex_.unlock();
-    setStatus(Status::ERROR_STOPPED);
-    return;
-  }
-  //serial_->end_of_line_char('\n'); // not necessary
-  qInfo() << "[SerialPort] Success connect!";
-  // ====================================================
-
   // Check whether the serial port is open (connected)
   if (!SerialPort::getInstance().isConnected()) {
     emit error(tr("Serial port not connected"));
@@ -295,11 +271,9 @@ void SerialJob::run() {
     }
 #endif
 
-    SerialPort::getInstance().stop();
-    //serial_->stop();
-    mutex_.unlock();
     progressValue_ = 100;
     setStatus(Status::FINISHED);
+    mutex_.unlock();
   } catch (...) { // const std::exception& e
     // NOTE: error signal has been emitted before throwing exception
     progressValue_ = 0;
@@ -308,8 +282,6 @@ void SerialJob::run() {
     } else if (status() == Status::STOPPING) {
       setStatus(Status::STOPPED);
     }
-    SerialPort::getInstance().stop();
-    //serial_->stop();
     mutex_.unlock();
   }
 }
