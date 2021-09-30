@@ -139,7 +139,7 @@ Rectangle {
         }
 
         TapHandler {
-            onTapped: controller.connectSerialPort()
+            onTapped: controller.homing()
         }
     }
 

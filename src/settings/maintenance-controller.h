@@ -34,6 +34,7 @@ public:
 
   Q_INVOKABLE void testLog(const QString &str) const;
 
+  Q_INVOKABLE void homing();
   Q_INVOKABLE void connectSerialPort();
 
 //  Q_INVOKABLE void send(const QString &str) const;
