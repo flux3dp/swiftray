@@ -16,32 +16,47 @@ public:
   }
 
   void moveTo(float x, float y, float speed, float power) override {
-    // Coordinate transform for different origin type
-    switch (machine_origin_) {
-      case MachineSettings::MachineSet::OriginType::RearLeft:
-        break;
-      case MachineSettings::MachineSet::OriginType::RearRight:
-        x = machine_width_ - x;
-        break;
-      case MachineSettings::MachineSet::OriginType::FrontLeft:
-        y = machine_height_ - y;
-        break;
-      case MachineSettings::MachineSet::OriginType::FrontRight:
-        y = machine_height_ - y;
-        x = machine_width_ - x;
-        break;
+    if (relative_mode_) {
+      if (x != 0 || y != 0) {
+        str_stream_ << "G1";
+      }
+      if (x != 0) {
+        str_stream_ << "X" << round(x * 1000) / 1000;
+        x_ = x_ + x;
+      }
+      if (y != 0) {
+        str_stream_ << "Y" << round(y * 1000) / 1000;
+        y_ = y_ + y;
+      }
+    } else {
+      // Coordinate transform for different origin type
+      switch (machine_origin_) {
+        case MachineSettings::MachineSet::OriginType::RearLeft:
+          break;
+        case MachineSettings::MachineSet::OriginType::RearRight:
+          x = machine_width_ - x;
+          break;
+        case MachineSettings::MachineSet::OriginType::FrontLeft:
+          y = machine_height_ - y;
+          break;
+        case MachineSettings::MachineSet::OriginType::FrontRight:
+          y = machine_height_ - y;
+          x = machine_width_ - x;
+          break;
+      }
+      if (x_ == x && y_ == y && speed_ == speed && power_ == power)
+        return;
+      str_stream_ << "G1";
+      if (x_ != x) {
+        str_stream_ << "X" << round(x * 1000) / 1000;
+        x_ = x;
+      }
+      if (y_ != y) {
+        str_stream_ << "Y" << round(y * 1000) / 1000;
+        y_ = y;
+      }
     }
-    if (x_ == x && y_ == y && speed_ == speed && power_ == power)
-      return;
-    str_stream_ << "G1";
-    if (x_ != x) {
-      str_stream_ << "X" << round(x * 1000) / 1000;
-      x_ = x;
-    }
-    if (y_ != y) {
-      str_stream_ << "Y" << round(y * 1000) / 1000;
-      y_ = y;
-    }
+
     if (speed_ != speed) {
       str_stream_ << "F" << speed * 60; // mm/s to mm/min
       speed_ = speed;
@@ -70,11 +85,13 @@ public:
   }
 
   void useAbsolutePositioning() override {
+    relative_mode_ = false;
     str_stream_ << "G90" << std::endl;
   }
 
   void useRelativePositioning() override {
     // TODO (Support actual G91)
+    relative_mode_ = true;
     str_stream_ << "G91" << std::endl;
   }
 
@@ -86,5 +103,6 @@ public:
 private:
   int machine_width_;
   int machine_height_;
+  bool relative_mode_;
   MachineSettings::MachineSet::OriginType machine_origin_;
 };

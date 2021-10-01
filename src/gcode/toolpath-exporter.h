@@ -35,7 +35,7 @@ private:
 
   bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
 
-  bool rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
+  bool rasterBitmapRow(unsigned char *data, bool reverse, QPointF offset);
 
   QTransform global_transform_;
   QList<ShapePtr> layer_elements_;
