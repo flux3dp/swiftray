@@ -12,6 +12,10 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
   travel_speed_ = 100;
 }
 
+/**
+ * @brief Convert all visible layers in the document into gcode (result is stored in gcode generator)
+ * @param layers MUST contain at least one layer
+ */
 void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
   QElapsedTimer t;
   t.start();
@@ -22,14 +26,17 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
 
   gen_->turnOnLaser(); // M3/M4
 
+  Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
   // Generate bitmap canvas
-  layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
+  layer_bitmap_ = QPixmap(QSize((layers.at(0)->document()).width(), (layers.at(0)->document()).height()));
   layer_bitmap_.fill(Qt::white);
+
   bitmap_dirty_area_ = QRectF();
 
   for (auto &layer : layers) {
-    if (!layer->isVisible()) return;
-
+    if (!layer->isVisible()) {
+      continue;
+    }
     qInfo() << "[Export] Output layer: " << layer->name();
     for (int i = 0; i < layer->repeat(); i++) {
       convertLayer(layer);

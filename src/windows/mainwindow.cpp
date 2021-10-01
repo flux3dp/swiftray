@@ -130,7 +130,6 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  PreviewWindow *pw = new PreviewWindow(this);
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get());
   exporter.convertStack(canvas_->document().layers());
@@ -408,7 +407,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
   connect(ui->actionPreview, &QAction::triggered, [=]() {
     auto gen = canvas_->exportGcode();
-    PreviewWindow *pw = new PreviewWindow(this);
+    PreviewWindow *pw = new PreviewWindow(this,
+                                          canvas_->document().width() / 10,
+                                          canvas_->document().height() / 10);
     auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
     ToolpathExporter exporter(gen_gcode.get());
     exporter.convertStack(canvas_->document().layers());
