@@ -378,14 +378,15 @@ bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
  */
 void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-  auto blue_pen = QPen(QBrush(sky_blue), 2, Qt::SolidLine);
-  blue_pen.setCosmetic(true);
+  auto dash_pen = QPen(QColor(20, 20, 20), 2, Qt::DashLine);
+  dash_pen.setCosmetic(true);
+  dash_pen.setDashPattern(QVector<qreal>({5, 5}));
   auto pt_pen = QPen(sky_blue, 10 / document().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
 
   if (selections().size() > 0) {
     controlPoints();
-    painter->setPen(blue_pen);
+    painter->setPen(dash_pen);
     painter->drawPolyline(controls_, 8);
     painter->drawLine(controls_[7], controls_[0]);
     painter->setPen(pt_pen);
