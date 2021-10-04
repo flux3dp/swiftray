@@ -64,6 +64,9 @@
            <height>0</height>
           </size>
          </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
+         </property>
          <property name="maximum">
           <number>255</number>
          </property>
@@ -85,6 +88,9 @@
            <width>140</width>
            <height>20</height>
           </size>
+         </property>
+         <property name="cursor">
+          <cursorShape>PointingHandCursor</cursorShape>
          </property>
          <property name="maximum">
           <number>255</number>
