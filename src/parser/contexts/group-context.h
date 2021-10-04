@@ -77,7 +77,8 @@ public:
   void on_exit_element() {
     if (layer_ptr_ != nullptr) {
       layer_ptr_->setColor(data_color_);
-      layer_ptr_->setType(Layer::Type::Mixed);
+      // TODO: Check whether this layer type is appropriate
+      layer_ptr_->setType(Layer::Type::FillLine);
       svgpp_add_layer(layer_ptr_);
       svgpp_unset_active_layer();
 

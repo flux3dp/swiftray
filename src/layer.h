@@ -13,7 +13,7 @@ public:
     Line,
     Fill,
     FillLine,
-    Mixed // Compatible mode with Beam Studio, could be deprecated in the future
+    //Mixed // Compatible mode with Beam Studio, could be deprecated in the future
   };
 
   /** Constructors **/

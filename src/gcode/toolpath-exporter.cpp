@@ -93,8 +93,7 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
 void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());;
-  if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
-      current_layer_->type() == Layer::Type::Fill ||
+  if (current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
@@ -103,8 +102,8 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     layer_painter_->setBrush(Qt::NoBrush);
     bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
   }
-  if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
-      current_layer_->type() == Layer::Type::Line ||
+
+  if (current_layer_->type() == Layer::Type::Line ||
       current_layer_->type() == Layer::Type::FillLine) {
     layer_polygons_.append(transformed_path.toSubpathPolygons());
   }

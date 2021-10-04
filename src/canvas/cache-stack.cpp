@@ -42,18 +42,7 @@ void CacheStack::addShape(Shape *shape) {
   switch (shape->type()) {
     case Shape::Type::Path:
     case Shape::Type::Text:
-      if (layer_type == Layer::Type::Mixed) {
-        if (isLayer()) {
-          if (((PathShape *) shape)->isFilled()) {
-            cache_type = shape->selected() ? CacheType::SelectedFilledPaths : CacheType::NonSelectedFilledPaths;
-          } else {
-            cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
-          }
-        } else if (isGroup()) {
-          cache_type = ((PathShape *) shape)->isFilled() ? CacheType::NonSelectedFilledPaths
-                                                         : CacheType::NonSelectedPaths;
-        }
-      } else if (layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine) { // Always fill
+      if (layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine) { // Always fill
         cache_type = shape->selected() ? CacheType::SelectedFilledPaths : CacheType::NonSelectedFilledPaths;
       } else { // Line
         cache_type = shape->selected() ? CacheType::SelectedPaths : CacheType::NonSelectedPaths;
