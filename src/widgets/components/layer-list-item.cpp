@@ -19,7 +19,7 @@ LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, b
   ui->comboBox->setCurrentIndex((int) layer->type());
 
   setContextMenu();
-  createIcon();
+  initColorIcon(layer_->color());
   loadStyles();
   registerEvents();
 
@@ -32,17 +32,9 @@ LayerListItem::~LayerListItem() {
   delete ui;
 }
 
-void LayerListItem::createIcon() {
-  QPixmap pix(100, 100);
-  pix.fill(QColor::fromRgba64(0, 0, 0, 0));
-  QPainter paint(&pix);
-  paint.setRenderHint(QPainter::Antialiasing, true);
-  QPen pen(QColor(255, 255, 255, 255), 5);
-  paint.setPen(pen);
-  paint.setBrush(QBrush(layer_->color()));
-  paint.drawRoundedRect(QRectF(30, 30, 40, 40), 10, 10);
-  paint.end();
-  ui->labelIcon->setPixmap(pix);
+void LayerListItem::initColorIcon(QColor color) {
+  ui->btnColorPicker->setColor(color);
+  ui->btnColorPicker->setTitle(tr("Set layer color"));
 }
 
 void LayerListItem::loadStyles() {
@@ -53,6 +45,12 @@ void LayerListItem::loadStyles() {
 }
 
 void LayerListItem::registerEvents() {
+  connect(ui->btnColorPicker, &ColorPickerButton::colorChanged, [=](QColor new_color) {
+    layer_->document().execute(
+            Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), new_color)
+    );
+    emit canvas_->layerChanged();
+  });
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
          Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()),
@@ -83,24 +81,15 @@ void LayerListItem::setContextMenu() {
 }
 
 void LayerListItem::mouseDoubleClickEvent(QMouseEvent *event) {
-  if (event->localPos().x() < 60) {
-    QColor color = QColorDialog::getColor(layer_->color(), this, "Set layer color");
-    if (color != layer_->color()) {
-      layer_->document().execute(
-           Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), color)
-      );
-    }
-  } else {
-    bool ok;
-    QString text = QInputDialog::getText(this, "Rename Layer",
-                                         tr("Layer name:"), QLineEdit::Normal,
-                                         layer_->name(), &ok);
-    if (ok && !text.isEmpty() && text != layer_->name()) {
-      ui->labelName->setText(text);
-      layer_->document().execute(
-           Commands::SetRef<Layer, QString, &Layer::name, &Layer::setName>(layer_.get(), text)
-      );
-    }
+  bool ok;
+  QString text = QInputDialog::getText(this, "Rename Layer",
+                                       tr("Layer name:"), QLineEdit::Normal,
+                                       layer_->name(), &ok);
+  if (ok && !text.isEmpty() && text != layer_->name()) {
+    ui->labelName->setText(text);
+    layer_->document().execute(
+         Commands::SetRef<Layer, QString, &Layer::name, &Layer::setName>(layer_.get(), text)
+    );
   }
   // TODO (Fix event flow)
   emit canvas_->layerChanged();

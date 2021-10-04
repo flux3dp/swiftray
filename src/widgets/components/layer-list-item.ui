@@ -67,10 +67,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>3</number>
-      </property>
+     <layout class="QGridLayout" name="gridLayout">
       <property name="leftMargin">
        <number>6</number>
       </property>
@@ -83,38 +80,29 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item>
-       <widget class="QLabel" name="labelIcon">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
+      <item row="0" column="0">
+       <widget class="ColorPickerButton" name="btnColorPicker">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>3</horstretch>
-          <verstretch>3</verstretch>
+          <horstretch>16</horstretch>
+          <verstretch>16</verstretch>
          </sizepolicy>
         </property>
         <property name="maximumSize">
          <size>
-          <width>40</width>
-          <height>40</height>
+          <width>16</width>
+          <height>16</height>
          </size>
         </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>:/images/icon-cursor-01.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
+         <string>...</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QLabel" name="labelName">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -130,7 +118,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="2">
        <widget class="QComboBox" name="comboBox">
         <property name="currentText">
          <string>Line</string>
@@ -157,7 +145,7 @@
         </item>
        </widget>
       </item>
-      <item>
+      <item row="0" column="3">
        <widget class="QToolButton" name="btnHide">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
@@ -199,7 +187,7 @@
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="4">
        <widget class="QToolButton" name="btnLock">
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
@@ -230,6 +218,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ColorPickerButton</class>
+   <extends>QToolButton</extends>
+   <header location="global">widgets/components/color-picker-button.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../../qml.qrc"/>
  </resources>
