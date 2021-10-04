@@ -55,7 +55,8 @@ void LayerListItem::loadStyles() {
 void LayerListItem::registerEvents() {
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
-         Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible())
+         Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()),
+         Commands::Select(&(layer_->document()), {})
     );
   });
   connect(ui->btnLock, &QAbstractButton::clicked, this, &LayerListItem::onUnlockLayer);
