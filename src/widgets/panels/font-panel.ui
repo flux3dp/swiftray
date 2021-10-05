@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>248</width>
-    <height>243</height>
+    <height>185</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -68,40 +68,6 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="6" column="2">
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Line Height</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Style</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="text">
-         <string>Letter Spacing</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="1" colspan="2" alignment="Qt::AlignRight">
        <widget class="QSpinBox" name="fontSizeSpinBox">
         <property name="minimumSize">
@@ -161,42 +127,17 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QFontComboBox" name="fontComboBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>150</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>1500</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-        <property name="currentFont">
-         <font>
-          <family>Helvetica</family>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Letter Spacing</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>Size</string>
+         <string>Style</string>
         </property>
        </widget>
       </item>
@@ -329,8 +270,67 @@
         </property>
        </spacer>
       </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Line Height</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="3">
+       <widget class="QFontComboBox" name="fontComboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>150</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>1500</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="currentFont">
+         <font>
+          <family>Helvetica</family>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
