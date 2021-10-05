@@ -16,6 +16,19 @@ FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
 }
 
 void FontPanel::loadStyles() {
+  ui->frame->setStyleSheet("\
+      QToolButton {   \
+          background-color: rgba(89, 89, 89, 100); \
+          border: none \
+      } \
+      QToolButton:checked{ \
+          background-color: rgba(20, 20, 20, 100); \
+          border: none \
+      } \
+  ");
+  ui->boldToolButton->setIcon(QIcon(":/images/icon-text.png"));
+  ui->italicToolButton->setIcon(QIcon(":/images/icon-text.png"));
+  ui->underlineToolButton->setIcon(QIcon(":/images/icon-text.png"));
 }
 
 void FontPanel::registerEvents() {
@@ -36,17 +49,17 @@ void FontPanel::registerEvents() {
 
   connect(ui->lineHeightSpinBox, spin_event, main_window_->canvas(), &Canvas::setLineHeight);
 
-  connect(ui->boldCheckBox, &QCheckBox::toggled, [=](bool checked) {
+  connect(ui->boldToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setBold(checked);
     ui->fontComboBox->setCurrentFont(font_);
   });
 
-  connect(ui->italicCheckBox, &QCheckBox::toggled, [=](bool checked) {
+  connect(ui->italicToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setItalic(checked);
     ui->fontComboBox->setCurrentFont(font_);
   });
 
-  connect(ui->underlineCheckBox, &QCheckBox::toggled, [=](bool checked) {
+  connect(ui->underlineToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setUnderline(checked);
     ui->fontComboBox->setCurrentFont(font_);
   });
@@ -77,7 +90,10 @@ void FontPanel::setFont(QFont font, float line_height) {
   ui->fontSizeSpinBox->setValue(font.pointSize());
   ui->letterSpacingSpinBox->setValue(font.letterSpacing());
   ui->lineHeightSpinBox->setValue(line_height);
-  ui->boldCheckBox->setChecked(font.bold());
-  ui->italicCheckBox->setChecked(font.italic());
-  ui->underlineCheckBox->setChecked(font.underline());
+  ui->boldToolButton->setChecked(font.bold());
+  qInfo() << "font.bold()" << font.bold();
+  ui->italicToolButton->setChecked(font.italic());
+  qInfo() << "font.italic()" << font.italic();
+  ui->underlineToolButton->setChecked(font.underline());
+  qInfo() << "font.underline()" << font.underline();
 }
