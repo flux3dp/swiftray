@@ -101,7 +101,7 @@ namespace Controls {
 
     Control hitTest(QPointF clickPoint, float tolerance);
 
-    QPointF controls_[8];
+    QPointF controls_[9];
     Control active_control_;
     QPointF action_center_;
     QRectF bounding_rect_;
