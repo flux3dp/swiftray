@@ -212,6 +212,11 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
     }
   } else if (mode() == Mode::PathEditing) {
     ctrl_path_edit_.exit();
+  } else if (mode() == Mode::TextDrawing) {
+    // NOTE: If Double click outside of text edit box, finish the current text edit
+    if (!ctrl_text_.target().boundingRect().contains(canvas_coord)) {
+      ctrl_text_.exit();
+    }
   }
 }
 
