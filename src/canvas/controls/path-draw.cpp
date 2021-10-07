@@ -170,7 +170,17 @@ void PathDraw::paint(QPainter *painter) {
 
 
 bool PathDraw::keyPressEvent(QKeyEvent *e) {
-  if (e->key() == Qt::Key::Key_Escape) {
+  if (e->key() == Qt::Key::Key_Backspace) {
+    exit();
+    return true;
+  } else if (e->key() == Qt::Key::Key_Escape) {
+    if (working_path_.elementCount() > 1) { // require at least two points to form a path
+      ShapePtr new_shape = make_shared<PathShape>(working_path_);
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&document(), {new_shape})
+      );
+    }
     exit();
     return true;
   }
