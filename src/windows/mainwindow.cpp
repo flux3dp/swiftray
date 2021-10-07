@@ -162,7 +162,7 @@ void MainWindow::saveAsFile() {
   QString filter = tr("Scene File (*.bb)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save Image"),
-                                                   default_save_dir + "/",
+                                                   default_save_dir,
                                                    filter, &filter);
 
   //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
@@ -194,7 +194,8 @@ void MainWindow::openImageFile() {
   p->show();
   return;
 #endif
-  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", default_open_dir, tr("Image Files (*.png *.jpg)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -227,7 +228,7 @@ void MainWindow::exportGCodeFile() {
   QString filter = tr("GCode Files (*.gcode)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save GCode"),
-                                                   default_save_dir + "/" + tr("untitled"),
+                                                   default_save_dir,
                                                    filter, &filter);
   if (file_name.isEmpty()) {
     return;
