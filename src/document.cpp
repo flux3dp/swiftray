@@ -93,6 +93,9 @@ void Document::execute(const CmdPtr &cmd) {
   redo2_stack_.clear();
   cmd->redo(this);
   undo2_stack_.push_back(cmd);
+  if (!current_file_modified) {
+    current_file_modified = true;
+  }
 }
 
 void Document::execute(initializer_list<CmdPtr> cmds) {

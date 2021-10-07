@@ -75,6 +75,13 @@ void MainWindow::loadStyles() {
 }
 
 void MainWindow::openFile() {
+  if ( ! canvas_->document().currentFile().isEmpty()) { // current document is opened from a file
+    if (canvas_->document().currentFileModified()) {    // some modifications have been performed on this document
+      // TODO: Pop a dialog to ask whether save/cancel/don't save
+
+    }
+  }
+
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
                                                    tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
@@ -96,11 +103,60 @@ void MainWindow::openFile() {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
+      canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
     } else {
       canvas_->loadSVG(data);
     }
+  }
+}
+
+/**
+ * @brief Save the document with the origin filename
+ *        If the document has never been saved, force a new save as
+ */
+void  MainWindow::saveFile() {
+  qInfo() << canvas_->document().currentFile();
+  if (canvas_->document().currentFile().isEmpty()) {
+    saveAsFile();
+    return;
+  }
+
+  QFile file(canvas_->document().currentFile());
+  if (file.open(QFile::ReadWrite)) {
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    qInfo() << "Saved";
+  }
+}
+
+/**
+ * @brief Save the document with a new filename
+ */
+void MainWindow::saveAsFile() {
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
+
+  QString filter = tr("Scene File (*.bb)");
+  QString file_name = QFileDialog::getSaveFileName(this,
+                                                   tr("Save Image"),
+                                                   default_save_dir + "/",
+                                                   filter, &filter);
+
+  //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
+  QFile file(file_name);
+
+  if (file.open(QFile::ReadWrite)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    canvas_->document().setCurrentFile(file_name);
+    qInfo() << "Saved";
   }
 }
 
@@ -147,7 +203,7 @@ void MainWindow::exportGCodeFile() {
 
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
-  QString filter = tr("GCode Files (*.gcode);; All files (*.*)");
+  QString filter = tr("GCode Files (*.gcode)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save GCode"),
                                                    default_save_dir + "/" + tr("untitled"),
@@ -163,20 +219,7 @@ void MainWindow::exportGCodeFile() {
 
     // update default save dir
     QFileInfo file_info{file_name};
-    settings.setValue("defaultSaveDir", file_info.absoluteDir().absolutePath());
-  }
-}
-
-
-void MainWindow::saveFile() {
-  QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
-  QFile file(file_name);
-
-  if (file.open(QFile::ReadWrite)) {
-    QDataStream stream(&file);
-    canvas_->save(stream);
-    file.close();
-    qInfo() << "Saved";
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
   }
 }
 
@@ -310,6 +353,7 @@ void MainWindow::registerEvents() {
   // Monitor UI events
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);

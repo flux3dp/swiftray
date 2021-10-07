@@ -86,6 +86,7 @@ private:
   ImageTraceDialog *image_trace_dialog_;
 
   void saveFile();
+  void saveAsFile();
   void exportGCodeFile();
 };
 
