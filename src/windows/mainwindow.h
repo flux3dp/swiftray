@@ -85,9 +85,11 @@ private:
   PreferencesWindow *preferences_window_;
   ImageTraceDialog *image_trace_dialog_;
 
+  void newFile();
   void saveFile();
   void saveAsFile();
   void exportGCodeFile();
+  bool handleUnsavedChange();
 };
 
 #endif // MAINWINDOW_H

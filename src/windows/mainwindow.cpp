@@ -74,14 +74,35 @@ void MainWindow::loadStyles() {
   }
 }
 
-void MainWindow::openFile() {
+/**
+ * @brief Check whether there is any unsaved change, and ask user to save
+ * @return true if unsaved change is resolved
+ *         false if unsaved change hasn't been resolved
+ */
+bool MainWindow::handleUnsavedChange() {
   if ( ! canvas_->document().currentFile().isEmpty()) { // current document is opened from a file
     if (canvas_->document().currentFileModified()) {    // some modifications have been performed on this document
       // TODO: Pop a dialog to ask whether save/cancel/don't save
 
     }
   }
+  return true;
+}
 
+void MainWindow::newFile() {
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  canvas_->setDocument(new Document());
+  canvas_->document().setCurrentFile("");
+  canvas_->emitAllChanges();
+  emit canvas_->selectionsChanged();
+}
+
+void MainWindow::openFile() {
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
                                                    tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
@@ -351,6 +372,7 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   // Monitor UI events
+  connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
