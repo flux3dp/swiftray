@@ -12,6 +12,7 @@
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
 #include <windows/path-offset-dialog.h>
+#include <settings/file-path-settings.h>
 
 #include "ui_mainwindow.h"
 
@@ -74,7 +75,8 @@ void MainWindow::loadStyles() {
 }
 
 void MainWindow::openFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".",
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
                                                    tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
 
   if (!QFile::exists(file_name))
@@ -83,6 +85,10 @@ void MainWindow::openFile() {
   QFile file(file_name);
 
   if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
@@ -119,6 +125,10 @@ void MainWindow::openImageFile() {
   QImage image;
 
   if (image.load(file_name)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
     qInfo() << "File size:" << image.size();
     canvas_->importImage(image);
   }
@@ -134,19 +144,13 @@ void MainWindow::exportGCodeFile() {
   ToolpathExporter exporter(gen_gcode.get());
   exporter.convertStack(canvas_->document().layers());
 
-  QString default_save_dir;
-  QSettings settings;
-  if ( ! settings.contains("defaultSaveDir")) {
-    QStringList desktop_dir = QStandardPaths::standardLocations(
-            QStandardPaths::StandardLocation::DesktopLocation);
-    settings.setValue("defaultSaveDir", desktop_dir.at(0));
-  }
-  default_save_dir = settings.value("defaultSaveDir").toString();
+
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
   QString filter = tr("GCode Files (*.gcode);; All files (*.*)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save GCode"),
-                                                   default_save_dir + "/" + tr("untitled.gcode"),
+                                                   default_save_dir + "/" + tr("untitled"),
                                                    filter, &filter);
   if (file_name.isEmpty()) {
     return;
