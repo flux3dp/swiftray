@@ -17,7 +17,6 @@
 #include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
-#include <windows/image-trace-dialog.h>
 
 namespace Ui {
   class MainWindow;
@@ -65,6 +64,8 @@ private slots:
 
   void showWelcomeDialog();
 
+  void genPreviewWindow();
+
 private:
 
   void loadWidgets() override;
@@ -83,7 +84,6 @@ private:
   MachineManager *machine_manager_;
   WelcomeDialog *welcome_dialog_;
   PreferencesWindow *preferences_window_;
-  ImageTraceDialog *image_trace_dialog_;
 
   void newFile();
   void saveFile();

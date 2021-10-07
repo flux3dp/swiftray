@@ -12,6 +12,8 @@
 #include <windows/preview-window.h>
 #include <windows/osxwindow.h>
 #include <document-serializer.h>
+#include <windows/path-offset-dialog.h>
+#include <windows/image-trace-dialog.h>
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -566,6 +568,75 @@ void Canvas::importImage(QImage &image) {
     Commands::AddShape(document().activeLayer(), new_shape),
     Commands::Select(&(document()), {new_shape})
   );
+}
+
+/**
+ * @brief Popout a dialog for param setting, and then generate the path offset accordingly
+ *        MUST assert only path shape are selected
+ */
+void Canvas::genPathOffset() {
+  QList<ShapePtr> &shapes = document().selections();
+  PathOffsetDialog *dialog = new PathOffsetDialog();
+  // initialize dialog
+  for (auto &shape : shapes) {
+    auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
+    auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
+    for (QPolygonF &poly : polygons) {
+      dialog->addPath(poly);
+    }
+  }
+  dialog->updatePathOffset();
+
+  // output result
+  int dialogRet = dialog->exec();
+  if(dialogRet == QDialog::Accepted) {
+    QPainterPath p;
+    for (auto polygon :dialog->getResult()) {
+      p.addPolygon(polygon);
+    }
+    ShapePtr new_shape = make_shared<PathShape>(p);
+    document().execute(
+            Commands::AddShape(document().activeLayer(), new_shape),
+            Commands::Select(&document(), {new_shape})
+    );
+  }
+  delete dialog;
+}
+
+/**
+ * @brief Popout a dialog for param setting, and then generate the image trace accordingly
+ *        MUST assert only one image is selected currently
+ */
+void Canvas::genImageTrace() {
+  QList<ShapePtr> &items = document().selections();
+  Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
+  Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionTrace", "MUST only be enabled when an image is selected");
+
+  ShapePtr selected_img_shape = items.at(0);
+  BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
+  ImageTraceDialog *dialog = new ImageTraceDialog();
+  dialog->loadImage(bitmap->image());
+  int dialog_ret = dialog->exec();
+  if(dialog_ret == QDialog::Accepted) {
+    // Add trace contours to canvas
+    ShapePtr new_shape = make_shared<PathShape>(dialog->getTrace());
+    QTransform offset = new_shape->transform();
+    offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
+    new_shape->setTransform(offset);
+    if (dialog->shouldDeleteImg()) {
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&(document()), {new_shape}),
+              Commands::RemoveShape(selected_img_shape)
+      );
+    } else {
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&(document()), {new_shape})
+      );
+    }
+  }
+  delete dialog;
 }
 
 void Canvas::setActiveLayer(LayerPtr &layer) {
