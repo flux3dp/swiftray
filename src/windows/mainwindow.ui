@@ -109,6 +109,7 @@
      </property>
      <addaction name="actionTrace"/>
      <addaction name="actionInvert"/>
+     <addaction name="actionCrop"/>
      <addaction name="actionReplace_with"/>
      <addaction name="actionSharpen"/>
     </widget>
@@ -945,6 +946,11 @@
   <action name="actionReplace_with">
    <property name="text">
     <string>Replace with ...</string>
+   </property>
+  </action>
+  <action name="actionCrop">
+   <property name="text">
+    <string>Crop</string>
    </property>
   </action>
  </widget>

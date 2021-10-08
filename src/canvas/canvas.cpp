@@ -826,6 +826,19 @@ void Canvas::replaceImage(QImage new_image) {
   );
 }
 
+void Canvas::cropImage() {
+  Q_ASSERT_X(document().selections().length() == 1,
+             "Canvas", "Only one image can be processed at a time");
+  ShapePtr origin_bitmap_shape = document().selections().at(0);
+  Layer* target_layer = origin_bitmap_shape->layer();
+  Q_ASSERT_X(origin_bitmap_shape->type() == Shape::Type::Bitmap,
+             "Canvas", "Crop action can only be applied on bitmap shape");
+
+  // Popout a dialog for crop
+
+  // Apply crop result
+}
+
 void Canvas::setActiveLayer(LayerPtr &layer) {
   document().setActiveLayer(layer);
   emit layerChanged();
