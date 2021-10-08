@@ -68,12 +68,23 @@ void LayerListItem::registerEvents() {
 void LayerListItem::setContextMenu() {
   popMenu_ = new QMenu(this);
   // Add QActions for context menu
+  renameLayerAction_ = popMenu_->addAction(tr("Rename"));
   lockLayerAction_ =  popMenu_->addAction(tr("&Lock"));
   unlockLayerAction_ =  popMenu_->addAction(tr("&Unlock"));
+  duplicateLayerAction_ = popMenu_->addAction(tr("Duplicate"));
+  deleteLayerAction_ = popMenu_->addAction(tr("Delete"));
+
+  addAction(renameLayerAction_);
   addAction(lockLayerAction_);
   addAction(unlockLayerAction_);
+  addAction(duplicateLayerAction_);
+  addAction(deleteLayerAction_);
+
+  connect(renameLayerAction_, &QAction::triggered, this, &LayerListItem::onRenameLayer);
   connect(lockLayerAction_, &QAction::triggered, this, &LayerListItem::onLockLayer);
   connect(unlockLayerAction_, &QAction::triggered, this, &LayerListItem::onUnlockLayer);
+  connect(duplicateLayerAction_, &QAction::triggered, this, &LayerListItem::onDuplicateLayer);
+  connect(deleteLayerAction_, &QAction::triggered, this, &LayerListItem::onDeleteLayer);
 
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, &QWidget::customContextMenuRequested,
@@ -81,18 +92,8 @@ void LayerListItem::setContextMenu() {
 }
 
 void LayerListItem::mouseDoubleClickEvent(QMouseEvent *event) {
-  bool ok;
-  QString text = QInputDialog::getText(this, "Rename Layer",
-                                       tr("Layer name:"), QLineEdit::Normal,
-                                       layer_->name(), &ok);
-  if (ok && !text.isEmpty() && text != layer_->name()) {
-    ui->labelName->setText(text);
-    layer_->document().execute(
-         Commands::SetRef<Layer, QString, &Layer::name, &Layer::setName>(layer_.get(), text)
-    );
-  }
-  // TODO (Fix event flow)
-  emit canvas_->layerChanged();
+  onRenameLayer();
+  // TODO (Fix event flow?)
 }
 
 void LayerListItem::paintEvent(QPaintEvent *event) {
@@ -109,6 +110,9 @@ void LayerListItem::onLockLayer() {
   ui->btnLock->setVisible(true);
   lockLayerAction_->setEnabled(false);
   unlockLayerAction_->setEnabled(true);
+  renameLayerAction_->setEnabled(true);
+  duplicateLayerAction_->setEnabled(true);
+  deleteLayerAction_->setEnabled(true);
 }
 
 void LayerListItem::onUnlockLayer() {
@@ -116,6 +120,38 @@ void LayerListItem::onUnlockLayer() {
   ui->btnLock->setVisible(false);
   lockLayerAction_->setEnabled(true);
   unlockLayerAction_->setEnabled(false);
+  renameLayerAction_->setEnabled(true);
+  duplicateLayerAction_->setEnabled(true);
+  deleteLayerAction_->setEnabled(true);
+}
+
+void LayerListItem::onRenameLayer() {
+  bool ok;
+  QString text = QInputDialog::getText(this, "Rename Layer",
+                                       tr("Layer name:"), QLineEdit::Normal,
+                                       layer_->name(), &ok);
+  if (ok && !text.isEmpty() && text != layer_->name()) {
+    ui->labelName->setText(text);
+    layer_->document().execute(
+            Commands::SetRef<Layer, QString, &Layer::name, &Layer::setName>(layer_.get(), text)
+    );
+  }
+  // TODO (Fix event flow?)
+  emit canvas_->layerChanged();
+}
+
+void LayerListItem::onDuplicateLayer() {
+  canvas_->duplicateLayer(layer_);
+}
+
+void LayerListItem::onDeleteLayer() {
+  if (layer_->document().layers().length() == 1) { // should add one default layer when no layer in the list
+    canvas_->addEmptyLayer();
+    layer_->document().execute(Commands::RemoveLayer(layer_));
+  } else {
+    layer_->document().execute(Commands::RemoveLayer(layer_));
+  }
+  emit canvas_->layerChanged();
 }
 
 void LayerListItem::showPopMenu(const QPoint& ) // SLOT Function

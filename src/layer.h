@@ -99,7 +99,7 @@ public:
 
   void setDocument(Document *doc);
 
-  void setLayerCounter(int i);
+  //void setLayerCounter(int i);
 
   friend class DocumentSerializer;
 

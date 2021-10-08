@@ -153,6 +153,8 @@ public slots:
 
   void addEmptyLayer();
 
+  void duplicateLayer(LayerPtr layer);
+
   void importImage(QImage &image);
 
   void genPathOffset();

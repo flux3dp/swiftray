@@ -38,10 +38,19 @@ private:
 
   void onUnlockLayer();
 
+  void onRenameLayer();
+
+  void onDuplicateLayer();
+
+  void onDeleteLayer();
+
   Canvas *canvas_;
   QMenu *popMenu_;
   QAction *lockLayerAction_;
   QAction *unlockLayerAction_;
+  QAction *renameLayerAction_;
+  QAction *duplicateLayerAction_;
+  QAction *deleteLayerAction_;
 
   Ui::LayerListItem *ui;
   bool active_;
