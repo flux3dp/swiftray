@@ -14,6 +14,8 @@
 #include <document-serializer.h>
 #include <windows/path-offset-dialog.h>
 #include <windows/image-trace-dialog.h>
+#include <settings/file-path-settings.h>
+#include <QFileDialog>
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -669,6 +671,29 @@ void Canvas::invertImage() {
       Commands::RemoveShape(origin_bitmap_shape->layer(), origin_bitmap_shape),
       Commands::AddShape(target_layer, inverted_bitmap_shape),
       Commands::Select(&document(), {inverted_bitmap_shape})
+  );
+}
+
+void Canvas::replaceImage(QImage new_image) {
+  Q_ASSERT_X(document().selections().length() == 1,
+             "Canvas", "Only one image can be processed at a time");
+  ShapePtr origin_shape = document().selections().at(0);
+  Layer* target_layer = origin_shape->layer();
+  Q_ASSERT_X(origin_shape->type() == Shape::Type::Bitmap,
+             "Canvas", "invert action can only be applied on bitmap shape");
+  BitmapShape * origin_bitmap_shape = static_cast<BitmapShape *>(origin_shape.get());
+
+  // Apply the height, width, x_pos, y_pos to new image
+  new_image = new_image.scaled(origin_bitmap_shape->image().size());
+  ShapePtr new_bitmap_shape = make_shared<BitmapShape>(new_image);
+  new_bitmap_shape->setTransform(origin_bitmap_shape->transform());
+
+  // Remove old image, Add new image
+  document().execute(
+          Commands::Select(&document(), {}),
+          Commands::RemoveShape(origin_shape->layer(), origin_shape),
+          Commands::AddShape(target_layer, new_bitmap_shape),
+          Commands::Select(&document(), {new_bitmap_shape})
   );
 }
 

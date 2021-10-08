@@ -60,6 +60,8 @@ private slots:
 
   void openImageFile();
 
+  void replaceImage();
+
   void imageSelected(const QImage image);
 
   void showWelcomeDialog();

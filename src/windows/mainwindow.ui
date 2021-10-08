@@ -109,6 +109,7 @@
      </property>
      <addaction name="actionTrace"/>
      <addaction name="actionInvert"/>
+     <addaction name="actionReplace_with"/>
     </widget>
     <widget class="QMenu" name="menuPath">
      <property name="title">
@@ -928,6 +929,11 @@
   <action name="actionInvert">
    <property name="text">
     <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionReplace_with">
+   <property name="text">
+    <string>Replace with ...</string>
    </property>
   </action>
  </widget>
