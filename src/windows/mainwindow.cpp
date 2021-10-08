@@ -417,7 +417,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionIntersect, &QAction::triggered, canvas_, &Canvas::editIntersect);
   connect(ui->actionDiff, &QAction::triggered, canvas_, &Canvas::editDifference);
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionGroupMenu, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->actionUngroupMenu, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionHFlip, &QAction::triggered, canvas_, &Canvas::editHFlip);
   connect(ui->actionVFlip, &QAction::triggered, canvas_, &Canvas::editVFlip);
   connect(ui->actionAlignVTop, &QAction::triggered, canvas_, &Canvas::editAlignVTop);
