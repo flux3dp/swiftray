@@ -7,6 +7,7 @@
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
 #include <gcode/generators/base-generator.h>
+#include <document.h>
 
 class ToolpathExporter {
 public:
@@ -35,7 +36,7 @@ private:
 
   bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
 
-  bool rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
+  bool rasterBitmapRow(unsigned char *data, bool reverse, QPointF offset);
 
   QTransform global_transform_;
   QList<ShapePtr> layer_elements_;

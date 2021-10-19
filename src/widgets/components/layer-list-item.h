@@ -24,7 +24,7 @@ public:
   void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
-  void createIcon();
+  void initColorIcon(QColor color);
 
   void loadStyles();
 
