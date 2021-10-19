@@ -194,7 +194,10 @@ void MainWindow::openImageFile() {
   return;
 #endif
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
-  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", default_open_dir, tr("Image Files (*.png *.jpg)"));
+  QString file_name = QFileDialog::getOpenFileName(this,
+                                                   "Open Image",
+                                                   default_open_dir,
+                                                   tr("Image Files (*.png *.jpg)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -208,6 +211,21 @@ void MainWindow::openImageFile() {
 
     qInfo() << "File size:" << image.size();
     canvas_->importImage(image);
+  }
+}
+
+void MainWindow::replaceImage() {
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this,
+                                                   "Open Image",
+                                                   default_open_dir,
+                                                   tr("Image Files (*.png *.jpg)"));
+  QImage new_image;
+  if (QFile::exists(file_name) && new_image.load(file_name)) {
+    canvas_->replaceImage(new_image);
+
+    // Update default file path
+    FilePathSettings::setDefaultFilePath(QFileInfo{file_name}.absoluteDir().absolutePath());
   }
 }
 
@@ -340,6 +358,7 @@ void MainWindow::updateSelections() {
   ui->actionAlignHRight->setEnabled(items.size() > 1);
   ui->actionTrace->setEnabled(items.size() == 1 && all_image);
   ui->actionInvert->setEnabled(items.size() == 1 && all_image);
+  ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
   ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
 #ifdef Q_OS_MACOS
@@ -413,6 +432,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
+  connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {

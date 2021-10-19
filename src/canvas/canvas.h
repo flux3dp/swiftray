@@ -163,6 +163,8 @@ public slots:
 
   void invertImage();
 
+  void replaceImage(QImage new_image);
+
   void setActiveLayer(LayerPtr &layer);
 
   void setLayerOrder(QList<LayerPtr> &order);
