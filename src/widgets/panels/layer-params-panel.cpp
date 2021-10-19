@@ -70,6 +70,7 @@ void LayerParamsPanel::registerEvents() {
 
 void LayerParamsPanel::updateLayer(Layer *layer) {
   layer_ = layer;
+  ui->presetParamLabel->setText(tr("Parameter Settings") + "("+ layer->name() + ")");
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());

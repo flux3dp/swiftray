@@ -945,6 +945,16 @@
     <string>Replace with ...</string>
    </property>
   </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionReplace_with">
+   <property name="text">
+    <string>Replace with ...</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

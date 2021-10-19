@@ -63,7 +63,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>187</width>
+        <width>201</width>
         <height>274</height>
        </rect>
       </property>
@@ -75,35 +75,52 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QComboBox" name="presetComboBox">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="editable">
-          <bool>false</bool>
-         </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <property name="text">
-           <string>Wood 3mm</string>
-          </property>
+          <widget class="QLabel" name="presetParamLabel">
+           <property name="minimumSize">
+            <size>
+             <width>161</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>參數</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <property name="text">
-           <string>Acrylic 3mm</string>
-          </property>
+          <widget class="QComboBox" name="presetComboBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <item>
+            <property name="text">
+             <string>Wood 3mm</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Acrylic 3mm</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Customized</string>
+            </property>
+           </item>
+          </widget>
          </item>
-         <item>
-          <property name="text">
-           <string>Customized</string>
-          </property>
-         </item>
-        </widget>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
