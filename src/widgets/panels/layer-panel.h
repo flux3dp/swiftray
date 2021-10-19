@@ -30,7 +30,7 @@ private slots:
 
 private:
   void loadWidgets() override;
-
+  void loadStyles() override;
   void registerEvents() override;
 
   Ui::LayerPanel *ui;
