@@ -360,6 +360,7 @@ void MainWindow::updateSelections() {
   ui->actionInvert->setEnabled(items.size() == 1 && all_image);
   ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
+  ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
@@ -432,7 +433,6 @@ void MainWindow::registerEvents() {
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
-
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
