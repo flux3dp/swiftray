@@ -147,39 +147,39 @@ int CacheStack::paint(QPainter *painter) {
   bool always_fill = layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine;
   bool always_select = isGroup() ? group_->isParentSelected() : false;
 
-  QPen dash_pen(color(), 2, Qt::DashLine);
-  if (isGroup()) {
-    dash_pen.setDashPattern(QVector<qreal>({18, 3, 9, 3}));
-  }
-  dash_pen.setDashOffset(document().framesCount());
-  dash_pen.setCosmetic(true);
-  QPen solid_pen(color(), 2, Qt::SolidLine);
-  solid_pen.setCosmetic(true);
-  QBrush brush(color());
+  QPen selected_stroke_pen(QColor(18, 139, 219), 3, Qt::SolidLine);
+  QPen layer_stroke_pen(color(), 2, Qt::SolidLine);
+  //if (isGroup()) {
+  //  highlight_stroke_pen.setColor(QColor(71, 169, 255));
+  //}
+  layer_stroke_pen.setCosmetic(true);
+  selected_stroke_pen.setCosmetic(true);
+  QPen layer_fill_pen(color(), 2, Qt::SolidLine);
+  layer_fill_pen.setCosmetic(true);
 
 
   for (auto &cache : caches_) {
     switch (cache.type()) {
       case CacheType::SelectedPaths:
-        cache.stroke(painter, dash_pen);
-        if (always_fill) cache.fill(painter, dash_pen);
+        if (always_fill) cache.fill(painter, layer_fill_pen);
+        cache.stroke(painter, selected_stroke_pen);
         break;
       case CacheType::SelectedFilledPaths:
-        cache.stroke(painter, dash_pen);
-        cache.fill(painter, dash_pen);
+        cache.fill(painter, layer_fill_pen);
+        cache.stroke(painter, selected_stroke_pen);
         break;
       case CacheType::NonSelectedPaths:
-        cache.stroke(painter, always_select ? dash_pen : solid_pen);
-        if (always_fill) cache.fill(painter, dash_pen);
+        if (always_fill) cache.fill(painter, layer_fill_pen);
+        cache.stroke(painter, always_select ? selected_stroke_pen : layer_stroke_pen);
         break;
       case CacheType::NonSelectedFilledPaths:
-        cache.stroke(painter, always_select ? dash_pen : solid_pen);
-        cache.fill(painter, dash_pen);
+        cache.fill(painter, layer_fill_pen);
+        cache.stroke(painter, always_select ? selected_stroke_pen : layer_stroke_pen);
         break;
       default:
         for (auto &shape : cache.shapes()) {
-          bool use_dash = always_select || (!isGroup() && shape->selected());
-          painter->setPen(use_dash ? dash_pen : Qt::NoPen);
+          bool shape_selected = always_select || (!isGroup() && shape->selected());
+          painter->setPen(shape_selected ? selected_stroke_pen : Qt::NoPen);
           shape->paint(painter);
           painter->setPen(Qt::NoPen);
         }

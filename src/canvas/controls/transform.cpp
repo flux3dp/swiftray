@@ -181,6 +181,7 @@ const QPointF *Transform::controlPoints() {
             .translate(bbox.center().x(), bbox.center().y())
             .rotate(bbox_angle_ + rotation_to_apply_)
             .translate(-bbox.center().x(), -bbox.center().y());
+  QTransform transformNoScale = transform;
 
   if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) {
     transform = transform *
@@ -200,6 +201,7 @@ const QPointF *Transform::controlPoints() {
   controls_[5] = transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
   controls_[6] = transform.map(bbox.bottomLeft());
   controls_[7] = transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
+  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);;
   return controls_;
 }
 
@@ -213,7 +215,7 @@ Transform::Control Transform::hitTest(QPointF clickPoint,
   }
 
   if (!this->boundingRect().contains(clickPoint)) {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
       if ((controls_[i] - clickPoint).manhattanLength() < tolerance * 1.5) {
         return Control::ROTATION;
       }
@@ -372,20 +374,26 @@ bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   return false;
 }
 
+/**
+ * @brief Draw bounding box and control points of selections
+ * @param painter
+ */
 void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-  auto blue_pen = QPen(QBrush(sky_blue), 1, Qt::SolidLine);
-  blue_pen.setCosmetic(true);
+  auto dash_pen = QPen(QColor(20, 20, 20), 2, Qt::DashLine);
+  dash_pen.setCosmetic(true);
+  dash_pen.setDashPattern(QVector<qreal>({5, 5}));
   auto pt_pen = QPen(sky_blue, 10 / document().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
 
   if (selections().size() > 0) {
     controlPoints();
-    painter->setPen(blue_pen);
+    painter->setPen(dash_pen);
     painter->drawPolyline(controls_, 8);
     painter->drawLine(controls_[7], controls_[0]);
+    painter->drawLine(controls_[8], controls_[1]);
     painter->setPen(pt_pen);
-    painter->drawPoints(controls_, 8);
+    painter->drawPoints(controls_, 9);
     painter->drawPoint((controls_[0] + controls_[4]) / 2);
   }
 }
