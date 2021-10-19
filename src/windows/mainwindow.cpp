@@ -272,6 +272,7 @@ void MainWindow::updateSelections() {
   ui->actionAlignHRight->setEnabled(items.size() > 1);
   ui->actionTrace->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
+  ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
@@ -288,6 +289,7 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
+  image_sharpen_dialog_ = new ImageSharpenDialog(this);
   image_trace_dialog_ = new ImageTraceDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
@@ -367,6 +369,28 @@ void MainWindow::registerEvents() {
     }
     delete dialog;
   });
+  connect(ui->actionSharpen, &QAction::triggered, [=]() {
+    QList<ShapePtr> &items = canvas_->document().selections();
+    Q_ASSERT_X(items.count() == 1, "actionSharpen", "MUST only be enabled when single item is selected");
+    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionSharpen", "MUST only be enabled when an image is selected");
+
+    ShapePtr selected_img_shape = items.at(0);
+    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
+    this->image_sharpen_dialog_->reset();
+    this->image_sharpen_dialog_->loadImage(bitmap->image());
+    int dialogRet = this->image_sharpen_dialog_->exec();
+    if(dialogRet == QDialog::Accepted) {
+      QImage sharpened_image = this->image_sharpen_dialog_->getSharpenedImage();
+      ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
+      new_shape->applyTransform(bitmap->transform());
+      canvas_->document().execute(
+              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
+              Commands::Select(&(canvas_->document()), {new_shape}),
+              Commands::RemoveShape(selected_img_shape)
+      );
+    }
+    this->image_sharpen_dialog_->reset();
+  });
   connect(ui->actionTrace, &QAction::triggered, [=]() {
     QList<ShapePtr> &items = canvas_->document().selections();
     Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
@@ -380,9 +404,7 @@ void MainWindow::registerEvents() {
     if(dialogRet == QDialog::Accepted) {
       // Add trace contours to canvas
       ShapePtr new_shape = make_shared<PathShape>(this->image_trace_dialog_->getTrace());
-      QTransform offset = new_shape->transform();
-      offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
-      new_shape->setTransform(offset);
+      new_shape->applyTransform(bitmap->transform());
       if (this->image_trace_dialog_->shouldDeleteImg()) {
         canvas_->document().execute(
                 Commands::AddShape(canvas_->document().activeLayer(), new_shape),
