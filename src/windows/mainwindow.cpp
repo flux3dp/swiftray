@@ -12,6 +12,7 @@
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
 #include <windows/path-offset-dialog.h>
+#include <settings/file-path-settings.h>
 
 #include "ui_mainwindow.h"
 
@@ -73,8 +74,37 @@ void MainWindow::loadStyles() {
   }
 }
 
+/**
+ * @brief Check whether there is any unsaved change, and ask user to save
+ * @return true if unsaved change is resolved
+ *         false if unsaved change hasn't been resolved
+ */
+bool MainWindow::handleUnsavedChange() {
+  if ( ! canvas_->document().currentFile().isEmpty()) { // current document is opened from a file
+    if (canvas_->document().currentFileModified()) {    // some modifications have been performed on this document
+      // TODO: Pop a dialog to ask whether save/cancel/don't save
+
+    }
+  }
+  return true;
+}
+
+void MainWindow::newFile() {
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  canvas_->setDocument(new Document());
+  canvas_->document().setCurrentFile("");
+  canvas_->emitAllChanges();
+  emit canvas_->selectionsChanged();
+}
+
 void MainWindow::openFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".",
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
                                                    tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
 
   if (!QFile::exists(file_name))
@@ -83,6 +113,10 @@ void MainWindow::openFile() {
   QFile file(file_name);
 
   if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
@@ -90,11 +124,60 @@ void MainWindow::openFile() {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
+      canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
     } else {
       canvas_->loadSVG(data);
     }
+  }
+}
+
+/**
+ * @brief Save the document with the origin filename
+ *        If the document has never been saved, force a new save as
+ */
+void  MainWindow::saveFile() {
+  qInfo() << canvas_->document().currentFile();
+  if (canvas_->document().currentFile().isEmpty()) {
+    saveAsFile();
+    return;
+  }
+
+  QFile file(canvas_->document().currentFile());
+  if (file.open(QFile::ReadWrite)) {
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    qInfo() << "Saved";
+  }
+}
+
+/**
+ * @brief Save the document with a new filename
+ */
+void MainWindow::saveAsFile() {
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
+
+  QString filter = tr("Scene File (*.bb)");
+  QString file_name = QFileDialog::getSaveFileName(this,
+                                                   tr("Save Image"),
+                                                   default_save_dir,
+                                                   filter, &filter);
+
+  //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
+  QFile file(file_name);
+
+  if (file.open(QFile::ReadWrite)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    canvas_->document().setCurrentFile(file_name);
+    qInfo() << "Saved";
   }
 }
 
@@ -111,7 +194,8 @@ void MainWindow::openImageFile() {
   p->show();
   return;
 #endif
-  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", default_open_dir, tr("Image Files (*.png *.jpg)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -119,6 +203,10 @@ void MainWindow::openImageFile() {
   QImage image;
 
   if (image.load(file_name)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
     qInfo() << "File size:" << image.size();
     canvas_->importImage(image);
   }
@@ -134,19 +222,13 @@ void MainWindow::exportGCodeFile() {
   ToolpathExporter exporter(gen_gcode.get());
   exporter.convertStack(canvas_->document().layers());
 
-  QString default_save_dir;
-  QSettings settings;
-  if ( ! settings.contains("defaultSaveDir")) {
-    QStringList desktop_dir = QStandardPaths::standardLocations(
-            QStandardPaths::StandardLocation::DesktopLocation);
-    settings.setValue("defaultSaveDir", desktop_dir.at(0));
-  }
-  default_save_dir = settings.value("defaultSaveDir").toString();
 
-  QString filter = tr("GCode Files (*.gcode);; All files (*.*)");
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
+
+  QString filter = tr("GCode Files (*.gcode)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save GCode"),
-                                                   default_save_dir + "/" + tr("untitled.gcode"),
+                                                   default_save_dir,
                                                    filter, &filter);
   if (file_name.isEmpty()) {
     return;
@@ -159,20 +241,7 @@ void MainWindow::exportGCodeFile() {
 
     // update default save dir
     QFileInfo file_info{file_name};
-    settings.setValue("defaultSaveDir", file_info.absoluteDir().absolutePath());
-  }
-}
-
-
-void MainWindow::saveFile() {
-  QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
-  QFile file(file_name);
-
-  if (file.open(QFile::ReadWrite)) {
-    QDataStream stream(&file);
-    canvas_->save(stream);
-    file.close();
-    qInfo() << "Saved";
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
   }
 }
 
@@ -306,8 +375,10 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   // Monitor UI events
+  connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);

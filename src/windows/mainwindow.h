@@ -87,8 +87,11 @@ private:
   ImageTraceDialog *image_trace_dialog_;
   ImageSharpenDialog *image_sharpen_dialog_;
 
+  void newFile();
   void saveFile();
+  void saveAsFile();
   void exportGCodeFile();
+  bool handleUnsavedChange();
 };
 
 #endif // MAINWINDOW_H

@@ -89,8 +89,10 @@
      </property>
      <addaction name="actionExportGcode"/>
     </widget>
+    <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
+    <addaction name="actionSave_As"/>
     <addaction name="actionPreferences"/>
     <addaction name="actionPreview"/>
     <addaction name="menuExport"/>
@@ -901,6 +903,26 @@
     <string>Offset</string>
    </property>
   </action>
+  <action name="actionSave_As">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+   <property name="iconText">
+    <string>Save As...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
   <action name="actionSharpen">
    <property name="text">
     <string>Sharpen</string>

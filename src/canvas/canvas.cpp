@@ -561,9 +561,11 @@ void Canvas::importImage(QImage &image) {
   qreal scale = min(1.0, min(document().height() / image.height(),
                              document().width() / image.width()));
   qInfo() << "Scale" << scale;
-  new_shape->setTransform(QTransform().scale(scale, scale));
-  document().activeLayer()->addShape(new_shape);
-  document().setSelection(new_shape);
+  document().execute(
+    Commands::SetTransform(new_shape.get(), QTransform().scale(scale, scale)),
+    Commands::AddShape(document().activeLayer(), new_shape),
+    Commands::Select(&(document()), {new_shape})
+  );
 }
 
 void Canvas::setActiveLayer(LayerPtr &layer) {
