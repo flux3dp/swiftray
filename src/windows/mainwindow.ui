@@ -76,7 +76,7 @@
      <x>0</x>
      <y>0</y>
      <width>1250</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -110,6 +110,7 @@
      <addaction name="actionTrace"/>
      <addaction name="actionInvert"/>
      <addaction name="actionReplace_with"/>
+     <addaction name="actionSharpen"/>
     </widget>
     <widget class="QMenu" name="menuPath">
      <property name="title">
@@ -924,6 +925,24 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+  <action name="actionSharpen">
+   <property name="text">
+    <string>Sharpen</string>
+   </property>
+  </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionReplace_with">
+   <property name="text">
+    <string>Replace with ...</string>
    </property>
   </action>
   <action name="actionInvert">

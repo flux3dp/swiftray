@@ -1,6 +1,7 @@
 #include <widgets/components/base-graphicsview.h>
 #include <QScrollBar>
 #include <QPainterPath>
+#include <QGraphicsRectitem>
 
 #include <QDebug>
 
@@ -34,6 +35,38 @@ void BaseGraphicsView::gestureHandler(QGestureEvent *gesture_event) {
   if (QGesture *pinch = gesture_event->gesture(Qt::PinchGesture)) {
     pinchGestureHandler(static_cast<QPinchGesture *>(pinch));
   }
+}
+
+void BaseGraphicsView::reset() {
+  QGraphicsScene* new_scene = new QGraphicsScene();
+  setScene(new_scene);
+  resetTransform();
+}
+
+/**
+ * @brief clear and draw new background image
+ * @param background_pixmap
+ */
+void BaseGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
+  auto item = getBackgroundPixmapItem();
+  if (item) {
+    item->setPixmap(background_pixmap);
+  } else {
+    // If not exist -> create and add a new graphics item
+    item = scene()->addPixmap(background_pixmap);
+    item->setData(ITEM_ID_KEY, BACKGROUND_IMAGE_ITEM_ID);
+    item->setZValue(BACKGROUND_IMAGE_Z_INDEX); // overlapped by any other items
+  }
+}
+
+QGraphicsPixmapItem* BaseGraphicsView::getBackgroundPixmapItem() {
+  for (auto item: scene()->items()) {
+    if (item->data(ITEM_ID_KEY).toString().compare(QString(BACKGROUND_IMAGE_ITEM_ID)) == 0 &&
+        qgraphicsitem_cast<QGraphicsPixmapItem *>(item)) {
+      return qgraphicsitem_cast<QGraphicsPixmapItem *>(item);
+    }
+  }
+  return nullptr;
 }
 
 void BaseGraphicsView::pinchGestureHandler(QPinchGesture *pinch_gesture) {
