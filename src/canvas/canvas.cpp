@@ -536,6 +536,21 @@ void Canvas::addEmptyLayer() {
   emit layerChanged();
 }
 
+void Canvas::duplicateLayer(LayerPtr layer) {
+  // NOTE: Unselect current shapes first to prevent selection box from malfunctioning
+  document().execute(
+          Commands::Select(&document(), {})
+  );
+  int i = 1;
+  while (document().findLayerByName(layer->name() + " copy " + QString::number(i)) != nullptr) i++;
+  LayerPtr new_layer = layer->clone();
+  new_layer->setName(layer->name() + " copy " + QString::number(i));
+  document().execute(Commands::AddLayer(new_layer));
+
+  setActiveLayer(new_layer);
+  emit layerChanged();
+}
+
 void Canvas::resize() {
   if (widget_) {
     document().setScreenSize(widget_->geometry().size());
