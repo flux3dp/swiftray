@@ -15,9 +15,12 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
 void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
   QElapsedTimer t;
   t.start();
-  gen_->turnOffLaser();
+  // Pre cmds
+  gen_->turnOffLaser(); // M5
   gen_->home();
   gen_->useAbsolutePositioning();
+
+  gen_->turnOnLaser(); // M3/M4
 
   // Generate bitmap canvas
   layer_bitmap_ = QPixmap(QSize(300 * dpmm_, 200 * dpmm_));
@@ -32,6 +35,8 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
       convertLayer(layer);
     }
   }
+
+  // Post cmds
   gen_->home();
   qInfo() << "[Export] Took " << t.elapsed();
 }
@@ -121,7 +126,6 @@ void ToolpathExporter::outputLayerGcode() {
 
 void ToolpathExporter::outputLayerPathGcode() {
   QPointF current_pos;
-  gen_->setLaserPower(current_layer_->power());
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
 
@@ -153,13 +157,21 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
   bool reverse = false;
   QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
-  gen_->setLaserPower(current_layer_->power());
 
+  // rapid move to the start position
+  qInfo() << bitmap_dirty_area_;
+  gen_->moveTo(bitmap_dirty_area_.left() / dpmm_,bitmap_dirty_area_.top() / dpmm_,
+               current_layer_->speed(), 0);
+
+  gen_->useRelativePositioning();
   for (int y = bitmap_dirty_area_.top(); y <= bitmap_dirty_area_.bottom(); y++) {
-    rasterBitmapRow(image.scanLine(y), (float) y / dpmm_, reverse, QPointF());
+    rasterBitmapRow(image.scanLine(y), reverse, QPointF());
+    // move to the next row (relative move)
+    gen_->moveTo(0, 1 / dpmm_,current_layer_->speed(), 0);
     reverse = !reverse;
   }
 
+  gen_->useAbsolutePositioning();
   gen_->turnOffLaser();
 }
 
@@ -227,61 +239,61 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
   gen_->moveToX(end_x);
 }
 
-bool ToolpathExporter::rasterBitmapRow(unsigned char *data, float global_coord_y, bool reverse,
+bool ToolpathExporter::rasterBitmapRow(unsigned char *data, bool reverse,
                                        QPointF offset) {
-  float pixel_size = 1.0 / dpmm_;
+  float pixel_size = 1.0 / dpmm_; // mm per pixel (dot)
   int x_max = bitmap_dirty_area_.right();
   int x_min = bitmap_dirty_area_.left();
   // TODO (Pass machine size as argument);
   int MACHINE_MAX_X = 300;
-  bool x_moved = false;
   bool y_moved = false;
-  auto x_range = reverse ? boost::irange(x_max, x_min, -1) : boost::irange(x_min, x_max, 1);
 
-  gen_->turnOnLaser();
-
-  bool laser_should_be_on = false;
-
-  for (int x : x_range) {
-    float p = data[x] > 127 ? 255 : 0;
+  bool laser_should_be_on = false; // whether should be on (in the last pixel but haven't been added to gcode)
+  int x_total = x_max - x_min;
+  int accumulated_x_pixel = 0;
+  for (int x = 0; x < x_total; x++) {
+    // proceed one pixel size per loop
+    accumulated_x_pixel++;
+    float p = data[reverse ? (x_max - x) : (x + x_min)] > 127 ? 255 : 0;
     float laser_pwm = (255.0 - p) / 255.0;
 
     if (laser_pwm < 0.01) laser_pwm = 0;
 
-    float global_coord_x = pixel_size * x - offset.x();
+    // special case (first pixel)
+    if (x == 0 && laser_pwm != 0) {
+      laser_should_be_on = true;
+    }
 
+    //float global_coord_x = pixel_size * x - offset.x();
+    // Check black/white boundary
     if (laser_pwm == 0) {
-      if (laser_should_be_on) {
-        gen_->moveTo(global_coord_x + (reverse ? pixel_size : -pixel_size), global_coord_y, current_layer_->speed(),
-                     current_layer_->power());
-        x_moved = true;
+      if (laser_should_be_on) { // on -> off (add a dark line to the last pixel)
+        gen_->moveTo((reverse ? -accumulated_x_pixel*pixel_size : accumulated_x_pixel*pixel_size),0,
+                     current_layer_->speed(),current_layer_->power());
+        accumulated_x_pixel = 0;
         laser_should_be_on = false;
-      } else {
-        continue;
       }
     } else {
-      if (!laser_should_be_on) {
-        gen_->moveTo(global_coord_x, global_coord_y, current_layer_->speed(), 0);
-        x_moved = true;
+      if (!laser_should_be_on) { // off -> on (add a empty line to the last pixel)
+        gen_->moveTo((reverse ? -accumulated_x_pixel*pixel_size : accumulated_x_pixel*pixel_size), 0,
+                     current_layer_->speed(), 0);
+        accumulated_x_pixel = 0;
         laser_should_be_on = true;
+      }
+    }
+
+    // finish the line
+    if (x == x_total - 1 && accumulated_x_pixel != 0) {
+      if (laser_should_be_on) { // off -> on (add a empty line to the last pixel)
+        gen_->moveTo((reverse ? -accumulated_x_pixel * pixel_size : accumulated_x_pixel * pixel_size), 0,
+                     current_layer_->speed(), current_layer_->power());
+      } else {
+        gen_->moveTo((reverse ? -accumulated_x_pixel * pixel_size : accumulated_x_pixel * pixel_size), 0,
+                     current_layer_->speed(), 0);
+
       }
     }
   }
 
-  if (laser_should_be_on) {
-    // If the last pixel is still powered on
-    qreal final_x = *(x_range.end()) * pixel_size - offset.x();
-    gen_->moveTo(final_x, global_coord_y, current_layer_->speed(), current_layer_->power());
-    x_moved = true;
-    qInfo() << "Move to final with laser" << final_x << reverse;
-  }
-
-  if (x_moved) {
-    float buffer_x = reverse ? std::max(0.0, gen_->x() - 10.0) :
-                     std::min(0.0 + MACHINE_MAX_X, gen_->x() + 10.0);
-    gen_->moveTo(buffer_x, global_coord_y, current_layer_->speed(), 0);
-
-  }
-
-  return x_moved;
+  return 0;
 }
