@@ -654,6 +654,24 @@ void Canvas::genImageTrace() {
   delete dialog;
 }
 
+void Canvas::invertImage() {
+  Q_ASSERT_X(document().selections().length() == 1,
+             "Canvas", "Only one image can be processed at a time");
+  ShapePtr origin_bitmap_shape = document().selections().at(0);
+  Layer* target_layer = origin_bitmap_shape->layer();
+  Q_ASSERT_X(origin_bitmap_shape->type() == Shape::Type::Bitmap,
+             "Canvas", "invert action can only be applied on bitmap shape");
+  ShapePtr inverted_bitmap_shape = origin_bitmap_shape->clone();
+  BitmapShape * bitmap = static_cast<BitmapShape *>(inverted_bitmap_shape.get());
+  bitmap->image().invertPixels(QImage::InvertRgb);
+  document().execute(
+      Commands::Select(&document(), {}),
+      Commands::RemoveShape(origin_bitmap_shape->layer(), origin_bitmap_shape),
+      Commands::AddShape(target_layer, inverted_bitmap_shape),
+      Commands::Select(&document(), {inverted_bitmap_shape})
+  );
+}
+
 void Canvas::setActiveLayer(LayerPtr &layer) {
   document().setActiveLayer(layer);
   emit layerChanged();

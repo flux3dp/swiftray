@@ -161,6 +161,8 @@ public slots:
 
   void genImageTrace();
 
+  void invertImage();
+
   void setActiveLayer(LayerPtr &layer);
 
   void setLayerOrder(QList<LayerPtr> &order);

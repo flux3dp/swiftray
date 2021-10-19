@@ -108,6 +108,7 @@
       <string>Image</string>
      </property>
      <addaction name="actionTrace"/>
+     <addaction name="actionInvert"/>
      <addaction name="actionSharpen"/>
     </widget>
     <widget class="QMenu" name="menuPath">
@@ -926,6 +927,11 @@
   <action name="actionSharpen">
    <property name="text">
     <string>Sharpen</string>
+   </property>
+  </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
    </property>
   </action>
  </widget>
