@@ -111,16 +111,24 @@ void MainWindow::openImageFile() {
   p->show();
   return;
 #endif
-  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg)"));
+  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg *.svg)"));
 
   if (!QFile::exists(file_name))
     return;
 
-  QImage image;
+  if (file_name.endsWith(".svg")) {
+      QFile file(file_name);
+    if (file.open(QFile::ReadOnly)) {
+      QByteArray data = file.readAll();
+      canvas_->loadSVG(data);
+    }
+  } else {
+    QImage image;
 
-  if (image.load(file_name)) {
-    qInfo() << "File size:" << image.size();
-    canvas_->importImage(image);
+    if (image.load(file_name)) {
+      qInfo() << "File size:" << image.size();
+      canvas_->importImage(image);
+    }
   }
 }
 
