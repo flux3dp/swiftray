@@ -155,6 +155,10 @@ public slots:
 
   void importImage(QImage &image);
 
+  void genPathOffset();
+
+  void genImageTrace();
+
   void setActiveLayer(LayerPtr &layer);
 
   void setLayerOrder(QList<LayerPtr> &order);

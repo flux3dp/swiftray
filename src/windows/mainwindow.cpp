@@ -7,12 +7,11 @@
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
 #include <windows/osxwindow.h>
-#include <windows/preview-window.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
-#include <windows/path-offset-dialog.h>
 #include <settings/file-path-settings.h>
+#include <windows/preview-window.h>
 
 #include "ui_mainwindow.h"
 
@@ -358,8 +357,6 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
-  image_sharpen_dialog_ = new ImageSharpenDialog(this);
-  image_trace_dialog_ = new ImageTraceDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -412,105 +409,15 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
-  connect(ui->actionPathOffset, &QAction::triggered, [=]() {
-    QList<ShapePtr> &shapes = canvas_->document().selections();
-    PathOffsetDialog *dialog = new PathOffsetDialog();
-    // initialize dialog
-    for (auto &shape : shapes) {
-      auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
-      auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
-      for (QPolygonF &poly : polygons) {
-        dialog->addPath(poly);
-      }
-    }
-    dialog->updatePathOffset();
-
-    // output result
-    int dialogRet = dialog->exec();
-    if(dialogRet == QDialog::Accepted) {
-      QPainterPath p;
-      for (auto polygon :dialog->getResult()) {
-        p.addPolygon(polygon);
-      }
-      ShapePtr new_shape = make_shared<PathShape>(p);
-      canvas_->document().execute(
-              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-              Commands::Select(&(canvas_->document()), {new_shape})
-      );
-    }
-    delete dialog;
-  });
-  connect(ui->actionSharpen, &QAction::triggered, [=]() {
-    QList<ShapePtr> &items = canvas_->document().selections();
-    Q_ASSERT_X(items.count() == 1, "actionSharpen", "MUST only be enabled when single item is selected");
-    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionSharpen", "MUST only be enabled when an image is selected");
-
-    ShapePtr selected_img_shape = items.at(0);
-    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
-    this->image_sharpen_dialog_->reset();
-    this->image_sharpen_dialog_->loadImage(bitmap->image());
-    int dialogRet = this->image_sharpen_dialog_->exec();
-    if(dialogRet == QDialog::Accepted) {
-      QImage sharpened_image = this->image_sharpen_dialog_->getSharpenedImage();
-      ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
-      new_shape->applyTransform(bitmap->transform());
-      canvas_->document().execute(
-              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-              Commands::Select(&(canvas_->document()), {new_shape}),
-              Commands::RemoveShape(selected_img_shape)
-      );
-    }
-    this->image_sharpen_dialog_->reset();
-  });
-  connect(ui->actionTrace, &QAction::triggered, [=]() {
-    QList<ShapePtr> &items = canvas_->document().selections();
-    Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
-    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionTrace", "MUST only be enabled when an image is selected");
-
-    ShapePtr selected_img_shape = items.at(0);
-    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
-    this->image_trace_dialog_->reset();
-    this->image_trace_dialog_->loadImage(bitmap->image());
-    int dialogRet = this->image_trace_dialog_->exec();
-    if(dialogRet == QDialog::Accepted) {
-      // Add trace contours to canvas
-      ShapePtr new_shape = make_shared<PathShape>(this->image_trace_dialog_->getTrace());
-      new_shape->applyTransform(bitmap->transform());
-      if (this->image_trace_dialog_->shouldDeleteImg()) {
-        canvas_->document().execute(
-                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-                Commands::Select(&(canvas_->document()), {new_shape}),
-                Commands::RemoveShape(selected_img_shape)
-        );
-      } else {
-        canvas_->document().execute(
-                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-                Commands::Select(&(canvas_->document()), {new_shape})
-        );
-      }
-    }
-    this->image_trace_dialog_->reset();
-  });
-
+  connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
+  connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
     emit machineSettingsChanged();
   });
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
-  connect(ui->actionPreview, &QAction::triggered, [=]() {
-    auto gen = canvas_->exportGcode();
-    PreviewWindow *pw = new PreviewWindow(this,
-                                          canvas_->document().width() / 10,
-                                          canvas_->document().height() / 10);
-    auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_gcode.get());
-    exporter.convertStack(canvas_->document().layers());
-    gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
-    pw->setPreviewPath(gen);
-    pw->setRequiredTime(gcode_player_->requiredTime());
-    pw->show();
-  });
+  connect(ui->actionPreview, &QAction::triggered, this, &MainWindow::genPreviewWindow);
   connect(canvas_, &Canvas::cursorChanged, [=](Qt::CursorShape cursor) {
     if (cursor == Qt::ArrowCursor) {
       unsetCursor();
@@ -545,4 +452,18 @@ void MainWindow::showWelcomeDialog() {
     welcome_dialog_->activateWindow();
     welcome_dialog_->raise();
   });
+}
+
+void MainWindow::genPreviewWindow() {
+  auto gen = canvas_->exportGcode();
+  PreviewWindow *pw = new PreviewWindow(this,
+                                        canvas_->document().width() / 10,
+                                        canvas_->document().height() / 10);
+  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter exporter(gen_gcode.get());
+  exporter.convertStack(canvas_->document().layers());
+  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  pw->setPreviewPath(gen);
+  pw->setRequiredTime(gcode_player_->requiredTime());
+  pw->show();
 }
