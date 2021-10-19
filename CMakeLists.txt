@@ -17,13 +17,15 @@ FIND_PACKAGE(Qt5Svg COMPONENTS Private REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Boost 1.70 REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
+
 FIND_PACKAGE(Potrace REQUIRED)
 
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_AUTOMOC ON)
 SET(CMAKE_AUTORCC ON)
 SET(CMAKE_AUTOUIC ON)
-SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
+SET(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
 #SET(CMAKE_CXX_FLAGS "-O2")
 
 GET_FILENAME_COMPONENT(SRC_DIR "src" REALPATH)
@@ -36,6 +38,8 @@ FILE(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
 FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
+FILE(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
+
 
 SET(SOURCES
         ${SRC_DIR}/layer.cpp
@@ -50,6 +54,7 @@ SET(SOURCES
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}
         ${QXPOTRACE_CPP}
+        ${SERIALPORT_CPP}
         ${SRC_DIR}/canvas/cache-stack.cpp
         ${SRC_DIR}/canvas/canvas.cpp
         ${SRC_DIR}/parser/svgpp-parser.cpp
@@ -109,5 +114,6 @@ target_link_libraries(swiftray Qt::Widgets)
 target_link_libraries(swiftray Qt::SerialPort)
 
 target_link_libraries(swiftray CLIPPER)
+target_link_libraries(swiftray Boost::thread)
 
 add_subdirectory(tests)
