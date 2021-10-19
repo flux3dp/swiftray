@@ -17,6 +17,7 @@
 #include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
+#include <windows/image-sharpen-dialog.h>
 #include <windows/image-trace-dialog.h>
 
 namespace Ui {
@@ -84,6 +85,7 @@ private:
   WelcomeDialog *welcome_dialog_;
   PreferencesWindow *preferences_window_;
   ImageTraceDialog *image_trace_dialog_;
+  ImageSharpenDialog *image_sharpen_dialog_;
 
   void newFile();
   void saveFile();
