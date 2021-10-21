@@ -15,13 +15,23 @@ LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
   updateLayers();
 }
 
+void LayerPanel::loadStyles() {
+  ui->layerList->setStyleSheet("\
+    QToolButton#btnAddLayer{ \
+      background-color: rgba(0, 0, 0, 0);\
+    } \
+  ");
+}
+
 void LayerPanel::loadWidgets() {
   layer_params_panel_ = new LayerParamsPanel(this, main_window_);
   this->layout()->addWidget(layer_params_panel_);
   // Add floating buttons
   QPointF button_pos = ui->layerList->mapToGlobal(ui->layerList->geometry().bottomRight()) - QPointF(35, 35);
   add_layer_btn_ = new QToolButton(ui->layerList);
-  add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
+  add_layer_btn_->setObjectName("btnAddLayer");
+  add_layer_btn_->setCursor(Qt::PointingHandCursor);
+  add_layer_btn_->setIcon(QIcon(":/images/icon-plus.png"));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
   add_layer_btn_->raise();

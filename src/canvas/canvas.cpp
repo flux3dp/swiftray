@@ -12,6 +12,10 @@
 #include <windows/preview-window.h>
 #include <windows/osxwindow.h>
 #include <document-serializer.h>
+#include <windows/path-offset-dialog.h>
+#include <windows/image-trace-dialog.h>
+#include <settings/file-path-settings.h>
+#include <QFileDialog>
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -145,6 +149,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
 
 void Canvas::keyReleaseEvent(QKeyEvent *e) {
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  for (auto &control : ctrls_) {
+    if (control->isActive() && control->keyReleaseEvent(e))
+      return;
+  }
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {
@@ -212,6 +220,11 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
     }
   } else if (mode() == Mode::PathEditing) {
     ctrl_path_edit_.exit();
+  } else if (mode() == Mode::TextDrawing) {
+    // NOTE: If Double click outside of text edit box, finish the current text edit
+    if (!ctrl_text_.target().boundingRect().contains(canvas_coord)) {
+      ctrl_text_.exit();
+    }
   }
 }
 
@@ -529,6 +542,21 @@ void Canvas::addEmptyLayer() {
   emit layerChanged();
 }
 
+void Canvas::duplicateLayer(LayerPtr layer) {
+  // NOTE: Unselect current shapes first to prevent selection box from malfunctioning
+  document().execute(
+          Commands::Select(&document(), {})
+  );
+  int i = 1;
+  while (document().findLayerByName(layer->name() + " copy " + QString::number(i)) != nullptr) i++;
+  LayerPtr new_layer = layer->clone();
+  new_layer->setName(layer->name() + " copy " + QString::number(i));
+  document().execute(Commands::AddLayer(new_layer));
+
+  setActiveLayer(new_layer);
+  emit layerChanged();
+}
+
 void Canvas::resize() {
   if (widget_) {
     document().setScreenSize(widget_->geometry().size());
@@ -556,9 +584,121 @@ void Canvas::importImage(QImage &image) {
   qreal scale = min(1.0, min(document().height() / image.height(),
                              document().width() / image.width()));
   qInfo() << "Scale" << scale;
-  new_shape->setTransform(QTransform().scale(scale, scale));
-  document().activeLayer()->addShape(new_shape);
-  document().setSelection(new_shape);
+  document().execute(
+    Commands::SetTransform(new_shape.get(), QTransform().scale(scale, scale)),
+    Commands::AddShape(document().activeLayer(), new_shape),
+    Commands::Select(&(document()), {new_shape})
+  );
+}
+
+/**
+ * @brief Popout a dialog for param setting, and then generate the path offset accordingly
+ *        MUST assert only path shape are selected
+ */
+void Canvas::genPathOffset() {
+  QList<ShapePtr> &shapes = document().selections();
+  PathOffsetDialog *dialog = new PathOffsetDialog();
+  // initialize dialog
+  for (auto &shape : shapes) {
+    auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
+    auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
+    for (QPolygonF &poly : polygons) {
+      dialog->addPath(poly);
+    }
+  }
+  dialog->updatePathOffset();
+
+  // output result
+  int dialogRet = dialog->exec();
+  if(dialogRet == QDialog::Accepted) {
+    QPainterPath p;
+    for (auto polygon :dialog->getResult()) {
+      p.addPolygon(polygon);
+    }
+    ShapePtr new_shape = make_shared<PathShape>(p);
+    document().execute(
+            Commands::AddShape(document().activeLayer(), new_shape),
+            Commands::Select(&document(), {new_shape})
+    );
+  }
+  delete dialog;
+}
+
+/**
+ * @brief Popout a dialog for param setting, and then generate the image trace accordingly
+ *        MUST assert only one image is selected currently
+ */
+void Canvas::genImageTrace() {
+  QList<ShapePtr> &items = document().selections();
+  Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
+  Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionTrace", "MUST only be enabled when an image is selected");
+
+  ShapePtr selected_img_shape = items.at(0);
+  BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
+  ImageTraceDialog *dialog = new ImageTraceDialog();
+  dialog->loadImage(bitmap->image());
+  int dialog_ret = dialog->exec();
+  if(dialog_ret == QDialog::Accepted) {
+    // Add trace contours to canvas
+    ShapePtr new_shape = make_shared<PathShape>(dialog->getTrace());
+    QTransform offset = new_shape->transform();
+    offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
+    new_shape->setTransform(offset);
+    if (dialog->shouldDeleteImg()) {
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&(document()), {new_shape}),
+              Commands::RemoveShape(selected_img_shape)
+      );
+    } else {
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&(document()), {new_shape})
+      );
+    }
+  }
+  delete dialog;
+}
+
+void Canvas::invertImage() {
+  Q_ASSERT_X(document().selections().length() == 1,
+             "Canvas", "Only one image can be processed at a time");
+  ShapePtr origin_bitmap_shape = document().selections().at(0);
+  Layer* target_layer = origin_bitmap_shape->layer();
+  Q_ASSERT_X(origin_bitmap_shape->type() == Shape::Type::Bitmap,
+             "Canvas", "invert action can only be applied on bitmap shape");
+  ShapePtr inverted_bitmap_shape = origin_bitmap_shape->clone();
+  BitmapShape * bitmap = static_cast<BitmapShape *>(inverted_bitmap_shape.get());
+  bitmap->image().invertPixels(QImage::InvertRgb);
+  document().execute(
+      Commands::Select(&document(), {}),
+      Commands::RemoveShape(origin_bitmap_shape->layer(), origin_bitmap_shape),
+      Commands::AddShape(target_layer, inverted_bitmap_shape),
+      Commands::Select(&document(), {inverted_bitmap_shape})
+  );
+}
+
+void Canvas::replaceImage(QImage new_image) {
+  Q_ASSERT_X(document().selections().length() == 1,
+             "Canvas", "Only one image can be processed at a time");
+  ShapePtr origin_shape = document().selections().at(0);
+  Layer* target_layer = origin_shape->layer();
+  Q_ASSERT_X(origin_shape->type() == Shape::Type::Bitmap,
+             "Canvas", "invert action can only be applied on bitmap shape");
+  BitmapShape * origin_bitmap_shape = static_cast<BitmapShape *>(origin_shape.get());
+
+  // Apply the height, width, x_pos, y_pos to new image
+  new_image = new_image.scaled(origin_bitmap_shape->image().size());
+  ShapePtr new_bitmap_shape = make_shared<BitmapShape>(new_image);
+  new_bitmap_shape->setTransform(origin_bitmap_shape->transform());
+
+  // Remove old image, Add new image
+  document().execute(
+          Commands::Select(&document(), {}),
+          Commands::RemoveShape(origin_shape->layer(), origin_shape),
+          Commands::AddShape(target_layer, new_bitmap_shape),
+          Commands::Select(&document(), {new_bitmap_shape})
+  );
 }
 
 void Canvas::setActiveLayer(LayerPtr &layer) {

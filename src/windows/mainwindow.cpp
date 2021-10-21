@@ -7,11 +7,11 @@
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
 #include <windows/osxwindow.h>
-#include <windows/preview-window.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <document-serializer.h>
-#include <windows/path-offset-dialog.h>
+#include <settings/file-path-settings.h>
+#include <windows/preview-window.h>
 
 #include "ui_mainwindow.h"
 
@@ -73,8 +73,37 @@ void MainWindow::loadStyles() {
   }
 }
 
+/**
+ * @brief Check whether there is any unsaved change, and ask user to save
+ * @return true if unsaved change is resolved
+ *         false if unsaved change hasn't been resolved
+ */
+bool MainWindow::handleUnsavedChange() {
+  if ( ! canvas_->document().currentFile().isEmpty()) { // current document is opened from a file
+    if (canvas_->document().currentFileModified()) {    // some modifications have been performed on this document
+      // TODO: Pop a dialog to ask whether save/cancel/don't save
+
+    }
+  }
+  return true;
+}
+
+void MainWindow::newFile() {
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  canvas_->setDocument(new Document());
+  canvas_->document().setCurrentFile("");
+  canvas_->emitAllChanges();
+  emit canvas_->selectionsChanged();
+}
+
 void MainWindow::openFile() {
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", ".",
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
                                                    tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
 
   if (!QFile::exists(file_name))
@@ -83,6 +112,10 @@ void MainWindow::openFile() {
   QFile file(file_name);
 
   if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
@@ -90,11 +123,60 @@ void MainWindow::openFile() {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
+      canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
     } else {
       canvas_->loadSVG(data);
     }
+  }
+}
+
+/**
+ * @brief Save the document with the origin filename
+ *        If the document has never been saved, force a new save as
+ */
+void  MainWindow::saveFile() {
+  qInfo() << canvas_->document().currentFile();
+  if (canvas_->document().currentFile().isEmpty()) {
+    saveAsFile();
+    return;
+  }
+
+  QFile file(canvas_->document().currentFile());
+  if (file.open(QFile::ReadWrite)) {
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    qInfo() << "Saved";
+  }
+}
+
+/**
+ * @brief Save the document with a new filename
+ */
+void MainWindow::saveAsFile() {
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
+
+  QString filter = tr("Scene File (*.bb)");
+  QString file_name = QFileDialog::getSaveFileName(this,
+                                                   tr("Save Image"),
+                                                   default_save_dir,
+                                                   filter, &filter);
+
+  //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
+  QFile file(file_name);
+
+  if (file.open(QFile::ReadWrite)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
+    QDataStream stream(&file);
+    canvas_->save(stream);
+    file.close();
+    canvas_->document().setCurrentFile(file_name);
+    qInfo() << "Saved";
   }
 }
 
@@ -111,10 +193,18 @@ void MainWindow::openImageFile() {
   p->show();
   return;
 #endif
-  QString file_name = QFileDialog::getOpenFileName(this, "Open Image", ".", tr("Image Files (*.png *.jpg *.svg)"));
+
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this,
+                                                   "Open Image",
+                                                   default_open_dir,
+                                                   tr("Image Files (*.png *.jpg *.svg)"));
 
   if (!QFile::exists(file_name))
     return;
+
+  QFileInfo file_info{file_name};
+  FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
   if (file_name.endsWith(".svg")) {
       QFile file(file_name);
@@ -132,30 +222,38 @@ void MainWindow::openImageFile() {
   }
 }
 
+void MainWindow::replaceImage() {
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this,
+                                                   "Open Image",
+                                                   default_open_dir,
+                                                   tr("Image Files (*.png *.jpg)"));
+  QImage new_image;
+  if (QFile::exists(file_name) && new_image.load(file_name)) {
+    canvas_->replaceImage(new_image);
+
+    // Update default file path
+    FilePathSettings::setDefaultFilePath(QFileInfo{file_name}.absoluteDir().absolutePath());
+  }
+}
+
 void MainWindow::imageSelected(const QImage image) {
   QImage my_image = image;
   canvas_->importImage(my_image);
 }
 
 void MainWindow::exportGCodeFile() {
-  PreviewWindow *pw = new PreviewWindow(this);
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get());
   exporter.convertStack(canvas_->document().layers());
 
-  QString default_save_dir;
-  QSettings settings;
-  if ( ! settings.contains("defaultSaveDir")) {
-    QStringList desktop_dir = QStandardPaths::standardLocations(
-            QStandardPaths::StandardLocation::DesktopLocation);
-    settings.setValue("defaultSaveDir", desktop_dir.at(0));
-  }
-  default_save_dir = settings.value("defaultSaveDir").toString();
 
-  QString filter = tr("GCode Files (*.gcode);; All files (*.*)");
+  QString default_save_dir = FilePathSettings::getDefaultFilePath();
+
+  QString filter = tr("GCode Files (*.gcode)");
   QString file_name = QFileDialog::getSaveFileName(this,
                                                    tr("Save GCode"),
-                                                   default_save_dir + "/" + tr("untitled.gcode"),
+                                                   default_save_dir,
                                                    filter, &filter);
   if (file_name.isEmpty()) {
     return;
@@ -168,20 +266,7 @@ void MainWindow::exportGCodeFile() {
 
     // update default save dir
     QFileInfo file_info{file_name};
-    settings.setValue("defaultSaveDir", file_info.absoluteDir().absolutePath());
-  }
-}
-
-
-void MainWindow::saveFile() {
-  QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
-  QFile file(file_name);
-
-  if (file.open(QFile::ReadWrite)) {
-    QDataStream stream(&file);
-    canvas_->save(stream);
-    file.close();
-    qInfo() << "Saved";
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
   }
 }
 
@@ -280,6 +365,8 @@ void MainWindow::updateSelections() {
   ui->actionAlignHCenter->setEnabled(items.size() > 1);
   ui->actionAlignHRight->setEnabled(items.size() > 1);
   ui->actionTrace->setEnabled(items.size() == 1 && all_image);
+  ui->actionInvert->setEnabled(items.size() == 1 && all_image);
+  ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
   ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
 #ifdef Q_OS_MACOS
@@ -298,8 +385,6 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
-  image_sharpen_dialog_ = new ImageSharpenDialog(this);
-  image_trace_dialog_ = new ImageTraceDialog(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -315,8 +400,10 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   // Monitor UI events
+  connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
@@ -339,7 +426,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionIntersect, &QAction::triggered, canvas_, &Canvas::editIntersect);
   connect(ui->actionDiff, &QAction::triggered, canvas_, &Canvas::editDifference);
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ui->actionGroupMenu, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  connect(ui->actionUngroupMenu, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionHFlip, &QAction::triggered, canvas_, &Canvas::editHFlip);
   connect(ui->actionVFlip, &QAction::triggered, canvas_, &Canvas::editVFlip);
   connect(ui->actionAlignVTop, &QAction::triggered, canvas_, &Canvas::editAlignVTop);
@@ -350,103 +439,17 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
-  connect(ui->actionPathOffset, &QAction::triggered, [=]() {
-    QList<ShapePtr> &shapes = canvas_->document().selections();
-    PathOffsetDialog *dialog = new PathOffsetDialog();
-    // initialize dialog
-    for (auto &shape : shapes) {
-      auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());
-      auto polygons = path_shape_ptr->path().toSubpathPolygons(shape->transform());
-      for (QPolygonF &poly : polygons) {
-        dialog->addPath(poly);
-      }
-    }
-    dialog->updatePathOffset();
-
-    // output result
-    int dialogRet = dialog->exec();
-    if(dialogRet == QDialog::Accepted) {
-      QPainterPath p;
-      for (auto polygon :dialog->getResult()) {
-        p.addPolygon(polygon);
-      }
-      ShapePtr new_shape = make_shared<PathShape>(p);
-      canvas_->document().execute(
-              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-              Commands::Select(&(canvas_->document()), {new_shape})
-      );
-    }
-    delete dialog;
-  });
-  connect(ui->actionSharpen, &QAction::triggered, [=]() {
-    QList<ShapePtr> &items = canvas_->document().selections();
-    Q_ASSERT_X(items.count() == 1, "actionSharpen", "MUST only be enabled when single item is selected");
-    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionSharpen", "MUST only be enabled when an image is selected");
-
-    ShapePtr selected_img_shape = items.at(0);
-    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
-    this->image_sharpen_dialog_->reset();
-    this->image_sharpen_dialog_->loadImage(bitmap->image());
-    int dialogRet = this->image_sharpen_dialog_->exec();
-    if(dialogRet == QDialog::Accepted) {
-      QImage sharpened_image = this->image_sharpen_dialog_->getSharpenedImage();
-      ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
-      new_shape->applyTransform(bitmap->transform());
-      canvas_->document().execute(
-              Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-              Commands::Select(&(canvas_->document()), {new_shape}),
-              Commands::RemoveShape(selected_img_shape)
-      );
-    }
-    this->image_sharpen_dialog_->reset();
-  });
-  connect(ui->actionTrace, &QAction::triggered, [=]() {
-    QList<ShapePtr> &items = canvas_->document().selections();
-    Q_ASSERT_X(items.count() == 1, "actionTrace", "MUST only be enabled when single item is selected");
-    Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionTrace", "MUST only be enabled when an image is selected");
-
-    ShapePtr selected_img_shape = items.at(0);
-    BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
-    this->image_trace_dialog_->reset();
-    this->image_trace_dialog_->loadImage(bitmap->image());
-    int dialogRet = this->image_trace_dialog_->exec();
-    if(dialogRet == QDialog::Accepted) {
-      // Add trace contours to canvas
-      ShapePtr new_shape = make_shared<PathShape>(this->image_trace_dialog_->getTrace());
-      new_shape->applyTransform(bitmap->transform());
-      if (this->image_trace_dialog_->shouldDeleteImg()) {
-        canvas_->document().execute(
-                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-                Commands::Select(&(canvas_->document()), {new_shape}),
-                Commands::RemoveShape(selected_img_shape)
-        );
-      } else {
-        canvas_->document().execute(
-                Commands::AddShape(canvas_->document().activeLayer(), new_shape),
-                Commands::Select(&(canvas_->document()), {new_shape})
-        );
-      }
-    }
-    this->image_trace_dialog_->reset();
-  });
-
+  connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
+  connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
+  connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
+  connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
     emit machineSettingsChanged();
   });
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
-  connect(ui->actionPreview, &QAction::triggered, [=]() {
-    auto gen = canvas_->exportGcode();
-    PreviewWindow *pw = new PreviewWindow(this);
-    auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_gcode.get());
-    exporter.convertStack(canvas_->document().layers());
-    gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
-    pw->setPreviewPath(gen);
-    pw->setRequiredTime(gcode_player_->requiredTime());
-    pw->show();
-  });
+  connect(ui->actionPreview, &QAction::triggered, this, &MainWindow::genPreviewWindow);
   connect(canvas_, &Canvas::cursorChanged, [=](Qt::CursorShape cursor) {
     if (cursor == Qt::ArrowCursor) {
       unsetCursor();
@@ -481,4 +484,18 @@ void MainWindow::showWelcomeDialog() {
     welcome_dialog_->activateWindow();
     welcome_dialog_->raise();
   });
+}
+
+void MainWindow::genPreviewWindow() {
+  auto gen = canvas_->exportGcode();
+  PreviewWindow *pw = new PreviewWindow(this,
+                                        canvas_->document().width() / 10,
+                                        canvas_->document().height() / 10);
+  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter exporter(gen_gcode.get());
+  exporter.convertStack(canvas_->document().layers());
+  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  pw->setPreviewPath(gen);
+  pw->setRequiredTime(gcode_player_->requiredTime());
+  pw->show();
 }

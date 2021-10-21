@@ -43,6 +43,9 @@ public:
 
   static QString baudRate();
 
+private slots:
+  void onStatusChanged(BaseJob::Status new_status);
+
 private:
 
   void loadSettings() override;

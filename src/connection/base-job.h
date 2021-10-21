@@ -10,6 +10,7 @@
 */
 class BaseJob : public QThread {
 Q_OBJECT
+    //Q_ENUMS(Status)
 public:
   enum class Status {
     READY,
@@ -18,8 +19,10 @@ public:
     PAUSED,
     PAUSING,
     RESUMING,
+    STOPPING,
     STOPPED,
     FINISHED,
+    ERROR_STOPPING,
     ERROR_STOPPED,
     ERROR_PAUSED
   };
@@ -43,7 +46,7 @@ public:
 signals:
 
   void error(const QString &error_message);
-
+  void statusChanged(BaseJob::Status new_status);
   void timeout(const QString &s);
 
 protected:
@@ -54,3 +57,5 @@ protected:
 
   Status status_;
 };
+
+Q_DECLARE_METATYPE(BaseJob::Status);

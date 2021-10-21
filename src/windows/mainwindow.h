@@ -17,8 +17,6 @@
 #include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
-#include <windows/image-sharpen-dialog.h>
-#include <windows/image-trace-dialog.h>
 
 namespace Ui {
   class MainWindow;
@@ -62,9 +60,13 @@ private slots:
 
   void openImageFile();
 
+  void replaceImage();
+
   void imageSelected(const QImage image);
 
   void showWelcomeDialog();
+
+  void genPreviewWindow();
 
 private:
 
@@ -84,11 +86,12 @@ private:
   MachineManager *machine_manager_;
   WelcomeDialog *welcome_dialog_;
   PreferencesWindow *preferences_window_;
-  ImageTraceDialog *image_trace_dialog_;
-  ImageSharpenDialog *image_sharpen_dialog_;
 
+  void newFile();
   void saveFile();
+  void saveAsFile();
   void exportGCodeFile();
+  bool handleUnsavedChange();
 };
 
 #endif // MAINWINDOW_H

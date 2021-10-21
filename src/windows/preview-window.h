@@ -18,7 +18,7 @@ Q_OBJECT
 
 public:
 
-  explicit PreviewWindow(QWidget *parent = nullptr);
+  explicit PreviewWindow(QWidget *parent, int width, int height);
 
   ~PreviewWindow();
 

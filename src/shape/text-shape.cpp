@@ -52,6 +52,7 @@ void TextShape::makePath() {
 
 void TextShape::makeCursorRect(int cursor) {
   int current_pos = 0;
+  const qreal WIDTH_HEIGHT_RATIO = 0.03; // fixed ratio between width and height
   for (int i = 0; i < lines_.length(); i++) {
     QString &line = lines_[i];
     int cursor_offset = cursor - current_pos;
@@ -61,18 +62,20 @@ void TextShape::makeCursorRect(int cursor) {
            ? "A"
            : line.chopped(line.length() - cursor_offset);
 
-      QPainterPath line_path;
+      QPainterPath line_path; // for calculating x pos of cursor rect
       line_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
                         font_, test_string);
+      QPainterPath height_path; // always use "A" for calculating y_offset and height of cursor
+      height_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
+                        font_, "A");
 
-      QRectF test_rect = line_path.boundingRect();
-      if (cursor_offset == 0) {
-        cursor_rect_ =
-             QRectF(test_rect.topLeft(), QSizeF(5, test_rect.height()));
-      } else {
-        cursor_rect_ = QRectF(test_rect.topRight() + QPointF(5, 0),
-                              QSizeF(5, test_rect.height()));
-      }
+      qreal cursor_height = height_path.boundingRect().height();
+      qreal cursor_width = cursor_height * WIDTH_HEIGHT_RATIO;
+      qreal cursor_x_pos = cursor_offset == 0 ? line_path.boundingRect().left() :
+                                                line_path.boundingRect().right() + cursor_width;
+      qreal cursor_y_pos = height_path.boundingRect().top();
+      cursor_rect_ = QRectF{QPointF{cursor_x_pos, cursor_y_pos},
+                              QSizeF{cursor_width, cursor_height}};
       break;
     }
     current_pos += lines_[i].length() + 1; // Add "\n"'s offset
@@ -85,7 +88,7 @@ void TextShape::paint(QPainter *painter) const {
   painter->setTransform(temp_transform_, true);
   if (editing_ && QDateTime::currentMSecsSinceEpoch() % 1000 < 500) {
     // Show 500 msec and hide 500 msec
-    painter->drawRect(cursor_rect_);
+    painter->fillRect(cursor_rect_, QColor{20, 20, 20, 150});
   }
   painter->restore();
   PathShape::paint(painter);

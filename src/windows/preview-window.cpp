@@ -96,19 +96,27 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
   }
 }
 
-PreviewWindow::PreviewWindow(QWidget *parent) :
+/**
+ * @brief
+ * @param parent
+ * @param width The width of canvas (= machine working area) in the physical (real) unit (e.g. mm))
+ *              instead of virtual document size (e.g. 3000)
+ * @param height The height of canvas (= machine working area) in the physical (real) unit (e.g. mm))
+ *               instead of virtual document size (e.g. 2000)
+ */
+PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
      QDialog(parent),
      ui(new Ui::PreviewWindow),
      progress_(50),
      preview_path_(nullptr),
      BaseContainer() {
   ui->setupUi(this);
-  setWindowTitle("Preview Path");
+  setWindowTitle(tr("Preview Path"));
   initializeContainer();
 
   auto scene = new QGraphicsScene(this);
   //scene->setBackgroundBrush(Qt::gray);
-  scene->setSceneRect(0, 0, 300, 200); // in unit of mm
+  scene->setSceneRect(0, 0, width, height); // in unit of mm
 
   path_graphics_view_ = new PathGraphicsPreview(scene, ui->frame);
 

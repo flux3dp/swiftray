@@ -11,6 +11,7 @@ BaseJob::Status BaseJob::status() {
 
 void BaseJob::setStatus(BaseJob::Status status) {
   status_ = status;
+  emit statusChanged(status_);
 }
 
 int BaseJob::progress() { return 1; };

@@ -89,8 +89,10 @@
      </property>
      <addaction name="actionExportGcode"/>
     </widget>
+    <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
+    <addaction name="actionSave_As"/>
     <addaction name="actionPreferences"/>
     <addaction name="actionPreview"/>
     <addaction name="menuExport"/>
@@ -106,6 +108,8 @@
       <string>Image</string>
      </property>
      <addaction name="actionTrace"/>
+     <addaction name="actionInvert"/>
+     <addaction name="actionReplace_with"/>
      <addaction name="actionSharpen"/>
     </widget>
     <widget class="QMenu" name="menuPath">
@@ -901,9 +905,46 @@
     <string>Offset</string>
    </property>
   </action>
+  <action name="actionSave_As">
+   <property name="text">
+    <string>Save As...</string>
+   </property>
+   <property name="iconText">
+    <string>Save As...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save As...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
   <action name="actionSharpen">
    <property name="text">
     <string>Sharpen</string>
+   </property>
+  </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionInvert">
+   <property name="text">
+    <string>Invert</string>
+   </property>
+  </action>
+  <action name="actionReplace_with">
+   <property name="text">
+    <string>Replace with ...</string>
    </property>
   </action>
  </widget>
