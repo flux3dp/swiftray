@@ -103,7 +103,11 @@ public slots:
 
   void editPaste();
 
+  void editPasteInPlace();
+
   void editDelete();
+
+  void editDuplicate();
 
   void editUndo();
 
@@ -219,6 +223,7 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
+  bool isPopMenuShowing_;
 
   QQuickWidget *widget_;
 
@@ -234,6 +239,8 @@ protected:
   CanvasTextEdit *text_input_;
 
 signals:
+
+  void canvasContextMenuOpened();
 
   void selectionsChanged();
 

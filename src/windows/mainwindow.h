@@ -5,6 +5,7 @@
 #include <QQuickWindow>
 #include <QQuickWidget>
 #include <QListWidget>
+#include <QMenu>
 #include <QToolButton>
 #include <widgets/components/layer-list-item.h>
 #include <widgets/panels/transform-panel.h>
@@ -64,6 +65,10 @@ private slots:
 
   void imageSelected(const QImage image);
 
+  void setCanvasContextMenu();
+
+  void showCanvasPopMenu();
+
   void showWelcomeDialog();
 
   void genPreviewWindow();
@@ -78,6 +83,18 @@ private:
 
   Ui::MainWindow *ui;
   Canvas *canvas_;
+
+  // Context menu of canvas
+  QMenu *popMenu_;
+  QAction *cutAction_;
+  QAction *copyAction_;
+  QAction *pasteAction_;
+  QAction *pasteInPlaceAction_;
+  QAction *duplicateAction_;
+  QAction *deleteAction_;
+  QAction *groupAction_;
+  QAction *ungroupAction_;
+
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;
   DocPanel *doc_panel_;

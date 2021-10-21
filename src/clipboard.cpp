@@ -37,6 +37,21 @@ void Clipboard::pasteTo(Document &doc) {
   );
 }
 
+void Clipboard::pasteInPlace(Document &doc) {
+  paste_shift_ += QPointF(20, 20);
+
+  QList<ShapePtr> new_shapes;
+  for (auto &shape : shapes_) {
+    ShapePtr new_shape = shape->clone();
+    new_shapes << new_shape;
+  }
+
+  doc.execute(
+       Commands::AddShapes(doc.activeLayer(), new_shapes),
+       Commands::Select(&doc, new_shapes)
+  );
+}
+
 void Clipboard::clear() {
   shapes_.clear();
 }
