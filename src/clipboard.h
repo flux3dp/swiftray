@@ -14,6 +14,8 @@ public:
 
   void pasteTo(Document &doc);
 
+  void pasteInPlace(Document &doc);
+
   void clear();
 
 private:

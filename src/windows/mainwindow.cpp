@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
   loadCanvas();
   initializeContainer();
   updateMode();
+  setCanvasContextMenu();
   updateSelections();
   showWelcomeDialog();
 }
@@ -350,6 +351,14 @@ void MainWindow::updateSelections() {
     if (shape->type() != Shape::Type::Bitmap) all_image = false;
   }
 
+  cutAction_->setEnabled(items.size() > 0);
+  copyAction_->setEnabled(items.size() > 0);
+  //pasteAction_;
+  duplicateAction_->setEnabled(items.size() > 0);
+  deleteAction_->setEnabled(items.size() > 0);
+  groupAction_->setEnabled(items.size() > 1);
+  ungroupAction_->setEnabled(all_group);
+
   ui->actionGroup->setEnabled(items.size() > 1);
   ui->actionUngroup->setEnabled(all_group);
   ui->actionUnion->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
@@ -399,6 +408,7 @@ void MainWindow::registerEvents() {
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
+  connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
   // Monitor UI events
   connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
@@ -476,6 +486,48 @@ bool isDarkMode() {
 #endif
   return false;
 }
+
+void MainWindow::setCanvasContextMenu() {
+  popMenu_ = new QMenu(this);
+  // Add QActions for context menu
+  cutAction_ = popMenu_->addAction(tr("Cut"));
+  copyAction_ =  popMenu_->addAction(tr("Copy"));
+  pasteAction_ =  popMenu_->addAction(tr("Paste"));
+  pasteInPlaceAction_ =  popMenu_->addAction(tr("Paste in Place"));
+  duplicateAction_ = popMenu_->addAction(tr("Duplicate"));
+  popMenu_->addSeparator();
+  deleteAction_ = popMenu_->addAction(tr("Delete"));
+  popMenu_->addSeparator();
+  groupAction_ = popMenu_->addAction(tr("group"));
+  ungroupAction_ = popMenu_->addAction(tr("ungroup"));
+
+  addAction(cutAction_);
+  addAction(copyAction_);
+  addAction(pasteAction_);
+  addAction(pasteInPlaceAction_);
+  addAction(duplicateAction_);
+  addAction(deleteAction_);
+  addAction(groupAction_);
+  addAction(ungroupAction_);
+
+  connect(cutAction_, &QAction::triggered, canvas_, &Canvas::editCut);
+  connect(copyAction_, &QAction::triggered, canvas_, &Canvas::editCopy);
+  connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPaste);
+  connect(pasteInPlaceAction_, &QAction::triggered, canvas_, &Canvas::editPasteInPlace);
+  connect(duplicateAction_, &QAction::triggered, canvas_, &Canvas::editDuplicate);
+  connect(deleteAction_, &QAction::triggered, canvas_, &Canvas::editCut);
+  connect(groupAction_, &QAction::triggered, canvas_, &Canvas::editGroup);
+  connect(ungroupAction_, &QAction::triggered, canvas_, &Canvas::editUngroup);
+
+  setContextMenuPolicy(Qt::CustomContextMenu);
+}
+
+void MainWindow::showCanvasPopMenu() {
+  if(popMenu_){
+      popMenu_->exec(QCursor::pos());
+  }
+}
+
 
 void MainWindow::showWelcomeDialog() {
   if (!MachineSettings().machines().empty()) return;

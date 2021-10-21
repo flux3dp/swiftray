@@ -156,6 +156,12 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {
+  if (e->button()==Qt::RightButton) {
+    isPopMenuShowing_ = true;
+    emit canvasContextMenuOpened();
+    return;
+  }
+
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   document().setMousePressedScreenCoord(e->pos());
   qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
@@ -181,6 +187,10 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
 }
 
 void Canvas::mouseMoveEvent(QMouseEvent *e) {
+  if (isPopMenuShowing_) {
+    return;
+  }
+
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseMoveEvent(e))
       return;
@@ -188,6 +198,16 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void Canvas::mouseReleaseEvent(QMouseEvent *e) {
+  if (e->button()==Qt::RightButton && !isPopMenuShowing_) {
+    isPopMenuShowing_ = true;
+    return;
+  }
+
+  if (isPopMenuShowing_) {
+    isPopMenuShowing_ = false;
+    return;
+  }
+
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseReleaseEvent(e))
       return;
@@ -356,19 +376,27 @@ void Canvas::editCopy() {
 }
 
 void Canvas::editPaste() {
-  if (mode() != Mode::Selecting)
-    return;
   clipboard().pasteTo(document());
 }
 
+void Canvas::editPasteInPlace() {
+  clipboard().pasteInPlace(document());
+}
+
 void Canvas::editDelete() {
-  qInfo() << "Edit Delete";
   if (mode() != Mode::Selecting)
     return;
 
   document().execute(
        Commands::RemoveSelections(&document())
   );
+}
+
+void Canvas::editDuplicate() {
+  if (mode() != Mode::Selecting)
+    return;
+  clipboard().set(document().selections());
+  clipboard().pasteTo(document());
 }
 
 void Canvas::editUndo() {
