@@ -17,11 +17,22 @@ bool Polygon::isActive() {
 }
 
 bool Polygon::mouseMoveEvent(QMouseEvent *e) {
-
   initial_vertex_ =  document().getCanvasCoord(e->pos());
   center_ = document().mousePressedCanvasCoord();
-  updateVertices(center_, initial_vertex_);
+  if (scale_locked_) {
+    QPointF adjusted_pos;
+    if ((initial_vertex_.y() - center_.y()) / (initial_vertex_.x() - center_.x()) > aspect_ratio_) {
+      adjusted_pos.setX(initial_vertex_.x());
+      adjusted_pos.setY(center_.y() + aspect_ratio_ * (initial_vertex_.x() - center_.x()));
+    } else {
+      adjusted_pos.setX(center_.x() + (initial_vertex_.y() - center_.y()) / aspect_ratio_);
+      adjusted_pos.setY(initial_vertex_.y());
+    }
 
+    updateVertices(center_, adjusted_pos);
+  } else {
+    updateVertices(center_, initial_vertex_);
+  }
   return true;
 }
 
@@ -53,6 +64,7 @@ void Polygon::paint(QPainter *painter) {
 
 
 bool Polygon::keyPressEvent(QKeyEvent *e) {
+  setScaleLock(e->modifiers() & Qt::ShiftModifier);
   if (e->key() == Qt::Key::Key_Escape) {
     exit();
     return true;
@@ -72,6 +84,11 @@ bool Polygon::keyPressEvent(QKeyEvent *e) {
     }
   }
 
+  return false;
+}
+
+bool Polygon::keyReleaseEvent(QKeyEvent *e) {
+  setScaleLock(e->modifiers() & Qt::ShiftModifier);
   return false;
 }
 
@@ -101,7 +118,6 @@ void Polygon::updateVertices(const QPointF &center, const QPointF &start_vertex)
   Q_ASSERT_X(polygon_.isClosed() == true, "Polygon", "Generated polygon must be closed");
 }
 
-
 bool Polygon::setNumSide(unsigned int numSide) {
   if (numSide >= kMinimumNumSide) {
     num_side_ = numSide;
@@ -112,4 +128,9 @@ bool Polygon::setNumSide(unsigned int numSide) {
   } else {
     return false;
   }
+}
+
+void Polygon::setScaleLock(bool scale_lock) {
+  aspect_ratio_ = scale_lock ? (initial_vertex_.y() - center_.y()) / (initial_vertex_.x() - center_.x()) : 1;
+  scale_locked_ = scale_lock;
 }

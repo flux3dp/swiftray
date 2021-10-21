@@ -149,6 +149,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
 
 void Canvas::keyReleaseEvent(QKeyEvent *e) {
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  for (auto &control : ctrls_) {
+    if (control->isActive() && control->keyReleaseEvent(e))
+      return;
+  }
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {

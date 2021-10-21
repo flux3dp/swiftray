@@ -27,6 +27,8 @@ namespace Controls {
 
     virtual bool keyPressEvent(QKeyEvent *e);
 
+    virtual bool keyReleaseEvent(QKeyEvent *e);
+
     virtual void paint(QPainter *painter);
 
     /**
