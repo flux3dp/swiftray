@@ -130,6 +130,10 @@ void Canvas::paint(QPainter *painter) {
 }
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Space) {
+    isHoldingSpace_ = true;
+  }
+
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
 
   for (auto &control : ctrls_) {
@@ -148,6 +152,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
 }
 
 void Canvas::keyReleaseEvent(QKeyEvent *e) {
+  if (e->key() == Qt::Key::Key_Space) {
+    isHoldingSpace_ = false;
+  }
+
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyReleaseEvent(e))
@@ -159,6 +167,11 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
   if (e->button()==Qt::RightButton) {
     isPopMenuShowing_ = true;
     emit canvasContextMenuOpened();
+    return;
+  }
+
+  if (e->button()==Qt::MiddleButton) {
+    isHoldingMiddleButton_ = true;
     return;
   }
 
@@ -191,6 +204,30 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
     return;
   }
 
+  QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
+
+  if (isHoldingSpace_ || isHoldingMiddleButton_) {
+    qreal newScrollX = document().mousePressedCanvasScroll().x() + movement.x() / 2.5;
+    qreal newScrollY = document().mousePressedCanvasScroll().y() + movement.y() / 2.5;
+
+    // Restrict the range of scroll
+    QPointF top_left_bound = getTopLeftScrollBoundary();
+    QPointF bottom_right_bound = getBottomRightScrollBoundary();
+    if (movement.x() > 0 && newScrollX > top_left_bound.x()) {
+      newScrollX = top_left_bound.x();
+    } else if (movement.x() < 0 && newScrollX < bottom_right_bound.x()) {
+      newScrollX = bottom_right_bound.x();
+    }
+    if (movement.y() > 0 && newScrollY > top_left_bound.y()) {
+      newScrollY = top_left_bound.y();
+    } else if (movement.y() < 0 && newScrollY < bottom_right_bound.y()) {
+      newScrollY = bottom_right_bound.y();
+    }
+
+    document().setScroll({newScrollX, newScrollY});
+    volatility_timer.restart();
+    return; 
+  }
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mouseMoveEvent(e))
       return;
@@ -200,6 +237,11 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 void Canvas::mouseReleaseEvent(QMouseEvent *e) {
   if (e->button()==Qt::RightButton && !isPopMenuShowing_) {
     isPopMenuShowing_ = true;
+    return;
+  }
+
+  if (e->button()==Qt::MiddleButton) {
+    isHoldingMiddleButton_ = true;
     return;
   }
 

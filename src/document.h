@@ -79,6 +79,8 @@ public:
 
   QPointF mousePressedCanvasCoord() const;
 
+  QPointF mousePressedCanvasScroll() const;
+
   const QFont &font() const;
 
   const Canvas *canvas() const;
@@ -157,6 +159,7 @@ private:
   Layer *active_layer_;
 
   QPointF mouse_pressed_screen_coord_;
+  QPointF mouse_pressed_scroll_coord_;
 
   QList<CmdPtr> undo2_stack_;
   QList<CmdPtr> redo2_stack_;
