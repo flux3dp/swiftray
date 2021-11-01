@@ -508,7 +508,7 @@ bool isDarkMode() {
 }
 
 void MainWindow::setCanvasContextMenu() {
-  popMenu_ = new QMenu(this);
+  popMenu_ = new QMenu(ui->quickWidget);
   // Add QActions for context menu
   cutAction_ = popMenu_->addAction(tr("Cut"));
   copyAction_ =  popMenu_->addAction(tr("Copy"));
@@ -521,25 +521,25 @@ void MainWindow::setCanvasContextMenu() {
   groupAction_ = popMenu_->addAction(tr("group"));
   ungroupAction_ = popMenu_->addAction(tr("ungroup"));
 
-  addAction(cutAction_);
-  addAction(copyAction_);
-  addAction(pasteAction_);
-  addAction(pasteInPlaceAction_);
-  addAction(duplicateAction_);
-  addAction(deleteAction_);
-  addAction(groupAction_);
-  addAction(ungroupAction_);
+  ui->quickWidget->addAction(cutAction_);
+  ui->quickWidget->addAction(copyAction_);
+  ui->quickWidget->addAction(pasteAction_);
+  ui->quickWidget->addAction(pasteInPlaceAction_);
+  ui->quickWidget->addAction(duplicateAction_);
+  ui->quickWidget->addAction(deleteAction_);
+  ui->quickWidget->addAction(groupAction_);
+  ui->quickWidget->addAction(ungroupAction_);
 
-  connect(cutAction_, &QAction::triggered, canvas_, &Canvas::editCut);
-  connect(copyAction_, &QAction::triggered, canvas_, &Canvas::editCopy);
-  connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPaste);
-  connect(pasteInPlaceAction_, &QAction::triggered, canvas_, &Canvas::editPasteInPlace);
-  connect(duplicateAction_, &QAction::triggered, canvas_, &Canvas::editDuplicate);
-  connect(deleteAction_, &QAction::triggered, canvas_, &Canvas::editCut);
-  connect(groupAction_, &QAction::triggered, canvas_, &Canvas::editGroup);
-  connect(ungroupAction_, &QAction::triggered, canvas_, &Canvas::editUngroup);
+  ui->quickWidget->connect(cutAction_, &QAction::triggered, canvas_, &Canvas::editCut);
+  ui->quickWidget->connect(copyAction_, &QAction::triggered, canvas_, &Canvas::editCopy);
+  ui->quickWidget->connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPaste);
+  ui->quickWidget->connect(pasteInPlaceAction_, &QAction::triggered, canvas_, &Canvas::editPasteInPlace);
+  ui->quickWidget->connect(duplicateAction_, &QAction::triggered, canvas_, &Canvas::editDuplicate);
+  ui->quickWidget->connect(deleteAction_, &QAction::triggered, canvas_, &Canvas::editCut);
+  ui->quickWidget->connect(groupAction_, &QAction::triggered, canvas_, &Canvas::editGroup);
+  ui->quickWidget->connect(ungroupAction_, &QAction::triggered, canvas_, &Canvas::editUngroup);
 
-  setContextMenuPolicy(Qt::CustomContextMenu);
+  ui->quickWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 }
 
 void MainWindow::setScaleBlock() {
