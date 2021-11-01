@@ -204,12 +204,17 @@ QPointF Document::mousePressedCanvasCoord() const {
   return getCanvasCoord(mouse_pressed_screen_coord_);
 }
 
+QPointF Document::mousePressedCanvasScroll() const {
+  return mouse_pressed_scroll_coord_;
+}
+
 QPointF Document::mousePressedScreenCoord() const {
   return mouse_pressed_screen_coord_;
 }
 
 void Document::setMousePressedScreenCoord(QPointF screen_coord) {
   mouse_pressed_screen_coord_ = screen_coord;
+  mouse_pressed_scroll_coord_ = QPointF(scroll_x_, scroll_y_);
 }
 
 void Document::groupSelections() {
