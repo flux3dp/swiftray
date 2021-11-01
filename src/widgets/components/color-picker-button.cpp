@@ -7,13 +7,13 @@
 ColorPickerButton::ColorPickerButton(QColor color, QWidget *parent) :
         QToolButton(parent), ui(new Ui::ColorPickerButton) {
   ui->setupUi(this);
-
+  // NOTE: styles for this button (e.g. border and size) are actually set in layer-list-item.ui
+  //setIconSize(QSize(16, 16));
+  //setFixedWidth(16);
   setStyleSheet(QString::fromUtf8(""));
   setBackgroundRole(QPalette::Button);
   setAutoFillBackground(false);
-  setIconSize(QSize(16, 16));
   setToolButtonStyle(Qt::ToolButtonIconOnly);
-  //setFixedWidth(16);
 
   color_ = color;
   updateIcon(color_);
@@ -58,10 +58,10 @@ void ColorPickerButton::updateIcon(QColor color) {
   pix.fill(QColor::fromRgba64(0, 0, 0, 0));
   QPainter paint(&pix);
   paint.setRenderHint(QPainter::Antialiasing, true);
-  QPen pen(QColor(255, 255, 255, 255), 5);
+  QPen pen(QColor(255, 255, 255, 255), 4);
   paint.setPen(pen);
   paint.setBrush(QBrush(this->color_));
-  paint.drawRoundedRect(QRectF(0, 0, 40, 40), 10, 10);
+  paint.drawRoundedRect(QRectF(2, 2, 36, 36), 12, 12);
   paint.end();
   QIcon ButtonIcon(pix);
   this->setIcon(ButtonIcon);

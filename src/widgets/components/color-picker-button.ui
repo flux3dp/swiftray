@@ -13,6 +13,19 @@
   <property name="windowTitle">
    <string>ColorPickerButton</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QToolButton:hover {
+  background-color: transparent;
+  border: 2px solid green;
+  padding: 4px;
+}
+QToolButton {
+  background-color: transparent;
+  border: 2px solid green;
+  padding: 4px;
+}
+</string>
+  </property>
  </widget>
  <resources/>
  <connections/>
