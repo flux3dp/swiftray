@@ -173,6 +173,8 @@ public slots:
 
   void setLayerOrder(QList<LayerPtr> &order);
 
+  void setScaleWithCenter(qreal new_scale);
+
   void resize();
 
   void setFont(const QFont &font);
@@ -241,6 +243,8 @@ protected:
 signals:
 
   void canvasContextMenuOpened();
+
+  void scaleChanged();
 
   void selectionsChanged();
 

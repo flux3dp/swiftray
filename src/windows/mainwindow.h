@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QQuickWindow>
 #include <QQuickWidget>
+#include <QPushButton>
 #include <QListWidget>
 #include <QMenu>
 #include <QToolButton>
@@ -57,6 +58,12 @@ private slots:
 
   void updateSelections();
 
+  void updateScale();
+
+  void onScaleMinusClicked();
+
+  void onScalePlusClicked();
+
   void openFile();
 
   void openImageFile();
@@ -66,6 +73,8 @@ private slots:
   void imageSelected(const QImage image);
 
   void setCanvasContextMenu();
+
+  void setScaleBlock();
 
   void showCanvasPopMenu();
 
@@ -94,6 +103,9 @@ private:
   QAction *deleteAction_;
   QAction *groupAction_;
   QAction *ungroupAction_;
+
+  QPushButton *scale_block_;
+  QMenu *popScaleMenu_;
 
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;

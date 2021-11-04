@@ -139,6 +139,8 @@ signals:
 
   void selectionsChanged();
 
+  void scaleChanged();
+
 private:
   qreal scroll_x_;
   qreal scroll_y_;
