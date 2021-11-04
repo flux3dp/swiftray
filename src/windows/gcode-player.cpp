@@ -21,6 +21,12 @@ GCodePlayer::GCodePlayer(QWidget *parent) :
   ui->setupUi(this);
   gcode_player_ = this;
   initializeContainer();
+  connect(&(SerialPort::getInstance()), &SerialPort::connected, this, [=]() {
+    ui->connectionStatus->setText(tr("Connected"));
+  });
+  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, this, [=]() {
+    ui->connectionStatus->setText(tr("Disconnected"));
+  });
 }
 
 void GCodePlayer::loadSettings() {
@@ -59,6 +65,7 @@ void GCodePlayer::registerEvents() {
         full_port_path = port;
       }
       qInfo() << "[SerialPort] Connecting" << port << baudrate;
+      ui->connectionStatus->setText(tr("Connecting"));
       bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
       if (rv == false) {
         ui->connectBtn->setChecked(false);
