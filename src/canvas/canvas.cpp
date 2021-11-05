@@ -13,6 +13,7 @@
 #include <windows/osxwindow.h>
 #include <document-serializer.h>
 #include <windows/path-offset-dialog.h>
+#include <windows/image-sharpen-dialog.h>
 #include <windows/image-trace-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
@@ -746,6 +747,35 @@ void Canvas::invertImage() {
       Commands::AddShape(target_layer, inverted_bitmap_shape),
       Commands::Select(&document(), {inverted_bitmap_shape})
   );
+}
+
+/**
+ * @brief Popout a dialog for param setting, and then sharpen the image accordingly
+ *        MUST assert only one image is selected currently
+ */
+void Canvas::sharpenImage() {
+  QList<ShapePtr> &items = document().selections();
+  Q_ASSERT_X(items.count() == 1, "actionSharpen", "MUST only be enabled when single item is selected");
+  Q_ASSERT_X(items.at(0)->type() == Shape::Type::Bitmap, "actionSharpen", "MUST only be enabled when an image is selected");
+
+  ShapePtr selected_img_shape = items.at(0);
+  BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
+  ImageSharpenDialog *dialog = new ImageSharpenDialog();
+  dialog->reset();
+  dialog->loadImage(bitmap->image());
+  int dialogRet = dialog->exec();
+  if(dialogRet == QDialog::Accepted) {
+    QImage sharpened_image = dialog->getSharpenedImage();
+    ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
+    new_shape->applyTransform(bitmap->transform());
+    document().execute(
+            Commands::AddShape(document().activeLayer(), new_shape),
+            Commands::Select(&(document()), {new_shape}),
+          Commands::RemoveShape(selected_img_shape)
+    );
+  }
+  dialog->reset();
+  delete dialog;
 }
 
 void Canvas::replaceImage(QImage new_image) {

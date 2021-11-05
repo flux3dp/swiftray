@@ -452,6 +452,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
+  connect(ui->actionSharpen, &QAction::triggered, canvas_, &Canvas::sharpenImage);
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
