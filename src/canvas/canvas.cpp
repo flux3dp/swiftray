@@ -339,6 +339,31 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   volatility_timer.restart();
 }
 
+void Canvas::setScaleWithCenter(qreal new_scale) {
+  QPointF center_pos = QPointF(width()/2 + 20, height()/2 + 20);
+  qreal orig_scale = document().scale();
+  document().setScale(new_scale);
+
+  QPointF new_scroll = center_pos - (center_pos - document().scroll()) * document().scale() / orig_scale;
+
+  // Restrict the scroll range (might not be necessary)
+  QPointF top_left_bound = getTopLeftScrollBoundary();
+  QPointF bottom_right_bound = getBottomRightScrollBoundary();
+  if (center_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+    new_scroll.setX(top_left_bound.x());
+  } else if (center_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
+    new_scroll.setX(bottom_right_bound.x());
+  }
+  if (center_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+    new_scroll.setY(top_left_bound.y());
+  } else if (center_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
+    new_scroll.setY(bottom_right_bound.y());
+  }
+
+  document().setScroll(new_scroll);
+  volatility_timer.restart();
+}
+
 void Canvas::loop() {
   update();
 }
@@ -852,6 +877,7 @@ void Canvas::setDocument(Document *document) {
   doc_->setCanvas(this);
   resize();
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
+  connect(doc_.get(), &Document::scaleChanged, this, &Canvas::scaleChanged);
 }
 
 Canvas::Mode Canvas::mode() const { return mode_; }

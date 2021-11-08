@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setCanvasContextMenu();
   updateSelections();
   showWelcomeDialog();
+  setScaleBlock();
 }
 
 void MainWindow::loadSettings() {
@@ -97,6 +98,14 @@ void MainWindow::newFile() {
   canvas_->document().setCurrentFile("");
   canvas_->emitAllChanges();
   emit canvas_->selectionsChanged();
+}
+
+void MainWindow::onScalePlusClicked() {
+  canvas_->setScaleWithCenter(qreal(qRound((canvas_->document().scale() + 0.05)*10))/10);
+}
+
+void MainWindow::onScaleMinusClicked() {
+  canvas_->setScaleWithCenter(qreal(qRound((canvas_->document().scale() - 0.051)*10))/10);
 }
 
 void MainWindow::openFile() {
@@ -336,6 +345,10 @@ void MainWindow::updateMode() {
   if (actionIter != actionMap.end()) actionIter->second->setChecked(true);
 }
 
+void MainWindow::updateScale() {
+  scale_block_->setText(QString::number(canvas_->document().scale() * 100, 'f', 1)+"%");
+}
+
 void MainWindow::updateSelections() {
   QList<ShapePtr> &items = canvas_->document().selections();
   bool all_group = !items.empty();
@@ -408,6 +421,7 @@ void MainWindow::registerEvents() {
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
+  connect(canvas_, &Canvas::scaleChanged, this, &MainWindow::updateScale);
   connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
   // Monitor UI events
   connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
@@ -520,6 +534,87 @@ void MainWindow::setCanvasContextMenu() {
   connect(ungroupAction_, &QAction::triggered, canvas_, &Canvas::editUngroup);
 
   setContextMenuPolicy(Qt::CustomContextMenu);
+}
+
+void MainWindow::setScaleBlock() {
+  scale_block_ = new QPushButton("100%", ui->quickWidget);
+  QToolButton *minusBtn = new QToolButton(ui->quickWidget);
+  QToolButton *plusBtn = new QToolButton(ui->quickWidget);
+  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 100, 50, 30);
+  scale_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
+  minusBtn->setIcon(QIcon(":/images/icon-plus.png"));
+  minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 100, 40, 30);
+  minusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
+  plusBtn->setIcon(QIcon(":/images/icon-plus.png"));
+  plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 100, 40, 30);
+  plusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
+
+  popScaleMenu_ = new QMenu(scale_block_);
+  // Add QActions for context menu
+  QAction* scaleFitToScreenAction_ = popScaleMenu_->addAction(tr("Fit to Screen"));
+  QAction* scale25Action_ = popScaleMenu_->addAction("25 %");
+  QAction* scale50Action_ =  popScaleMenu_->addAction("50 %");
+  QAction* scale75Action_ =  popScaleMenu_->addAction("75 %");
+  QAction* scale100Action_ =  popScaleMenu_->addAction("100 %");
+  QAction* scale150Action_ = popScaleMenu_->addAction("150 %");
+  QAction* scale200Action_ = popScaleMenu_->addAction("200 %");
+
+  scale_block_->addAction(scale25Action_);
+  scale_block_->addAction(scale50Action_);
+  scale_block_->addAction(scale75Action_);
+  scale_block_->addAction(scale100Action_);
+  scale_block_->addAction(scale150Action_);
+  scale_block_->addAction(scale200Action_);
+
+  scale_block_->connect(scaleFitToScreenAction_, &QAction::triggered, [=]() {
+    qreal orig_scale = canvas_->document().scale();
+    canvas_->document().setScale(qMin((canvas_->width() - 40)/canvas_->document().width(), (canvas_->height() - 40)/canvas_->document().height()));
+    QPointF center_pos = QPointF(canvas_->document().width()/2*canvas_->document().scale(), canvas_->document().height()/2*canvas_->document().scale());
+    QPointF new_scroll = (QPointF(canvas_->width()/2 + 10, canvas_->height()/2 + 10) - center_pos);
+    // Restrict the scroll range (might not be necessary)
+    QPointF top_left_bound = canvas_->getTopLeftScrollBoundary();
+    QPointF bottom_right_bound = canvas_->getBottomRightScrollBoundary();
+    if (center_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+      new_scroll.setX(top_left_bound.x());
+    } else if (center_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
+      new_scroll.setX(bottom_right_bound.x());
+    }
+    if (center_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+      new_scroll.setY(top_left_bound.y());
+    } else if (center_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
+      new_scroll.setY(bottom_right_bound.y());
+    }
+
+    canvas_->document().setScroll(new_scroll);
+  });
+  scale_block_->connect(scale25Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(0.25);
+  });
+  scale_block_->connect(scale50Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(0.5);
+  });
+  scale_block_->connect(scale75Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(0.75);
+  });
+  scale_block_->connect(scale100Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(1);
+  });
+  scale_block_->connect(scale150Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(1.5);
+  });
+  scale_block_->connect(scale200Action_, &QAction::triggered, [=]() {
+    canvas_->setScaleWithCenter(2);
+  });
+
+  scale_block_->setContextMenuPolicy(Qt::CustomContextMenu);
+
+  connect(minusBtn, &QAbstractButton::clicked, this, &MainWindow::onScaleMinusClicked);
+  connect(plusBtn, &QAbstractButton::clicked, this, &MainWindow::onScalePlusClicked);
+  connect(scale_block_, &QAbstractButton::clicked, [=]() {
+    if(popScaleMenu_){
+      popScaleMenu_->exec(QCursor::pos());
+    }
+  });
 }
 
 void MainWindow::showCanvasPopMenu() {
