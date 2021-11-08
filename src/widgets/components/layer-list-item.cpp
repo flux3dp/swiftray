@@ -23,6 +23,11 @@ LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, b
   loadStyles();
   registerEvents();
 
+  // Make lock button occupy space even when hidden
+  QSizePolicy sp_retain = ui->btnLock->sizePolicy();
+  sp_retain.setRetainSizeWhenHidden(true);
+  ui->btnLock->setSizePolicy(sp_retain);
+
   ui->btnLock->setVisible(layer_->isLocked());
   lockLayerAction_->setEnabled(!layer_->isLocked());
   unlockLayerAction_->setEnabled(layer_->isLocked());

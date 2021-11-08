@@ -73,7 +73,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <property name="leftMargin">
        <number>6</number>
       </property>
@@ -86,7 +86,23 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="0" column="0">
+      <item>
+       <spacer name="leftHorizontalFixedSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>15</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="ColorPickerButton" name="btnColorPicker">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -103,12 +119,19 @@
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
+        <property name="styleSheet">
+         <string notr="true">QToolButton:hover {
+  background-color: transparent;
+  border: 0px;
+}
+</string>
+        </property>
         <property name="text">
          <string>...</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item>
        <widget class="QLabel" name="labelName">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -124,7 +147,20 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
+      <item>
+       <spacer name="expandingHorizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QComboBox" name="comboBox">
         <property name="currentText">
          <string>Line</string>
@@ -151,7 +187,7 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="3">
+      <item>
        <widget class="QToolButton" name="btnHide">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
@@ -193,7 +229,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
+      <item>
        <widget class="QToolButton" name="btnLock">
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
