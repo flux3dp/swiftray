@@ -94,8 +94,13 @@ void MainWindow::newFile() {
   if ( ! handleUnsavedChange()) {
     return;
   }
+
+  qreal width = canvas_->document().width();
+  qreal height = canvas_->document().height();
   canvas_->setDocument(new Document());
   canvas_->document().setCurrentFile("");
+  canvas_->document().setWidth(width);
+  canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
   emit canvas_->selectionsChanged();
 }
