@@ -208,7 +208,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.svg)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg)"));
 
   if (!QFile::exists(file_name))
     return;
