@@ -167,6 +167,8 @@ public slots:
 
   void invertImage();
 
+  void sharpenImage();
+
   void replaceImage(QImage new_image);
 
   void setActiveLayer(LayerPtr &layer);
