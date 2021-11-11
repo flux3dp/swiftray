@@ -15,6 +15,7 @@
 #include <windows/path-offset-dialog.h>
 #include <windows/image-sharpen-dialog.h>
 #include <windows/image-trace-dialog.h>
+#include <windows/image-crop-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
 
@@ -829,14 +830,32 @@ void Canvas::replaceImage(QImage new_image) {
 void Canvas::cropImage() {
   Q_ASSERT_X(document().selections().length() == 1,
              "Canvas", "Only one image can be processed at a time");
-  ShapePtr origin_bitmap_shape = document().selections().at(0);
-  Layer* target_layer = origin_bitmap_shape->layer();
-  Q_ASSERT_X(origin_bitmap_shape->type() == Shape::Type::Bitmap,
+  ShapePtr selected_bitmap_shape = document().selections().at(0);
+  Layer* target_layer = selected_bitmap_shape->layer();
+  Q_ASSERT_X(selected_bitmap_shape->type() == Shape::Type::Bitmap,
              "Canvas", "Crop action can only be applied on bitmap shape");
 
-  // Popout a dialog for crop
+  BitmapShape * bitmap = static_cast<BitmapShape *>(selected_bitmap_shape.get());
 
+  // Popout a dialog for crop
+  ImageCropDialog *dialog = new ImageCropDialog();
+  dialog->loadImage(bitmap->image());
+  int dialog_ret = dialog->exec();
   // Apply crop result
+  if(dialog_ret == QDialog::Accepted) {
+    // Add trace contours to canvas
+    QImage crop_result = dialog->getCrop().toImage();
+    ShapePtr new_shape = make_shared<BitmapShape>(crop_result);
+    QTransform offset = new_shape->transform();
+    offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
+    new_shape->setTransform(offset);
+    document().execute(
+            Commands::AddShape(document().activeLayer(), new_shape),
+            Commands::Select(&(document()), {new_shape}),
+            Commands::RemoveShape(selected_bitmap_shape)
+    );
+  }
+  delete dialog;
 }
 
 void Canvas::setActiveLayer(LayerPtr &layer) {

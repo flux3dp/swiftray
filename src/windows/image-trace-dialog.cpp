@@ -140,26 +140,6 @@ void ImageTraceDialog::loadStyles() {
   ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
 }
 
-/**
- * @brief load a new image and generate a trace
- *        might need a reset() before
- * @param img could be rgb/rgba image
- *            converted into grayscale when loaded
- */
-void ImageTraceDialog::loadImage(const QImage *img) {
-  src_image_grayscale_ = ImageToGrayscale(*img);
-  try {
-    ui->traceGraphicsView->scene()->setSceneRect(0, 0,
-                                                 src_image_grayscale_.width(),
-                                                 src_image_grayscale_.height());
-    updateBackgroundDisplay();
-    updateImageTrace();
-  } catch (const std::exception& e) {
-    qInfo() << e.what();
-    return;
-  }
-}
-
 void ImageTraceDialog::loadImage(const QImage &img) {
   src_image_grayscale_ = ImageToGrayscale(img);
   try {
