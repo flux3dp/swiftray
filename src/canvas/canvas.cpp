@@ -135,6 +135,11 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
     isHoldingSpace_ = true;
   }
 
+  if (e->modifiers() & Qt::ControlModifier) {
+    qInfo() << (e->modifiers() & Qt::ControlModifier);
+    isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
+  }
+
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
 
   for (auto &control : ctrls_) {
@@ -155,6 +160,11 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
 void Canvas::keyReleaseEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Space) {
     isHoldingSpace_ = false;
+  }
+
+  if (isHoldingCtrl_) {
+    qInfo() << (e->modifiers() & Qt::ControlModifier);
+    isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
   transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
@@ -319,24 +329,37 @@ QPointF Canvas::getBottomRightScrollBoundary() {
 }
 
 void Canvas::wheelEvent(QWheelEvent *e) {
-  qreal newScrollX = document().scroll().x() + e->pixelDelta().x() / 2.5;
-  qreal newScrollY = document().scroll().y() + e->pixelDelta().y() / 2.5;
+  QPointF new_scroll;
+  QPointF mouse_pos;
+
+  if (isHoldingCtrl_) {
+    mouse_pos = e->position() - widget_offset_;
+    double orig_scale = document().scale();
+    double new_scale = min(30.0, max(0.1, document().scale() + e->pixelDelta().y() / document().height()));
+    document().setScale(new_scale);
+
+    new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
+  } else {
+    new_scroll.setX(document().scroll().x() + e->pixelDelta().x() / 2.5);
+    new_scroll.setY(document().scroll().y() + e->pixelDelta().y() / 2.5);
+    mouse_pos = e->pixelDelta();
+  }
 
   // Restrict the range of scroll
   QPointF top_left_bound = getTopLeftScrollBoundary();
   QPointF bottom_right_bound = getBottomRightScrollBoundary();
-  if (e->pixelDelta().x() > 0 && newScrollX > top_left_bound.x()) {
-    newScrollX = top_left_bound.x();
-  } else if (e->pixelDelta().x() < 0 && newScrollX < bottom_right_bound.x()) {
-    newScrollX = bottom_right_bound.x();
+  if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+    new_scroll.setX(top_left_bound.x());
+  } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
+    new_scroll.setX(bottom_right_bound.x());
   }
-  if (e->pixelDelta().y() > 0 && newScrollY > top_left_bound.y()) {
-    newScrollY = top_left_bound.y();
-  } else if (e->pixelDelta().y() < 0 && newScrollY < bottom_right_bound.y()) {
-    newScrollY = bottom_right_bound.y();
+  if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+    new_scroll.setY(top_left_bound.y());
+  } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
+    new_scroll.setY(bottom_right_bound.y());
   }
 
-  document().setScroll({newScrollX, newScrollY});
+  document().setScroll(new_scroll);
   volatility_timer.restart();
 }
 
