@@ -918,6 +918,7 @@ void Canvas::setMode(Mode mode) {
 }
 
 void Canvas::emitAllChanges() {
+  emit scaleChanged();
   emit layerChanged();
   emit modeChanged();
 }
