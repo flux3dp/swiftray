@@ -846,9 +846,7 @@ void Canvas::cropImage() {
     // Add trace contours to canvas
     QImage crop_result = dialog->getCrop().toImage();
     ShapePtr new_shape = make_shared<BitmapShape>(crop_result);
-    QTransform offset = new_shape->transform();
-    offset.translate(bitmap->x(), bitmap->y()); // offset of center of image
-    new_shape->setTransform(offset);
+    new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),
             Commands::Select(&(document()), {new_shape}),
