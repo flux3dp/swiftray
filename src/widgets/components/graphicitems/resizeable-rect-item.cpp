@@ -43,9 +43,6 @@ ResizeableRectItem::HandleIdx ResizeableRectItem::handleAt(QPointF point) {
   for (int i = 0; i < 8; i++) {
     if (std::get<0>(handles_[i]) != HandleIdx::kHandleNone) {
       if (std::get<1>(handles_[i]).contains(point)) {
-        qInfo() << "Mouse point:" << point;
-        qInfo() << "Handle rect:" << std::get<1>(handles_[i]);
-        qInfo() << "Handle hovered:" << static_cast<int>(std::get<0>(handles_[i]));
         return std::get<0>(handles_[i]);
       }
     }
@@ -55,7 +52,6 @@ ResizeableRectItem::HandleIdx ResizeableRectItem::handleAt(QPointF point) {
 
 void ResizeableRectItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
   //if self.isSelected():
-  qInfo() << "Hover move";
   HandleIdx handle = handleAt(event->pos());
   QCursor cursor = getHandleCursor(handle);
   setCursor(cursor);
@@ -63,7 +59,6 @@ void ResizeableRectItem::hoverMoveEvent(QGraphicsSceneHoverEvent* event) {
 }
 
 void ResizeableRectItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
-  qInfo() << "Hover leave";
   setCursor(Qt::ArrowCursor);
   QGraphicsItem::hoverLeaveEvent(event);
 }
@@ -86,7 +81,6 @@ void ResizeableRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
 }
 
 void ResizeableRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
-  qInfo() << "Resizeable Rect release:" << event->pos();
   QGraphicsItem::mouseReleaseEvent(event);
   handle_selected_ = HandleIdx::kHandleNone;
   mouse_press_pos_ = QPointF();
