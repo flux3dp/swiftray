@@ -76,7 +76,7 @@
      <x>0</x>
      <y>0</y>
      <width>1250</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -496,6 +496,18 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="documentContents"/>
+  </widget>
+  <widget class="QToolBar" name="toolBarConnection">
+   <property name="windowTitle">
+    <string>Connection Toolbar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionConnect"/>
   </widget>
   <action name="actionOpen">
    <property name="text">
@@ -945,6 +957,18 @@
   <action name="actionReplace_with">
    <property name="text">
     <string>Replace with ...</string>
+   </property>
+  </action>
+  <action name="actionConnect">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-nodetype-1.png</normaloff>:/images/icon-nodetype-1.png</iconset>
+   </property>
+   <property name="text">
+    <string>Connect</string>
+   </property>
+   <property name="toolTip">
+    <string> Connect</string>
    </property>
   </action>
  </widget>
