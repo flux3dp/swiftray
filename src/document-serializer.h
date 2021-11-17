@@ -60,6 +60,7 @@ public:
     out << layer->target_height_;
     out << layer->step_height_;
     out << layer->repeat_;
+    out << layer->power_;
     out << layer->speed_;
 
     out << layer->children().size();
@@ -81,6 +82,7 @@ public:
     in >> layer->target_height_;
     in >> layer->step_height_;
     in >> layer->repeat_;
+    in >> layer->power_;
     in >> layer->speed_;
 
     int shape_size;
