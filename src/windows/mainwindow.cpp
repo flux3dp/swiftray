@@ -3,6 +3,8 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QSerialPort>
+#include <QSerialPortInfo>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
@@ -28,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
+  setConnectionToolBar();
 }
 
 void MainWindow::loadSettings() {
@@ -540,6 +543,50 @@ void MainWindow::setCanvasContextMenu() {
   connect(ungroupAction_, &QAction::triggered, canvas_, &Canvas::editUngroup);
 
   setContextMenuPolicy(Qt::CustomContextMenu);
+}
+
+void MainWindow::setConnectionToolBar() {
+  baudComboBox_ = new QComboBox;
+  portComboBox_ = new QComboBox;
+  portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+  ui->toolBarConnection->addWidget(portComboBox_);
+  ui->toolBarConnection->addWidget(baudComboBox_);
+  QTimer *timer = new QTimer(this);
+  QList<QSerialPortInfo> portList;
+  baudComboBox_->addItem("9600");
+  baudComboBox_->addItem("12800");
+  baudComboBox_->addItem("25600");
+  baudComboBox_->addItem("51200");
+  baudComboBox_->addItem("57600");
+  baudComboBox_->addItem("102400");
+  baudComboBox_->addItem("115200");
+  baudComboBox_->addItem("204800");
+  connect(timer, &QTimer::timeout, [=]() {
+    const auto infos = QSerialPortInfo::availablePorts();
+
+    portComboBox_->clear();
+    for (const QSerialPortInfo &info : infos) {
+      portComboBox_->addItem(info.portName());
+    }
+    portComboBox_->setCurrentIndex(portComboBox_->count() - 1);
+  });
+  connect(ui->actionConnect, &QAction::triggered, [=]() {
+    QString port = portComboBox_->currentText();
+    QString baudrate = baudComboBox_->currentText();
+    QString full_port_path;
+    if (port.startsWith("tty")) { // Linux/macOSX
+      full_port_path += "/dev/";
+      full_port_path += port;
+    } else { // Windows COMx
+      full_port_path = port;
+    }
+    qInfo() << "[SerialPort] Connecting" << port << baudrate;
+    bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
+    if (rv == false) {
+      return;
+    }
+  });
+  timer->start(5000);
 }
 
 void MainWindow::setScaleBlock() {

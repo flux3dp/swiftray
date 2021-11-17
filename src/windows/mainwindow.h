@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QQuickWindow>
 #include <QQuickWidget>
+#include <QComboBox>
 #include <QPushButton>
 #include <QListWidget>
 #include <QMenu>
@@ -74,6 +75,8 @@ private slots:
 
   void setCanvasContextMenu();
 
+  void setConnectionToolBar();
+
   void setScaleBlock();
 
   void showCanvasPopMenu();
@@ -106,6 +109,8 @@ private:
 
   QPushButton *scale_block_;
   QMenu *popScaleMenu_;
+  QComboBox* baudComboBox_;
+  QComboBox* portComboBox_;
 
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;
