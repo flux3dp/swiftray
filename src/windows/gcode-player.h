@@ -10,7 +10,6 @@
 #include <QSerialPort>
 #include <connection/serial-job.h>
 #include <widgets/base-container.h>
-#include <settings/maintenance-controller.h>
 
 #endif
 

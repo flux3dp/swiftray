@@ -163,8 +163,7 @@ Rectangle {
             PathSvg { path: "M279.2,41H276l-5.2-10.4l-0.1,0V41h-3.2V24.7h3.2l5.2,10.4l0.1,0V24.7h3.2V41z" }
         }
         TapHandler {
-            //onTapped: controller.moveY(160)
-            onTapped: controller.testLog(root.width)
+            onTapped: controller.moveY(160)
         }
     }
 
@@ -188,8 +187,7 @@ Rectangle {
             PathSvg { path: "M40.5,242.4v3.2l-10.4,5.2l0,0.1h10.4v3.2H24.3v-3.2l10.4-5.2l0-0.1H24.3v-3.2H40.5z" }
         }
         TapHandler {
-            //onTapped: controller.moveX(0)
-            onTapped: controller.testLog(root.height)
+            onTapped: controller.moveX(0)
         }
     }
 
