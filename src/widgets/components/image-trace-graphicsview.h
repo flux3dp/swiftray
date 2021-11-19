@@ -11,6 +11,7 @@ class ImageTraceGraphicsView: public BaseGraphicsView {
 public:
     /**
      * @brief Used to draw trace path and points on it
+     *        NOTE: Can be extracted to a separate file
      */
     class QGraphicsContourPathsItem: public QGraphicsPathItem {
     public:
@@ -26,7 +27,6 @@ public:
     };
 
     ImageTraceGraphicsView(QWidget *parent = nullptr);
-    ImageTraceGraphicsView(QGraphicsScene *scene = nullptr, QWidget *parent = nullptr);
     void reset();
 
     void updateBackgroundPixmap(QPixmap background_img);

@@ -34,6 +34,7 @@ FILE(GLOB SHAPES_CPP "${SRC_DIR}/shape/*.cpp")
 FILE(GLOB CONTROLS_CPP "${SRC_DIR}/canvas/controls/*.cpp")
 FILE(GLOB WIDGETS_PANELS_CPP "${SRC_DIR}/widgets/panels/*.cpp")
 FILE(GLOB WIDGETS_COMPONENTS_CPP "${SRC_DIR}/widgets/components/*.cpp")
+FILE(GLOB WIDGETS_COMPONENTS_GRAPHICSITEMS_CPP "${SRC_DIR}/widgets/components/graphicitems/*.cpp")
 FILE(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
 FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
@@ -50,6 +51,7 @@ SET(SOURCES
         ${CONTROLS_CPP}
         ${WIDGETS_PANELS_CPP}
         ${WIDGETS_COMPONENTS_CPP}
+        ${WIDGETS_COMPONENTS_GRAPHICSITEMS_CPP}
         ${SHAPES_CPP}
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}

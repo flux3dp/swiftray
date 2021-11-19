@@ -20,7 +20,6 @@ public:
 
     void reset();
     void resetParams();
-    void loadImage(const QImage *img);
     void loadImage(const QImage &img);
     void updateBackgroundDisplay();
     void updateImageTrace();

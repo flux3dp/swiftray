@@ -63,17 +63,7 @@ void ImageTraceGraphicsView::QGraphicsContourPathsItem::paint(QPainter *painter,
 ImageTraceGraphicsView::ImageTraceGraphicsView(QWidget *parent)
         : BaseGraphicsView(parent)
 {
-  min_scale_ = 0.5;
-  QGraphicsScene* new_scene = new QGraphicsScene();
-  setScene(new_scene);
-}
-
-ImageTraceGraphicsView::ImageTraceGraphicsView(QGraphicsScene *scene, QWidget *parent)
-        : BaseGraphicsView(scene, parent)
-{
-  min_scale_ = 0.5;
-  QGraphicsScene* new_scene = new QGraphicsScene();
-  setScene(new_scene);
+  setMinScale(0.5);
 }
 
 void ImageTraceGraphicsView::reset() {

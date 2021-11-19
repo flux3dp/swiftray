@@ -397,6 +397,7 @@ void MainWindow::updateSelections() {
   ui->actionTrace->setEnabled(items.size() == 1 && all_image);
   ui->actionInvert->setEnabled(items.size() == 1 && all_image);
   ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
+  ui->actionCrop->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
   ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
 #ifdef Q_OS_MACOS
@@ -478,6 +479,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionSharpen, &QAction::triggered, canvas_, &Canvas::sharpenImage);
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(ui->actionJogging, &QAction::triggered, this, &MainWindow::showJoggingPanel);
+  connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {

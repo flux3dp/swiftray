@@ -8,15 +8,9 @@
 BaseGraphicsView::BaseGraphicsView(QWidget *parent)
         : QGraphicsView(parent)
 {
-  setDragMode(ScrollHandDrag); // mouse drag
-  grabGesture(Qt::PinchGesture);
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn); // Qt::ScrollBarAlwaysOff
-  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);   // Qt::ScrollBarAlwaysOff
-}
+  QGraphicsScene* new_scene = new QGraphicsScene();
+  setScene(new_scene);
 
-BaseGraphicsView::BaseGraphicsView(QGraphicsScene *scene, QWidget *parent)
-        : QGraphicsView(scene, parent)
-{
   setDragMode(ScrollHandDrag); // mouse drag
   grabGesture(Qt::PinchGesture);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn); // Qt::ScrollBarAlwaysOff
@@ -41,6 +35,11 @@ void BaseGraphicsView::reset() {
   QGraphicsScene* new_scene = new QGraphicsScene();
   setScene(new_scene);
   resetTransform();
+}
+
+void BaseGraphicsView::resetTransform() {
+  QGraphicsView::resetTransform();
+  scaleFactor = 1;
 }
 
 /**
