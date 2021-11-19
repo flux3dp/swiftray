@@ -136,7 +136,7 @@ void PathOffsetDialog::updatePathOffset() {
     clipper_offset.AddPaths(input_closed_clipper_paths, ClipperLib::jtMiter, ClipperLib::etClosedLine);
   }
   ClipperLib::Paths output_clipper_paths;
-  clipper_offset.Execute(output_clipper_paths, ui->distanceDoubleSpinBox->value() * scale_factor_);
+  clipper_offset.Execute(output_clipper_paths, ui->distanceDoubleSpinBox->value() * 10 * scale_factor_);
   convertClipperToQt(output_clipper_paths);
 
   if (offset_path_list_.count() == 0) {

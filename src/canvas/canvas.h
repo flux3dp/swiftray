@@ -230,6 +230,7 @@ private:
   QTimer *timer;
   QThread *mem_thread_;
   bool isHoldingSpace_ = false;
+  bool isHoldingCtrl_  = false;
   bool isHoldingMiddleButton_ = false;
   bool isPopMenuShowing_;
 

@@ -14,11 +14,11 @@ bool Rect::mouseMoveEvent(QMouseEvent *e) {
   mouse_pos_ = document().getCanvasCoord(e->pos());
   if (scale_locked_) {
     QPointF adjusted_pos;
-    if ((mouse_pos_.y() - pressed_pos_.y()) / (mouse_pos_.x() - pressed_pos_.x()) > aspect_ratio_) {
+    if ((mouse_pos_.y() - pressed_pos_.y()) < (mouse_pos_.x() - pressed_pos_.x())) {
       adjusted_pos.setX(mouse_pos_.x());
-      adjusted_pos.setY(pressed_pos_.y() + aspect_ratio_ * (mouse_pos_.x() - pressed_pos_.x()));
+      adjusted_pos.setY(pressed_pos_.y() + mouse_pos_.x() - pressed_pos_.x());
     } else {
-      adjusted_pos.setX(pressed_pos_.x() + (mouse_pos_.y() - pressed_pos_.y()) / aspect_ratio_);
+      adjusted_pos.setX(pressed_pos_.x() + mouse_pos_.y() - pressed_pos_.y());
       adjusted_pos.setY(mouse_pos_.y());
     }
 

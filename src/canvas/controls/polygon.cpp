@@ -21,11 +21,11 @@ bool Polygon::mouseMoveEvent(QMouseEvent *e) {
   center_ = document().mousePressedCanvasCoord();
   if (scale_locked_) {
     QPointF adjusted_pos;
-    if ((initial_vertex_.y() - center_.y()) / (initial_vertex_.x() - center_.x()) > aspect_ratio_) {
+    if ((initial_vertex_.y() - center_.y()) < (initial_vertex_.x() - center_.x())) {
       adjusted_pos.setX(initial_vertex_.x());
-      adjusted_pos.setY(center_.y() + aspect_ratio_ * (initial_vertex_.x() - center_.x()));
+      adjusted_pos.setY(center_.y() + initial_vertex_.x() - center_.x());
     } else {
-      adjusted_pos.setX(center_.x() + (initial_vertex_.y() - center_.y()) / aspect_ratio_);
+      adjusted_pos.setX(center_.x() + initial_vertex_.y() - center_.y());
       adjusted_pos.setY(initial_vertex_.y());
     }
 
