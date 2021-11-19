@@ -18,6 +18,7 @@
 #include <windows/preferences-window.h>
 #include <windows/gcode-player.h>
 #include <windows/welcome-dialog.h>
+#include <windows/jogging-panel.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
 
@@ -83,6 +84,8 @@ private slots:
 
   void showWelcomeDialog();
 
+  void showJoggingPanel();
+
   void genPreviewWindow();
 
 private:
@@ -119,6 +122,7 @@ private:
   LayerPanel *layer_panel_;
   MachineManager *machine_manager_;
   WelcomeDialog *welcome_dialog_;
+  JoggingPanel *jogging_panel_;
   PreferencesWindow *preferences_window_;
 
   void newFile();

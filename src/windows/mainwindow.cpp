@@ -416,6 +416,7 @@ void MainWindow::loadWidgets() {
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
+  jogging_panel_ = new JoggingPanel(this);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -477,8 +478,8 @@ void MainWindow::registerEvents() {
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
   connect(ui->actionSharpen, &QAction::triggered, canvas_, &Canvas::sharpenImage);
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
+  connect(ui->actionJogging, &QAction::triggered, this, &MainWindow::showJoggingPanel);
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
-
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
@@ -686,6 +687,14 @@ void MainWindow::showWelcomeDialog() {
     welcome_dialog_->show();
     welcome_dialog_->activateWindow();
     welcome_dialog_->raise();
+  });
+}
+
+void MainWindow::showJoggingPanel() {
+  QTimer::singleShot(0, [=]() {
+    jogging_panel_->show();
+    jogging_panel_->activateWindow();
+    jogging_panel_->raise();
   });
 }
 

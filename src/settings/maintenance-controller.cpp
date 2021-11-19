@@ -31,12 +31,6 @@ void MaintenanceController::homing() {
   qInfo() << "Homing!";
   sendJob(job_str);
 }
-void MaintenanceController::connectSerialPort() {
-  //QString job_str = "M5\n$H";
-  //qInfo() << "Connect serial port!";
-  //qInfo() << GCodePlayer::baudRate();
-  //sendJob(job_str);
-}
 
 void MaintenanceController::laserPulse() {
   QString job_str = "M5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
@@ -79,23 +73,7 @@ void MaintenanceController::sendJob(QString &job_str) {
   for (auto cmd: cmd_list) {
     SerialPort::getInstance().write_some((cmd + "\n").toStdString());
   }
-  /*
-  auto job = new SerialJob(this,
-                        GCodePlayer::portName() + ":" + GCodePlayer::baudRate(),
-                        job_str.split("\n"));
-  jobs_ << job;
-  job->start();
-  */
 }
-
-
-//void MaintenanceController::send(const QString &gcode_line) const {
-//  if (!job_) {
-//    connectSerialPort();
-//  }
-//
-//  jobs_.last()->send(gcode_line);
-//}
 
 void MaintenanceController::testLog(const QString &str) const {
   qInfo() << "Test! MaintenanceController: " << str;

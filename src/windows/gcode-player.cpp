@@ -30,9 +30,6 @@ void GCodePlayer::loadSettings() {
   for (const QSerialPortInfo &info : infos)
     ui->portComboBox->addItem(info.portName());
   ui->portComboBox->setCurrentIndex(ui->portComboBox->count() - 1);
-  qmlRegisterType<MaintenanceController>("MaintenanceController", 1, 0, "MaintenanceController");
-  ui->maintenanceController->setSource(QUrl("qrc:/src/windows/qml/MaintenanceDialog.qml"));
-  ui->maintenanceController->show();
 #endif
 }
 
