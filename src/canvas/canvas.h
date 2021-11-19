@@ -170,6 +170,8 @@ public slots:
   void sharpenImage();
 
   void replaceImage(QImage new_image);
+  
+  void cropImage();
 
   void setActiveLayer(LayerPtr &layer);
 

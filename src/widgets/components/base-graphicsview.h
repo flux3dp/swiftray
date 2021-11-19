@@ -6,9 +6,9 @@
 class BaseGraphicsView: public QGraphicsView {
 public:
     BaseGraphicsView(QWidget *parent = nullptr);
-    BaseGraphicsView(QGraphicsScene *scene = nullptr, QWidget *parent = nullptr);
     bool event(QEvent *e) override;
     void reset();
+    void resetTransform();
     void updateBackgroundPixmap(QPixmap background_img);
     void setMinScale(qreal min_scale) { min_scale_ = min_scale; }
 

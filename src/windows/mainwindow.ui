@@ -109,6 +109,7 @@
      </property>
      <addaction name="actionTrace"/>
      <addaction name="actionInvert"/>
+     <addaction name="actionCrop"/>
      <addaction name="actionReplace_with"/>
      <addaction name="actionSharpen"/>
     </widget>
@@ -959,6 +960,11 @@
     <string>Replace with ...</string>
    </property>
   </action>
+  <action name="actionCrop">
+   <property name="text">
+    <string>Crop</string>
+   </property>
+  </action>
   <action name="actionConnect">
    <property name="icon">
     <iconset resource="../../qml.qrc">
@@ -968,7 +974,7 @@
     <string>Connect</string>
    </property>
    <property name="toolTip">
-    <string> Connect</string>
+    <string>Connect</string>
    </property>
   </action>
  </widget>
