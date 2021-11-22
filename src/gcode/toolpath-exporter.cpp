@@ -97,7 +97,7 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   QTransform transform = QTransform().scale(dpmm_ / 10.0, dpmm_ / 10.0) * bmp->transform() * global_transform_;
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
-  layer_painter_->drawPixmap(0, 0, *bmp->pixmap());
+  layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->image().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
 }
