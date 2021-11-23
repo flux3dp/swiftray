@@ -9,8 +9,6 @@
 
 SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant gcode) :
      BaseJob(parent, endpoint, gcode) {
-  port_ = endpoint.split(":")[0];
-  baudrate_ = endpoint.split(":")[1].toInt();
   gcode_ = gcode.toStringList();
 
   planner_total_block_count_ = 1;
