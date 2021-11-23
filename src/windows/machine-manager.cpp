@@ -33,7 +33,6 @@ void MachineManager::loadSettings() {
   }
 }
 
-
 void MachineManager::loadStyles() {
   ui->nameLineEdit->setStyleSheet("padding-left: 3px");
 }
@@ -46,13 +45,11 @@ void MachineManager::registerEvents() {
   connect(this, &QDialog::accepted, this, &MachineManager::save);
 
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
-    auto *dialog = new NewMachineDialog(this);
-    if (dialog->exec() == 0) return;
     QListWidgetItem *machine_item = new QListWidgetItem;
-    auto machine = dialog->machine();
-    machine_item->setData(Qt::UserRole, machine.toJson());
-    machine_item->setText(machine.name);
-    machine_item->setIcon(machine.icon());
+    auto machine = MachineSettings::database();
+    machine_item->setData(Qt::UserRole, machine[0].toJson());
+    machine_item->setText(machine[0].name);
+    machine_item->setIcon(machine[0].icon());
     ui->machineList->addItem(machine_item);
   });
 
