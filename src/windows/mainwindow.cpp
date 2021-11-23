@@ -567,12 +567,12 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("204800");
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
-
+    int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
     portComboBox_->clear();
     for (const QSerialPortInfo &info : infos) {
       portComboBox_->addItem(info.portName());
     }
-    portComboBox_->setCurrentIndex(portComboBox_->count() - 1);
+    portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
     QString port = portComboBox_->currentText();
