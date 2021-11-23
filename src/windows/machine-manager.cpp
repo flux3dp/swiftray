@@ -23,7 +23,10 @@ MachineManager::~MachineManager() {
 
 void MachineManager::loadSettings() {
   MachineSettings settings;
+  // If we call clear() when some item is selected, it lead to crash. Block signals here.
+  ui->machineList->blockSignals(true);
   ui->machineList->clear();
+  ui->machineList->blockSignals(false);
   for (auto &machine : settings.machines()) {
     QListWidgetItem *param_item = new QListWidgetItem;
     param_item->setData(Qt::UserRole, machine.toJson());
