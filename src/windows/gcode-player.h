@@ -38,10 +38,6 @@ public:
 
   void updateProgress();
 
-  static QString portName();
-
-  static QString baudRate();
-
 private slots:
   void onStatusChanged(BaseJob::Status new_status);
 

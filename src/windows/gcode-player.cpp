@@ -1,6 +1,7 @@
 #include "gcode-player.h"
 #include "ui_gcode-player.h"
 #include <QMessageBox>
+#include <QRegularExpression>
 
 #ifndef Q_OS_IOS
 
@@ -23,51 +24,10 @@ GCodePlayer::GCodePlayer(QWidget *parent) :
   initializeContainer();
 }
 
-void GCodePlayer::loadSettings() {
-#ifndef Q_OS_IOS
-  const auto infos = QSerialPortInfo::availablePorts();
-  ui->portComboBox->clear();
-  for (const QSerialPortInfo &info : infos)
-    ui->portComboBox->addItem(info.portName());
-  ui->portComboBox->setCurrentIndex(ui->portComboBox->count() - 1);
-#endif
-}
+void GCodePlayer::loadSettings() {}
 
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
-  connect(ui->connectBtn, &QAbstractButton::clicked, [=]() {
-    // NOTE: When emiting click signal, the check state is in the new state
-    if (!ui->connectBtn->isChecked()) {
-      // Disconnect
-      if (!SerialPort::getInstance().isConnected()) {
-        return;
-      }
-      SerialPort::getInstance().stop();
-      ui->executeBtn->setText(tr("Execute"));
-      ui->executeBtn->setEnabled(false);
-    } else {
-      QString port = ui->portComboBox->currentText();
-      QString baudrate = ui->baudComboBox->currentText();
-      QString full_port_path;
-      if (port.startsWith("tty")) { // Linux/macOSX
-        full_port_path += "/dev/";
-        full_port_path += port;
-      } else { // Windows COMx
-        full_port_path = port;
-      }
-      qInfo() << "[SerialPort] Connecting" << port << baudrate;
-      bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
-      if (rv == false) {
-        ui->connectBtn->setChecked(false);
-        return;
-      }
-      //serial_->end_of_line_char('\n'); // not necessary
-      qInfo() << "[SerialPort] Success connect!";
-      ui->executeBtn->setText(tr("Execute"));
-      ui->executeBtn->setEnabled(true);
-    }
-  });
-
   connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
     // Delete and pop all finished jobs
     if (!jobs_.isEmpty()) {
@@ -87,9 +47,7 @@ void GCodePlayer::registerEvents() {
     }
 
     // START
-    auto job = new SerialJob(this,
-                             ui->portComboBox->currentText() + ":" + ui->baudComboBox->currentText(),
-                             ui->gcodeText->toPlainText().split("\n"));
+    auto job = new SerialJob(this, "", ui->gcodeText->toPlainText().split("\n"));
     jobs_ << job;
     qRegisterMetaType<BaseJob::Status>();
     qRegisterMetaType<uint32_t>();
@@ -118,10 +76,16 @@ void GCodePlayer::registerEvents() {
       job->resume();
     }
   });
-
-  QTimer *timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &GCodePlayer::loadSettings);
-  timer->start(3000);
+  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+    qInfo() << "[SerialPort] Success connect!";
+    ui->executeBtn->setText(tr("Execute"));
+    ui->executeBtn->setEnabled(true);
+  });
+  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+    qInfo() << "[SerialPort] Disconnected!";
+      ui->executeBtn->setText(tr("Execute"));
+      ui->executeBtn->setEnabled(false);
+  });
 #endif
 }
 
@@ -256,14 +220,6 @@ QString GCodePlayer::requiredTime() const {
   }
 
   return required_time_str;
-}
-
-QString GCodePlayer::portName() {
-  return gcode_player_->ui->portComboBox->currentText();
-}
-
-QString GCodePlayer::baudRate() {
-  return gcode_player_->ui->baudComboBox->currentText();
 }
 
 GCodePlayer::~GCodePlayer() {
