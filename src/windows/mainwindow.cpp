@@ -288,6 +288,31 @@ void MainWindow::exportGCodeFile() {
   }
 }
 
+void MainWindow::importGCodeFile() {
+  if ( ! handleUnsavedChange()) {
+    return;
+  }
+  QString default_open_dir = FilePathSettings::getDefaultFilePath();
+  QString file_name = QFileDialog::getOpenFileName(this, "Open GCode", default_open_dir,
+                                                   tr("GCdoe Files (*.gc, *.gcode)"));
+
+  if (!QFile::exists(file_name))
+    return;
+
+  QFile file(file_name);
+
+  if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
+    QByteArray data = file.readAll();
+    qInfo() << "File size:" << data.size();
+    QTextStream stream(data);
+    gcode_player_->setGCode(stream.readAll());
+  }
+}
+
 void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   if (status == QQuickWidget::Error) {
     const auto widgetErrors = this->ui->quickWidget->errors();
@@ -494,6 +519,8 @@ void MainWindow::registerEvents() {
       setCursor(cursor);
     }
   });
+  connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
+  connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {

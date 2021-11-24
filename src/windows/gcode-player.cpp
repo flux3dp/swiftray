@@ -86,6 +86,9 @@ void GCodePlayer::registerEvents() {
       ui->executeBtn->setText(tr("Execute"));
       ui->executeBtn->setEnabled(false);
   });
+
+  connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePlayer::exportGcode);
+  connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
 #endif
 }
 
