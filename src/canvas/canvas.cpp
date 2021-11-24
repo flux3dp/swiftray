@@ -638,18 +638,27 @@ void Canvas::editDifference() {
   auto *a = dynamic_cast<PathShape *>(document().selections().at(0).get());
   auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
 
+  QPainterPath result;
   QPainterPath intersection(a->transform().map(a->path()).intersected(
        b->transform().map(b->path())));
   intersection.closeSubpath();
-  ShapePtr new_shape_a = make_shared<PathShape>(a->transform().map(a->path()).subtracted(intersection));
-  ShapePtr new_shape_b = make_shared<PathShape>(b->transform().map(b->path()).subtracted(intersection));
-  document().execute(
-       Commands::AddShape(document().activeLayer(), new_shape_a),
-       Commands::AddShape(document().activeLayer(), new_shape_b),
-       Commands::RemoveSelections(&document()),
-       Commands::Select(&document(), {new_shape_a, new_shape_b})
-  );
 
+  for (auto &shape : document().selections()) {
+    auto polygons = shape->transform().map(dynamic_cast<PathShape *>(shape.get())->path()).toSubpathPolygons();
+    for (QPolygonF &poly : polygons) {
+      QPainterPath p;
+      p.addPolygon(poly);
+      result = result.united(p);
+    }
+  }
+
+  ShapePtr new_shape = make_shared<PathShape>(result.subtracted(intersection));
+
+  document().execute(
+       Commands::AddShape(document().activeLayer(), new_shape),
+       Commands::RemoveSelections(&document()),
+       Commands::Select(&document(), {new_shape})
+  );
 }
 
 void Canvas::addEmptyLayer() {
