@@ -74,6 +74,11 @@ QImage &BitmapShape::image() const {
   return tinted_image_;
 }
 
+void BitmapShape::invertPixels() {
+  image().invertPixels(QImage::InvertRgb);
+  bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(tinted_image_));
+}
+
 void BitmapShape::paint(QPainter *painter) const {
   painter->save();
   painter->setTransform(temp_transform_, true);

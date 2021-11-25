@@ -26,6 +26,8 @@ public:
 
   QImage &image() const;
 
+  void invertPixels();
+
   friend class DocumentSerializer;
 
 private:
