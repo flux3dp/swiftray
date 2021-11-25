@@ -54,4 +54,9 @@ private:
 #ifndef Q_OS_IOS
   QList<SerialJob *> jobs_;
 #endif
+
+signals:
+  void exportGcode();
+
+  void importGcode();
 };
