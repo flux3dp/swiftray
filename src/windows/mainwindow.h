@@ -50,6 +50,8 @@ signals:
 
   void machineSettingsChanged();
 
+  void toolbarTransformChanged(double x, double y, double r, double w, double h);
+
 private slots:
 
   void canvasLoaded(QQuickWidget::Status status);
@@ -61,6 +63,8 @@ private slots:
   void updateSelections();
 
   void updateScale();
+
+  void updateToolbarTransform();
 
   void onScaleMinusClicked();
 
@@ -77,6 +81,8 @@ private slots:
   void setCanvasContextMenu();
 
   void setConnectionToolBar();
+
+  void setToolbarTransform();
 
   void setScaleBlock();
 
@@ -98,6 +104,7 @@ private:
 
   Ui::MainWindow *ui;
   Canvas *canvas_;
+  double x_, y_, r_, w_, h_;
 
   // Context menu of canvas
   QMenu *popMenu_;
