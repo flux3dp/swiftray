@@ -796,7 +796,7 @@ void Canvas::invertImage() {
              "Canvas", "invert action can only be applied on bitmap shape");
   ShapePtr inverted_bitmap_shape = origin_bitmap_shape->clone();
   BitmapShape * bitmap = static_cast<BitmapShape *>(inverted_bitmap_shape.get());
-  bitmap->image().invertPixels(QImage::InvertRgb);
+  bitmap->invertPixels();
   document().execute(
       Commands::Select(&document(), {}),
       Commands::RemoveShape(origin_bitmap_shape->layer(), origin_bitmap_shape),
