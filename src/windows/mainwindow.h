@@ -130,6 +130,7 @@ private:
   void saveAsFile();
   void exportGCodeFile();
   void importGCodeFile();
+  void generateGcode();
   bool handleUnsavedChange();
 };
 

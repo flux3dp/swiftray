@@ -89,6 +89,7 @@ void GCodePlayer::registerEvents() {
 
   connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePlayer::exportGcode);
   connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
+  connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
 #endif
 }
 

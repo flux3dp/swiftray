@@ -132,6 +132,13 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="generateBtn">
+       <property name="text">
+        <string>Generate G-code</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

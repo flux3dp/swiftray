@@ -521,6 +521,7 @@ void MainWindow::registerEvents() {
   });
   connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
+  connect(gcode_player_, &GCodePlayer::generateGcode, this, &MainWindow::generateGcode);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -723,6 +724,13 @@ void MainWindow::showJoggingPanel() {
     jogging_panel_->activateWindow();
     jogging_panel_->raise();
   });
+}
+
+void MainWindow::generateGcode() {
+  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter exporter(gen_gcode.get());
+  exporter.convertStack(canvas_->document().layers());
+  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
 }
 
 void MainWindow::genPreviewWindow() {

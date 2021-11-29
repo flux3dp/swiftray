@@ -59,4 +59,6 @@ signals:
   void exportGcode();
 
   void importGcode();
+
+  void generateGcode();
 };
