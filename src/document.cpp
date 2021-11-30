@@ -197,6 +197,9 @@ ShapePtr Document::hitTest(QPointF canvas_coord) {
   qreal smallest_area = std::numeric_limits<qreal>::max();
   ShapePtr selected_shape = nullptr;
   for (auto &layer : layers()) {
+    if (!layer->isVisible()) {
+      continue;
+    }
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
         // NOTE: Select the shape with the smallest bounding box

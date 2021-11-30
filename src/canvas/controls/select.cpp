@@ -27,6 +27,9 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
   if (selection_box_.width() != 0 || selection_box_.height() != 0) {
     QList<ShapePtr> selected;
     for (auto &layer : document().layers()) {
+      if (!layer->isVisible()) {
+        continue;
+      }
       for (auto &shape : layer->children()) {
         if (shape->hitTest(selection_box_)) {
           selected << shape;
