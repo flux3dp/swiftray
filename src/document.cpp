@@ -3,6 +3,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <document.h>
 #include <shape/group-shape.h>
+#include <limits>
 
 Document::Document() noexcept:
      new_layer_id_(1),
@@ -193,15 +194,22 @@ void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {
-  // TODO: Select the shape with the smallest bounding box
+  qreal smallest_area = std::numeric_limits<qreal>::max();
+  ShapePtr selected_shape = nullptr;
   for (auto &layer : layers()) {
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
-        return shape;
+        // NOTE: Select the shape with the smallest bounding box
+        // Alwyas iterate through all shapes -> Performance should be considered carefully
+        qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
+        if (bounding_area < smallest_area) {
+          smallest_area = bounding_area;
+          selected_shape = shape;
+        }
       }
     }
   }
-  return nullptr;
+  return selected_shape;
 }
 
 QPointF Document::mousePressedCanvasCoord() const {
