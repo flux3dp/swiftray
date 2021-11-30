@@ -193,6 +193,7 @@ void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {
+  // TODO: Select the shape with the smallest bounding box
   for (auto &layer : layers()) {
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {

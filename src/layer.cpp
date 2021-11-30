@@ -131,6 +131,7 @@ void Layer::setColor(const QColor &color) {
 }
 
 void Layer::setType(Layer::Type type) {
+  // TODO: Whether setFilled of all shapes in this layer?
   type_ = type;
   flushCache();
 }
