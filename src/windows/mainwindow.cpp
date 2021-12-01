@@ -3,8 +3,10 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QLabel>
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
@@ -27,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
   initializeContainer();
   updateMode();
   setCanvasContextMenu();
+  setToolbarTransform();
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
@@ -397,6 +400,12 @@ void MainWindow::updateSelections() {
     if (shape->type() != Shape::Type::Bitmap) all_image = false;
   }
 
+  if (items.size() == 1) {
+    ui->toolBarTransform->setVisible(true);
+  } else {
+    ui->toolBarTransform->setVisible(false);
+  }
+
   cutAction_->setEnabled(items.size() > 0);
   copyAction_->setEnabled(items.size() > 0);
   //pasteAction_;
@@ -428,6 +437,11 @@ void MainWindow::updateSelections() {
 #ifdef Q_OS_MACOS
   setOSXWindowTitleColor(this);
 #endif
+}
+
+void MainWindow::updateToolbarTransform() {
+  canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
+  emit toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
 void MainWindow::loadWidgets() {
@@ -621,6 +635,98 @@ void MainWindow::setConnectionToolBar() {
   timer->start(5000);
 }
 
+
+void MainWindow::setToolbarTransform() {
+  ui->toolBarTransform->setVisible(false);
+  auto labelX = new QLabel;
+  auto doubleSpinBoxX = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto labelY = new QLabel;
+  auto doubleSpinBoxY = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto labelRotation = new QLabel;
+  auto doubleSpinBoxRotation = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto labelWidth = new QLabel;
+  auto doubleSpinBoxWidth = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto labelHeight = new QLabel;
+  auto doubleSpinBoxHeight = new QDoubleSpinBox2(ui->toolBarTransform);
+  labelX->setText("X");
+  labelY->setText("Y");
+  labelRotation->setText(tr("Rotation"));
+  labelWidth->setText(tr("Width"));
+  labelHeight->setText(tr("Height"));
+  doubleSpinBoxX->setMaximum(9999);
+  doubleSpinBoxY->setMaximum(9999);
+  doubleSpinBoxRotation->setMaximum(9999);
+  doubleSpinBoxWidth->setMaximum(9999);
+  doubleSpinBoxHeight->setMaximum(9999);
+  doubleSpinBoxX->setSuffix(" mm");
+  doubleSpinBoxY->setSuffix(" mm");
+  doubleSpinBoxWidth->setSuffix(" mm");
+  doubleSpinBoxHeight->setSuffix(" mm");
+  ui->toolBarTransform->addWidget(labelX);
+  ui->toolBarTransform->addWidget(doubleSpinBoxX);
+  ui->toolBarTransform->addWidget(labelY);
+  ui->toolBarTransform->addWidget(doubleSpinBoxY);
+  ui->toolBarTransform->addWidget(labelRotation);
+  ui->toolBarTransform->addWidget(doubleSpinBoxRotation);
+  ui->toolBarTransform->addWidget(labelWidth);
+  ui->toolBarTransform->addWidget(doubleSpinBoxWidth);
+  ui->toolBarTransform->addWidget(labelHeight);
+  ui->toolBarTransform->addWidget(doubleSpinBoxHeight);
+
+  auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
+
+  connect(canvas(), &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
+    x_ = x/10;
+    y_ = y/10;
+    r_ = r;
+    w_ = w/10;
+    h_ = h/10;
+    doubleSpinBoxX->setValue(x/10);
+    doubleSpinBoxY->setValue(y/10);
+    doubleSpinBoxRotation->setValue(r);
+    doubleSpinBoxWidth->setValue(w/10);
+    doubleSpinBoxHeight->setValue(h/10);
+  });
+
+  connect(transform_panel_, &TransformPanel::transformPanelUpdated, [=](double x, double y, double r, double w, double h) {
+    x_ = x;
+    y_ = y;
+    r_ = r;
+    w_ = w;
+    h_ = h;
+    doubleSpinBoxX->setValue(x);
+    doubleSpinBoxY->setValue(y);
+    doubleSpinBoxRotation->setValue(r);
+    doubleSpinBoxWidth->setValue(w);
+    doubleSpinBoxHeight->setValue(h);
+  });
+
+  connect(doubleSpinBoxX, spin_event, [=]() {
+    x_ = doubleSpinBoxX->value();
+    updateToolbarTransform();
+  });
+
+  connect(doubleSpinBoxY, spin_event, [=]() {
+    y_ = doubleSpinBoxY->value();
+    updateToolbarTransform();
+  });
+
+  connect(doubleSpinBoxRotation, spin_event, [=]() {
+    r_ = doubleSpinBoxRotation->value();
+    updateToolbarTransform();
+  });
+
+    connect(doubleSpinBoxWidth, spin_event, [=]() {
+    w_ = doubleSpinBoxWidth->value();
+    updateToolbarTransform();
+  });
+
+  connect(doubleSpinBoxHeight, spin_event, [=]() {
+    h_ = doubleSpinBoxHeight->value();
+    updateToolbarTransform();
+  });
+}
+
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
   QToolButton *minusBtn = new QToolButton(ui->quickWidget);
@@ -707,7 +813,6 @@ void MainWindow::showCanvasPopMenu() {
       popMenu_->exec(QCursor::pos());
   }
 }
-
 
 void MainWindow::showWelcomeDialog() {
   if (!MachineSettings().machines().empty()) return;

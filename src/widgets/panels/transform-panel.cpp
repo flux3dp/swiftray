@@ -70,6 +70,19 @@ void TransformPanel::registerEvents() {
     ui->widthSpinBox->setValue(w_);
     ui->heightSpinBox->setValue(h_);
   });
+
+  connect(main_window_, &MainWindow::toolbarTransformChanged, [=](double x, double y, double r, double w, double h) {
+    x_ = x;
+    y_ = y;
+    r_ = r;
+    w_ = w;
+    h_ = h;
+    ui->xSpinBox->setValue(x);
+    ui->ySpinBox->setValue(y);
+    ui->rotationSpinBox->setValue(r);
+    ui->widthSpinBox->setValue(w);
+    ui->heightSpinBox->setValue(h);
+  });
 }
 
 bool TransformPanel::isScaleLock() const {
@@ -82,5 +95,5 @@ void TransformPanel::setScaleLock(bool scaleLock) {
 
 void TransformPanel::updateControl() {
   main_window_->canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
+  emit transformPanelUpdated(x_, y_, r_, w_, h_);
 }
-

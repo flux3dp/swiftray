@@ -40,6 +40,9 @@ private:
   double h_;
   bool scale_locked_;
   MainWindow *main_window_;
+
+signals:
+  void transformPanelUpdated(double x, double y, double r, double w, double h);
 };
 
 #endif // TRANSFORM_WIDGET_H
