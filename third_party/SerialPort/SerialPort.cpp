@@ -70,12 +70,14 @@ bool SerialPort::start(const char *com_port_name, int baud_rate)
 void SerialPort::stop()
 {
   boost::mutex::scoped_lock look(mutex_);
+  bool should_disconnect = false;
 
   if (port_ && port_->is_open()) {
     port_->cancel();
     port_->close();
     port_.reset(); // clear the shared_ptr (port_ becomes nullptr here)
     qInfo() << "SerialPort disconnect";
+    should_disconnect = true;
   }
   if (io_context_) {
     io_context_->stop();
@@ -83,8 +85,9 @@ void SerialPort::stop()
   }
 
   clear_buf();
-
-  emit disconnected();
+  if (should_disconnect) {
+    emit disconnected();
+  }
 }
 
 bool SerialPort::isConnected() {
