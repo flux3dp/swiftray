@@ -528,6 +528,17 @@
     <bool>false</bool>
    </attribute>
   </widget>
+  <widget class="QToolBar" name="toolBarFont">
+   <property name="windowTitle">
+    <string>toolBarFont</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>

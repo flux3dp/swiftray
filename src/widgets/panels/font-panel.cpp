@@ -26,9 +26,6 @@ void FontPanel::loadStyles() {
           border: none \
       } \
   ");
-  ui->boldToolButton->setIcon(QIcon(":/images/icon-text.png"));
-  ui->italicToolButton->setIcon(QIcon(":/images/icon-text.png"));
-  ui->underlineToolButton->setIcon(QIcon(":/images/icon-text.png"));
 }
 
 void FontPanel::registerEvents() {
@@ -37,31 +34,46 @@ void FontPanel::registerEvents() {
 
   connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, main_window_->canvas(), &Canvas::setFont);
 
+  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont font) {
+    font_.setFamily(font.family());
+    ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
+  });
+
   connect(ui->fontSizeSpinBox, spin_int_event, [=](double value) {
     font_.setPointSize(value);
     ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
   });
 
   connect(ui->letterSpacingSpinBox, spin_event, [=](double value) {
     font_.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, value);
     ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
   });
 
   connect(ui->lineHeightSpinBox, spin_event, main_window_->canvas(), &Canvas::setLineHeight);
 
+  connect(ui->lineHeightSpinBox, spin_event, [=](double value) {
+    emit lineHeightChanged(value);
+  });
+
   connect(ui->boldToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setBold(checked);
     ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
   });
 
   connect(ui->italicToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setItalic(checked);
     ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
   });
 
   connect(ui->underlineToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setUnderline(checked);
     ui->fontComboBox->setCurrentFont(font_);
+    emit fontSettingChanged();
   });
 
   connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {
@@ -79,9 +91,12 @@ FontPanel::~FontPanel() {
   delete ui;
 }
 
-
 QFont FontPanel::font() {
   return font_;
+}
+
+double FontPanel::lineHeight() {
+  return ui->lineHeightSpinBox->value();
 }
 
 void FontPanel::setFont(QFont font, float line_height) {
@@ -96,4 +111,8 @@ void FontPanel::setFont(QFont font, float line_height) {
   qInfo() << "font.italic()" << font.italic();
   ui->underlineToolButton->setChecked(font.underline());
   qInfo() << "font.underline()" << font.underline();
+}
+
+void FontPanel::setLineHeight(double line_height) {
+  ui->lineHeightSpinBox->setValue(line_height);
 }

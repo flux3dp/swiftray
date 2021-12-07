@@ -21,7 +21,11 @@ public:
 
   QFont font();
 
+  double lineHeight();
+
   void setFont(QFont font, float line_height);
+
+  void setLineHeight(double line_height);
 
 private:
   void loadStyles() override;
@@ -31,6 +35,11 @@ private:
   Ui::FontPanel *ui;
   MainWindow *main_window_;
   QFont font_;
+
+signals:
+  void lineHeightChanged(double line_height);
+
+  void fontSettingChanged();
 };
 
 #endif // FONTPANEL_H

@@ -46,6 +46,9 @@
         <file>images/icon-setting.png</file>
         <file>images/icon-alignvbottom.png</file>
         <file>images/icon-plus.png</file>
+        <file>images/icon-bold.png</file>
+        <file>images/icon-I.png</file>
+        <file>images/icon-U.png</file>
         <file>images/beamo.png</file>
         <file>images/beambox.png</file>
         <file>images/dark/icon-adjust.png</file>
@@ -88,6 +91,9 @@
         <file>images/dark/icon-setting.png</file>
         <file>images/dark/icon-alignvbottom.png</file>
         <file>images/dark/icon-plus.png</file>
+        <file>images/dark/icon-bold.png</file>
+        <file>images/dark/icon-I.png</file>
+        <file>images/dark/icon-U.png</file>
         <file>images/dark/beamo.png</file>
         <file>images/dark/beambox.png</file>
         <file>images/icon.icns</file>
