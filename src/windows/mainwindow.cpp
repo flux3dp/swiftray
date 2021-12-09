@@ -452,10 +452,11 @@ void MainWindow::loadWidgets() {
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
+  jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
   machine_manager_ = new MachineManager(this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
-  jogging_panel_ = new JoggingPanel(this);
+  ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
@@ -825,9 +826,11 @@ void MainWindow::showWelcomeDialog() {
 
 void MainWindow::showJoggingPanel() {
   QTimer::singleShot(0, [=]() {
-    jogging_panel_->show();
-    jogging_panel_->activateWindow();
-    jogging_panel_->raise();
+    if(ui->joggingDock->isVisible()) {
+      ui->joggingDock->hide();
+    } else {
+      ui->joggingDock->show();
+    }
   });
 }
 
