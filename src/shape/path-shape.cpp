@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <shape/path-shape.h>
+#include <layer.h>
 
 #define SELECTION_TOLERANCE 10
 
@@ -39,6 +40,10 @@ bool PathShape::hitTest(QRectF global_coord_rect) const {
   // TODO (Test revese transform to map rect back to local coord)
   QPainterPath new_path = transform().map(path_);
   // TODO (Consider cases that the path is not closed)
+
+  if (layer()->type() == Layer::Type::Fill) {
+    return new_path.intersects(global_coord_rect);
+  }
   return new_path.intersects(global_coord_rect) &&
          !new_path.contains(global_coord_rect);
 }

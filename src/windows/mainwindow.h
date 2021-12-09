@@ -14,11 +14,11 @@
 #include <widgets/panels/doc-panel.h>
 #include <widgets/panels/layer-panel.h>
 #include <widgets/panels/font-panel.h>
+#include <widgets/panels/jogging-panel.h>
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
 #include <windows/gcode-player.h>
 #include <windows/welcome-dialog.h>
-#include <windows/jogging-panel.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
 
