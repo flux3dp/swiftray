@@ -180,11 +180,6 @@
           <string>Fill+Line</string>
          </property>
         </item>
-        <item>
-         <property name="text">
-          <string>Mixed</string>
-         </property>
-        </item>
        </widget>
       </item>
       <item>
