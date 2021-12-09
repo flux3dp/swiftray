@@ -178,6 +178,10 @@
           <property name="text">
            <string>B</string>
           </property>
+          <property name="icon">
+           <iconset resource="../../../qml.qrc">
+            <normaloff>:/images/icon-bold.png</normaloff>:/images/icon-bold.png</iconset>
+          </property>
           <property name="checkable">
            <bool>true</bool>
           </property>
@@ -200,6 +204,10 @@
           <property name="text">
            <string>I</string>
           </property>
+          <property name="icon">
+           <iconset resource="../../../qml.qrc">
+            <normaloff>:/images/icon-I.png</normaloff>:/images/icon-I.png</iconset>
+          </property>
           <property name="checkable">
            <bool>true</bool>
           </property>
@@ -221,6 +229,10 @@
           </property>
           <property name="text">
            <string>U</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../../qml.qrc">
+            <normaloff>:/images/icon-U.png</normaloff>:/images/icon-U.png</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -334,6 +346,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../qml.qrc"/>
+ </resources>
  <connections/>
 </ui>

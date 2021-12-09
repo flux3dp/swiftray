@@ -3,9 +3,13 @@
 #include <QQmlError>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QFont>
+#include <QFontComboBox>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QSerialPort>
 #include <QSerialPortInfo>
+#include <QToolButton>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -29,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
   initializeContainer();
   updateMode();
   setCanvasContextMenu();
+  setToolbarFont();
   setToolbarTransform();
   updateSelections();
   showWelcomeDialog();
@@ -636,6 +641,122 @@ void MainWindow::setConnectionToolBar() {
   timer->start(5000);
 }
 
+void MainWindow::setToolbarFont() {
+  auto fontComboBox = new QFontComboBox(ui->toolBarFont);
+  ui->toolBarFont->addWidget(fontComboBox);
+  //auto labelStyle = new QLabel(tr("Style"), ui->toolBarFont);
+  //ui->toolBarFont->addWidget(labelStyle);
+  auto styleHBoxLayout = new QHBoxLayout(ui->toolBarFont);
+  auto boldToolButton = new QToolButton(ui->toolBarFont);
+  auto italicToolButton = new QToolButton(ui->toolBarFont);
+  auto underlineToolButton = new QToolButton(ui->toolBarFont);
+  auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
+  auto spin_int_event = QOverload<int>::of(&QSpinBox::valueChanged);
+  ui->toolBarFont->setStyleSheet("\
+    QToolButton {   \
+        border: none; \
+        margin: 0; \
+        padding: 0; \
+    } \
+    QToolButton:checked{ \
+        border: none \
+    } \
+  ");
+  boldToolButton->setIcon(QIcon(":/images/icon-bold.png"));
+  italicToolButton->setIcon(QIcon(":/images/icon-I.png"));
+  underlineToolButton->setIcon(QIcon(":/images/icon-U.png"));
+  boldToolButton->setCheckable(true);
+  italicToolButton->setCheckable(true);
+  underlineToolButton->setCheckable(true);
+  ui->toolBarFont->addWidget(boldToolButton);
+  ui->toolBarFont->addWidget(italicToolButton);
+  ui->toolBarFont->addWidget(underlineToolButton);
+  auto labelSize = new QLabel(tr("Size"), ui->toolBarFont);
+  auto labelLineHeight = new QLabel(tr("Line Height"), ui->toolBarFont);
+  auto labelLetterSpacing = new QLabel(tr("Letter Spacing"), ui->toolBarFont);
+  auto spinBoxSize = new QSpinBox(ui->toolBarTransform);
+  auto doubleSpinBoxLineHeight = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto doubleSpinBoxLetterSpacing = new QDoubleSpinBox2(ui->toolBarTransform);
+
+  doubleSpinBoxLetterSpacing->setDecimals(1);
+  doubleSpinBoxLetterSpacing->setMaximum(1000);
+  doubleSpinBoxLetterSpacing->setSingleStep(0.1);
+  doubleSpinBoxLineHeight->setDecimals(1);
+  doubleSpinBoxLineHeight->setMaximum(100);
+  doubleSpinBoxLineHeight->setSingleStep(0.1);
+  spinBoxSize->setMaximum(1000);
+
+  QFont initialFont = QFont("Tahoma", 100, QFont::Bold);
+
+  fontComboBox->setCurrentFont(initialFont);
+  doubleSpinBoxLetterSpacing->setValue(initialFont.letterSpacing());
+  doubleSpinBoxLineHeight->setValue(1.5);
+  spinBoxSize->setValue(initialFont.pointSize());
+  boldToolButton->setChecked(initialFont.bold());
+
+  ui->toolBarFont->addWidget(labelSize);
+  ui->toolBarFont->addWidget(spinBoxSize);
+  ui->toolBarFont->addWidget(labelLineHeight);
+  ui->toolBarFont->addWidget(doubleSpinBoxLineHeight);
+  ui->toolBarFont->addWidget(labelLetterSpacing);
+  ui->toolBarFont->addWidget(doubleSpinBoxLetterSpacing);
+
+  connect(fontComboBox, &QFontComboBox::currentFontChanged, canvas(), &Canvas::setFont);
+
+  connect(fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont selected_font) {
+    QFont font = font_panel_->font();
+    font.setFamily(selected_font.family());
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  });
+
+  connect(spinBoxSize, spin_int_event, [=](int value) {
+    QFont font = font_panel_->font();
+    font.setPointSize(int(value));
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  }); 
+
+  connect(doubleSpinBoxLetterSpacing, spin_event, [=](double value) {
+    QFont font = font_panel_->font();
+    font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, value);
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  });
+
+  connect(doubleSpinBoxLineHeight, spin_event, canvas(), &Canvas::setLineHeight);
+
+  connect(doubleSpinBoxLineHeight, spin_event, font_panel_, &FontPanel::setLineHeight);
+
+  connect(boldToolButton, &QToolButton::toggled, [=](bool checked) {
+    QFont font = font_panel_->font();
+    font.setBold(checked);
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  });
+
+  connect(italicToolButton, &QToolButton::toggled, [=](bool checked) {
+    QFont font = font_panel_->font();
+    font.setItalic(checked);
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  });
+
+  connect(underlineToolButton, &QToolButton::toggled, [=](bool checked) {
+    QFont font = font_panel_->font();
+    font.setUnderline(checked);
+    font_panel_->setFont(font, font_panel_->lineHeight());
+  });
+
+  connect(font_panel_, &FontPanel::fontSettingChanged, [=]() {
+    QFont font = font_panel_->font();
+    fontComboBox->setCurrentFont(font);
+    doubleSpinBoxLetterSpacing->setValue(font.letterSpacing());
+    spinBoxSize->setValue(font.pointSize());
+    boldToolButton->setChecked(font.bold());
+    italicToolButton->setChecked(font.italic());
+    underlineToolButton->setChecked(font.underline());
+  });
+
+  connect(font_panel_, &FontPanel::lineHeightChanged, [=](double line_height) {
+    doubleSpinBoxLineHeight->setValue(line_height);
+  });
+}
 
 void MainWindow::setToolbarTransform() {
   ui->toolBarTransform->setVisible(false);

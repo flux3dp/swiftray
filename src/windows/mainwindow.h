@@ -82,6 +82,8 @@ private slots:
 
   void setConnectionToolBar();
 
+  void setToolbarFont();
+
   void setToolbarTransform();
 
   void setScaleBlock();
