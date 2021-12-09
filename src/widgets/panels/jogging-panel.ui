@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>JoggingPanel</class>
- <widget class="QDialog" name="JoggingPanel">
-  <property name="enabled">
-   <bool>true</bool>
-  </property>
+ <widget class="QFrame" name="JoggingPanel">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -19,22 +16,13 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>275</width>
-    <height>320</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>275</width>
-    <height>320</height>
-   </size>
-  </property>
   <property name="windowTitle">
-   <string>Jogging</string>
+   <string>QFrame</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout" stretch="0">
+   <property name="spacing">
+    <number>0</number>
+   </property>
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -49,8 +37,23 @@
    </property>
    <item>
     <widget class="QQuickWidget" name="maintenanceController">
-     <property name="enabled">
-      <bool>true</bool>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>275</width>
+       <height>320</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>275</width>
+       <height>320</height>
+      </size>
      </property>
      <property name="resizeMode">
       <enum>QQuickWidget::SizeRootObjectToView</enum>

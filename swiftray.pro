@@ -131,11 +131,11 @@ FORMS += \
     src/widgets/components/task-list-item.ui \
     src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
+    src/widgets/panels/jogging-panel.ui \
     src/widgets/panels/layer-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/spooler-panel.ui \
     src/widgets/panels/transform-panel.ui \
-    src/windows/jogging-panel.ui \
     src/windows/machine-manager.ui \
     src/windows/machine-monitor.ui \
     src/windows/new-machine-dialog.ui \
