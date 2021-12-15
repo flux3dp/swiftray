@@ -49,6 +49,13 @@
         <file>images/icon-bold.png</file>
         <file>images/icon-I.png</file>
         <file>images/icon-U.png</file>
+        <file>images/icon-new.png</file>
+        <file>images/icon-open.png</file>
+        <file>images/icon-save.png</file>
+        <file>images/icon-undo.png</file>
+        <file>images/icon-redo.png</file>
+        <file>images/icon-offset.png</file>
+        <file>images/icon-trace.png</file>
         <file>images/beamo.png</file>
         <file>images/beambox.png</file>
         <file>images/dark/icon-adjust.png</file>
@@ -94,6 +101,13 @@
         <file>images/dark/icon-bold.png</file>
         <file>images/dark/icon-I.png</file>
         <file>images/dark/icon-U.png</file>
+        <file>images/dark/icon-new.png</file>
+        <file>images/dark/icon-open.png</file>
+        <file>images/dark/icon-save.png</file>
+        <file>images/dark/icon-undo.png</file>
+        <file>images/dark/icon-redo.png</file>
+        <file>images/dark/icon-offset.png</file>
+        <file>images/dark/icon-trace.png</file>
         <file>images/dark/beamo.png</file>
         <file>images/dark/beambox.png</file>
         <file>images/icon.icns</file>
