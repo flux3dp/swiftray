@@ -73,8 +73,13 @@ void MainWindow::loadStyles() {
        ui->toolBar,
        ui->toolBarAlign,
        ui->toolBarBool,
+       ui->toolBarFile,
+       ui->toolBarFlip,
        ui->toolBarGroup,
-       ui->toolBarFlip
+       ui->toolBarHistory,
+       ui->toolBarImage,
+       ui->toolBarTransform,
+       ui->toolBarVector,
   };
   for (QToolBar *toolbar : toolbars) {
     for (QAction *action : toolbar->actions()) {
@@ -396,6 +401,7 @@ void MainWindow::updateSelections() {
   bool all_path = !items.empty();
   bool all_image = !items.empty();
   bool all_geometry = !items.empty();
+  bool all_text = !items.empty();
 
   for (auto &shape : canvas_->document().selections()) {
     if (shape->type() != Shape::Type::Group) all_group = false;
@@ -403,17 +409,11 @@ void MainWindow::updateSelections() {
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
     if (shape->type() != Shape::Type::Path) all_geometry = false;
     if (shape->type() != Shape::Type::Bitmap) all_image = false;
-  }
-
-  if (items.size() == 1) {
-    ui->toolBarTransform->setVisible(true);
-  } else {
-    ui->toolBarTransform->setVisible(false);
+    if (shape->type() != Shape::Type::Text) all_text = false;
   }
 
   cutAction_->setEnabled(items.size() > 0);
   copyAction_->setEnabled(items.size() > 0);
-  //pasteAction_;
   duplicateAction_->setEnabled(items.size() > 0);
   deleteAction_->setEnabled(items.size() > 0);
   groupAction_->setEnabled(items.size() > 1);
@@ -421,7 +421,7 @@ void MainWindow::updateSelections() {
 
   ui->actionGroup->setEnabled(items.size() > 1);
   ui->actionUngroup->setEnabled(all_group);
-  ui->actionUnion->setEnabled(all_path); // Union can be done with the shape itself if it contains sub polygons
+  ui->actionUnion->setEnabled(items.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
   ui->actionSubtract->setEnabled(items.size() == 2 && all_path);
   ui->actionDiff->setEnabled(items.size() == 2 && all_path);
   ui->actionIntersect->setEnabled(items.size() == 2 && all_path);
@@ -642,6 +642,7 @@ void MainWindow::setConnectionToolBar() {
 }
 
 void MainWindow::setToolbarFont() {
+  ui->toolBarFont->addSeparator();
   auto fontComboBox = new QFontComboBox(ui->toolBarFont);
   ui->toolBarFont->addWidget(fontComboBox);
   //auto labelStyle = new QLabel(tr("Style"), ui->toolBarFont);
@@ -662,9 +663,9 @@ void MainWindow::setToolbarFont() {
         border: none \
     } \
   ");
-  boldToolButton->setIcon(QIcon(":/images/icon-bold.png"));
-  italicToolButton->setIcon(QIcon(":/images/icon-I.png"));
-  underlineToolButton->setIcon(QIcon(":/images/icon-U.png"));
+  boldToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-bold.png" : ":/images/icon-bold.png"));
+  italicToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-I.png" : ":/images/icon-I.png"));
+  underlineToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-U.png" : ":/images/icon-U.png"));
   boldToolButton->setCheckable(true);
   italicToolButton->setCheckable(true);
   underlineToolButton->setCheckable(true);
@@ -759,7 +760,6 @@ void MainWindow::setToolbarFont() {
 }
 
 void MainWindow::setToolbarTransform() {
-  ui->toolBarTransform->setVisible(false);
   auto labelX = new QLabel;
   auto doubleSpinBoxX = new QDoubleSpinBox2(ui->toolBarTransform);
   auto labelY = new QLabel;
@@ -784,6 +784,7 @@ void MainWindow::setToolbarTransform() {
   doubleSpinBoxY->setSuffix(" mm");
   doubleSpinBoxWidth->setSuffix(" mm");
   doubleSpinBoxHeight->setSuffix(" mm");
+  ui->toolBarTransform->addSeparator();
   ui->toolBarTransform->addWidget(labelX);
   ui->toolBarTransform->addWidget(doubleSpinBoxX);
   ui->toolBarTransform->addWidget(labelY);
