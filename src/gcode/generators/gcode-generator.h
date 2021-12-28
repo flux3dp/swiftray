@@ -15,17 +15,42 @@ public:
     machine_origin_ = machine.origin;
   }
 
+  /**
+   * @brief Input position from canvas coordinate -> generate G-Code for machine coordinate
+   * @param x position_x in canvas coordinate
+   * @param y position_y in canvas coordinate
+   * @param speed
+   * @param power
+   */
   void moveTo(float x, float y, float speed, float power) override {
     if (relative_mode_) {
       if (x != 0 || y != 0) {
         str_stream_ << "G1";
       }
       if (x != 0) {
-        str_stream_ << "X" << round(x * 1000) / 1000;
+        switch (machine_origin_) {
+          case MachineSettings::MachineSet::OriginType::RearRight:
+          case MachineSettings::MachineSet::OriginType::FrontRight:
+            // Canvas x coordinate direction is opposite to machine coordinate
+            str_stream_ << "X" << round(-x * 1000) / 1000;
+            break;
+          default:
+            str_stream_ << "X" << round(x * 1000) / 1000;
+            break;
+        }
         x_ = x_ + x;
       }
       if (y != 0) {
-        str_stream_ << "Y" << round(y * 1000) / 1000;
+        switch (machine_origin_) {
+          case MachineSettings::MachineSet::OriginType::FrontRight:
+          case MachineSettings::MachineSet::OriginType::FrontLeft:
+            // Canvas y coordinate direction is opposite to machine coordinate
+            str_stream_ << "Y" << round(-y * 1000) / 1000;
+            break;
+          default:
+            str_stream_ << "Y" << round(y * 1000) / 1000;
+            break;
+        }
         y_ = y_ + y;
       }
     } else {
