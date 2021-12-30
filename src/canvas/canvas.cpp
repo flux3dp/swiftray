@@ -931,13 +931,6 @@ void Canvas::setLineHeight(float line_height) {
   }
 }
 
-shared_ptr<PreviewGenerator> Canvas::exportGcode() {
-  auto gen = make_shared<PreviewGenerator>();
-  ToolpathExporter exporter(gen.get());
-  exporter.convertStack(document().layers());
-  return gen;
-}
-
 Clipboard &Canvas::clipboard() {
   return clipboard_;
 }

@@ -2,10 +2,12 @@
 
 #include <sstream>
 #include <gcode/generators/base-generator.h>
+#include <settings/machine-settings.h>
 
-/*
-Generator for the preview
-*/
+/**
+ * @brief 
+ *        Generator for the preview
+ */
 class PreviewGenerator : public BaseGenerator {
 public:
   class Path {
@@ -17,7 +19,8 @@ public:
     QPointF target_;
   };
 
-  PreviewGenerator() : BaseGenerator() {
+  PreviewGenerator(const MachineSettings::MachineSet &machine) : BaseGenerator() {
+    machine_origin_ = machine.origin;
   }
 
   void moveTo(float x, float y, float speed, float power) override {
@@ -82,4 +85,5 @@ public:
 
   bool relative_mode_;
   QList<Path> paths_;
+  MachineSettings::MachineSet::OriginType machine_origin_;
 };

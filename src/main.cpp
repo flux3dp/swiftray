@@ -20,7 +20,7 @@ int mainCLI(int argc, char *argv[]) {
   Q_ASSERT_X(file.open(QFile::ReadOnly), "Swiftray CLI", "Can not open the file");
   QByteArray data = file.readAll();
   vcanvas.loadSVG(data);
-  vcanvas.exportGcode();
+  //vcanvas.exportGcode();
   return 0;
 }
 

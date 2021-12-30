@@ -73,8 +73,8 @@ public:
 
 protected:
   std::stringstream str_stream_;
-  float x_;
-  float y_;
+  float x_; // in canvas coordinate -> have nothing to do with machine coordinate
+  float y_; // in canvas coordinate -> have nothing to do with machine coordinate
   float power_;
   float speed_;
 };

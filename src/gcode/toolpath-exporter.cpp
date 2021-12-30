@@ -24,8 +24,6 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
   gen_->home();
   gen_->useAbsolutePositioning();
 
-  gen_->turnOnLaser(); // M3/M4
-
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
   // Generate bitmap canvas
   layer_bitmap_ = QPixmap(QSize((layers.at(0)->document()).width(), (layers.at(0)->document()).height()));
@@ -133,6 +131,9 @@ void ToolpathExporter::outputLayerGcode() {
 
 void ToolpathExporter::outputLayerPathGcode() {
   QPointF current_pos;
+
+  gen_->turnOnLaser(); // M3/M4
+
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
 
@@ -165,7 +166,9 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   bool reverse = false;
   QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
 
-  // rapid move to the start position
+  gen_->turnOnLaser(); // M3/M4
+
+  // rapid move to the start position (absolute position)
   qInfo() << bitmap_dirty_area_;
   gen_->moveTo(bitmap_dirty_area_.left() / dpmm_,bitmap_dirty_area_.top() / dpmm_,
                current_layer_->speed(), 0);
@@ -244,8 +247,18 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
 
   gen_->endHighSpeedRastering();
   gen_->moveToX(end_x);
+
+  return true;
 }
 
+/**
+ * @brief
+ *        NOTE: Use "relative" position for nearby pixels
+ * @param data
+ * @param reverse
+ * @param offset
+ * @return
+ */
 bool ToolpathExporter::rasterBitmapRow(unsigned char *data, bool reverse,
                                        QPointF offset) {
   float pixel_size = 1.0 / dpmm_; // mm per pixel (dot)

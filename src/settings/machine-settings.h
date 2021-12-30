@@ -26,10 +26,10 @@ public:
   */
   struct MachineSet {
     enum class OriginType {
-      RearLeft,
-      RearRight,
-      FrontLeft,
-      FrontRight
+      RearLeft,  // Machine origin at the "top left" in canvas coordinate
+      RearRight, // Machine origin at the "top right" in canvas coordinate
+      FrontLeft, // Machine origin at the "bottom left" in canvas coordinate
+      FrontRight // Machine origin at the "bottom right" in canvas coordinate
     };
     enum class BoardType {
       GRBL_2020,

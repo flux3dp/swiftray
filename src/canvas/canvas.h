@@ -19,7 +19,6 @@
 #include <clipboard.h>
 #include <shape/shape.h>
 #include <parser/svgpp-parser.h>
-#include <gcode/generators/preview-generator.h>
 
 /**
   \class Canvas
@@ -184,8 +183,6 @@ public slots:
   void setFont(const QFont &font);
 
   void emitAllChanges();
-
-  shared_ptr<PreviewGenerator> exportGcode();
 
   void setLineHeight(float line_height);
 

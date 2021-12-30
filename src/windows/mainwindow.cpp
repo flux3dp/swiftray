@@ -17,6 +17,7 @@
 #include <windows/osxwindow.h>
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
+#include <gcode/generators/preview-generator.h>
 #include <document-serializer.h>
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
@@ -963,13 +964,15 @@ void MainWindow::generateGcode() {
 }
 
 void MainWindow::genPreviewWindow() {
-  auto gen = canvas_->exportGcode();
+  auto gen = make_shared<PreviewGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter preview_exporter(gen.get());
+  preview_exporter.convertStack(canvas_->document().layers());
   PreviewWindow *pw = new PreviewWindow(this,
                                         canvas_->document().width() / 10,
                                         canvas_->document().height() / 10);
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get());
-  exporter.convertStack(canvas_->document().layers());
+  ToolpathExporter gcode_exporter(gen_gcode.get());
+  gcode_exporter.convertStack(canvas_->document().layers());
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   pw->setPreviewPath(gen);
   pw->setRequiredTime(gcode_player_->requiredTime());
