@@ -59,15 +59,15 @@ namespace Controls {
     }
 
     void updateTransform(double new_x, double new_y, double new_r, double new_w, double new_h) {
-      if (abs(new_x - x()) > 0.01 || abs(new_y - y()) > 0.01) {
+      if (std::abs(new_x - x()) > 0.01 || std::abs(new_y - y()) > 0.01) {
         translate_to_apply_ = QPointF(new_x - x(), new_y - y());
         applyMove();
       }
-      if (abs(new_r - rotation()) > 0.01) {
+      if (std::abs(new_r - rotation()) > 0.01) {
         rotation_to_apply_ = new_r - rotation();
         applyRotate(boundingRect().center(), rotation_to_apply_);
       }
-      if (abs(new_w - width()) > 0.01 || abs(new_h - height()) > 0.01) {
+      if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
         scale_x_to_apply_ = new_w / width();
         scale_y_to_apply_ = new_h / height();
         applyScale(boundingRect().center(), scale_x_to_apply_, scale_y_to_apply_);

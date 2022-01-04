@@ -17,11 +17,11 @@ Document::Document() noexcept:
      font_(QFont("Tahoma", 200, QFont::Bold)),
      active_layer_(nullptr),
      canvas_(nullptr) {
-  auto layer1 = make_shared<Layer>(this, 1);
+  auto layer1 = std::make_shared<Layer>(this, 1);
   addLayer(layer1);
 }
 
-void Document::setSelection(nullptr_t) {
+void Document::setSelection(std::nullptr_t) {
   setSelections({});
 }
 
@@ -99,7 +99,7 @@ void Document::execute(const CmdPtr &cmd) {
   }
 }
 
-void Document::execute(initializer_list<CmdPtr> cmds) {
+void Document::execute(std::initializer_list<CmdPtr> cmds) {
   auto joined = Commands::Joined();
   for (auto cmd: cmds) {
     joined << cmd;
@@ -235,7 +235,7 @@ void Document::setMousePressedScreenCoord(QPointF screen_coord) {
 void Document::groupSelections() {
   if (selections().empty()) return;
 
-  ShapePtr group_ptr = make_shared<GroupShape>(selections());
+  ShapePtr group_ptr = std::make_shared<GroupShape>(selections());
   auto cmd = Commands::Joined();
   for (auto &shape: selections()) {
     cmd << Commands::SetParent(shape.get(), group_ptr.get());

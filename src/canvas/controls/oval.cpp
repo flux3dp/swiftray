@@ -34,7 +34,7 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
   path.arcTo(rect_, 0, 360 * 16);
-  ShapePtr new_oval = make_shared<PathShape>(path);
+  ShapePtr new_oval = std::make_shared<PathShape>(path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_oval),
        Commands::Select(&document(), {new_oval})

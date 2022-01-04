@@ -291,7 +291,7 @@ void Transform::calcScale(QPointF canvas_coord) {
   scale_y_to_apply_ = d.y() / transformed_from_.height();
 
   if (scale_locked_) {
-    double min_scale = min(scale_x_to_apply_, scale_y_to_apply_);
+    double min_scale = std::min(scale_x_to_apply_, scale_y_to_apply_);
     scale_x_to_apply_ = min_scale;
     scale_y_to_apply_ = min_scale;
   } else {

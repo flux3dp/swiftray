@@ -32,7 +32,7 @@ bool Rect::mouseMoveEvent(QMouseEvent *e) {
 bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addRect(rect_);
-  ShapePtr new_rect = make_shared<PathShape>(path);
+  ShapePtr new_rect = std::make_shared<PathShape>(path);
   canvas().setMode(Canvas::Mode::Selecting);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_rect),

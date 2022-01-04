@@ -22,7 +22,7 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
     // Create a virtual target
-    ShapePtr new_shape = make_shared<TextShape>("", canvas().font());
+    ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font());
     setTarget(new_shape);
     target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
   }

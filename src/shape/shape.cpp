@@ -115,7 +115,7 @@ void Shape::paint(QPainter *) const {
 }
 
 shared_ptr<Shape> Shape::clone() const {
-  shared_ptr<Shape> shape = make_shared<Shape>(*this);
+  shared_ptr<Shape> shape = std::make_shared<Shape>(*this);
   qInfo() << "Clone Shape" << shape.get();
   return shape;
 }

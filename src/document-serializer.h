@@ -72,7 +72,7 @@ public:
   }
 
   LayerPtr deserializeLayer() {
-    LayerPtr layer = make_shared<Layer>();
+    LayerPtr layer = std::make_shared<Layer>();
     in >> layer->name_;
     in >> layer->type_;
     in >> layer->color_;
@@ -158,7 +158,7 @@ public:
     deserializeShapeProp(shape);
     QPixmap pixmap;
     in >> pixmap;
-    shape->bitmap_ = make_unique<QPixmap>(pixmap);
+    shape->bitmap_ = std::make_unique<QPixmap>(pixmap);
     return shape;
   }
 

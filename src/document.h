@@ -26,7 +26,7 @@ public:
 
   QList<ShapePtr> &selections();
 
-  void setSelection(nullptr_t);
+  void setSelection(std::nullptr_t);
 
   void setSelection(ShapePtr &shape);
 
@@ -128,7 +128,7 @@ public:
 
   void execute(const CmdPtr &cmd);
 
-  void execute(initializer_list<CmdPtr> cmds);
+  void execute(std::initializer_list<CmdPtr> cmds);
 
   template<typename... Args>
   void execute(const CmdPtr cmd0, Args... args) {

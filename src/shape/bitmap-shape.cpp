@@ -21,11 +21,11 @@ BitmapShape::BitmapShape(QImage &image) : Shape(), tinted_signature(0) {
       *rgbpixel = QColor(gray, gray, gray, qAlpha(*rgbpixel)).rgba();
     }
   }
-  bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(image));
+  bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
 BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig), tinted_signature(0) {
-  bitmap_ = make_unique<QPixmap>(*orig.bitmap_);
+  bitmap_ = std::make_unique<QPixmap>(*orig.bitmap_);
   setLayer(orig.layer());
   setTransform(orig.transform());
 }
@@ -76,7 +76,7 @@ QImage &BitmapShape::image() const {
 
 void BitmapShape::invertPixels() {
   image().invertPixels(QImage::InvertRgb);
-  bitmap_ = make_unique<QPixmap>(QPixmap::fromImage(tinted_image_));
+  bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(tinted_image_));
 }
 
 void BitmapShape::paint(QPainter *painter) const {
@@ -90,7 +90,7 @@ void BitmapShape::paint(QPainter *painter) const {
 }
 
 ShapePtr BitmapShape::clone() const {
-  ShapePtr new_shape = make_shared<BitmapShape>(*this);
+  ShapePtr new_shape = std::make_shared<BitmapShape>(*this);
   return new_shape;
 }
 

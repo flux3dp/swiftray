@@ -76,38 +76,38 @@ void SelectCmd::redo(Document *doc) {
 
 CmdPtr Commands::RemoveSelections(Document *doc) {
   QList<ShapePtr> selections = doc->selections();
-  auto evt = make_shared<JoinedCmd>();
+  auto evt = std::make_shared<JoinedCmd>();
   evt << Commands::Select(doc, {});
   evt << Commands::RemoveShapes(selections);
   return evt;
 }
 
 CmdPtr Commands::AddShape(Layer *layer, const ShapePtr &shape) {
-  return make_shared<AddShapeCmd>(layer, shape);
+  return std::make_shared<AddShapeCmd>(layer, shape);
 }
 
 CmdPtr Commands::RemoveShape(const ShapePtr &shape) {
-  return make_shared<RemoveShapeCmd>(shape);
+  return std::make_shared<RemoveShapeCmd>(shape);
 }
 
 CmdPtr Commands::RemoveShape(Layer *layer, const ShapePtr &shape) {
-  return make_shared<RemoveShapeCmd>(layer, shape);
+  return std::make_shared<RemoveShapeCmd>(layer, shape);
 }
 
 CmdPtr Commands::Select(Document *doc, const QList<ShapePtr> &new_selections) {
-  return make_shared<SelectCmd>(doc, new_selections);
+  return std::make_shared<SelectCmd>(doc, new_selections);
 }
 
 CmdPtr Commands::AddShapes(Layer *layer, const QList<ShapePtr> &shapes) {
-  auto evt = make_shared<JoinedCmd>();
+  auto evt = std::make_shared<JoinedCmd>();
   for (auto &shape : shapes) {
-    evt->events << make_shared<AddShapeCmd>(layer, shape);
+    evt->events << std::make_shared<AddShapeCmd>(layer, shape);
   }
   return evt;
 }
 
 CmdPtr Commands::RemoveShapes(const QList<ShapePtr> &shapes) {
-  auto evt = make_shared<JoinedCmd>();
+  auto evt = std::make_shared<JoinedCmd>();
   for (auto &shape : shapes) {
     evt->events << Commands::RemoveShape(shape);
   }
@@ -115,22 +115,22 @@ CmdPtr Commands::RemoveShapes(const QList<ShapePtr> &shapes) {
 }
 
 CmdPtr Commands::AddLayer(const LayerPtr &layer) {
-  return make_shared<AddLayerCmd>(layer);
+  return std::make_shared<AddLayerCmd>(layer);
 }
 
 CmdPtr Commands::RemoveLayer(const LayerPtr &layer) {
-  return make_shared<RemoveLayerCmd>(layer);
+  return std::make_shared<RemoveLayerCmd>(layer);
 }
 
 JoinedPtr Commands::Joined() {
-  return make_shared<Commands::JoinedCmd>();
+  return std::make_shared<Commands::JoinedCmd>();
 }
 
-Commands::JoinedCmd::JoinedCmd(initializer_list<Commands::BaseCmd *> undo_events) {
+Commands::JoinedCmd::JoinedCmd(std::initializer_list<Commands::BaseCmd *> undo_events) {
   for (auto &event : undo_events) events << CmdPtr(event);
 }
 
-Commands::JoinedCmd::JoinedCmd(initializer_list<Commands::CmdPtr> undo_events) {
+Commands::JoinedCmd::JoinedCmd(std::initializer_list<Commands::CmdPtr> undo_events) {
   for (auto &event : undo_events) events << event;
 }
 

@@ -50,7 +50,7 @@ public:
   void on_exit_element() {
     check_style();
     QPainterPath mapped_path = qtransform().map(working_path_);
-    ShapePtr shape = make_shared<PathShape>(mapped_path);
+    ShapePtr shape = std::make_shared<PathShape>(mapped_path);
     QString layer_name = this->strokeColor() == "N/A" ? this->fillColor() : this->strokeColor();
     if (this->strokeColor() == "N/A" && this->fillColor() != "N/A") ((PathShape *) shape.get())->setFilled(true);
     svgpp_add_shape(shape, layer_name);
@@ -88,8 +88,8 @@ public:
                 (y1prime * y1prime) / (ry * ry);
 
     if (lamb >= 1) {
-      ry = sqrt(lamb) * ry;
-      rx = sqrt(lamb) * rx;
+      ry = std::sqrt(lamb) * ry;
+      rx = std::sqrt(lamb) * rx;
     }
 
     // Back to https://www.w3.org/TR/SVG/implnote.html F.6.5
@@ -102,7 +102,7 @@ public:
     }
 
     const double factor =
-         (large_arc_flag == sweep_flag ? -1 : 1) * sqrt(radicand);
+         (large_arc_flag == sweep_flag ? -1 : 1) * std::sqrt(radicand);
     const double cxprime = factor * rx * y1prime / ry,
          cyprime = -factor * ry * x1prime / rx,
          cx = cxprime + (x1 + x2) / 2, cy = cyprime + (y1 + y2) / 2,
@@ -144,7 +144,7 @@ public:
     m.directionality = directionality;
   }
 
-  string type() {
+  std::string type() {
     return "path";
   }
 
