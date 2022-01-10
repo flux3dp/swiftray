@@ -956,7 +956,7 @@ void Canvas::backToSelectMode() {
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {
-  doc_ = unique_ptr<Document>(document);
+  doc_ = std::unique_ptr<Document>(document);
   doc_->setCanvas(this);
   resize();
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);

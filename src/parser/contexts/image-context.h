@@ -68,7 +68,7 @@ private:
   std::string fragment_id_;
   double x_, y_;
   double width_, height_;
-  shared_ptr<Shape> bitmap_;
+  std::shared_ptr<Shape> bitmap_;
 };
 
 }

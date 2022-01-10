@@ -33,7 +33,7 @@ namespace Commands {
     }
   };
 
-  typedef shared_ptr<BaseCmd> CmdPtr;
+  typedef std::shared_ptr<BaseCmd> CmdPtr;
 
 
   /**
@@ -140,7 +140,7 @@ namespace Commands {
     QList<CmdPtr> events;
   };
 
-  typedef shared_ptr<JoinedCmd> JoinedPtr;
+  typedef std::shared_ptr<JoinedCmd> JoinedPtr;
 
   /**
       \class SetCmd

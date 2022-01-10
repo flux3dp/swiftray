@@ -4,8 +4,6 @@
 
 #define SELECTION_TOLERANCE 10
 
-using namespace std;
-
 PathShape::PathShape() noexcept: Shape(), filled_(false) {}
 
 PathShape::PathShape(QPainterPath path) : Shape(), filled_(false) {
@@ -67,8 +65,8 @@ void PathShape::paint(QPainter *painter) const {
   painter->restore();
 }
 
-shared_ptr<Shape> PathShape::clone() const {
-  shared_ptr<PathShape> shape = std::make_shared<PathShape>(*this);
+std::shared_ptr<Shape> PathShape::clone() const {
+  std::shared_ptr<PathShape> shape = std::make_shared<PathShape>(*this);
   return shape;
 }
 

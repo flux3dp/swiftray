@@ -10,8 +10,6 @@
 
 #define SELECTION_TOLERANCE 15
 
-using namespace std;
-
 Shape::Shape() noexcept:
      rotation_(0),
      transform_(),
@@ -114,8 +112,8 @@ void Shape::paint(QPainter *) const {
   qWarning() << "Shape::Paint not implemented" << this;
 }
 
-shared_ptr<Shape> Shape::clone() const {
-  shared_ptr<Shape> shape = std::make_shared<Shape>(*this);
+std::shared_ptr<Shape> Shape::clone() const {
+  std::shared_ptr<Shape> shape = std::make_shared<Shape>(*this);
   qInfo() << "Clone Shape" << shape.get();
   return shape;
 }
