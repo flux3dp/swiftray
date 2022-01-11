@@ -276,8 +276,9 @@ void MainWindow::imageSelected(const QImage image) {
 void MainWindow::exportGCodeFile() {
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get());
+  exporter.setDPMM(canvas_->document().settings().dpmm());
+  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers());
-
 
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
@@ -959,6 +960,8 @@ void MainWindow::showJoggingPanel() {
 void MainWindow::generateGcode() {
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get());
+  exporter.setDPMM(canvas_->document().settings().dpmm());
+  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers());
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
 }

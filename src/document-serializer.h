@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <document.h>
+#include <QJsonObject>
 
 /**
  *  \class DocumentSerializer
@@ -28,6 +29,21 @@ public:
     for (auto &layer : doc.layers()) {
       serializeLayer(layer);
     }
+
+    QJsonObject doc_settings_json = {
+        {"machine_model", doc.settings().machine_model},
+        {"dpi", doc.settings().dpi},
+        { "advanced",
+          QJsonObject {
+            {"use_af", doc.settings().use_af},
+            {"use_diode", doc.settings().use_diode},
+            {"use_rotary", doc.settings().use_rotary},
+            {"use_open_bottom", doc.settings().use_open_bottom}
+          }
+        }
+    };
+    out << doc_settings_json;
+
   }
 
   Document *deserializeDocument() {
@@ -47,6 +63,32 @@ public:
       LayerPtr layer = deserializeLayer();
       doc->addLayer(layer);
     }
+
+    QJsonObject doc_settings_obj;
+    in >> doc_settings_obj;
+    qInfo() << "Doc settings: " << doc_settings_obj;
+    if ( doc_settings_obj.contains("machine_model") && doc_settings_obj.value("machine_model").isString() ) {
+      doc->settings().machine_model = doc_settings_obj.value("machine_model").toString();
+    }
+    if ( doc_settings_obj.contains("dpi") && doc_settings_obj.value("dpi").isDouble() ) {
+      doc->settings().dpi = doc_settings_obj.value("dpi").toDouble();
+    }
+    if ( doc_settings_obj.contains("advanced") && doc_settings_obj.value("advanced").isObject() ) {
+      QJsonObject advanced_setting_obj = doc_settings_obj.value("advanced").toObject();
+      if ( advanced_setting_obj.contains("use_af") && advanced_setting_obj.value("use_af").isBool() ) {
+        doc->settings().use_af = advanced_setting_obj.value("use_af").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_diode") && advanced_setting_obj.value("use_diode").isBool() ) {
+        doc->settings().use_diode = advanced_setting_obj.value("use_diode").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_rotary") && advanced_setting_obj.value("use_rotary").isBool() ) {
+        doc->settings().use_rotary = advanced_setting_obj.value("use_rotary").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_open_bottom") && advanced_setting_obj.value("use_open_bottom").isBool() ) {
+        doc->settings().use_open_bottom = advanced_setting_obj.value("use_open_bottom").toBool();
+      }
+    }
+
     return doc;
   }
 

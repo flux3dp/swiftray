@@ -12,9 +12,11 @@ public:
        use_rotary(false),
        use_open_bottom(false) {}
 
-  QString machine_model;
-  float width;
-  float height;
+  float dpmm() { return dpi / 25.4; }
+
+  QString machine_model; // TBD
+  float width;  // NOTE: store value but not used?
+  float height; // NOTE: store value but not used?
   float dpi;
   bool use_af;
   bool use_diode;

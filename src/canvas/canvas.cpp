@@ -974,6 +974,7 @@ void Canvas::emitAllChanges() {
   emit scaleChanged();
   emit layerChanged();
   emit modeChanged();
+  emit docSettingsChanged();
 }
 
 bool Canvas::isVolatile() const {

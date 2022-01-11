@@ -28,6 +28,9 @@ private:
 
   void registerEvents() override;
 
+  void syncDPISettingsUI();
+
+  void syncAdvancedSettingsUI();
 
   Ui::DocPanel *ui;
   MainWindow *main_window_;

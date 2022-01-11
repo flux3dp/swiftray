@@ -256,6 +256,8 @@ signals:
 
   void modeChanged();
 
+  void docSettingsChanged();
+
   void undoCalled();
 
   void redoCalled();
