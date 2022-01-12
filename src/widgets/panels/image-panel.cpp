@@ -16,6 +16,8 @@ ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
     ui->checkBox->setEnabled(false);
     ui->horizontalSlider->setValue(128);
     ui->horizontalSlider->setEnabled(false);
+    setVisible(false);
+    setEnabled(true);
     initializeContainer();
 }
 
@@ -35,18 +37,15 @@ void ImagePanel::registerEvents() {
       ui->horizontalSlider->setEnabled(true);
 
       if (selected_img->gradient()) {
-        ui->horizontalSlider->setVisible(false);
-        ui->label->setVisible(false);
+        ui->thresholdFrame->setVisible(false);
       } else {
-        ui->horizontalSlider->setVisible(true);
-        ui->label->setVisible(true);
+        ui->thresholdFrame->setVisible(true);
       }
-
-      setEnabled(true);
+      setVisible(true);
     } else {
       ui->checkBox->setEnabled(false);
       ui->horizontalSlider->setEnabled(false);
-      setEnabled(false);
+      setVisible(false);
     }
   });
 
@@ -56,11 +55,9 @@ void ImagePanel::registerEvents() {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
       selected_img->setGradient(state);
       if (state) {
-        ui->horizontalSlider->setVisible(false);
-        ui->label->setVisible(false);
+        ui->thresholdFrame->setVisible(false);
       } else {
-        ui->horizontalSlider->setVisible(true);
-        ui->label->setVisible(true);
+        ui->thresholdFrame->setVisible(true);
       }
     }
   });
