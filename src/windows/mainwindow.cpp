@@ -10,6 +10,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QToolButton>
+#include <QCheckBox>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -36,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setCanvasContextMenu();
   setToolbarFont();
   setToolbarTransform();
+  //setToolbarImage();
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
@@ -459,6 +461,7 @@ void MainWindow::loadWidgets() {
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_player_ = new GCodePlayer(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
+  image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
   machine_manager_ = new MachineManager(this);
@@ -852,6 +855,32 @@ void MainWindow::setToolbarTransform() {
     updateToolbarTransform();
   });
 }
+
+/*
+void MainWindow::setToolbarImage() {
+  auto gradientSwitch = new QCheckBox(ui->toolBarImage1);
+  auto gradientThresholdSlider = new QSlider(Qt::Horizontal, ui->toolBarImage1);
+  auto thresholdLabel = new QLabel(ui->toolBarImage1);
+  auto styleHBoxLayout = new QVBoxLayout(ui->toolBarImage1);
+  ui->toolBarImage1->setLayout(styleHBoxLayout);
+  thresholdLabel->setText(tr("Gradient Treshold"));
+  gradientSwitch->setCheckState(Qt::Checked);
+  gradientSwitch->setText(tr("Gradient Switch"));
+  gradientThresholdSlider->setValue(128);
+  ui->toolBarImage1->addWidget(gradientSwitch);
+  ui->toolBarImage1->addWidget(thresholdLabel);
+  ui->toolBarImage1->addWidget(gradientThresholdSlider);
+  auto checkbox_event = QOverload<int>::of(&QCheckBox::stateChanged);
+  auto slider_event = QOverload<int>::of(&QSlider::valueChanged);
+
+  //connect(gradientSwitch, checkbox_event, ..., ...);
+
+  connect(gradientThresholdSlider, slider_event, [=](int threshold_value) {
+
+  });
+
+}
+*/
 
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
