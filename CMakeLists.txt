@@ -80,11 +80,11 @@ INCLUDE_DIRECTORIES(
         ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
         ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
-        ${LIBXML2_INCLUDE_DIRS}
+        ${LIBXML2_INCLUDE_DIR}
         ${OpenCV_INCLUDE_DIRS}
         third_party
         ${SRC_DIR}
-        /usr/local/opt/libxml2/include
+        #/usr/local/opt/libxml2/include
         ${POTRACE_INCLUDE_DIRS}
 )
 

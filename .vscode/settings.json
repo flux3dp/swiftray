@@ -109,7 +109,20 @@
         "__memory": "cpp",
         "stack": "cpp",
         "qwidget": "cpp",
-        "qframe": "cpp"
+        "qframe": "cpp",
+        "xfacet": "cpp",
+        "xhash": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "xlocinfo": "cpp",
+        "xlocnum": "cpp",
+        "xmemory": "cpp",
+        "xmemory0": "cpp",
+        "xstddef": "cpp",
+        "xstring": "cpp",
+        "xtr1common": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

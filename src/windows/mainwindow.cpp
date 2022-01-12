@@ -395,7 +395,7 @@ void MainWindow::updateMode() {
     action->setChecked(false);
   }
 
-  const map<Canvas::Mode, QAction *> actionMap = {
+  const std::map<Canvas::Mode, QAction *> actionMap = {
        {Canvas::Mode::Selecting,      ui->actionSelect},
        {Canvas::Mode::MultiSelecting, ui->actionSelect},
        {Canvas::Mode::LineDrawing,    ui->actionLine},

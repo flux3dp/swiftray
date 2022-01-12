@@ -2144,13 +2144,13 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2, IntPoint &Pt)
     else if (e1->PolyTyp != e2->PolyTyp)
     {
       //toggle subj open path OutIdx on/off when Abs(clip.WndCnt) == 1 ...
-      if ((e1->WindDelta == 0) && abs(e2->WindCnt) == 1 && 
+      if ((e1->WindDelta == 0) && std::abs(e2->WindCnt) == 1 && 
         (m_ClipType != ctUnion || e2->WindCnt2 == 0))
       {
         AddOutPt(e1, Pt);
         if (e1Contributing) e1->OutIdx = Unassigned;
       }
-      else if ((e2->WindDelta == 0) && (abs(e1->WindCnt) == 1) && 
+      else if ((e2->WindDelta == 0) && (std::abs(e1->WindCnt) == 1) && 
         (m_ClipType != ctUnion || e1->WindCnt2 == 0))
       {
         AddOutPt(e2, Pt);
@@ -4329,10 +4329,10 @@ double DistanceFromLineSqrd(
   const IntPoint& pt, const IntPoint& ln1, const IntPoint& ln2)
 {
   //The equation of a line in general form (Ax + By + C = 0)
-  //given 2 points (x¹,y¹) & (x²,y²) is ...
-  //(y¹ - y²)x + (x² - x¹)y + (y² - y¹)x¹ - (x² - x¹)y¹ = 0
-  //A = (y¹ - y²); B = (x² - x¹); C = (y² - y¹)x¹ - (x² - x¹)y¹
-  //perpendicular distance of point (x³,y³) = (Ax³ + By³ + C)/Sqrt(A² + B²)
+  //given 2 points (xï¿½,yï¿½) & (xï¿½,yï¿½) is ...
+  //(yï¿½ - yï¿½)x + (xï¿½ - xï¿½)y + (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½ = 0
+  //A = (yï¿½ - yï¿½); B = (xï¿½ - xï¿½); C = (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½
+  //perpendicular distance of point (xï¿½,yï¿½) = (Axï¿½ + Byï¿½ + C)/Sqrt(Aï¿½ + Bï¿½)
   //see http://en.wikipedia.org/wiki/Perpendicular_distance
   double A = double(ln1.Y - ln2.Y);
   double B = double(ln2.X - ln1.X);
