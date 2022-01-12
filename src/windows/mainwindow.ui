@@ -383,7 +383,7 @@
     <string notr="true"/>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -394,27 +394,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="separator"/>
    <addaction name="actionNew"/>
    <addaction name="actionOpen"/>
    <addaction name="actionSave"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarHistory">
-   <property name="windowTitle">
-    <string>toolBarHistory</string>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
@@ -424,7 +406,7 @@
     <string>toolBarTransform</string>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -450,7 +432,7 @@
     <string notr="true"/>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
@@ -470,7 +452,6 @@
    <attribute name="toolBarBreak">
     <bool>true</bool>
    </attribute>
-   <addaction name="separator"/>
    <addaction name="actionUnion"/>
    <addaction name="actionSubtract"/>
    <addaction name="actionIntersect"/>
@@ -481,7 +462,7 @@
     <string>Connection Toolbar</string>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -508,7 +489,7 @@
     <string notr="true"/>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
@@ -545,7 +526,7 @@
     <string notr="true"/>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
@@ -589,7 +570,7 @@
     <string notr="true"/>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="allowedAreas">
     <set>Qt::LeftToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
@@ -617,7 +598,7 @@
     <string>toolBarImage</string>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -635,7 +616,7 @@
     <string>toolBarVector</string>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -653,7 +634,7 @@
     <string>toolBarFont</string>
    </property>
    <property name="movable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -673,74 +654,6 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="joggingContents"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarFile">
-   <property name="windowTitle">
-    <string>toolBarFile</string>
-   </property>
-   <property name="styleSheet">
-    <string notr="true"/>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="separator"/>
-   <addaction name="actionNew"/>
-   <addaction name="actionOpen"/>
-   <addaction name="actionSave"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarHistory">
-   <property name="windowTitle">
-    <string>toolBarHistory</string>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="separator"/>
-   <addaction name="actionUndo"/>
-   <addaction name="actionRedo"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarImage">
-   <property name="windowTitle">
-    <string>toolBarImage</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionTrace"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarVector">
-   <property name="windowTitle">
-    <string>toolBarVector</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPathOffset"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
