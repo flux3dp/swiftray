@@ -251,6 +251,8 @@ void MainWindow::openImageFile() {
       canvas_->importImage(image);
     }
   }
+
+  canvas_->setMode(Canvas::Mode::Selecting);
 }
 
 void MainWindow::replaceImage() {
