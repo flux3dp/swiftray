@@ -76,10 +76,12 @@ void MainWindow::loadStyles() {
        ui->toolBar,
        ui->toolBarAlign,
        ui->toolBarBool,
+       ui->toolBarConnection,
        ui->toolBarFile,
        ui->toolBarFlip,
        ui->toolBarGroup,
        ui->toolBarImage,
+       ui->toolBarTask,
        ui->toolBarTransform,
        ui->toolBarVector,
   };
@@ -531,6 +533,10 @@ void MainWindow::registerEvents() {
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(ui->actionJogging, &QAction::triggered, this, &MainWindow::showJoggingPanel);
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
+  connect(ui->actionStart, &QAction::triggered, this, [=]() {
+    generateGcode();
+    gcode_player_->executeBtnClick();
+  });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
@@ -648,7 +654,6 @@ void MainWindow::setConnectionToolBar() {
 }
 
 void MainWindow::setToolbarFont() {
-  ui->toolBarFont->addSeparator();
   auto fontComboBox = new QFontComboBox(ui->toolBarFont);
   ui->toolBarFont->addWidget(fontComboBox);
   //auto labelStyle = new QLabel(tr("Style"), ui->toolBarFont);
@@ -681,9 +686,9 @@ void MainWindow::setToolbarFont() {
   auto labelSize = new QLabel(tr("Size"), ui->toolBarFont);
   auto labelLineHeight = new QLabel(tr("Line Height"), ui->toolBarFont);
   auto labelLetterSpacing = new QLabel(tr("Letter Spacing"), ui->toolBarFont);
-  auto spinBoxSize = new QSpinBox(ui->toolBarTransform);
-  auto doubleSpinBoxLineHeight = new QDoubleSpinBox2(ui->toolBarTransform);
-  auto doubleSpinBoxLetterSpacing = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto spinBoxSize = new QSpinBox(ui->toolBarFont);
+  auto doubleSpinBoxLineHeight = new QDoubleSpinBox2(ui->toolBarFont);
+  auto doubleSpinBoxLetterSpacing = new QDoubleSpinBox2(ui->toolBarFont);
 
   doubleSpinBoxLetterSpacing->setDecimals(1);
   doubleSpinBoxLetterSpacing->setMaximum(1000);
@@ -790,7 +795,6 @@ void MainWindow::setToolbarTransform() {
   doubleSpinBoxY->setSuffix(" mm");
   doubleSpinBoxWidth->setSuffix(" mm");
   doubleSpinBoxHeight->setSuffix(" mm");
-  ui->toolBarTransform->addSeparator();
   ui->toolBarTransform->addWidget(labelX);
   ui->toolBarTransform->addWidget(doubleSpinBoxX);
   ui->toolBarTransform->addWidget(labelY);

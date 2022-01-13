@@ -655,18 +655,12 @@
    </attribute>
    <widget class="QWidget" name="joggingContents"/>
   </widget>
-  <widget class="QToolBar" name="toolBarFile">
+  <widget class="QToolBar" name="toolBarTask">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="windowTitle">
-    <string>toolBarFile</string>
-   </property>
-   <property name="styleSheet">
-    <string notr="true"/>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
+    <string>toolBarTask</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -674,54 +668,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="separator"/>
-   <addaction name="actionNew"/>
-   <addaction name="actionOpen"/>
-   <addaction name="actionSave"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarHistory">
-   <property name="windowTitle">
-    <string>toolBarHistory</string>
-   </property>
-   <property name="movable">
-    <bool>false</bool>
-   </property>
-   <property name="floatable">
-    <bool>false</bool>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="separator"/>
-   <addaction name="actionUndo"/>
-   <addaction name="actionRedo"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarImage">
-   <property name="windowTitle">
-    <string>toolBarImage</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionTrace"/>
-  </widget>
-  <widget class="QToolBar" name="toolBarVector">
-   <property name="windowTitle">
-    <string>toolBarVector</string>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-   <addaction name="actionPathOffset"/>
+   <addaction name="actionPreview"/>
+   <addaction name="actionStart"/>
   </widget>
   <widget class="QDockWidget" name="imageDock">
    <property name="windowTitle">
@@ -743,7 +691,7 @@
       </widget>
      </item>
     </layout>
-   </widget>
+    </widget>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -1164,6 +1112,10 @@
    </property>
   </action>
   <action name="actionPreview">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-preview.png</normaloff>:/images/icon-preview.png</iconset>
+   </property>
    <property name="text">
     <string>Preview</string>
    </property>
@@ -1171,7 +1123,7 @@
   <action name="actionPathOffset">
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-offset.png</normaloff>:/images/icon-offset.png</iconset>
+     <normaloff>:/images/icon-pathoffset.png</normaloff>:/images/icon-pathoffset.png</iconset>
    </property>
    <property name="text">
     <string>Offset</string>
@@ -1213,11 +1165,6 @@
     <string>Invert</string>
    </property>
   </action>
-  <action name="actionInvert">
-   <property name="text">
-    <string>Invert</string>
-   </property>
-  </action>
   <action name="actionReplace_with">
    <property name="text">
     <string>Replace with ...</string>
@@ -1231,7 +1178,7 @@
   <action name="actionConnect">
    <property name="icon">
     <iconset resource="../../qml.qrc">
-     <normaloff>:/images/icon-nodetype-1.png</normaloff>:/images/icon-nodetype-1.png</iconset>
+     <normaloff>:/images/icon-connection.png</normaloff>:/images/icon-connection.png</iconset>
    </property>
    <property name="text">
     <string>Connect</string>
@@ -1243,6 +1190,18 @@
   <action name="actionJogging">
    <property name="text">
     <string>Jogging</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-start.png</normaloff>:/images/icon-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start</string>
+   </property>
+   <property name="toolTip">
+    <string>Start</string>
    </property>
   </action>
  </widget>
