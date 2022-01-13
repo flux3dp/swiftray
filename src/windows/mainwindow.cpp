@@ -691,7 +691,7 @@ void MainWindow::setToolbarFont() {
 
   fontComboBox->setCurrentFont(initialFont);
   doubleSpinBoxLetterSpacing->setValue(initialFont.letterSpacing());
-  doubleSpinBoxLineHeight->setValue(1.5);
+  doubleSpinBoxLineHeight->setValue(1.2);
   spinBoxSize->setValue(initialFont.pointSize());
   boldToolButton->setChecked(initialFont.bold());
 

@@ -14,7 +14,7 @@ Document::Document() noexcept:
      frames_count_(0),
      width_(3000),
      height_(2000),
-     font_(QFont("Tahoma", 200, QFont::Bold)),
+     font_(QFont("Tahoma", 100, QFont::Bold)),
      active_layer_(nullptr),
      canvas_(nullptr) {
   auto layer1 = make_shared<Layer>(this, 1);
