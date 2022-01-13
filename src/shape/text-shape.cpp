@@ -47,6 +47,9 @@ void TextShape::makePath() {
     path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()), font_,
                  line);
   };
+  QPainterPath infill{path};
+  infill.setFillRule(Qt::WindingFill);
+  path = path.united(infill);
   setPath(path);
 }
 
