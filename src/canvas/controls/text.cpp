@@ -46,7 +46,10 @@ void Text::paint(QPainter *painter) {
   if (target_ == nullptr)
     return;
   QString text = canvas().textInput()->toPlainText() + canvas().textInput()->preeditString();
-  target().setText(text);
+  if (text_cache_ != text) {
+    target().setText(text);
+    text_cache_ = text;
+  }
   target().makeCursorRect(canvas().textInput()->textCursor().position());
   target().setEditing(true);
   QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);

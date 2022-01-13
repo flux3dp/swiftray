@@ -28,6 +28,7 @@ namespace Controls {
 
   private:
     ShapePtr target_;
+    QString text_cache_;
   };
 
 }
