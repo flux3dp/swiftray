@@ -77,7 +77,6 @@ void MainWindow::loadStyles() {
        ui->toolBarFile,
        ui->toolBarFlip,
        ui->toolBarGroup,
-       ui->toolBarHistory,
        ui->toolBarImage,
        ui->toolBarTransform,
        ui->toolBarVector,
