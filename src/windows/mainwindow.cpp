@@ -292,8 +292,9 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
+
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers());
 

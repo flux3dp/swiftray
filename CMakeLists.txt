@@ -40,6 +40,7 @@ FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
 FILE(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
+FILE(GLOB CLIPPER_CPP "third_party/clipper/clipper.cpp")
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/classicUI.ini DESTINATION ${CMAKE_BINARY_DIR})
 FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/essentialUI.ini DESTINATION ${CMAKE_BINARY_DIR})
 
@@ -58,6 +59,7 @@ SET(SOURCES
         ${WINDOWS_CPP}
         ${QXPOTRACE_CPP}
         ${SERIALPORT_CPP}
+        ${CLIPPER_CPP}
         ${SRC_DIR}/canvas/cache-stack.cpp
         ${SRC_DIR}/canvas/canvas.cpp
         ${SRC_DIR}/parser/svgpp-parser.cpp
@@ -84,6 +86,7 @@ LINK_LIBRARIES(
         ${BOOST_LIBRARIES}
         ${OpenCV_LIBRARIES}
         ${POTRACE_LIBRARIES}
+        ${POTRACE_LIBRARY}
 )
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -95,7 +98,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ENDIF ()
 
 # Build third_party libraries
-ADD_SUBDIRECTORY(third_party/clipper)
+#ADD_SUBDIRECTORY(third_party/clipper)
 
 SET(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
@@ -116,7 +119,7 @@ target_link_libraries(swiftray Qt::Svg)
 target_link_libraries(swiftray Qt::Widgets)
 target_link_libraries(swiftray Qt::SerialPort)
 
-target_link_libraries(swiftray CLIPPER)
-target_link_libraries(swiftray Boost::thread)
+#target_link_libraries(swiftray CLIPPER)
+#target_link_libraries(swiftray Boost::thread)
 
 add_subdirectory(tests)
