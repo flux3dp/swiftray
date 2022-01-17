@@ -3,6 +3,13 @@ project(vecty)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
+set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
+set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
+set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
+set (BOOST_LIBRARYDIR "C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2")
+set (OpenCV_DIR "C:/Dev/opencv/build/x64/vc14/lib")
+
 FIND_PACKAGE(Qt5 COMPONENTS Core REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Widgets REQUIRED)
 FIND_PACKAGE(Qt5 COMPONENTS Quick REQUIRED)
@@ -121,5 +128,7 @@ target_link_libraries(swiftray Qt::SerialPort)
 
 #target_link_libraries(swiftray CLIPPER)
 #target_link_libraries(swiftray Boost::thread)
+
+target_link_libraries(swiftray LibXml2::LibXml2)
 
 add_subdirectory(tests)

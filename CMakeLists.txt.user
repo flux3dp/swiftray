@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.0, 2022-01-17T14:39:14. -->
+<!-- Written by QtCreator 6.0.0, 2022-01-17T16:05:32. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -108,7 +108,17 @@
 -DCMAKE_CXX_COMPILER:STRING=%{Compiler:Executable:Cxx}
 -DLIBXML2_INCLUDE_DIR:PATH=C:/Dev/LibXml2/include/libxml2
 -DLIBXML2_LIBRARY:FILEPATH=C:/Dev/LibXml2/lib/libxml2.dll.a
--DLIBXML2_XMLLINT_EXECUTABLE:FILEPATH=C:/Dev/LibXml2/bin/xmllint.exe</value>
+-DLIBXML2_XMLLINT_EXECUTABLE:FILEPATH=C:/Dev/LibXml2/bin/xmllint.exe
+-DBOOST_ROOT:PATH=C:/Dev/boost/boost_1_70_0
+-DBOOST_INCLUDEDIR:PATH=C:/Dev/boost/boost_1_70_0/boost
+-DBOOST_LIBRARYDIR:PATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2
+-DBoost_DATE_TIME_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_date_time-vc142-mt-x64-1_70.lib
+-DBoost_CHRONO_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_chrono-vc142-mt-x64-1_70.lib
+-DBoost_ATOMIC_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_atomic-vc142-mt-x64-1_70.lib
+-DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
+-DBoost_THREAD_LIBRARY_DEBUG:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
+-DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
+</value>
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Dev\build-swiftray3-Desktop_Qt_5_15_2_MinGW_64_bit-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
@@ -157,7 +167,15 @@
 -DCMAKE_CXX_COMPILER:STRING=%{Compiler:Executable:Cxx}
 -DLIBXML2_INCLUDE_DIR:PATH=C:/Dev/LibXml2/include/libxml2
 -DLIBXML2_LIBRARY:FILEPATH=C:/Dev/LibXml2/lib/libxml2.dll.a
--DLIBXML2_XMLLINT_EXECUTABLE:FILEPATH=C:/Dev/LibXml2/bin/xmllint.exe</value>
+-DLIBXML2_XMLLINT_EXECUTABLE:FILEPATH=C:/Dev/LibXml2/bin/xmllint.exe
+-DBOOST_ROOT:PATH=C:/Dev/boost/boost_1_70_0
+-DBOOST_INCLUDEDIR:PATH=C:/Dev/boost/boost_1_70_0/boost
+-DBOOST_LIBRARYDIR:PATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2
+-DBoost_DATE_TIME_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_date_time-vc142-mt-x64-1_70.lib
+-DBoost_CHRONO_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_chrono-vc142-mt-x64-1_70.lib
+-DBoost_ATOMIC_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_atomic-vc142-mt-x64-1_70.lib
+-DBoost_THREAD_LIBRARY_DEBUG:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.lib
+-DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.lib</value>
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Dev\build-swiftray3-Desktop_Qt_5_15_2_MinGW_64_bit-Release</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
