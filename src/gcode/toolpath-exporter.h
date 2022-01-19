@@ -9,6 +9,8 @@
 #include <gcode/generators/base-generator.h>
 #include <document.h>
 
+#include <QImage>
+
 class ToolpathExporter {
 public:
   ToolpathExporter(BaseGenerator *generator) noexcept;
@@ -38,7 +40,9 @@ private:
 
   bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
 
-  bool rasterBitmapRow(unsigned char *data, int row_pixel_cnt, bool reverse, QPointF offset);
+  bool rasterBitmapRow(unsigned char *data, qreal real_y_pos, int row_pixel_cnt, bool reverse, QPointF offset);
+
+  QImage imageBinarize(QImage src, int threshold);
 
   QTransform global_transform_;
   QList<ShapePtr> layer_elements_;

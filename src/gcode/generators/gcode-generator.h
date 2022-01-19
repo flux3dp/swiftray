@@ -17,58 +17,49 @@ public:
 
   /**
    * @brief Input position from canvas coordinate -> generate G-Code for machine coordinate
-   * @param x position_x in canvas coordinate
-   * @param y position_y in canvas coordinate
+   * @param x "absolute" position in real world scale and canvas axis direction
+   * @param y "absolute" position in real world scale and canvas axis direction
    * @param speed
    * @param power
    */
   void moveTo(float x, float y, float speed, float power) override {
+    // 1. Handle the axis direction (convert from canvas to machine)
+    switch (machine_origin_) {
+      case MachineSettings::MachineSet::OriginType::RearRight:
+        // Canvas x axis direction is opposite to machine coordinate
+        x = machine_width_ - x;
+        break;
+      case MachineSettings::MachineSet::OriginType::FrontRight:
+        // Canvas x, y axis directions are opposite to machine coordinate
+        x = machine_width_ - x;
+        y = machine_height_ - y;
+        break;
+      case MachineSettings::MachineSet::OriginType::RearLeft:
+        // NORMAL canvas x, y axis directions are the same as machine coordinate
+        break;
+      case MachineSettings::MachineSet::OriginType::FrontLeft:
+        // Canvas y axis direction is opposite to machine coordinate
+        y = machine_height_ - y;
+        break;
+      default:
+        break;
+    }
+
+    // 2. separate relative mode & absolute mode
     if (relative_mode_) {
-      if (x != 0 || y != 0) {
+      if (x != x_ || y != y_) {
         str_stream_ << "G1";
       }
-      if (x != 0) {
-        switch (machine_origin_) {
-          case MachineSettings::MachineSet::OriginType::RearRight:
-          case MachineSettings::MachineSet::OriginType::FrontRight:
-            // Canvas x coordinate direction is opposite to machine coordinate
-            str_stream_ << "X" << round(-x * 1000) / 1000;
-            break;
-          default:
-            str_stream_ << "X" << round(x * 1000) / 1000;
-            break;
-        }
-        x_ = x_ + x;
+      if (x != x_) {
+        str_stream_ << "X" << round((x - x_) * 1000) / 1000;
+        x_ = x;
       }
-      if (y != 0) {
-        switch (machine_origin_) {
-          case MachineSettings::MachineSet::OriginType::FrontRight:
-          case MachineSettings::MachineSet::OriginType::FrontLeft:
-            // Canvas y coordinate direction is opposite to machine coordinate
-            str_stream_ << "Y" << round(-y * 1000) / 1000;
-            break;
-          default:
-            str_stream_ << "Y" << round(y * 1000) / 1000;
-            break;
-        }
-        y_ = y_ + y;
+      if (y != y_) {
+        str_stream_ << "Y" << round((y - y_) * 1000) / 1000;
+        y_ = y;
       }
     } else {
       // Coordinate transform for different origin type
-      switch (machine_origin_) {
-        case MachineSettings::MachineSet::OriginType::RearLeft:
-          break;
-        case MachineSettings::MachineSet::OriginType::RearRight:
-          x = machine_width_ - x;
-          break;
-        case MachineSettings::MachineSet::OriginType::FrontLeft:
-          y = machine_height_ - y;
-          break;
-        case MachineSettings::MachineSet::OriginType::FrontRight:
-          y = machine_height_ - y;
-          x = machine_width_ - x;
-          break;
-      }
       if (x_ == x && y_ == y && speed_ == speed && power_ == power)
         return;
       str_stream_ << "G1";
@@ -125,9 +116,17 @@ public:
     x_ = y_ = 0;
   }
 
+  void reset() override {
+    BaseGenerator::reset();
+    relative_mode_ = false;
+    machine_width_ = 0;
+    machine_height_ = 0;
+    machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+  }
+
 private:
+  bool relative_mode_;
   int machine_width_;
   int machine_height_;
-  bool relative_mode_;
   MachineSettings::MachineSet::OriginType machine_origin_;
 };

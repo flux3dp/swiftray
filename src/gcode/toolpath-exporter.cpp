@@ -101,7 +101,11 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   QTransform transform = bmp->transform() * global_transform_;
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
-  layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->image().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
+  if (bmp->gradient()) { // gradient mode
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->image().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
+  } else { // binarize mode
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->image(), bmp->thrsh_brightness()) ));
+  }
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
 }
@@ -136,8 +140,11 @@ void ToolpathExporter::outputLayerGcode() {
   outputLayerPathGcode();
 }
 
+/**
+ * @brief Gcode for non-filled geometry
+ */
 void ToolpathExporter::outputLayerPathGcode() {
-  QPointF current_pos;
+  QPointF current_pos; // in canvas scale (not real world)
 
   gen_->turnOnLaser(); // M3/M4
 
@@ -149,9 +156,11 @@ void ToolpathExporter::outputLayerPathGcode() {
     gen_->moveTo(current_pos.x() / canvas_mm_ratio_, current_pos.y() / canvas_mm_ratio_, travel_speed_, 0);
 
     for (QPointF &point : poly) {
-      if ((point - current_pos).manhattanLength() > (5 * canvas_mm_ratio_) ) { // 5mm
-        int segments = max(2.0, sqrt(pow(point.x() - current_pos.x(), 2) +
-                                     pow(point.y() - current_pos.y(), 2)) / (5 * canvas_mm_ratio_));
+      // Divide a long line into small segments
+      if ( (point - current_pos).manhattanLength() / canvas_mm_ratio_ > 5 ) { // At most 5mm per segment
+        int segments = max(2.0,
+                           sqrt(pow(point.x() - current_pos.x(), 2) +
+                                pow(point.y() - current_pos.y(), 2)) / canvas_mm_ratio_ / 5 );
         for (int i = 1; i <= segments; i++) {
           QPointF insert_point = (i * point + (segments - i) * current_pos) / float(segments);
           gen_->moveTo(insert_point.x() / canvas_mm_ratio_, insert_point.y() / canvas_mm_ratio_, current_layer_->speed(), current_layer_->power());
@@ -180,27 +189,34 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   qreal mm_per_pixel = canvas_size_.height() / canvas_mm_ratio_ / image.height();
   // layer_bitmap_ image size = width & height of the document
 
+  // NOTE: Should convert points from canvas unit to mm
+  qreal real_x_left = bitmap_dirty_area_.left() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
+  qreal real_x_right = bitmap_dirty_area_.right() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
+  qreal real_y_top = bitmap_dirty_area_.top() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
+  qreal real_y_bottom = bitmap_dirty_area_.bottom() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
+
   gen_->turnOnLaser(); // M3/M4
 
-  // NOTE: Should convert points from canvas unit to mm
-
-  // rapid move to the start position (absolute position)
-  gen_->moveTo(bitmap_dirty_area_.left() / canvas_mm_ratio_,bitmap_dirty_area_.top() / canvas_mm_ratio_,
-               current_layer_->speed(), 0);
+  // rapid move to the start position
+  gen_->moveTo(real_x_left, real_y_top,current_layer_->speed(), 0);
 
   gen_->useRelativePositioning();
-  qreal y_real_top_boundary = bitmap_dirty_area_.top() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal y_real_bottom_boundary = bitmap_dirty_area_.bottom() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
 
-  // Handle first pixel
-  qreal y_current_real_position = y_real_top_boundary;
-  while (y_current_real_position < y_real_bottom_boundary) {
-    y_current_real_position += mm_per_dot;
-    if (y_current_real_position > y_real_bottom_boundary) {
+  // Handle first row
+  qreal real_y_current_pos = real_y_top; // NOTE: y top < y bottom (in canvas coordinate)
+  while (real_y_current_pos < real_y_bottom) {
+    // scan a row
+    rasterBitmapRow(image.scanLine(int(real_y_current_pos / mm_per_pixel)), real_y_current_pos, image.width(), reverse, QPointF());
+    // enter the next row (y axis)
+    real_y_current_pos += mm_per_dot;
+    if (real_y_current_pos > real_y_bottom) {
       break;
     }
-    rasterBitmapRow(image.scanLine(int(y_current_real_position / mm_per_pixel)), image.width(), reverse, QPointF());
-    gen_->moveTo(0, mm_per_dot,current_layer_->speed(), 0);
+    if (reverse) {
+      gen_->moveTo(real_x_left, real_y_current_pos, current_layer_->speed(), 0);
+    } else {
+      gen_->moveTo(real_x_right, real_y_current_pos, current_layer_->speed(), 0);
+    }
     reverse = !reverse;
   }
   gen_->useAbsolutePositioning();
@@ -210,67 +226,69 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
 /**
  * @brief
- *        NOTE: Use "relative" position for nearby pixels
  * @param data
  * @param row_pixel_cnt Number of bitmap pixels in the row (Not the number of engraving dot)
  * @param reverse true: left to right; false: right to left
  * @param offset
  * @return
  */
-bool ToolpathExporter::rasterBitmapRow(unsigned char *data, int row_pixel_cnt,
+bool ToolpathExporter::rasterBitmapRow(unsigned char *data, qreal real_y_pos, int row_pixel_cnt,
                                        bool reverse, QPointF offset) {
   qreal mm_per_dot = 1.0 / dpmm_;            // unit size of engraving dot (segment)
   qreal mm_per_pixel = canvas_size_.width() / canvas_mm_ratio_ / row_pixel_cnt;
 
-  qreal x_real_left_boundary = bitmap_dirty_area_.left() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal x_real_right_boundary = bitmap_dirty_area_.right() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
+  qreal real_x_left_boundary = bitmap_dirty_area_.left() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
+  qreal real_x_right_boundary = bitmap_dirty_area_.right() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
 
   bool laser_should_be_on = false; // whether should be on (in the last pixel but haven't been added to gcode)
 
-  qreal x_current_real_position = reverse ? x_real_right_boundary : x_real_left_boundary;
-  // Handle the first pixel in the row (initial state)
-  float p = data[int(x_current_real_position / mm_per_pixel)] > 127 ? 255 : 0;
+  qreal real_x_current_pos = reverse ? real_x_right_boundary : real_x_left_boundary;
+
+  // 1. Handle the first pixel in the row (initial state)
+  float p = data[int(real_x_current_pos / mm_per_pixel)] > 127 ? 255 : 0;
   float laser_pwm = (255.0 - p) / 255.0; // black (0) -> 100% pwm; white (255) -> 0% pwm
   if (laser_pwm < 0.01) laser_pwm = 0;
   if (laser_pwm != 0) {
     laser_should_be_on = true;
   }
-  // Iterate until the boundary
-  while ( (reverse && x_current_real_position > x_real_left_boundary) ||
-          (!reverse && x_current_real_position < x_real_right_boundary) )
+  // 2. Iterate until the boundary
+  while ( (reverse && real_x_current_pos > real_x_left_boundary) ||
+          (!reverse && real_x_current_pos < real_x_right_boundary) )
   {
     if (reverse) {
-      x_current_real_position -= mm_per_dot;
+      real_x_current_pos -= mm_per_dot;
     } else {
-      x_current_real_position += mm_per_dot;
+      real_x_current_pos += mm_per_dot;
     }
-    if (reverse && x_current_real_position <= x_real_left_boundary) { // End of reversed Line
-      x_current_real_position = x_real_left_boundary;
+    if (reverse && real_x_current_pos <= real_x_left_boundary) {
+      // End of reversed Line
+      real_x_current_pos = real_x_left_boundary;
       if (laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-        gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), current_layer_->power());
+        gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), current_layer_->power());
       } else if (!laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-        gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), 0);
+        gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), 0);
       }
       break;
-    } else if (!reverse && x_current_real_position >= x_real_right_boundary) { // End of forward Line
-      x_current_real_position = x_real_right_boundary;
+    } else if (!reverse && real_x_current_pos >= real_x_right_boundary) {
+      // End of forward Line
+      real_x_current_pos = real_x_right_boundary;
       if (laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-        gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), current_layer_->power());
+        gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), current_layer_->power());
       } else if (!laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-        gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), 0);
+        gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), 0);
       }
       break;
     }
 
     // Dots (segments) in the middle
-    float p = data[int(x_current_real_position / mm_per_pixel)] > 127 ? 255 : 0;
+    float p = data[int(real_x_current_pos / mm_per_pixel)] > 127 ? 255 : 0;
     float laser_pwm = (255.0 - p) / 255.0;
     if (laser_pwm < 0.01) laser_pwm = 0; // black (0) -> 100% pwm; white (255) -> 0% pwm
     if (laser_pwm == 0 && laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-      gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), current_layer_->power());
+      gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), current_layer_->power());
       laser_should_be_on = false;
     } else if (laser_pwm != 0 && !laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-      gen_->moveTo(x_current_real_position, 0, current_layer_->speed(), 0);
+      gen_->moveTo(real_x_current_pos, real_y_pos, current_layer_->speed(), 0);
       laser_should_be_on = true;
     }
 
@@ -344,3 +362,20 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
   return true;
 }
 
+QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
+  QImage result_img{src.width(), src.height(), QImage::Format_Grayscale8};
+  bool apply_alpha = src.hasAlphaChannel();
+
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      int grayscale_val = qGray(src.pixel(x, y));
+      if (apply_alpha) {
+        grayscale_val = 255 - (255 - grayscale_val) * qAlpha(src.pixel(x, y)) / 255;
+      }
+      result_img.setPixel(x, y,
+                          grayscale_val <= threshold ? qRgb(0, 0, 0) :
+                          qRgb(255, 255, 255));
+    }
+  }
+  return result_img;
+}

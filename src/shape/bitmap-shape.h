@@ -29,9 +29,9 @@ public:
   void invertPixels();
 
   void setGradient(bool gradient) { gradient_ = gradient; }
-  bool gradient() { return gradient_; }
+  bool gradient() const { return gradient_; }
   void setThrshBrightness(int thrsh) { thrsh_brightness_ = thrsh; }
-  int thrsh_brightness() { return thrsh_brightness_; }
+  int thrsh_brightness() const { return thrsh_brightness_; }
 
   friend class DocumentSerializer;
 
