@@ -15,6 +15,7 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
+  updateMovingComboBox();
 }
 
 LayerParamsPanel::~LayerParamsPanel() {
@@ -66,6 +67,44 @@ void LayerParamsPanel::registerEvents() {
       preset_previous_index_ = index;
     }
   });
+  connect(ui->movingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+    if(index > 0) {
+      LayerPtr new_layer;
+      auto cmd = Commands::Joined();
+      for (auto &layer: main_window_->canvas()->document().layers()) {
+        if(layer->name() == ui->movingComboBox->currentText()) {
+          new_layer = layer;
+          break;
+        }
+      }
+      QList<ShapePtr> selected_items;
+      for (auto &item: main_window_->canvas()->document().selections()) {
+        if (item->layer() == new_layer.get()) {
+          selected_items << item;
+          continue;
+        }
+        ShapePtr clone_item = item->clone();
+        cmd << Commands::AddShape(new_layer.get(), clone_item);
+        cmd << Commands::RemoveShape(item);
+        selected_items << clone_item;
+      }
+      cmd << Commands::Select(&(main_window_->canvas()->document()), selected_items);
+      main_window_->canvas()->document().execute(cmd);
+      main_window_->canvas()->setActiveLayer(new_layer);
+    }
+  });
+}
+
+void LayerParamsPanel::updateMovingComboBox() {
+  if (main_window_->canvas()->document().layers().length() > 1) {
+    ui->movingComboBox->clear();
+    ui->movingComboBox->addItem(layer_->name());
+    for (auto &layer: main_window_->canvas()->document().layers()) {
+      if(layer.get() != layer_) {
+        ui->movingComboBox->addItem(layer->name());
+      }
+    }
+  }
 }
 
 void LayerParamsPanel::updateLayer(Layer *layer) {
@@ -74,4 +113,5 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
+  updateMovingComboBox();
 }
