@@ -149,6 +149,10 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
   }
 }
 
+void GCodePlayer::executeBtnClick() const {
+  ui->executeBtn->click();
+}
+
 void GCodePlayer::updateProgress() {
   ui->progressBarLabel->setText(QString::number(jobs_.last()->progress())+"%");
   ui->progressBar->setValue(jobs_.last()->progress());

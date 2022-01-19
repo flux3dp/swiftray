@@ -28,6 +28,8 @@ public:
 
   void calcRequiredTime(const QString &string);
 
+  void executeBtnClick() const;
+
   QString requiredTime() const;
 
   void setSerialPort();
