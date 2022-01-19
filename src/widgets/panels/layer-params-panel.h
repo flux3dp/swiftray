@@ -2,6 +2,7 @@
 #define LAYER_PARAMS_PANEL_H
 
 #include <QFrame>
+#include <command.h>
 #include <layer.h>
 #include <settings/preset-settings.h>
 #include <widgets/base-container.h>
@@ -31,6 +32,8 @@ private:
   void loadSettings() override;
 
   void registerEvents() override;
+
+  void updateMovingComboBox();
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;

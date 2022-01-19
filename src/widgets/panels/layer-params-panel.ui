@@ -37,7 +37,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>170</height>
+       <height>270</height>
       </size>
      </property>
      <property name="autoFillBackground">
@@ -50,7 +50,7 @@
       <enum>QFrame::Plain</enum>
      </property>
      <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOn</enum>
+      <enum>Qt::ScrollBarAsNeeded</enum>
      </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -74,6 +74,20 @@
        </sizepolicy>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QVBoxLayout" name="moveLayerLayout">
+         <item>
+          <widget class="QLabel" name="labelMoving">
+           <property name="text">
+            <string>Moving to</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="movingComboBox"/>
+         </item>
+        </layout>
+       </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
