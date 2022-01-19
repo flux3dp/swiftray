@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QDialog>
-#include <widgets//base-container.h>
+#include <widgets/base-container.h>
 
 
 QT_BEGIN_NAMESPACE

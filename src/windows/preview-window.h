@@ -6,6 +6,7 @@
 
 #include <QGraphicsView>
 #include <QGestureEvent>
+#include <QTime>
 
 
 namespace Ui {
@@ -26,14 +27,13 @@ public:
 
   void setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_path);
 
-  void setRequiredTime(const QString &required_time);
+  void setRequiredTime(const QTime &required_time);
 
 private:
 
   void registerEvents() override;
 
   Ui::PreviewWindow *ui;
-  int progress_;
   std::shared_ptr<PreviewGenerator> preview_path_;
   QGraphicsView* path_graphics_view_;
 };

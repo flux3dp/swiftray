@@ -691,7 +691,7 @@
       </widget>
      </item>
     </layout>
-    </widget>
+   </widget>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -1177,7 +1177,7 @@
   </action>
   <action name="actionConnect">
    <property name="icon">
-    <iconset resource="../../qml.qrc">
+    <iconset>
      <normaloff>:/images/icon-connection.png</normaloff>:/images/icon-connection.png</iconset>
    </property>
    <property name="text">
@@ -1202,6 +1202,11 @@
    </property>
    <property name="toolTip">
     <string>Start</string>
+   </property>
+  </action>
+  <action name="actionJobDashboardDialog">
+   <property name="text">
+    <string>JobDashboardDialog</string>
    </property>
   </action>
  </widget>

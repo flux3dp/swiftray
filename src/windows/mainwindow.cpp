@@ -12,6 +12,7 @@
 #include <QToolButton>
 #include <QCheckBox>
 #include <constants.h>
+#include <QMessageBox>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -23,6 +24,7 @@
 #include <document-serializer.h>
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
+#include <windows/job-dashboard-dialog.h>
 
 #include "ui_mainwindow.h"
 
@@ -535,8 +537,36 @@ void MainWindow::registerEvents() {
   connect(ui->actionJogging, &QAction::triggered, this, &MainWindow::showJoggingPanel);
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(ui->actionStart, &QAction::triggered, this, [=]() {
+    // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
+    canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
+
+    if ( ! SerialPort::getInstance().isConnected()) {
+      QMessageBox msgbox;
+      msgbox.setText("Error");
+      msgbox.setInformativeText("Please connect to serial port first");
+      msgbox.exec();
+      return;
+    }
+
+    // Prepare GCodes
     generateGcode();
-    gcode_player_->executeBtnClick();
+    // Prepare total required time
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    QTime total_required_time = QTime{0, 0};
+    if (!timestamp_list.empty()) {
+      total_required_time = timestamp_list.last();
+    }
+    // Prepare canvas scene pixmap
+    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
+    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+    canvas_->document().paint(painter.get());
+
+    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJobFromDashboard);
+    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+    job_dashboard_->show();
   });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
   // Complex callbacks
@@ -552,9 +582,14 @@ void MainWindow::registerEvents() {
       setCursor(cursor);
     }
   });
+
   connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
   connect(gcode_player_, &GCodePlayer::generateGcode, this, &MainWindow::generateGcode);
+  connect(gcode_player_, &GCodePlayer::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -1002,6 +1037,9 @@ void MainWindow::showJoggingPanel() {
   });
 }
 
+/**
+ * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
+ */
 void MainWindow::generateGcode() {
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get());
@@ -1012,17 +1050,106 @@ void MainWindow::generateGcode() {
 }
 
 void MainWindow::genPreviewWindow() {
-  auto gen = make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter preview_exporter(gen.get());
+  auto preview_path_generator = make_shared<PreviewGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter preview_exporter(preview_path_generator.get());
   preview_exporter.convertStack(canvas_->document().layers());
   PreviewWindow *pw = new PreviewWindow(this,
                                         canvas_->document().width() / 10,
                                         canvas_->document().height() / 10);
-  auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter gcode_exporter(gen_gcode.get());
+  auto gcode_generator = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter gcode_exporter(gcode_generator.get());
   gcode_exporter.convertStack(canvas_->document().layers());
-  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
-  pw->setPreviewPath(gen);
-  pw->setRequiredTime(gcode_player_->requiredTime());
+  gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
+  QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
+  QTime last_gcode_timestamp{0, 0};
+  if (!timestamp_list.empty()) {
+    last_gcode_timestamp = timestamp_list.last();
+  }
+
+  pw->setPreviewPath(preview_path_generator);
+  pw->setRequiredTime(last_gcode_timestamp);
   pw->show();
+}
+
+/**
+ * @brief Generate a new job from Gcodes in gcode editor (gcode player)
+ */
+void MainWindow::generateJob() {
+  // Delete and pop all finished jobs
+  if (!jobs_.isEmpty()) {
+    qInfo() << "delete finished jobs";
+    if (jobs_.last()->thread() != nullptr && jobs_.last()->isFinished()) {
+      jobs_.last()->deleteLater();
+      jobs_.pop_back();
+    }
+  }
+
+  // Check whether any job still running
+  if (!jobs_.isEmpty()) { // at least one job hasn't finist -> don't start execute
+    qInfo() << "Blocked: Some jobs are still running";
+    return;
+  }
+
+  auto job = new SerialJob(this, "", gcode_player_->getGCode().split("\n"));
+  job->setTimestampList(gcode_player_->calcRequiredTime());
+  jobs_ << job;
+}
+
+/**
+ * @brief launch a new Serial Job (might be other job in the future)
+ */
+void MainWindow::onStartNewJob() {
+  generateJob();
+  if (jobs_.empty()) {
+    return;
+  }
+
+  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
+    qInfo() << "Blocked: No job is ready to run";
+    return;
+  }
+
+  gcode_player_->attachJob(jobs_.last());
+  jobs_.last()->start();
+}
+
+void MainWindow::onStartNewJobFromDashboard() {
+  generateJob();
+  if (jobs_.empty()) {
+    return;
+  }
+
+  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
+    qInfo() << "Blocked: No job is ready to run";
+    return;
+  }
+
+  gcode_player_->attachJob(jobs_.last());
+  job_dashboard_->attachJob(jobs_.last());
+  jobs_.last()->start();
+}
+
+void MainWindow::onStopJob() {
+  // Delete finished jobs
+  for (auto job: jobs_) {
+    if (!jobs_.last()->isFinished()) {
+      jobs_.last()->stop();
+    }
+  }
+}
+
+void MainWindow::onPauseJob() {
+  if (jobs_.isEmpty()) {
+    return;
+  }
+  auto job = jobs_.last();
+  job->pause();
+}
+
+void MainWindow::onResumeJob() {
+  if (jobs_.isEmpty()) {
+    return;
+  }
+  auto job = jobs_.last();
+  job->resume();
 }

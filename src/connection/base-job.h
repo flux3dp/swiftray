@@ -3,6 +3,7 @@
 #include <QMutex>
 #include <QThread>
 #include <QVariant>
+#include <QTime>
 
 /**
     \class BaseJob
@@ -26,6 +27,7 @@ public:
     ERROR_STOPPED,
     ERROR_PAUSED
   };
+  Q_ENUM(Status)
 
   BaseJob(QObject *parent, QString endpoint, QVariant data);
 
@@ -43,19 +45,37 @@ public:
 
   Status status();
 
+  static QString statusToString(Status status);
+
+  void setTimestampList(QList<QTime> &&timestamp_list);
+  void setTimestampList(const QList<QTime> &timestamp_list);
+  QTime getTimestamp(int idx);
+  QTime getTotalRequiredTime();
+  QTime getElapsedTime();
+
+  quint64 getFinishedCmdCnt() { return finished_cmd_cnt_; }
+  inline quint64 getFinishedCmdIdx() { return finished_cmd_cnt_ == 0 ? 0 : (finished_cmd_cnt_ - 1); }
+
 signals:
 
-  void error(const QString &error_message);
-  void statusChanged(BaseJob::Status new_status);
-  void timeout(const QString &s);
+  void error(const QString &);
+  void statusChanged(BaseJob::Status);
+  void progressChanged(QVariant);
+  void elapsedTimeChanged(QTime);
+  void timeout(const QString &);
 
 protected:
 
   void setStatus(Status status);
+  inline void incFinishedCmdCnt() { finished_cmd_cnt_ += 1; }
 
   QMutex mutex_;
 
-  Status status_;
+  Status status_ = Status::READY;
+
+  QList<QTime> timestamp_list_;
+  quint64 finished_cmd_cnt_ = 0;
+
 };
 
 Q_DECLARE_METATYPE(BaseJob::Status);

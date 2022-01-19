@@ -7,7 +7,50 @@
 
 #include <SerialPort/SerialPort.h>
 
-SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant gcode) :
+SerialJob::SerialJob(QObject *parent, QString endpoint, const QVariant &gcode) :
+     BaseJob(parent, endpoint, gcode) {
+  gcode_ = gcode.toStringList();
+
+  planner_total_block_count_ = 1;
+  planner_block_unexecuted_count_ = 0;
+  serial_buffer_size_ = 100;
+
+  waiting_first_ok_ = true;
+  timeout_occurred_ = false;
+  grbl_reset_condition_detected_ = false;
+  last_alarm_code_ = -1; // no alarm
+
+  gcode_cmd_comm_state_ = gcodeCmdCommState::kIdle;
+  ctrl_cmd_state_.cmd = ctrlCmd::kNull;
+  ctrl_cmd_state_.comm_state = ctrlCmdCommState::kIdle;
+  system_cmd_state_.cmd = systemCmd::kNull;
+  system_cmd_state_.comm_state = systemCmdCommState::kIdle;
+
+  //serial_ = std::make_unique<SerialPort>();
+  //connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
+  connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
+
+  pause_flag_ = false;
+  resume_flag_ = false;
+  stop_flag_ = false;
+
+  timeout_timer_ = new QTimer(this);
+  connect(this, &SerialJob::startWaiting, this, &SerialJob::startTimer);
+  connect(this, &SerialJob::waitComplete, this, &SerialJob::stopTimer);
+  connect(timeout_timer_, &QTimer::timeout, this, &SerialJob::timeout);
+
+#ifdef ENABLE_STATUS_REPORT
+  is_starting_report_timer_ = false;
+  realtime_status_report_timer_ = new QTimer(this);
+  realtime_status_report_timer_->setSingleShot(true);
+  connect(this, &SerialJob::startStatusPolling, this, &SerialJob::onStartStatusPolling);
+  connect(this, &SerialJob::endStatusPolling, this, &SerialJob::onStopStatusPolling);
+  connect(realtime_status_report_timer_, &QTimer::timeout, this, &SerialJob::onTimeToGetStatus);
+#endif
+
+}
+
+SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant &&gcode) :
      BaseJob(parent, endpoint, gcode) {
   gcode_ = gcode.toStringList();
 
@@ -66,21 +109,34 @@ void SerialJob::start() {
 }
 
 int SerialJob::progress() {
-  return progressValue_;
+  return progress_value_;
 }
 
+/**
+ * @brief Set pause status flag
+ */
 void SerialJob::pause() {
   pause_flag_ = true;
 }
 
+/**
+ * @brief Set resume status flag
+ */
 void SerialJob::resume() {
   resume_flag_ = true;
 }
 
+/**
+ * @brief Set stop status flag
+ */
 void SerialJob::stop() {
   stop_flag_ = true;
 }
 
+/**
+ * @brief Main loop for job execution
+ *        Inherited from QThread
+ */
 void SerialJob::run() {
   mutex_.lock();
 
@@ -232,9 +288,8 @@ void SerialJob::run() {
       }
 
       current_line_++;
-      progressValue_ = (int)(100 * current_line_ / gcode_.size());
-
-      emit progressChanged();
+      progress_value_ = (int)(100 * current_line_ / gcode_.size());
+      emit progressChanged(progress_value_);
     }
 
     while (1) {
@@ -268,12 +323,12 @@ void SerialJob::run() {
     }
 #endif
 
-    progressValue_ = 100;
+    progress_value_ = 100;
     setStatus(Status::FINISHED);
     mutex_.unlock();
   } catch (...) { // const std::exception& e
     // NOTE: error signal has been emitted before throwing exception
-    progressValue_ = 0;
+    progress_value_ = 0;
     if (status() == Status::ERROR_STOPPING) {
       setStatus(Status::ERROR_STOPPED);
     } else if (status() == Status::STOPPING) {
@@ -311,7 +366,9 @@ void SerialJob::parseResponse(QString line) {
     }
     if (gcode_cmd_comm_state_ != gcodeCmdCommState::kIdle) {
       gcode_cmd_comm_state_ = gcodeCmdCommState::kIdle;
+      incFinishedCmdCnt();
       emit waitComplete();
+      emit elapsedTimeChanged(getElapsedTime());
     }
   } else if (line.startsWith("error:")) { // invalid gcode
     // TODO: terminate when any invalid gcode is detected

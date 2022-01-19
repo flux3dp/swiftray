@@ -107,7 +107,6 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
 PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
      QDialog(parent),
      ui(new Ui::PreviewWindow),
-     progress_(50),
      preview_path_(nullptr),
      BaseContainer() {
   ui->setupUi(this);
@@ -121,10 +120,9 @@ PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
   path_graphics_view_ = new PathGraphicsPreview(scene, ui->frame);
 
   Q_ASSERT_X(ui->frame->layout() != nullptr, "PreviewWindow", "Frame container must exist");
-  static_cast<QHBoxLayout*>(ui->frame->layout())->insertWidget(0, path_graphics_view_);
+  static_cast<QBoxLayout*>(ui->frame->layout())->insertWidget(0, path_graphics_view_);
 
   registerEvents();
-
 }
 
 PreviewWindow::~PreviewWindow() {
@@ -133,11 +131,8 @@ PreviewWindow::~PreviewWindow() {
 
 void PreviewWindow::registerEvents() {
   connect(ui->progress, &QSlider::valueChanged, [=](int value) {
-      progress_ = value;
-
       // Clear all paths on the GraphicsScene
       this->path_graphics_view_->scene()->clear();
-
       // Add background
       this->path_graphics_view_->scene()->addRect(
               this->path_graphics_view_->scene()->sceneRect(),
@@ -161,6 +156,7 @@ void PreviewWindow::registerEvents() {
         this->path_graphics_view_->scene()->addItem(line);
         current_pos = paths[i].target_;
       }
+
       auto end_pen = QPen(Qt::red, 2, Qt::SolidLine);
       end_pen.setCosmetic(true);
       this->path_graphics_view_->scene()->addEllipse(current_pos.x() - 2, current_pos.y() - 2, 4, 4, end_pen);
@@ -180,6 +176,6 @@ void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_pa
   update();
 }
 
-void PreviewWindow::setRequiredTime(const QString &required_time) {
-  ui->requiredTime->setText(tr("Required Time")+": "+required_time);
+void PreviewWindow::setRequiredTime(const QTime &required_time) {
+  ui->requiredTimeLabel->setText(required_time.toString("hh:mm:ss"));
 }

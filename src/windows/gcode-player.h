@@ -7,9 +7,9 @@
 
 #ifndef Q_OS_IOS
 
-#include <QSerialPort>
-#include <connection/serial-job.h>
+#include <connection/base-job.h>
 #include <widgets/base-container.h>
+#include <QTime>
 
 #endif
 
@@ -26,23 +26,19 @@ public:
 
   ~GCodePlayer();
 
-  void calcRequiredTime(const QString &string);
+  QList<QTime> calcRequiredTime();
 
-  void executeBtnClick() const;
-
-  QString requiredTime() const;
-
-  void setSerialPort();
-
-  void setGCode(const QString &string);
+  void setGCode(const QString &gcodes);
+  QString getGCode();
 
   void showError(const QString &string);
 
-  void updateProgress();
+  void attachJob(BaseJob *job);
 
-private slots:
-  void onStatusChanged(BaseJob::Status new_status);
-
+public slots:
+  void onStatusChanged(BaseJob::Status);
+  void onProgressChanged(QVariant);
+  
 private:
 
   void loadSettings() override;
@@ -51,11 +47,8 @@ private:
 
   Ui::GCodePlayer *ui;
 
-  float required_time_;
-
-#ifndef Q_OS_IOS
-  QList<SerialJob *> jobs_;
-#endif
+  BaseJob::Status status_;
+  BaseJob *job_;
 
 signals:
   void exportGcode();
@@ -63,4 +56,9 @@ signals:
   void importGcode();
 
   void generateGcode();
+
+  void startBtnClicked();
+  void stopBtnClicked();
+  void pauseBtnClicked();
+  void resumeBtnClicked();
 };

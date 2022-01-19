@@ -6,21 +6,18 @@
 #ifndef Q_OS_IOS
 
 #include <QTimer>
-#include <QSerialPortInfo>
+#include <SerialPort/SerialPort.h>
 #include <QtMath>
 
 #include <QDebug>
 
 #endif
 
-GCodePlayer *gcode_player_ = nullptr;
-
 GCodePlayer::GCodePlayer(QWidget *parent) :
      QFrame(parent),
      ui(new Ui::GCodePlayer),
      BaseContainer() {
   ui->setupUi(this);
-  gcode_player_ = this;
   initializeContainer();
 }
 
@@ -28,68 +25,30 @@ void GCodePlayer::loadSettings() {}
 
 void GCodePlayer::registerEvents() {
 #ifndef Q_OS_IOS
-  connect(ui->executeBtn, &QAbstractButton::clicked, [=]() {
-    // Delete and pop all finished jobs
-    if (!jobs_.isEmpty()) {
-      qInfo() << "delete finished jobs";
-      // Delete finished/stopped job first
-      if (jobs_.last()->thread() != nullptr && jobs_.last()->isFinished()) {
-        qInfo() << "delete finished job";
-        jobs_.last()->deleteLater();
-        jobs_.pop_back();
-      }
-    }
-
-    // Check whether any job still running
-    if (!jobs_.isEmpty()) { // at least one job hasn't finist -> don't start execute
-      qInfo() << "Blocked: Some jobs are still running";
-      return;
-    }
-
-    // START
-    auto job = new SerialJob(this, "", ui->gcodeText->toPlainText().split("\n"));
-    jobs_ << job;
-    qRegisterMetaType<BaseJob::Status>();
-    qRegisterMetaType<uint32_t>();
-    connect(job, &SerialJob::error, this, &GCodePlayer::showError);
-    connect(job, &SerialJob::progressChanged, this, &GCodePlayer::updateProgress);
-    connect(job, &SerialJob::statusChanged, this, &GCodePlayer::onStatusChanged);
-    job->start();
-  });
-  connect(ui->stopBtn, &QAbstractButton::clicked, [=]() {
-    // Delete finished jobs
-    for (auto job: jobs_) {
-      if (!jobs_.last()->isFinished()) {
-        jobs_.last()->stop();
-      }
-    }
-  });
+  connect(ui->executeBtn, &QAbstractButton::clicked, this, &GCodePlayer::startBtnClicked);
+  connect(ui->stopBtn, &QAbstractButton::clicked, this, &GCodePlayer::stopBtnClicked);
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
     // Pause / Resume
-    if (jobs_.isEmpty()) {
-      return;
-    }
-    auto job = jobs_.last();
-    if (job->status() == SerialJob::Status::RUNNING) {
-      job->pause();
+    if (status_ == BaseJob::Status::RUNNING) {
+      emit pauseBtnClicked();
     } else {
-      job->resume();
+      emit resumeBtnClicked();
     }
   });
-  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
-    qInfo() << "[SerialPort] Success connect!";
-    ui->executeBtn->setText(tr("Execute"));
-    ui->executeBtn->setEnabled(true);
-  });
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
-    qInfo() << "[SerialPort] Disconnected!";
-      ui->executeBtn->setText(tr("Execute"));
-      ui->executeBtn->setEnabled(false);
-  });
-
   connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePlayer::exportGcode);
   connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
   connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
+
+  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+      qInfo() << "[SerialPort] Success connect!";
+      ui->executeBtn->setText(tr("Execute"));
+      ui->executeBtn->setEnabled(true);
+  });
+  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+      qInfo() << "[SerialPort] Disconnected!";
+      ui->executeBtn->setText(tr("Execute"));
+      ui->executeBtn->setEnabled(false);
+  });
 #endif
 }
 
@@ -104,7 +63,8 @@ void GCodePlayer::showError(const QString &msg) {
 }
 
 void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
-  switch (new_status) {
+  status_ = new_status;
+  switch (status_) {
     case BaseJob::Status::READY:
       break;
     case BaseJob::Status::RUNNING:
@@ -126,7 +86,7 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
       ui->pauseBtn->setText(tr("Pause"));
       ui->executeBtn->setEnabled(true);
       ui->stopBtn->setEnabled(false);
-      updateProgress();
+      onProgressChanged(100);
       break;
     case BaseJob::Status::STOPPING:
     case BaseJob::Status::ERROR_STOPPING:
@@ -142,95 +102,91 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
       ui->pauseBtn->setText(tr("Pause"));
       ui->executeBtn->setEnabled(true);
       ui->stopBtn->setEnabled(false);
-      updateProgress();
+      onProgressChanged(0);
       break;
     default:
       break;
   }
 }
 
-void GCodePlayer::executeBtnClick() const {
-  ui->executeBtn->click();
-}
-
-void GCodePlayer::updateProgress() {
-  ui->progressBarLabel->setText(QString::number(jobs_.last()->progress())+"%");
-  ui->progressBar->setValue(jobs_.last()->progress());
+void GCodePlayer::onProgressChanged(QVariant progress) {
+  ui->progressBar->setValue(progress.toInt());
+  ui->progressBarLabel->setText(ui->progressBar->text());
 }
 
 void GCodePlayer::setGCode(const QString &gcode) {
   ui->gcodeText->setPlainText(gcode);
-  this->calcRequiredTime(gcode);
 }
 
-void GCodePlayer::calcRequiredTime(const QString &gcode) {
-  QStringList gcodeList = gcode.split('\n');
+QString GCodePlayer::getGCode() {
+  return ui->gcodeText->toPlainText();
+}
+
+/**
+ * @brief Calculate the required time from the GCodes inside text area
+ * @retval A list of timestamp corresponding to each line of GCode
+ */
+QList<QTime> GCodePlayer::calcRequiredTime() {
+  QList<QTime> timestamp_list;
+  QStringList gcode_list = ui->gcodeText->toPlainText().split('\n');
   int current_line = 0;
   float last_x = 0, last_y = 0, f = 7500, x = 0, y = 0;
-  required_time_ = 0;
-  while (current_line < gcodeList.size()) {
+
+  QTime required_time{0, 0};
+  while (current_line < gcode_list.size()) {
     x = last_x;
     y = last_y;
 
-    if (gcodeList[current_line].indexOf("G1") > -1) {
-      if (gcodeList[current_line].indexOf("F") > -1) {
+    if (gcode_list[current_line].indexOf("G1") > -1) {
+      if (gcode_list[current_line].indexOf("F") > -1) {
         QRegularExpression re("F(\\d+)");
-        QRegularExpressionMatch match = re.match(gcodeList[current_line]);
+        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
         if (match.hasMatch()) {
           f = match.captured(1).toFloat();
         }
       }
-      if (gcodeList[current_line].indexOf("X") > -1) {
+      if (gcode_list[current_line].indexOf("X") > -1) {
         QRegularExpression re("X(\\d+.\\d+)");
-        QRegularExpressionMatch match = re.match(gcodeList[current_line]);
+        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
         if (match.hasMatch()) {
           x = match.captured(1).toFloat();
         }
       }
 
-      if (gcodeList[current_line].indexOf("Y") > -1) {
+      if (gcode_list[current_line].indexOf("Y") > -1) {
         QRegularExpression re("Y(\\d+.\\d+)");
-        QRegularExpressionMatch match = re.match(gcodeList[current_line]);
+        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
         if (match.hasMatch()) {
           y = match.captured(1).toFloat();
         }
       }
 
-      required_time_ +=  qSqrt(qPow(x-last_x, 2) + qPow(y-last_y, 2)) / f * 60;
+      // NOTE: F value is in unit of mm/min
+      required_time = required_time.addMSecs(1000 *
+                  qSqrt(qPow(x-last_x, 2) + qPow(y-last_y, 2)) / f * 60);
 
       last_x = x;
       last_y = y;
     }
 
+    timestamp_list << required_time;
     current_line++;
   }
-}
 
-QString GCodePlayer::requiredTime() const {
-  int num = (int) required_time_;
-  QString required_time_str = "";
-
-  if (num >= 3600) {
-    required_time_str += QString::number(num/3600);
-    required_time_str += "h ";
-    num = num % 3600;
-  }
-
-  if (num >= 60) {
-    required_time_str += QString::number(num/60);
-    required_time_str += "m ";
-    num = num % 60;
-  }
-
-  if (num != 0) {
-    required_time_str += QString::number(num);
-    required_time_str += "s";
-  }
-
-  return required_time_str;
+  return timestamp_list;
 }
 
 GCodePlayer::~GCodePlayer() {
-  gcode_player_ = nullptr;
   delete ui;
+}
+
+void GCodePlayer::attachJob(BaseJob *job) {
+  job_ = job;
+  //qRegisterMetaType<BaseJob::Status>(); // NOTE: This is necessary for passing enum class argument for signal/slot
+  connect(job_, &BaseJob::error, this, &GCodePlayer::showError);
+  connect(job_, &BaseJob::progressChanged, this, &GCodePlayer::onProgressChanged);
+  connect(job_, &BaseJob::statusChanged, this, &GCodePlayer::onStatusChanged);
+
+  onStatusChanged(job_->status());
+  onProgressChanged(0);
 }

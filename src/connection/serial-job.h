@@ -60,7 +60,8 @@ struct systemCmdState {
 class SerialJob : public BaseJob {
 Q_OBJECT
 public:
-  SerialJob(QObject *parent, QString endpoint, QVariant gcode);
+  SerialJob(QObject *parent, QString endpoint, const QVariant &gcode);
+  SerialJob(QObject *parent, QString endpoint, QVariant &&gcode);
 
   ~SerialJob();
 
@@ -74,6 +75,8 @@ public:
 
   int progress() override;
 
+  void parseResponse(QString line);
+
 signals:
 
   void startWaiting(int);
@@ -82,8 +85,6 @@ signals:
   void startStatusPolling();
   void endStatusPolling();
 #endif
-
-  void progressChanged();
 
 private slots:
 
@@ -111,18 +112,15 @@ private:
   int plannerAvailableCnt() { return planner_total_block_count_ - planner_block_unexecuted_count_; }
   bool plannerBufferFull() { return planner_total_block_count_ == planner_block_unexecuted_count_; }
 
-  void parseResponse(QString line);
-  friend class SerialPort;
 
   //QByteArray unprocssed_response_;
-  //std::unique_ptr<SerialPort> serial_;
   QString port_;
   QStringList gcode_;
   QTimer *timeout_timer_;
 
   int baudrate_;
   int current_line_;
-  int progressValue_;
+  int progress_value_;
   unsigned long int wait_timeout_ = 1500;
 
   // action request flag

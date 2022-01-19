@@ -23,6 +23,9 @@
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
 
+#include <windows/job-dashboard-dialog.h>
+#include <connection/serial-job.h>
+
 namespace Ui {
   class MainWindow;
 }
@@ -52,6 +55,13 @@ signals:
   void machineSettingsChanged();
 
   void toolbarTransformChanged(double x, double y, double r, double w, double h);
+
+public slots:
+  void onStartNewJob();
+  void onStartNewJobFromDashboard();
+  void onStopJob();
+  void onPauseJob();
+  void onResumeJob();
 
 private slots:
 
@@ -129,6 +139,7 @@ private:
 
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;
+  JobDashboardDialog *job_dashboard_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;
   ImagePanel *image_panel_;
@@ -138,12 +149,17 @@ private:
   JoggingPanel *jogging_panel_;
   PreferencesWindow *preferences_window_;
 
+#ifndef Q_OS_IOS
+    QList<SerialJob *> jobs_;
+#endif
+
   void newFile();
   void saveFile();
   void saveAsFile();
   void exportGCodeFile();
   void importGCodeFile();
   void generateGcode();
+  void generateJob();
   bool handleUnsavedChange();
 };
 
