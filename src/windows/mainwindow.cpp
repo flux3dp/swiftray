@@ -890,13 +890,13 @@ void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
   QToolButton *minusBtn = new QToolButton(ui->quickWidget);
   QToolButton *plusBtn = new QToolButton(ui->quickWidget);
-  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 100, 50, 30);
+  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 110, 50, 30);
   scale_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  minusBtn->setIcon(QIcon(":/images/icon-plus.png"));
-  minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 100, 40, 30);
+  minusBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
+  minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 110, 40, 30);
   minusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
-  plusBtn->setIcon(QIcon(":/images/icon-plus.png"));
-  plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 100, 40, 30);
+  plusBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
+  plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 110, 40, 30);
   plusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
 
   popScaleMenu_ = new QMenu(scale_block_);
@@ -935,6 +935,9 @@ void MainWindow::setScaleBlock() {
       new_scroll.setY(bottom_right_bound.y());
     }
 
+    scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 110, 50, 30);
+    minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 110, 40, 30);
+    plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 110, 40, 30);
     canvas_->document().setScroll(new_scroll);
   });
   scale_block_->connect(scale25Action_, &QAction::triggered, [=]() {
