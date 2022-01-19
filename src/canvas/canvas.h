@@ -195,7 +195,7 @@ public slots:
 
 private:
   // Basic attributes
-  unique_ptr<Document> doc_;
+  std::unique_ptr<Document> doc_;
   Mode mode_;
   QFont font_;
   Clipboard clipboard_;

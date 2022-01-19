@@ -43,7 +43,7 @@ private:
   QList<QPolygonF> layer_polygons_;
   QPixmap layer_bitmap_;
   LayerPtr current_layer_;
-  unique_ptr<QPainter> layer_painter_;
+  std::unique_ptr<QPainter> layer_painter_;
   BaseGenerator *gen_;
   float dpmm_;
   float travel_speed_;

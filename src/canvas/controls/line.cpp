@@ -18,7 +18,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.moveTo(document().mousePressedCanvasCoord());
   path.lineTo(document().getCanvasCoord(e->pos()));
-  ShapePtr new_line = make_shared<PathShape>(path);
+  ShapePtr new_line = std::make_shared<PathShape>(path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_line),
        Commands::Select(&document(), {new_line})

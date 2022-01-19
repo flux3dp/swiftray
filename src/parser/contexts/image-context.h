@@ -35,7 +35,7 @@ public:
     qInfo() << "xlink::href (from string)" << substr.size();
     QImage img = QImage::fromData(QByteArray::fromBase64(QString::fromStdString(substr).toUtf8()));
     qInfo() << "image size" << img.size();
-    bitmap_ = make_shared<BitmapShape>(img);
+    bitmap_ = std::make_shared<BitmapShape>(img);
   }
 
   void set(tag::attribute::x, double val) { x_ = val; }
@@ -60,7 +60,7 @@ public:
     svgpp_add_shape(bitmap_, bitmap_layer_name);
   }
 
-  string type() {
+  std::string type() {
     return "image";
   }
 
@@ -68,7 +68,7 @@ private:
   std::string fragment_id_;
   double x_, y_;
   double width_, height_;
-  shared_ptr<Shape> bitmap_;
+  std::shared_ptr<Shape> bitmap_;
 };
 
 }

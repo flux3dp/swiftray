@@ -16,10 +16,10 @@ bool Select::isActive() {
 bool Select::mouseMoveEvent(QMouseEvent *e) {
   QPointF start = document().mousePressedCanvasCoord();
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  selection_box_ = QRectF(min(start.x(), canvas_coord.x()),
-                          min(start.y(), canvas_coord.y()),
-                          abs(start.x() - canvas_coord.x()),
-                          abs(start.y() - canvas_coord.y()));
+  selection_box_ = QRectF(std::min(start.x(), canvas_coord.x()),
+                          std::min(start.y(), canvas_coord.y()),
+                          std::abs(start.x() - canvas_coord.x()),
+                          std::abs(start.y() - canvas_coord.y()));
   return true;
 }
 

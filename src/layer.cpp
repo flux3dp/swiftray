@@ -25,7 +25,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      step_height_(0),
      use_diode_(false),
      target_height_(0),
-     cache_(make_unique<CacheStack>(this)),
+     cache_(std::make_unique<CacheStack>(this)),
      cache_valid_(false),
      type_(Type::Line) {}
 
@@ -171,7 +171,7 @@ void Layer::setDocument(Document *doc) {
 // Clone
 
 LayerPtr Layer::clone() {
-  LayerPtr new_layer = make_shared<Layer>(document_, color(), name());
+  LayerPtr new_layer = std::make_shared<Layer>(document_, color(), name());
   new_layer->setSpeed(speed());
   new_layer->setStrength(power());
   new_layer->setRepeat(repeat());

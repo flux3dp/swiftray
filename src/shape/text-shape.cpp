@@ -97,7 +97,7 @@ void TextShape::paint(QPainter *painter) const {
   PathShape::paint(painter);
 }
 
-shared_ptr<Shape> TextShape::clone() const {
-  shared_ptr<TextShape> shape = make_shared<TextShape>(*this);
+std::shared_ptr<Shape> TextShape::clone() const {
+  std::shared_ptr<TextShape> shape = std::make_shared<TextShape>(*this);
   return shape;
 }

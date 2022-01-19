@@ -45,7 +45,7 @@ bool Polygon::mouseReleaseEvent(QMouseEvent *e) {
 
   QPainterPath path;
   path.addPolygon(polygon_);
-  ShapePtr new_polygon = make_shared<PathShape>(path);
+  ShapePtr new_polygon = std::make_shared<PathShape>(path);
   canvas().setMode(Canvas::Mode::Selecting);
   document().execute(
           Commands::AddShape(document().activeLayer(), new_polygon),
