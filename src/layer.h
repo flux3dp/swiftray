@@ -38,7 +38,7 @@ public:
   QList<ShapePtr> &children();
 
   // Clone the children and the layer itself
-  shared_ptr<Layer> clone();
+  std::shared_ptr<Layer> clone();
 
   // Remove specific ShapePtr
   void removeShape(const ShapePtr &shape);
@@ -121,7 +121,7 @@ private:
 
   /** Main properties **/
   mutable bool cache_valid_;
-  mutable unique_ptr<CacheStack> cache_;
+  mutable std::unique_ptr<CacheStack> cache_;
 };
 
-typedef shared_ptr<Layer> LayerPtr;
+typedef std::shared_ptr<Layer> LayerPtr;

@@ -4,8 +4,6 @@
 #include <QPainterPath>
 #include <QRectF>
 
-using namespace std;
-
 class Layer;
 
 class DocumentSerializer;
@@ -92,7 +90,7 @@ public:
   /** Whether the layer of the object is locked */
   bool isLayerLocked() const;
 
-  virtual shared_ptr<Shape> clone() const;
+  virtual std::shared_ptr<Shape> clone() const;
 
   virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
 
@@ -134,4 +132,4 @@ protected:
   bool selected_;
 };
 
-typedef shared_ptr<Shape> ShapePtr;
+typedef std::shared_ptr<Shape> ShapePtr;

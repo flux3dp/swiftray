@@ -53,7 +53,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // TODO (Use layer_painter to manage transform over different sub objects)
   global_transform_ = QTransform();
   layer_polygons_.clear();
-  layer_painter_ = make_unique<QPainter>(&layer_bitmap_);
+  layer_painter_ = std::make_unique<QPainter>(&layer_bitmap_);
   layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
@@ -158,9 +158,9 @@ void ToolpathExporter::outputLayerPathGcode() {
     for (QPointF &point : poly) {
       // Divide a long line into small segments
       if ( (point - current_pos).manhattanLength() / canvas_mm_ratio_ > 5 ) { // At most 5mm per segment
-        int segments = max(2.0,
-                           sqrt(pow(point.x() - current_pos.x(), 2) +
-                                pow(point.y() - current_pos.y(), 2)) / canvas_mm_ratio_ / 5 );
+        int segments = std::max(2.0,
+                           std::sqrt(std::pow(point.x() - current_pos.x(), 2) +
+                                std::pow(point.y() - current_pos.y(), 2)) / canvas_mm_ratio_ / 5 );
         for (int i = 1; i <= segments; i++) {
           QPointF insert_point = (i * point + (segments - i) * current_pos) / float(segments);
           gen_->moveTo(insert_point.x() / canvas_mm_ratio_, insert_point.y() / canvas_mm_ratio_, current_layer_->speed(), current_layer_->power());
@@ -322,14 +322,14 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
   float start_x, end_x;
 
   if (!reverse) {
-    head = max(0, head - init_blank_pixels);
-    tail = min(max_x - 31, tail + init_blank_pixels);
+    head = std::max(0, head - init_blank_pixels);
+    tail = std::min(max_x - 31, tail + init_blank_pixels);
     start_x = pixel_size * head - offset.x();
     end_x = pixel_size * (tail + 1) - offset.x();
     pixels_count = tail - head + 1;
   } else {
-    head = min(max_x - 31, head + init_blank_pixels);
-    tail = max(0, tail - init_blank_pixels);
+    head = std::min(max_x - 31, head + init_blank_pixels);
+    tail = std::max(0, tail - init_blank_pixels);
     start_x = pixel_size * (head + 1) - offset.x();
     end_x = pixel_size * tail - offset.x();
     pixels_count = head - tail + 1;

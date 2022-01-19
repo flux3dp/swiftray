@@ -13,7 +13,7 @@ public:
 
   Shape::Type type() const override;
 
-  shared_ptr<Shape> clone() const override;
+  std::shared_ptr<Shape> clone() const override;
 
   // Getters
 
@@ -49,4 +49,4 @@ private:
   void makePath();
 };
 
-typedef shared_ptr<TextShape *> TextShapePtr;
+typedef std::shared_ptr<TextShape *> TextShapePtr;

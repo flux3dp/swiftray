@@ -38,7 +38,7 @@ public:
 private:
   void calcBoundingBox() const override;
 
-  unique_ptr<QPixmap> bitmap_;
+  std::unique_ptr<QPixmap> bitmap_;
   mutable QImage tinted_image_;            // Cache object
   mutable std::uintptr_t tinted_signature; // Cache object
 

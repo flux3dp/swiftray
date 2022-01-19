@@ -72,7 +72,7 @@ public:
 
   SVGPPDoc &svgppDoc() const { return doc_; }
 
-  virtual string type() {
+  virtual std::string type() {
     return "svg";
   }
 

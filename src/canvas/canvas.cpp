@@ -309,9 +309,9 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
 QPointF Canvas::getTopLeftScrollBoundary() {
 
   qreal scrollX_max =
-       1 * max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
+       1 * std::max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
   qreal scrollY_max =
-       1 * max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
+       1 * std::max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
 
   return QPointF{scrollX_max, scrollY_max};
 }
@@ -322,8 +322,8 @@ QPointF Canvas::getTopLeftScrollBoundary() {
  */
 QPointF Canvas::getBottomRightScrollBoundary() {
   qreal scrollX_min =
-       (-1) * max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
-  qreal scrollY_min = (-1) * max(0.5 * document().height() * document().scale(),
+       (-1) * std::max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
+  qreal scrollY_min = (-1) * std::max(0.5 * document().height() * document().scale(),
                                  2 * document().height() * document().scale() - height());
 
   return QPointF{scrollX_min, scrollY_min};
@@ -336,7 +336,7 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   if (isHoldingCtrl_) {
     mouse_pos = e->position() - widget_offset_;
     double orig_scale = document().scale();
-    double new_scale = min(30.0, max(0.1, document().scale() + e->pixelDelta().y() / document().height()));
+    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->pixelDelta().y() / document().height()));
     document().setScale(new_scale);
 
     new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
@@ -422,7 +422,7 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        double new_scale = min(30.0, max(0.1, document().scale() + nge->value() / 8));
+        double new_scale = std::min(30.0, std::max(0.1, document().scale() + nge->value() / 8));
         document().setScale(new_scale);
 
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
@@ -593,7 +593,7 @@ void Canvas::editUnion() {
     }
   }
 
-  ShapePtr new_shape = make_shared<PathShape>(result);
+  ShapePtr new_shape = std::make_shared<PathShape>(result);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_shape),
        Commands::RemoveSelections(&document()),
@@ -608,7 +608,7 @@ void Canvas::editSubtract() {
   auto *b = dynamic_cast<PathShape *>(document().selections().at(1).get());
   QPainterPath new_path(a->transform().map(a->path()).subtracted(
        b->transform().map(b->path())));
-  auto new_shape = make_shared<PathShape>(new_path);
+  auto new_shape = std::make_shared<PathShape>(new_path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_shape),
        Commands::RemoveSelections(&document()),
@@ -624,7 +624,7 @@ void Canvas::editIntersect() {
   QPainterPath new_path(a->transform().map(a->path()).intersected(
        b->transform().map(b->path())));
   new_path.closeSubpath();
-  ShapePtr new_shape = make_shared<PathShape>(new_path);
+  ShapePtr new_shape = std::make_shared<PathShape>(new_path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_shape),
        Commands::RemoveSelections(&document()),
@@ -652,7 +652,7 @@ void Canvas::editDifference() {
     }
   }
 
-  ShapePtr new_shape = make_shared<PathShape>(result.subtracted(intersection));
+  ShapePtr new_shape = std::make_shared<PathShape>(result.subtracted(intersection));
 
   document().execute(
        Commands::AddShape(document().activeLayer(), new_shape),
@@ -664,7 +664,7 @@ void Canvas::editDifference() {
 void Canvas::addEmptyLayer() {
   int i = 1;
   while (document().findLayerByName(tr("Layer ") + QString::number(i)) != nullptr) i++;
-  LayerPtr new_layer = make_shared<Layer>(&document(), i);
+  LayerPtr new_layer = std::make_shared<Layer>(&document(), i);
   document().execute(
        Commands::AddLayer(new_layer)
   );
@@ -692,7 +692,7 @@ void Canvas::resize() {
     widget_offset_ = widget_->parentWidget()->mapToParent(widget_->geometry().topLeft());
   }
 
-  qreal proper_scale = min((width() - 100) / document().width(),
+  qreal proper_scale = std::min((width() - 100) / document().width(),
                            (height() - 100) / document().height());
   QPointF proper_translate =
        QPointF((width() - document().width() * proper_scale) / 2,
@@ -709,8 +709,8 @@ void Canvas::importImage(QImage &image) {
     image = image.scaled(image.width() * scale, image.height() * scale);
   }
 #endif
-  ShapePtr new_shape = make_shared<BitmapShape>(image);
-  qreal scale = min(1.0, min(document().height() / image.height(),
+  ShapePtr new_shape = std::make_shared<BitmapShape>(image);
+  qreal scale = std::min(1.0, std::min(document().height() / image.height(),
                              document().width() / image.width()));
   qInfo() << "Scale" << scale;
   document().execute(
@@ -744,7 +744,7 @@ void Canvas::genPathOffset() {
     for (auto polygon :dialog->getResult()) {
       p.addPolygon(polygon);
     }
-    ShapePtr new_shape = make_shared<PathShape>(p);
+    ShapePtr new_shape = std::make_shared<PathShape>(p);
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),
             Commands::Select(&document(), {new_shape})
@@ -769,7 +769,7 @@ void Canvas::genImageTrace() {
   int dialog_ret = dialog->exec();
   if(dialog_ret == QDialog::Accepted) {
     // Add trace contours to canvas
-    ShapePtr new_shape = make_shared<PathShape>(dialog->getTrace());
+    ShapePtr new_shape = std::make_shared<PathShape>(dialog->getTrace());
     new_shape->applyTransform(bitmap->transform());
     if (dialog->shouldDeleteImg()) {
       document().execute(
@@ -822,7 +822,7 @@ void Canvas::sharpenImage() {
   int dialogRet = dialog->exec();
   if(dialogRet == QDialog::Accepted) {
     QImage sharpened_image = dialog->getSharpenedImage();
-    ShapePtr new_shape = make_shared<BitmapShape>(sharpened_image);
+    ShapePtr new_shape = std::make_shared<BitmapShape>(sharpened_image);
     new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),
@@ -845,7 +845,7 @@ void Canvas::replaceImage(QImage new_image) {
 
   // Apply the height, width, x_pos, y_pos to new image
   new_image = new_image.scaled(origin_bitmap_shape->image().size());
-  ShapePtr new_bitmap_shape = make_shared<BitmapShape>(new_image);
+  ShapePtr new_bitmap_shape = std::make_shared<BitmapShape>(new_image);
   new_bitmap_shape->setTransform(origin_bitmap_shape->transform());
 
   // Remove old image, Add new image
@@ -875,7 +875,7 @@ void Canvas::cropImage() {
   if(dialog_ret == QDialog::Accepted) {
     // Add trace contours to canvas
     QImage crop_result = dialog->getCrop().toImage();
-    ShapePtr new_shape = make_shared<BitmapShape>(crop_result);
+    ShapePtr new_shape = std::make_shared<BitmapShape>(crop_result);
     new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),
@@ -956,7 +956,7 @@ void Canvas::backToSelectMode() {
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {
-  doc_ = unique_ptr<Document>(document);
+  doc_ = std::unique_ptr<Document>(document);
   doc_->setCanvas(this);
   resize();
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
