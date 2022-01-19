@@ -6,11 +6,13 @@
 #include <shape/bitmap-shape.h>
 
 
-BitmapShape::BitmapShape() : Shape(), tinted_signature(0) {
+BitmapShape::BitmapShape() :
+    Shape(), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
 
 }
 
-BitmapShape::BitmapShape(QImage &image) : Shape(), tinted_signature(0) {
+BitmapShape::BitmapShape(QImage &image) :
+    Shape(), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
   // Process transparent image grayscale
   for (int yy = 0; yy < image.height(); yy++) {
     uchar *scan = image.scanLine(yy);
@@ -24,7 +26,8 @@ BitmapShape::BitmapShape(QImage &image) : Shape(), tinted_signature(0) {
   bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
-BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig), tinted_signature(0) {
+BitmapShape::BitmapShape(const BitmapShape &orig) :
+    Shape(orig), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
   bitmap_ = std::make_unique<QPixmap>(*orig.bitmap_);
   setLayer(orig.layer());
   setTransform(orig.transform());
@@ -50,26 +53,51 @@ void BitmapShape::calcBoundingBox() const {
   rotated_bbox_ = transform().map(QPolygonF(QRectF(bitmap_->rect())));
 }
 
+/**
+ * @brief Return the image to be painted on canvas (apply the layer color and gradient settings)
+ *        Not the origin image
+ * @return
+ */
 QImage &BitmapShape::image() const {
   assert(bitmap_.get() != nullptr);
-  std::uintptr_t parent_color = hasLayer() ? 0 : layer()->color().value();
+  std::uintptr_t parent_color = hasLayer() ? layer()->color().value() : 0;
   std::uintptr_t bitmap_address =
        reinterpret_cast<std::uintptr_t>(bitmap_.get());
-  if (tinted_signature != parent_color + bitmap_address) {
-    tinted_signature = parent_color + bitmap_address;
+  std::uintptr_t gradient_switch = gradient_;
+  std::uintptr_t thrsh = thrsh_brightness_;
+  if (tinted_signature != parent_color + bitmap_address + gradient_switch + thrsh) {
+    tinted_signature = parent_color + bitmap_address + gradient_switch + thrsh;
     qInfo() << "Tinted image" << tinted_signature;
     tinted_image_ = bitmap_->toImage();
-    QImage mask(tinted_image_);
-    QPainter p;
-    p.begin(&mask);
-    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(QRect(0, 0, mask.width(), mask.height()), layer()->color());
-    p.end();
 
-    p.begin(&tinted_image_);
-    p.setCompositionMode(QPainter::CompositionMode_SoftLight);
-    p.drawImage(0, 0, mask);
-    p.end();
+    if ( ! gradient_) {
+      bool apply_alpha = tinted_image_.hasAlphaChannel();
+      for (int y = 0; y < tinted_image_.height(); ++y) {
+        for (int x = 0; x < tinted_image_.width(); ++x) {
+          QRgb pixel = tinted_image_.pixel(x, y);
+          int grayscale_val = qGray(pixel);
+          QRgb bm_p;
+          if (apply_alpha) {
+            grayscale_val = 255 - (255 - grayscale_val) * qAlpha(pixel) / 255;
+          }
+          bm_p = grayscale_val < thrsh_brightness_ ? layer()->color().rgb() : qRgb(255, 255, 255);
+          tinted_image_.setPixel(x, y, bm_p);
+        }
+      }
+    } else {
+      QImage mask(tinted_image_);
+      QPainter p;
+      p.begin(&mask);
+      p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+      p.fillRect(QRect(0, 0, mask.width(), mask.height()), layer()->color());
+      p.end();
+
+      p.begin(&tinted_image_);
+      p.setCompositionMode(QPainter::CompositionMode_SoftLight);
+      p.drawImage(0, 0, mask);
+      p.end();
+    }
+
   }
   return tinted_image_;
 }

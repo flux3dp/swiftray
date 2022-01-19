@@ -147,8 +147,8 @@ private:
   qreal scroll_x_;
   qreal scroll_y_;
   qreal scale_;
-  qreal width_;
-  qreal height_;
+  qreal width_;  // the document width = canvas (mm) * 10
+  qreal height_; // the document height = canvas (mm) * 10
 
   bool screen_changed_;
 

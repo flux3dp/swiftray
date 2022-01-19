@@ -224,13 +224,12 @@ void SerialJob::run() {
 
       // Send the next gcode
       const QByteArray data = QString(gcode_[current_line_] + "\n").toUtf8();
+      qInfo() << "[SerialPort] Write" << gcode_[current_line_];
       if (data.startsWith("$H")) {
         systemCmdNonblockingSend(systemCmd::kHoming);
       } else {
         gcodeCmdNonblockingSend(data.toStdString());
       }
-
-      qInfo() << "[SerialPort] Write" << gcode_[current_line_];
 
       current_line_++;
       progressValue_ = (int)(100 * current_line_ / gcode_.size());
@@ -388,9 +387,10 @@ void SerialJob::timeout() {
 
 void SerialJob::gcodeCmdNonblockingSend(std::string cmd) {
   if (cmd.empty()) return;
+  // WARNING: MUST change comm state before send
+  gcode_cmd_comm_state_ = gcodeCmdCommState::kWaitingResp;
   SerialPort::getInstance().write_some(cmd);
   //serial_->write_some(cmd);
-  gcode_cmd_comm_state_ = gcodeCmdCommState::kWaitingResp;
   //emit startWaiting(kGrblTimeout);
   planner_block_unexecuted_count_++; // only gcode cmd might be added to planner block
 }

@@ -14,6 +14,7 @@
 #include <widgets/panels/doc-panel.h>
 #include <widgets/panels/layer-panel.h>
 #include <widgets/panels/font-panel.h>
+#include <widgets/panels/image-panel.h>
 #include <widgets/panels/jogging-panel.h>
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
@@ -86,6 +87,8 @@ private slots:
 
   void setToolbarTransform();
 
+  //void setToolbarImage();
+
   void setScaleBlock();
 
   void showCanvasPopMenu();
@@ -128,6 +131,7 @@ private:
   GCodePlayer *gcode_player_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;
+  ImagePanel *image_panel_;
   LayerPanel *layer_panel_;
   MachineManager *machine_manager_;
   WelcomeDialog *welcome_dialog_;

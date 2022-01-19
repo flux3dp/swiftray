@@ -131,9 +131,15 @@ qreal Document::width() const { return width_; }
 
 qreal Document::height() const { return height_; }
 
-void Document::setWidth(qreal width) { width_ = width; }
+void Document::setWidth(qreal width) {
+  width_ = width;
+  settings_.width = width;
+}
 
-void Document::setHeight(qreal height) { height_ = height; }
+void Document::setHeight(qreal height) {
+  height_ = height;
+  settings_.height = height;
+}
 
 void Document::setScroll(QPointF scroll) {
   scroll_x_ = scroll.x();

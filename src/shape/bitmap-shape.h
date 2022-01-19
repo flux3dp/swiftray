@@ -28,6 +28,11 @@ public:
 
   void invertPixels();
 
+  void setGradient(bool gradient) { gradient_ = gradient; }
+  bool gradient() const { return gradient_; }
+  void setThrshBrightness(int thrsh) { thrsh_brightness_ = thrsh; }
+  int thrsh_brightness() const { return thrsh_brightness_; }
+
   friend class DocumentSerializer;
 
 private:
@@ -36,4 +41,7 @@ private:
   std::unique_ptr<QPixmap> bitmap_;
   mutable QImage tinted_image_;            // Cache object
   mutable std::uintptr_t tinted_signature; // Cache object
+
+  bool gradient_; // gradient or binarized
+  int thrsh_brightness_; // threshold value for binarization
 };
