@@ -635,6 +635,11 @@ void MainWindow::setConnectionToolBar() {
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
+    if (SerialPort::getInstance().isConnected()) {
+      qInfo() << "[SerialPort] Disconnect";
+      SerialPort::getInstance().stop(); // disconnect
+      return;
+    }
     QString port = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     QString full_port_path;
@@ -647,6 +652,7 @@ void MainWindow::setConnectionToolBar() {
     qInfo() << "[SerialPort] Connecting" << port << baudrate;
     bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
     if (rv == false) {
+      // Do something?
       return;
     }
   });
