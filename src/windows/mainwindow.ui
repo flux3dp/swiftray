@@ -153,6 +153,8 @@
      <string>Window</string>
     </property>
     <addaction name="actionJogging"/>
+    <addaction name="actionLoadClassics"/>
+    <addaction name="actionLoadEssential"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -1202,6 +1204,26 @@
    </property>
    <property name="toolTip">
     <string>Start</string>
+    </property>
+  </action>
+  <action name="actionSaveClassics">
+   <property name="text">
+    <string>SaveClassics</string>
+   </property>
+  </action>
+  <action name="actionSaveEssential">
+   <property name="text">
+    <string>SaveEssential</string>
+   </property>
+  </action>
+  <action name="actionLoadClassics">
+   <property name="text">
+    <string>LoadClassics</string>
+   </property>
+  </action>
+  <action name="actionLoadEssential">
+   <property name="text">
+    <string>LoadEssential</string>
    </property>
   </action>
  </widget>

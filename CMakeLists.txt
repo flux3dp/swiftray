@@ -40,7 +40,8 @@ FILE(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
 FILE(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 FILE(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
 FILE(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
-
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/classicsUI.ini DESTINATION ${CMAKE_BINARY_DIR})
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/essentialUI.ini DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(SOURCES
         ${SRC_DIR}/layer.cpp
