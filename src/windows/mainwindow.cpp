@@ -541,19 +541,19 @@ void MainWindow::registerEvents() {
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassics, &QAction::triggered, [=]() {
-      QSettings settings(QDir::currentPath() + "/classicsUI.ini", QSettings::IniFormat);
+      QSettings settings(":/classicsUI.ini", QSettings::IniFormat);
       settings.setValue("window/windowState", saveState());
   });
   connect(ui->actionSaveEssential, &QAction::triggered, [=]() {
-      QSettings settings(QDir::currentPath() + "/essentialUI.ini", QSettings::IniFormat);
+      QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
       settings.setValue("window/windowState", saveState());
   });
   connect(ui->actionLoadClassics, &QAction::triggered, [=]() {
-      QSettings settings(QDir::currentPath() + "/classicsUI.ini", QSettings::IniFormat);
+      QSettings settings(":/classicsUI.ini", QSettings::IniFormat);
       restoreState(settings.value("window/windowState").toByteArray());
   });
   connect(ui->actionLoadEssential, &QAction::triggered, [=]() {
-      QSettings settings(QDir::currentPath() + "/essentialUI.ini", QSettings::IniFormat);
+      QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
       restoreState(settings.value("window/windowState").toByteArray());
   });
   // Complex callbacks
