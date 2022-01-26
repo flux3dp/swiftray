@@ -11,6 +11,7 @@
 #include <QSerialPortInfo>
 #include <QToolButton>
 #include <QCheckBox>
+#include <constants.h>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -704,7 +705,7 @@ void MainWindow::setToolbarFont() {
   doubleSpinBoxLineHeight->setSingleStep(0.1);
   spinBoxSize->setMaximum(1000);
 
-  QFont initialFont = QFont("Tahoma", 100, QFont::Bold);
+  QFont initialFont = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
 
   fontComboBox->setCurrentFont(initialFont);
   doubleSpinBoxLetterSpacing->setValue(initialFont.letterSpacing());

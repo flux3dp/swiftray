@@ -1,6 +1,7 @@
 #include <QFontComboBox>
 #include "font-panel.h"
 #include "ui_font-panel.h"
+#include <constants.h>
 #include <canvas/canvas.h>
 #include <windows/mainwindow.h>
 
@@ -11,7 +12,7 @@ FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
      BaseContainer() {
   assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
-  setFont(QFont("Tahoma", 100, QFont::Bold), 1.2);
+  setFont(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold), LINE_HEIGHT);
   initializeContainer();
 }
 
