@@ -235,6 +235,9 @@ void SerialJob::run() {
           throw "ERROR_STOPPED GRBL_RESET";
         } else if (status() == Status::STOPPING) {
           throw "STOPPED USER_ABORT";
+        } else if (status() == Status::PAUSED){
+          setStatus(Status::STOPPING);
+          throw "STOPPED USER_ABORT";
         }
       }
       if (timeout_occurred_) { // No response
