@@ -1,11 +1,12 @@
 #include <QDateTime>
 #include <QDebug>
+#include <constants.h>
 #include <shape/text-shape.h>
 
-TextShape::TextShape() noexcept: PathShape() { line_height_ = 1.2; }
+TextShape::TextShape() noexcept: PathShape() { line_height_ = LINE_HEIGHT; }
 
 TextShape::TextShape(QString text, QFont font) : PathShape() {
-  line_height_ = 1.2;
+  line_height_ = LINE_HEIGHT;
   lines_ = text.split("\n");
   font_ = font;
   makePath();

@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
+#include <constants.h>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/group-shape.h>
@@ -35,7 +36,7 @@ Canvas::Canvas(QQuickItem *parent)
        svgpp_parser_(Parser::SVGPPParser()),
        widget_(nullptr),
        fps(0),
-       font_(QFont("Tahoma", 100, QFont::Bold)),
+       font_(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold)),
        timer(new QTimer(this)),
        mem_thread_(new QThread(this)) {
 
