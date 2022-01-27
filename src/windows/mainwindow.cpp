@@ -76,7 +76,6 @@ void MainWindow::loadStyles() {
        ui->toolBar,
        ui->toolBarAlign,
        ui->toolBarBool,
-       ui->toolBarConnection,
        ui->toolBarFile,
        ui->toolBarFlip,
        ui->toolBarGroup,
@@ -554,6 +553,12 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
   connect(gcode_player_, &GCodePlayer::generateGcode, this, &MainWindow::generateGcode);
+  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
+  });
+  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
+  });
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -615,6 +620,7 @@ void MainWindow::setConnectionToolBar() {
   portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
   ui->toolBarConnection->addWidget(portComboBox_);
   ui->toolBarConnection->addWidget(baudComboBox_);
+  ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
   baudComboBox_->addItem("9600");
