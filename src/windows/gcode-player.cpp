@@ -182,7 +182,7 @@ GCodePlayer::~GCodePlayer() {
 
 void GCodePlayer::attachJob(BaseJob *job) {
   job_ = job;
-  //qRegisterMetaType<BaseJob::Status>(); // NOTE: This is necessary for passing enum class argument for signal/slot
+  qRegisterMetaType<BaseJob::Status>(); // NOTE: This is necessary for passing custom type argument for signal/slot
   connect(job_, &BaseJob::error, this, &GCodePlayer::showError);
   connect(job_, &BaseJob::progressChanged, this, &GCodePlayer::onProgressChanged);
   connect(job_, &BaseJob::statusChanged, this, &GCodePlayer::onStatusChanged);

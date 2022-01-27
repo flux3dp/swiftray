@@ -21,6 +21,8 @@ JobDashboardDialog::JobDashboardDialog(const QPixmap &preview, QWidget *parent) 
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
   scene->addPixmap(preview_);
   ui->canvasView->setScene(scene);
+  ui->stopBtn->setEnabled(false);
+  ui->startBtn->setEnabled(true);
 
   initializeContainer();
 }
@@ -39,6 +41,8 @@ JobDashboardDialog::JobDashboardDialog(QTime total_required_time, const QPixmap 
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
   scene->addPixmap(preview_);
   ui->canvasView->setScene(scene);
+  ui->stopBtn->setEnabled(false);
+  ui->startBtn->setEnabled(true);
 
   initializeContainer();
 }
@@ -52,7 +56,8 @@ void JobDashboardDialog::registerEvents() {
   connect(ui->startBtn, &QToolButton::clicked, this, [=](){
     if (status_ == BaseJob::Status::READY ||
         status_ == BaseJob::Status::FINISHED ||
-        status_ == BaseJob::Status::ERROR_STOPPED) {
+        status_ == BaseJob::Status::ERROR_STOPPED ||
+        status_ == BaseJob::Status::STOPPED) {
       emit startBtnClicked(); // try to start a new job
     } else if (status_ == BaseJob::Status::RUNNING) {
       emit pauseBtnClicked();
@@ -125,7 +130,7 @@ void JobDashboardDialog::onElapsedTimeChanged(QTime new_timestamp) {
 
 void JobDashboardDialog::attachJob(BaseJob *job) {
   job_ = job;
-  //qRegisterMetaType<BaseJob::Status>();  // NOTE: This is necessary for passing enum class argument for signal/slot
+  qRegisterMetaType<BaseJob::Status>();  // NOTE: This is necessary for passing custom type argument for signal/slot
   connect(job_, &BaseJob::statusChanged, this, &JobDashboardDialog::onStatusChanged);
   connect(job_, &BaseJob::progressChanged, this, &JobDashboardDialog::onProgressChanged);
   connect(job_, &BaseJob::elapsedTimeChanged, this, &JobDashboardDialog::onElapsedTimeChanged);

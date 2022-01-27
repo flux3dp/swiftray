@@ -11,7 +11,6 @@
 */
 class BaseJob : public QThread {
 Q_OBJECT
-    //Q_ENUMS(Status)
 public:
   enum class Status {
     READY,
@@ -78,4 +77,4 @@ protected:
 
 };
 
-Q_DECLARE_METATYPE(BaseJob::Status);
+//Q_DECLARE_METATYPE(BaseJob::Status);
