@@ -32,15 +32,10 @@ PathGraphicsPreview::PathGraphicsPreview(QGraphicsScene *scene, QWidget *parent)
   setDragMode(ScrollHandDrag); // mouse drag
 
   grabGesture(Qt::PinchGesture);
-  //setBackgroundBrush(Qt::green);
-  //setStyleSheet("border: 1px solid red");
 
   //setAttribute(Qt::WA_AcceptTouchEvents);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn); // Qt::ScrollBarAlwaysOff
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);   // Qt::ScrollBarAlwaysOff
-
-  //setTransformationAnchor(QGraphicsView::AnchorViewCenter);
-  //setResizeAnchor(QGraphicsView::AnchorViewCenter);
 }
 
 bool PathGraphicsPreview::event(QEvent *e) {
@@ -75,8 +70,6 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
       zoom_fixed_point_scene_ = mapToScene(pinch_gesture->centerPoint().toPoint());
       zooming_ = true;
     }
-    //qInfo() << "pinchTriggered(): zoom by" <<
-    //    pinch_gesture->scaleFactor() << "->" << currentStepScaleFactor;
     if (this->scaleFactor * pinch_gesture->scaleFactor() >= 1) {
 
       this->scaleFactor *= pinch_gesture->scaleFactor();
@@ -92,7 +85,6 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
   }
   if (pinch_gesture->state() == Qt::GestureFinished) {
     zooming_ = false;
-    //qInfo() << "gesture finished";
   }
 }
 
@@ -115,7 +107,6 @@ PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
   initializeContainer();
 
   auto scene = new QGraphicsScene(this);
-  //scene->setBackgroundBrush(Qt::gray);
   scene->setSceneRect(0, 0, width, height); // in unit of mm
 
   path_graphics_view_ = new PathGraphicsPreview(scene, ui->frame);
@@ -151,8 +142,6 @@ void PreviewWindow::registerEvents() {
       auto pen_red = QPen(Qt::red, 0, Qt::SolidLine);
       for (int i = 0; i < ui->progress->value(); i++) {
         auto line = new QGraphicsLineItem(QLineF(current_pos, paths[i].target_));
-        //line->setFlag(QGraphicsItem::ItemIsMovable);
-        //line->setFlag(QGraphicsItem::ItemIsSelectable);
         if (paths[i].power_ > 0) {
           line->setPen(pen_black);
         } else {
@@ -167,6 +156,16 @@ void PreviewWindow::registerEvents() {
 
       update();
   });
+}
+
+void PreviewWindow::showEvent(QShowEvent *event) {
+  QDialog::showEvent(event);
+  path_graphics_view_->fitInView(path_graphics_view_->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void PreviewWindow::resizeEvent(QResizeEvent *event) {
+  QDialog::resizeEvent(event);
+  path_graphics_view_->fitInView(path_graphics_view_->sceneRect(), Qt::KeepAspectRatio);
 }
 
 PreviewGenerator *PreviewWindow::previewPath() const {

@@ -31,6 +31,8 @@ public:
 private:
 
   void registerEvents() override;
+  void showEvent(QShowEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
 
   Ui::PreviewWindow *ui;
   int progress_;
