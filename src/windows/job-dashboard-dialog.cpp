@@ -91,6 +91,10 @@ void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       break;
+    case BaseJob::Status::STARTING:
+      ui->startBtn->setEnabled(false);
+      ui->stopBtn->setEnabled(false);
+      break;
     case BaseJob::Status::RUNNING:
       ui->startBtn->setEnabled(true); // act as pause btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-pause.png" : ":/images/icon-pause.png"));

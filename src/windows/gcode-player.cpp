@@ -66,6 +66,14 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
   status_ = new_status;
   switch (status_) {
     case BaseJob::Status::READY:
+      ui->pauseBtn->setEnabled(false);
+      ui->executeBtn->setEnabled(true);
+      ui->stopBtn->setEnabled(false);
+      break;
+    case BaseJob::Status::STARTING:
+      ui->pauseBtn->setEnabled(false);
+      ui->executeBtn->setEnabled(false);
+      ui->stopBtn->setEnabled(false);
       break;
     case BaseJob::Status::RUNNING:
       qInfo() << "Running";

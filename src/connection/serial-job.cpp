@@ -167,6 +167,7 @@ void SerialJob::run() {
   }
 
   try {
+    setStatus(Status::STARTING);
     // if the last job is terminated by an alarm, it will require an unlock
     systemCmdBlockingSend(systemCmd::kUnlock);
 
