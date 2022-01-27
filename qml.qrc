@@ -59,6 +59,8 @@
         <file>images/icon-trace.png</file>
         <file>images/icon-preview.png</file>
         <file>images/icon-start.png</file>
+        <file>images/icon-pause.png</file>
+        <file>images/icon-stop.png</file>
         <file>images/beamo.png</file>
         <file>images/beambox.png</file>
         <file>images/dark/icon-adjust.png</file>
@@ -114,6 +116,8 @@
         <file>images/dark/icon-trace.png</file>
         <file>images/dark/icon-preview.png</file>
         <file>images/dark/icon-start.png</file>
+        <file>images/dark/icon-pause.png</file>
+        <file>images/dark/icon-stop.png</file>
         <file>images/dark/beamo.png</file>
         <file>images/dark/beambox.png</file>
         <file>images/icon.icns</file>

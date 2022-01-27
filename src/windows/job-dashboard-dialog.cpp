@@ -72,10 +72,12 @@ void JobDashboardDialog::loadStyles() {
   ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
   ui->startBtn->setGeometry(ui->startBtn->geometry().left() + 100, this->size().height() - 100, 50, 50);
   ui->startBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; }");
+  ui->startBtn->setIconSize(QSize{50, 50});
 
-  //ui->stopBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-stop.png" : ":/images/icon-stop.png"));
-  //ui->stopBtn->setGeometry(ui->stopBtn->geometry().left() + 140, this->size().height() - 140, 70, 70);
-  //ui->stopBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; }");
+  ui->stopBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-stop.png" : ":/images/icon-stop.png"));
+  ui->stopBtn->setGeometry(ui->stopBtn->geometry().left() + 100, this->size().height() - 100, 50, 50);
+  ui->stopBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; }");
+  ui->stopBtn->setIconSize(QSize{50, 50});
 }
 
 void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
@@ -86,18 +88,22 @@ void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
   switch (status_) {
     case BaseJob::Status::READY:
       ui->startBtn->setEnabled(true); // act as start btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       break;
     case BaseJob::Status::RUNNING:
       ui->startBtn->setEnabled(true); // act as pause btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-pause.png" : ":/images/icon-pause.png"));
       ui->stopBtn->setEnabled(true);
       break;
     case BaseJob::Status::PAUSED:
       ui->startBtn->setEnabled(true); // act as resume btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(true);
       break;
     case BaseJob::Status::FINISHED:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       onProgressChanged(100);
       break;
@@ -109,6 +115,7 @@ void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
     case BaseJob::Status::STOPPED:
     case BaseJob::Status::ERROR_STOPPED:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       onProgressChanged(0);
       break;

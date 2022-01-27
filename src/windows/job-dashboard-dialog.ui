@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>547</width>
-    <height>464</height>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -94,6 +94,12 @@
       <widget class="QToolButton" name="stopBtn">
        <property name="text">
         <string>STOP</string>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>50</width>
+         <height>50</height>
+        </size>
        </property>
       </widget>
      </item>
