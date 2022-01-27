@@ -36,6 +36,8 @@ public:
 
   Q_INVOKABLE void homing();
 
+  Q_INVOKABLE void laser();
+
   Q_INVOKABLE void laserPulse();
 
   Q_INVOKABLE void moveRelatively(float x, float y);
@@ -53,6 +55,8 @@ public:
 private:
 
   QString port_name_;
+
+  bool is_laser_on_ = false;
 
 #ifndef Q_OS_IOS
   QList<SerialJob *> jobs_;
