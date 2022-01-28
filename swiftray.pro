@@ -136,6 +136,7 @@ FORMS += \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/spooler-panel.ui \
     src/widgets/panels/transform-panel.ui \
+    src/windows/job-dashboard-dialog.ui \
     src/windows/machine-manager.ui \
     src/windows/machine-monitor.ui \
     src/windows/new-machine-dialog.ui \
