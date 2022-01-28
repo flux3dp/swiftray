@@ -96,7 +96,7 @@ public:
   }
 
   void turnOnLaser() override {
-    str_stream_ << "M3" << std::endl;
+    str_stream_ << "M3S0" << std::endl;
     power_ = 1;
   }
 

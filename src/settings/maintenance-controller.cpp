@@ -32,6 +32,20 @@ void MaintenanceController::homing() {
   sendJob(job_str);
 }
 
+void MaintenanceController::laser() {
+  QString job_str;
+  if (is_laser_on_) {
+    job_str = "G1S0\nM5";
+    qInfo() << "laser off!";
+    is_laser_on_ = false;
+  } else {
+    job_str = "$X\nM3\nG1F1000\nG1S10";
+    is_laser_on_ = true;
+    qInfo() << "laser on!";
+  }
+  sendJob(job_str);
+}
+
 void MaintenanceController::laserPulse() {
   QString job_str = "M5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
   qInfo() << "laser pulse!";

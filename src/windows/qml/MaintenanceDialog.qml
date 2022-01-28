@@ -891,16 +891,32 @@ Rectangle {
     Rectangle {
         x: 44
         y: 553
-        width: 450
+        width: 200
         height: 50  
         color: "transparent"
 
         Button {
-            width: 450
+            width: 200
             height: 60
             text: qsTr("Laser Pulse")
             font.pointSize: 28
             onClicked: controller.laserPulse()
+        }
+    }
+
+    Rectangle {
+        x: 294
+        y: 553
+        width: 200
+        height: 50  
+        color: "transparent"
+
+        Button {
+            width: 200
+            height: 60
+            text: qsTr("Laser")
+            font.pointSize: 28
+            onClicked: controller.laser()
         }
     }
 

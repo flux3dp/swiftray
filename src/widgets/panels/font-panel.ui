@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>248</width>
-    <height>185</height>
+    <height>189</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -150,25 +150,25 @@
          <number>5</number>
         </property>
         <property name="topMargin">
-         <number>5</number>
+         <number>0</number>
         </property>
         <property name="rightMargin">
          <number>5</number>
         </property>
         <property name="bottomMargin">
-         <number>5</number>
+         <number>0</number>
         </property>
         <item>
          <widget class="QToolButton" name="boldToolButton">
           <property name="minimumSize">
            <size>
-            <width>26</width>
-            <height>0</height>
+            <width>25</width>
+            <height>25</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>26</width>
+            <width>25</width>
             <height>16777215</height>
            </size>
           </property>
@@ -182,6 +182,12 @@
            <iconset resource="../../../qml.qrc">
             <normaloff>:/images/icon-bold.png</normaloff>:/images/icon-bold.png</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>25</width>
+            <height>25</height>
+           </size>
+          </property>
           <property name="checkable">
            <bool>true</bool>
           </property>
@@ -191,13 +197,13 @@
          <widget class="QToolButton" name="italicToolButton">
           <property name="minimumSize">
            <size>
-            <width>26</width>
-            <height>0</height>
+            <width>25</width>
+            <height>25</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>26</width>
+            <width>25</width>
             <height>16777215</height>
            </size>
           </property>
@@ -208,6 +214,12 @@
            <iconset resource="../../../qml.qrc">
             <normaloff>:/images/icon-I.png</normaloff>:/images/icon-I.png</iconset>
           </property>
+          <property name="iconSize">
+           <size>
+            <width>25</width>
+            <height>25</height>
+           </size>
+          </property>
           <property name="checkable">
            <bool>true</bool>
           </property>
@@ -217,13 +229,13 @@
          <widget class="QToolButton" name="underlineToolButton">
           <property name="minimumSize">
            <size>
-            <width>26</width>
-            <height>0</height>
+            <width>25</width>
+            <height>25</height>
            </size>
           </property>
           <property name="maximumSize">
            <size>
-            <width>26</width>
+            <width>25</width>
             <height>16777215</height>
            </size>
           </property>
@@ -233,6 +245,12 @@
           <property name="icon">
            <iconset resource="../../../qml.qrc">
             <normaloff>:/images/icon-U.png</normaloff>:/images/icon-U.png</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>25</width>
+            <height>25</height>
+           </size>
           </property>
           <property name="checkable">
            <bool>true</bool>

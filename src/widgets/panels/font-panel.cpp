@@ -4,6 +4,7 @@
 #include <constants.h>
 #include <canvas/canvas.h>
 #include <windows/mainwindow.h>
+#include <windows/osxwindow.h>
 
 FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -14,6 +15,7 @@ FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
   ui->setupUi(this);
   setFont(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold), LINE_HEIGHT);
   initializeContainer();
+  setLayout();
 }
 
 void FontPanel::loadStyles() {
@@ -112,6 +114,12 @@ void FontPanel::setFont(QFont font, float line_height) {
   qInfo() << "font.italic()" << font.italic();
   ui->underlineToolButton->setChecked(font.underline());
   qInfo() << "font.underline()" << font.underline();
+}
+
+void FontPanel::setLayout() {
+  ui->boldToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-bold.png" : ":/images/icon-bold.png"));
+  ui->italicToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-I.png" : ":/images/icon-I.png"));
+  ui->underlineToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-U.png" : ":/images/icon-U.png"));
 }
 
 void FontPanel::setLineHeight(double line_height) {

@@ -25,6 +25,8 @@ public:
 
   void setFont(QFont font, float line_height);
 
+  void setLayout();
+
   void setLineHeight(double line_height);
 
 private:
