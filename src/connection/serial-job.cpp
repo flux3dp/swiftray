@@ -293,7 +293,11 @@ void SerialJob::run() {
 
       current_line_++;
       //progress_value_ = (int)(100 * current_line_ / gcode_.size());
-      progress_value_ = 100 * QTime{0, 0}.secsTo(getElapsedTime()) / QTime{0, 0}.secsTo(getTotalRequiredTime());
+      if (QTime{0, 0}.secsTo(getTotalRequiredTime()) == 0) {
+        progress_value_ = 100;
+      } else {
+        progress_value_ = 100 * QTime{0, 0}.secsTo(getElapsedTime()) / QTime{0, 0}.secsTo(getTotalRequiredTime());
+      }
       emit progressChanged(progress_value_);
     }
 
