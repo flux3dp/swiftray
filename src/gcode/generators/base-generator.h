@@ -62,7 +62,7 @@ public:
 
   virtual void endHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
 
-  std::string toString() const { return str_stream_.str(); };
+  virtual std::string toString() { return str_stream_.str(); };
 
   std::stringstream &stream() { return str_stream_; }
 

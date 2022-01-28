@@ -673,6 +673,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionPreview"/>
+   <addaction name="actionFrame"/>
    <addaction name="actionStart"/>
   </widget>
   <widget class="QDockWidget" name="imageDock">
@@ -1243,6 +1244,20 @@
   <action name="actionJobDashboardDialog">
    <property name="text">
     <string>JobDashboardDialog</string>
+   </property>
+  </action>
+  <action name="actionOutlineScanning">
+   <property name="text">
+    <string>OutlineScanning</string>
+   </property>
+  </action>
+  <action name="actionFrame">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-frame.png</normaloff>:/images/icon-frame.png</iconset>
+   </property>
+   <property name="text">
+    <string>Framing</string>
    </property>
   </action>
  </widget>
