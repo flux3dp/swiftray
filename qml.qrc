@@ -54,11 +54,12 @@
         <file>images/icon-save.png</file>
         <file>images/icon-undo.png</file>
         <file>images/icon-redo.png</file>
-        <file>images/icon-connect.png</file>
         <file>images/icon-pathoffset.png</file>
         <file>images/icon-trace.png</file>
         <file>images/icon-preview.png</file>
         <file>images/icon-start.png</file>
+        <file>images/icon-link.png</file>
+        <file>images/icon-unlink.png</file>
         <file>images/beamo.png</file>
         <file>images/beambox.png</file>
         <file>images/dark/icon-adjust.png</file>
@@ -109,11 +110,12 @@
         <file>images/dark/icon-save.png</file>
         <file>images/dark/icon-undo.png</file>
         <file>images/dark/icon-redo.png</file>
-        <file>images/dark/icon-connect.png</file>
         <file>images/dark/icon-pathoffset.png</file>
         <file>images/dark/icon-trace.png</file>
         <file>images/dark/icon-preview.png</file>
         <file>images/dark/icon-start.png</file>
+        <file>images/dark/icon-link.png</file>
+        <file>images/dark/icon-unlink.png</file>
         <file>images/dark/beamo.png</file>
         <file>images/dark/beambox.png</file>
         <file>images/icon.icns</file>
