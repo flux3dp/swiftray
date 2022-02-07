@@ -37,6 +37,8 @@ private:
     Ui::ImageTraceDialog *ui;
     void registerEvents() override;
     void loadStyles() override;
+    void showEvent(QShowEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
     QImage src_image_grayscale_;
     QImage ImageToGrayscale(const QImage &image);

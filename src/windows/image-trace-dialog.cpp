@@ -368,3 +368,13 @@ void ImageTraceDialog::setThresholdSliderWithoutEmit(int thres) {
 bool ImageTraceDialog::shouldDeleteImg() {
   return ui->deleteImgCheckBox->isChecked();
 }
+
+void ImageTraceDialog::showEvent(QShowEvent *event) {
+  QDialog::showEvent(event);
+  ui->traceGraphicsView->fitInView(ui->traceGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+}
+
+void ImageTraceDialog::resizeEvent(QResizeEvent *event) {
+  QDialog::resizeEvent(event);
+  ui->traceGraphicsView->fitInView(ui->traceGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+}
