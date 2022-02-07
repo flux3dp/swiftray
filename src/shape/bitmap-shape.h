@@ -39,9 +39,9 @@ private:
   void calcBoundingBox() const override;
 
   std::unique_ptr<QPixmap> bitmap_;
-  mutable QImage tinted_image_;            // Cache object
-  mutable std::uintptr_t tinted_signature; // Cache object
+  mutable QImage tinted_image_;                // Cache object
+  mutable std::uintptr_t tinted_signature = 0; // Cache object
 
-  bool gradient_; // gradient or binarized
-  int thrsh_brightness_; // threshold value for binarization
+  bool gradient_ = true; // gradient or binarized
+  int thrsh_brightness_ = 128; // threshold value for binarization
 };
