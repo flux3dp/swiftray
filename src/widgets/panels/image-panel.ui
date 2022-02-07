@@ -23,11 +23,11 @@
    <string notr="true"/>
   </property>
   <property name="lineWidth">
-   <number>0</number>
+   <number>1</number>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QCheckBox" name="checkBox">
+    <widget class="QCheckBox" name="gradientCheckBox">
      <property name="text">
       <string>Gradient mode</string>
      </property>
@@ -37,29 +37,20 @@
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="thresholdFrame">
-     <property name="styleSheet">
-      <string notr="true"/>
+    <widget class="QWidget" name="brightnessThresholdGroup" native="true">
+     <property name="enabled">
+      <bool>false</bool>
      </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
-     </property>
-     <property name="lineWidth">
-      <number>0</number>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="brightnessThresholdLabel">
         <property name="text">
          <string>Threshold Brightness</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QSlider" name="horizontalSlider">
+       <widget class="QSlider" name="brightnessThresholdSlider">
         <property name="enabled">
          <bool>false</bool>
         </property>
