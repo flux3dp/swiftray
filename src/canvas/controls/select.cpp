@@ -37,6 +37,10 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       }
     }
     document().setSelections(selected);
+    if (selected.size() == 1) {
+      document().setActiveLayer(selected.first()->layer()->name());
+      emit canvas().layerChanged();
+    }
   }
 
   canvas().setMode(Canvas::Mode::Selecting);

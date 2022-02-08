@@ -204,6 +204,8 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     if (hit != nullptr) {
       if (!hit->selected()) {
         document().setSelection(hit);
+        document().setActiveLayer(hit->layer()->name());
+        emit layerChanged();
       }
     } else {
       document().setSelection(nullptr);
@@ -280,6 +282,8 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
         case Shape::Type::Text:
           qInfo() << "[Canvas] Double clicked text" << hit.get();
           document().setSelection(hit);
+          document().setActiveLayer(hit->layer()->name());
+          emit layerChanged();
           ctrl_text_.setTarget(hit);
           setMode(Mode::TextDrawing);
           break;
@@ -569,6 +573,10 @@ void Canvas::editSelectAll() {
   }
 
   document().setSelections(all_shapes);
+  if (all_shapes.size() == 1) {
+    document().setActiveLayer(all_shapes.first()->layer()->name());
+    emit layerChanged();
+  }
 }
 
 void Canvas::editGroup() {
