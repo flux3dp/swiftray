@@ -476,6 +476,7 @@ void MainWindow::loadWidgets() {
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
   ui->fontDock->setWidget(font_panel_);
+  ui->imageDock->setWidget(image_panel_);
   ui->layerDock->setWidget(layer_panel_);
   ui->documentDock->setWidget(doc_panel_);
 #ifdef Q_OS_IOS

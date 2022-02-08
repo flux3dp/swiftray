@@ -12,12 +12,9 @@ ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
     main_window_(main_window)
 {
     ui->setupUi(this);
-    ui->checkBox->setCheckState(Qt::Checked);
-    ui->checkBox->setEnabled(false);
-    ui->horizontalSlider->setValue(128);
-    ui->horizontalSlider->setEnabled(false);
-    setVisible(false);
-    setEnabled(true);
+    ui->gradientCheckBox->setCheckState(Qt::Checked);
+    ui->brightnessThresholdSlider->setValue(128);
+    setEnabled(false);
     initializeContainer();
 }
 
@@ -31,38 +28,41 @@ void ImagePanel::registerEvents() {
     if (main_window_->canvas()->document().selections().size() == 1 &&
         main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
-      ui->checkBox->setCheckState(selected_img->gradient() ? Qt::Checked : Qt::Unchecked);
-      ui->horizontalSlider->setValue(selected_img->thrsh_brightness());
-      ui->checkBox->setEnabled(true);
-      ui->horizontalSlider->setEnabled(true);
+      setEnabled(true);
+      // NOTE:
+      //     For unknown reason, the group widget and slider inside it must be enabled manually
+      //     From Qt documentation, all child widgets should be enabled when the parent is enabled
+      //     (if not individually specified)
+      ui->brightnessThresholdGroup->setEnabled(true);
+      ui->brightnessThresholdSlider->setEnabled(true);
 
+      ui->gradientCheckBox->setCheckState(selected_img->gradient() ? Qt::Checked : Qt::Unchecked);
+      ui->brightnessThresholdSlider->setValue(selected_img->thrsh_brightness());
       if (selected_img->gradient()) {
-        ui->thresholdFrame->setVisible(false);
+        ui->brightnessThresholdGroup->setVisible(false);
       } else {
-        ui->thresholdFrame->setVisible(true);
+        ui->brightnessThresholdGroup->setVisible(true);
       }
-      setVisible(true);
     } else {
-      ui->checkBox->setEnabled(false);
-      ui->horizontalSlider->setEnabled(false);
-      setVisible(false);
+      // Disable the parent widget will disable all child widgets as well
+      setEnabled(false);
     }
   });
 
-  connect(ui->checkBox, QOverload<int>::of(&QCheckBox::stateChanged), [=](int state) {
+  connect(ui->gradientCheckBox, QOverload<int>::of(&QCheckBox::stateChanged), [=](int state) {
     if (main_window_->canvas()->document().selections().size() == 1 &&
         main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
       selected_img->setGradient(state);
       if (state) {
-        ui->thresholdFrame->setVisible(false);
+        ui->brightnessThresholdGroup->setVisible(false);
       } else {
-        ui->thresholdFrame->setVisible(true);
+        ui->brightnessThresholdGroup->setVisible(true);
       }
     }
   });
 
-  connect(ui->horizontalSlider, QOverload<int>::of(&QSlider::valueChanged), [=](int value) {
+  connect(ui->brightnessThresholdSlider, QOverload<int>::of(&QSlider::valueChanged), [=](int value) {
       if (main_window_->canvas()->document().selections().size() == 1 &&
           main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
         BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
