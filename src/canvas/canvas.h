@@ -114,6 +114,8 @@ public slots:
 
   void editSelectAll();
 
+  void editClear();
+
   void editGroup();
 
   void editUngroup();
