@@ -571,16 +571,16 @@ void MainWindow::registerEvents() {
   });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
-  connect(ui->actionSaveClassics, &QAction::triggered, [=]() {
-      QSettings settings(":/classicsUI.ini", QSettings::IniFormat);
+  connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
+      QSettings settings(QDir::currentPath() + "/classicUI.ini", QSettings::IniFormat);
       settings.setValue("window/windowState", saveState());
   });
   connect(ui->actionSaveEssential, &QAction::triggered, [=]() {
-      QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
+      QSettings settings(QDir::currentPath() + "/essentialUI.ini", QSettings::IniFormat);
       settings.setValue("window/windowState", saveState());
   });
-  connect(ui->actionLoadClassics, &QAction::triggered, [=]() {
-      QSettings settings(":/classicsUI.ini", QSettings::IniFormat);
+  connect(ui->actionLoadClassic, &QAction::triggered, [=]() {
+      QSettings settings(":/classicUI.ini", QSettings::IniFormat);
       restoreState(settings.value("window/windowState").toByteArray());
   });
   connect(ui->actionLoadEssential, &QAction::triggered, [=]() {
