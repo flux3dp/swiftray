@@ -33,13 +33,13 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
 
   bitmap_dirty_area_ = QRectF();
 
-  for (auto &layer : layers) {
-    if (!layer->isVisible()) {
+  for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
+    if (!(*layer_rit)->isVisible()) {
       continue;
     }
-    qInfo() << "[Export] Output layer: " << layer->name();
-    for (int i = 0; i < layer->repeat(); i++) {
-      convertLayer(layer);
+    qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
+    for (int i = 0; i < (*layer_rit)->repeat(); i++) {
+      convertLayer((*layer_rit));
     }
   }
 
