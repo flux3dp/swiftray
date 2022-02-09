@@ -152,8 +152,7 @@
     <property name="title">
      <string>Window</string>
     </property>
-    <addaction name="actionJogging"/>
-    <addaction name="actionLoadClassics"/>
+    <addaction name="actionLoadClassic"/>
     <addaction name="actionLoadEssential"/>
    </widget>
    <addaction name="menu_File"/>
@@ -1206,9 +1205,9 @@
     <string>Start</string>
    </property>
   </action>
-  <action name="actionSaveClassics">
+  <action name="actionSaveClassic">
    <property name="text">
-    <string>SaveClassics</string>
+    <string>SaveClassic</string>
    </property>
   </action>
   <action name="actionSaveEssential">
@@ -1216,14 +1215,14 @@
     <string>SaveEssential</string>
    </property>
   </action>
-  <action name="actionLoadClassics">
+  <action name="actionLoadClassic">
    <property name="text">
-    <string>LoadClassics</string>
+    <string>Classic</string>
    </property>
   </action>
   <action name="actionLoadEssential">
    <property name="text">
-    <string>LoadEssential</string>
+    <string>Essential</string>
    </property>
   </action>
   <action name="actionJobDashboardDialog">

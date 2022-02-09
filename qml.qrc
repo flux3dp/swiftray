@@ -134,6 +134,6 @@
         <file>i18n/zh-Hant-TW.qm</file>
         <file>qtquickcontrols2.conf</file>
         <file>essentialUI.ini</file>
-        <file>classicsUI.ini</file>
+        <file>classicUI.ini</file>
     </qresource>
 </RCC>
