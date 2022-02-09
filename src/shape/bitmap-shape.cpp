@@ -6,17 +6,24 @@
 #include <shape/bitmap-shape.h>
 
 
-BitmapShape::BitmapShape() :
-    Shape(), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
+BitmapShape::BitmapShape() : Shape()
+{
 
 }
 
-BitmapShape::BitmapShape(QImage &image) :
-    Shape(), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
+BitmapShape::BitmapShape(QImage &image) : Shape()
+{
+  // NOTE: Force a format conversion first (to 32-bit = 4-byte format).
+  // Otherwise, we should handle each kind of format with different pixel data size in scanLine later
+  if (image.hasAlphaChannel()) {
+    image = image.convertToFormat(QImage::Format_ARGB32);
+  } else {
+    image = image.convertToFormat(QImage::Format_RGB32);
+  }
   // Process transparent image grayscale
   for (int yy = 0; yy < image.height(); yy++) {
     uchar *scan = image.scanLine(yy);
-    int depth = 4;
+    int depth = 4; // 32-bit = 4-byte
     for (int xx = 0; xx < image.width(); xx++) {
       QRgb *rgbpixel = reinterpret_cast<QRgb *>(scan + xx * depth);
       int gray = qGray(*rgbpixel);
@@ -26,8 +33,8 @@ BitmapShape::BitmapShape(QImage &image) :
   bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
-BitmapShape::BitmapShape(const BitmapShape &orig) :
-    Shape(orig), tinted_signature(0), gradient_(true), thrsh_brightness_(128) {
+BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig)
+{
   bitmap_ = std::make_unique<QPixmap>(*orig.bitmap_);
   setLayer(orig.layer());
   setTransform(orig.transform());
