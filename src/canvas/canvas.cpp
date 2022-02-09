@@ -727,7 +727,7 @@ void Canvas::importImage(QImage &image) {
  */
 void Canvas::genPathOffset() {
   QList<ShapePtr> &shapes = document().selections();
-  PathOffsetDialog *dialog = new PathOffsetDialog();
+  PathOffsetDialog *dialog = new PathOffsetDialog(QSizeF{document().width(), document().height()});
   // initialize dialog
   for (auto &shape : shapes) {
     auto path_shape_ptr = dynamic_cast<PathShape *>(shape.get());

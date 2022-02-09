@@ -9,11 +9,11 @@
 #include <QDebug>
 #include <clipper/clipper.hpp>
 #include <list>
-
-PathOffsetDialog::PathOffsetDialog(QWidget *parent) :
-        QDialog(parent), ui(new Ui::PathOffsetDialog) {
+PathOffsetDialog::PathOffsetDialog(QSizeF document_size, QWidget *parent) :
+        QDialog(parent), ui(new Ui::PathOffsetDialog),
+        document_size_(document_size) {
   ui->setupUi(this);
-
+  qInfo() << document_size_;
   initializeContainer();
   reset();
   ui->graphicsView->setMinScale(0.4);
@@ -36,7 +36,7 @@ void PathOffsetDialog::reset() {
 
   // reset graphicsview
   QGraphicsScene *scene = new QGraphicsScene();
-  scene->setSceneRect(QRectF{0, 0, 3000, 2000});
+  scene->setSceneRect(QRectF{0, 0, document_size_.width(), document_size_.height()});
   scene->setBackgroundBrush(Qt::white);
   ui->graphicsView->setScene(scene);
 }
@@ -205,4 +205,9 @@ QList<QPolygonF> PathOffsetDialog::extractUnidirectionalOffsetPaths(
   }
 
   return extract_inward ? inward_list : outward_list;
+}
+
+void PathOffsetDialog::showEvent(QShowEvent *event) {
+  QDialog::showEvent(event);
+  ui->graphicsView->fitInView(ui->graphicsView->sceneRect(), Qt::KeepAspectRatio);
 }

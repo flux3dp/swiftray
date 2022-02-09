@@ -12,7 +12,8 @@ class PathOffsetDialog : public QDialog, BaseContainer {
 Q_OBJECT
 
 public:
-    explicit PathOffsetDialog(QWidget *parent = nullptr);
+    PathOffsetDialog(QSizeF document_size, QWidget *parent = nullptr);
+    PathOffsetDialog(QWidget *parent = nullptr) = delete;
 
     ~PathOffsetDialog() override;
 
@@ -25,6 +26,7 @@ private:
     Ui::PathOffsetDialog *ui;
     void registerEvents() override;
     void loadStyles() override;
+    void showEvent(QShowEvent *event) override;
 
     ClipperLib::Paths convertQtToClipper(bool closed_path);
     void convertClipperToQt(ClipperLib::Paths clipper_result);
@@ -36,6 +38,7 @@ private:
     QTransform scale_down_ = QTransform::fromScale(scale_factor_invert_, scale_factor_invert_);
     QList<QPolygonF> path_list_; // source path
     QList<QPolygonF> offset_path_list_; // result
+    QSizeF document_size_ = QSizeF{3000, 2000}; // default value
 
     constexpr static int ITEM_ID_KEY = 0;
     constexpr static char PATH_OFFSET_ITEM_ID[] = "PATH_OFFSET";
