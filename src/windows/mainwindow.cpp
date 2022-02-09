@@ -136,13 +136,16 @@ void MainWindow::onScaleMinusClicked() {
   canvas_->setScaleWithCenter(qreal(qRound((canvas_->document().scale() - 0.051)*10))/10);
 }
 
+/**
+ * @brief Open Scene File or import SVG file
+ */
 void MainWindow::openFile() {
   if ( ! handleUnsavedChange()) {
     return;
   }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
-  QString file_name = QFileDialog::getOpenFileName(this, "Open SVG", default_open_dir,
-                                                   tr("SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)"));
+  QString file_name = QFileDialog::getOpenFileName(this, "Open File", default_open_dir,
+                                                   tr("Files (*.bb *.bvg *.svg)"));
 
   if (!QFile::exists(file_name))
     return;
