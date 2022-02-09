@@ -42,6 +42,7 @@ void ImageCropDialog::showEvent(QShowEvent *event) {
   if (!src_image_.isNull()) {
     initBackgroundDisplay();
   }
+  ui->graphicsView->fitInView(ui->graphicsView->sceneRect(), Qt::KeepAspectRatio);
 }
 
 void ImageCropDialog::loadImage(const QImage &img) {

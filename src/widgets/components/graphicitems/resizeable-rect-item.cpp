@@ -5,10 +5,11 @@
 ResizeableRectItem::ResizeableRectItem(qreal x, qreal y, qreal width, qreal height, QGraphicsItem *parent):
     QGraphicsRectItem(x, y, width, height, parent) {
   setAcceptHoverEvents(true);
-  //setFlag(QGraphicsItem::ItemIsMovable, true);
   setFlag(QGraphicsItem::ItemIsSelectable, true);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
   setFlag(QGraphicsItem::ItemIsFocusable, true);
+  // Make outline fixed-width during scaling of view
+  setFlag(QGraphicsItem::ItemIgnoresTransformations, true);
   updateHandlesPos();
 }
 
@@ -19,6 +20,8 @@ ResizeableRectItem::ResizeableRectItem(const QRectF &rect, QGraphicsItem *parent
   setFlag(QGraphicsItem::ItemIsSelectable, true);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
   setFlag(QGraphicsItem::ItemIsFocusable, true);
+  // Make outline fixed-width during scaling of view
+  setFlag(QGraphicsItem::ItemIgnoresTransformations, true);
   updateHandlesPos();
 }
 
@@ -29,6 +32,8 @@ ResizeableRectItem::ResizeableRectItem(QGraphicsItem *parent):
   setFlag(QGraphicsItem::ItemIsSelectable, true);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
   setFlag(QGraphicsItem::ItemIsFocusable, true);
+  // Make outline fixed-width during scaling of view
+  setFlag(QGraphicsItem::ItemIgnoresTransformations, true);
   updateHandlesPos();
 }
 
@@ -91,13 +96,13 @@ void ResizeableRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
 void ResizeableRectItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                                QWidget *widget) {
   painter->setBrush(QBrush(QColor(125, 125, 125, 50)));
-  painter->setPen(QPen(QColor(50, 149, 168), 1.0, Qt::SolidLine));
-  //painter->fillRect(this->rect(), QBrush(QColor(125, 125, 125, 200)));
+  QPen pen1{QColor(50, 149, 168), 0, Qt::SolidLine};
+  painter->setPen(pen1);
   painter->drawRect(this->rect());
 
-  //painter->setRenderHint(QPainter::Antialiasing)
   painter->setBrush(QBrush(QColor(50, 149, 168, 255)));
-  painter->setPen(QPen(QColor(50, 149, 168, 255), 1.0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+  QPen pen2{QColor(50, 149, 168, 255), 0, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin};
+  painter->setPen(pen2);
   for (int i = 0; i < 8; i++) {
     //if self.handleSelected is None or handle == self.handleSelected:
     if (std::get<0>(handles_[i]) != HandleIdx::kHandleNone) {
@@ -156,12 +161,15 @@ void ResizeableRectItem::updateHandlesPos() {
           std::make_tuple(HandleIdx::kHandleBottomRight, QRectF(b.right() - s, b.bottom() - s, s, s));
 }
 
+/**
+ * @brief Resize the resizeable rectangle based on current mouse position
+ * @param mouse_pos The real-time mouse position in scaled graphicsscene coordinate 
+ *                  when any resize handle is being pressed
+ */
 void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
-
   qreal offset = handle_size_ + handle_space_;
   QRectF bounding_rect = boundingRect();
   QRectF rect = this->rect();
-  QPointF diff = QPointF(0, 0);
 
   prepareGeometryChange();
 
@@ -174,8 +182,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
       from_y = mouse_press_rect_.top();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setX(to_x - from_x);
-      diff.setY(to_y - from_y);
       bounding_rect.setLeft(to_x);
       bounding_rect.setTop(to_y);
       rect.setLeft(bounding_rect.left() + offset);
@@ -185,7 +191,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
     case HandleIdx::kHandleTopMiddle:
       from_y = mouse_press_rect_.top();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setY(to_y - from_y);
       bounding_rect.setTop(to_y);
       rect.setTop(bounding_rect.top() + offset);
       setRect(rect);
@@ -195,8 +200,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
       from_y = mouse_press_rect_.top();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setX(to_x - from_x);
-      diff.setY(to_y - from_y);
       bounding_rect.setRight(to_x);
       bounding_rect.setTop(to_y);
       rect.setRight(bounding_rect.right() - offset);
@@ -206,7 +209,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
     case HandleIdx::kHandleMiddleLeft:
       from_x = mouse_press_rect_.left();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
-      diff.setX(to_x - from_x);
       bounding_rect.setLeft(to_x);
       rect.setLeft(bounding_rect.left() + offset);
       setRect(rect);
@@ -214,7 +216,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
     case HandleIdx::kHandleMiddleRight:
       from_x = mouse_press_rect_.right();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
-      diff.setX(to_x - from_x);
       bounding_rect.setRight(to_x);
       rect.setRight(bounding_rect.right() - offset);
       setRect(rect);
@@ -224,8 +225,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
       from_y = mouse_press_rect_.bottom();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setX(to_x - from_x);
-      diff.setY(to_y - from_y);
       bounding_rect.setLeft(to_x);
       bounding_rect.setBottom(to_y);
       rect.setLeft(bounding_rect.left() + offset);
@@ -235,7 +234,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
     case HandleIdx::kHandleBottomMiddle:
       from_y = mouse_press_rect_.bottom();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setY(to_y - from_y);
       bounding_rect.setBottom(to_y);
       rect.setBottom(bounding_rect.bottom() - offset);
       setRect(rect);
@@ -245,8 +243,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
       from_y = mouse_press_rect_.bottom();
       to_x = from_x + mouse_pos.x() - mouse_press_pos_.x();
       to_y = from_y + mouse_pos.y() - mouse_press_pos_.y();
-      diff.setX(to_x - from_x);
-      diff.setY(to_y - from_y);
       bounding_rect.setRight(to_x);
       bounding_rect.setBottom(to_y);
       rect.setRight(bounding_rect.right() - offset);
@@ -255,7 +251,6 @@ void ResizeableRectItem::interactiveResize(QPointF mouse_pos) {
       break;
     default:
       return;
-      break;
   }
 
   updateHandlesPos();
