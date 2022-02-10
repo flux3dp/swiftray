@@ -96,13 +96,19 @@ void LayerParamsPanel::registerEvents() {
 }
 
 void LayerParamsPanel::updateMovingComboBox() {
+  ui->movingComboBox->blockSignals(true);
+  ui->movingComboBox->clear();
+  ui->movingComboBox->blockSignals(false);
   if (main_window_->canvas()->document().layers().length() > 1) {
-    ui->movingComboBox->clear();
     ui->movingComboBox->addItem(layer_->name());
     for (auto &layer: main_window_->canvas()->document().layers()) {
       if(layer.get() != layer_) {
         ui->movingComboBox->addItem(layer->name());
       }
+    }
+
+    if (ui->movingComboBox->count() > main_window_->canvas()->document().layers().size()) {
+      ui->movingComboBox->removeItem(0);
     }
   }
 }
