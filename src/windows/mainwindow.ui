@@ -610,6 +610,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionCrop"/>
+   <addaction name="actionInvert"/>
+   <addaction name="actionSharpen"/>
    <addaction name="actionTrace"/>
   </widget>
   <widget class="QToolBar" name="toolBarVector">
@@ -1157,11 +1160,19 @@
    </property>
   </action>
   <action name="actionSharpen">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-sharpen.png</normaloff>:/images/icon-sharpen.png</iconset>
+   </property>
    <property name="text">
     <string>Sharpen</string>
    </property>
   </action>
   <action name="actionInvert">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-invert.png</normaloff>:/images/icon-invert.png</iconset>
+   </property>
    <property name="text">
     <string>Invert</string>
    </property>
@@ -1172,6 +1183,10 @@
    </property>
   </action>
   <action name="actionCrop">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-crop.png</normaloff>:/images/icon-crop.png</iconset>
+   </property>
    <property name="text">
     <string>Crop</string>
    </property>
