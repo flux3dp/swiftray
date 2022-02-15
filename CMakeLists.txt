@@ -130,5 +130,8 @@ target_link_libraries(swiftray Qt::SerialPort)
 #target_link_libraries(swiftray Boost::thread)
 
 target_link_libraries(swiftray LibXml2::LibXml2)
-
+if (MINGW)
+    target_link_libraries(swiftray ws2_32)
+    message(STATUS "Link ws2_32")
+endif()
 #add_subdirectory(tests)
