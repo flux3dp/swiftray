@@ -142,7 +142,10 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
     isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
-  transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  if (!transformControl().isScaleLock()) {
+    isTempScaleLock_ = true;
+    transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  }
 
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyPressEvent(e))
@@ -169,7 +172,10 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
     isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
-  transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  if (isTempScaleLock_) {
+    isTempScaleLock_ = false;
+    transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
+  }
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyReleaseEvent(e))
       return;

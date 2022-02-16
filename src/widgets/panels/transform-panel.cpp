@@ -83,6 +83,11 @@ void TransformPanel::registerEvents() {
     ui->widthSpinBox->setValue(w);
     ui->heightSpinBox->setValue(h);
   });
+
+  connect(ui->lockBtn, &QToolButton::toggled, [=](bool checked) {
+    ui->lockBtn->setChecked(checked);
+    setScaleLock(checked);
+  });
 }
 
 bool TransformPanel::isScaleLock() const {
@@ -91,6 +96,7 @@ bool TransformPanel::isScaleLock() const {
 
 void TransformPanel::setScaleLock(bool scaleLock) {
   scale_locked_ = scaleLock;
+  main_window_->canvas()->transformControl().setScaleLock(scaleLock);
 }
 
 void TransformPanel::updateControl() {
