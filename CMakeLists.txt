@@ -131,4 +131,4 @@ target_link_libraries(swiftray Qt::SerialPort)
 
 target_link_libraries(swiftray LibXml2::LibXml2)
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
