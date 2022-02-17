@@ -17,7 +17,7 @@ ELSE (POTRACE_LIBRARIES AND POTRACE_INCLUDE_DIRS)
     FIND_LIBRARY (POTRACE_LIBRARY
             NAMES libpotrace.a potrace libpotrace
             PATHS
-            C:/Dev/potrace/potrace-1.16/lib
+            C:/Dev/potrace/potrace-1.16/src/.libs
             )
 
     if (POTRACE_LIBRARY)

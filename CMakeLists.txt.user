@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 6.0.0, 2022-01-17T16:05:32. -->
+<!-- Written by QtCreator 6.0.0, 2022-02-17T13:49:38. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -118,7 +118,8 @@
 -DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
 -DBoost_THREAD_LIBRARY_DEBUG:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
 -DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.dll
-</value>
+-DPOTRACE_LIBRARY:FILEPATH=C:/Dev/potrace/potrace-1.16/src/.libs/libpotrace-0.dll
+-DCMAKE_CXX_FLAGS:STRING=-Os</value>
     <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Dev\build-swiftray3-Desktop_Qt_5_15_2_MinGW_64_bit-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
@@ -170,13 +171,20 @@
 -DLIBXML2_XMLLINT_EXECUTABLE:FILEPATH=C:/Dev/LibXml2/bin/xmllint.exe
 -DBOOST_ROOT:PATH=C:/Dev/boost/boost_1_70_0
 -DBOOST_INCLUDEDIR:PATH=C:/Dev/boost/boost_1_70_0/boost
--DBOOST_LIBRARYDIR:PATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2
--DBoost_DATE_TIME_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_date_time-vc142-mt-x64-1_70.lib
--DBoost_CHRONO_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_chrono-vc142-mt-x64-1_70.lib
--DBoost_ATOMIC_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_atomic-vc142-mt-x64-1_70.lib
--DBoost_THREAD_LIBRARY_DEBUG:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.lib
--DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/Dev/boost/boost_1_70_0/lib64-msvc-14.2/boost_thread-vc142-mt-x64-1_70.lib</value>
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:\Dev\build-swiftray3-Desktop_Qt_5_15_2_MinGW_64_bit-Release</value>
+-DBOOST_LIBRARYDIR:PATH=C:/boost_1_70_0/boost-build/lib
+-DBoost_THREAD_LIBRARY_RELEASE:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_thread-mgw81-mt-x64-1_70.a
+-DBoost_THREAD_LIBRARY_DEBUG:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_thread-mgw81-mt-x64-1_70.a
+-DBoost_SYSTEM_LIBRARY_RELEASE:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_system-mgw81-mt-x64-1_70.a
+-DBoost_SYSTEM_LIBRARY_DEBUG:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_system-mgw81-mt-x64-1_70.a
+-DBoost_DATE_TIME_LIBRARY_RELEASE:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_date_time-mgw81-mt-x64-1_70.a
+-DBoost_DATE_TIME_LIBRARY_DEBUG:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_date_time-mgw81-mt-x64-1_70.a
+-DBoost_CHRONO_LIBRARY_RELEASE:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_chrono-mgw81-mt-x64-1_70.a
+-DBoost_CHRONO_LIBRARY_DEBUG:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_chrono-mgw81-mt-x64-1_70.a
+-DBoost_ATOMIC_LIBRARY_RELEASE:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_atomic-mgw81-mt-x64-1_70.a
+-DBoost_ATOMIC_LIBRARY_DEBUG:FILEPATH=C:/boost_1_70_0/boost-build/lib/libboost_atomic-mgw81-mt-x64-1_70.a
+-DCMAKE_CXX_FLAGS:STRING=-DWIN32_LEAN_AND_MEAN</value>
+    <value type="int" key="EnableQmlDebugging">1</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">C:/Dev/build-swiftray3-Desktop_Qt_5_15_2_MinGW_64_bit-Release</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <valuelist type="QVariantList" key="CMakeProjectManager.MakeStep.BuildTargets">
@@ -229,6 +237,7 @@
        <value type="QString">all</value>
       </valuelist>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
+      <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Build</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.MakeStep</value>
      </valuemap>
      <value type="qlonglong" key="ProjectExplorer.BuildStepList.StepsCount">1</value>
@@ -242,6 +251,7 @@
        <value type="QString">clean</value>
       </valuelist>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
+      <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">Build</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">CMakeProjectManager.MakeStep</value>
      </valuemap>
      <value type="qlonglong" key="ProjectExplorer.BuildStepList.StepsCount">1</value>
