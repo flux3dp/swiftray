@@ -31,6 +31,9 @@ public slots:
     void onSharpnessChanged(int new_sharpness_val);
     void onRadiusChanged(int new_radius_val);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 private:
 
     Ui::ImageSharpenDialog *ui;

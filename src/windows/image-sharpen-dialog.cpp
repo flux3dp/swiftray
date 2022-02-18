@@ -254,3 +254,7 @@ void ImageSharpenDialog::setRadiusSliderWithoutEmit(int radius) {
   ui->radiusSlider->setValue(radius);
   ui->radiusSlider->blockSignals(false);
 }
+
+void ImageSharpenDialog::showEvent(QShowEvent *event) {
+  ui->sharpenGraphicsView->fitInView(ui->sharpenGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+}
