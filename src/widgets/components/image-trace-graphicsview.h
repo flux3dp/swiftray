@@ -27,9 +27,8 @@ public:
     };
 
     ImageTraceGraphicsView(QWidget *parent = nullptr);
-    void reset();
-
-    void updateBackgroundPixmap(QPixmap background_img);
+    void reset() override;
+    void updateBackgroundPixmap(QPixmap background_img) override;
     void updateTrace(const QPainterPath& contours);
     void setShowPoints(bool enable);
     void clearSelectionArea();
@@ -53,7 +52,6 @@ private:
     constexpr static char IMAGE_TRACE_ITEM_ID[] = "TRACE";
 
     // Might replace the following with a template function
-    QGraphicsPixmapItem* getBackgroundPixmapItem();
     QGraphicsRectItem* getSelectionAreaRectItem();
     QGraphicsContourPathsItem* getTraceContourPathsItem();
 };

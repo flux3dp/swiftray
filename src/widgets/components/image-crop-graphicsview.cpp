@@ -19,9 +19,10 @@ ImageCropGraphicsView::ImageCropGraphicsView(QWidget *parent)
 
 void ImageCropGraphicsView::mousePressEvent(QMouseEvent *event) {
   QGraphicsView::mousePressEvent(event);
+  QPointF mouse_pos_in_crop_coord = transform().map(mapToScene(event->pos()));
   // Handle click outside -> create a new crop area
   if ( crop_area_ &&
-      !crop_area_->contains(mapToScene(event->pos())) ) {
+      !crop_area_->contains( mouse_pos_in_crop_coord) ) {
     creating_new_crop_area_ = true;
     crop_area_->setVisible(false); // hided temporarily
   }
@@ -32,8 +33,8 @@ void ImageCropGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
     if ( crop_area_ ) {
       crop_area_->updateRect(
               QRectF(
-                      mapToScene(rubberBandRect().topLeft()),
-                      mapToScene(rubberBandRect().bottomRight())
+                      transform().map(mapToScene(rubberBandRect().topLeft())),
+                      transform().map(mapToScene(rubberBandRect().bottomRight()))
                       )
                     );
       crop_area_->setVisible(true);
@@ -41,6 +42,10 @@ void ImageCropGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
     creating_new_crop_area_ = false;
   }
   QGraphicsView::mouseReleaseEvent(event);
+}
+
+void ImageCropGraphicsView::pinchGestureHandler(QPinchGesture *pg) {
+  // Override base, disable zoom in/out
 }
 
 /**
@@ -58,34 +63,20 @@ void ImageCropGraphicsView::updateBackgroundPixmap(QPixmap background_pixmap) {
     item->setZValue(BACKGROUND_IMAGE_Z_INDEX); // overlapped by any other items
   }
 
+  QRectF scene_rect{0, 0, qreal(background_pixmap.width()), qreal(background_pixmap.height())};
+  setSceneRect(scene_rect);
+  fitInView(sceneRect(), Qt::KeepAspectRatio);
   // Set crop area to full image
+  // NOTE: Since ResizeableRectItem has ItemIgnoresTransformations flag set, 
+  //       We need to manually perform the transform
   if (crop_area_) {
-    crop_area_->updateRect(QRectF(0, 0, background_pixmap.width(), background_pixmap.height()));
-    crop_area_->setMaxBoundary(QRectF(0, 0, background_pixmap.width(), background_pixmap.height()));
-    setSceneRect(crop_area_->boundingRect());
-    resetTransform();
-    fitInView(crop_area_->boundingRect(), Qt::KeepAspectRatio);
+    crop_area_->updateRect(transform().mapRect(scene_rect));
   } else {
-    crop_area_ = new ResizeableRectItem(0, 0, background_pixmap.width(), background_pixmap.height());
+    crop_area_ = new ResizeableRectItem(transform().mapRect(scene_rect));
     crop_area_->setZValue(CROP_AREA_Z_INDEX);
     crop_area_->setData(ITEM_ID_KEY, CROP_AREA_ITEM_ID);
-    crop_area_->setMaxBoundary(QRectF(0, 0, background_pixmap.width(), background_pixmap.height()));
     this->scene()->addItem(crop_area_);
-    //setSceneRect(-10, -10, crop_area_->boundingRect().width(), crop_area_->boundingRect().height());
-    setSceneRect(crop_area_->boundingRect());
-    resetTransform();
-    fitInView(crop_area_->boundingRect(), Qt::KeepAspectRatio);
   }
-}
-
-QGraphicsPixmapItem* ImageCropGraphicsView::getBackgroundPixmapItem() {
-  for (auto item: scene()->items()) {
-    if (item->data(ITEM_ID_KEY).toString().compare(QString(BACKGROUND_IMAGE_ITEM_ID)) == 0 &&
-        qgraphicsitem_cast<QGraphicsPixmapItem *>(item)) {
-      return qgraphicsitem_cast<QGraphicsPixmapItem *>(item);
-    }
-  }
-  return nullptr;
 }
 
 /**
@@ -106,7 +97,7 @@ ResizeableRectItem* ImageCropGraphicsView::getCropAreaItem() {
 QPixmap ImageCropGraphicsView::getCrop() {
   if (crop_area_ != nullptr && getBackgroundPixmapItem() != nullptr) {
     return getBackgroundPixmapItem()->pixmap().copy(
-            crop_area_->rect().toRect()
+  transform().inverted().mapRect(crop_area_->rect().toRect())
     );
   }
   return QPixmap();

@@ -28,7 +28,6 @@ public:
     QRectF boundingRect();
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget);
-    void setMaxBoundary(QRectF max_boundary) { max_boundary_ = max_boundary; }
     void updateRect(QRectF new_rect);
 
     HandleIdx handleAt(QPointF point);
@@ -50,9 +49,6 @@ private:
     QPointF mouse_press_pos_;
     QRectF mouse_press_rect_;
 
-    const qreal handle_size_ = 16.0;
-    const qreal handle_space_ = -8.0;
-
-    QRectF max_boundary_ = QRectF(); // Constraint for resize
-
+    const qreal handle_size_ = 8.0;
+    const qreal handle_space_ = -4.0;
 };

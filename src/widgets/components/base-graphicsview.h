@@ -7,21 +7,20 @@ class BaseGraphicsView: public QGraphicsView {
 public:
     BaseGraphicsView(QWidget *parent = nullptr);
     bool event(QEvent *e) override;
-    void reset();
     void resetTransform();
-    void updateBackgroundPixmap(QPixmap background_img);
     void setMinScale(qreal min_scale) { min_scale_ = min_scale; }
+    virtual void reset();
+    virtual void updateBackgroundPixmap(QPixmap background_img);
 
 private:
     constexpr static int ITEM_ID_KEY = 0;
     constexpr static int BACKGROUND_IMAGE_Z_INDEX = 0;
     constexpr static char BACKGROUND_IMAGE_ITEM_ID[] = "BACKGROUND";
-    
-    QGraphicsPixmapItem* getBackgroundPixmapItem();
 
 protected:
+    QGraphicsPixmapItem* getBackgroundPixmapItem();
     void gestureHandler(QGestureEvent *ge);
-    void pinchGestureHandler(QPinchGesture *pg);
+    virtual void pinchGestureHandler(QPinchGesture *pg);
 
     qreal scaleFactor = 1;  
     qreal min_scale_ = 0.5;

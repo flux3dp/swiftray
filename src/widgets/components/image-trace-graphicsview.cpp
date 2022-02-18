@@ -169,16 +169,6 @@ void ImageTraceGraphicsView::drawSelectionArea() {
   }
 }
 
-QGraphicsPixmapItem* ImageTraceGraphicsView::getBackgroundPixmapItem() {
-  for (auto item: scene()->items()) {
-    if (item->data(ITEM_ID_KEY).toString().compare(QString(BACKGROUND_IMAGE_ITEM_ID)) == 0 &&
-        qgraphicsitem_cast<QGraphicsPixmapItem *>(item)) {
-      return qgraphicsitem_cast<QGraphicsPixmapItem *>(item);
-    }
-  }
-  return nullptr;
-}
-
 QGraphicsRectItem* ImageTraceGraphicsView::getSelectionAreaRectItem() {
   for (auto item: scene()->items()) {
     if (item->data(ITEM_ID_KEY).toString().compare(QString(SELECTION_RECT_ITEM_ID)) == 0 &&
