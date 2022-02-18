@@ -140,8 +140,15 @@ void ImageTraceDialog::loadStyles() {
   ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
 }
 
+/**
+ * @brief 
+ * 
+ * @param img always expect Format_ARGB32 grayscaled image
+ */
 void ImageTraceDialog::loadImage(const QImage &img) {
-  src_image_grayscale_ = ImageToGrayscale(img);
+  Q_ASSERT_X(img.allGray(), "ImageTraceDialog", "Input image for loadImage() must be grayscaled");
+  Q_ASSERT_X(img.format() == QImage::Format_ARGB32, "ImageTraceDialog", "Input image for loadImage() must be Format_ARGB32");
+  src_image_grayscale_ = img;
   try {
     ui->traceGraphicsView->scene()->setSceneRect(0, 0,
                                                  src_image_grayscale_.width(),
@@ -152,34 +159,6 @@ void ImageTraceDialog::loadImage(const QImage &img) {
     qInfo() << e.what();
     return;
   }
-}
-
-
-/**
- * @brief Convert rgb/rgba image to grayscale image and also keep alpha channel
- * @param image source image
- * @return RGBA32/Grascale8 image
- */
-QImage ImageTraceDialog::ImageToGrayscale(const QImage &image)
-{
-  QImage result_img;
-  bool apply_alpha = image.hasAlphaChannel();
-  if (apply_alpha) {
-    result_img = image.convertToFormat(QImage::Format_ARGB32);
-  } else {
-    result_img = image.convertToFormat(QImage::Format_Grayscale8);
-  }
-
-  if (apply_alpha) {
-    for (int y = 0; y < result_img.height(); ++y) {
-      for (int x = 0; x < result_img.width(); ++x) {
-        QRgb pixel = result_img.pixel(x, y);
-        uint ci = uint(qGray(pixel));
-        result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
-      }
-    }
-  }
-  return result_img;
 }
 
 /**
@@ -212,41 +191,28 @@ QImage ImageTraceDialog::ImageBinarize(const QImage &image, int threshold, int c
 }
 
 /**
- * @brief Fade rgb/rgba image
- * @param image source image
- * @return RGBA32/Grascale8 image
+ * @brief Fade  image
+ * @param image source image (always expect Format_ARGB32 grayscaled)
+ * @return ARGB32 image
  */
 QImage ImageTraceDialog::FadeImage(const QImage &image)
 {
+  Q_ASSERT_X(image.allGray(), "ImageTraceDialog", "input image must be grayscaled");
+  Q_ASSERT_X(image.format() == QImage::Format_ARGB32, "ImageTraceDialog", "input image must be Format_ARGB32");
+
   QImage result_img = image;
-  bool apply_alpha = image.hasAlphaChannel();
-  if (apply_alpha) {
-    if (image.format() != QImage::Format_ARGB32) {
-      result_img = image.convertToFormat(QImage::Format_ARGB32);
-    }
-  } else {
-    if (image.format() != QImage::Format_Grayscale8) {
-      result_img = image.convertToFormat(QImage::Format_Grayscale8);
+
+  for (int y = 0; y < result_img.height(); ++y) {
+    for (int x = 0; x < result_img.width(); ++x) {
+      QRgb pixel = result_img.pixel(x, y);
+      uint ci = uint(qGray(pixel));
+      ci = (ci + 50) > 255 ? 255 : (ci + 50);
+      if (qAlpha(pixel) != 0) {
+        result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
+      }
     }
   }
 
-  //if (apply_alpha) {
-    for (int y = 0; y < result_img.height(); ++y) {
-      for (int x = 0; x < result_img.width(); ++x) {
-        QRgb pixel = result_img.pixel(x, y);
-        uint ci = uint(qGray(pixel));
-        ci = (ci + 50) > 255 ? 255 : (ci + 50);
-        if (apply_alpha) {
-          if (qAlpha(pixel) != 0) {
-            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
-          }
-        } else {
-            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
-        }
-      }
-    }
-  //} else {  
-  //}
   return result_img;
 }
 

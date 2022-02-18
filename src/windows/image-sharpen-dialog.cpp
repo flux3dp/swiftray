@@ -142,11 +142,11 @@ void ImageSharpenDialog::loadStyles() {
 /**
  * @brief load a new image and generate a sharpened image
  *        might need a reset() before
- * @param img could be rgb/rgba image
- *            converted into grayscale when loaded
+ * @param img always expect an ARGB32 format and grayscaled
  */
-void ImageSharpenDialog::loadImage(const QImage &img) {
-  src_image_grayscale_ = ImageToGrayscale(img);
+void ImageSharpenDialog::loadImage(const QImage &grayscale_img) {
+  Q_ASSERT_X(grayscale_img.format() == QImage::Format_ARGB32, "ImageSharpenDialog", "Input image must be in Format_ARGB32");
+  src_image_grayscale_ = grayscale_img;
   try {
     ui->sharpenGraphicsView->scene()->setSceneRect(0, 0,
                                                  src_image_grayscale_.width(),
@@ -159,70 +159,29 @@ void ImageSharpenDialog::loadImage(const QImage &img) {
   }
 }
 
-
 /**
- * @brief Convert rgb/rgba image to grayscale image and also keep alpha channel
+ * @brief Fade Format_ARGB32 grayscaled image
  * @param image source image
- * @return RGBA32/Grascale8 image
+ * @return RGBA32
  */
-QImage ImageSharpenDialog::ImageToGrayscale(const QImage &image)
+QImage ImageSharpenDialog::FadeImage(const QImage &image)
 {
-  QImage result_img;
-  bool apply_alpha = image.hasAlphaChannel();
-  if (apply_alpha) {
-    result_img = image.convertToFormat(QImage::Format_ARGB32);
-  } else {
-    result_img = image.convertToFormat(QImage::Format_Grayscale8);
-  }
+  Q_ASSERT_X(image.allGray(), "ImageSharpenDialog", "Input image for FadeImage() must be grayscaled");
+  Q_ASSERT_X(image.format() == QImage::Format_ARGB32, "ImageSharpenDialog", "Input image for FadeImage() must be Format_ARGB32");
 
-  if (apply_alpha) {
-    for (int y = 0; y < result_img.height(); ++y) {
-      for (int x = 0; x < result_img.width(); ++x) {
-        QRgb pixel = result_img.pixel(x, y);
-        uint ci = uint(qGray(pixel));
+  QImage result_img{image.size(), QImage::Format_ARGB32};
+
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      QRgb pixel = image.pixel(x, y);
+      uint ci = uint(qGray(pixel));
+      ci = (ci + 50) > 255 ? 255 : (ci + 50);
+      if (qAlpha(pixel) != 0) {
         result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
       }
     }
   }
-  return result_img;
-}
 
-/**
- * @brief Fade rgb/rgba image
- * @param image source image
- * @return RGBA32/Grascale8 image
- */
-QImage ImageSharpenDialog::FadeImage(const QImage &image)
-{
-  QImage result_img = image;
-  bool apply_alpha = image.hasAlphaChannel();
-  if (apply_alpha) {
-    if (image.format() != QImage::Format_ARGB32) {
-      result_img = image.convertToFormat(QImage::Format_ARGB32);
-    }
-  } else {
-    if (image.format() != QImage::Format_Grayscale8) {
-      result_img = image.convertToFormat(QImage::Format_Grayscale8);
-    }
-  }
-
-  //if (apply_alpha) {
-    for (int y = 0; y < result_img.height(); ++y) {
-      for (int x = 0; x < result_img.width(); ++x) {
-        QRgb pixel = result_img.pixel(x, y);
-        uint ci = uint(qGray(pixel));
-        ci = (ci + 50) > 255 ? 255 : (ci + 50);
-        if (apply_alpha) {
-          if (qAlpha(pixel) != 0) {
-            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
-          }
-        } else {
-            result_img.setPixel(x, y, qRgba(ci, ci, ci, qAlpha(pixel)));
-        }
-      }
-    }
-  //} else {  
-  //}
   return result_img;
 }
 
