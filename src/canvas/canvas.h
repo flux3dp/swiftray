@@ -230,6 +230,7 @@ private:
   bool isHoldingCtrl_  = false;
   bool isHoldingMiddleButton_ = false;
   bool isPopMenuShowing_;
+  bool isTempScaleLock_;
 
   QQuickWidget *widget_;
 
