@@ -2,6 +2,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QLocale>
+#include <QSettings>
 #include <QTranslator>
 #include <QDebug>
 #include <canvas/canvas.h>
@@ -46,22 +47,28 @@ int main(int argc, char *argv[]) {
   /*QSurfaceFormat format = QSurfaceFormat::defaultFormat();
   format.setSamples(8);
   QSurfaceFormat::setDefaultFormat(format);*/
-  
+
   // Set translator
-  QTranslator translator;
-  const QStringList uiLanguages = QLocale::system().uiLanguages();
+  QSettings settings;
+  QString locale;
+  QVariant language_code = settings.value("window/language", 0);
 
-  for (const QString &locale : uiLanguages) {
-    const QString baseName = QLocale(locale).name();
-    qInfo() << "Loading language" << locale;
-
-    if (translator.load(":/i18n/" + locale)) {
-      qInfo() << "Success loaded";
-      app.installTranslator(&translator);
+  switch(language_code.toInt()) {
+    case 0:
+      locale = "en-US";
       break;
-    }
+    case 1:
+      locale = "zh-Hant-TW";
+      break;
+    default:
+      locale = "en-US";
+      break;
   }
-  
+
+  QTranslator translator;
+  translator.load(":/i18n/" + locale);
+  app.installTranslator(&translator);
+
   // Load Canvas to QML Engine
   qmlRegisterType<Canvas>("Vecty", 1, 0, "Canvas");
   
