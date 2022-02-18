@@ -38,7 +38,6 @@ public:
 
 private:
   void calcBoundingBox() const override;
-  int getLuminanceFromQRgb(QRgb rgb);
 
   mutable QImage src_image_;
   mutable bool dirty_ = true;                  // Force an update for Cache object

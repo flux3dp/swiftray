@@ -8,42 +8,27 @@
 
 BitmapShape::BitmapShape() : Shape()
 {
-
 }
 
-BitmapShape::BitmapShape(const QImage &image) : Shape()
+/**
+ * @param image Must be Format_ARGB32 grayscaled image
+ */
+BitmapShape::BitmapShape(const QImage &image) : Shape(),
+  src_image_(image)
 {
-  // NOTE: Force a consistent format conversion first (to 32-bit = 4-byte format).
-  // Otherwise, we should handle each kind of format later for each image processing
-  if (image.format() != QImage::Format_ARGB32) {
-    src_image_ = image.convertToFormat(QImage::Format_ARGB32);
-  } else {
-    src_image_ = image;
-  }
-
-  // Process ARGB values into grayscale value and alpha value
-  for (int yy = 0; yy < image.height(); yy++) {
-    uchar *scan = src_image_.scanLine(yy);
-    int depth = 4; // 32-bit = 4-byte
-    for (int xx = 0; xx < image.width(); xx++) {
-      QRgb *rgbpixel = reinterpret_cast<QRgb *>(scan + xx * depth);
-      int luma = getLuminanceFromQRgb(*rgbpixel);
-      int alpha = qAlpha(*rgbpixel);
-      int gray = qRound(255.0 - alpha/255.0 * (255 - luma));
-      *rgbpixel = qRgba(gray, gray, gray, alpha);
-    }
-  }
-
 }
 
-BitmapShape::BitmapShape(QImage &&image) : Shape()
+/**
+ * @param image Must be Format_ARGB32 grayscaled image
+ */
+BitmapShape::BitmapShape(QImage &&image) : Shape(),
+  src_image_(std::move(image))
 {
-
 }
 
-BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig)
+BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig),
+  src_image_(orig.src_image_)
 {
-  src_image_ = orig.src_image_;
   setLayer(orig.layer());
   setTransform(orig.transform());
 }
@@ -141,10 +126,6 @@ ShapePtr BitmapShape::clone() const {
 }
 
 Shape::Type BitmapShape::type() const { return Shape::Type::Bitmap; }
-
-int BitmapShape::getLuminanceFromQRgb(QRgb rgb) {
-  return qRound(0.299*qRed(rgb) + 0.587*qGreen(rgb) + 0.114*qBlue(rgb));
-}
 
 const QImage &BitmapShape::sourceImage() const {
   return src_image_;

@@ -34,6 +34,7 @@ public:
     auto substr = std::string(fragment.begin() + 22, fragment.end());
     qInfo() << "xlink::href (from string)" << substr.size();
     QImage img = QImage::fromData(QByteArray::fromBase64(QString::fromStdString(substr).toUtf8()));
+    img = img.convertToFormat(QImage::Format_Grayscale8).convertToFormat(QImage::Format_ARGB32);
     qInfo() << "image size" << img.size();
     bitmap_ = std::make_shared<BitmapShape>(img);
   }
