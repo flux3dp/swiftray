@@ -8,7 +8,9 @@ class BitmapShape : public Shape {
 public:
   BitmapShape();
 
-  BitmapShape(QImage &image);
+  BitmapShape(const QImage &image);
+
+  BitmapShape(QImage &&image);
 
   BitmapShape(const BitmapShape &orig);
 
@@ -22,9 +24,8 @@ public:
 
   Shape::Type type() const override;
 
-  const QPixmap *pixmap() const;
-
-  QImage &image() const;
+  const QImage &imageForDisplay() const;
+  const QImage &sourceImage() const;
 
   void invertPixels();
 
@@ -37,8 +38,10 @@ public:
 
 private:
   void calcBoundingBox() const override;
+  int getLuminanceFromQRgb(QRgb rgb);
 
-  std::unique_ptr<QPixmap> bitmap_;
+  mutable QImage src_image_;
+  mutable bool dirty_ = true;                  // Force an update for Cache object
   mutable QImage tinted_image_;                // Cache object
   mutable std::uintptr_t tinted_signature = 0; // Cache object
 

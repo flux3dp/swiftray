@@ -102,9 +102,9 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   if (bmp->gradient()) { // gradient mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->image().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->sourceImage().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
   } else { // binarize mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->image(), bmp->thrsh_brightness()) ));
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
   }
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());

@@ -49,12 +49,12 @@ public:
   void on_exit_element() {
     QString bitmap_layer_name("Bitmap");
     BitmapShape *new_shape = (BitmapShape *) bitmap_.get();
-    if (width_ == 0) width_ = new_shape->pixmap()->width();
-    if (height_ == 0) height_ = new_shape->pixmap()->height();
+    if (width_ == 0) width_ = new_shape->sourceImage().width();
+    if (height_ == 0) height_ = new_shape->sourceImage().height();
     new_shape->setTransform(
          qtransform() * QTransform().translate(x_, y_).scale(
-              width_ / new_shape->pixmap()->width(),
-              height_ / new_shape->pixmap()->height())
+              width_ / new_shape->sourceImage().width(),
+              height_ / new_shape->sourceImage().height())
 
     );
     svgpp_add_shape(bitmap_, bitmap_layer_name);
