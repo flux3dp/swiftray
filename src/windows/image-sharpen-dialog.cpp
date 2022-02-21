@@ -9,20 +9,20 @@
 #include <QOpenGLWidget>
 #include <QSurfaceFormat>
 
+/**
+ * @brief convert cv::Mat to QImage
+ *        WARNING: Use copy() because the data in cv::Mat will be released later. 
+ *                 Without using copy, the data memory is shared between QImage and Mat and 
+ *                 it could cause a crash (invalid memory access)
+ */
 QImage cvMatToQImage (const cv::Mat &inMat) {
   switch (inMat.type()) {
-    case CV_8UC4: {
-      QImage image(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_ARGB32);
-      return image;
-    }
-    case CV_8UC3: {
-      QImage image(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_RGB888);
-      return image.rgbSwapped();
-    }
-    case CV_8UC1: {
-      QImage image(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_Grayscale8);
-      return image;
-    }
+    case CV_8UC4:
+      return QImage(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_ARGB32).copy();
+    case CV_8UC3:
+      return QImage(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_RGB888).copy().rgbSwapped();
+    case CV_8UC1:
+      return QImage(inMat.data, inMat.cols, inMat.rows, static_cast<int>(inMat.step), QImage::Format_Grayscale8).copy();
     default:
       qWarning() << "cvMatToQImage() failed, the type of mat is: " << inMat.type();
       break;
