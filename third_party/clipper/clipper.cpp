@@ -4329,10 +4329,10 @@ double DistanceFromLineSqrd(
   const IntPoint& pt, const IntPoint& ln1, const IntPoint& ln2)
 {
   //The equation of a line in general form (Ax + By + C = 0)
-  //given 2 points (x�,y�) & (x�,y�) is ...
-  //(y� - y�)x + (x� - x�)y + (y� - y�)x� - (x� - x�)y� = 0
-  //A = (y� - y�); B = (x� - x�); C = (y� - y�)x� - (x� - x�)y�
-  //perpendicular distance of point (x�,y�) = (Ax� + By� + C)/Sqrt(A� + B�)
+  //given 2 points (x1,y1) & (x2,y2) is ...
+  //(y1 - y2)x + (x2 - x1)y + (y2 - y1)x1 - (x2 - x1)y1 = 0
+  //A = (y1 - y2); B = (x2 - x1); C = (y2 - y1)x1 - (x2 - x1)y1
+  //perpendicular distance of point (x3,y3) = (Ax3 + By3 + C)/Sqrt(A2 + B2)
   //see http://en.wikipedia.org/wiki/Perpendicular_distance
   double A = double(ln1.Y - ln2.Y);
   double B = double(ln2.X - ln1.X);

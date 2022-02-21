@@ -3,17 +3,15 @@ project(swiftray)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
-add_compile_definitions(WIN32_LEAN_AND_MEAN)
-
-set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
-set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
-set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
-set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
-
-set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
-#set (OpenCV_DIR "C:/Dev/opencv/build/x64/vc14/lib")
-#set (OpenCV_DIR "C:/Dev/opencv/build/x64/mingw/lib")
-set (OpenCV_DIR "C:/Dev/opencv-4.5.4-prebuilt/OpenCV-MinGW-Build")
+if(WIN32)
+    add_compile_definitions(WIN32_LEAN_AND_MEAN)
+    set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
+    set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
+    set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
+    set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
+    set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
+    set (OpenCV_DIR "C:/Dev/opencv-4.5.4-prebuilt/OpenCV-MinGW-Build")
+endif()
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
@@ -83,10 +81,11 @@ include_directories(
         ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIR}
+        ${LIBXML2_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         third_party
         ${SRC_DIR}
-        #/usr/local/opt/libxml2/include
+        /usr/local/opt/libxml2/include
         ${POTRACE_INCLUDE_DIRS}
 )
 
