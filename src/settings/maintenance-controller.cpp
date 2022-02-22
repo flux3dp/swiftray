@@ -96,6 +96,8 @@ void MaintenanceController::testLog(const QString &str) const {
 void MaintenanceController::loadSerialPorts() {
 #ifndef Q_OS_IOS
   const auto infos = QSerialPortInfo::availablePorts();
-  port_name_ = infos.last().portName();
+  if (!infos.isEmpty()) {
+    port_name_ = infos.last().portName();
+  }
 #endif
 }
