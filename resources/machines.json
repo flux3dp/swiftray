@@ -1,36 +1,6 @@
 {
   "data": [
     {
-      "brand": "FLUX",
-      "model": "beamo",
-      "icon": ":/images/beamo.png",
-      "width": 300,
-      "height": 210,
-      "origin": 0,
-      "homeOnStart": true,
-      "boardType": 1
-    },
-    {
-      "brand": "FLUX",
-      "model": "Beambox Compact",
-      "icon": ":/images/beambox.png",
-      "width": 400,
-      "height": 375,
-      "origin": 0,
-      "homeOnStart": true,
-      "boardType": 1
-    },
-    {
-      "brand": "FLUX",
-      "model": "Beambox Pro",
-      "icon": ":/images/beambox.png",
-      "width": 600,
-      "height": 375,
-      "origin": 0,
-      "homeOnStart": true,
-      "boardType": 1
-    },
-    {
       "brand": "Ortur",
       "model": "Laser Master 2",
       "icon": ":/images/beambox.png",
