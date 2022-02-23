@@ -597,7 +597,6 @@ void MainWindow::registerEvents() {
 
     // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
     gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
-    gcode_player_->executeBtnClick();
   });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 

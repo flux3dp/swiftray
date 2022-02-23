@@ -40,6 +40,7 @@ public:
         break;
     }
 
+    // 2. Update boundary
     if (x_min_ == 0 && x_max_ == 0) {
       x_min_ = x;
       x_max_ = x;
@@ -88,9 +89,9 @@ public:
   std::string toString() override {
     str_stream_.str(std::string()); // clear
 
-    str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd (otherwise, it's time consuming)
+    str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
 
-    str_stream_ << "G1F2000" << std::endl;
+    str_stream_ << "G1F6000" << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
     str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
