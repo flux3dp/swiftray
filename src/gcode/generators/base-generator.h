@@ -22,6 +22,8 @@ public:
 
   virtual void turnOnLaser() { NO_BASIC_IMPL }
 
+  virtual void turnOnLaserAdpatively() { NO_BASIC_IMPL }
+
   virtual void useAbsolutePositioning() { NO_BASIC_IMPL }
 
   virtual void useRelativePositioning() { NO_BASIC_IMPL }

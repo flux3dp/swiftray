@@ -100,6 +100,11 @@ public:
     power_ = 1;
   }
 
+  void turnOnLaserAdpatively() override {
+    str_stream_ << "M4S0" << std::endl;
+    power_ = 1;
+  }
+
   void useAbsolutePositioning() override {
     relative_mode_ = false;
     str_stream_ << "G90" << std::endl;

@@ -145,7 +145,7 @@ void ToolpathExporter::outputLayerGcode() {
  */
 void ToolpathExporter::outputLayerPathGcode() {
 
-  gen_->turnOnLaser(); // M3/M4
+  gen_->turnOnLaser(); // M3
 
   // NOTE: Should convert points from canvas unit to mm
   for (auto &poly : layer_polygons_) {
@@ -204,7 +204,7 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   qreal real_y_top = bitmap_dirty_area_.top() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
   qreal real_y_bottom = bitmap_dirty_area_.bottom() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
 
-  gen_->turnOnLaser(); // M3/M4
+  gen_->turnOnLaserAdpatively(); // M4
 
   // rapid move to the start position
   moveTo(QPointF{real_x_left, real_y_top},
