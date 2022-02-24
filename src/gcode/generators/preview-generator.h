@@ -66,6 +66,10 @@ class PreviewGenerator : public BaseGenerator {
     power_ = 1; // typically for determining preview track color
   }
 
+  void turnOnLaserAdpatively() override {
+    power_ = 1; // typically for determining preview track color
+  }
+
   void useAbsolutePositioning() override {
     relative_mode_ = false;
   }
