@@ -5,6 +5,7 @@
 ResizeableRectItem::ResizeableRectItem(qreal x, qreal y, qreal width, qreal height, QGraphicsItem *parent):
     QGraphicsRectItem(x, y, width, height, parent) {
   setAcceptHoverEvents(true);
+  setFlag(QGraphicsItem::ItemIsMovable, true);
   setFlag(QGraphicsItem::ItemIsSelectable, true);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
   setFlag(QGraphicsItem::ItemIsFocusable, true);
@@ -73,20 +74,29 @@ void ResizeableRectItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
   if (handle_selected_ != HandleIdx::kHandleNone) {
     mouse_press_pos_ = event->pos();
     mouse_press_rect_ = boundingRect();
+    current_action_ = InteractiveAction::kMoveHandle;
+  } else if (shape().contains(event->pos())) {
+    mouse_press_pos_ = event->pos();
+    current_action_ = InteractiveAction::kMovePosition;
   }
-  QGraphicsItem::mousePressEvent(event);
 }
 
 void ResizeableRectItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
-  if (handle_selected_ != HandleIdx::kHandleNone) {
-    interactiveResize(event->pos());
-  } else {
-    QGraphicsItem::mouseMoveEvent(event);
+  if (current_action_ == InteractiveAction::kMoveHandle) {
+    if (handle_selected_ != HandleIdx::kHandleNone) {
+      interactiveResize(event->pos());
+    }
+  } else if (current_action_ == InteractiveAction::kMovePosition) {
+    interactiveMove(event->pos() - mouse_press_pos_);
+    mouse_press_pos_ = event->pos();
   }
 }
 
 void ResizeableRectItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
-  QGraphicsItem::mouseReleaseEvent(event);
+  if (current_action_ == InteractiveAction::kMovePosition) {
+    interactiveMove(event->pos() - mouse_press_pos_);
+  }
+  current_action_ = InteractiveAction::kNone;
   handle_selected_ = HandleIdx::kHandleNone;
   mouse_press_pos_ = QPointF();
   mouse_press_rect_ = QRectF();
@@ -135,11 +145,13 @@ Qt::CursorShape ResizeableRectItem::getHandleCursor(HandleIdx idx) {
 }
 
 QRectF ResizeableRectItem::boundingRect() {
-  //qreal o = handle_size_ + handle_space_;
-  //return this->rect().adjusted(-o, -o, o, o);
   return this->rect();
 }
 
+/**
+ * @brief Must be called when bounding rect is changed,
+ *        update the handles' position info accordingly
+ */
 void ResizeableRectItem::updateHandlesPos() {
   qreal s = handle_size_;
   QRectF b = boundingRect();
@@ -159,6 +171,20 @@ void ResizeableRectItem::updateHandlesPos() {
           std::make_tuple(HandleIdx::kHandleBottomMiddle, QRectF(b.center().x() - s / 2, b.bottom() - s, s, s));
   handles_[static_cast<int>(HandleIdx::kHandleBottomRight)] =
           std::make_tuple(HandleIdx::kHandleBottomRight, QRectF(b.right() - s, b.bottom() - s, s, s));
+}
+
+/**
+ * @brief Move the bounding rect
+ * @param displace displacement from the previous position
+ */
+void ResizeableRectItem::interactiveMove(QPointF displace) {
+  if (displace == QPointF(0, 0)) {
+    return;
+  }
+  QRectF bounding_rect = boundingRect();
+  QRectF rect = QRectF(bounding_rect.topLeft() + displace, bounding_rect.size());
+  setRect(rect);
+  updateHandlesPos();
 }
 
 /**
