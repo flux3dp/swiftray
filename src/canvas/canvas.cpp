@@ -724,6 +724,25 @@ void Canvas::importImage(QImage &image) {
     image = image.scaled(image.width() * scale, image.height() * scale);
   }
 #endif
+  // NOTE: Force a consistent format conversion first (to 32-bit = 4-byte format).
+  // Otherwise, we should handle each kind of format later for each image processing
+  if (image.format() != QImage::Format_ARGB32) {
+    image = image.convertToFormat(QImage::Format_ARGB32);
+  }
+
+  // Process ARGB values into grayscale value and alpha value
+  for (int yy = 0; yy < image.height(); yy++) {
+    uchar *scan = image.scanLine(yy);
+    int depth = 4; // 32-bit = 4-byte
+    for (int xx = 0; xx < image.width(); xx++) {
+      QRgb *rgb_pixel = reinterpret_cast<QRgb *>(scan + xx * depth);
+      int luma = qRound(0.299*qRed(*rgb_pixel) + 0.587*qGreen(*rgb_pixel) + 0.114*qBlue(*rgb_pixel));
+      int alpha = qAlpha(*rgb_pixel);
+      int gray = qRound(255.0 - alpha/255.0 * (255 - luma));
+      *rgb_pixel = qRgba(gray, gray, gray, alpha);
+    }
+  }
+
   ShapePtr new_shape = std::make_shared<BitmapShape>(image);
   qreal scale = std::min(1.0, std::min(document().height() / image.height(),
                              document().width() / image.width()));
@@ -780,7 +799,7 @@ void Canvas::genImageTrace() {
   ShapePtr selected_img_shape = items.at(0);
   BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
   ImageTraceDialog *dialog = new ImageTraceDialog();
-  dialog->loadImage(bitmap->image());
+  dialog->loadImage(bitmap->sourceImage());
   int dialog_ret = dialog->exec();
   if(dialog_ret == QDialog::Accepted) {
     // Add trace contours to canvas
@@ -833,11 +852,10 @@ void Canvas::sharpenImage() {
   BitmapShape * bitmap = static_cast<BitmapShape *>(selected_img_shape.get());
   ImageSharpenDialog *dialog = new ImageSharpenDialog();
   dialog->reset();
-  dialog->loadImage(bitmap->image());
+  dialog->loadImage(bitmap->sourceImage());
   int dialogRet = dialog->exec();
   if(dialogRet == QDialog::Accepted) {
-    QImage sharpened_image = dialog->getSharpenedImage();
-    ShapePtr new_shape = std::make_shared<BitmapShape>(sharpened_image);
+    ShapePtr new_shape = std::make_shared<BitmapShape>(dialog->getSharpenedImage());
     new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),
@@ -859,7 +877,7 @@ void Canvas::replaceImage(QImage new_image) {
   BitmapShape * origin_bitmap_shape = static_cast<BitmapShape *>(origin_shape.get());
 
   // Apply the height, width, x_pos, y_pos to new image
-  new_image = new_image.scaled(origin_bitmap_shape->image().size());
+  new_image = new_image.scaled(origin_bitmap_shape->sourceImage().size());
   ShapePtr new_bitmap_shape = std::make_shared<BitmapShape>(new_image);
   new_bitmap_shape->setTransform(origin_bitmap_shape->transform());
 
@@ -884,13 +902,12 @@ void Canvas::cropImage() {
 
   // Popout a dialog for crop
   ImageCropDialog *dialog = new ImageCropDialog();
-  dialog->loadImage(bitmap->image());
+  dialog->loadImage(bitmap->sourceImage());
   int dialog_ret = dialog->exec();
   // Apply crop result
   if(dialog_ret == QDialog::Accepted) {
     // Add trace contours to canvas
-    QImage crop_result = dialog->getCrop().toImage();
-    ShapePtr new_shape = std::make_shared<BitmapShape>(crop_result);
+    ShapePtr new_shape = std::make_shared<BitmapShape>(dialog->getCrop().toImage());
     new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),

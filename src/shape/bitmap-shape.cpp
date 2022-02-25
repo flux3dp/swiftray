@@ -8,34 +8,27 @@
 
 BitmapShape::BitmapShape() : Shape()
 {
-
 }
 
-BitmapShape::BitmapShape(QImage &image) : Shape()
+/**
+ * @param image Must be Format_ARGB32 grayscaled image
+ */
+BitmapShape::BitmapShape(const QImage &image) : Shape(),
+  src_image_(image)
 {
-  // NOTE: Force a format conversion first (to 32-bit = 4-byte format).
-  // Otherwise, we should handle each kind of format with different pixel data size in scanLine later
-  if (image.hasAlphaChannel()) {
-    image = image.convertToFormat(QImage::Format_ARGB32);
-  } else {
-    image = image.convertToFormat(QImage::Format_RGB32);
-  }
-  // Process transparent image grayscale
-  for (int yy = 0; yy < image.height(); yy++) {
-    uchar *scan = image.scanLine(yy);
-    int depth = 4; // 32-bit = 4-byte
-    for (int xx = 0; xx < image.width(); xx++) {
-      QRgb *rgbpixel = reinterpret_cast<QRgb *>(scan + xx * depth);
-      int gray = qGray(*rgbpixel);
-      *rgbpixel = QColor(gray, gray, gray, qAlpha(*rgbpixel)).rgba();
-    }
-  }
-  bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(image));
 }
 
-BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig)
+/**
+ * @param image Must be Format_ARGB32 grayscaled image
+ */
+BitmapShape::BitmapShape(QImage &&image) : Shape(),
+  src_image_(std::move(image))
 {
-  bitmap_ = std::make_unique<QPixmap>(*orig.bitmap_);
+}
+
+BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig),
+  src_image_(orig.src_image_)
+{
   setLayer(orig.layer());
   setTransform(orig.transform());
 }
@@ -51,58 +44,61 @@ bool BitmapShape::hitTest(QRectF global_coord_rect) const {
   local_rect.addRect(global_coord_rect);
   local_rect = transform().inverted().map(local_rect);
   QPainterPath image_rect;
-  image_rect.addRect(image().rect());
+  image_rect.addRect(src_image_.rect());
   return image_rect.intersects(local_rect);
 }
 
 void BitmapShape::calcBoundingBox() const {
-  bbox_ = transform().mapRect(bitmap_->rect());
-  rotated_bbox_ = transform().map(QPolygonF(QRectF(bitmap_->rect())));
+  bbox_ = transform().mapRect(src_image_.rect());
+  rotated_bbox_ = transform().map(QPolygonF(QRectF(src_image_.rect())));
 }
 
 /**
  * @brief Return the image to be painted on canvas (apply the layer color and gradient settings)
- *        Not the origin image
+ *        Adjusted from the source image
  * @return
  */
-QImage &BitmapShape::image() const {
-  assert(bitmap_.get() != nullptr);
+const QImage &BitmapShape::imageForDisplay() const {
   std::uintptr_t parent_color = hasLayer() ? layer()->color().value() : 0;
-  std::uintptr_t bitmap_address =
-       reinterpret_cast<std::uintptr_t>(bitmap_.get());
   std::uintptr_t gradient_switch = gradient_;
   std::uintptr_t thrsh = thrsh_brightness_;
-  if (tinted_signature != parent_color + bitmap_address + gradient_switch + thrsh) {
-    tinted_signature = parent_color + bitmap_address + gradient_switch + thrsh;
+  if (dirty_ || (tinted_signature != parent_color + gradient_switch + thrsh) ) {
+    QColor layer_color = layer()->color();
+    tinted_signature = parent_color + gradient_switch + thrsh;
+    dirty_ = false;
     qInfo() << "Tinted image" << tinted_signature;
-    tinted_image_ = bitmap_->toImage();
+
+    // Update tinted image
+    tinted_image_ = QImage(src_image_.size(), QImage::Format_ARGB32);
 
     if ( ! gradient_) {
-      bool apply_alpha = tinted_image_.hasAlphaChannel();
-      for (int y = 0; y < tinted_image_.height(); ++y) {
-        for (int x = 0; x < tinted_image_.width(); ++x) {
-          QRgb pixel = tinted_image_.pixel(x, y);
-          int grayscale_val = qGray(pixel);
-          QRgb bm_p;
-          if (apply_alpha) {
-            grayscale_val = 255 - (255 - grayscale_val) * qAlpha(pixel) / 255;
-          }
-          bm_p = grayscale_val < thrsh_brightness_ ? layer()->color().rgb() : qRgb(255, 255, 255);
+      for (int y = 0; y < src_image_.height(); ++y) {
+        for (int x = 0; x < src_image_.width(); ++x) {
+          QRgb gray = qRed(src_image_.pixel(x, y)); // R = G = B = Gray
+          // fill with layer color but also consider the alpha from pixel
+          QRgb fill_color = qRgba(layer()->color().red(),
+                                  layer()->color().green(),
+                                  layer()->color().blue(),
+                                  qAlpha(src_image_.pixel(x, y)));
+          QRgb bm_p = gray < thrsh_brightness_ ? fill_color : qRgba(255, 255, 255, 0);
           tinted_image_.setPixel(x, y, bm_p);
         }
       }
     } else {
-      QImage mask(tinted_image_);
-      QPainter p;
-      p.begin(&mask);
-      p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(QRect(0, 0, mask.width(), mask.height()), layer()->color());
-      p.end();
-
-      p.begin(&tinted_image_);
-      p.setCompositionMode(QPainter::CompositionMode_SoftLight);
-      p.drawImage(0, 0, mask);
-      p.end();
+      for (int y = 0; y < src_image_.height(); ++y) {
+        for (int x = 0; x < src_image_.width(); ++x) {
+          int gray = qRed(src_image_.pixel(x, y)); // R = G = B = Gray
+          // Force transparent for pure white pixel
+          int alpha = gray == 255 ? 0 : qAlpha(src_image_.pixel(x, y));
+          // Blend layer color and grayscale value
+          // TBD: Select a proper blending algorithm
+          QRgb bm_p = qRgba(layer_color.red() + (255 - layer_color.red()) * gray / 255,
+                      layer_color.green() + (255 - layer_color.red()) * gray / 255,
+                      layer_color.blue() + (255 - layer_color.red()) * gray / 255,
+                      alpha);
+          tinted_image_.setPixel(x, y, bm_p);
+        }
+      }
     }
 
   }
@@ -110,17 +106,17 @@ QImage &BitmapShape::image() const {
 }
 
 void BitmapShape::invertPixels() {
-  image().invertPixels(QImage::InvertRgb);
-  bitmap_ = std::make_unique<QPixmap>(QPixmap::fromImage(tinted_image_));
+  src_image_.invertPixels(QImage::InvertRgb);
+  dirty_ = true;
 }
 
 void BitmapShape::paint(QPainter *painter) const {
   painter->save();
   painter->setTransform(temp_transform_, true);
   painter->setTransform(transform(), true);
-  painter->drawImage(0, 0, image());
+  painter->drawImage(0, 0, imageForDisplay());
   // TODO (pass selection state with set pen or no pen?)
-  painter->drawRect(image().rect());
+  painter->drawRect(src_image_.rect());
   painter->restore();
 }
 
@@ -131,4 +127,6 @@ ShapePtr BitmapShape::clone() const {
 
 Shape::Type BitmapShape::type() const { return Shape::Type::Bitmap; }
 
-const QPixmap *BitmapShape::pixmap() const { return bitmap_.get(); }
+const QImage &BitmapShape::sourceImage() const {
+  return src_image_;
+}

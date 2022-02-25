@@ -102,9 +102,9 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   if (bmp->gradient()) { // gradient mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->image().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->sourceImage().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
   } else { // binarize mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->image(), bmp->thrsh_brightness()) ));
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
   }
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp->boundingRect());
@@ -392,16 +392,22 @@ bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float globa
   return false;
 }
 
+/**
+ * @brief 
+ * 
+ * @param src must be Format_ARGB32 grayscaled image
+ * @param threshold 
+ * @return QImage 
+ */
 QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
+  Q_ASSERT_X(src.allGray(), "ToolpathExporter", "Input image for imageBinarize() must be grayscaled");
+  Q_ASSERT_X(src.format() == QImage::Format_ARGB32, "ToolpathExporter", "Input image for imageBinarize() must be Format_ARGB32");
+  
   QImage result_img{src.width(), src.height(), QImage::Format_Grayscale8};
-  bool apply_alpha = src.hasAlphaChannel();
 
   for (int y = 0; y < src.height(); ++y) {
     for (int x = 0; x < src.width(); ++x) {
       int grayscale_val = qGray(src.pixel(x, y));
-      if (apply_alpha) {
-        grayscale_val = 255 - (255 - grayscale_val) * qAlpha(src.pixel(x, y)) / 255;
-      }
       result_img.setPixel(x, y,
                           grayscale_val <= threshold ? qRgb(0, 0, 0) :
                           qRgb(255, 255, 255));

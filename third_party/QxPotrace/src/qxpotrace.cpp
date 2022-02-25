@@ -17,7 +17,7 @@
 #define BM_PUT(bm, x, y, b) (bm_safe(bm, x, y) ? BM_UPUT(bm, x, y, b) : 0)
 
 /**
- * @param image
+ * @param image always expect a Format_ARGB32 grayscaled image
  * @param bitmap internal memory block should have been allocated
  * @param cutoff
  * @param threshold
@@ -28,26 +28,19 @@ void imageToBinarizedBitmap(const QImage &image, potrace_bitmap_t* bitmap, int c
     return;
   }
 
-  bool apply_alpha = image.hasAlphaChannel();
-  if (apply_alpha) {
-    Q_ASSERT_X(image.format() == QImage::Format_ARGB32, "qxpotrace", "input image must be ARGB32/Grayscale8");
-  } else {
-    Q_ASSERT_X(image.format() == QImage::Format_Grayscale8, "qxpotrace", "input image must be ARGB32/Grayscale8");
-  }
+  Q_ASSERT_X(image.allGray(), "qxpotrace", "input image must be grayscaled");
+  Q_ASSERT_X(image.format() == QImage::Format_ARGB32, "qxpotrace", "input image must be Format_ARGB32");
 
+  int bm_p;
   for (int y = 0; y < image.height(); ++y) {
     for (int x = 0; x < image.width(); ++x) {
-      QRgb pixel = image.pixel(x, y);
-      int grayscale_val = qGray(pixel);
-      int bm_p;
-      if (apply_alpha) {
-        grayscale_val = 255 - (255 - grayscale_val) * qAlpha(pixel) / 255;
-      }
-      bm_p = grayscale_val < cutoff ? 0 :
-             grayscale_val <= threshold ? 1 : 0;
+      QRgb gray = qRed(image.pixel(x, y)); // R = G = B = Gray
+      bm_p = gray < cutoff ? 0 :
+             gray <= threshold ? 1 : 0;
       BM_PUT(bitmap, x, y, bm_p);
     }
   }
+
   return;
 }
 

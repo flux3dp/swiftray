@@ -31,6 +31,9 @@ public slots:
     void onSharpnessChanged(int new_sharpness_val);
     void onRadiusChanged(int new_radius_val);
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 private:
 
     Ui::ImageSharpenDialog *ui;
@@ -39,7 +42,6 @@ private:
 
     QImage src_image_grayscale_;
     QImage sharpened_image_;
-    QImage ImageToGrayscale(const QImage &image);
     QImage ImageBinarize(const QImage &image, int threshold, int cutoff);
     QImage FadeImage(const QImage &image);
     //QPainterPath contours_;

@@ -41,7 +41,6 @@ private:
     void resizeEvent(QResizeEvent *event) override;
 
     QImage src_image_grayscale_;
-    QImage ImageToGrayscale(const QImage &image);
     QImage ImageBinarize(const QImage &image, int threshold, int cutoff);
     QImage FadeImage(const QImage &image);
     QImage createSubImage(QImage* image, const QRect & rect);

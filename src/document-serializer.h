@@ -192,7 +192,7 @@ public:
 
   void serializeBitmapShape(BitmapShape *shape) {
     serializeShapeProp(shape);
-    out << *shape->bitmap_.get();
+    out << shape->src_image_;
     out << shape->gradient_;
     out << shape->thrsh_brightness_;
   }
@@ -200,9 +200,7 @@ public:
   BitmapShape *deserializeBitmapShape() {
     BitmapShape *shape = new BitmapShape();
     deserializeShapeProp(shape);
-    QPixmap pixmap;
-    in >> pixmap;
-    shape->bitmap_ = std::make_unique<QPixmap>(pixmap);
+    in >> shape->src_image_;
     in >> shape->gradient_;
     in >> shape->thrsh_brightness_;
     return shape;
