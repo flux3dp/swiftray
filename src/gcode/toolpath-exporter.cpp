@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cmath>
 #include <boost/range/irange.hpp>
+#include <constants.h>
 
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
   global_transform_ = QTransform();
@@ -153,7 +154,7 @@ void ToolpathExporter::outputLayerPathGcode() {
 
     QPointF next_point_mm = poly.first() / canvas_mm_ratio_;
     moveTo(next_point_mm,
-           current_layer_->speed(),
+           MOVING_SPEED,
            0);
 
     for (QPointF &point : poly) {
@@ -208,7 +209,7 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // rapid move to the start position
   moveTo(QPointF{real_x_left, real_y_top},
-         current_layer_->speed(),
+         MOVING_SPEED,
          0);
 
   gen_->useRelativePositioning();
