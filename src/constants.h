@@ -5,6 +5,6 @@
 #define FONT_TYPE "Tahoma"
 #define LINE_HEIGHT 1.2
 
-#define MOVING_SPEED 4800
+#define MOVING_SPEED 80
 
 #endif // CONSTANTS_H
