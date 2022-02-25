@@ -24,19 +24,21 @@ void ImageCropGraphicsView::mousePressEvent(QMouseEvent *event) {
   if ( crop_area_ &&
       !crop_area_->contains( mouse_pos_in_crop_coord) ) {
     creating_new_crop_area_ = true;
-    crop_area_->setVisible(false); // hided temporarily
+    crop_area_->setVisible(false); // hidden temporarily
   }
 }
 
 void ImageCropGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
   if (creating_new_crop_area_) {
     if ( crop_area_ ) {
+      // NOTE: The scale of crop_area should not apply the transform (ignore transform flag is set inside)
+      //       But we still need to translate to the transformed scene origin
       crop_area_->updateRect(
               QRectF(
-                      transform().map(mapToScene(rubberBandRect().topLeft())),
-                      transform().map(mapToScene(rubberBandRect().bottomRight()))
-                      )
-                    );
+                      rubberBandRect().topLeft() - mapFromScene(QPoint(0, 0)),
+                      rubberBandRect().bottomRight() - mapFromScene(QPoint(0, 0))
+              )
+      );
       crop_area_->setVisible(true);
     }
     creating_new_crop_area_ = false;
@@ -96,6 +98,8 @@ ResizeableRectItem* ImageCropGraphicsView::getCropAreaItem() {
 
 QPixmap ImageCropGraphicsView::getCrop() {
   if (crop_area_ != nullptr && getBackgroundPixmapItem() != nullptr) {
+    // The PixmapItem is on scene and expressed in scene coordinate.
+    // Thus, we need to apply "invert" the transform on crop_area_ to get the actual crop area on image (pixmap)
     return getBackgroundPixmapItem()->pixmap().copy(
   transform().inverted().mapRect(crop_area_->rect().toRect())
     );
