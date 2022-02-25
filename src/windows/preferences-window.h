@@ -17,4 +17,8 @@ public:
 
 private:
   Ui::PreferencesWindow *ui;
+
+  void setLanguageComboBox();
+
+  void setTabWidget();
 };
