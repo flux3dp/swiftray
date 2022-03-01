@@ -89,6 +89,8 @@ private slots:
 
   void imageSelected(const QImage image);
 
+  void importImage(QString file_name);
+
   void setCanvasContextMenu();
 
   void setConnectionToolBar();
