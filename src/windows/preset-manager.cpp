@@ -27,11 +27,15 @@ void PresetManager::loadStyles() {
 }
 
 void PresetManager::loadSettings() {
-  PresetSettings settings;
-  qInfo() << "Settings" << settings.toJson();
+  PresetSettings* settings = &PresetSettings::getInstance();
+  qInfo() << "Settings" << settings->toJson();
+  ui->addParamBtn->hide();
+  ui->removeParamBtn->hide();
+  ui->addPresetBtn->hide();
+  ui->removePresetBtn->hide();
   ui->presetList->clear();
   ui->paramList->clear();
-  for (auto &preset : settings.presets()) {
+  for (auto &preset : settings->presets()) {
     QListWidgetItem *item = new QListWidgetItem(preset.name);
     item->setData(Qt::UserRole, preset.toJson());
     item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -52,14 +56,12 @@ void PresetManager::registerEvents() {
     updatePresetData();
   });
 
-
   connect(ui->removeParamBtn, &QAbstractButton::clicked, [=]() {
     qInfo() << "Remove param" << ui->paramList->currentItem();
     auto item = ui->paramList->currentItem();
     ui->paramList->takeItem(ui->paramList->row(item));
     updatePresetData();
   });
-
 
   connect(ui->addPresetBtn, &QAbstractButton::clicked, [=]() {
     PresetSettings::Preset preset;
@@ -127,14 +129,15 @@ void PresetManager::updatePresetData() {
 }
 
 void PresetManager::save() {
-  PresetSettings settings;
-  settings.presets_.clear();
+  PresetSettings* settings = &PresetSettings::getInstance();
+  settings->presets_.clear();
   for (int i = 0; i < ui->presetList->count(); i++) {
     auto data = ui->presetList->item(i)->data(Qt::UserRole).toJsonObject();
-    settings.presets_ << PresetSettings::Preset::fromJson(data);
+    settings->presets_ << PresetSettings::Preset::fromJson(data);
   }
-  settings.save();
-  qInfo() << "Saving" << settings.toJson();
+  settings->setCurrentIndex(ui->presetList->currentRow());
+  settings->save();
+  qInfo() << "Saving" << settings->toJson();
 }
 
 void PresetManager::showPreset() {

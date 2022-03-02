@@ -28,10 +28,10 @@ void LayerParamsPanel::loadStyles() {
 void LayerParamsPanel::loadSettings() {
   QString machine_model = main_window_->canvas()->document().settings().machine_model;
   qInfo() << "Loading model" << machine_model;
-  PresetSettings preset;
-  if (preset.presets().size() > 0) {
+  PresetSettings* preset = &PresetSettings::getInstance();
+  if (preset->presets().size() > 0) {
     ui->presetComboBox->clear();
-    for (auto &param: preset.presets().first().params) {
+    for (auto &param: preset->currentPreset().params) {
       ui->presetComboBox->addItem(param.name, param.toJson());
     }
   }
