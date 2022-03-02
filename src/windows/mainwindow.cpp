@@ -145,7 +145,7 @@ void MainWindow::openFile() {
   }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open File", default_open_dir,
-                                                   tr("Files (*.bb *.bvg *.svg)"));
+                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -167,8 +167,10 @@ void MainWindow::openFile() {
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
-    } else {
+    } else if (file_name.endsWith(".svg")) {
       canvas_->loadSVG(data);
+    } else {
+      importImage(file_name);
     }
   }
 }
@@ -221,6 +223,15 @@ void MainWindow::saveAsFile() {
   }
 }
 
+void MainWindow::importImage(QString file_name) {
+  QImage image;
+
+  if (image.load(file_name)) {
+    qInfo() << "File size:" << image.size();
+    canvas_->importImage(image);
+  }
+}
+
 void MainWindow::openImageFile() {
   if (canvas_->document().activeLayer()->isLocked()) {
     emit canvas_->modeChanged();
@@ -239,7 +250,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -254,12 +265,7 @@ void MainWindow::openImageFile() {
       canvas_->loadSVG(data);
     }
   } else {
-    QImage image;
-
-    if (image.load(file_name)) {
-      qInfo() << "File size:" << image.size();
-      canvas_->importImage(image);
-    }
+    importImage(file_name);
   }
 
   canvas_->setMode(Canvas::Mode::Selecting);
@@ -270,7 +276,7 @@ void MainWindow::replaceImage() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.bmp)"));
   QImage new_image;
   if (QFile::exists(file_name) && new_image.load(file_name)) {
     canvas_->replaceImage(new_image);
