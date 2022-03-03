@@ -12,7 +12,8 @@ public:
        use_rotary(false),
        use_open_bottom(false) {}
 
-  float dpmm() { return dpi / 25.4; }
+    // NOTE: Use an approx. value for DPI-DPMM conversion (25.4 -> 25 inch/mm)
+    float dpmm() { return dpi / 25; }
 
   QString machine_model; // TBD
   float width;  // NOTE: store value but not used?
