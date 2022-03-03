@@ -17,10 +17,10 @@ DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
 
   // Fill data for DPI combobox items
   Q_ASSERT_X(ui->dpiComboBox->count() == 4, "doc-panel", "The item count of dpi combobox must match our expectation.");
-  ui->dpiComboBox->setItemData(0, qreal{250}); // Low
-  ui->dpiComboBox->setItemData(1, qreal{500}); // Mid
-  ui->dpiComboBox->setItemData(2, qreal{750}); // High
-  ui->dpiComboBox->setItemData(3, qreal{1000}); // Ultra High
+  ui->dpiComboBox->setItemData(0, qreal{125*qPow(2,0)}); // Low (125)
+  ui->dpiComboBox->setItemData(1, qreal{125*qPow(2,1)}); // Mid (250)
+  ui->dpiComboBox->setItemData(2, qreal{125*qPow(2,2)}); // High (500)
+  ui->dpiComboBox->setItemData(3, qreal{125*qPow(2,3)}); // Ultra High (1000)
 
   initializeContainer();
 }
