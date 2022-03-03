@@ -35,18 +35,22 @@ void LayerParamsPanel::loadSettings() {
       ui->presetComboBox->addItem(param.name, param.toJson());
     }
   }
-  ui->presetComboBox->addItem("More...");
+  ui->presetComboBox->addItem(tr("Custom"));
+  ui->presetComboBox->addItem(tr("More..."));
 }
 
 void LayerParamsPanel::registerEvents() {
   connect(ui->powerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
     if (layer_ != nullptr) layer_->setStrength(strength);
+    setToCustom();
   });
   connect(ui->speedSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int speed) {
     if (layer_ != nullptr) layer_->setSpeed(speed);
+    setToCustom();
   });
   connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
     if (layer_ != nullptr) layer_->setRepeat(repeat);
+    setToCustom();
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     if (index == ui->presetComboBox->count() - 1 && index > 0) {
@@ -58,12 +62,22 @@ void LayerParamsPanel::registerEvents() {
         loadSettings();
       }
       ui->presetComboBox->setCurrentIndex(index_to_recover);
-      return;
-    } else if (index >= 0) {
+    } else if (index >= 0 && index < ui->presetComboBox->count() - 2) {
       auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
+      ui->powerSpinBox->blockSignals(true);
+      ui->speedSpinBox->blockSignals(true);
+      ui->repeatSpinBox->blockSignals(true);
       ui->powerSpinBox->setValue(p.power);
       ui->speedSpinBox->setValue(p.speed);
       ui->repeatSpinBox->setValue(p.repeat);
+      ui->powerSpinBox->blockSignals(false);
+      ui->speedSpinBox->blockSignals(false);
+      ui->repeatSpinBox->blockSignals(false);
+      layer_->setStrength(p.power);
+      layer_->setSpeed(p.speed);
+      layer_->setRepeat(p.repeat);
+      preset_previous_index_ = index;
+    } else {
       preset_previous_index_ = index;
     }
   });
@@ -120,4 +134,12 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
   updateMovingComboBox();
+}
+
+/*
+  To avoid confusing with the recommended parameters,
+  we change the preset combobox to `custom` whenever user changes the parameters.
+*/
+void LayerParamsPanel::setToCustom() {
+  ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 2);
 }
