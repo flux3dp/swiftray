@@ -925,12 +925,18 @@ void MainWindow::setToolbarTransform() {
     updateToolbarTransform();
   });
 
-    connect(doubleSpinBoxWidth, spin_event, [=]() {
+  connect(doubleSpinBoxWidth, spin_event, [=]() {
+    if (transform_panel_->isScaleLock()) {
+      h_ *= doubleSpinBoxWidth->value() / w_;
+    }
     w_ = doubleSpinBoxWidth->value();
     updateToolbarTransform();
   });
 
   connect(doubleSpinBoxHeight, spin_event, [=]() {
+    if (transform_panel_->isScaleLock()) {
+      w_ *= doubleSpinBoxHeight->value() / h_;
+    }
     h_ = doubleSpinBoxHeight->value();
     updateToolbarTransform();
   });
