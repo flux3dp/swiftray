@@ -1099,12 +1099,16 @@ void MainWindow::generateGcode() {
 void MainWindow::genPreviewWindow() {
   auto preview_path_generator = make_shared<PreviewGenerator>(doc_panel_->currentMachine());
   ToolpathExporter preview_exporter(preview_path_generator.get());
+  preview_exporter.setDPMM(canvas_->document().settings().dpmm());
+  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   preview_exporter.convertStack(canvas_->document().layers());
   PreviewWindow *pw = new PreviewWindow(this,
                                         canvas_->document().width() / 10,
                                         canvas_->document().height() / 10);
   auto gcode_generator = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter gcode_exporter(gcode_generator.get());
+  gcode_exporter.setDPMM(canvas_->document().settings().dpmm());
+  gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   gcode_exporter.convertStack(canvas_->document().layers());
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
   QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
