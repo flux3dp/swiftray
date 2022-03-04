@@ -293,8 +293,7 @@ void MainWindow::imageSelected(const QImage image) {
 
 void MainWindow::exportGCodeFile() {
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get());
-  exporter.setDPMM(canvas_->document().settings().dpmm());
+  ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers());
 
@@ -1089,8 +1088,7 @@ void MainWindow::showJoggingPanel() {
  */
 void MainWindow::generateGcode() {
   auto gen_gcode = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get());
-  exporter.setDPMM(canvas_->document().settings().dpmm());
+  ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers());
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
@@ -1098,16 +1096,14 @@ void MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   auto preview_path_generator = make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter preview_exporter(preview_path_generator.get());
-  preview_exporter.setDPMM(canvas_->document().settings().dpmm());
+  ToolpathExporter preview_exporter(preview_path_generator.get(), canvas_->document().settings().dpmm());
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   preview_exporter.convertStack(canvas_->document().layers());
   PreviewWindow *pw = new PreviewWindow(this,
                                         canvas_->document().width() / 10,
                                         canvas_->document().height() / 10);
   auto gcode_generator = make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter gcode_exporter(gcode_generator.get());
-  gcode_exporter.setDPMM(canvas_->document().settings().dpmm());
+  ToolpathExporter gcode_exporter(gcode_generator.get(), canvas_->document().settings().dpmm());
   gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   gcode_exporter.convertStack(canvas_->document().layers());
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));

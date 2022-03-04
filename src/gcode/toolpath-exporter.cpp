@@ -7,11 +7,10 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept :
+ gen_(generator), dpmm_(dpmm)
+{
   global_transform_ = QTransform();
-  gen_ = generator;
-  dpmm_ = 10;
-  travel_speed_ = 100;
 }
 
 /**

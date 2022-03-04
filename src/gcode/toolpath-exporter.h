@@ -14,11 +14,10 @@
 
 class ToolpathExporter {
 public:
-  ToolpathExporter(BaseGenerator *generator) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept;
 
   void convertStack(const QList<LayerPtr> &layers);
 
-  void setDPMM(qreal new_dpmm) { dpmm_ = new_dpmm; }
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 
 private:
@@ -57,8 +56,7 @@ private:
   std::unique_ptr<QPainter> layer_painter_;
 
   BaseGenerator *gen_;
-  float dpmm_;
-  float travel_speed_;
+  float dpmm_ = 10;
   QSizeF machine_work_area_size_; // Work area in real world coordinate (in unit of mm)
   QRectF bitmap_dirty_area_; // In canvas unit (not in real world mm unit)
   QSizeF canvas_size_;       // In canvas unit (not in real world mm unit)
