@@ -92,9 +92,9 @@ const QImage &BitmapShape::imageForDisplay() const {
           int alpha = gray == 255 ? 0 : qAlpha(src_image_.pixel(x, y));
           // Blend layer color and grayscale value
           // TBD: Select a proper blending algorithm
-          QRgb bm_p = qRgba(layer_color.red() + (255 - layer_color.red()) * gray / 255,
-                      layer_color.green() + (255 - layer_color.red()) * gray / 255,
-                      layer_color.blue() + (255 - layer_color.red()) * gray / 255,
+          QRgb bm_p = qRgba((layer_color.red() + (255 - layer_color.red()) * gray / 255),
+                      layer_color.green() + (255 - layer_color.green()) * gray / 255,
+                      layer_color.blue() + (255 - layer_color.blue()) * gray / 255,
                       alpha);
           tinted_image_.setPixel(x, y, bm_p);
         }
