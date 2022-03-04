@@ -45,6 +45,9 @@ void TransformPanel::registerEvents() {
   connect(ui->widthSpinBox, spin_event, [=](double value) {
     if (value == 0) return;
     if (w_ != value) {
+      if (scale_locked_) {
+        h_ *= value / w_;
+      }
       w_ = value;
       updateControl();
     }
@@ -53,6 +56,9 @@ void TransformPanel::registerEvents() {
   connect(ui->heightSpinBox, spin_event, [=](double value) {
     if (value == 0) return;
     if (h_ != value) {
+      if (scale_locked_) {
+        w_ *= value / h_;
+      }
       h_ = value;
       updateControl();
     }
