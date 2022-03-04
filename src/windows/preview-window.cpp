@@ -102,7 +102,6 @@ PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
      preview_path_(nullptr),
      BaseContainer() {
   ui->setupUi(this);
-  setWindowTitle(tr("Preview Path"));
   initializeContainer();
 
   auto scene = new QGraphicsScene(this);
