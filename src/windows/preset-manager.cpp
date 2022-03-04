@@ -14,7 +14,6 @@ PresetManager::PresetManager(QWidget *parent) :
      ui(new Ui::PresetManager),
      BaseContainer() {
   ui->setupUi(this);
-  setWindowTitle("Preset Manager");
   initializeContainer();
 }
 
