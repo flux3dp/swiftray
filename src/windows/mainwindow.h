@@ -119,6 +119,8 @@ private:
 
   void registerEvents() override;
 
+  void resizeEvent(QResizeEvent *event) override;
+
   Ui::MainWindow *ui;
   Canvas *canvas_;
   double x_, y_, r_, w_, h_;
@@ -135,6 +137,8 @@ private:
   QAction *ungroupAction_;
 
   QPushButton *scale_block_;
+  QToolButton *minusBtn_;
+  QToolButton *plusBtn_;
   QMenu *popScaleMenu_;
   QComboBox* baudComboBox_;
   QComboBox* portComboBox_;

@@ -632,6 +632,12 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   QMainWindow::closeEvent(event);
 }
 
+void MainWindow::resizeEvent(QResizeEvent *event) {
+  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 150, 50, 30);
+  minusBtn_->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 150, 40, 30);
+  plusBtn_->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 150, 40, 30);
+}
+
 Canvas *MainWindow::canvas() const {
   return canvas_;
 }
@@ -964,16 +970,16 @@ void MainWindow::setToolbarImage() {
 
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
-  QToolButton *minusBtn = new QToolButton(ui->quickWidget);
-  QToolButton *plusBtn = new QToolButton(ui->quickWidget);
-  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 110, 50, 30);
+  minusBtn_ = new QToolButton(ui->quickWidget);
+  plusBtn_ = new QToolButton(ui->quickWidget);
+  scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 150, 50, 30);
   scale_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  minusBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
-  minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 110, 40, 30);
-  minusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
-  plusBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
-  plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 110, 40, 30);
-  plusBtn->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
+  minusBtn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-minus.png" : ":/images/icon-minus.png"));
+  minusBtn_->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 150, 40, 30);
+  minusBtn_->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
+  plusBtn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
+  plusBtn_->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 150, 40, 30);
+  plusBtn_->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
 
   popScaleMenu_ = new QMenu(scale_block_);
   // Add QActions for context menu
@@ -1011,9 +1017,9 @@ void MainWindow::setScaleBlock() {
       new_scroll.setY(bottom_right_bound.y());
     }
 
-    scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 110, 50, 30);
-    minusBtn->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 110, 40, 30);
-    plusBtn->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 110, 40, 30);
+    scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 150, 50, 30);
+    minusBtn_->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 150, 40, 30);
+    plusBtn_->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 150, 40, 30);
     canvas_->document().setScroll(new_scroll);
   });
   scale_block_->connect(scale25Action_, &QAction::triggered, [=]() {
@@ -1037,8 +1043,8 @@ void MainWindow::setScaleBlock() {
 
   scale_block_->setContextMenuPolicy(Qt::CustomContextMenu);
 
-  connect(minusBtn, &QAbstractButton::clicked, this, &MainWindow::onScaleMinusClicked);
-  connect(plusBtn, &QAbstractButton::clicked, this, &MainWindow::onScalePlusClicked);
+  connect(minusBtn_, &QAbstractButton::clicked, this, &MainWindow::onScaleMinusClicked);
+  connect(plusBtn_, &QAbstractButton::clicked, this, &MainWindow::onScalePlusClicked);
   connect(scale_block_, &QAbstractButton::clicked, [=]() {
     if(popScaleMenu_){
       popScaleMenu_->exec(QCursor::pos());
