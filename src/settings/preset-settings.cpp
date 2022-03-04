@@ -47,4 +47,3 @@ QJsonObject PresetSettings::Preset::toJson() const {
   obj["data"] = data;
   return obj;
 }
-

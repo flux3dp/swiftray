@@ -33,6 +33,8 @@ private:
 
   void registerEvents() override;
 
+  void setToCustom();
+
   void updateMovingComboBox();
 
   Ui::LayerParamsPanel *ui;

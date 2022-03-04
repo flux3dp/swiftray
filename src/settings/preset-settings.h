@@ -11,6 +11,10 @@
 
 class PresetSettings {
 public:
+  static PresetSettings& getInstance() {
+    static PresetSettings sInstance;
+    return sInstance;
+  }
   struct Param {
   public:
     QString name;
@@ -46,21 +50,6 @@ public:
     QJsonObject toJson() const;
   };
 
-  PresetSettings() {
-    QSettings settings;
-    QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
-    if (obj["data"].isNull()) {
-      QFile file(":/resources/parameters/default.json");
-      file.open(QFile::ReadOnly);
-      // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
-      auto preset = Preset::fromJson(QJsonDocument::fromJson(file.readAll()).object());
-      preset.name = "FLUX beamo Preset";
-      presets_ << preset;
-    } else {
-      loadJson(obj);
-    }
-  }
-
   void loadJson(const QJsonObject &obj) {
     QJsonArray data = obj["data"].toArray();
     presets_.clear();
@@ -83,10 +72,36 @@ public:
     return presets_;
   }
 
+  void setCurrentIndex(int index) {
+    current_index_ = index;
+  }
+
+  const Preset currentPreset() {
+    qInfo() << "Current Preset:" << current_index_ ;
+    return presets_[current_index_];
+  }
+
   void save() {
     QSettings settings;
     settings.setValue("preset/user", QJsonDocument(toJson()));
   }
 
   QList<Preset> presets_;
+  int current_index_ = 0;
+
+private:
+  PresetSettings() {
+    QSettings settings;
+    QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
+    if (obj["data"].isNull()) {
+      QFile file(":/resources/parameters/default.json");
+      file.open(QFile::ReadOnly);
+      // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
+      auto preset = Preset::fromJson(QJsonDocument::fromJson(file.readAll()).object());
+      preset.name = "FLUX beamo Preset";
+      presets_ << preset;
+    } else {
+      loadJson(obj);
+    }
+  }
 };

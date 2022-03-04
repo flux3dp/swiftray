@@ -401,6 +401,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="powerSpinBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -425,6 +428,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="speedSpinBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -477,6 +483,9 @@
               </item>
               <item>
                <widget class="QSpinBox" name="repeatSpinBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
@@ -510,6 +519,9 @@
               </item>
               <item>
                <widget class="QDoubleSpinBox" name="stepHeightSpinBox">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>

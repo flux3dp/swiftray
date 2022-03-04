@@ -75,9 +75,9 @@ void DocPanel::loadSettings() {
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();
 
-  PresetSettings preset_settings;
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
   ui->presetComboBox->clear();
-  for (auto &preset : preset_settings.presets()) {
+  for (auto &preset : preset_settings->presets()) {
     ui->presetComboBox->addItem(preset.name);
   }
 
