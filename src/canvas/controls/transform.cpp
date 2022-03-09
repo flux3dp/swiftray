@@ -394,7 +394,6 @@ void Transform::paint(QPainter *painter) {
     painter->drawLine(controls_[8], controls_[1]);
     painter->setPen(pt_pen);
     painter->drawPoints(controls_, 9);
-    painter->drawPoint((controls_[0] + controls_[4]) / 2);
   }
 }
 
