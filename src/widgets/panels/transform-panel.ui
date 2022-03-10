@@ -269,6 +269,9 @@
          <property name="suffix">
           <string/>
          </property>
+         <property name="minimum">
+          <double>-90.000000000000000</double>
+         </property>
          <property name="maximum">
           <double>999999.989999999990687</double>
          </property>
