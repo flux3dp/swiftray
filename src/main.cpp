@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   app.installTranslator(&translator);
 
   // Load Canvas to QML Engine
-  qmlRegisterType<Canvas>("Vecty", 1, 0, "Canvas");
+  qmlRegisterType<Canvas>("Swiftray", 1, 0, "Canvas");
   
   // Load MainWindow
   MainWindow win;
