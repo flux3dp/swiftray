@@ -37,14 +37,14 @@ void Transform::updateSelections() {
 }
 
 void Transform::updateBoundingRect() {
-  if (selections().size() == 0) {
+  if (selections().empty()) {
     bounding_rect_ = QRectF(0, 0, 0, 0);
     bbox_angle_ = 0;
   }
 
   // Check if all selection's rotation are the same
   bool all_same_direction = true;
-  qreal rotation = selections().first()->rotation();
+  qreal rotation = selections().empty() ? 0 : selections().first()->rotation();
 
   for (ShapePtr &selection : selections()) {
     if (selection->rotation() != rotation) {
