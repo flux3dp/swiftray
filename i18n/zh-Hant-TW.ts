@@ -790,7 +790,7 @@
     <name>MainWindow</name>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="14"/>
-        <source>Vecty</source>
+        <source>Swiftray</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

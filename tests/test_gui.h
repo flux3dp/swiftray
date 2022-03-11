@@ -6,7 +6,7 @@
 using namespace testing;
 
 TEST(GUI, MainWindow) {
-  qmlRegisterType<Canvas>("Vecty", 1, 0, "Canvas");
+  qmlRegisterType<Canvas>("Swiftray", 1, 0, "Canvas");
   MainWindow *win = new MainWindow;
   win->show();
 }
