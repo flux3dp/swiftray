@@ -54,7 +54,6 @@ private:
   QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path)
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;
-
   BaseGenerator *gen_;
   float dpmm_ = 10;
   QSizeF machine_work_area_size_; // Work area in real world coordinate (in unit of mm)

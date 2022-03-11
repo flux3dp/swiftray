@@ -12,6 +12,7 @@ ELSE (POTRACE_LIBRARIES AND POTRACE_INCLUDE_DIRS)
             /usr/include
             /usr/local/include
             $ENV{DEVLIBS_PATH}/include
+            C:/Dev/potrace/potrace-1.16/src/
             PATH_SUFFIXES
             potrace
             )
@@ -19,9 +20,10 @@ ELSE (POTRACE_LIBRARIES AND POTRACE_INCLUDE_DIRS)
     FIND_LIBRARY (POTRACE_LIBRARY
             NAMES libpotrace.a potrace libpotrace
             PATHS
-            /usr/lib
-            /usr/local/lib
-            $ENV{DEVLIBS_PATH}/lib
+            /usr/include
+            /usr/local/include
+            $ENV{DEVLIBS_PATH}/include
+            C:/Dev/potrace/potrace-1.16/src/.libs
             )
 
     if (POTRACE_LIBRARY)
