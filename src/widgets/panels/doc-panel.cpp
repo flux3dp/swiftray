@@ -88,6 +88,7 @@ void DocPanel::loadSettings() {
 
 void DocPanel::registerEvents() {
   ui->advanceFeatureToggle->setContent(ui->fluxFeatures);
+  ui->advanceFeatureToggle->hide();
 
   // Events of internal document settings changed trigger update in UI (panel & canvas)
   connect(ui->machineComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
