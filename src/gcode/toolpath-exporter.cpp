@@ -1,16 +1,16 @@
 #include <gcode/toolpath-exporter.h>
 #include <QElapsedTimer>
 #include <QDebug>
+#include <QVector2D>
 #include <iostream>
 #include <cmath>
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator) noexcept {
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept :
+ gen_(generator), dpmm_(dpmm)
+{
   global_transform_ = QTransform();
-  gen_ = generator;
-  dpmm_ = 10;
-  travel_speed_ = 100;
 }
 
 /**
@@ -46,7 +46,7 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
 
   // Post cmds
   gen_->home();
-  qInfo() << "[Export] Took " << t.elapsed() << " seconds";
+  qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
 }
 
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
@@ -192,51 +192,106 @@ void ToolpathExporter::outputLayerPathGcode() {
  */
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
-  bool reverse = false;
-  QImage image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
+  // Get the image of entire layer
+  QImage layer_image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
 
-  qreal mm_per_dot = 1.0 / dpmm_;            // unit size of engraving dot (segment)
-  qreal mm_per_pixel = canvas_size_.height() / canvas_mm_ratio_ / image.height();
-  // layer_bitmap_ image size = width & height of the document
-
+  qreal canvas_physical_width = canvas_size_.width() / canvas_mm_ratio_;
+  layer_image.setDotsPerMeterX(1000 * layer_image.width() / canvas_physical_width); // m/pixel = 1000 * mm/pixel
+  layer_image.setDotsPerMeterY(1000 * layer_image.width() / canvas_physical_width);
+  const qreal mm_per_pixel = 1000.0 / layer_image.dotsPerMeterX();
   // NOTE: Should convert points from canvas unit to mm
-  qreal real_x_left = bitmap_dirty_area_.left() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal real_x_right = bitmap_dirty_area_.right() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal real_y_top = bitmap_dirty_area_.top() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal real_y_bottom = bitmap_dirty_area_.bottom() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
+  QRectF bbox_mm{bitmap_dirty_area_.topLeft() / canvas_mm_ratio_,
+                 bitmap_dirty_area_.bottomRight() / canvas_mm_ratio_};
+  const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
 
   gen_->turnOnLaserAdpatively(); // M4
 
   // rapid move to the start position
-  moveTo(QPointF{real_x_left, real_y_top},
+  moveTo(bbox_mm.topLeft(),
          MOVING_SPEED,
          0);
 
   gen_->useRelativePositioning();
-  // Handle first row
-  qreal real_y_current_pos = real_y_top; // NOTE: y top < y bottom (in canvas coordinate)
-  while (real_y_current_pos < real_y_bottom) {
-    // scan a row
-    rasterBitmapRow(image.scanLine(int(real_y_current_pos / mm_per_pixel)), real_y_current_pos, image.width(), reverse, QPointF());
-    // enter the next row (y axis)
-    real_y_current_pos += mm_per_dot;
-    if (real_y_current_pos > real_y_bottom) {
-      break;
-    }
-    if (reverse) {
-      moveTo(QPointF{real_x_left, real_y_current_pos},
-             current_layer_->speed(),
-             0);
-    } else {
-      moveTo(QPointF{real_x_right, real_y_current_pos},
-             current_layer_->speed(),
-             0);
-    }
-    reverse = !reverse;
-  }
+
+  // Start raster
+  rasterBitmap(layer_image, mm_per_pixel, mm_per_dot, bbox_mm);
+
   gen_->useAbsolutePositioning();
 
   gen_->turnOffLaser();
+}
+
+bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
+    const qreal &mm_per_pixel,
+    const qreal &mm_per_dot,
+    QRectF bbox_mm) {
+
+  const int white_pixel = 255;
+  int current_grayscale = white_pixel; // 0-255 from dark (black) to bright (white)
+  bool reverse_raster_dir = false;
+
+  // Prepare raster lines
+  QList<QLineF> raster_lines;
+  for (qreal y = bbox_mm.top(); y <= bbox_mm.bottom(); y += mm_per_dot) {
+    raster_lines.push_back(QLineF{bbox_mm.left(), y,
+                                     bbox_mm.right(), y});
+  }
+  qInfo() << "mm_per_pixel: " << mm_per_pixel << ", mm_per_dot: " << mm_per_dot;
+  qInfo() << "bbox: " << bbox_mm;
+  qInfo() << "# of raster line: " << raster_lines.size();
+
+  for (const auto &raster_line: raster_lines) {
+    // Initialize for the new raster line
+    QPointF current_pos = reverse_raster_dir ?
+            raster_line.p2() :
+            raster_line.p1();
+    QVector2D direction = reverse_raster_dir ?
+            QVector2D{raster_line.p1() - raster_line.p2()} :
+            QVector2D{raster_line.p2() - raster_line.p1()};
+    direction.normalize();
+    current_grayscale = white_pixel; // 0 power for motion across lines
+    bool first_segment = true; // indicate the first segment in the current raster line
+    const QPointF displace_per_step = mm_per_dot * direction.toPointF();
+
+    // Start stepping
+    while (1) {
+      QPointF next_pos = current_pos + displace_per_step;
+      if ( !bbox_mm.contains(next_pos) ) { // finish the remaining
+        if (current_grayscale != white_pixel) {
+          moveTo(current_pos,
+                 current_layer_->speed(),
+                 qRound(current_layer_->power() * current_grayscale / 255.0));
+          current_grayscale = white_pixel;
+        }
+        break;
+      }
+
+      // Get pixel value from pos
+      current_pos = next_pos;
+      const uchar *data_ptr = layer_image.constScanLine(current_pos.y() / mm_per_pixel);
+      int new_grayscale = data_ptr[int(current_pos.x() / mm_per_pixel)];
+
+      // When encounter a grayscale change, moveTo the pos
+      if (new_grayscale != current_grayscale) {
+        if (current_grayscale == white_pixel) { // white path - black path transition
+          moveTo(current_pos,
+                 first_segment ? MOVING_SPEED : current_layer_->speed(),
+                 0);
+          first_segment = false;
+        } else { // black path - white path transition
+          moveTo(current_pos,
+                 current_layer_->speed(),
+                 qRound(current_layer_->power() * (white_pixel - current_grayscale) / 255.0));
+        }
+        current_grayscale = new_grayscale;
+      }
+    } // end of a raster line
+    if (!first_segment) { // if any segment exist in this line -> reverse direction in the next line
+      reverse_raster_dir = !reverse_raster_dir;
+    }
+  } // end of all raster lines
+
+  return true;
 }
 
 /**

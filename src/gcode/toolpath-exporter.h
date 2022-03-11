@@ -14,11 +14,10 @@
 
 class ToolpathExporter {
 public:
-  ToolpathExporter(BaseGenerator *generator) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept;
 
   void convertStack(const QList<LayerPtr> &layers);
 
-  void setDPMM(qreal new_dpmm) { dpmm_ = new_dpmm; }
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 
 private:
@@ -43,8 +42,8 @@ private:
   inline void moveTo(QPointF&& dest, int speed, int power);
   inline void moveTo(const QPointF& dest, int speed, int power);
 
+  bool rasterBitmap(const QImage &layer_image,const qreal &mm_per_pixel, const qreal &mm_per_dot, QRectF bbox_mm);
   bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
-
   bool rasterBitmapRow(unsigned char *data, qreal real_y_pos, int row_pixel_cnt, bool reverse, QPointF offset);
 
   QImage imageBinarize(QImage src, int threshold);
@@ -57,8 +56,7 @@ private:
   std::unique_ptr<QPainter> layer_painter_;
 
   BaseGenerator *gen_;
-  float dpmm_;
-  float travel_speed_;
+  float dpmm_ = 10;
   QSizeF machine_work_area_size_; // Work area in real world coordinate (in unit of mm)
   QRectF bitmap_dirty_area_; // In canvas unit (not in real world mm unit)
   QSizeF canvas_size_;       // In canvas unit (not in real world mm unit)
