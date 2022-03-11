@@ -871,6 +871,7 @@ void MainWindow::setToolbarTransform() {
   doubleSpinBoxX->setMaximum(9999);
   doubleSpinBoxY->setMaximum(9999);
   doubleSpinBoxRotation->setMaximum(9999);
+  doubleSpinBoxRotation->setMinimum(-90);
   doubleSpinBoxWidth->setMaximum(9999);
   doubleSpinBoxHeight->setMaximum(9999);
   doubleSpinBoxX->setSuffix(" mm");

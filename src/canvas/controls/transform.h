@@ -122,11 +122,10 @@ namespace Controls {
     bool bbox_need_recalc_;
 
     bool scale_locked_;
-  public slots:
 
+  public slots:
     void updateSelections();
 
     void updateBoundingRect();
   };
-
 }
