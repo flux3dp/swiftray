@@ -48,12 +48,15 @@ bool SerialPort::start(const char *com_port_name, int baud_rate)
   }
 
   // option settings...
-  port_->set_option(boost::asio::serial_port_base::baud_rate(baud_rate));
-  port_->set_option(boost::asio::serial_port_base::character_size(8));
-  port_->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
-  port_->set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
-  port_->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
-
+  try {
+    port_->set_option(boost::asio::serial_port_base::baud_rate(baud_rate));
+    port_->set_option(boost::asio::serial_port_base::character_size(8));
+    port_->set_option(boost::asio::serial_port_base::stop_bits(boost::asio::serial_port_base::stop_bits::one));
+    port_->set_option(boost::asio::serial_port_base::parity(boost::asio::serial_port_base::parity::none));
+    port_->set_option(boost::asio::serial_port_base::flow_control(boost::asio::serial_port_base::flow_control::none));
+  } catch (std::exception const &e) {
+    qWarning() << "Error connection: " << e.what();
+  }
   async_read_some_();
 
   // NOTE: The following line is necessary for async_read_some to work
@@ -148,4 +151,3 @@ void SerialPort::on_receive_(const boost::system::error_code& ec, size_t bytes_t
 
   async_read_some_(); // start the next read
 }
-
