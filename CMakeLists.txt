@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(swiftray)
+project(Swiftray)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
