@@ -1,88 +1,82 @@
 {
-  "name": "Default Preset",
+  "name": "10W",
   "data": [
     {
       "name": "Wood 3mm Cutting",
-      "power": 45,
-      "speed": 5
+      "power": 100,
+      "speed": 6
     },
     {
       "name": "Wood 5mm Cutting",
-      "power": 55,
-      "speed": 4,
-      "repeat": 2
+      "power": 100,
+      "speed": 3
     },
     {
       "name": "Wood Engraving",
-      "power": 25,
-      "speed": 150
+      "power": 30,
+      "speed": 50
     },
     {
       "name": "Acrylic 3mm Cutting",
-      "power": 55,
-      "speed": 4
+      "power": 95,
+      "speed": 2
     },
     {
       "name": "Acrylic 5mm Cutting",
-      "power": 55,
-      "speed": 5,
+      "power": 100,
+      "speed": 2,
       "repeat": 2
     },
     {
       "name": "Acrylic Engraving",
-      "power": 25,
-      "speed": 150
+      "power": 30,
+      "speed": 20
     },
     {
       "name": "Leather 3mm Cutting",
-      "power": 60,
-      "speed": 3
+      "power": 100,
+      "speed": 4
     },
     {
       "name": "Leather 5mm Cutting",
-      "power": 60,
+      "power": 100,
       "speed": 3,
       "repeat": 2
     },
     {
       "name": "Leather Engraving",
-      "power": 30,
-      "speed": 150
+      "power": 10,
+      "speed": 40
     },
     {
       "name": "Fabric 3mm cutting",
-      "power": 50,
-      "speed": 20
+      "power": 100,
+      "speed": 6
     },
     {
       "name": "Fabric 5mm cutting",
-      "power": 50,
-      "speed": 20
+      "power": 100,
+      "speed": 2
     },
     {
       "name": "Fabric Engraving",
-      "power": 20,
-      "speed": 150
+      "power": 30,
+      "speed": 45
     },
     {
       "name": "Rubber Engraving",
-      "power": 50,
-      "speed": 140
+      "power": 100,
+      "speed": 15
     },
     {
       "name": "Glass Engraving",
-      "power": 35,
-      "speed": 150
+      "power": 40,
+      "speed": 20
     },
     {
       "name": "Metal Engraving",
-      "power": 50,
-      "speed": 80
-    },
-    {
-      "name": "Stainless Diode Engraving",
       "power": 100,
-      "speed": 4
+      "speed": 20
     }
   ]
 }

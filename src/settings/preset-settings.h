@@ -91,17 +91,25 @@ public:
 
 private:
   PresetSettings() {
-    QSettings settings;
-    QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
-    if (obj["data"].isNull()) {
-      QFile file(":/resources/parameters/default.json");
+    //QSettings settings;
+    //QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
+    //if (obj["data"].isNull()) {
+    QList<QString> file_list;
+    //file_list.append("default.json");
+    file_list.append("1.6W.json");
+    file_list.append("5W.json");
+    file_list.append("10W.json");
+    for (int i = 0; i < file_list.size(); ++i) {
+      QFile file(":/resources/parameters/"+file_list[i]);
       file.open(QFile::ReadOnly);
       // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
       auto preset = Preset::fromJson(QJsonDocument::fromJson(file.readAll()).object());
-      preset.name = "FLUX beamo Preset";
+      qInfo() << file.fileName();
+      preset.name = file_list[i].left(file_list[i].lastIndexOf('.'));
       presets_ << preset;
-    } else {
-      loadJson(obj);
     }
+    //} else {
+    //  loadJson(obj);
+    //}
   }
 };
