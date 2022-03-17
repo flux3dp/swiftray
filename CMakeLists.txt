@@ -114,7 +114,7 @@ set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
 set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 
 
-add_executable(${PROJECT_NAME} ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
+add_executable(${PROJECT_NAME} WIN32 ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
 target_link_libraries(${PROJECT_NAME} Qt::Core)
 target_link_libraries(${PROJECT_NAME} Qt::Quick)
 target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
