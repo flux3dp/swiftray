@@ -290,8 +290,8 @@ void Transform::calcScale(QPointF canvas_coord) {
       active_control_ == Control::SW)
     d.setX(-d.x());
 
-  scale_x_to_apply_ = d.x() / transformed_from_.width();
-  scale_y_to_apply_ = d.y() / transformed_from_.height();
+  scale_x_to_apply_ = transformed_from_.width() == 0 ? 1 : d.x() / transformed_from_.width();
+  scale_y_to_apply_ = transformed_from_.height() == 0 ? 1 : d.y() / transformed_from_.height();
 
   if (scale_locked_) {
     if (active_control_ == Control::N || active_control_ == Control::S) {
