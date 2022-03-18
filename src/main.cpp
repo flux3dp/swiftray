@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   QCoreApplication::setOrganizationName("FLUX");
   QCoreApplication::setOrganizationDomain("flux3dp.com");
-  QCoreApplication::setApplicationName("Beam Studio Native");
+  QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
   // CLI
