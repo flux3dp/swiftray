@@ -569,6 +569,13 @@ void Canvas::editDrawText() {
   setMode(Mode::TextDrawing);
 }
 
+void Canvas::editClear() {
+  editSelectAll();
+  document().execute(
+    Commands::RemoveSelections(&document())
+  );
+}
+
 void Canvas::editSelectAll() {
   if (mode() != Mode::Selecting)
     return;
