@@ -17,8 +17,8 @@ public:
     ~ImageCropDialog() override;
 
     void loadImage(const QImage &img);
-    void initBackgroundDisplay();
-    QPixmap getCrop();
+    void resetCropOperation();
+    QImage getCropImage();
 
 protected:
     void showEvent(QShowEvent *event) override;
@@ -29,5 +29,5 @@ private:
 
     Ui::ImageCropDialog *ui;
 
-    QImage src_image_;
+    QImage src_image_; // original image before any crop
 };

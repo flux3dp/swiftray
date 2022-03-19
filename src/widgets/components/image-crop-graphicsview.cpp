@@ -50,6 +50,16 @@ void ImageCropGraphicsView::pinchGestureHandler(QPinchGesture *pg) {
   // Override base, disable zoom in/out
 }
 
+void ImageCropGraphicsView::updateTargetImage(const QImage &image) {
+  target_image_ = image;
+  updateBackgroundPixmap(QPixmap::fromImage(target_image_));
+}
+
+void ImageCropGraphicsView::updateTargetImage(QImage &&image) {
+  target_image_ = image;
+  updateBackgroundPixmap(QPixmap::fromImage(target_image_));
+}
+
 /**
  * @brief clear and draw new background image
  * @param background_pixmap
@@ -96,13 +106,11 @@ ResizeableRectItem* ImageCropGraphicsView::getCropAreaItem() {
   return nullptr;
 }
 
-QPixmap ImageCropGraphicsView::getCrop() {
+QImage ImageCropGraphicsView::getCropImage() {
   if (crop_area_ != nullptr && getBackgroundPixmapItem() != nullptr) {
     // The PixmapItem is on scene and expressed in scene coordinate.
     // Thus, we need to apply "invert" the transform on crop_area_ to get the actual crop area on image (pixmap)
-    return getBackgroundPixmapItem()->pixmap().copy(
-  transform().inverted().mapRect(crop_area_->rect().toRect())
-    );
+    return target_image_.copy(transform().inverted().mapRect(crop_area_->rect().toRect()));
   }
-  return QPixmap();
+  return QImage();
 }

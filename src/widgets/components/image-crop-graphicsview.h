@@ -12,9 +12,11 @@ Q_OBJECT
 public:
     ImageCropGraphicsView(QWidget *parent = nullptr);
 
+    void updateTargetImage(const QImage &image);
+    void updateTargetImage(QImage &&image);
     void updateBackgroundPixmap(QPixmap background_img) override;
 
-    QPixmap getCrop();
+    QImage getCropImage();
 
 protected:
     void mousePressEvent(QMouseEvent *event);
@@ -31,6 +33,7 @@ private:
 
     QPoint new_crop_area_starting_point_;
     ResizeableRectItem* getCropAreaItem();
+    QImage target_image_; // temporary image as crop target
     ResizeableRectItem *crop_area_ = nullptr;
     bool creating_new_crop_area_ = false;
 };
