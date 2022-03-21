@@ -99,6 +99,7 @@ HEADERS += \
     $$files(src/windows/*.h) \
     $$files(src/*.h) \
     src/connection/base-job.h \
+    src/gcode/generators/dirty-area-outline-generator.h \
     src/settings/file-path-settings.h \
     src/settings/machine-settings.h \
     src/settings/maintenance-controller.h \

@@ -12,6 +12,7 @@
 #include <QSerialPortInfo>
 #include <QToolButton>
 #include <QCheckBox>
+#include <QMessageBox>
 #include <constants.h>
 #include <QMessageBox>
 #include <widgets/components/qdoublespinbox2.h>
@@ -22,6 +23,7 @@
 #include <gcode/toolpath-exporter.h>
 #include <gcode/generators/gcode-generator.h>
 #include <gcode/generators/preview-generator.h>
+#include <gcode/generators/dirty-area-outline-generator.h>
 #include <document-serializer.h>
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
@@ -578,6 +580,34 @@ void MainWindow::registerEvents() {
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
     job_dashboard_->show();
+  });
+  connect(ui->actionFrame, &QAction::triggered, this, [=]() {
+    if (SerialPort::getInstance().isConnected()) {
+      QMessageBox msgbox;
+      msgbox.setText(tr("Serial Port Error"));
+      msgbox.setInformativeText(tr("Please connect to serial port first"));
+      msgbox.exec();
+      return;
+    }
+    auto gen_outline_scanning_gcode = make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
+    ToolpathExporter exporter(gen_outline_scanning_gcode.get());
+    exporter.setDPMM(canvas_->document().settings().dpmm());
+    exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+    exporter.convertStack(canvas_->document().layers());
+
+    // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
+    // Approach 1: use gcode player
+    // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
+    // Approach 2: directy control serial port
+    if (!SerialPort::getInstance().isConnected()) {
+      return;
+    }
+    QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
+    for (auto cmd: cmd_list) {
+      SerialPort::getInstance().write_some((cmd + "\n").toStdString());
+      // TODO: Wait for ok?
+    }
+
   });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
