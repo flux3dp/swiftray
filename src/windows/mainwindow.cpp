@@ -589,9 +589,8 @@ void MainWindow::registerEvents() {
       msgbox.exec();
       return;
     }
-    auto gen_outline_scanning_gcode = make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_outline_scanning_gcode.get());
-    exporter.setDPMM(canvas_->document().settings().dpmm());
+    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
+    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), canvas_->document().settings().dpmm());
     exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
     exporter.convertStack(canvas_->document().layers());
 
