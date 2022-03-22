@@ -48,7 +48,10 @@ public:
     // 2. separate relative mode & absolute mode
     if (relative_mode_) {
       if (x != x_ || y != y_) {
-        str_stream_ << "G1";
+        if ( ! in_G1_modal_) {
+          str_stream_ << "G1";
+          in_G1_modal_ = true;
+        }
       }
       if (x != x_) {
         str_stream_ << "X" << round((x - x_) * 1000) / 1000;
@@ -62,7 +65,11 @@ public:
       // Coordinate transform for different origin type
       if (x_ == x && y_ == y && speed_ == speed && power_ == power)
         return;
-      str_stream_ << "G1";
+
+      if ( ! in_G1_modal_) {
+        str_stream_ << "G1";
+        in_G1_modal_ = true;
+      }
       if (x_ != x) {
         str_stream_ << "X" << round(x * 1000) / 1000;
         x_ = x;
@@ -127,11 +134,13 @@ public:
     machine_width_ = 0;
     machine_height_ = 0;
     machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+    in_G1_modal_ = false;
   }
 
 private:
   bool relative_mode_;
   int machine_width_;
   int machine_height_;
+  bool in_G1_modal_ = false;
   MachineSettings::MachineSet::OriginType machine_origin_;
 };
