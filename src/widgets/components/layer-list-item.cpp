@@ -152,9 +152,15 @@ void LayerListItem::onDuplicateLayer() {
 void LayerListItem::onDeleteLayer() {
   if (layer_->document().layers().length() == 1) { // should add one default layer when no layer in the list
     canvas_->addEmptyLayer();
-    layer_->document().execute(Commands::RemoveLayer(layer_));
+    layer_->document().execute(
+      Commands::RemoveSelections(&(layer_->document())),
+      Commands::RemoveLayer(layer_)
+    );
   } else {
-    layer_->document().execute(Commands::RemoveLayer(layer_));
+    layer_->document().execute(
+      Commands::RemoveSelections(&(layer_->document())),
+      Commands::RemoveLayer(layer_)
+    );
   }
   emit canvas_->layerChanged();
 }
