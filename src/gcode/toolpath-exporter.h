@@ -20,6 +20,11 @@ public:
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 
+  enum class ScanDirectionMode {
+      kBidirectionMode,
+      kUnidirectionMode
+  };
+
 private:
   void convertLayer(const LayerPtr &layer);
 
@@ -42,9 +47,13 @@ private:
   inline void moveTo(QPointF&& dest, int speed, int power);
   inline void moveTo(const QPointF& dest, int speed, int power);
 
-  bool rasterBitmap(const QImage &layer_image,const qreal &mm_per_pixel, const qreal &mm_per_dot, QRectF bbox_mm);
-  bool rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse, QPointF offset);
-  bool rasterBitmapRow(unsigned char *data, qreal real_y_pos, int row_pixel_cnt, bool reverse, QPointF offset);
+  bool rasterBitmap(const QImage &layer_image, const qreal &mm_per_pixel,
+                    const qreal &mm_per_dot, QRectF bbox_mm,
+                    ScanDirectionMode direction_mode);
+  bool rasterBitmapHighSpeed(const QImage &layer_image, const qreal &mm_per_pixel,
+                             const qreal &mm_per_dot, QRectF bbox_mm,
+                             ScanDirectionMode direction_mode);
+  bool rasterLineHighSpeed(const std::vector<std::bitset<32>>& data);
 
   QImage imageBinarize(QImage src, int threshold);
 

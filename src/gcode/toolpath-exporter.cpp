@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QVector2D>
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <boost/range/irange.hpp>
 #include <constants.h>
@@ -214,23 +215,37 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   gen_->useRelativePositioning();
 
   // Start raster
-  rasterBitmap(layer_image, mm_per_pixel, mm_per_dot, bbox_mm);
+  rasterBitmapHighSpeed(layer_image, mm_per_pixel,
+                mm_per_dot, bbox_mm,
+                ScanDirectionMode::kBidirectionMode);
+  //rasterBitmap(layer_image, mm_per_pixel,
+  //              mm_per_dot, bbox_mm,
+  //              ScanDirectionMode::kBidirectionMode);
 
   gen_->useAbsolutePositioning();
 
   gen_->turnOffLaser();
 }
 
+/**
+ *
+ * @param layer_image the bitmap of entire layer
+ * @param mm_per_pixel
+ * @param mm_per_dot   unit length of engraving segment
+ * @param bbox_mm bounding box of dirty area
+ * @param diection_mode
+ * @return
+ */
 bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
     const qreal &mm_per_pixel,
     const qreal &mm_per_dot,
-    QRectF bbox_mm) {
+    QRectF bbox_mm, ScanDirectionMode direction_mode) {
 
   const int white_pixel = 255;
   int current_grayscale = white_pixel; // 0-255 from dark (black) to bright (white)
   bool reverse_raster_dir = false;
 
-  // Prepare raster lines
+  // Prepare raster line paths
   QList<QLineF> raster_lines;
   for (qreal y = bbox_mm.top(); y <= bbox_mm.bottom(); y += mm_per_dot) {
     raster_lines.push_back(QLineF{bbox_mm.left(), y,
@@ -241,26 +256,29 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
   qInfo() << "# of raster line: " << raster_lines.size();
 
   for (const auto &raster_line: raster_lines) {
-    // Initialize for the new raster line
+    // Initialize
     QPointF current_pos = reverse_raster_dir ?
             raster_line.p2() :
             raster_line.p1();
-    QVector2D direction = reverse_raster_dir ?
+    QVector2D unit_dir = reverse_raster_dir ?
             QVector2D{raster_line.p1() - raster_line.p2()} :
             QVector2D{raster_line.p2() - raster_line.p1()};
-    direction.normalize();
+    unit_dir.normalize();
     current_grayscale = white_pixel; // 0 power for motion across lines
     bool first_segment = true; // indicate the first segment in the current raster line
-    const QPointF displace_per_step = mm_per_dot * direction.toPointF();
+    const QPointF displace_per_dot = mm_per_dot * unit_dir.toPointF();
 
-    // Start stepping
+    // Start stepping each dot
+    qInfo() << "==============";
     while (1) {
-      QPointF next_pos = current_pos + displace_per_step;
+      QPointF next_pos = current_pos + displace_per_dot;
       if ( !bbox_mm.contains(next_pos) ) { // finish the remaining
+        //qInfo() << current_grayscale;
         if (current_grayscale != white_pixel) {
+          //qInfo() << current_layer_->power() << " " << qRound(current_layer_->power() * current_grayscale / 255.0);
           moveTo(current_pos,
                  current_layer_->speed(),
-                 qRound(current_layer_->power() * current_grayscale / 255.0));
+                 qRound(current_layer_->power() * (white_pixel - current_grayscale) / 255.0));
           current_grayscale = white_pixel;
         }
         break;
@@ -270,183 +288,253 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
       current_pos = next_pos;
       const uchar *data_ptr = layer_image.constScanLine(current_pos.y() / mm_per_pixel);
       int new_grayscale = data_ptr[int(current_pos.x() / mm_per_pixel)];
-
-      // When encounter a grayscale change, moveTo the pos
+      //qInfo() << new_grayscale;
+      // When encountering a grayscale change, the parsing for the next segment finished.
+      // moveTo the pos_of_next_segment_end (current parser pos) with corresponding power
       if (new_grayscale != current_grayscale) {
         if (current_grayscale == white_pixel) { // white path - black path transition
           moveTo(current_pos,
                  first_segment ? MOVING_SPEED : current_layer_->speed(),
                  0);
-          first_segment = false;
         } else { // black path - white path transition
           moveTo(current_pos,
                  current_layer_->speed(),
                  qRound(current_layer_->power() * (white_pixel - current_grayscale) / 255.0));
         }
+        if (first_segment) {
+          first_segment = false;
+        }
         current_grayscale = new_grayscale;
       }
     } // end of a raster line
-    if (!first_segment) { // if any segment exist in this line -> reverse direction in the next line
-      reverse_raster_dir = !reverse_raster_dir;
+
+    // Update scan direction
+    if (direction_mode == ScanDirectionMode::kBidirectionMode) {
+      if (!first_segment) { // if any segment exist in this line -> reverse direction in the next line
+        reverse_raster_dir = !reverse_raster_dir;
+      }
     }
+
   } // end of all raster lines
 
   return true;
 }
 
 /**
- * @brief
- * @param data
- * @param row_pixel_cnt Number of bitmap pixels in the row (Not the number of engraving dot)
- * @param reverse true: left to right; false: right to left
- * @param offset
+ * @brief Remove the suffix and prefix zeros
+ * 
+ * @param src_bit_array 
+ * @return std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> 
+ *         - the trimmed bit array
+ *         - the bit idx of the first 1 in the source bit array
+ *         - the bit idx of the last 1 in the source bit array
+ */
+static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
+    const std::vector<std::bitset<32>>& src_bit_array) {
+
+  enum class SearchStage {
+      kSearchForStartPos,
+      kSearchForEndPos,
+  };
+  SearchStage search_stage = SearchStage::kSearchForStartPos;
+  int first_none_zero_bit_idx = 0;
+  int last_none_zero_bit_idx = 0;
+  for (int i = 0; i < src_bit_array.size(); i++) {
+    if (src_bit_array[i].none()) {
+      continue;
+    }
+
+    if (search_stage == SearchStage::kSearchForStartPos) {
+      // Search for the first black dot
+      for (int j = 31; j >= 0; j--) { // search from most significant bit
+        if (src_bit_array[i][j]) {
+          first_none_zero_bit_idx = i*32 + (31-j);
+          search_stage = SearchStage::kSearchForEndPos;
+          break;
+        }
+      }
+    }
+    if (search_stage == SearchStage::kSearchForEndPos) {
+      // Search for the last black dot
+      for (int j = 0; j < 32; j++) { // search from least significant bit
+        if (src_bit_array[i][j]) {
+          last_none_zero_bit_idx = i*32 + (31-j);
+          break;
+        }
+      }
+    }
+
+  } // end of search for loop
+
+  std::vector<std::bitset<32>> bit_array{
+    src_bit_array.begin() + (first_none_zero_bit_idx / 32),
+    src_bit_array.begin() + (last_none_zero_bit_idx / 32) + 1
+  };
+  int bit_shift = first_none_zero_bit_idx % 32;
+
+  for (auto i = 0; i < bit_array.size(); i++) {
+    if (i+1 == bit_array.size()) {
+      bit_array[i] = (bit_array[i] << bit_shift);
+    } else {
+      bit_array[i] = (bit_array[i] << bit_shift) | (bit_array[i+1] >> (32-bit_shift)) ;
+    }
+  }
+  // If any pure-0 word (32 bits) exist after shift, discard it
+  if (bit_array.back().none()) {
+    bit_array.pop_back();
+  }
+  return std::make_tuple(bit_array, first_none_zero_bit_idx, last_none_zero_bit_idx);
+}
+
+/**
+ * @brief Export
+ * @param layer_image  image of an entire layer on canvas
+ * @param mm_per_pixel canvas pixel size
+ * @param mm_per_dot   laser unit size (machine engraving resolution)
+ * @param bbox_mm      the STRICT bounding box for the raster motion
  * @return
  */
-bool ToolpathExporter::rasterBitmapRow(unsigned char *data, qreal real_y_pos, int row_pixel_cnt,
-                                       bool reverse, QPointF offset) {
-  qreal mm_per_dot = 1.0 / dpmm_;            // unit size of engraving dot (segment)
-  qreal mm_per_pixel = canvas_size_.width() / canvas_mm_ratio_ / row_pixel_cnt;
+bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
+    const qreal &mm_per_pixel, 
+    const qreal &mm_per_dot, 
+    QRectF bbox_mm,
+    ScanDirectionMode direction_mode) {
 
-  qreal real_x_left_boundary = bitmap_dirty_area_.left() / canvas_mm_ratio_;   // in unit of mm (real world coordinate)
-  qreal real_x_right_boundary = bitmap_dirty_area_.right() / canvas_mm_ratio_; // in unit of mm (real world coordinate)
+  // 1. Enter fast raster mode
+  gen_->appendCustomCmd(std::string("D0R") +
+        std::string(mm_per_pixel >= 0.2 ? "L" :
+                    mm_per_pixel >= 0.1 ? "M" :
+                    mm_per_pixel >= 0.05 ? "H" : "U") +
+       std::string("\n")
+   );
 
-  bool laser_should_be_on = false; // whether should be on (in the last pixel but haven't been added to gcode)
+  // 2. Parsing bitmap data and generate command for each raster line
+  const int white_pixel = 255;
+  bool is_emitting_laser = false;
+  bool reverse_raster_dir = false;
 
-  qreal real_x_current_pos = reverse ? real_x_right_boundary : real_x_left_boundary;
-
-  // 1. Handle the first pixel in the row (initial state)
-  float p = data[int(real_x_current_pos / mm_per_pixel)] > 127 ? 255 : 0;
-  float laser_pwm = (255.0 - p) / 255.0; // black (0) -> 100% pwm; white (255) -> 0% pwm
-  if (laser_pwm < 0.01) laser_pwm = 0;
-  if (laser_pwm != 0) {
-    laser_should_be_on = true;
+  // 2-1. Prepare raster line paths
+  QList<QLineF> raster_lines;
+  for (qreal y = bbox_mm.top(); y <= bbox_mm.bottom(); y += mm_per_dot) {
+    raster_lines.push_back(QLineF{bbox_mm.left(), y,
+                                  bbox_mm.right(), y});
   }
-  // 2. Iterate until the boundary
-  while ( (reverse && real_x_current_pos > real_x_left_boundary) ||
-          (!reverse && real_x_current_pos < real_x_right_boundary) )
-  {
-    if (reverse) {
-      real_x_current_pos -= mm_per_dot;
-    } else {
-      real_x_current_pos += mm_per_dot;
+  qInfo() << "mm_per_pixel: " << mm_per_pixel << ", mm_per_dot: " << mm_per_dot;
+  qInfo() << "bbox: " << bbox_mm;
+  qInfo() << "# of raster line: " << raster_lines.size();
+
+  // 2-2. iterate
+  for (const auto &raster_line: raster_lines) {
+    // Initialize
+    if (raster_line.isNull()) {
+      continue;
     }
-    if (reverse && real_x_current_pos <= real_x_left_boundary) {
-      // End of reversed Line
-      real_x_current_pos = real_x_left_boundary;
-      if (laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-        moveTo(QPointF{real_x_current_pos, real_y_pos},
-               current_layer_->speed(),
-               current_layer_->power());
-      } else if (!laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-        moveTo(QPointF{real_x_current_pos, real_y_pos},
-               current_layer_->speed(),
-               0);
+    std::vector<std::bitset<32>> dot_data_list;
+    // TBD: Consider encapsulate the following into a class/struct
+    const QPointF initial_pos = reverse_raster_dir ?
+                       raster_line.p2() :
+                       raster_line.p1();
+    const QPointF end_pos = reverse_raster_dir ?
+                          raster_line.p1() :
+                          raster_line.p2();
+    const QLineF path{initial_pos, end_pos};
+    const qreal t_per_dot = mm_per_dot / path.length();
+    qreal current_t = 0;
+    QPointF current_pos = path.pointAt(current_t);
+
+    // Scan an entire line of bitmap
+    std::bitset<32> data_word = 0;
+    uint32_t bit_idx = 31;
+    bool blank_line = true; // blank line filled with white pixels entirely
+    while (1) {
+
+      const uchar *data_ptr = layer_image.constScanLine(current_pos.y() / mm_per_pixel);
+      int dot_grayscale = data_ptr[int(current_pos.x() / mm_per_pixel)];
+      //qInfo() << dot_grayscale;
+      if (dot_grayscale < white_pixel && blank_line) {
+        blank_line = false;
       }
-      break;
-    } else if (!reverse && real_x_current_pos >= real_x_right_boundary) {
-      // End of forward Line
-      real_x_current_pos = real_x_right_boundary;
-      if (laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-        moveTo(QPointF{real_x_current_pos, real_y_pos},
-               current_layer_->speed(),
-               current_layer_->power());
-      } else if (!laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-        moveTo(QPointF{real_x_current_pos, real_y_pos},
-               current_layer_->speed(),
-               0);
+      dot_grayscale == white_pixel ? data_word.reset(bit_idx) : data_word.set(bit_idx);
+
+      if (bit_idx == 0) {
+        dot_data_list.push_back(data_word);
+        data_word.reset();
+        bit_idx = 31;
+      } else {
+        bit_idx--;
       }
-      break;
+
+      current_t += t_per_dot;
+      if ( current_t >= 0.9999) { // terminate condition: Reach end pos (within epsilon distance)
+        if (bit_idx != 31) { // Append the remaining partial word
+          dot_data_list.push_back(data_word);
+        }
+        break;
+      }
+      current_pos = path.pointAt(current_t);
+    } // End of parsing of the raster line
+
+    if (blank_line) {
+      continue; // ignore blank line
     }
 
-    // Dots (segments) in the middle
-    float p = data[int(real_x_current_pos / mm_per_pixel)] > 127 ? 255 : 0;
-    float laser_pwm = (255.0 - p) / 255.0;
-    if (laser_pwm < 0.01) laser_pwm = 0; // black (0) -> 100% pwm; white (255) -> 0% pwm
-    if (laser_pwm == 0 && laser_should_be_on) { // on -> off (add a dark segment until the last pixel)
-      moveTo(QPointF{real_x_current_pos, real_y_pos},
-             current_layer_->speed(),
-             current_layer_->power());
-      laser_should_be_on = false;
-    } else if (laser_pwm != 0 && !laser_should_be_on) { // off -> on (add an white segment until the last pixel)
-      moveTo(QPointF{real_x_current_pos, real_y_pos},
-             current_layer_->speed(),
-             0);
-      laser_should_be_on = true;
+    auto [ trimmed_bit_array, first_none_zero_idx, last_none_zero_idx ] = trim_zero(dot_data_list);
+    QLineF dirty_line_segment {
+        path.pointAt(first_none_zero_idx * t_per_dot),
+        path.pointAt(qMin((last_none_zero_idx + 1) * t_per_dot, 1.0))
+    };
+
+    // Generate moveTo cmd to the initial position of raster line
+    moveTo(dirty_line_segment.p1(),
+           MOVING_SPEED,
+           0);
+    // Generate D1PC, D2W, D3FE, D4PL cmd based on the parsed info
+    rasterLineHighSpeed(trimmed_bit_array);
+    // Generate moveTo cmd to the end position of raster line
+    moveTo(dirty_line_segment.p2(),
+           current_layer_->speed(),
+           current_layer_->power());
+
+    // Switch scan direction if config
+    if (direction_mode == ScanDirectionMode::kBidirectionMode) {
+      reverse_raster_dir = !reverse_raster_dir;
     }
 
-  }
+  } // end of all raster lines
 
-  return 0;
-}
-
-bool ToolpathExporter::rasterBitmapRowHighSpeed(unsigned char *data, float global_coord_y, bool reverse,
-                                                QPointF offset) {
-  /*
-  float pixel_size = 1.0 / dpmm_;
-  int max_x = layer_bitmap_.width();
-  max_x -= 3;
-  int init_blank_pixels = int(5 / pixel_size);
-  int head = -1, tail = -1;
-  bool pixels[max_x];
-
-  for (int x = 0; x < max_x; x++) {
-    pixels[x] = data[x] < 127;
-
-    if (!pixels[x]) {
-      if (head < 0) head = x;
-
-      tail = x;
-    }
-  }
-
-  if (head < 0) return false;
-
-  int pixels32 = 0, pixels32_mask = 31, pixels_count;
-  float start_x, end_x;
-
-  if (!reverse) {
-    head = std::max(0, head - init_blank_pixels);
-    tail = std::min(max_x - 31, tail + init_blank_pixels);
-    start_x = pixel_size * head - offset.x();
-    end_x = pixel_size * (tail + 1) - offset.x();
-    pixels_count = tail - head + 1;
-  } else {
-    head = std::min(max_x - 31, head + init_blank_pixels);
-    tail = std::max(0, tail - init_blank_pixels);
-    start_x = pixel_size * (head + 1) - offset.x();
-    end_x = pixel_size * tail - offset.x();
-    pixels_count = head - tail + 1;
-  }
-
-  gen_->moveTo(start_x, global_coord_y, travel_speed_, 0);
-  gen_->setSpeed(current_layer_->speed());
-  gen_->beginHighSpeedRastering(pixels_count);
-  auto x_range = reverse ? boost::irange(head, tail - 1, -1) : boost::irange(head, tail + 1, 1);
-
-  for (int x : x_range) {
-    if (pixels[x]) {
-      pixels32 |= 1 << pixels32_mask;
-    }
-
-    pixels32_mask--;
-
-    if (pixels32_mask < 0) {
-      pixels32_mask = 31;
-      gen_->pushRasteringPixels32(pixels32);
-      pixels32 = 0;
-    }
-  }
-
-  if (pixels32) gen_->pushRasteringPixels32(pixels32);
-
-  gen_->endHighSpeedRastering();
-  gen_->moveToX(end_x);
+  // 5. Exit fast raster mode
+  gen_->appendCustomCmd(std::string("D5\n"));
 
   return true;
-  */
-
-  return false;
 }
+
+/**
+ * @brief Export D1PC[n], D2WXXXXXX, D3FE and D4PL cmd for an entire row
+ * @param data row data
+ * @return
+ */
+bool ToolpathExporter::rasterLineHighSpeed(const std::vector<std::bitset<32>>& data) {
+  gen_->appendCustomCmd(std::string("D1PC") + std::to_string(32*data.size()) + std::string("\n"));
+
+  // Generate D2W commands 6*32 pixels per D2W cmd
+  // WARNING: Shouldn't exceed the cmd line buffer size (e.g. 80) of grbl machine
+  std::stringstream ss;
+  for (auto i = 0; i < data.size(); i++) {
+    if (i % 6 == 0) {
+      ss.str(std::string());
+      ss << "D2W";
+    }
+    ss << std::setfill('0') << std::setw(8) << std::hex << std::uppercase << data[i].to_ulong();
+    if (i % 6 == 5 || (i == data.size() - 1)) {
+      ss << "\n";
+      gen_->appendCustomCmd(ss.str());
+    }
+  }
+
+  gen_->appendCustomCmd(std::string("D3FE\n"));
+  gen_->appendCustomCmd(std::string("D4PL\n"));
+}
+
 
 /**
  * @brief 
