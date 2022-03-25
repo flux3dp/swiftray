@@ -914,7 +914,7 @@ void Canvas::cropImage() {
   // Apply crop result
   if(dialog_ret == QDialog::Accepted) {
     // Add trace contours to canvas
-    ShapePtr new_shape = std::make_shared<BitmapShape>(dialog->getCrop().toImage());
+    ShapePtr new_shape = std::make_shared<BitmapShape>(dialog->getCropImage());
     new_shape->applyTransform(bitmap->transform());
     document().execute(
             Commands::AddShape(document().activeLayer(), new_shape),

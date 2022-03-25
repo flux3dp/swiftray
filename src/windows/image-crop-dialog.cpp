@@ -23,11 +23,11 @@ void ImageCropDialog::registerEvents() {
           this, &ImageCropDialog::reject);
   connect(ui->buttonBox->button(QDialogButtonBox::Apply), &QPushButton::clicked,
           this, [=] () {
-    ui->graphicsView->updateBackgroundPixmap(ui->graphicsView->getCrop());
+    ui->graphicsView->updateTargetImage(ui->graphicsView->getCropImage());
   });
   connect(ui->buttonBox->button(QDialogButtonBox::Reset), &QPushButton::clicked,
           this, [=] () {
-    this->initBackgroundDisplay(); // re-initialize with src image
+    this->resetCropOperation(); // re-initialize target_image with src_image
   });
 }
 
@@ -39,10 +39,7 @@ void ImageCropDialog::loadStyles() {
 }
 
 void ImageCropDialog::showEvent(QShowEvent *event) {
-  if (!src_image_.isNull()) {
-    initBackgroundDisplay();
-  }
-  ui->graphicsView->fitInView(ui->graphicsView->sceneRect(), Qt::KeepAspectRatio);
+  resetCropOperation();
 }
 
 void ImageCropDialog::loadImage(const QImage &img) {
@@ -61,13 +58,14 @@ void ImageCropDialog::loadImage(const QImage &img) {
  * @brief Create background pixmap based on background mode
  *        and update it on the graphicsscene
  */
-void ImageCropDialog::initBackgroundDisplay() {
+void ImageCropDialog::resetCropOperation() {
   if (src_image_.isNull()) {
     return;
   }
-  ui->graphicsView->updateBackgroundPixmap(QPixmap::fromImage(src_image_));
+  ui->graphicsView->updateTargetImage(src_image_);
+  ui->graphicsView->fitInView(ui->graphicsView->sceneRect(), Qt::KeepAspectRatio);
 }
 
-QPixmap ImageCropDialog::getCrop() {
-  return ui->graphicsView->getCrop();
+QImage ImageCropDialog::getCropImage() {
+  return ui->graphicsView->getCropImage();
 }
