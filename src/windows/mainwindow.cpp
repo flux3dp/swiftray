@@ -585,7 +585,7 @@ void MainWindow::registerEvents() {
     job_dashboard_->show();
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    if (SerialPort::getInstance().isConnected()) {
+    if (!SerialPort::getInstance().isConnected()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Serial Port Error"));
       msgbox.setInformativeText(tr("Please connect to serial port first"));
