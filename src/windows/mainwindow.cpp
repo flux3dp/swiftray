@@ -579,6 +579,9 @@ void MainWindow::registerEvents() {
     connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+    if (jobs_.length() > 0 && jobs_.last()->isRunning()) {
+      job_dashboard_->attachJob(jobs_.last());
+    }
     job_dashboard_->show();
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
