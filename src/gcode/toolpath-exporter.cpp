@@ -272,13 +272,10 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
     const QPointF displace_per_dot = mm_per_dot * unit_dir.toPointF();
 
     // Start stepping each dot
-    qInfo() << "==============";
     while (1) {
       QPointF next_pos = current_pos + displace_per_dot;
       if ( !bbox_mm.contains(next_pos) ) { // finish the remaining
-        //qInfo() << current_grayscale;
         if (current_grayscale != white_pixel) {
-          //qInfo() << current_layer_->power() << " " << qRound(current_layer_->power() * current_grayscale / 255.0);
           moveTo(current_pos,
                  current_layer_->speed(),
                  qRound(current_layer_->power() * (white_pixel - current_grayscale) / 255.0));
