@@ -154,6 +154,7 @@ public:
     machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
     motion_modal_ = GCodeMotionModal::kG00;
     distance_modal_ = GCodeDistanceModal::kG90;
+    spindle_modal_ = MCodeSpindleModal::kM05;
   }
 
 private:
