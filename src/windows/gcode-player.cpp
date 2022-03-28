@@ -137,44 +137,66 @@ QString GCodePlayer::getGCode() {
 QList<QTime> GCodePlayer::calcRequiredTime() {
   QList<QTime> timestamp_list;
   QStringList gcode_list = ui->gcodeText->toPlainText().split('\n');
+  bool relative_mode = false; // G90 or G91
   int current_line = 0;
   float last_x = 0, last_y = 0, f = 7500, x = 0, y = 0;
 
   QTime required_time{0, 0};
   while (current_line < gcode_list.size()) {
-    x = last_x;
-    y = last_y;
+    const QString& line = gcode_list[current_line];
+    if (line.startsWith("B",  Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (FLUX's custom cmd)
+    } else if (line.startsWith("D",  Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (FLUX's custom cmd)
+    } else if (line.startsWith("$",  Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (grbl's system cmd)
+    } else if (line.startsWith("M",  Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (M code)
+    } else {
+      if (line.indexOf("G91", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+        relative_mode = true;
+      } else if (line.indexOf("G90", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+        relative_mode = false;
+      }
 
-    if (gcode_list[current_line].indexOf("G1") > -1) {
-      if (gcode_list[current_line].indexOf("F") > -1) {
-        QRegularExpression re("F(\\d+)");
-        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
+      // default value when X/Y field is absent
+      x = relative_mode ? 0 : last_x;
+      y = relative_mode ? 0 : last_y;
+
+      if (line.indexOf("F", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+        QRegularExpression re("[Ff]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           f = match.captured(1).toFloat();
         }
       }
-      if (gcode_list[current_line].indexOf("X") > -1) {
-        QRegularExpression re("X(\\d+.\\d+)");
-        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
+      if (line.indexOf("X", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+        QRegularExpression re("[Xx]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           x = match.captured(1).toFloat();
         }
       }
-
-      if (gcode_list[current_line].indexOf("Y") > -1) {
-        QRegularExpression re("Y(\\d+.\\d+)");
-        QRegularExpressionMatch match = re.match(gcode_list[current_line]);
+      if (line.indexOf("Y", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+        QRegularExpression re("[Yy]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           y = match.captured(1).toFloat();
         }
       }
 
       // NOTE: F value is in unit of mm/min
-      required_time = required_time.addMSecs(1000 *
-                  qSqrt(qPow(x-last_x, 2) + qPow(y-last_y, 2)) / f * 60);
-
-      last_x = x;
-      last_y = y;
+      if (relative_mode) {
+        required_time = required_time.addMSecs(1000 *
+                                               qSqrt(qPow(x, 2) + qPow(y, 2)) / f * 60);
+        last_x += x;
+        last_y += y;
+      } else {
+        required_time = required_time.addMSecs(1000 *
+                                               qSqrt(qPow(x-last_x, 2) + qPow(y-last_y, 2)) / f * 60);
+        last_x = x;
+        last_y = y;
+      }
     }
 
     timestamp_list << required_time;
