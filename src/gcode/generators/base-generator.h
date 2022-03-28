@@ -37,7 +37,7 @@ public:
     speed_ = 0;
   }
 
-  virtual void appendCustomCmd(std::string& cmd) { str_stream_ << cmd; }
+  virtual void appendCustomCmd(const std::string& cmd) { str_stream_ << cmd; }
   virtual void appendCustomCmd(std::string&& cmd) { str_stream_ << cmd; }
 
   // Advanced laser cutter features
