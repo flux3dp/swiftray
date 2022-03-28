@@ -201,8 +201,11 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   layer_image.setDotsPerMeterY(1000 * layer_image.width() / canvas_physical_width);
   const qreal mm_per_pixel = 1000.0 / layer_image.dotsPerMeterX();
   // NOTE: Should convert points from canvas unit to mm
-  QRectF bbox_mm{bitmap_dirty_area_.topLeft() / canvas_mm_ratio_,
-                 bitmap_dirty_area_.bottomRight() / canvas_mm_ratio_};
+  //       Reserve x-direction padding in bounding box (for acceleration distance)
+  QRectF bbox_mm{QPointF{qMax(bitmap_dirty_area_.topLeft().x() / canvas_mm_ratio_ - padding_mm_, 0.0),
+                                 bitmap_dirty_area_.topLeft().y() / canvas_mm_ratio_},
+                 QPointF{qMin(bitmap_dirty_area_.bottomRight().x() / canvas_mm_ratio_ + padding_mm_, (qreal)(layer_image.width())),
+                                   bitmap_dirty_area_.bottomRight().y() / canvas_mm_ratio_}};
   const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
 
   gen_->turnOnLaserAdpatively(); // M4
@@ -326,19 +329,19 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
  * @param src_bit_array 
  * @return std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> 
  *         - the trimmed bit array
- *         - the bit idx of the first 1 in the source bit array
- *         - the bit idx of the last 1 in the source bit array
+ *         - the bit idx of the trim start
+ *         - the bit idx of the trim end
  */
 static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
-    const std::vector<std::bitset<32>>& src_bit_array) {
+    const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt) {
 
   enum class SearchStage {
       kSearchForStartPos,
       kSearchForEndPos,
   };
   SearchStage search_stage = SearchStage::kSearchForStartPos;
-  int first_none_zero_bit_idx = 0;
-  int last_none_zero_bit_idx = 0;
+  uint32_t trim_start_bit_idx = 0;
+  uint32_t trim_end_bit_idx = 0;
   for (int i = 0; i < src_bit_array.size(); i++) {
     if (src_bit_array[i].none()) {
       continue;
@@ -348,7 +351,7 @@ static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
       // Search for the first black dot
       for (int j = 31; j >= 0; j--) { // search from most significant bit
         if (src_bit_array[i][j]) {
-          first_none_zero_bit_idx = i*32 + (31-j);
+          trim_start_bit_idx = i*32 + (31-j);
           search_stage = SearchStage::kSearchForEndPos;
           break;
         }
@@ -358,7 +361,7 @@ static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
       // Search for the last black dot
       for (int j = 0; j < 32; j++) { // search from least significant bit
         if (src_bit_array[i][j]) {
-          last_none_zero_bit_idx = i*32 + (31-j);
+          trim_end_bit_idx = i*32 + (31-j);
           break;
         }
       }
@@ -366,12 +369,18 @@ static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
 
   } // end of search for loop
 
-  std::vector<std::bitset<32>> bit_array{
-    src_bit_array.begin() + (first_none_zero_bit_idx / 32),
-    src_bit_array.begin() + (last_none_zero_bit_idx / 32) + 1
-  };
-  int bit_shift = first_none_zero_bit_idx % 32;
+  // Calculate padding (with restriction of path boundary)
+  trim_start_bit_idx = trim_start_bit_idx > padding_dot_cnt ? (trim_start_bit_idx - padding_dot_cnt) : 0;
+  trim_end_bit_idx = qMin(trim_end_bit_idx + padding_dot_cnt,
+                                uint32_t(src_bit_array.size() * 32u - 1)); // index max = size - 1
 
+  // Trim zeros but also keep padding
+  std::vector<std::bitset<32>> bit_array{
+    src_bit_array.begin() + (trim_start_bit_idx / 32),
+    src_bit_array.begin() + (trim_end_bit_idx / 32) + 1 // (+1 because the last iterator is not included)
+  };
+  // Align the trim first pos with the start of bit array
+  int bit_shift = trim_start_bit_idx % 32;
   for (auto i = 0; i < bit_array.size(); i++) {
     if (i+1 == bit_array.size()) {
       bit_array[i] = (bit_array[i] << bit_shift);
@@ -379,11 +388,7 @@ static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
       bit_array[i] = (bit_array[i] << bit_shift) | (bit_array[i+1] >> (32-bit_shift)) ;
     }
   }
-  // If any pure-0 word (32 bits) exist after shift, discard it
-  if (bit_array.back().none()) {
-    bit_array.pop_back();
-  }
-  return std::make_tuple(bit_array, first_none_zero_bit_idx, last_none_zero_bit_idx);
+  return std::make_tuple(bit_array, trim_start_bit_idx, trim_end_bit_idx);
 }
 
 /**
@@ -478,11 +483,14 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
       continue; // ignore blank line
     }
 
-    auto [ trimmed_bit_array, first_none_zero_idx, last_none_zero_idx ] = trim_zero(dot_data_list);
+    auto [ trimmed_bit_array, first_pos_idx, last_pos_idx ] =
+            trim_zero(dot_data_list, padding_mm_ / mm_per_dot);
+    // NOTE +1 to the end pos because we move to "the end of the last dot"
     QLineF dirty_line_segment {
-        path.pointAt(first_none_zero_idx * t_per_dot),
-        path.pointAt(qMin((last_none_zero_idx + 1) * t_per_dot, 1.0))
+            path.pointAt(first_pos_idx * t_per_dot),
+            path.pointAt(qMin((last_pos_idx + 1) * t_per_dot, 1.0))
     };
+
 
     // Generate moveTo cmd to the initial position of raster line
     moveTo(dirty_line_segment.p1(),

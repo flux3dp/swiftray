@@ -72,4 +72,5 @@ private:
                                        // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_size_)
 
   QPointF current_pos_; // in unit of mm
+  qreal padding_mm_ = 10;
 };
