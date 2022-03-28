@@ -77,6 +77,8 @@ public:
 
   void parseResponse(QString line);
 
+  bool isPaused();
+
 signals:
 
   void startWaiting(int);

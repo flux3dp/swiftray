@@ -149,8 +149,8 @@ void JobDashboardDialog::attachJob(BaseJob *job) {
   // Initialize displayed job info
   ui->estTotalRequiredTime->setText(job_->getTotalRequiredTime().toString("hh:mm:ss"));
   onStatusChanged(job_->status());
-  onProgressChanged(0);
-  onElapsedTimeChanged(QTime{0,0});
+  onProgressChanged(job_->progress());
+  onElapsedTimeChanged(job_->getElapsedTime());
 }
 
 void JobDashboardDialog::showEvent(QShowEvent *event) {

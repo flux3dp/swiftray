@@ -112,6 +112,10 @@ int SerialJob::progress() {
   return progress_value_;
 }
 
+bool SerialJob::isPaused() {
+  return pause_flag_;
+}
+
 /**
  * @brief Set pause status flag
  */
