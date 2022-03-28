@@ -388,6 +388,11 @@ static std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> trim_zero(
       bit_array[i] = (bit_array[i] << bit_shift) | (bit_array[i+1] >> (32-bit_shift)) ;
     }
   }
+  // Discard all trailing zero bits (not needed, reduce data transmission)
+  while (bit_array.back().none()) {
+    bit_array.pop_back();
+  }
+
   return std::make_tuple(bit_array, trim_start_bit_idx, trim_end_bit_idx);
 }
 
