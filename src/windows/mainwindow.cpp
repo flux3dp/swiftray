@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarTransform();
   //setToolbarImage();
   updateSelections();
-  showWelcomeDialog();
+  //showWelcomeDialog();
   setScaleBlock();
   setConnectionToolBar();
 }
