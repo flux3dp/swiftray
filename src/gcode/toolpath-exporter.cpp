@@ -134,7 +134,20 @@ void ToolpathExporter::convertPath(const PathShape *path) {
 }
 
 void ToolpathExporter::sortPolygons() {
-  // TODO (Path order optimization)
+  // Performance: O(n^2)
+  QList<QPolygonF> sort_result;
+  for (const auto& polygon: layer_polygons_) {
+    int insert_idx = sort_result.size();
+    for (int idx = sort_result.size() - 1; idx >= 0; idx--) {
+      if (sort_result[idx].boundingRect().contains(polygon.boundingRect())) {
+        insert_idx = idx;
+      }
+    }
+    sort_result.insert(insert_idx, polygon);
+  }
+
+  layer_polygons_ = sort_result;
+  return;
 }
 
 void ToolpathExporter::outputLayerGcode() {
