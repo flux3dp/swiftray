@@ -195,12 +195,12 @@
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
-      <widget class="QPushButton" name="executeBtn">
+      <widget class="QPushButton" name="playBtn">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Execute</string>
+        <string>Play</string>
        </property>
       </widget>
      </item>
