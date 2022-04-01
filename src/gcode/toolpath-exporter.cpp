@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QVector2D>
+#include <QtMath>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -121,6 +122,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
+    layer_painter_->setPen(Qt::NoPen); // Otherwise, the border would occupy at least 1 pixel
     layer_painter_->setBrush(Qt::black);
     layer_painter_->drawPath(transformed_path);
     layer_painter_->setBrush(Qt::NoBrush);
@@ -202,11 +204,12 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   const qreal mm_per_pixel = 1000.0 / layer_image.dotsPerMeterX();
   // NOTE: Should convert points from canvas unit to mm
   //       Reserve x-direction padding in bounding box (for acceleration distance)
-  QRectF bbox_mm{QPointF{qMax(bitmap_dirty_area_.topLeft().x() / canvas_mm_ratio_ - padding_mm_, 0.0),
-                                 bitmap_dirty_area_.topLeft().y() / canvas_mm_ratio_},
-                 QPointF{qMin(bitmap_dirty_area_.bottomRight().x() / canvas_mm_ratio_ + padding_mm_, (qreal)(layer_image.width())),
-                                   bitmap_dirty_area_.bottomRight().y() / canvas_mm_ratio_}};
   const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
+  QRectF bbox_mm{qMax(bitmap_dirty_area_.topLeft().x() / canvas_mm_ratio_ - padding_mm_, 0.0),
+                 qMax(bitmap_dirty_area_.topLeft().y() / canvas_mm_ratio_, 0.0),
+                 (int)((bitmap_dirty_area_.width() / canvas_mm_ratio_  + 2*padding_mm_) / mm_per_dot) * mm_per_dot,
+                 bitmap_dirty_area_.height() / canvas_mm_ratio_};
+
 
   gen_->turnOnLaserAdpatively(); // M4
 
@@ -446,17 +449,16 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
                           raster_line.p2();
     const QLineF path{initial_pos, end_pos};
     const qreal t_per_dot = mm_per_dot / path.length();
-    qreal current_t = 0;
-    QPointF current_pos = path.pointAt(current_t);
+    qreal current_t_sample = t_per_dot/2; // NOTE: Sample point varies with direction
+    QPointF current_pos_sample = path.pointAt(current_t_sample);
 
     // Scan an entire line of bitmap
     std::bitset<32> data_word = 0;
     uint32_t bit_idx = 31;
     bool blank_line = true; // blank line filled with white pixels entirely
     while (1) {
-
-      const uchar *data_ptr = layer_image.constScanLine(current_pos.y() / mm_per_pixel);
-      int dot_grayscale = data_ptr[int(current_pos.x() / mm_per_pixel)];
+      const uchar *data_ptr = layer_image.constScanLine(current_pos_sample.y() / mm_per_pixel);
+      int dot_grayscale = data_ptr[int(current_pos_sample.x() / mm_per_pixel)];
       //qInfo() << dot_grayscale;
       if (dot_grayscale < white_pixel && blank_line) {
         blank_line = false;
@@ -471,14 +473,14 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
         bit_idx--;
       }
 
-      current_t += t_per_dot;
-      if ( current_t >= 0.9999) { // terminate condition: Reach end pos (within epsilon distance)
+      current_t_sample += t_per_dot;
+      if ( current_t_sample >= 0.99999) { // terminate condition: Reach end pos (within epsilon distance)
         if (bit_idx != 31) { // Append the remaining partial word
           dot_data_list.push_back(data_word);
         }
         break;
       }
-      current_pos = path.pointAt(current_t);
+      current_pos_sample = path.pointAt(current_t_sample);
     } // End of parsing of the raster line
 
     if (blank_line) {
