@@ -68,8 +68,8 @@ namespace Controls {
         applyRotate(boundingRect().center(), rotation_to_apply_);
       }
       if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
-        scale_x_to_apply_ = new_w / width();
-        scale_y_to_apply_ = new_h / height();
+        scale_x_to_apply_ = width() == 0 ? 1 : new_w / width();
+        scale_y_to_apply_ = height() == 0 ? 1 : new_h / height();
         applyScale(boundingRect().center(), scale_x_to_apply_, scale_y_to_apply_);
       }
     }
