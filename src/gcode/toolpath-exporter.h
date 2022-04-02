@@ -47,28 +47,31 @@ private:
   inline void moveTo(QPointF&& dest, int speed, int power);
   inline void moveTo(const QPointF& dest, int speed, int power);
 
-  bool rasterBitmap(const QImage &layer_image, const qreal &mm_per_pixel,
-                    const qreal &mm_per_dot, QRectF bbox_mm,
+  std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> adjustPrefixSuffixZero(
+          const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt);
+  bool rasterBitmap(const QImage &layer_image, QRect bbox,
                     ScanDirectionMode direction_mode);
-  bool rasterBitmapHighSpeed(const QImage &layer_image, const qreal &mm_per_pixel,
-                             const qreal &mm_per_dot, QRectF bbox_mm,
+  bool rasterLine(const QLineF& path, const std::vector<std::bitset<32>>& data);
+  bool rasterBitmapHighSpeed(const QImage &layer_image, QRect bbox,
                              ScanDirectionMode direction_mode);
-  bool rasterLineHighSpeed(const std::vector<std::bitset<32>>& data);
+  bool rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data);
 
   QImage imageBinarize(QImage src, int threshold);
 
   QTransform global_transform_;
+  qreal resolution_scale_; // = dots per unit_size_on_canvas
+  QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
   //QList<ShapePtr> layer_elements_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry
   QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path)
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;
   BaseGenerator *gen_;
-  float dpmm_ = 10;
+  qreal dpmm_ = 10;
   QSizeF machine_work_area_size_; // Work area in real world coordinate (in unit of mm)
-  QRectF bitmap_dirty_area_; // In canvas unit (not in real world mm unit)
-  QSizeF canvas_size_;       // In canvas unit (not in real world mm unit)
-  const qreal canvas_mm_ratio_ = 10.0; // Currently 10 unit in canvas = 1 mm in real world
+  QRectF bitmap_dirty_area_;  // Scaled by resolution (expressed in # of dot)
+  QSizeF canvas_size_;       // Scaled by resolution (expressed in # of dot)
+  const qreal canvas_mm_ratio_ = 10.0; // Currently 10 units in canvas = 1 mm in real world
                                        // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_size_)
 
   QPointF current_pos_; // in unit of mm
