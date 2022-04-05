@@ -144,18 +144,18 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
   QTime required_time{0, 0};
   while (current_line < gcode_list.size()) {
     const QString& line = gcode_list[current_line];
-    if (line.startsWith("B",  Qt::CaseSensitivity::CaseInsensitive)) {
+    if (line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
-    } else if (line.startsWith("D",  Qt::CaseSensitivity::CaseInsensitive)) {
+    } else if (line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
-    } else if (line.startsWith("$",  Qt::CaseSensitivity::CaseInsensitive)) {
+    } else if (line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (grbl's system cmd)
-    } else if (line.startsWith("M",  Qt::CaseSensitivity::CaseInsensitive)) {
+    } else if (line.startsWith("M", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (M code)
     } else {
-      if (line.indexOf("G91", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+      if (line.indexOf("G91", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
         relative_mode = true;
-      } else if (line.indexOf("G90", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+      } else if (line.indexOf("G90", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
         relative_mode = false;
       }
 
@@ -163,21 +163,21 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
       x = relative_mode ? 0 : last_x;
       y = relative_mode ? 0 : last_y;
 
-      if (line.indexOf("F", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+      if (line.indexOf("F", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
         QRegularExpression re("[Ff]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           f = match.captured(1).toFloat();
         }
       }
-      if (line.indexOf("X", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+      if (line.indexOf("X", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
         QRegularExpression re("[Xx]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           x = match.captured(1).toFloat();
         }
       }
-      if (line.indexOf("Y", Qt::CaseSensitivity::CaseInsensitive) > -1) {
+      if (line.indexOf("Y", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
         QRegularExpression re("[Yy]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
