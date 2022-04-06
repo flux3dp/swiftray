@@ -23,6 +23,8 @@ public:
 
   bool isScaleLock() const;
 
+  void setLayout();
+
   void setScaleLock(bool scaleLock);
 
   void updateControl();

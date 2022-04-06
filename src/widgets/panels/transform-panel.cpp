@@ -1,6 +1,7 @@
 #include "transform-panel.h"
 #include "ui_transform-panel.h"
 #include <windows/mainwindow.h>
+#include <windows/osxwindow.h>
 
 TransformPanel::TransformPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -10,6 +11,7 @@ TransformPanel::TransformPanel(QWidget *parent, MainWindow *main_window) :
   assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
   initializeContainer();
+  setLayout();
 }
 
 TransformPanel::~TransformPanel() {
@@ -103,9 +105,19 @@ bool TransformPanel::isScaleLock() const {
 void TransformPanel::setScaleLock(bool scaleLock) {
   scale_locked_ = scaleLock;
   main_window_->canvas()->transformControl().setScaleLock(scaleLock);
+
+  if (scaleLock) {
+    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-lock.png" : ":/images/icon-lock.png"));
+  } else {
+    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+  }
 }
 
 void TransformPanel::updateControl() {
   main_window_->canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
   emit transformPanelUpdated(x_, y_, r_, w_, h_);
+}
+
+void TransformPanel::setLayout() {
+  ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
 }
