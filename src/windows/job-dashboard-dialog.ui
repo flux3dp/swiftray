@@ -14,18 +14,6 @@
    <string>Dashboard</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
-   <item alignment="Qt::AlignHCenter">
-    <widget class="QLabel" name="label">
-     <property name="styleSheet">
-      <string notr="true">QLabel {
-  font-weight: bold;
-}</string>
-     </property>
-     <property name="text">
-      <string>LightMaker</string>
-     </property>
-    </widget>
-   </item>
    <item>
     <widget class="QGraphicsView" name="canvasView">
      <property name="sizePolicy">
