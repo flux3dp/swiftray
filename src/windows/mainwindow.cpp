@@ -734,6 +734,7 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("102400");
   baudComboBox_->addItem("115200");
   baudComboBox_->addItem("204800");
+  baudComboBox_->setCurrentIndex(6); // default baudrate 115200
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
