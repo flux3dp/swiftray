@@ -12,27 +12,10 @@ SerialJob::SerialJob(QObject *parent, QString endpoint, const QVariant &gcode) :
   gcode_ = gcode.toStringList();
 
   planner_total_block_count_ = 1;
-  planner_block_unexecuted_count_ = 0;
-  serial_buffer_size_ = 100;
-
-  waiting_first_ok_ = true;
-  timeout_occurred_ = false;
-  grbl_reset_condition_detected_ = false;
-  last_alarm_code_ = -1; // no alarm
-
-  gcode_cmd_comm_state_ = gcodeCmdCommState::kIdle;
-  ctrl_cmd_state_.cmd = ctrlCmd::kNull;
-  ctrl_cmd_state_.comm_state = ctrlCmdCommState::kIdle;
-  system_cmd_state_.cmd = systemCmd::kNull;
-  system_cmd_state_.comm_state = systemCmdCommState::kIdle;
 
   //serial_ = std::make_unique<SerialPort>();
   //connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
   connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
-
-  pause_flag_ = false;
-  resume_flag_ = false;
-  stop_flag_ = false;
 
   timeout_timer_ = new QTimer(this);
   connect(this, &SerialJob::startWaiting, this, &SerialJob::startTimer);
@@ -55,27 +38,10 @@ SerialJob::SerialJob(QObject *parent, QString endpoint, QVariant &&gcode) :
   gcode_ = gcode.toStringList();
 
   planner_total_block_count_ = 1;
-  planner_block_unexecuted_count_ = 0;
-  serial_buffer_size_ = 100;
-
-  waiting_first_ok_ = true;
-  timeout_occurred_ = false;
-  grbl_reset_condition_detected_ = false;
-  last_alarm_code_ = -1; // no alarm
-
-  gcode_cmd_comm_state_ = gcodeCmdCommState::kIdle;
-  ctrl_cmd_state_.cmd = ctrlCmd::kNull;
-  ctrl_cmd_state_.comm_state = ctrlCmdCommState::kIdle;
-  system_cmd_state_.cmd = systemCmd::kNull;
-  system_cmd_state_.comm_state = systemCmdCommState::kIdle;
 
   //serial_ = std::make_unique<SerialPort>();
   //connect(serial_.get(), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
   connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &SerialJob::parseResponse);
-
-  pause_flag_ = false;
-  resume_flag_ = false;
-  stop_flag_ = false;
 
   timeout_timer_ = new QTimer(this);
   connect(this, &SerialJob::startWaiting, this, &SerialJob::startTimer);

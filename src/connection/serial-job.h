@@ -108,9 +108,9 @@ private:
   QTimer *realtime_status_report_timer_;
   bool is_starting_report_timer_; // use to handle the period between emit signal and start timer
 #endif
-  int serial_buffer_size_; // not necessary -> we only send the next gcode when ok is rcvd
+  int serial_buffer_size_ = 80; // not necessary -> we only send the next gcode when ok is rcvd
   int planner_total_block_count_;
-  int planner_block_unexecuted_count_;
+  int planner_block_unexecuted_count_ = 0;
   int plannerAvailableCnt() { return planner_total_block_count_ - planner_block_unexecuted_count_; }
   bool plannerBufferFull() { return planner_total_block_count_ == planner_block_unexecuted_count_; }
 
@@ -121,25 +121,25 @@ private:
   QTimer *timeout_timer_;
 
   int baudrate_;
-  int current_line_;
-  int progress_value_;
+  int current_line_ = 0;
+  int progress_value_ = 0;
   unsigned long int wait_timeout_ = 1500;
 
   // action request flag
-  bool pause_flag_;
-  bool resume_flag_;
-  bool stop_flag_;
+  bool pause_flag_ = false;
+  bool resume_flag_ = false;
+  bool stop_flag_ = false;
 
   // cmd state
-  gcodeCmdCommState gcode_cmd_comm_state_;
-  ctrlCmdState ctrl_cmd_state_;
-  systemCmdState system_cmd_state_;
+  gcodeCmdCommState gcode_cmd_comm_state_ = gcodeCmdCommState::kIdle;
+  ctrlCmdState ctrl_cmd_state_ = { .cmd = ctrlCmd::kNull, .comm_state = ctrlCmdCommState::kIdle};
+  systemCmdState system_cmd_state_ = { .cmd = systemCmd::kNull, .comm_state = systemCmdCommState::kIdle};
 
   // meta status flag
-  bool timeout_occurred_;
-  bool waiting_first_ok_;
-  bool grbl_reset_condition_detected_;
-  int last_alarm_code_;
+  bool timeout_occurred_ = false;
+  bool waiting_first_ok_ = true;
+  bool grbl_reset_condition_detected_ = false;
+  int last_alarm_code_ = -1; // TODO: Use enum class instead of int
 
   void gcodeCmdNonblockingSend(std::string cmd);
   void ctrlCmdNonblockingSend(ctrlCmd cmd);
