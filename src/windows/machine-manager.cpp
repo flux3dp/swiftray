@@ -41,7 +41,7 @@ void MachineManager::loadStyles() {
 }
 
 void MachineManager::loadWidgets() {
-  ui->editorTabs->setEnabled(false);
+  ui->frame->setEnabled(false);
 }
 
 void MachineManager::registerEvents() {
@@ -66,7 +66,7 @@ void MachineManager::registerEvents() {
   connect(ui->machineList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
     auto obj = item->data(Qt::UserRole).toJsonObject();
     auto mach = MachineSettings::MachineSet::fromJson(obj);
-    ui->editorTabs->setEnabled(true);
+    ui->frame->setEnabled(true);
     ui->nameLineEdit->setText(mach.name);
     ui->widthSpinBox->setValue(mach.width);
     ui->heightSpinBox->setValue(mach.height);

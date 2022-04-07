@@ -721,8 +721,8 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_ = new QComboBox;
   portComboBox_ = new QComboBox;
   portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-  ui->toolBarConnection->addWidget(portComboBox_);
-  ui->toolBarConnection->addWidget(baudComboBox_);
+  ui->toolBarConnection->insertWidget(ui->actionConnect, portComboBox_);
+  ui->toolBarConnection->insertWidget(ui->actionConnect, baudComboBox_);
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
@@ -734,6 +734,7 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("102400");
   baudComboBox_->addItem("115200");
   baudComboBox_->addItem("204800");
+  baudComboBox_->setCurrentIndex(6); // default baudrate 115200
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;

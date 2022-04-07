@@ -18,7 +18,11 @@ public:
     explicit ImagePanel(QWidget *parent, MainWindow *main_window);
     ~ImagePanel();
 
+    void setLayout();
+
 private:
+    void loadStyles() override;
+
     void registerEvents() override;
 
     Ui::ImagePanel *ui;

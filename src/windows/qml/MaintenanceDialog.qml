@@ -897,14 +897,14 @@ Rectangle {
         }
 
         Rectangle {
-            x: 44
+            x: 0
             y: 553
-            width: 200
+            width: 260
             height: 50
             color: "transparent"
 
             Button {
-                width: 200
+                width: 260
                 height: 60
                 text: qsTr("Laser Pulse")
                 font.pointSize: 28
@@ -913,14 +913,14 @@ Rectangle {
         }
 
         Rectangle {
-            x: 294
+            x: 270
             y: 553
-            width: 200
+            width: 260
             height: 50
             color: "transparent"
 
             Button {
-                width: 200
+                width: 260
                 height: 60
                 text: qsTr("Laser")
                 font.pointSize: 28

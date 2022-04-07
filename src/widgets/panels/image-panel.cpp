@@ -5,6 +5,7 @@
 #include <shape/shape.h>
 #include <shape/bitmap-shape.h>
 #include <windows/mainwindow.h>
+#include <windows/osxwindow.h>
 
 ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
     QFrame(parent),
@@ -16,11 +17,23 @@ ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
     ui->brightnessThresholdSlider->setValue(128);
     setEnabled(false);
     initializeContainer();
+    setLayout();
 }
 
 ImagePanel::~ImagePanel()
 {
     delete ui;
+}
+
+void ImagePanel::loadStyles() {
+  ui->frameButtons->setStyleSheet("\
+      QToolButton {   \
+          border: none \
+      } \
+      QToolButton:checked{ \
+          border: none \
+      } \
+  ");
 }
 
 void ImagePanel::registerEvents() {
@@ -39,9 +52,9 @@ void ImagePanel::registerEvents() {
       ui->gradientCheckBox->setCheckState(selected_img->gradient() ? Qt::Checked : Qt::Unchecked);
       ui->brightnessThresholdSlider->setValue(selected_img->thrsh_brightness());
       if (selected_img->gradient()) {
-        ui->brightnessThresholdGroup->setVisible(false);
+        ui->brightnessThresholdGroup->setEnabled(false);
       } else {
-        ui->brightnessThresholdGroup->setVisible(true);
+        ui->brightnessThresholdGroup->setEnabled(true);
       }
     } else {
       // Disable the parent widget will disable all child widgets as well
@@ -55,9 +68,9 @@ void ImagePanel::registerEvents() {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
       selected_img->setGradient(state);
       if (state) {
-        ui->brightnessThresholdGroup->setVisible(false);
+        ui->brightnessThresholdGroup->setEnabled(false);
       } else {
-        ui->brightnessThresholdGroup->setVisible(true);
+        ui->brightnessThresholdGroup->setEnabled(true);
       }
     }
   });
@@ -69,5 +82,16 @@ void ImagePanel::registerEvents() {
         selected_img->setThrshBrightness(value);
       }
   });
+
+  connect(ui->toolButtonCrop, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::cropImage);
+  connect(ui->toolButtonInvert, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::invertImage);
+  connect(ui->toolButtonSharpen, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::sharpenImage);
+  connect(ui->toolButtonTrace, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::genImageTrace);
 }
 
+void ImagePanel::setLayout() {
+  ui->toolButtonCrop->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-crop.png" : ":/images/icon-crop.png"));
+  ui->toolButtonInvert->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-invert.png" : ":/images/icon-invert.png"));
+  ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-sharpen.png" : ":/images/icon-sharpen.png"));
+  ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-trace.png" : ":/images/icon-trace.png"));
+}
