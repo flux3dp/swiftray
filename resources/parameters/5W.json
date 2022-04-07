@@ -1,88 +1,83 @@
 {
-  "name": "Default Preset",
+  "name": "5W",
   "data": [
     {
       "name": "Wood 3mm Cutting",
-      "power": 45,
-      "speed": 5
+      "power": 100,
+      "speed": 2
     },
     {
       "name": "Wood 5mm Cutting",
-      "power": 55,
+      "power": 100,
       "speed": 4,
-      "repeat": 2
+      "repect":3
     },
     {
       "name": "Wood Engraving",
-      "power": 25,
-      "speed": 150
+      "power": 40,
+      "speed": 25
     },
     {
       "name": "Acrylic 3mm Cutting",
-      "power": 55,
-      "speed": 4
+      "power": 100,
+      "speed": 1
     },
     {
       "name": "Acrylic 5mm Cutting",
-      "power": 55,
-      "speed": 5,
-      "repeat": 2
+      "power": 100,
+      "speed": 4,
+      "repeat": 3
     },
     {
       "name": "Acrylic Engraving",
-      "power": 25,
-      "speed": 150
+      "power": 100,
+      "speed": 10
     },
     {
       "name": "Leather 3mm Cutting",
-      "power": 60,
-      "speed": 3
+      "power": 100,
+      "speed": 6
     },
     {
       "name": "Leather 5mm Cutting",
-      "power": 60,
-      "speed": 3,
-      "repeat": 2
+      "power": 100,
+      "speed": 2,
+      "repeat": 3
     },
     {
       "name": "Leather Engraving",
       "power": 30,
-      "speed": 150
+      "speed": 10
     },
     {
       "name": "Fabric 3mm cutting",
-      "power": 50,
-      "speed": 20
+      "power": 100,
+      "speed": 5
     },
     {
       "name": "Fabric 5mm cutting",
-      "power": 50,
-      "speed": 20
+      "power": 100,
+      "speed": 2
     },
     {
       "name": "Fabric Engraving",
-      "power": 20,
-      "speed": 150
+      "power": 35,
+      "speed": 20
     },
     {
       "name": "Rubber Engraving",
-      "power": 50,
-      "speed": 140
+      "power": 70,
+      "speed": 20
     },
     {
       "name": "Glass Engraving",
-      "power": 35,
-      "speed": 150
+      "power": 40,
+      "speed": 10
     },
     {
       "name": "Metal Engraving",
-      "power": 50,
-      "speed": 80
-    },
-    {
-      "name": "Stainless Diode Engraving",
       "power": 100,
-      "speed": 4
+      "speed": 10
     }
   ]
 }

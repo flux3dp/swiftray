@@ -1,0 +1,30 @@
+{
+  "name": "1.6W",
+  "data": [
+    {
+      "name": "Wood Engraving",
+      "power": 55,
+      "speed": 25
+    },
+    {
+      "name": "Acrylic Engraving",
+      "power": 60,
+      "speed": 20
+    },
+    {
+      "name": "Leather Engraving",
+      "power": 40,
+      "speed": 30
+    },
+    {
+      "name": "Fabric Engraving",
+      "power": 100,
+      "speed": 6
+    },
+    {
+      "name": "Rubber Engraving",
+      "power": 100,
+      "speed": 5
+    }
+  ]
+}

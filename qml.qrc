@@ -140,6 +140,9 @@
         <file>styles/swiftray-light.qss</file>
         <file>resources/parameters/beamo.json</file>
         <file>resources/parameters/default.json</file>
+        <file>resources/parameters/1.6W.json</file>
+        <file>resources/parameters/5W.json</file>
+        <file>resources/parameters/10W.json</file>
         <file>resources/machines.json</file>
         <file>i18n/zh-Hant-TW.qm</file>
         <file>qtquickcontrols2.conf</file>
