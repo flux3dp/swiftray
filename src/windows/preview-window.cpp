@@ -132,18 +132,22 @@ void PreviewWindow::registerEvents() {
       // Add paths on the GraphicsScene
       QPointF current_pos = QPointF(3, 3);
       auto paths = preview_path_->paths();
-      auto pen_black = QPen(Qt::black, 0, Qt::SolidLine);
-      auto pen_red = QPen(Qt::red, 0, Qt::SolidLine);
+      auto pen_black = QPen(QColor{0, 0, 0, 255}, 0, Qt::SolidLine); // zero width -> cosmetic pen
+      auto pen_red = QPen(QColor{255, 0, 0, 155}, 0, Qt::SolidLine); // zero width -> cosmetic pen
+      QPainterPath red_path;
+      QPainterPath black_path;
       for (int i = 0; i < ui->progress->value(); i++) {
-        auto line = new QGraphicsLineItem(QLineF(current_pos, paths[i].target_));
         if (paths[i].power_ > 0) {
-          line->setPen(pen_black);
+          red_path.moveTo(paths[i].target_);
+          black_path.lineTo(paths[i].target_);
         } else {
-          line->setPen(pen_red);
+          red_path.lineTo(paths[i].target_);
+          black_path.moveTo(paths[i].target_);
         }
-        this->path_graphics_view_->scene()->addItem(line);
         current_pos = paths[i].target_;
       }
+      this->path_graphics_view_->scene()->addPath(black_path, pen_black);
+      this->path_graphics_view_->scene()->addPath(red_path, pen_red);
 
       auto end_pen = QPen(Qt::red, 2, Qt::SolidLine);
       end_pen.setCosmetic(true);
