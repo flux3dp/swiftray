@@ -721,8 +721,8 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_ = new QComboBox;
   portComboBox_ = new QComboBox;
   portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-  ui->toolBarConnection->addWidget(portComboBox_);
-  ui->toolBarConnection->addWidget(baudComboBox_);
+  ui->toolBarConnection->insertWidget(ui->actionConnect, portComboBox_);
+  ui->toolBarConnection->insertWidget(ui->actionConnect, baudComboBox_);
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
