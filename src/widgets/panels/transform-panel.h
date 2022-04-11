@@ -45,6 +45,8 @@ private:
 
 signals:
   void transformPanelUpdated(double x, double y, double r, double w, double h);
+
+  void scaleLockToggled(bool scale_locked);
 };
 
 #endif // TRANSFORM_WIDGET_H

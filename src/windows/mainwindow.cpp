@@ -897,6 +897,18 @@ void MainWindow::setToolbarTransform() {
   auto doubleSpinBoxWidth = new QDoubleSpinBox2(ui->toolBarTransform);
   auto labelHeight = new QLabel;
   auto doubleSpinBoxHeight = new QDoubleSpinBox2(ui->toolBarTransform);
+  auto buttonLock = new QToolButton(ui->toolBarTransform);
+  ui->toolBarTransform->setStyleSheet("\
+      QToolButton {   \
+          border: none \
+      } \
+      QToolButton:checked{ \
+          border: none \
+      } \
+  ");
+  ui->toolBarTransform->setIconSize(QSize(16, 16));
+  buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+  buttonLock->setCheckable(true);
   labelX->setText("X");
   labelY->setText("Y");
   labelRotation->setText(tr("Rotation"));
@@ -916,12 +928,13 @@ void MainWindow::setToolbarTransform() {
   ui->toolBarTransform->addWidget(doubleSpinBoxX);
   ui->toolBarTransform->addWidget(labelY);
   ui->toolBarTransform->addWidget(doubleSpinBoxY);
-  ui->toolBarTransform->addWidget(labelRotation);
-  ui->toolBarTransform->addWidget(doubleSpinBoxRotation);
   ui->toolBarTransform->addWidget(labelWidth);
   ui->toolBarTransform->addWidget(doubleSpinBoxWidth);
+  ui->toolBarTransform->addWidget(buttonLock);
   ui->toolBarTransform->addWidget(labelHeight);
   ui->toolBarTransform->addWidget(doubleSpinBoxHeight);
+  ui->toolBarTransform->addWidget(labelRotation);
+  ui->toolBarTransform->addWidget(doubleSpinBoxRotation);
 
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
 
@@ -980,6 +993,20 @@ void MainWindow::setToolbarTransform() {
     }
     h_ = doubleSpinBoxHeight->value();
     updateToolbarTransform();
+  });
+
+  connect(transform_panel_, &TransformPanel::scaleLockToggled, [=](bool scale_locked) {
+    buttonLock->setChecked(scale_locked);
+
+    if (scale_locked) {
+      buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-lock.png" : ":/images/icon-lock.png"));
+    } else {
+      buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+    }
+  });
+
+  connect(buttonLock, &QToolButton::toggled, [=](bool checked) {
+    transform_panel_->setScaleLock(checked);
   });
 }
 
