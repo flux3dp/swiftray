@@ -922,6 +922,7 @@ Rectangle {
             Button {
                 width: 260
                 height: 60
+                checkable: true
                 text: qsTr("Laser")
                 font.pointSize: 28
                 onClicked: controller.laser()
