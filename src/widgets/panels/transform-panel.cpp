@@ -48,7 +48,7 @@ void TransformPanel::registerEvents() {
     if (value == 0) return;
     if (w_ != value) {
       if (scale_locked_) {
-        h_ *= value / w_;
+        h_ = w_ == 0 ? 0 : h_ * value / w_;
       }
       w_ = value;
       updateControl();
@@ -59,7 +59,7 @@ void TransformPanel::registerEvents() {
     if (value == 0) return;
     if (h_ != value) {
       if (scale_locked_) {
-        w_ *= value / h_;
+        w_ = h_ == 0 ? 0 : w_ * value / h_;
       }
       h_ = value;
       updateControl();
