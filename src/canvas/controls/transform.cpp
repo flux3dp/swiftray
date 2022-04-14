@@ -214,7 +214,7 @@ const QPointF *Transform::controlPoints() {
 Transform::Control Transform::hitTest(QPointF clickPoint,
                                       float tolerance) {
   controlPoints();
-  for (int i = (int) Control::NW; i != (int) Control::ROTATION; i++) {
+  for (int i = (int) Control::NW; i <= (int) Control::ROTATION; i++) {
     if ((controls_[i] - clickPoint).manhattanLength() < tolerance) {
       return (Control) i;
     }
