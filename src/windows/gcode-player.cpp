@@ -6,7 +6,7 @@
 #ifndef Q_OS_IOS
 
 #include <QTimer>
-#include <SerialPort/SerialPort.h>
+#include <connection/serial-port.h>
 #include <QtMath>
 
 #include <QDebug>
@@ -96,15 +96,14 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
       ui->stopBtn->setEnabled(false);
       onProgressChanged(100);
       break;
-    case BaseJob::Status::STOPPING:
-    case BaseJob::Status::ERROR_STOPPING:
-      qInfo() << "Stopping";
+    case BaseJob::Status::ALARM:
       ui->pauseBtn->setEnabled(false);
       ui->playBtn->setEnabled(false);
       ui->stopBtn->setEnabled(false);
+      onProgressChanged(0);
       break;
     case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ERROR_STOPPED:
+    case BaseJob::Status::ALARM_STOPPED:
       qInfo() << "Stopped";
       ui->pauseBtn->setEnabled(false);
       ui->pauseBtn->setText(tr("Pause"));

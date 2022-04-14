@@ -1200,7 +1200,7 @@ void MainWindow::generateJob() {
     return;
   }
 
-  auto job = new SerialJob(this, "", gcode_player_->getGCode().split("\n"));
+  auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
   job->setTimestampList(gcode_player_->calcRequiredTime());
   jobs_ << job;
 }

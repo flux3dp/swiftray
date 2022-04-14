@@ -7,7 +7,7 @@
 
 #include <QTimer>
 #include <QSerialPortInfo>
-#include <SerialPort/SerialPort.h>
+#include <connection/serial-port.h>
 #include <QtMath>
 
 #endif

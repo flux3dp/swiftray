@@ -46,9 +46,10 @@ file(GLOB WIDGETS_PANELS_CPP "${SRC_DIR}/widgets/panels/*.cpp")
 file(GLOB WIDGETS_COMPONENTS_CPP "${SRC_DIR}/widgets/components/*.cpp")
 file(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
 file(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
+file(GLOB MOTION_CONTROLLER_JOB_CPP "${SRC_DIR}/motion_controller_job/*.cpp")
+#file(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
 file(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
 file(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
-file(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
 file(GLOB CLIPPER_CPP "third_party/clipper/clipper.cpp")
 file(GLOB PARSER_CPP "${SRC_DIR}/parser/*.cpp")
 file(GLOB GRAPHICSVIEW_ITEMS_CPP "${SRC_DIR}/widgets/components/graphicitems/*.cpp")
@@ -59,6 +60,7 @@ set(SOURCES
         ${SRC_DIR}/command.cpp
         ${SRC_DIR}/clipboard.cpp
         ${CONNECTION_CPP}
+        ${MOTION_CONTROLLER_JOB_CPP}
         ${CANVAS_CPP}
         ${CONTROLS_CPP}
         ${WIDGETS_PANELS_CPP}
@@ -68,7 +70,7 @@ set(SOURCES
         ${SETTINGS_CPP}
         ${WINDOWS_CPP}
         ${QXPOTRACE_CPP}
-        ${SERIALPORT_CPP}
+        #${SERIALPORT_CPP}
         ${CLIPPER_CPP}
         ${PARSER_CPP}
         ${GRAPHICSVIEW_ITEMS_CPP}

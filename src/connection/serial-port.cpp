@@ -1,4 +1,4 @@
-#include "SerialPort.h"
+#include "serial-port.h"
 #include <QDebug>
 
 SerialPort::SerialPort() : end_of_line_char_('\n')
