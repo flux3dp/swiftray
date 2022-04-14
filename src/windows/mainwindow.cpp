@@ -571,6 +571,7 @@ void MainWindow::registerEvents() {
     }
     // Prepare canvas scene pixmap
     QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
+    canvas_pixmap.fill(Qt::white);
     auto painter = std::make_unique<QPainter>(&canvas_pixmap);
     canvas_->document().paint(painter.get());
 
