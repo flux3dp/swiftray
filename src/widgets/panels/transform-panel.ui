@@ -270,10 +270,10 @@
           <string/>
          </property>
          <property name="minimum">
-          <double>-90.000000000000000</double>
+          <double>0</double>
          </property>
          <property name="maximum">
-          <double>999999.989999999990687</double>
+          <double>360</double>
          </property>
         </widget>
        </item>

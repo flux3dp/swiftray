@@ -2,6 +2,7 @@
 #include <QObject>
 #include <canvas/controls/transform.h>
 #include <canvas/canvas.h>
+#include <QtMath>
 
 using namespace Controls;
 
@@ -75,6 +76,8 @@ void Transform::updateBoundingRect() {
          QRectF(global_center - QPointF(unrotated_bbox.width() / 2,
                                         unrotated_bbox.height() / 2),
                 unrotated_bbox.size());
+    rotation = rotation - qFloor(rotation/360) * 360 ;
+
     bbox_angle_ = rotation;
   } else {
     for (ShapePtr &shape : selections()) {
@@ -211,7 +214,7 @@ const QPointF *Transform::controlPoints() {
 Transform::Control Transform::hitTest(QPointF clickPoint,
                                       float tolerance) {
   controlPoints();
-  for (int i = (int) Control::NW; i != (int) Control::ROTATION; i++) {
+  for (int i = (int) Control::NW; i <= (int) Control::ROTATION; i++) {
     if ((controls_[i] - clickPoint).manhattanLength() < tolerance) {
       return (Control) i;
     }
