@@ -124,14 +124,7 @@ private:
 
   void run() override;
 
-  void handleStatusReport(const QStringList& tokens);
-#ifdef ENABLE_STATUS_REPORT
-  void startStatusPolling();
-  void stopStatusPolling();
-  void onTimeToGetStatus();
-  QTimer *realtime_status_report_timer_;
-  bool is_starting_report_timer_; // use to handle the period between emit signal and start timer
-#endif
+  void handleRealtimeStatusReport(const QStringList& tokens);
   int serial_buffer_size_ = 80; // MUST be <= the actual Grbl buffer in machine
   int planner_total_block_count_ = 1;
   int planner_block_unexecuted_count_ = 0;

@@ -54,12 +54,9 @@ void GCodePlayer::registerEvents() {
 
 void GCodePlayer::showError(const QString &msg) {
   QMessageBox msgbox;
-  msgbox.setText("Serial Port Error");
+  msgbox.setText("Job Error");
   msgbox.setInformativeText(msg);
   msgbox.exec();
-  ui->pauseBtn->setEnabled(false);
-  ui->playBtn->setText(tr("Play"));
-  ui->pauseBtn->setText(tr("Pause"));
 }
 
 void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
