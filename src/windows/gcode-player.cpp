@@ -163,21 +163,21 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
       y = relative_mode ? 0 : last_y;
 
       if (line.indexOf("F", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Ff]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Ff]([0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           f = match.captured(1).toFloat();
         }
       }
       if (line.indexOf("X", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Xx]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Xx](-?[0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           x = match.captured(1).toFloat();
         }
       }
       if (line.indexOf("Y", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Yy]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Yy](-?[0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           y = match.captured(1).toFloat();
