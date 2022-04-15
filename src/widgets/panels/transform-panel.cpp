@@ -105,12 +105,15 @@ bool TransformPanel::isScaleLock() const {
 void TransformPanel::setScaleLock(bool scaleLock) {
   scale_locked_ = scaleLock;
   main_window_->canvas()->transformControl().setScaleLock(scaleLock);
+  ui->lockBtn->setChecked(scaleLock);
 
   if (scaleLock) {
     ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-lock.png" : ":/images/icon-lock.png"));
   } else {
     ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
   }
+
+  emit scaleLockToggled(scale_locked_);
 }
 
 void TransformPanel::updateControl() {
