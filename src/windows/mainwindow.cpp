@@ -982,7 +982,7 @@ void MainWindow::setToolbarTransform() {
 
   connect(doubleSpinBoxWidth, spin_event, [=]() {
     if (transform_panel_->isScaleLock()) {
-      h_ *= doubleSpinBoxWidth->value() / w_;
+      h_ = w_ == 0 ? 0 : h_ * doubleSpinBoxWidth->value() / w_;
     }
     w_ = doubleSpinBoxWidth->value();
     updateToolbarTransform();
@@ -990,7 +990,7 @@ void MainWindow::setToolbarTransform() {
 
   connect(doubleSpinBoxHeight, spin_event, [=]() {
     if (transform_panel_->isScaleLock()) {
-      w_ *= doubleSpinBoxHeight->value() / h_;
+      w_ = h_ == 0 ? 0 : w_ * doubleSpinBoxHeight->value() / h_;
     }
     h_ = doubleSpinBoxHeight->value();
     updateToolbarTransform();
