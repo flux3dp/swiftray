@@ -480,7 +480,7 @@ void MainWindow::loadWidgets() {
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
-  machine_manager_ = new MachineManager(this);
+  machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   ui->joggingDock->setWidget(jogging_panel_);
@@ -674,6 +674,11 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
 
 Canvas *MainWindow::canvas() const {
   return canvas_;
+}
+
+
+MachineSettings::MachineSet MainWindow::currentMachine() {
+  return doc_panel_->currentMachine();
 }
 
 bool isDarkMode() {

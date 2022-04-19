@@ -15,7 +15,7 @@ Q_OBJECT
 
 public:
 
-  explicit MachineManager(QWidget *parent);
+  explicit MachineManager(QWidget *parent, MainWindow *main_window);
 
   ~MachineManager();
 
@@ -40,4 +40,6 @@ private:
   void registerEvents() override;
 
   Ui::MachineManager *ui;
+
+  MainWindow *main_window_;
 };
