@@ -9,6 +9,7 @@
 #include <QSerialPortInfo>
 #include <connection/serial-port.h>
 #include <QtMath>
+#include <globals.h>
 
 #endif
 
@@ -77,7 +78,7 @@ void MaintenanceController::moveY(float y) {
 }
 
 void MaintenanceController::sendJob(QString &job_str) {
-  if (!SerialPort::getInstance().isConnected()) {
+  if (!serial_port.isOpen()) {
     return;
   }
   QStringList cmd_list = job_str.split("\n");
@@ -85,7 +86,7 @@ void MaintenanceController::sendJob(QString &job_str) {
   // TODO: Wait for ok for each cmd
   //       (Connect the responseReceive signal of SerialPort)
   for (auto cmd: cmd_list) {
-    SerialPort::getInstance().write_some((cmd + "\n").toStdString());
+    serial_port.write((cmd + "\n"));
   }
 }
 

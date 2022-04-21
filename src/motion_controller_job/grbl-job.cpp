@@ -9,13 +9,15 @@
 
 #include <connection/serial-port.h>
 #include <motion_controller_job/grbl-job.h>
+#include <globals.h>
 
 GrblJob::GrblJob(QObject *parent, QString endpoint, const QVariant &gcode) :
      BaseJob(parent, endpoint, gcode) {
   gcode_ = gcode.toStringList();
 
-  connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &GrblJob::onResponseReceived);
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, this, &GrblJob::onPortDisconnected);
+  connect(&serial_port, &SerialPort::lineReceived, this, &GrblJob::onResponseReceived);
+  connect(&serial_port, &SerialPort::disconnected, this, &GrblJob::onPortDisconnected);
+
 
   real_time_status_timer_ = new QTimer(this);
   connect(this, &GrblJob::startRealTimeStatusTimer, this, &GrblJob::onStartRealTimeStatusTimer);
@@ -33,9 +35,8 @@ GrblJob::GrblJob(QObject *parent, QString endpoint, QVariant &&gcode) :
      BaseJob(parent, endpoint, gcode) {
   gcode_ = gcode.toStringList();
 
-  //connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &GrblJob::parseResponse);
-  connect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &GrblJob::onResponseReceived);
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, this, &GrblJob::onPortDisconnected);
+  connect(&serial_port, &SerialPort::lineReceived, this, &GrblJob::onResponseReceived);
+  connect(&serial_port, &SerialPort::disconnected, this, &GrblJob::onPortDisconnected);
 
   real_time_status_timer_ = new QTimer(this);
   connect(this, &GrblJob::startRealTimeStatusTimer, this, &GrblJob::onStartRealTimeStatusTimer);
@@ -77,7 +78,7 @@ bool GrblJob::isPaused() {
  */
 void GrblJob::pause() {
   qInfo() << "[SerialPort] Write Pause (!)";
-  SerialPort::getInstance().write_some("!");
+  serial_port.write(QString{"!"});
   setStatus(Status::PAUSED); // Change status immediately
 }
 
@@ -86,7 +87,7 @@ void GrblJob::pause() {
  */
 void GrblJob::resume() {
   qInfo() << "[SerialPort] Write Resume (~)";
-  SerialPort::getInstance().write_some("~");
+  serial_port.write(QString{"~"});
   setStatus(Status::RUNNING); // Change status immediately
 }
 
@@ -95,7 +96,7 @@ void GrblJob::resume() {
  */
 void GrblJob::stop() {
   qInfo() << "[SerialPort] Write Reset";
-  SerialPort::getInstance().write_some("\x18");
+  serial_port.write(QString{"\x18"});
   emit startTimeoutTimer(5000); // set a timeout in case the machine stops responding
 }
 
@@ -107,49 +108,50 @@ void GrblJob::run() {
   mutex_.lock();
 
   // 1. Check whether the serial port is open (connected)
-  if (!SerialPort::getInstance().isConnected()) {
+  if (!serial_port.isOpen()) {
     emit error(tr("Serial port not connected"));
     mutex_.unlock();
     setStatus(Status::STOPPED);
     return;
   }
 
-  // 2. Poll until Grbl is ready
-  setStatus(Status::STARTING);
-  systemCmdNonblockingSend(SystemCmd::kUnlock);
-  waiting_first_ok_ = true;
-  auto wait_countdown = 4;
-  bool is_ready = false;
-  while (1) {
-    if (port_disconnected_) {
-      setStatus(Status::STOPPED);
-      throw "STOPPED PORT_DISCONNECTED";
-    }
-    while (!rcvd_lines_.empty()) {
-      if (rcvd_lines_.front().contains(QString{"ok"}) ) {
-        is_ready = true;
+  try {
+    // 2. Poll until Grbl is ready
+    setStatus(Status::STARTING);
+    systemCmdNonblockingSend(SystemCmd::kUnlock);
+    waiting_first_ok_ = true;
+    auto wait_countdown = 4;
+    bool is_ready = false;
+    while (1) {
+      if (port_disconnected_) {
+        setStatus(Status::STOPPED);
+        throw "STOPPED PORT_DISCONNECTED";
+      }
+      sleep(1);
+      while (!rcvd_lines_.empty()) {
+        if (rcvd_lines_.front().contains(QString{"ok"}) ) {
+          is_ready = true;
+          break;
+        }
+        rcvd_lines_.pop_front();
+      }
+      if (is_ready) {
+        qInfo() << "grbl ready";
         break;
       }
-      rcvd_lines_.pop_front();
+      wait_countdown--;
+      if (wait_countdown == 0) {
+        // timeout
+        emit error(tr("Serial port not responding"));
+        setStatus(Status::STOPPED);
+        throw "STOPPED TIMEOUT";
+      } else {
+        serial_port.write(QString{"\n"});
+      }
     }
-    if (is_ready) {
-      break;
-    }
-    sleep(1);
-    wait_countdown--;
-    if (wait_countdown == 0) {
-      // timeout
-      emit error(tr("Serial port not responding"));
-      setStatus(Status::STOPPED);
-      throw "STOPPED TIMEOUT";
-    } else {
-      SerialPort::getInstance().write_some("\n");
-    }
-  }
-  rcvd_lines_.clear();
+    rcvd_lines_.clear();
 
-  // Start streaming g-code to grbl
-  try {
+    // Start streaming g-code to grbl
     emit startRealTimeStatusTimer(1000);
     setStatus(Status::RUNNING);
     msleep(500);
@@ -256,8 +258,8 @@ void GrblJob::run() {
         rcvd_lines_.pop_front();
       }
       // Send the cmd
-      qInfo() << "SND>" << l_count << ": " + l_block;
-      SerialPort::getInstance().write_some(l_block.toStdString() + '\n'); // Send g-code block to grbl
+      qInfo() << "SND>" << l_count << ": " << l_block;
+      serial_port.write(l_block + '\n'); // Send g-code block to grbl
       //if verbose: print "SND>"+str(l_count)+": \"" + l_block + "\""
       // Approach 1: progress_value_ = (int)(100 * current_line_ / gcode_.size());
       // Approach 2:
@@ -328,17 +330,18 @@ void GrblJob::run() {
     }
 
     progress_value_ = 100;
-    setStatus(Status::FINISHED);
+    emit stopTimeoutTimer();
     emit stopRealTimeStatusTimer();
     // Possible final state: FINISHED
-    disconnect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &GrblJob::onResponseReceived);
+    disconnect(&serial_port, &SerialPort::lineReceived, this, &GrblJob::onResponseReceived);
+    setStatus(Status::FINISHED);
     mutex_.unlock();
   } catch (...) { // const std::exception& e
     // NOTE: error signal has been emitted before throwing exception
     progress_value_ = 0;
     emit stopTimeoutTimer();
     emit stopRealTimeStatusTimer();
-    disconnect(&(SerialPort::getInstance()), &SerialPort::responseReceived, this, &GrblJob::onResponseReceived);
+    disconnect(&serial_port, &SerialPort::lineReceived, this, &GrblJob::onResponseReceived);
     if (status() == Status::ALARM) {
       setStatus(Status::ALARM_STOPPED);
     } else if (status() != Status::STOPPED){
@@ -377,7 +380,7 @@ void GrblJob::gcodeCmdNonblockingSend(std::string cmd) {
   if (cmd.empty()) return;
   // WARNING: MUST change comm state before send
   gcode_cmd_comm_state_ = GcodeCmdCommState::kWaitingResp;
-  SerialPort::getInstance().write_some(cmd);
+  serial_port.write(cmd);
   //emit startWaiting(kGrblTimeout);
   planner_block_unexecuted_count_++; // only gcode cmd might be added to planner block
 }
@@ -408,7 +411,7 @@ void GrblJob::systemCmdNonblockingSend(SystemCmd cmd) {
   }
   system_cmd_state_.cmd = cmd;
   system_cmd_state_.comm_state = SystemCmdCommState::kWaitingResp;
-  SerialPort::getInstance().write_some(cmd_str);
+  serial_port.write(cmd_str);
 }
 
 void GrblJob::onPortDisconnected() {
@@ -460,10 +463,10 @@ void GrblJob::handleRealtimeStatusReport(const QStringList& tokens) {
 }
 
 void GrblJob::onStatusReport() {
-  if (!status_report_blocked_ && SerialPort::getInstance().isConnected()) {
+  if (!status_report_blocked_ && serial_port.isOpen()) {
     qInfo() << "Send ?";
     status_report_blocked_ = true;
-    SerialPort::getInstance().write_some("?");
+    serial_port.write(QString{"?"});
   }
 }
 

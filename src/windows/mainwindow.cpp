@@ -28,6 +28,7 @@
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
 #include <windows/job-dashboard-dialog.h>
+#include <globals.h>
 
 #include "ui_mainwindow.h"
 
@@ -553,7 +554,7 @@ void MainWindow::registerEvents() {
     // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
     canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
 
-    if ( ! SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText("Error");
       msgbox.setInformativeText("Please connect to serial port first");
@@ -586,7 +587,7 @@ void MainWindow::registerEvents() {
     job_dashboard_->show();
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    if (!SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Serial Port Error"));
       msgbox.setInformativeText(tr("Please connect to serial port first"));
@@ -602,12 +603,12 @@ void MainWindow::registerEvents() {
     // Approach 1: use gcode player
     // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
     // Approach 2: directy control serial port
-    if (!SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       return;
     }
     QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
     for (auto cmd: cmd_list) {
-      SerialPort::getInstance().write_some((cmd + "\n").toStdString());
+      serial_port.write(cmd + "\n");
       // TODO: Wait for ok?
     }
 
@@ -651,10 +652,10 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
   connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
   connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+  connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
   });
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+  connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   });
 }
@@ -746,9 +747,9 @@ void MainWindow::setConnectionToolBar() {
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
-    if (SerialPort::getInstance().isConnected()) {
+    if (serial_port.isOpen()) {
       qInfo() << "[SerialPort] Disconnect";
-      SerialPort::getInstance().stop(); // disconnect
+      serial_port.close(); // disconnect
       return;
     }
     QString port = portComboBox_->currentText();
@@ -761,8 +762,8 @@ void MainWindow::setConnectionToolBar() {
       full_port_path = port;
     }
     qInfo() << "[SerialPort] Connecting" << port << baudrate;
-    bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
-    if (rv == false) {
+    serial_port.open(full_port_path.toStdString().c_str(), baudrate.toInt());
+    if (!serial_port.isOpen()) {
       // Do something?
       return;
     }

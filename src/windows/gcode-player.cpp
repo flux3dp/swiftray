@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <connection/serial-port.h>
 #include <QtMath>
+#include <globals.h>
 
 #include <QDebug>
 
@@ -39,12 +40,12 @@ void GCodePlayer::registerEvents() {
   connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
   connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
 
-  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+  connect(&serial_port, &SerialPort::connected, [=]() {
       qInfo() << "[SerialPort] Success connect!";
       ui->playBtn->setText(tr("Play"));
       ui->playBtn->setEnabled(true);
   });
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+  connect(&serial_port, &SerialPort::disconnected, [=]() {
       qInfo() << "[SerialPort] Disconnected!";
       ui->playBtn->setText(tr("Play"));
       ui->playBtn->setEnabled(false);
