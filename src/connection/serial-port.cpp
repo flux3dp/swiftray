@@ -54,7 +54,15 @@ SerialPort::~SerialPort() {
  * @param baudrate
  * @return
  */
-bool SerialPort::open(QString devname, unsigned int baudrate) {
+bool SerialPort::open(QString port_name, unsigned int baudrate) {
+  QString full_port_path;
+  if (port_name.startsWith("tty")) { // Linux/macOSX
+    full_port_path += "/dev/";
+    full_port_path += port_name;
+  } else { // Windows COMx
+    full_port_path = port_name;
+  }
+
 #ifdef Q_OS_MACOS
   boost::system::error_code ec;
 
@@ -68,10 +76,10 @@ bool SerialPort::open(QString devname, unsigned int baudrate) {
     serial_ = std::make_unique<boost::asio::serial_port>(*io_context_);
   }
   qInfo() << "SerialPort start connection";
-  serial_->open(devname.toStdString().c_str(), ec);
+  serial_->open(full_port_path.toStdString(), ec);
   if (ec) {
     qInfo() << "error : port_->open() failed...com_port_name="
-              << devname << ", e=" << ec.message().c_str();
+              << full_port_path << ", e=" << ec.message().c_str();
     return false;
   }
 
@@ -108,6 +116,7 @@ bool SerialPort::open(QString devname, unsigned int baudrate) {
     return false;
   }
 #endif
+  port_name_ = port_name;
   emit connected();
   return true;
 }
@@ -247,4 +256,12 @@ bool SerialPort::errorStatus() {
 #ifdef Q_OS_WIN
   return pimpl_->serial_.errorStatus();
 #endif
+}
+
+QString SerialPort::portName() {
+  if (isOpen()) {
+    return port_name_;
+  } else {
+    return QString{};
+  }
 }

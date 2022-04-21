@@ -743,6 +743,18 @@ void MainWindow::setConnectionToolBar() {
       portComboBox_->addItem(info.portName());
     }
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
+
+    // Check whether port is unplugged
+    if (serial_port.isOpen()) {
+      auto matchIt = std::find_if(
+              infos.begin(), infos.end(),
+              [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
+      );
+      if (matchIt == infos.end()) { // Unplugged -> close opened port
+        serial_port.close();
+      }
+    }
+
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
     if (serial_port.isOpen()) {
@@ -750,23 +762,16 @@ void MainWindow::setConnectionToolBar() {
       serial_port.close(); // disconnect
       return;
     }
-    QString port = portComboBox_->currentText();
+    QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
-    QString full_port_path;
-    if (port.startsWith("tty")) { // Linux/macOSX
-      full_port_path += "/dev/";
-      full_port_path += port;
-    } else { // Windows COMx
-      full_port_path = port;
-    }
-    qInfo() << "[SerialPort] Connecting" << port << baudrate;
-    serial_port.open(full_port_path.toStdString().c_str(), baudrate.toInt());
+    qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
+    serial_port.open(port_name, baudrate.toInt());
     if (!serial_port.isOpen()) {
       // Do something?
       return;
     }
   });
-  timer->start(5000);
+  timer->start(4000);
 }
 
 void MainWindow::setToolbarFont() {

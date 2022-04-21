@@ -38,7 +38,7 @@ public:
     /**
      * Constructor. Opens a serial port
      * Format is 8N1, flow control is disabled.
-     * @param devname port name, like "/dev/ttyUSB0" or "COM4"
+     * @param devname port name gotten from QSerialPortInfo.portName() (e.g. COM3, tty.1231231)
      * @param baudrate port baud rate, example 115200
      */
     SerialPort(QString devname, unsigned int baudrate);
@@ -52,7 +52,7 @@ public:
 
     /**
      * Opens a serial port
-     * @param devname port name, like "/dev/ttyUSB0" or "COM4"
+     * @param devname port name gotten from QSerialPortInfo.portName() (e.g. COM3, tty.1231231)
      * @param baudrate port baud rate, example 115200
      * Format is 8N1, flow control is disabled.
      */
@@ -79,12 +79,18 @@ public:
      */
     bool errorStatus();
 
+    /**
+     * @return port name (get from QSerialPortInfo) if opened, otherwise, empty string
+     */
+     QString portName();
+
 signals:
     void connected();
     void disconnected();
     void lineReceived(QString resp);
 
 private:
+    QString port_name_;
 #ifdef Q_OS_MACOS
     boost::mutex mutex_;
     io_context_ptr io_context_;
