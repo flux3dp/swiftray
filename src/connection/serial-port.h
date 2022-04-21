@@ -63,8 +63,6 @@ public:
      */
     void close();
 
-    //virtual bool start(const char *com_port_name, int baud_rate=9600);
-    //virtual void stop();
     /**
      * @return true if the port is open
      */

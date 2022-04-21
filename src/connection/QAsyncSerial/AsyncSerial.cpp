@@ -25,6 +25,8 @@
  * character size, flow, stop bits, and defaults to 8N1 format.
  * I know it is bad but at least it's better than nothing.
  *
+ * TODO: 
+ *  - Replace io_context.post() with boost:asio::post()
  */
 
 #include "AsyncSerial.h"
@@ -127,9 +129,13 @@ void AsyncSerial::close()
     pimpl->open=false;
     pimpl->io.post(boost::bind(&AsyncSerial::doClose, this));
     pimpl->backgroundThread.join();
-    pimpl->io.reset();
+    pimpl->io.stop();
+    pimpl->io.restart();
     if(errorStatus())
     {
+        // NOTE: For unknown reason, if serial port is unplugged, the close() will not work as expected
+        //       so we just destruct the pimpl object and create a new one (create brand new serial_port and io_context) here
+        pimpl = std::make_shared<AsyncSerialImpl>();
         throw(boost::system::system_error(boost::system::error_code(),
                 "Error while closing the device"));
     }

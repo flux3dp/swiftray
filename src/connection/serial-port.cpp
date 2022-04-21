@@ -104,7 +104,7 @@ bool SerialPort::open(QString port_name, unsigned int baudrate) {
 #ifdef Q_OS_WIN
   bool result = false;
   try {
-    pimpl_->serial_.open(devname.toStdString(),baudrate);
+    pimpl_->serial_.open(full_port_path.toStdString(),baudrate);
     result = true;
   } catch(boost::system::system_error&)
   {
@@ -136,7 +136,7 @@ void SerialPort::close() {
 
   if (io_context_) {
     io_context_->stop();
-    io_context_.reset();
+    io_context_.restart();
   }
 
   read_buf_str_.clear();
