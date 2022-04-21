@@ -729,14 +729,12 @@ void MainWindow::setConnectionToolBar() {
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
   baudComboBox_->addItem("9600");
-  baudComboBox_->addItem("12800");
-  baudComboBox_->addItem("25600");
-  baudComboBox_->addItem("51200");
+  baudComboBox_->addItem("19200");
+  baudComboBox_->addItem("38400");
   baudComboBox_->addItem("57600");
-  baudComboBox_->addItem("102400");
   baudComboBox_->addItem("115200");
-  baudComboBox_->addItem("204800");
-  baudComboBox_->setCurrentIndex(6); // default baudrate 115200
+  baudComboBox_->addItem("230400");
+  baudComboBox_->setCurrentIndex(4); // default baudrate 115200
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
