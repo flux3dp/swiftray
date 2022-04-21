@@ -1336,6 +1336,7 @@ inline bool attribute_id_to_tag(tag::element::svg, attribute_id id, F & fn)
     SVGPP_ON(baseProfile)
     SVGPP_ON(contentScriptType)
     SVGPP_ON(contentStyleType)
+    SVGPP_ON(data_name)
     default:
       return false;
   }
