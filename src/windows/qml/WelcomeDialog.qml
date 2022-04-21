@@ -38,22 +38,6 @@ Rectangle {
             }
 
             Item {
-                id: item1
-                width: parent.parent.width
-                height: 200
-
-                AnimatedImage {
-                    id: image
-                    width: 200
-                    height: 200
-                    source: "../../../images/earth.gif"
-                    speed: 1.3
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    fillMode: Image.PreserveAspectFit
-                }
-            }
-
-            Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 Rectangle {

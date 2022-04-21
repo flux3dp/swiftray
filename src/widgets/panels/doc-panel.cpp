@@ -102,6 +102,8 @@ void DocPanel::registerEvents() {
   });
   connect(main_window_, &MainWindow::machineSettingsChanged, [=]() {
     loadSettings();
+    // Select the machine just created by Welcome Dialog
+    ui->machineComboBox->setCurrentIndex(ui->machineComboBox->count() - 1);
   });
   connect(main_window_->canvas(), &Canvas::docSettingsChanged, [=]() {
     loadSettings();

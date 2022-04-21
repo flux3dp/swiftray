@@ -135,7 +135,6 @@
         <file>images/icon.icns</file>
         <file>images/icon.png</file>
         <file>images/checkmark.gif</file>
-        <file>images/earth.gif</file>
         <file>styles/swiftray-dark.qss</file>
         <file>styles/swiftray-light.qss</file>
         <file>resources/parameters/beamo.json</file>
