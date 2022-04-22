@@ -1,14 +1,16 @@
 #include <QAction>
 #include <QDebug>
+#include <QListWidgetItem>
+#include <windows/mainwindow.h>
 #include <windows/new-machine-dialog.h>
 #include <settings/machine-settings.h>
-#include <QListWidgetItem>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
 
-MachineManager::MachineManager(QWidget *parent) :
+MachineManager::MachineManager(QWidget *parent, MainWindow *main_window) :
      QDialog(parent),
      ui(new Ui::MachineManager),
+     main_window_(main_window),
      BaseContainer() {
   ui->setupUi(this);
   ui->machineList->
@@ -33,6 +35,9 @@ void MachineManager::loadSettings() {
     param_item->setText(machine.name);
     param_item->setIcon(machine.icon());
     ui->machineList->addItem(param_item);
+    if (main_window_->currentMachine().name == machine.name) {
+      ui->machineList->setCurrentRow(ui->machineList->count() - 1);
+    }
   }
 }
 

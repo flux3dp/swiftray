@@ -48,6 +48,8 @@ public:
 
   Canvas *canvas() const;
 
+  MachineSettings::MachineSet currentMachine();
+
 signals:
 
   void presetSettingsChanged();
