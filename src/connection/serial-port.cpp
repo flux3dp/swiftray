@@ -136,7 +136,7 @@ void SerialPort::close() {
 
   if (io_context_) {
     io_context_->stop();
-    io_context_.restart();
+    io_context_->restart();
   }
 
   read_buf_str_.clear();
