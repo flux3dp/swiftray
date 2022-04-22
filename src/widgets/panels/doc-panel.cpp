@@ -79,6 +79,9 @@ void DocPanel::loadSettings() {
   ui->presetComboBox->clear();
   for (auto &preset : preset_settings->presets()) {
     ui->presetComboBox->addItem(preset.name);
+    if (preset.name == "5W") {
+      ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 1);
+    }
   }
 
   // Load DPI setting (select appropriate dpi item index)
