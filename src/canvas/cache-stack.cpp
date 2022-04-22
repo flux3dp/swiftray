@@ -97,7 +97,11 @@ void CacheStack::Cache::merge(const QTransform &global_transform) {
     QTransform transform = p->transform() * p->tempTransform() * global_transform;
     QPainterPath transformed_path = transform.map(p->path());
     if (transformed_path.intersects(screen_rect)) {
-      joined_path_.addPath(transformed_path);
+      if (type_ == Type::NonSelectedFilledPaths || type_ == Type::SelectedFilledPaths) {
+        joined_path_ |= transformed_path;
+      } else {
+        joined_path_.addPath(transformed_path);
+      }
     }
   }
 }
