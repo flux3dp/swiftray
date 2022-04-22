@@ -222,6 +222,9 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   // Get the image of entire layer
   QImage layer_image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
 
+  // Adjust padding based on layer speed
+  //qreal accelerate = 4000;
+  //padding_mm_ = qreal(current_layer_->speed()*current_layer_->speed()) / (2*accelerate); // d = v^2 / 2a
   // NOTE: Express bbox in # of dots
   //       Reserve x-direction padding in bounding box (for acceleration distance)
   const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)

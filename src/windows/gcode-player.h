@@ -7,7 +7,7 @@
 
 #ifndef Q_OS_IOS
 
-#include <connection/base-job.h>
+#include <motion_controller_job/base-job.h>
 #include <widgets/base-container.h>
 #include <QTime>
 

@@ -1,4 +1,4 @@
-#include <connection/base-job.h>
+#include <motion_controller_job/base-job.h>
 
 BaseJob::BaseJob(QObject *parent, QString endpoint, QVariant data) :
      QThread(parent) {}
@@ -34,22 +34,14 @@ QString BaseJob::statusToString(BaseJob::Status status) {
       return tr("RUNNING");
     case BaseJob::Status::PAUSED:
       return tr("PAUSED");
-    case BaseJob::Status::PAUSING:
-      return tr("PAUSING");
-    case BaseJob::Status::RESUMING:
-      return tr("RESUMING");
-    case BaseJob::Status::STOPPING:
-      return tr("STOPPING");
+    case BaseJob::Status::ALARM:
+      return tr("ALARM");
     case BaseJob::Status::STOPPED:
       return tr("STOPPED");
+    case BaseJob::Status::ALARM_STOPPED:
+      return tr("ALARM_STOPPED");
     case BaseJob::Status::FINISHED:
       return tr("FINISHED");
-    case BaseJob::Status::ERROR_STOPPING:
-      return tr("ERROR STOPPING");
-    case BaseJob::Status::ERROR_STOPPED:
-      return tr("ERROR STOPPED");
-    case BaseJob::Status::ERROR_PAUSED:
-      return tr("ERROR PAUSED");
     default:
       return tr("UNDEFINED STATUS");
   }

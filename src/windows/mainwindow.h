@@ -24,7 +24,7 @@
 #include <widgets/base-container.h>
 
 #include <windows/job-dashboard-dialog.h>
-#include <connection/serial-job.h>
+#include <motion_controller_job/grbl-job.h>
 
 namespace Ui {
   class MainWindow;
@@ -156,7 +156,7 @@ private:
   PreferencesWindow *preferences_window_;
 
 #ifndef Q_OS_IOS
-    QList<SerialJob *> jobs_;
+    QList<GrblJob *> jobs_;
 #endif
 
   void newFile();

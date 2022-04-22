@@ -56,7 +56,7 @@ void JobDashboardDialog::registerEvents() {
   connect(ui->startBtn, &QToolButton::clicked, this, [=](){
     if (status_ == BaseJob::Status::READY ||
         status_ == BaseJob::Status::FINISHED ||
-        status_ == BaseJob::Status::ERROR_STOPPED ||
+        status_ == BaseJob::Status::ALARM_STOPPED ||
         status_ == BaseJob::Status::STOPPED) {
       emit startBtnClicked(); // try to start a new job
     } else if (status_ == BaseJob::Status::RUNNING) {
@@ -105,19 +105,20 @@ void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(true);
       break;
+    case BaseJob::Status::ALARM:
+      ui->startBtn->setEnabled(false); // act as start (restart) btn
+      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
+      ui->stopBtn->setEnabled(false);
+      onProgressChanged(0);
+      break;
     case BaseJob::Status::FINISHED:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       onProgressChanged(100);
       break;
-    case BaseJob::Status::STOPPING:
-    case BaseJob::Status::ERROR_STOPPING:
-      ui->startBtn->setEnabled(false);
-      ui->stopBtn->setEnabled(false);
-      break;
     case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ERROR_STOPPED:
+    case BaseJob::Status::ALARM_STOPPED:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);

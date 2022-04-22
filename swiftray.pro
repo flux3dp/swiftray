@@ -59,20 +59,20 @@ SOURCES += \
         $$files(src/gcode/*.cpp) \
         $$files(src/windows/*.cpp) \
         $$files(src/settings/*.cpp) \
+        $$files(src/connection/*.cpp) \
+        $$files(src/motion_controller_job/*.cpp) \
         src/document.cpp \
         src/layer.cpp \
         src/command.cpp \
         src/clipboard.cpp \
         src/main.cpp \
-        src/connection/base-job.cpp \
         $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
         src/widgets/components/graphicitems/resizeable-rect-item.cpp \
-        third_party/SerialPort/SerialPort.cpp \
         third_party/clipper/clipper.cpp
 ios {
 } else {
     SOURCES += \
-            src/connection/serial-job.cpp
+            src/motion_controller_job/serial-job.cpp
 }
 RESOURCES += qml.qrc
 TRANSLATIONS += \
@@ -98,7 +98,7 @@ HEADERS += \
     $$files(src/widgets/panels/*.h) \
     $$files(src/windows/*.h) \
     $$files(src/*.h) \
-    src/connection/base-job.h \
+    $$files(src/motion_controller_job/*.h) \
     src/gcode/generators/dirty-area-outline-generator.h \
     src/settings/file-path-settings.h \
     src/settings/machine-settings.h \
@@ -113,14 +113,13 @@ HEADERS += \
     src/widgets/components/qdoublespinbox2.h \
     src/widgets/components/task-list-item.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
-    third_party/SerialPort/SerialPort.h \
     third_party/clipper/clipper.hpp
 ios {
     HEADERS += \
             src/widgets/components/ios-image-picker.h \
 } else {
     HEADERS += \
-            src/connection/serial-job.h
+            src/motion_controller_job/serial-job.h
 }
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd

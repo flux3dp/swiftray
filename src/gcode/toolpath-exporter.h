@@ -8,9 +8,9 @@
 #include <shape/group-shape.h>
 #include <gcode/generators/base-generator.h>
 #include <document.h>
+#include <bitset>
 
 #include <QImage>
-#include <QTime>
 
 class ToolpathExporter {
 public:

@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include <widgets/base-container.h>
-#include <connection/base-job.h>
+#include <motion_controller_job/base-job.h>
 
 #include <QString>
 #include <QPixmap>

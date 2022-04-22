@@ -14,7 +14,7 @@
 #ifndef Q_OS_IOS
 
 #include <QSerialPort>
-#include <connection/serial-job.h>
+#include <motion_controller_job/grbl-job.h>
 
 #endif
 
@@ -59,6 +59,6 @@ private:
   bool is_laser_on_ = false;
 
 #ifndef Q_OS_IOS
-  QList<SerialJob *> jobs_;
+  QList<GrblJob *> jobs_;
 #endif
 };

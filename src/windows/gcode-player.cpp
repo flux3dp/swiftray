@@ -6,8 +6,9 @@
 #ifndef Q_OS_IOS
 
 #include <QTimer>
-#include <SerialPort/SerialPort.h>
+#include <connection/serial-port.h>
 #include <QtMath>
+#include <globals.h>
 
 #include <QDebug>
 
@@ -39,12 +40,12 @@ void GCodePlayer::registerEvents() {
   connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
   connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
 
-  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+  connect(&serial_port, &SerialPort::connected, [=]() {
       qInfo() << "[SerialPort] Success connect!";
       ui->playBtn->setText(tr("Play"));
       ui->playBtn->setEnabled(true);
   });
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+  connect(&serial_port, &SerialPort::disconnected, [=]() {
       qInfo() << "[SerialPort] Disconnected!";
       ui->playBtn->setText(tr("Play"));
       ui->playBtn->setEnabled(false);
@@ -54,12 +55,9 @@ void GCodePlayer::registerEvents() {
 
 void GCodePlayer::showError(const QString &msg) {
   QMessageBox msgbox;
-  msgbox.setText("Serial Port Error");
+  msgbox.setText("Job Error");
   msgbox.setInformativeText(msg);
   msgbox.exec();
-  ui->pauseBtn->setEnabled(false);
-  ui->playBtn->setText(tr("Play"));
-  ui->pauseBtn->setText(tr("Pause"));
 }
 
 void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
@@ -96,15 +94,14 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
       ui->stopBtn->setEnabled(false);
       onProgressChanged(100);
       break;
-    case BaseJob::Status::STOPPING:
-    case BaseJob::Status::ERROR_STOPPING:
-      qInfo() << "Stopping";
+    case BaseJob::Status::ALARM:
       ui->pauseBtn->setEnabled(false);
       ui->playBtn->setEnabled(false);
       ui->stopBtn->setEnabled(false);
+      onProgressChanged(0);
       break;
     case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ERROR_STOPPED:
+    case BaseJob::Status::ALARM_STOPPED:
       qInfo() << "Stopped";
       ui->pauseBtn->setEnabled(false);
       ui->pauseBtn->setText(tr("Pause"));
@@ -164,21 +161,21 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
       y = relative_mode ? 0 : last_y;
 
       if (line.indexOf("F", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Ff]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Ff]([0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           f = match.captured(1).toFloat();
         }
       }
       if (line.indexOf("X", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Xx]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Xx](-?[0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           x = match.captured(1).toFloat();
         }
       }
       if (line.indexOf("Y", 0, Qt::CaseSensitivity::CaseInsensitive) > -1) {
-        QRegularExpression re("[Yy]-?([0-9]+([.][0-9]*)?|[.][0-9]+)");
+        QRegularExpression re("[Yy](-?[0-9]+([.][0-9]*)?|[.][0-9]+)");
         QRegularExpressionMatch match = re.match(line);
         if (match.hasMatch()) {
           y = match.captured(1).toFloat();

@@ -17,14 +17,10 @@ public:
     STARTING,
     RUNNING,
     PAUSED,
-    PAUSING,
-    RESUMING,
-    STOPPING,
+    ALARM,
     STOPPED,
+    ALARM_STOPPED,
     FINISHED,
-    ERROR_STOPPING,
-    ERROR_STOPPED,
-    ERROR_PAUSED
   };
   Q_ENUM(Status)
 
@@ -61,7 +57,6 @@ signals:
   void statusChanged(BaseJob::Status);
   void progressChanged(QVariant);
   void elapsedTimeChanged(QTime);
-  void timeout(const QString &);
 
 protected:
 

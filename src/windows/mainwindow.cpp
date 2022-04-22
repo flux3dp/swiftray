@@ -28,6 +28,7 @@
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
 #include <windows/job-dashboard-dialog.h>
+#include <globals.h>
 
 #include "ui_mainwindow.h"
 
@@ -553,7 +554,7 @@ void MainWindow::registerEvents() {
     // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
     canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
 
-    if ( ! SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText("Error");
       msgbox.setInformativeText("Please connect to serial port first");
@@ -586,7 +587,7 @@ void MainWindow::registerEvents() {
     job_dashboard_->show();
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    if (!SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Serial Port Error"));
       msgbox.setInformativeText(tr("Please connect to serial port first"));
@@ -602,12 +603,12 @@ void MainWindow::registerEvents() {
     // Approach 1: use gcode player
     // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
     // Approach 2: directy control serial port
-    if (!SerialPort::getInstance().isConnected()) {
+    if (!serial_port.isOpen()) {
       return;
     }
     QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
     for (auto cmd: cmd_list) {
-      SerialPort::getInstance().write_some((cmd + "\n").toStdString());
+      serial_port.write(cmd + "\n");
       // TODO: Wait for ok?
     }
 
@@ -651,10 +652,10 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
   connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
   connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(&(SerialPort::getInstance()), &SerialPort::connected, [=]() {
+  connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
   });
-  connect(&(SerialPort::getInstance()), &SerialPort::disconnected, [=]() {
+  connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   });
 }
@@ -728,14 +729,12 @@ void MainWindow::setConnectionToolBar() {
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
   baudComboBox_->addItem("9600");
-  baudComboBox_->addItem("12800");
-  baudComboBox_->addItem("25600");
-  baudComboBox_->addItem("51200");
+  baudComboBox_->addItem("19200");
+  baudComboBox_->addItem("38400");
   baudComboBox_->addItem("57600");
-  baudComboBox_->addItem("102400");
   baudComboBox_->addItem("115200");
-  baudComboBox_->addItem("204800");
-  baudComboBox_->setCurrentIndex(6); // default baudrate 115200
+  baudComboBox_->addItem("230400");
+  baudComboBox_->setCurrentIndex(4); // default baudrate 115200
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
@@ -744,30 +743,35 @@ void MainWindow::setConnectionToolBar() {
       portComboBox_->addItem(info.portName());
     }
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
+
+    // Check whether port is unplugged
+    if (serial_port.isOpen()) {
+      auto matchIt = std::find_if(
+              infos.begin(), infos.end(),
+              [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
+      );
+      if (matchIt == infos.end()) { // Unplugged -> close opened port
+        serial_port.close();
+      }
+    }
+
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
-    if (SerialPort::getInstance().isConnected()) {
+    if (serial_port.isOpen()) {
       qInfo() << "[SerialPort] Disconnect";
-      SerialPort::getInstance().stop(); // disconnect
+      serial_port.close(); // disconnect
       return;
     }
-    QString port = portComboBox_->currentText();
+    QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
-    QString full_port_path;
-    if (port.startsWith("tty")) { // Linux/macOSX
-      full_port_path += "/dev/";
-      full_port_path += port;
-    } else { // Windows COMx
-      full_port_path = port;
-    }
-    qInfo() << "[SerialPort] Connecting" << port << baudrate;
-    bool rv = SerialPort::getInstance().start(full_port_path.toStdString().c_str(), baudrate.toInt());
-    if (rv == false) {
+    qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
+    serial_port.open(port_name, baudrate.toInt());
+    if (!serial_port.isOpen()) {
       // Do something?
       return;
     }
   });
-  timer->start(5000);
+  timer->start(4000);
 }
 
 void MainWindow::setToolbarFont() {
@@ -1200,7 +1204,7 @@ void MainWindow::generateJob() {
     return;
   }
 
-  auto job = new SerialJob(this, "", gcode_player_->getGCode().split("\n"));
+  auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
   job->setTimestampList(gcode_player_->calcRequiredTime());
   jobs_ << job;
 }
