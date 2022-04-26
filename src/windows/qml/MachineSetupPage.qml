@@ -15,7 +15,7 @@ Item {
     }
 
     Component.onCompleted: function() {
-        comboBoxModel.model = machineSettings.models("LazerVida");
+        comboBoxModel.model = machineSettings.models("Lazervida");
     }
 
     function checkMachine() {
