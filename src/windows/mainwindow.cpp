@@ -54,7 +54,10 @@ MainWindow::MainWindow(QWidget *parent) :
 void MainWindow::loadSettings() {
   QSettings settings;
   restoreGeometry(settings.value("window/geometry").toByteArray());
-  restoreState(settings.value("window/windowState").toByteArray());
+  if (!restoreState(settings.value("window/windowState").toByteArray())) {
+    QSettings classic_settings(":/classicUI.ini", QSettings::IniFormat);
+    restoreState(classic_settings.value("window/windowState").toByteArray());
+  };
 }
 
 void MainWindow::loadCanvas() {
