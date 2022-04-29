@@ -95,7 +95,7 @@ public:
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
     str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1S10" << std::endl;
+    str_stream_ << "G1S20" << std::endl;
     str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
     str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
     str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
