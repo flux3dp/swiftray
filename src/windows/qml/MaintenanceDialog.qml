@@ -4,13 +4,18 @@ import QtQuick.Layouts 1.3
 import QtQuick.Window 2.2
 import QtQuick.Shapes 1.14
 import QtGraphicalEffects 1.0
-import MaintenanceController 1.0
 
 Rectangle {
     id: root
     width: 280
     height: 314
     color: is_dark_mode ? "#333333" : "#F0F0F0"
+    signal home()
+    signal laser()
+    signal laserPulse()
+    signal moveRelatively(int dir, int level)
+    signal moveToCorner(int corner)
+    signal moveToEdge(int dir)
 
     Rectangle {
         x: 10
@@ -19,10 +24,6 @@ Rectangle {
         height: 538
         color: "transparent"
         transform: Scale { origin.x: 0; origin.y: 0; xScale: 260/538; yScale: 260/538 }
-
-        MaintenanceController {
-          id: controller
-        }
 
         Shape {
             id: pathSvg
@@ -147,7 +148,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.homing()
+                onTapped: home()
             }
         }
 
@@ -186,7 +187,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveY(160)
+                onTapped: moveToEdge(1)
             }
         }
 
@@ -226,7 +227,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveX(0)
+                onTapped: moveToEdge(0)
             }
         }
 
@@ -266,7 +267,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveY(0)
+                onTapped: moveToEdge(3)
             }
         }
 
@@ -306,7 +307,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveX(160)
+                onTapped: moveToEdge(2)
             }
         }
 
@@ -334,7 +335,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveRelatively(0, 0.1)
+                onTapped: moveRelatively(1, 0)
             }
         }
 
@@ -359,7 +360,7 @@ Rectangle {
                 PathLine { x: 265.8; y: 352.1 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(0, -0.1)
+                onTapped: moveRelatively(3, 0)
             }
         }
 
@@ -384,7 +385,7 @@ Rectangle {
                 PathLine { x: 178.1; y: 264.3 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(-0.1, 0)
+                onTapped: moveRelatively(2, 0)
             }
         }
 
@@ -409,7 +410,7 @@ Rectangle {
                 PathLine { x: 353.5; y: 264.3 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(0.1, 0)
+                onTapped: moveRelatively(0, 0)
             }
         }
 
@@ -450,7 +451,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveRelatively(-1, 0)
+                onTapped: moveRelatively(2, 1)
             }
         }
 
@@ -490,7 +491,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveRelatively(0, -2)
+                onTapped: moveRelatively(3, 1)
             }
         }
 
@@ -527,7 +528,7 @@ Rectangle {
                 PathLine { x: 265.8; y: 123.7 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(0, 2)
+                onTapped: moveRelatively(1, 1)
             }
         }
 
@@ -562,7 +563,7 @@ Rectangle {
                 PathLine { x: 406.5; y: 264.3 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(1, 0)
+                onTapped: moveRelatively(0, 1)
             }
         }
 
@@ -607,7 +608,7 @@ Rectangle {
                 PathLine { x: 265.8; y: 73.2 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(0, 10)
+                onTapped: moveRelatively(1, 2)
             }
         }
 
@@ -652,7 +653,7 @@ Rectangle {
                 PathLine { x: 265.8; y: 455.5 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(0, -10)
+                onTapped: moveRelatively(3, 2)
             }
         }
 
@@ -697,7 +698,7 @@ Rectangle {
                 PathLine { x: 456.9; y: 264.3 }
             }
             TapHandler {
-                onTapped: controller.moveRelatively(10, 0)
+                onTapped: moveRelatively(0, 2)
             }
         }
 
@@ -743,7 +744,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveRelatively(-10, 0)
+                onTapped: moveRelatively(2, 2)
             }
         }
 
@@ -779,7 +780,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveTo(0, 0)
+                onTapped: moveToCorner(0)
             }
         }
 
@@ -817,7 +818,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveTo(160, 0)
+                onTapped: moveToCorner(1)
             }
         }
 
@@ -855,7 +856,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveTo(0, 160)
+                onTapped: moveToCorner(2)
             }
         }
 
@@ -892,7 +893,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: controller.moveTo(160, 160)
+                onTapped: moveToCorner(3)
             }
         }
 
@@ -908,7 +909,7 @@ Rectangle {
                 height: 60
                 text: qsTr("Laser Pulse")
                 font.pointSize: 28
-                onClicked: controller.laserPulse()
+                onClicked: laserPulse()
             }
         }
 
@@ -925,7 +926,7 @@ Rectangle {
                 checkable: true
                 text: qsTr("Laser")
                 font.pointSize: 28
-                onClicked: controller.laser()
+                onClicked: laser()
             }
         }
     }
