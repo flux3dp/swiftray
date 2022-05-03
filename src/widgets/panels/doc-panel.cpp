@@ -149,6 +149,7 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
   if (ui->machineComboBox->count() == 0) {
     MachineSettings::MachineSet m;
     m.origin = MachineSettings::MachineSet::OriginType::RearLeft;
+    // TODO: How about default width and height?
     return m;
   }
   auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
