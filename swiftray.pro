@@ -49,31 +49,24 @@ QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 SOURCES += \
-        $$files(src/canvas/controls/*.cpp) \
-        $$files(src/shape/*.cpp) \
-        $$files(src/widgets/*.cpp) \
-        $$files(src/widgets/panels/*.cpp) \
-        $$files(src/widgets/components/*.cpp) \
-        $$files(src/parser/*.cpp) \
-        $$files(src/canvas/*.cpp) \
-        $$files(src/gcode/*.cpp) \
-        $$files(src/windows/*.cpp) \
-        $$files(src/settings/*.cpp) \
-        $$files(src/connection/*.cpp) \
-        $$files(src/motion_controller_job/*.cpp) \
-        src/document.cpp \
-        src/layer.cpp \
-        src/command.cpp \
-        src/clipboard.cpp \
-        src/main.cpp \
-        $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
-        src/widgets/components/graphicitems/resizeable-rect-item.cpp \
-        third_party/clipper/clipper.cpp
-ios {
-} else {
-    SOURCES += \
-            src/motion_controller_job/serial-job.cpp
-}
+    $$files(src/*.cpp) \
+    $$files(src/canvas/*.cpp) \
+    $$files(src/canvas/controls/*.cpp) \
+    $$files(src/connection/*.cpp) \
+    $$files(src/connection/QAsyncSerial/*.cpp) \
+    $$files(src/gcode/*.cpp) \
+    $$files(src/motion_controller_job/*.cpp) \
+    $$files(src/parser/*.cpp) \
+    $$files(src/settings/*.cpp) \
+    $$files(src/shape/*.cpp) \
+    $$files(src/widgets/*.cpp) \
+    $$files(src/widgets/panels/*.cpp) \
+    $$files(src/widgets/components/*.cpp) \
+    $$files(src/windows/*.cpp) \
+    $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
+    src/widgets/components/graphicitems/resizeable-rect-item.cpp \
+    third_party/clipper/clipper.cpp
+
 RESOURCES += qml.qrc
 TRANSLATIONS += \
     i18n/zh-Hant-TW.ts
@@ -88,39 +81,29 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path):INSTALLS += target
 HEADERS += \
+    $$files(src/*.h) \
     $$files(src/canvas/*.h) \
     $$files(src/canvas/controls/*.h) \
-    $$files(src/shape/*.h) \
+    $$files(src/connection/*.h) \
+    $$files(src/connection/QAsyncSerial/*.h) \
+    $$files(src/gcode/*.h) \
+    $$files(src/motion_controller_job/*.h) \
     $$files(src/parser/*.h) \
     $$files(src/parser/generators/*.h) \
-    $$files(src/gcoder/*.h) \
+    $$files(src/settings/*.h) \
+    $$files(src/shape/*.h) \
     $$files(src/widgets/*.h) \
     $$files(src/widgets/panels/*.h) \
+    $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
-    $$files(src/*.h) \
-    $$files(src/motion_controller_job/*.h) \
     src/gcode/generators/dirty-area-outline-generator.h \
-    src/settings/file-path-settings.h \
-    src/settings/machine-settings.h \
-    src/settings/maintenance-controller.h \
-    src/settings/preset-settings.h \
-    src/widgets/components/canvas-text-edit.h \
-    src/widgets/components/color-picker-button.h \
-    src/widgets/components/graphicitems/resizeable-rect-item.h \
-    src/widgets/components/image-crop-graphicsview.h \
-    src/widgets/components/image-trace-graphicsview.h \
-    src/widgets/components/layer-list-item.h \
-    src/widgets/components/qdoublespinbox2.h \
-    src/widgets/components/task-list-item.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
     third_party/clipper/clipper.hpp
 ios {
     HEADERS += \
             src/widgets/components/ios-image-picker.h \
-} else {
-    HEADERS += \
-            src/motion_controller_job/serial-job.h
 }
+
 win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
 else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
 win32 {
@@ -160,8 +143,8 @@ OBJECTIVE_SOURCES += src/windows/osxwindow.mm
 TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/include/* \
              /usr/local/opt/libxml2/include/* \
-             /usr/local/include/boost/* \
-             /Users/simon/Dev/qt5/qtbase/*
+             /usr/local/include/boost/*
+
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
 win32:CONFIG(release, debug|release): LIBS += -L/usr/local/lib/release/ -lpotrace
