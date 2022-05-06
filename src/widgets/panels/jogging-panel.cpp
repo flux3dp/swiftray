@@ -54,7 +54,7 @@ void JoggingPanel::laser() {
 }
 
 void JoggingPanel::laserPulse() {
-  QString job_str = "M5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
+  QString job_str = "$X\nM5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
   qInfo() << "laser pulse!";
   sendJob(job_str);
 }
@@ -108,7 +108,7 @@ void JoggingPanel::moveRelatively(int dir, int level) {
       break;
   }
 
-  QString job_str = "M5\nG91\nG1F1200S0\nG1X" + QString::number(movement.x()) + "Y" + QString::number(movement.y()) + "\nG90";
+  QString job_str = "$X\nM5\n$J=G91 F1200 X" + QString::number(movement.x()) + "Y" + QString::number(movement.y());
   sendJob(job_str);
 }
 
@@ -120,22 +120,22 @@ void JoggingPanel::moveToEdge(int dir) {
     case 0:
       movement.setX(main_window_->currentMachine().width);
       movement = transformDirection(movement);
-      job_str = "M5\nG90\nG1F1200S0\nG1X" + QString::number(movement.x()) + "\nG90";
+      job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
       break;
     case 1:
       movement.setY(-(main_window_->currentMachine().height));
       movement = transformDirection(movement);
-      job_str = "M5\nG90\nG1F1200S0\nG1Y" + QString::number(movement.y()) + "\nG90";
+      job_str = "$X\nM5\n$J=G90 F1200 Y" + QString::number(movement.y());
       break;
     case 2:
       movement.setX(-(main_window_->currentMachine().width));
       movement = transformDirection(movement);
-      job_str = "M5\nG90\nG1F1200S0\nG1X" + QString::number(movement.x()) + "\nG90";
+      job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
       break;
     case 3:
       movement.setY(main_window_->currentMachine().height);
       movement = transformDirection(movement);
-      job_str = "M5\nG90\nG1F1200S0\nG1Y" + QString::number(movement.y()) + "\nG90";
+      job_str = "$X\nM5\n$J=G90 F1200 Y" + QString::number(movement.y());
       break;
   }
 
@@ -165,7 +165,7 @@ void JoggingPanel::moveToCorner(int corner) {
   }
   movement = transformDirection(movement);
 
-  QString job_str = "M5\nG90\nG1F1200S0\nG1X" + QString::number(movement.x()) + "Y" + QString::number(movement.y()) + "\nG90";
+  QString job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x()) + "Y" + QString::number(movement.y());
   sendJob(job_str);
 }
 
