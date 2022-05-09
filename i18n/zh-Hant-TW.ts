@@ -4,75 +4,55 @@
 <context>
     <name>BaseJob</name>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="30"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="30"/>
         <source>READY</source>
-        <translation type="unfinished"></translation>
+        <translation>準備中</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="32"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="32"/>
         <source>STARTING</source>
-        <translation type="unfinished"></translation>
+        <translation>啟動中</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="34"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="34"/>
         <source>RUNNING</source>
-        <translation type="unfinished"></translation>
+        <translation>工作中</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="36"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="36"/>
         <source>PAUSED</source>
-        <translation type="unfinished"></translation>
+        <translation>暫停</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="38"/>
-        <source>PAUSING</source>
-        <translation type="unfinished"></translation>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="38"/>
+        <source>ALARM</source>
+        <translation>警告</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="40"/>
-        <source>RESUMING</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/base-job.cpp" line="42"/>
-        <source>STOPPING</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/base-job.cpp" line="44"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="40"/>
         <source>STOPPED</source>
-        <translation type="unfinished"></translation>
+        <translation>停止</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="46"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="42"/>
+        <source>ALARM_STOPPED</source>
+        <translation>警告停止</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="44"/>
         <source>FINISHED</source>
-        <translation type="unfinished"></translation>
+        <translation>完成</translation>
     </message>
     <message>
-        <location filename="../src/connection/base-job.cpp" line="48"/>
-        <source>ERROR STOPPING</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/base-job.cpp" line="50"/>
-        <source>ERROR STOPPED</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/base-job.cpp" line="52"/>
-        <source>ERROR PAUSED</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/base-job.cpp" line="54"/>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="46"/>
         <source>UNDEFINED STATUS</source>
-        <translation type="unfinished"></translation>
+        <translation>未定義狀態</translation>
     </message>
 </context>
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="667"/>
+        <location filename="../src/canvas/canvas.cpp" line="688"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
@@ -82,7 +62,7 @@
     <message>
         <location filename="../src/widgets/components/color-picker-button.ui" line="14"/>
         <source>ColorPickerButton</source>
-        <translation type="unfinished"></translation>
+        <translation>色彩選取工具</translation>
     </message>
 </context>
 <context>
@@ -90,7 +70,7 @@
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="20"/>
         <source>Frame</source>
-        <translation></translation>
+        <translation>文件設定</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="58"/>
@@ -110,22 +90,22 @@
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="132"/>
         <source>Low (125 DPI)</source>
-        <translation>低</translation>
+        <translation>低 (125 DPI)</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="137"/>
         <source>Mid (250 DPI)</source>
-        <translation>中</translation>
+        <translation>中 (250 DPI)</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="142"/>
         <source>High (500 DPI)</source>
-        <translation>高</translation>
+        <translation>高 (500 DPI)</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="147"/>
         <source>Ultra High (1000 DPI)</source>
-        <translation type="unfinished"></translation>
+        <translation>極高 (1000 DPI)</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/doc-panel.ui" line="159"/>
@@ -163,22 +143,22 @@
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="140"/>
         <source>Style</source>
-        <translation type="unfinished"></translation>
+        <translation>字型</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="179"/>
         <source>B</source>
-        <translation type="unfinished"></translation>
+        <translation>B</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="211"/>
         <source>I</source>
-        <translation type="unfinished"></translation>
+        <translation>I</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="243"/>
         <source>U</source>
-        <translation type="unfinished"></translation>
+        <translation>U</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/font-panel.ui" line="313"/>
@@ -218,54 +198,82 @@
     <message>
         <location filename="../src/windows/gcode-player.ui" line="58"/>
         <source>Gcode Import</source>
-        <translation type="unfinished"></translation>
+        <translation>匯入 Gcode</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="102"/>
         <source>Gcode Export</source>
-        <translation type="unfinished"></translation>
+        <translation>匯出 Gcode</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="138"/>
         <source>Generate G-code</source>
-        <translation type="unfinished"></translation>
+        <translation>生成 G-code</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="161"/>
         <source>%p%</source>
-        <translation type="unfinished"></translation>
+        <translation>%p%</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="186"/>
         <source>0%</source>
-        <translation type="unfinished"></translation>
+        <translation>0%</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="203"/>
-        <location filename="../src/windows/gcode-player.cpp" line="44"/>
-        <location filename="../src/windows/gcode-player.cpp" line="49"/>
-        <location filename="../src/windows/gcode-player.cpp" line="61"/>
+        <location filename="../src/windows/gcode-player.cpp" line="45"/>
+        <location filename="../src/windows/gcode-player.cpp" line="50"/>
+        <source>Play</source>
+        <translation>開始工作</translation>
+    </message>
+    <message>
         <source>Execute</source>
-        <translation>送出工作</translation>
+        <translation type="vanished">送出工作</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="219"/>
-        <location filename="../src/windows/gcode-player.cpp" line="62"/>
-        <location filename="../src/windows/gcode-player.cpp" line="81"/>
-        <location filename="../src/windows/gcode-player.cpp" line="94"/>
-        <location filename="../src/windows/gcode-player.cpp" line="110"/>
+        <location filename="../src/windows/gcode-player.cpp" line="79"/>
+        <location filename="../src/windows/gcode-player.cpp" line="92"/>
+        <location filename="../src/windows/gcode-player.cpp" line="107"/>
         <source>Pause</source>
-        <translation type="unfinished">暫停工作</translation>
+        <translation>暫停工作</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="229"/>
         <source>Stop</source>
-        <translation type="unfinished">停止工作</translation>
+        <translation>停止工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="89"/>
+        <location filename="../src/windows/gcode-player.cpp" line="87"/>
         <source>Resume</source>
-        <translation type="unfinished">繼續工作</translation>
+        <translation>繼續工作</translation>
+    </message>
+</context>
+<context>
+    <name>GrblJob</name>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="112"/>
+        <source>Serial port not connected</source>
+        <translation>未偵測到序列埠連接</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="145"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="191"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="283"/>
+        <source>Serial port not responding</source>
+        <translation>序列埠沒有回應</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="187"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="279"/>
+        <source>Serial port disconnected</source>
+        <translation>序列埠斷線</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="227"/>
+        <source>Alarm code: </source>
+        <translation>錯誤代碼：</translation>
     </message>
 </context>
 <context>
@@ -273,27 +281,27 @@
     <message>
         <location filename="../src/windows/image-crop-dialog.ui" line="14"/>
         <source>ImageCropDialog</source>
-        <translation type="unfinished"></translation>
+        <translation>影像裁減</translation>
     </message>
     <message>
         <location filename="../src/windows/image-crop-dialog.cpp" line="35"/>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>完成</translation>
     </message>
     <message>
         <location filename="../src/windows/image-crop-dialog.cpp" line="36"/>
         <source>Cancel</source>
-        <translation type="unfinished">取消</translation>
+        <translation>取消</translation>
     </message>
     <message>
         <location filename="../src/windows/image-crop-dialog.cpp" line="37"/>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>套用</translation>
     </message>
     <message>
         <location filename="../src/windows/image-crop-dialog.cpp" line="38"/>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>重置</translation>
     </message>
 </context>
 <context>
@@ -301,17 +309,45 @@
     <message>
         <location filename="../src/widgets/panels/image-panel.ui" line="17"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>影像設定</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/image-panel.ui" line="32"/>
         <source>Gradient mode</source>
-        <translation type="unfinished"></translation>
+        <translation>漸層</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/image-panel.ui" line="57"/>
+        <location filename="../src/widgets/panels/image-panel.ui" line="48"/>
         <source>Threshold Brightness</source>
-        <translation type="unfinished"></translation>
+        <translation>臨界值</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/image-panel.ui" line="107"/>
+        <source>Crop</source>
+        <translation>影像裁減</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/image-panel.ui" line="110"/>
+        <location filename="../src/widgets/panels/image-panel.ui" line="133"/>
+        <location filename="../src/widgets/panels/image-panel.ui" line="153"/>
+        <location filename="../src/widgets/panels/image-panel.ui" line="176"/>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/image-panel.ui" line="130"/>
+        <source>Invert</source>
+        <translation>色彩反轉</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/image-panel.ui" line="150"/>
+        <source>Sharpen</source>
+        <translation>銳化</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/image-panel.ui" line="173"/>
+        <source>Trace</source>
+        <translation>向量化描圖</translation>
     </message>
 </context>
 <context>
@@ -374,8 +410,8 @@
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="164"/>
         <source>Cutoff</source>
-        <translatorcomment>低閥值</translatorcomment>
-        <translation>低閥值</translation>
+        <translatorcomment>低閾值</translatorcomment>
+        <translation>低閾值</translation>
     </message>
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="190"/>
@@ -386,8 +422,8 @@
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="197"/>
         <source>Threshold</source>
-        <translatorcomment>高閥值</translatorcomment>
-        <translation>高閥值</translation>
+        <translatorcomment>高閾值</translatorcomment>
+        <translation>高閾值</translation>
     </message>
     <message>
         <location filename="../src/windows/image-trace-dialog.ui" line="208"/>
@@ -435,43 +471,38 @@
     <message>
         <location filename="../src/windows/job-dashboard-dialog.ui" line="14"/>
         <source>Dashboard</source>
-        <translation type="unfinished"></translation>
+        <translation>儀表板</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="25"/>
-        <source>LightMaker</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="82"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="70"/>
         <source>Estimated</source>
-        <translation type="unfinished"></translation>
+        <translation>預估時間</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="89"/>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="146"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="77"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="134"/>
         <source>--</source>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="96"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="84"/>
         <source>STOP</source>
-        <translation type="unfinished"></translation>
+        <translation>停止</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="109"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="97"/>
         <source>START</source>
-        <translation type="unfinished"></translation>
+        <translation>開始</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="153"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="141"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>工作中</translation>
     </message>
     <message>
-        <location filename="../src/windows/job-dashboard-dialog.ui" line="160"/>
+        <location filename="../src/windows/job-dashboard-dialog.ui" line="148"/>
         <source>0%</source>
-        <translation type="unfinished"></translation>
+        <translation>0%</translation>
     </message>
 </context>
 <context>
@@ -479,7 +510,7 @@
     <message>
         <location filename="../src/widgets/panels/jogging-panel.ui" line="20"/>
         <source>QFrame</source>
-        <translation type="unfinished"></translation>
+        <translation>動作面板</translation>
     </message>
 </context>
 <context>
@@ -524,32 +555,32 @@
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="42"/>
         <source>Set layer color</source>
-        <translation type="unfinished"></translation>
+        <translation>設定圖層顏色</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="76"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>重新命名</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="77"/>
         <source>&amp;Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;鎖定圖層</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="78"/>
         <source>&amp;Unlock</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;解除鎖定圖層</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="79"/>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>複製圖層</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="80"/>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除圖層</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/layer-list-item.cpp" line="136"/>
@@ -562,7 +593,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-panel.ui" line="14"/>
         <source>Frame</source>
-        <translation></translation>
+        <translation>圖層</translation>
     </message>
 </context>
 <context>
@@ -570,32 +601,32 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="14"/>
         <source>Frame</source>
-        <translation></translation>
+        <translation>參數調整</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="82"/>
         <source>Moving to</source>
-        <translation type="unfinished"></translation>
+        <translation>移動到</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="102"/>
         <source>參數</source>
-        <translation type="unfinished"></translation>
+        <translation>參數調整</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="122"/>
         <source>Wood 3mm</source>
-        <translation></translation>
+        <translation>木頭 3mm</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="127"/>
         <source>Acrylic 3mm</source>
-        <translation></translation>
+        <translation>壓克力 3mm</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="132"/>
         <source>Customized</source>
-        <translation></translation>
+        <translation>自訂</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="144"/>
@@ -605,7 +636,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="157"/>
         <source> %</source>
-        <translation></translation>
+        <translation> %</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="174"/>
@@ -615,7 +646,7 @@
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="184"/>
         <source> mm/s</source>
-        <translation></translation>
+        <translation> mm/s</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/layer-params-panel.ui" line="201"/>
@@ -628,9 +659,19 @@
         <translation> 次</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="112"/>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="38"/>
+        <source>Custom</source>
+        <translation>自訂</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="39"/>
+        <source>More...</source>
+        <translation>更多...</translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="132"/>
         <source>Parameter Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>參數設置</translation>
     </message>
 </context>
 <context>
@@ -638,102 +679,100 @@
     <message>
         <location filename="../src/windows/machine-manager.ui" line="14"/>
         <source>Machine Manager</source>
-        <translation>機器管理員</translation>
+        <translation>新增或設定機器</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="22"/>
         <source>&quot;Machines&quot; allows you to set work area and etc.</source>
-        <translation></translation>
+        <translation>新增或設置機器工作範圍與原點</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="85"/>
         <source>A</source>
-        <translation type="unfinished"></translation>
+        <translation>A</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="90"/>
         <source>B</source>
-        <translation type="unfinished"></translation>
+        <translation>B</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="125"/>
         <source>+</source>
-        <translation type="unfinished"></translation>
+        <translation>+</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-manager.ui" line="138"/>
         <source>-</source>
-        <translation type="unfinished"></translation>
+        <translation>-</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="174"/>
         <source>General</source>
-        <translation>一般</translation>
+        <translation type="vanished">一般</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="188"/>
+        <location filename="../src/windows/machine-manager.ui" line="181"/>
         <source>Name</source>
-        <translation>名稱</translation>
+        <translation>機器名稱</translation>
     </message>
     <message>
         <source>Model</source>
         <translation type="vanished">型號</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="215"/>
+        <location filename="../src/windows/machine-manager.ui" line="205"/>
         <source>Width</source>
-        <translation>作業區域寬度</translation>
+        <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="225"/>
-        <location filename="../src/windows/machine-manager.ui" line="252"/>
+        <location filename="../src/windows/machine-manager.ui" line="215"/>
+        <location filename="../src/windows/machine-manager.ui" line="239"/>
         <source> mm</source>
-        <translation></translation>
+        <translation> mm</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="242"/>
+        <location filename="../src/windows/machine-manager.ui" line="229"/>
         <source>Height</source>
-        <translation>作業區域高度</translation>
+        <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="275"/>
+        <location filename="../src/windows/machine-manager.ui" line="262"/>
         <source>Controller</source>
         <translation>控制器</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="292"/>
+        <location filename="../src/windows/machine-manager.ui" line="279"/>
         <source>GRBL</source>
-        <translation type="unfinished"></translation>
+        <translation>GRBL</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="316"/>
         <source>Advanced</source>
-        <translation>進階</translation>
+        <translation type="vanished">進階</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="322"/>
+        <location filename="../src/windows/machine-manager.ui" line="291"/>
         <source>Origin</source>
         <translation>原點</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="339"/>
+        <location filename="../src/windows/machine-manager.ui" line="308"/>
         <source>Rear Left</source>
         <translation>左上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="346"/>
+        <location filename="../src/windows/machine-manager.ui" line="315"/>
         <source>Rear Right</source>
         <translation>右上</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="360"/>
+        <location filename="../src/windows/machine-manager.ui" line="329"/>
         <source>Front Left</source>
         <translation>左下</translation>
     </message>
     <message>
-        <location filename="../src/windows/machine-manager.ui" line="367"/>
+        <location filename="../src/windows/machine-manager.ui" line="336"/>
         <source>Front Right</source>
-        <translation type="unfinished">右下</translation>
+        <translation>右下</translation>
     </message>
 </context>
 <context>
@@ -741,27 +780,27 @@
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="14"/>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="25"/>
         <source>Machine Name</source>
-        <translation type="unfinished"></translation>
+        <translation>機器名稱</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="32"/>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>工作中</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="49"/>
         <source>20^C</source>
-        <translation type="unfinished"></translation>
+        <translation>20^C</translation>
     </message>
     <message>
         <location filename="../src/windows/machine-monitor.ui" line="56"/>
         <source>[Door] [Flow]</source>
-        <translation type="unfinished"></translation>
+        <translation>[門蓋] [流速]</translation>
     </message>
 </context>
 <context>
@@ -770,7 +809,7 @@
         <location filename="../src/settings/machine-settings.cpp" line="128"/>
         <location filename="../src/settings/machine-settings.cpp" line="139"/>
         <source>Other</source>
-        <translation type="unfinished"></translation>
+        <translation>其它</translation>
     </message>
 </context>
 <context>
@@ -783,7 +822,7 @@
     <message>
         <location filename="../src/windows/qml/MachineSetupPage.qml" line="95"/>
         <source>Next</source>
-        <translation type="unfinished"></translation>
+        <translation>下一步</translation>
     </message>
 </context>
 <context>
@@ -791,661 +830,705 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="14"/>
         <source>Swiftray</source>
-        <translation type="unfinished"></translation>
+        <translation>Swiftray</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="84"/>
         <source>&amp;File</source>
-        <translation>檔案</translation>
+        <translation>&amp;檔案</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="88"/>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>匯出成...</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="104"/>
         <source>&amp;Edit</source>
-        <translation>編輯</translation>
+        <translation>&amp;編輯</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="142"/>
         <source>&amp;Help</source>
-        <translation>說明</translation>
+        <translation>&amp;說明</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="148"/>
         <source>Machine</source>
-        <translation type="unfinished">機器</translation>
+        <translation>機器</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="171"/>
+        <location filename="../src/windows/mainwindow.ui" line="172"/>
         <source>Main Toolbar</source>
         <translation>主工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="486"/>
+        <location filename="../src/windows/mainwindow.ui" line="487"/>
         <source>Group Toolbar</source>
         <translation>群組工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="523"/>
+        <location filename="../src/windows/mainwindow.ui" line="524"/>
         <source>Align Toolbar</source>
         <translation>對齊工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="429"/>
+        <location filename="../src/windows/mainwindow.ui" line="430"/>
         <source>Boolean Operation</source>
         <translation>布林工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="567"/>
+        <location filename="../src/windows/mainwindow.ui" line="568"/>
         <source>Flip Toolbar</source>
         <translation>翻轉工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="223"/>
+        <location filename="../src/windows/mainwindow.ui" line="224"/>
         <source>Font</source>
         <translation>文字</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="153"/>
         <source>Window</source>
-        <translation type="unfinished"></translation>
+        <translation>視窗</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="270"/>
+        <location filename="../src/windows/mainwindow.ui" line="271"/>
         <source>Layer</source>
         <translation>圖層</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="318"/>
+        <location filename="../src/windows/mainwindow.ui" line="319"/>
         <source>Object</source>
         <translation>物件</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="354"/>
-        <source>Serial Port</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="371"/>
+        <location filename="../src/windows/mainwindow.ui" line="372"/>
         <source>Document</source>
         <translation>文件</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="380"/>
+        <location filename="../src/windows/mainwindow.ui" line="381"/>
         <source>toolBarFile</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="406"/>
+        <location filename="../src/windows/mainwindow.ui" line="407"/>
         <source>toolBarTransform</source>
-        <translation type="unfinished"></translation>
+        <translation>變形工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="462"/>
+        <location filename="../src/windows/mainwindow.ui" line="463"/>
         <source>Connection Toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>連線工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="598"/>
+        <location filename="../src/windows/mainwindow.ui" line="599"/>
         <source>toolBarImage</source>
-        <translation type="unfinished"></translation>
+        <translation>圖形工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="616"/>
+        <location filename="../src/windows/mainwindow.ui" line="620"/>
         <source>toolBarVector</source>
-        <translation type="unfinished"></translation>
+        <translation>向量工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="634"/>
+        <location filename="../src/windows/mainwindow.ui" line="638"/>
         <source>toolBarFont</source>
-        <translation type="unfinished"></translation>
+        <translation>文字工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="651"/>
+        <location filename="../src/windows/mainwindow.ui" line="655"/>
         <source>Jogging Panel</source>
-        <translation type="unfinished"></translation>
+        <translation>動作面板</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="663"/>
+        <location filename="../src/windows/mainwindow.ui" line="667"/>
         <source>toolBarTask</source>
-        <translation type="unfinished"></translation>
+        <translation>工作工具列</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="702"/>
+        <location filename="../src/windows/mainwindow.ui" line="707"/>
         <source>Open</source>
         <translation>開啟檔案</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="705"/>
+        <location filename="../src/windows/mainwindow.ui" line="710"/>
         <source>Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+O</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="714"/>
+        <location filename="../src/windows/mainwindow.ui" line="719"/>
         <source>Save</source>
         <translation>儲存檔案</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="717"/>
+        <location filename="../src/windows/mainwindow.ui" line="722"/>
         <source>Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+S</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="722"/>
+        <location filename="../src/windows/mainwindow.ui" line="727"/>
         <source>Close</source>
         <translation>關閉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="725"/>
+        <location filename="../src/windows/mainwindow.ui" line="730"/>
         <source>Ctrl+W</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+W</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="730"/>
-        <location filename="../src/windows/mainwindow.cpp" line="621"/>
+        <location filename="../src/windows/mainwindow.ui" line="735"/>
+        <location filename="../src/windows/mainwindow.cpp" line="698"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="733"/>
+        <location filename="../src/windows/mainwindow.ui" line="738"/>
         <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+X</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="738"/>
-        <location filename="../src/windows/mainwindow.cpp" line="622"/>
+        <location filename="../src/windows/mainwindow.ui" line="743"/>
+        <location filename="../src/windows/mainwindow.cpp" line="699"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="741"/>
+        <location filename="../src/windows/mainwindow.ui" line="746"/>
         <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+C</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="746"/>
-        <location filename="../src/windows/mainwindow.cpp" line="623"/>
+        <location filename="../src/windows/mainwindow.ui" line="751"/>
+        <location filename="../src/windows/mainwindow.cpp" line="700"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="749"/>
+        <location filename="../src/windows/mainwindow.ui" line="754"/>
         <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+V</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="758"/>
+        <location filename="../src/windows/mainwindow.ui" line="763"/>
         <source>Undo</source>
         <translation>復原</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="761"/>
+        <location filename="../src/windows/mainwindow.ui" line="766"/>
         <source>Ctrl+Z</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Z</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="770"/>
+        <location filename="../src/windows/mainwindow.ui" line="775"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="773"/>
+        <location filename="../src/windows/mainwindow.ui" line="778"/>
         <source>Ctrl+Shift+Z</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Shift+Z</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="778"/>
+        <location filename="../src/windows/mainwindow.ui" line="783"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="781"/>
+        <location filename="../src/windows/mainwindow.ui" line="786"/>
         <source>Ctrl+Shift+X</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Shift+X</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="796"/>
+        <location filename="../src/windows/mainwindow.ui" line="801"/>
         <source>Select</source>
-        <translation>選擇</translation>
+        <translation>選取</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="799"/>
+        <location filename="../src/windows/mainwindow.ui" line="804"/>
         <source>Select (&amp;V)</source>
-        <translation type="unfinished"></translation>
+        <translation>選取 (&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="802"/>
+        <location filename="../src/windows/mainwindow.ui" line="807"/>
         <source>V</source>
-        <translation type="unfinished"></translation>
+        <translation>V</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="814"/>
+        <location filename="../src/windows/mainwindow.ui" line="819"/>
         <source>Rectangle</source>
         <translation>矩形</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="817"/>
+        <location filename="../src/windows/mainwindow.ui" line="822"/>
         <source>Draw rectangles</source>
-        <translation type="unfinished"></translation>
+        <translation>繪製矩形</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="820"/>
+        <location filename="../src/windows/mainwindow.ui" line="825"/>
         <source>R</source>
-        <translation type="unfinished">旋轉</translation>
+        <translation>R</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="832"/>
+        <location filename="../src/windows/mainwindow.ui" line="837"/>
         <source>Oval</source>
         <translation>橢圓</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="835"/>
+        <location filename="../src/windows/mainwindow.ui" line="840"/>
         <source>Draw ovals</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="838"/>
-        <source>O</source>
-        <translation type="unfinished"></translation>
+        <translation>繪製橢圓</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="843"/>
+        <source>O</source>
+        <translation>O</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="848"/>
         <source>About</source>
-        <translation type="unfinished">關於</translation>
+        <translation>關於</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="852"/>
+        <location filename="../src/windows/mainwindow.ui" line="857"/>
         <source>Photo</source>
-        <translation type="unfinished"></translation>
+        <translation>圖片</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1111"/>
+        <location filename="../src/windows/mainwindow.ui" line="1116"/>
         <source>Trace</source>
         <translation>向量化描圖</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1120"/>
+        <location filename="../src/windows/mainwindow.ui" line="1125"/>
         <source>Preview</source>
         <translation>路徑預覽</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1129"/>
+        <location filename="../src/windows/mainwindow.ui" line="1134"/>
         <source>Offset</source>
         <translation>位移複製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1134"/>
-        <location filename="../src/windows/mainwindow.ui" line="1137"/>
-        <location filename="../src/windows/mainwindow.ui" line="1140"/>
+        <location filename="../src/windows/mainwindow.ui" line="1139"/>
+        <location filename="../src/windows/mainwindow.ui" line="1142"/>
+        <location filename="../src/windows/mainwindow.ui" line="1145"/>
         <source>Save As...</source>
-        <translation type="unfinished"></translation>
+        <translation>另存新檔...</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1143"/>
+        <location filename="../src/windows/mainwindow.ui" line="1148"/>
         <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Shift+S</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1152"/>
+        <location filename="../src/windows/mainwindow.ui" line="1157"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="1155"/>
-        <source>Ctrl+N</source>
-        <translation type="unfinished"></translation>
+        <translation>新增</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="1160"/>
+        <source>Ctrl+N</source>
+        <translation>Ctrl+N</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1169"/>
         <source>Sharpen</source>
         <translation>銳化</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1165"/>
+        <location filename="../src/windows/mainwindow.ui" line="1178"/>
         <source>Invert</source>
-        <translation type="unfinished"></translation>
+        <translation>色彩反轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1170"/>
+        <location filename="../src/windows/mainwindow.ui" line="1183"/>
         <source>Replace with ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="1175"/>
-        <source>Crop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="1184"/>
-        <location filename="../src/windows/mainwindow.ui" line="1187"/>
-        <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>取代圖片 ...</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="1192"/>
-        <source>Jogging</source>
-        <translation type="unfinished"></translation>
+        <source>Crop</source>
+        <translation>影像裁減</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="1201"/>
         <location filename="../src/windows/mainwindow.ui" line="1204"/>
-        <source>Start</source>
-        <translation type="unfinished"></translation>
+        <source>Connect</source>
+        <translation>連線機器</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="1209"/>
+        <source>Jogging</source>
+        <translation>動作面板</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1218"/>
+        <location filename="../src/windows/mainwindow.ui" line="1221"/>
+        <source>Start</source>
+        <translation>送出工作</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1226"/>
+        <source>SaveClassic</source>
+        <translation>儲存經典工作區</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1231"/>
+        <source>SaveEssential</source>
+        <translation>儲存基本工作區</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1236"/>
+        <source>Classic</source>
+        <translation>經典工作區</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1241"/>
+        <source>Essential</source>
+        <translation>基本工作區</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1246"/>
         <source>JobDashboardDialog</source>
-        <translation type="unfinished"></translation>
+        <translation>儀表板</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1251"/>
+        <source>OutlineScanning</source>
+        <translation>外框掃描</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1260"/>
+        <source>Framing</source>
+        <translation>走邊框</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="108"/>
-        <location filename="../src/windows/mainwindow.ui" line="676"/>
-        <location filename="../src/windows/mainwindow.ui" line="855"/>
+        <location filename="../src/windows/mainwindow.ui" line="681"/>
+        <location filename="../src/windows/mainwindow.ui" line="860"/>
         <source>Image</source>
         <translation>影像</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="858"/>
-        <location filename="../src/windows/mainwindow.ui" line="948"/>
+        <location filename="../src/windows/mainwindow.ui" line="863"/>
+        <location filename="../src/windows/mainwindow.ui" line="953"/>
         <source>P</source>
-        <translation type="unfinished"></translation>
+        <translation>P</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="870"/>
-        <location filename="../src/windows/mainwindow.ui" line="873"/>
+        <location filename="../src/windows/mainwindow.ui" line="875"/>
+        <location filename="../src/windows/mainwindow.ui" line="878"/>
         <source>Text</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.ui" line="876"/>
-        <source>T</source>
-        <translation type="unfinished"></translation>
+        <translation>文字</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="881"/>
+        <source>T</source>
+        <translation>T</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="886"/>
         <source>Select All</source>
         <translation>全選</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="884"/>
-        <source>Ctrl+A</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/windows/mainwindow.ui" line="889"/>
-        <source>Group</source>
-        <translation type="unfinished">群組</translation>
+        <source>Ctrl+A</source>
+        <translation>Ctrl+A</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="892"/>
-        <source>Ctrl+G</source>
-        <translation type="unfinished"></translation>
+        <location filename="../src/windows/mainwindow.ui" line="894"/>
+        <source>Group</source>
+        <translation>群組</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="897"/>
+        <source>Ctrl+G</source>
+        <translation>Ctrl+G</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="902"/>
         <source>Ungroup</source>
-        <translation type="unfinished">解散群組</translation>
+        <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="900"/>
+        <location filename="../src/windows/mainwindow.ui" line="905"/>
         <source>Ctrl+Shift+G</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+Shift+G</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="912"/>
+        <location filename="../src/windows/mainwindow.ui" line="917"/>
         <source>DrawLine</source>
-        <translation type="unfinished"></translation>
+        <translation>繪製線段</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="915"/>
+        <location filename="../src/windows/mainwindow.ui" line="920"/>
         <source>Line</source>
-        <translation type="unfinished">線段</translation>
+        <translation>線段</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="918"/>
+        <location filename="../src/windows/mainwindow.ui" line="923"/>
         <source>L</source>
-        <translation></translation>
+        <translation>L</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="118"/>
-        <location filename="../src/windows/mainwindow.ui" line="930"/>
+        <location filename="../src/windows/mainwindow.ui" line="935"/>
         <source>Path</source>
-        <translation>路徑
+        <translation>鋼筆
 </translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="933"/>
+        <location filename="../src/windows/mainwindow.ui" line="355"/>
+        <source>GCode Viewer</source>
+        <translation>Gcode 檢視器</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="938"/>
         <source>D</source>
-        <translation type="unfinished"></translation>
+        <translation>D</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="945"/>
+        <location filename="../src/windows/mainwindow.ui" line="950"/>
         <source>Polygon</source>
-        <translation type="unfinished"></translation>
+        <translation>多邊形</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="957"/>
+        <location filename="../src/windows/mainwindow.ui" line="962"/>
         <source>GroupBtn</source>
-        <translation type="unfinished"></translation>
+        <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="966"/>
+        <location filename="../src/windows/mainwindow.ui" line="971"/>
         <source>UngroupBtn</source>
-        <translation type="unfinished"></translation>
+        <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="975"/>
+        <location filename="../src/windows/mainwindow.ui" line="980"/>
         <source>AlignVCenter</source>
-        <translation type="unfinished"></translation>
+        <translation>垂直居中</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="984"/>
+        <location filename="../src/windows/mainwindow.ui" line="989"/>
         <source>AlignHCenter</source>
-        <translation type="unfinished"></translation>
+        <translation>水平居中</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="993"/>
+        <location filename="../src/windows/mainwindow.ui" line="998"/>
         <source>AlignLeft</source>
-        <translation type="unfinished"></translation>
+        <translation>靠左對齊</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1002"/>
+        <location filename="../src/windows/mainwindow.ui" line="1007"/>
         <source>AlignRight</source>
-        <translation type="unfinished"></translation>
+        <translation>靠右對齊</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1011"/>
+        <location filename="../src/windows/mainwindow.ui" line="1016"/>
         <source>AlignTop</source>
-        <translation type="unfinished"></translation>
+        <translation>頂端對齊</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1020"/>
+        <location filename="../src/windows/mainwindow.ui" line="1025"/>
         <source>AlignBottom</source>
-        <translation type="unfinished"></translation>
+        <translation>底部對齊</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1029"/>
+        <location filename="../src/windows/mainwindow.ui" line="1034"/>
         <source>UnionBtn</source>
         <translation>連集</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1038"/>
+        <location filename="../src/windows/mainwindow.ui" line="1043"/>
         <source>SubtractBtn</source>
         <translation>相減</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1047"/>
+        <location filename="../src/windows/mainwindow.ui" line="1052"/>
         <source>IntersectBtn</source>
         <translation>交集</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1056"/>
+        <location filename="../src/windows/mainwindow.ui" line="1061"/>
         <source>DiffBtn</source>
         <translation>差異</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1065"/>
+        <location filename="../src/windows/mainwindow.ui" line="1070"/>
         <source>HFip</source>
         <translation>水平翻轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1074"/>
+        <location filename="../src/windows/mainwindow.ui" line="1079"/>
         <source>VFlip</source>
         <translation>垂直翻轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1089"/>
-        <source>Preferences</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/windows/mainwindow.ui" line="1094"/>
-        <source>Hi</source>
-        <translation type="unfinished"></translation>
+        <source>Preferences</source>
+        <translation>偏好設定</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="1099"/>
+        <source>Hi</source>
+        <translation>您好</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="1104"/>
         <source>Gcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Gcode</translation>
     </message>
     <message>
         <source>Export Gcode</source>
         <translation type="vanished">輸出 Gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1102"/>
+        <location filename="../src/windows/mainwindow.ui" line="1107"/>
         <source>Ctrl+E</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+E</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="1079"/>
         <location filename="../src/windows/mainwindow.ui" line="1084"/>
+        <location filename="../src/windows/mainwindow.ui" line="1089"/>
         <source>Machine Settings</source>
         <translation>機器設定</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="144"/>
-        <source>SVG Files (*.svg);;BVG Files (*.bvg);;Scene Files (*.bb)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.cpp" line="200"/>
+        <location filename="../src/windows/mainwindow.cpp" line="212"/>
         <source>Save Image</source>
-        <translation type="unfinished"></translation>
+        <translation>儲存圖片</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="238"/>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/windows/mainwindow.cpp" line="269"/>
         <source>Image Files (*.png *.jpg)</source>
-        <translation>圖片檔案 (*.png *,jpg)</translation>
+        <translation type="vanished">圖片檔案 (*.png *,jpg)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="293"/>
+        <location filename="../src/windows/mainwindow.cpp" line="154"/>
+        <source>Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</source>
+        <translation>檔案 (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="259"/>
+        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp)</source>
+        <translation>檔案 (*.png *.jpg *.jpeg *.svg *.bmp)</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="285"/>
+        <source>Image Files (*.png *.jpg *.jpeg *.bmp)</source>
+        <translation>檔案 (*.png *.jpg *.jpeg *.bmp)</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="309"/>
         <source>GCode Files (*.gcode)</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案 (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="319"/>
+        <location filename="../src/windows/mainwindow.cpp" line="335"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="624"/>
+        <location filename="../src/windows/mainwindow.cpp" line="595"/>
+        <source>Serial Port Error</source>
+        <translation>序列埠錯誤</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="596"/>
+        <source>Please connect to serial port first</source>
+        <translation>請先與機器連線</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="701"/>
         <source>Paste in Place</source>
-        <translation type="unfinished"></translation>
+        <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="625"/>
+        <location filename="../src/windows/mainwindow.cpp" line="702"/>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="627"/>
+        <location filename="../src/windows/mainwindow.cpp" line="704"/>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="629"/>
+        <location filename="../src/windows/mainwindow.cpp" line="706"/>
         <source>group</source>
-        <translation type="unfinished"></translation>
+        <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="630"/>
+        <location filename="../src/windows/mainwindow.cpp" line="707"/>
         <source>ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="734"/>
+        <location filename="../src/windows/mainwindow.cpp" line="815"/>
         <source>Size</source>
-        <translation type="unfinished">文字大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="735"/>
+        <location filename="../src/windows/mainwindow.cpp" line="816"/>
         <source>Line Height</source>
-        <translation type="unfinished">行高</translation>
+        <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="736"/>
+        <location filename="../src/windows/mainwindow.cpp" line="817"/>
         <source>Letter Spacing</source>
-        <translation type="unfinished">字距</translation>
+        <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="834"/>
+        <location filename="../src/windows/mainwindow.cpp" line="927"/>
         <source>Rotation</source>
-        <translation type="unfinished"></translation>
+        <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="835"/>
+        <location filename="../src/windows/mainwindow.cpp" line="928"/>
         <source>Width</source>
-        <translation type="unfinished">作業區域寬度</translation>
+        <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="836"/>
+        <location filename="../src/windows/mainwindow.cpp" line="929"/>
         <source>Height</source>
-        <translation type="unfinished">作業區域高度</translation>
+        <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="952"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1067"/>
         <source>Fit to Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>配合視窗尺寸</translation>
     </message>
     <message>
         <source>GCode Files (*.gcode);; All files (*.*)</source>
         <translation type="vanished">GCode檔案 (*gcode);; 所有檔案(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="295"/>
+        <location filename="../src/windows/mainwindow.cpp" line="311"/>
         <source>Save GCode</source>
-        <translation>儲存GCode</translation>
+        <translation>儲存 GCode</translation>
     </message>
     <message>
         <source>untitled.gcode</source>
         <translation type="vanished">未命名.gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="198"/>
+        <location filename="../src/windows/mainwindow.cpp" line="210"/>
         <source>Scene File (*.bb)</source>
-        <translation>場景檔案 (*.bb)</translation>
+        <translation>檔案 (*.bb)</translation>
     </message>
 </context>
 <context>
     <name>MaintenanceDialog</name>
     <message>
-        <location filename="../src/windows/qml/MaintenanceDialog.qml" line="901"/>
+        <location filename="../src/windows/qml/MaintenanceDialog.qml" line="910"/>
         <source>Laser Pulse</source>
-        <translation type="unfinished"></translation>
+        <translation>雷射脈衝</translation>
     </message>
     <message>
-        <location filename="../src/windows/qml/MaintenanceDialog.qml" line="917"/>
+        <location filename="../src/windows/qml/MaintenanceDialog.qml" line="927"/>
         <source>Laser</source>
-        <translation type="unfinished"></translation>
+        <translation>雷射</translation>
     </message>
 </context>
 <context>
@@ -1463,17 +1546,17 @@
     <message>
         <location filename="../src/windows/new-machine-dialog.ui" line="58"/>
         <source>FLUX beamo</source>
-        <translation type="unfinished"></translation>
+        <translation>FLUX beamo</translation>
     </message>
     <message>
         <location filename="../src/windows/new-machine-dialog.ui" line="70"/>
         <source>FLUX Beambox 40W</source>
-        <translation type="unfinished"></translation>
+        <translation>FLUX Beambox 40W</translation>
     </message>
     <message>
         <location filename="../src/windows/new-machine-dialog.ui" line="82"/>
         <source>FLUX Beambox 50W</source>
-        <translation type="unfinished"></translation>
+        <translation>FLUX Beambox 50W</translation>
     </message>
 </context>
 <context>
@@ -1481,27 +1564,27 @@
     <message>
         <location filename="../src/windows/qml/OtherMachinePage.qml" line="48"/>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <location filename="../src/windows/qml/OtherMachinePage.qml" line="63"/>
         <source>Width</source>
-        <translation type="unfinished">作業區域寬度</translation>
+        <translation>工作區域寬度</translation>
     </message>
     <message>
         <location filename="../src/windows/qml/OtherMachinePage.qml" line="86"/>
         <source>Height</source>
-        <translation type="unfinished">作業區域高度</translation>
+        <translation>工作區域高度</translation>
     </message>
     <message>
         <location filename="../src/windows/qml/OtherMachinePage.qml" line="112"/>
         <source>Origin</source>
-        <translation type="unfinished">原點</translation>
+        <translation>原點</translation>
     </message>
     <message>
         <location filename="../src/windows/qml/OtherMachinePage.qml" line="174"/>
         <source>Create Machine Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>新增機器參數</translation>
     </message>
 </context>
 <context>
@@ -1566,88 +1649,88 @@
     <name>PreferencesWindow</name>
     <message>
         <location filename="../src/windows/preferences-window.ui" line="14"/>
-        <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <source>Preferences</source>
+        <translation>偏好設定</translation>
     </message>
     <message>
         <location filename="../src/windows/preferences-window.ui" line="24"/>
         <source>General</source>
-        <translation type="unfinished">一般</translation>
+        <translation>一般</translation>
     </message>
     <message>
         <location filename="../src/windows/preferences-window.ui" line="32"/>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>語言</translation>
     </message>
     <message>
         <location filename="../src/windows/preferences-window.ui" line="58"/>
         <source>Advanced</source>
-        <translation type="unfinished">進階</translation>
+        <translation>進階</translation>
     </message>
 </context>
 <context>
     <name>PresetManager</name>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="14"/>
-        <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <source>Preset Manager</source>
+        <translation>參數管理</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="105"/>
         <location filename="../src/windows/preset-manager.ui" line="307"/>
         <source>+</source>
-        <translation type="unfinished"></translation>
+        <translation>+</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="124"/>
         <location filename="../src/windows/preset-manager.ui" line="326"/>
         <source>-</source>
-        <translation type="unfinished"></translation>
+        <translation>-</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="213"/>
         <source>Wood - 3mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>木頭 -  3mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="221"/>
         <source>Wood - 5mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>木頭 -  5mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="229"/>
         <source>Wood - Engraving</source>
-        <translation type="unfinished"></translation>
+        <translation>木頭 -  雕刻</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="237"/>
         <source>Acrylic - 3mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>壓克力 -  3mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="245"/>
         <source>Acrylic - 5mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>壓克力 -  5mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="253"/>
         <source>Leather - Engraving</source>
-        <translation type="unfinished"></translation>
+        <translation>皮革 -  雕刻</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="261"/>
         <source>Fabric - 3mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>布料 -  3mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="266"/>
         <source>Fabric - 5mm cutting</source>
-        <translation type="unfinished"></translation>
+        <translation>布料 -  5mm 切割</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="358"/>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>標題</translation>
     </message>
     <message>
         <location filename="../src/windows/preset-manager.ui" line="398"/>
@@ -1655,66 +1738,61 @@
         <translation>功率</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="408"/>
+        <location filename="../src/windows/preset-manager.ui" line="411"/>
         <source> %</source>
-        <translation type="unfinished"></translation>
+        <translation> %</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="422"/>
+        <location filename="../src/windows/preset-manager.ui" line="425"/>
         <source>Laser Speed</source>
         <translation>速度</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="432"/>
+        <location filename="../src/windows/preset-manager.ui" line="438"/>
         <source> mm/s</source>
-        <translation type="unfinished"></translation>
+        <translation> mm/s</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="474"/>
+        <location filename="../src/windows/preset-manager.ui" line="480"/>
         <source>Execute</source>
         <translation>執行</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="484"/>
+        <location filename="../src/windows/preset-manager.ui" line="493"/>
         <source> times</source>
         <translation> 次</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="507"/>
+        <location filename="../src/windows/preset-manager.ui" line="516"/>
         <source>Z Step</source>
-        <translation>Z Step</translation>
+        <translation>每次遞降</translation>
     </message>
     <message>
-        <location filename="../src/windows/preset-manager.ui" line="517"/>
+        <location filename="../src/windows/preset-manager.ui" line="529"/>
         <source> mm</source>
-        <translation type="unfinished"></translation>
+        <translation> mm</translation>
     </message>
 </context>
 <context>
     <name>PreviewWindow</name>
     <message>
-        <location filename="../src/windows/preview-window.ui" line="14"/>
-        <source>Dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/windows/preview-window.ui" line="31"/>
         <source>Required Time: </source>
-        <translation type="unfinished"></translation>
+        <translation>預估時間:</translation>
     </message>
     <message>
         <location filename="../src/windows/preview-window.ui" line="38"/>
         <source>0:0:0</source>
-        <translation type="unfinished"></translation>
+        <translation>0:0:0</translation>
     </message>
     <message>
         <source>Required Time</source>
         <translation type="obsolete">所需時間</translation>
     </message>
     <message>
-        <location filename="../src/windows/preview-window.cpp" line="105"/>
+        <location filename="../src/windows/preview-window.ui" line="14"/>
         <source>Preview Path</source>
-        <translation type="unfinished"></translation>
+        <translation>路徑預覽</translation>
     </message>
 </context>
 <context>
@@ -1723,7 +1801,7 @@
         <location filename="../src/layer.cpp" line="35"/>
         <location filename="../src/layer.cpp" line="38"/>
         <source>Layer</source>
-        <translation type="unfinished">圖層</translation>
+        <translation>圖層</translation>
     </message>
 </context>
 <context>
@@ -1731,26 +1809,6 @@
     <message>
         <source>Unable to connect serial port</source>
         <translation type="obsolete">無法連接 SerialPort</translation>
-    </message>
-    <message>
-        <location filename="../src/connection/serial-job.cpp" line="145"/>
-        <source>Serial port not connected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/serial-job.cpp" line="225"/>
-        <source>Homing failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/serial-job.cpp" line="248"/>
-        <source>Machine no response</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/connection/serial-job.cpp" line="562"/>
-        <source>GRBL system cmd timeout</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1765,7 +1823,7 @@
     <message>
         <location filename="../src/windows/qml/SetupSuccessfulPage.qml" line="63"/>
         <source>Let&apos;s Start!</source>
-        <translation type="unfinished"></translation>
+        <translation>開始吧！</translation>
     </message>
 </context>
 <context>
@@ -1786,12 +1844,12 @@
     <message>
         <location filename="../src/widgets/components/task-list-item.ui" line="26"/>
         <source>Task name</source>
-        <translation type="unfinished"></translation>
+        <translation>工作名稱</translation>
     </message>
     <message>
         <location filename="../src/widgets/components/task-list-item.ui" line="33"/>
         <source>03:00</source>
-        <translation type="unfinished"></translation>
+        <translation>03:00</translation>
     </message>
 </context>
 <context>
@@ -1799,12 +1857,12 @@
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="14"/>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>變形</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="48"/>
         <source>X</source>
-        <translation type="unfinished"></translation>
+        <translation>X</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="70"/>
@@ -1812,52 +1870,54 @@
         <location filename="../src/widgets/panels/transform-panel.ui" line="170"/>
         <location filename="../src/widgets/panels/transform-panel.ui" line="215"/>
         <source> mm</source>
-        <translation type="unfinished"></translation>
+        <translation> mm</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="93"/>
         <source>W</source>
-        <translation type="unfinished">寬</translation>
+        <translation>W</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="148"/>
         <source>Y</source>
-        <translation type="unfinished"></translation>
+        <translation>Y</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="193"/>
         <source>H</source>
-        <translation type="unfinished">高</translation>
+        <translation>H</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/transform-panel.ui" line="248"/>
         <source>R</source>
-        <translation type="unfinished">旋轉</translation>
+        <translation>R</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/transform-panel.ui" line="288"/>
+        <location filename="../src/widgets/panels/transform-panel.ui" line="291"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
 </context>
 <context>
     <name>WelcomeDialog</name>
     <message>
-        <location filename="../src/windows/qml/WelcomeDialog.qml" line="71"/>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="70"/>
         <source>Welcome!
 This is your first time using Swiftray,
 what would you like to do first?</source>
-        <translation type="unfinished"></translation>
+        <translation>歡迎！
+這是您第一次使用 Swiftray，
+請選擇您的下一步</translation>
     </message>
     <message>
-        <location filename="../src/windows/qml/WelcomeDialog.qml" line="91"/>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="90"/>
         <source>Setup My Machine Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>新增設置機器</translation>
     </message>
     <message>
-        <location filename="../src/windows/qml/WelcomeDialog.qml" line="102"/>
+        <location filename="../src/windows/qml/WelcomeDialog.qml" line="101"/>
         <source>Play Around!</source>
-        <translation type="unfinished"></translation>
+        <translation>直接開始</translation>
     </message>
 </context>
 </TS>
