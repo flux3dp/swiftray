@@ -393,6 +393,7 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 }
 
 MainWindow::~MainWindow() {
+  serial_port.close();
   delete ui;
 }
 

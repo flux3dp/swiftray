@@ -411,8 +411,18 @@ bool Canvas::event(QEvent *e) {
 
   switch (e->type()) {
     case QEvent::HoverMove:
+      switch (mode()) {
+        case Mode::LineDrawing:
+        case Mode::OvalDrawing:
+        case Mode::PolygonDrawing:
+        case Mode::RectDrawing:
+          emit cursorChanged(Qt::CrossCursor);
+          break;
+        default:
+          emit cursorChanged(Qt::ArrowCursor);
+          break;
+      }
 
-      emit cursorChanged(Qt::ArrowCursor);
       for (auto &control : ctrls_) {
         if (control->isActive() &&
             control->hoverEvent(dynamic_cast<QHoverEvent *>(e), &cursor)) {
