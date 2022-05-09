@@ -52,7 +52,7 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="688"/>
+        <location filename="../src/canvas/canvas.cpp" line="698"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
@@ -979,7 +979,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="735"/>
-        <location filename="../src/windows/mainwindow.cpp" line="698"/>
+        <location filename="../src/windows/mainwindow.cpp" line="699"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
@@ -990,7 +990,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="743"/>
-        <location filename="../src/windows/mainwindow.cpp" line="699"/>
+        <location filename="../src/windows/mainwindow.cpp" line="700"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
@@ -1001,7 +1001,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="751"/>
-        <location filename="../src/windows/mainwindow.cpp" line="700"/>
+        <location filename="../src/windows/mainwindow.cpp" line="701"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
@@ -1430,72 +1430,72 @@
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="595"/>
+        <location filename="../src/windows/mainwindow.cpp" line="596"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="596"/>
+        <location filename="../src/windows/mainwindow.cpp" line="597"/>
         <source>Please connect to serial port first</source>
         <translation>請先與機器連線</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="701"/>
+        <location filename="../src/windows/mainwindow.cpp" line="702"/>
         <source>Paste in Place</source>
         <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="702"/>
+        <location filename="../src/windows/mainwindow.cpp" line="703"/>
         <source>Duplicate</source>
         <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="704"/>
+        <location filename="../src/windows/mainwindow.cpp" line="705"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="706"/>
+        <location filename="../src/windows/mainwindow.cpp" line="707"/>
         <source>group</source>
         <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="707"/>
+        <location filename="../src/windows/mainwindow.cpp" line="708"/>
         <source>ungroup</source>
         <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="815"/>
+        <location filename="../src/windows/mainwindow.cpp" line="816"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="816"/>
+        <location filename="../src/windows/mainwindow.cpp" line="817"/>
         <source>Line Height</source>
         <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="817"/>
+        <location filename="../src/windows/mainwindow.cpp" line="818"/>
         <source>Letter Spacing</source>
         <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="927"/>
+        <location filename="../src/windows/mainwindow.cpp" line="928"/>
         <source>Rotation</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="928"/>
+        <location filename="../src/windows/mainwindow.cpp" line="929"/>
         <source>Width</source>
         <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="929"/>
+        <location filename="../src/windows/mainwindow.cpp" line="930"/>
         <source>Height</source>
         <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1067"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1068"/>
         <source>Fit to Screen</source>
         <translation>配合視窗尺寸</translation>
     </message>
