@@ -70,6 +70,9 @@ public:
   void turnOnLaser() override {
   }
 
+  void turnOnLaserAdpatively() override {
+  }
+
   void useAbsolutePositioning() override {
   }
 
