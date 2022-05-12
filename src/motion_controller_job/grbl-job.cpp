@@ -270,6 +270,7 @@ void GrblJob::run() {
         progress_value_ = 100 * QTime{0, 0}.secsTo(getElapsedTime()) / QTime{0, 0}.secsTo(getTotalRequiredTime());
       }
       emit progressChanged(progress_value_);
+      emit elapsedTimeChanged(getElapsedTime());
 
     }
 
