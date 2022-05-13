@@ -41,6 +41,7 @@ private:
   Layer *layer_;
   MainWindow *main_window_;
   PresetManager *preset_manager_;
+  PresetSettings *preset_settings_ = &PresetSettings::getInstance();
   int preset_previous_index_;
 };
 

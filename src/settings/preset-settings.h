@@ -9,7 +9,9 @@
 
 // TODO (Redesign logic to PresetSettings -> Preset -> Param)
 
-class PresetSettings {
+class PresetSettings : public QObject
+{
+    Q_OBJECT
 public:
   static PresetSettings& getInstance() {
     static PresetSettings sInstance;
@@ -74,6 +76,7 @@ public:
 
   void setCurrentIndex(int index) {
     current_index_ = index;
+    currentIndexChanged();
   }
 
   const Preset currentPreset() {
@@ -88,6 +91,9 @@ public:
 
   QList<Preset> presets_;
   int current_index_ = 0;
+
+signals:
+  void currentIndexChanged();
 
 private:
   PresetSettings() {
@@ -107,6 +113,9 @@ private:
       qInfo() << file.fileName();
       preset.name = file_list[i].left(file_list[i].lastIndexOf('.'));
       presets_ << preset;
+      if (preset.name == "5W") {
+        setCurrentIndex(i);
+      }
     }
     //} else {
     //  loadJson(obj);

@@ -79,7 +79,7 @@ void DocPanel::loadSettings() {
   ui->presetComboBox->clear();
   for (auto &preset : preset_settings->presets()) {
     ui->presetComboBox->addItem(preset.name);
-    if (preset.name == "5W") {
+    if (preset.name == preset_settings->currentPreset().name) {
       ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 1);
     }
   }
@@ -99,6 +99,10 @@ void DocPanel::registerEvents() {
     updateScene();
     QSettings settings;
     settings.setValue("defaultMachine", ui->machineComboBox->currentText());
+  });
+  connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+    PresetSettings* preset_settings = &PresetSettings::getInstance();
+    preset_settings->setCurrentIndex(index);
   });
   connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
     loadSettings();

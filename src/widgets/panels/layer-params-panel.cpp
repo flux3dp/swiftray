@@ -28,10 +28,9 @@ void LayerParamsPanel::loadStyles() {
 void LayerParamsPanel::loadSettings() {
   QString machine_model = main_window_->canvas()->document().settings().machine_model;
   qInfo() << "Loading model" << machine_model;
-  PresetSettings* preset = &PresetSettings::getInstance();
-  if (preset->presets().size() > 0) {
+  if (preset_settings_->presets().size() > 0) {
     ui->presetComboBox->clear();
-    for (auto &param: preset->currentPreset().params) {
+    for (auto &param: preset_settings_->currentPreset().params) {
       ui->presetComboBox->addItem(param.name, param.toJson());
     }
   }
@@ -40,6 +39,15 @@ void LayerParamsPanel::loadSettings() {
 }
 
 void LayerParamsPanel::registerEvents() {
+  connect(preset_settings_, &PresetSettings::currentIndexChanged, [=]() {
+    int index_to_recover = preset_previous_index_;
+    loadSettings();
+    if (index_to_recover > ui->presetComboBox->count() - 3) {
+      setToCustom();
+    } else {
+      ui->presetComboBox->setCurrentIndex(index_to_recover);
+    }
+  });
   connect(ui->powerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
     if (layer_ != nullptr) layer_->setStrength(strength);
     setToCustom();
