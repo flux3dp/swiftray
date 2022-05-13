@@ -102,7 +102,9 @@ void DocPanel::registerEvents() {
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     PresetSettings* preset_settings = &PresetSettings::getInstance();
-    preset_settings->setCurrentIndex(index);
+    if (index > -1) {
+        preset_settings->setCurrentIndex(index);
+    }
   });
   connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
     loadSettings();
