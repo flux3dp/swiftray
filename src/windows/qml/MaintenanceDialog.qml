@@ -227,7 +227,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: moveToEdge(0)
+                onTapped: moveToEdge(2)
             }
         }
 
@@ -307,7 +307,7 @@ Rectangle {
             }
 
             TapHandler {
-                onTapped: moveToEdge(2)
+                onTapped: moveToEdge(0)
             }
         }
 
