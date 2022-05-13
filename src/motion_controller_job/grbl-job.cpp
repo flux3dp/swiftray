@@ -217,7 +217,7 @@ void GrblJob::run() {
           }
         } else if (out_temp.startsWith("ALARM:")) {
           qInfo() << out_temp;
-          QStringRef subString = out_temp.midRef(strlen("ALARM:"));
+          QString subString = out_temp.mid(strlen("ALARM:"));
           int code = subString.toInt();
           if (code >= static_cast<int>(AlarmCode::kMin) &&
               code <= static_cast<int>(AlarmCode::kMax) ) {
@@ -309,7 +309,7 @@ void GrblJob::run() {
           throw "ALARM";
         }
       } else if (out_temp.startsWith("ALARM:")) {
-        QStringRef subString = out_temp.midRef(strlen("ALARM:"));
+        QString subString = out_temp.mid(strlen("ALARM:"));
         int code = subString.toInt();
         if (code >= static_cast<int>(AlarmCode::kMin) &&
             code <= static_cast<int>(AlarmCode::kMax) ) {

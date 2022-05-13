@@ -2,6 +2,7 @@ QT += quick
 QT += quickwidgets
 QT += widgets
 QT += opengl
+QT += openglwidgets
 QT += gui
 QT += gui-private
 QT += svg

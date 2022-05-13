@@ -144,7 +144,7 @@ Qt::CursorShape ResizeableRectItem::getHandleCursor(HandleIdx idx) {
   }
 }
 
-QRectF ResizeableRectItem::boundingRect() {
+QRectF ResizeableRectItem::boundingRect() const {
   return this->rect();
 }
 

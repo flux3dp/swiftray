@@ -39,7 +39,7 @@ Rectangle {
 
             Item {
                 id: item1
-                width: parent.parent.width
+                width: startupDialog.width
                 height: 200
 
                 Image {

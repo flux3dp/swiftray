@@ -8,6 +8,7 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
+#include <QtGlobal>
 
 #ifdef Q_OS_MACOS
 #define MACOS
@@ -71,7 +72,12 @@ int main(int argc, char *argv[]) {
 
   // Load Canvas to QML Engine
   qmlRegisterType<Canvas>("Swiftray", 1, 0, "Canvas");
-  
+
+  #if QT_VERSION >= 0x060000
+  // QQuickWidget is only supported on OpenGL
+  QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+  #endif
+
   // Load MainWindow
   MainWindow win;
   win.show();

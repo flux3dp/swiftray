@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(Swiftray)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+#set(CMAKE_PREFIX_PATH "~/Qt6/6.2.4/macos/lib/cmake")
 #set(CMAKE_FIND_DEBUG_MODE 1)
 if(WIN32)
     add_compile_definitions(WIN32_LEAN_AND_MEAN)
@@ -13,17 +14,18 @@ if(WIN32)
     set (OpenCV_DIR "C:/Dev/opencv-4.5.4-prebuilt/OpenCV-MinGW-Build")
 endif()
 
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Quick REQUIRED)
-find_package(Qt5 COMPONENTS QuickWidgets REQUIRED)
-find_package(Qt5 COMPONENTS OpenGL REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
-find_package(Qt5 COMPONENTS Svg REQUIRED)
-find_package(Qt5 COMPONENTS SerialPort REQUIRED)
-find_package(Qt5Gui COMPONENTS Private REQUIRED)
-find_package(Qt5Widgets COMPONENTS Private REQUIRED)
-find_package(Qt5Svg COMPONENTS Private REQUIRED)
+find_package(Qt6 COMPONENTS Core REQUIRED)
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Quick REQUIRED)
+find_package(Qt6 COMPONENTS QuickWidgets REQUIRED)
+find_package(Qt6 COMPONENTS OpenGL REQUIRED)
+find_package(Qt6 COMPONENTS OpenGLWidgets REQUIRED)
+find_package(Qt6 COMPONENTS Gui REQUIRED)
+find_package(Qt6 COMPONENTS Svg REQUIRED)
+find_package(Qt6 COMPONENTS SerialPort REQUIRED)
+find_package(Qt6Gui COMPONENTS Private REQUIRED)
+find_package(Qt6Widgets COMPONENTS Private REQUIRED)
+find_package(Qt6Svg COMPONENTS Private REQUIRED)
 find_package(LibXml2 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost 1.70 REQUIRED)
@@ -81,9 +83,9 @@ set(SOURCES
         )
 
 include_directories(
-        ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+        ${Qt6Gui_PRIVATE_INCLUDE_DIRS}
+        ${Qt6Svg_PRIVATE_INCLUDE_DIRS}
+        ${Qt6Widgets_PRIVATE_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIR}
         ${LIBXML2_INCLUDE_DIRS}
@@ -111,7 +113,7 @@ endif ()
 #ADD_SUBDIRECTORY(third_party/clipper)
 
 set(MAIN_SOURCE ${SOURCES})
-qt5_add_resources(MAIN_SOURCE "qml.qrc")
+qt6_add_resources(MAIN_SOURCE "qml.qrc")
 
 set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/images/icon.rc")
 set(MACOSX_BUNDLE_ICON_FILE images/icon.icns)
@@ -124,6 +126,7 @@ target_link_libraries(${PROJECT_NAME} Qt::Core)
 target_link_libraries(${PROJECT_NAME} Qt::Quick)
 target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
 target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
+target_link_libraries(${PROJECT_NAME} Qt::OpenGLWidgets)
 target_link_libraries(${PROJECT_NAME} Qt::Gui)
 target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)

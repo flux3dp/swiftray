@@ -3,6 +3,7 @@
 
 #include <shape/shape.h>
 #include <QtGui/private/qcssparser_p.h>
+#include <QtGlobal>
 
 class SVGNode {
 public:
@@ -46,6 +47,17 @@ public:
     return QString::compare(name, nodeName, Qt::CaseInsensitive) == 0;
   }
 
+#if QT_VERSION >= 0x060000
+    virtual QString attributeValue(NodePtr node, const QCss::AttributeSelector &aSelector) const {
+    SVGNode *n = getSVGNode(node);
+    if ((!getNodeId(n).isEmpty() && (aSelector.name == QLatin1String("id") ||
+                                    aSelector.name == QLatin1String("xml:id"))))
+      return getNodeId(n);
+    if (!getNodeClass(n).isEmpty() && aSelector.name == QLatin1String("class"))
+      return getNodeClass(n);
+    return QString();
+  }
+#else
   virtual QString attribute(NodePtr node, const QString &name) const {
     SVGNode *n = getSVGNode(node);
     if ((!getNodeId(n).isEmpty() && (name == QLatin1String("id") ||
@@ -55,6 +67,7 @@ public:
       return getNodeClass(n);
     return QString();
   }
+#endif
 
   virtual bool hasAttributes(NodePtr node) const {
     SVGNode *n = getSVGNode(node);

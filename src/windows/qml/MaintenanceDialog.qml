@@ -3,7 +3,6 @@ import QtQuick.Controls 2.14
 import QtQuick.Layouts 1.3
 import QtQuick.Window 2.2
 import QtQuick.Shapes 1.14
-import QtGraphicalEffects 1.0
 
 Rectangle {
     id: root

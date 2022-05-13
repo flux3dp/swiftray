@@ -31,7 +31,7 @@ public:
     ResizeableRectItem(const QRectF &rect, QGraphicsItem *parent = nullptr);
     ResizeableRectItem(QGraphicsItem *parent = nullptr);
 
-    QRectF boundingRect();
+    QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget);
     void updateRect(QRectF new_rect);
@@ -39,11 +39,11 @@ public:
     HandleIdx handleAt(QPointF point);
 
 protected:
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent * event);
-    void hoverMoveEvent(QGraphicsSceneHoverEvent * event);
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent * event) override;
+    void hoverMoveEvent(QGraphicsSceneHoverEvent * event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
     Qt::CursorShape getHandleCursor(HandleIdx idx);
