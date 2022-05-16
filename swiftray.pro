@@ -14,6 +14,7 @@ QT += serialport
 
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
+ICON = images/icon.icns
 _BOOST_PATH = "/usr/local/Cellar/boost/1.76.0"
 CONFIG += c++17
 LIBS += -L"/usr/lib"
