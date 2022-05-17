@@ -3,8 +3,8 @@
 #include <QDialog>
 #include <widgets//base-container.h>
 #include <memory>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/imgproc/types_c.h>
+#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgproc/types_c.h>
 
 
 QT_BEGIN_NAMESPACE

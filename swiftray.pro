@@ -17,22 +17,18 @@ TARGET = Swiftray
 ICON = images/icon.icns
 _BOOST_PATH = "/usr/local/Cellar/boost/1.76.0"
 CONFIG += c++17
-LIBS += -L"/usr/lib"
-LIBS += -L"/usr/local/lib"
-LIBS += -L"/usr/local/opt/libxml2/lib"
-LIBS += -L"/usr/local/opt/opencv/lib"
-LIBS += -lxml2
+LIBS += -L"/usr/local/opt/libxml2/lib/" -lxml2
+LIBS += -L"/usr/local/opt/boost/lib/" -lboost_thread-mt
+LIBS += -L"/opt/local/lib/opencv4/" -lopencv_core
+LIBS += -L"/opt/local/lib/opencv4/" -lopencv_imgproc
 ios {
     LIBS += -framework Foundation -framework UIKit
 }
-LIBS += -lboost_thread-mt
-LIBS += -lopencv_core
-LIBS += -lopencv_imgproc
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
 INCLUDEPATH += /usr/local/opt/libxml2/include
-INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
+INCLUDEPATH += /opt/local/include/opencv4
 INCLUDEPATH += "$${_BOOST_PATH}/include/"
 # Remove -Wall and -Wextra flag
 QMAKE_CFLAGS_WARN_ON -= -Wall
