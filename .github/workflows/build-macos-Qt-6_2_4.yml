@@ -20,8 +20,8 @@ jobs:
           brew install libxml2
           brew unlink unixodbc
           brew install libiodbc
-          curl https://github.com/PostgresApp/PostgresApp/releases/download/v2.5.6/Postgres-2.5.6-14.dmg -o Postrgres.dmg
-          sudo installer -pkg Postrgres.dmg -target ~
+          wget https://github.com/PostgresApp/PostgresApp/releases/download/v2.5.6/Postgres-2.5.6-14.dmg
+          sudo installer -pkg Postgres-2.5.6-14.dmg -target ~
 
       # Install Qt 6.2.4
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
