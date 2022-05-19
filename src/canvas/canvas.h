@@ -228,11 +228,11 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
-  bool isHoldingSpace_ = false;
-  bool isHoldingCtrl_  = false;
-  bool isHoldingMiddleButton_ = false;
-  bool isPopMenuShowing_;
-  bool isTempScaleLock_;
+  bool is_holding_space_ = false;
+  bool is_holding_ctrl_  = false;
+  bool is_holding_middle_button_ = false;
+  bool is_pop_menu_showing_;
+  bool is_temp_scale_lock_;
 
   QQuickWidget *widget_;
 
