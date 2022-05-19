@@ -15,10 +15,9 @@ QT += serialport
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
 ICON = images/icon.icns
-_BOOST_PATH = "/usr/local/Cellar/boost/1.76.0"
 CONFIG += c++17
 LIBS += -L"/usr/local/opt/libxml2/lib/" -lxml2
-LIBS += -L"/usr/local/opt/boost/lib/" -lboost_thread-mt
+LIBS += -L"/usr/local/lib/" -lboost_thread-mt
 LIBS += -L"/usr/local/lib/" -lopencv_core
 LIBS += -L"/usr/local/lib/" -lopencv_imgproc
 ios {
@@ -28,8 +27,8 @@ INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
 INCLUDEPATH += /usr/local/opt/libxml2/include
+INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
 INCLUDEPATH += /usr/local/include/opencv4/
-INCLUDEPATH += "$${_BOOST_PATH}/include/"
 # Remove -Wall and -Wextra flag
 QMAKE_CFLAGS_WARN_ON -= -Wall
 QMAKE_CXXFLAGS_WARN_ON -= -Wall
