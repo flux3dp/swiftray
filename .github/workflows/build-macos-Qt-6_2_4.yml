@@ -14,6 +14,15 @@ jobs:
         with:
           xcode-version: '11.2.1'
       - run: mkdir $RUNNER_WORKSPACE/dev/
+      
+      - name: Install dependencies for project
+        run: |
+          brew install libxml2
+          brew unlink unixodbc
+          brew install libiodbc
+          curl https://github.com/PostgresApp/PostgresApp/releases/download/v2.5.6/Postgres-2.5.6-14.dmg -o Postrgres.dmg
+          sudo installer -pkg Postrgres.dmg -target ~
+
       # Install Qt 6.2.4
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
       - name: Install Qt 6.2.4
@@ -109,13 +118,6 @@ jobs:
           cmake ${opencv_cmake_args} -DOPENCV_EXTRA_MODULES_PATH=$RUNNER_WORKSPACE/dev/opencv/opencv_contrib/modules $RUNNER_WORKSPACE/dev/opencv/opencv
           make
           make install
-
-      - name: Install dependencies for project
-        run: |
-          brew install libxml2
-          brew install libiodbc
-          curl https://github.com/PostgresApp/PostgresApp/releases/download/v2.5.6/Postgres-2.5.6-14.dmg -o Postrgres.dmg
-          sudo installer -pkg Postrgres.dmg -target ~
       
       - name: QMake project
         run: |
