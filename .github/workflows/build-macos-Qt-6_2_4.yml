@@ -110,8 +110,12 @@ jobs:
           make
           make install
 
-      - name: Install libxml2
-        run: brew install libxml2
+      - name: Install dependencies for project
+        run: |
+          brew install libxml2
+          brew install libiodbc
+          curl https://github.com/PostgresApp/PostgresApp/releases/download/v2.5.6/Postgres-2.5.6-14.dmg -o Postrgres.dmg
+          sudo installer -pkg Postrgres.dmg -target ~
       
       - name: QMake project
         run: |
@@ -125,11 +129,10 @@ jobs:
           make -j10
       - run: |
           brew install tree
-          tree build/
       - name: Package built executable into dmg
         run: |
           cd build
-          $RUNNER_WORKSPACE/Qt/6.2.4/macos/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -dmg
+          $RUNNER_WORKSPACE/Qt/6.2.4/macos/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -dmg -verbose=2
           tree .
       
       - name: Create Github Release
