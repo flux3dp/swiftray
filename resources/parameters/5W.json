@@ -10,7 +10,7 @@
       "name": "Wood 5mm Cutting",
       "power": 100,
       "speed": 4,
-      "repect":3
+      "repeat": 3
     },
     {
       "name": "Wood Engraving",
