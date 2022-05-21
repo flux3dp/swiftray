@@ -134,16 +134,16 @@ void Canvas::paint(QPainter *painter) {
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Space) {
-    isHoldingSpace_ = true;
+    is_holding_space_ = true;
   }
 
   if (e->modifiers() & Qt::ControlModifier) {
     qInfo() << (e->modifiers() & Qt::ControlModifier);
-    isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
+    is_holding_ctrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
   if (!transformControl().isScaleLock()) {
-    isTempScaleLock_ = true;
+    is_temp_scale_lock_ = true;
     transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
   }
 
@@ -164,16 +164,16 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
 
 void Canvas::keyReleaseEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Space) {
-    isHoldingSpace_ = false;
+    is_holding_space_ = false;
   }
 
-  if (isHoldingCtrl_) {
+  if (is_holding_ctrl_) {
     qInfo() << (e->modifiers() & Qt::ControlModifier);
-    isHoldingCtrl_ = e->modifiers() & Qt::ControlModifier;
+    is_holding_ctrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
-  if (isTempScaleLock_) {
-    isTempScaleLock_ = false;
+  if (is_temp_scale_lock_) {
+    is_temp_scale_lock_ = false;
     transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
   }
   for (auto &control : ctrls_) {
@@ -184,13 +184,8 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
 
 void Canvas::mousePressEvent(QMouseEvent *e) {
   if (e->button()==Qt::RightButton) {
-    isPopMenuShowing_ = true;
+    is_pop_menu_showing_ = true;
     emit canvasContextMenuOpened();
-    return;
-  }
-
-  if (e->button()==Qt::MiddleButton) {
-    isHoldingMiddleButton_ = true;
     return;
   }
 
@@ -198,6 +193,11 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
   document().setMousePressedScreenCoord(e->pos());
   qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
           << canvas_coord;
+
+  if (e->button()==Qt::MiddleButton) {
+    is_holding_middle_button_ = true;
+    return;
+  }
 
   for (auto &control : ctrls_) {
     if (control->isActive() && control->mousePressEvent(e))
@@ -221,31 +221,32 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
 }
 
 void Canvas::mouseMoveEvent(QMouseEvent *e) {
-  if (isPopMenuShowing_) {
+  if (is_pop_menu_showing_) {
     return;
   }
 
   QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
-
-  if (isHoldingSpace_ || isHoldingMiddleButton_) {
-    qreal newScrollX = document().mousePressedCanvasScroll().x() + movement.x() / 2.5;
-    qreal newScrollY = document().mousePressedCanvasScroll().y() + movement.y() / 2.5;
+  if (is_holding_space_ || is_holding_middle_button_) {
+    qreal movement_x = movement.x() * document().scale();
+    qreal movement_y = movement.y() * document().scale();
+    qreal new_scroll_x = (document().mousePressedCanvasScroll().x() + movement_x);
+    qreal new_scroll_y = (document().mousePressedCanvasScroll().y() + movement_y);
 
     // Restrict the range of scroll
     QPointF top_left_bound = getTopLeftScrollBoundary();
     QPointF bottom_right_bound = getBottomRightScrollBoundary();
-    if (movement.x() > 0 && newScrollX > top_left_bound.x()) {
-      newScrollX = top_left_bound.x();
-    } else if (movement.x() < 0 && newScrollX < bottom_right_bound.x()) {
-      newScrollX = bottom_right_bound.x();
+    if (movement_x > 0 && new_scroll_x > top_left_bound.x()) {
+      new_scroll_x = top_left_bound.x();
+    } else if (movement_x < 0 && new_scroll_x < bottom_right_bound.x()) {
+      new_scroll_x = bottom_right_bound.x();
     }
-    if (movement.y() > 0 && newScrollY > top_left_bound.y()) {
-      newScrollY = top_left_bound.y();
-    } else if (movement.y() < 0 && newScrollY < bottom_right_bound.y()) {
-      newScrollY = bottom_right_bound.y();
+    if (movement_y > 0 && new_scroll_y > top_left_bound.y()) {
+      new_scroll_y = top_left_bound.y();
+    } else if (movement_y < 0 && new_scroll_y < bottom_right_bound.y()) {
+      new_scroll_y = bottom_right_bound.y();
     }
 
-    document().setScroll({newScrollX, newScrollY});
+    document().setScroll({new_scroll_x, new_scroll_y});
     volatility_timer.restart();
     return; 
   }
@@ -256,18 +257,18 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void Canvas::mouseReleaseEvent(QMouseEvent *e) {
-  if (e->button()==Qt::RightButton && !isPopMenuShowing_) {
-    isPopMenuShowing_ = true;
+  if (e->button()==Qt::RightButton && !is_pop_menu_showing_) {
+    is_pop_menu_showing_ = true;
     return;
   }
 
   if (e->button()==Qt::MiddleButton) {
-    isHoldingMiddleButton_ = true;
+    is_holding_middle_button_ = false;
     return;
   }
 
-  if (isPopMenuShowing_) {
-    isPopMenuShowing_ = false;
+  if (is_pop_menu_showing_) {
+    is_pop_menu_showing_ = false;
     return;
   }
 
@@ -319,12 +320,12 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
  */
 QPointF Canvas::getTopLeftScrollBoundary() {
 
-  qreal scrollX_max =
+  qreal scroll_x_max =
        1 * std::max((width() - document().width() * document().scale()) / 2, document().width() * document().scale());
-  qreal scrollY_max =
+  qreal scroll_y_max =
        1 * std::max((height() - document().height() * document().scale()) / 2, document().height() * document().scale());
 
-  return QPointF{scrollX_max, scrollY_max};
+  return QPointF{scroll_x_max, scroll_y_max};
 }
 
 /**
@@ -332,19 +333,19 @@ QPointF Canvas::getTopLeftScrollBoundary() {
  * @return  lower bound value (negative value) for document scroll
  */
 QPointF Canvas::getBottomRightScrollBoundary() {
-  qreal scrollX_min =
+  qreal scroll_x_min =
        (-1) * std::max(0.5 * document().width() * document().scale(), 2 * document().width() * document().scale() - width());
-  qreal scrollY_min = (-1) * std::max(0.5 * document().height() * document().scale(),
+  qreal scroll_y_min = (-1) * std::max(0.5 * document().height() * document().scale(),
                                  2 * document().height() * document().scale() - height());
 
-  return QPointF{scrollX_min, scrollY_min};
+  return QPointF{scroll_x_min, scroll_y_min};
 }
 
 void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF new_scroll;
   QPointF mouse_pos;
 
-  if (isHoldingCtrl_) {
+  if (is_holding_ctrl_) {
     mouse_pos = e->position() - widget_offset_;
     double orig_scale = document().scale();
     double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->pixelDelta().y() / document().height()));
