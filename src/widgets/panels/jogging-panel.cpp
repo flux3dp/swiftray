@@ -123,12 +123,12 @@ void JoggingPanel::moveToEdge(int dir) {
       job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
       break;
     case 1:
-      movement.setY(-(main_window_->currentMachine().height));
+      movement.setY(0);
       movement = transformDirection(movement);
       job_str = "$X\nM5\n$J=G90 F1200 Y" + QString::number(movement.y());
       break;
     case 2:
-      movement.setX(-(main_window_->currentMachine().width));
+      movement.setX(0);
       movement = transformDirection(movement);
       job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
       break;
