@@ -56,8 +56,7 @@ void MachineManager::registerEvents() {
     QListWidgetItem *machine_item = new QListWidgetItem;
     auto machine = MachineSettings::database();
     machine_item->setData(Qt::UserRole, machine[0].toJson());
-    machine_item->setText(machine[0].name);
-    machine_item->setIcon(machine[0].icon());
+    machine_item->setText("New Machine");
     ui->machineList->addItem(machine_item);
   });
 
