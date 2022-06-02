@@ -52,7 +52,7 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="698"/>
+        <location filename="../src/canvas/canvas.cpp" line="699"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
@@ -260,13 +260,13 @@
     <message>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="145"/>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="191"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="283"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="284"/>
         <source>Serial port not responding</source>
         <translation>序列埠沒有回應</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="187"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="279"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="280"/>
         <source>Serial port disconnected</source>
         <translation>序列埠斷線</translation>
     </message>
@@ -659,17 +659,17 @@
         <translation> 次</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="38"/>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="37"/>
         <source>Custom</source>
         <translation>自訂</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="39"/>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="38"/>
         <source>More...</source>
         <translation>更多...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="132"/>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="140"/>
         <source>Parameter Settings</source>
         <translation>參數設置</translation>
     </message>
@@ -1666,6 +1666,11 @@
         <location filename="../src/windows/preferences-window.ui" line="58"/>
         <source>Advanced</source>
         <translation>進階</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/preferences-window.cpp" line="21"/>
+        <source>Please restart Swiftray to enable new settings.</source>
+        <translation type="unfinished">請重開 Swiftyray 以啟用新設定</translation>
     </message>
 </context>
 <context>

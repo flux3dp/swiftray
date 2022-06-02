@@ -18,7 +18,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
     if (language_code.toInt() != ui->comboBox->currentIndex()) {
       settings.setValue("window/language", ui->comboBox->currentIndex());
       QMessageBox msgbox;
-      msgbox.setInformativeText("Please restart Swiftray to enable new settings.");
+      msgbox.setInformativeText(tr("Please restart Swiftray to enable new settings."));
       msgbox.exec();
     }
   });
