@@ -39,7 +39,7 @@ bool PathShape::hitTest(QRectF global_coord_rect) const {
   QPainterPath new_path = transform().map(path_);
   // TODO (Consider cases that the path is not closed)
 
-  if (layer()->type() == Layer::Type::Fill) {
+  if (layer()->type() == Layer::Type::Fill || layer()->type() == Layer::Type::FillLine) {
     return new_path.intersects(global_coord_rect);
   }
   return new_path.intersects(global_coord_rect) &&
