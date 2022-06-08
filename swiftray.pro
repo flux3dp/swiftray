@@ -14,25 +14,52 @@ QT += serialport
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
 ICON=images/icon.icns
-_BOOST_PATH = "/usr/local/Cellar/boost/1.76.0"
 CONFIG += c++17
-LIBS += -L"/usr/lib"
-LIBS += -L"/usr/local/lib"
-LIBS += -L"/usr/local/opt/libxml2/lib"
-LIBS += -L"/usr/local/opt/opencv/lib"
-LIBS += -lxml2
+win32 {
+    QMAKE_CXXFLAGS_RELEASE -= -O2
+    QMAKE_CXXFLAGS_RELEASE += -Os
+    isEmpty($$(MINGW64_PATH)) {
+        message(MINGW64_PATH is empty)
+    }
+    # libxml2, potrace, boost, opencv
+    LIBS += -L$$(MINGW64_PATH)/lib
+    # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
+    LIBS += -lws2_32
+    # resolve WinSock.h already included issue
+    DEFINES+=WIN32_LEAN_AND_MEAN
+}
+macx{
+    _BOOST_PATH = "/usr/local/Cellar/boost/1.78.0_1"
+    LIBS += -L"/usr/lib"
+    LIBS += -L"/usr/local/lib"
+    LIBS += -L"/usr/local/opt/libxml2/lib"
+    LIBS += -L"/usr/local/opt/opencv/lib"
+}
 ios {
     LIBS += -framework Foundation -framework UIKit
 }
+LIBS += -lxml2
 LIBS += -lboost_thread-mt
+LIBS += -lboost_system-mt
 LIBS += -lopencv_core
 LIBS += -lopencv_imgproc
+LIBS += -lpotrace
+
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
-INCLUDEPATH += /usr/local/include/
-INCLUDEPATH += /usr/local/opt/libxml2/include
-INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
-INCLUDEPATH += "$${_BOOST_PATH}/include/"
+win32 {
+    # boost, libxml2, potrace
+    INCLUDEPATH += $$(MINGW64_PATH)/include
+    INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
+    INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+}
+macx{
+    INCLUDEPATH += /usr/local/include
+    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
+    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
+    INCLUDEPATH += "$${_BOOST_PATH}/include/"
+}
+
 # Remove -Wall and -Wextra flag
 QMAKE_CFLAGS_WARN_ON -= -Wall
 QMAKE_CXXFLAGS_WARN_ON -= -Wall
@@ -44,7 +71,10 @@ QMAKE_CXXFLAGS += -Wno-unused-local-typedef
 QMAKE_CXXFLAGS += -Wno-unused-variable
 QMAKE_CXXFLAGS += -Wno-reorder-ctor
 QMAKE_CXXFLAGS += -Wno-deprecated-declarations
-QMAKE_CXXFLAGS += -ferror-limit=1
+macx{
+    # flag for clang only
+    QMAKE_CXXFLAGS += -ferror-limit=1
+}
 QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -105,12 +135,6 @@ ios {
             src/widgets/components/ios-image-picker.h \
 }
 
-win32:CONFIG(release, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_system
-else:win32:CONFIG(debug, debug|release): LIBS += -LC:/cygwin64/lib/ -lboost_systemd
-win32 {
-INCLUDEPATH += C:/cygwin64/usr/include
-DEPENDPATH += C:/cygwin64/usr/include
-}
 FORMS += \
     src/widgets/components/layer-list-item.ui \
     src/widgets/components/task-list-item.ui \
@@ -148,13 +172,3 @@ TR_EXCLUDE += $$PWD/third_party/* \
 
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
-win32:CONFIG(release, debug|release): LIBS += -L/usr/local/lib/release/ -lpotrace
-else:win32:CONFIG(debug, debug|release): LIBS += -L/usr/local/lib/debug/ -lpotrace
-else:unix: LIBS += -L/usr/local/lib/ -lpotrace
-INCLUDEPATH += /usr/local/include
-DEPENDPATH += /usr/local/include
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += /usr/local/lib/release/libpotrace.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += /usr/local/lib/debug/libpotrace.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += /usr/local/lib/release/potrace.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += /usr/local/lib/debug/potrace.lib
-else:unix: PRE_TARGETDEPS += /usr/local/lib/libpotrace.a
