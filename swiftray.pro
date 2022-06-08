@@ -31,6 +31,7 @@ INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 INCLUDEPATH += /usr/local/include/
 INCLUDEPATH += /usr/local/opt/libxml2/include
+INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
 INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
 INCLUDEPATH += "$${_BOOST_PATH}/include/"
 # Remove -Wall and -Wextra flag
