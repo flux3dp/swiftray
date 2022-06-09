@@ -18,6 +18,7 @@ jobs:
             mingw-w64-x86_64-opencv
             mingw-w64-x86_64-boost
             mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-qt5-tools
             mingw-w64-x86_64-libxml2
             mingw-w64-x86_64-gcc
             make
