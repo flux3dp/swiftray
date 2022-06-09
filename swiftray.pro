@@ -17,7 +17,7 @@ ICON=images/icon.icns
 CONFIG += c++17
 win32 {
     # libxml2, potrace, boost, opencv
-    LIBS += -LC:/Dev/msys64/mingw64/lib
+    LIBS += -L${MINGW64_PATH}/lib
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
@@ -44,9 +44,9 @@ INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 win32 {
     # boost, libxml2, potrace
-    INCLUDEPATH += C:/Dev/msys64/mingw64/include
-    INCLUDEPATH += C:/Dev/msys64/mingw64/include/libxml2
-    INCLUDEPATH += C:/Dev/msys64/mingw64/include/opencv4
+    INCLUDEPATH += ${MINGW64_PATH}/include
+    INCLUDEPATH += ${MINGW64_PATH}/include/libxml2
+    INCLUDEPATH += ${MINGW64_PATH}/include/opencv4
 }
 macx{
     INCLUDEPATH += /usr/local/include
