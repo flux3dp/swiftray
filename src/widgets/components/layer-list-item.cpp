@@ -29,6 +29,7 @@ LayerListItem::LayerListItem(QWidget *parent, Canvas *canvas, LayerPtr &layer, b
   ui->btnLock->setSizePolicy(sp_retain);
 
   ui->btnLock->setVisible(layer_->isLocked());
+  ui->btnHide->setChecked(!layer_->isVisible());
   lockLayerAction_->setEnabled(!layer_->isLocked());
   unlockLayerAction_->setEnabled(layer_->isLocked());
 }
