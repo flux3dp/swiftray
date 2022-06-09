@@ -1,0 +1,28 @@
+name: build-macos-installer
+on:
+  push:
+    tags:
+      - "test-win-build-*"
+jobs:
+  setup-win-mingw-build-environment:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >-
+            mingw-w64-x86_64-potrace
+            mingw-w64-x86_64-opencv
+            mingw-w64-x86_64-boost
+            mingw-w64-x86_64-qt5
+        
+      - name: Check libraries
+        run: |
+          echo $PATH
+          pwd
+          ls /mingw64
+          ls /mingw64/lib
+          ls /mingw64/include
