@@ -52,12 +52,17 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 
 void MainWindow::loadSettings() {
-  QSettings settings;
-  restoreGeometry(settings.value("window/geometry").toByteArray());
-  if (!restoreState(settings.value("window/windowState").toByteArray())) {
-    QSettings classic_settings(":/classicUI.ini", QSettings::IniFormat);
-    restoreState(classic_settings.value("window/windowState").toByteArray());
-  };
+  #ifdef Q_OS_MACOS
+    QSettings settings;
+    restoreGeometry(settings.value("window/geometry").toByteArray());
+    if (!restoreState(settings.value("window/windowState").toByteArray())) {
+      QSettings classic_settings(":/classicUI.ini", QSettings::IniFormat);
+      restoreState(classic_settings.value("window/windowState").toByteArray());
+    };
+  #else
+    QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
+    restoreState(settings.value("window/windowState").toByteArray());
+  #endif
 }
 
 void MainWindow::loadCanvas() {
