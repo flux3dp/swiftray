@@ -18,12 +18,18 @@ jobs:
             mingw-w64-x86_64-opencv
             mingw-w64-x86_64-boost
             mingw-w64-x86_64-qt5
+            mingw-w64-x86_64-libxml2
+            libxml2
         
-      - name: Check libraries
+      - name: 
         shell: msys2 {0}
         run: |
           echo $PATH
           pwd
-          ls /mingw64
-          ls /mingw64/lib
-          ls /mingw64/include
+          mkdir build
+          cd build
+          qmake.exe -o Makefile ../swiftray.pro -spec wing32-g++ "CONFIG+=qtquickcompiler"
+          #mingw32-make -j4
+          make -j4
+          ls
+          
