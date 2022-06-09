@@ -20,6 +20,7 @@ jobs:
             mingw-w64-x86_64-qt5
         
       - name: Check libraries
+        shell: msys2 {0}
         run: |
           echo $PATH
           pwd
