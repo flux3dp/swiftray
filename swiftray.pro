@@ -49,6 +49,7 @@ win32 {
     INCLUDEPATH += C:/Dev/msys64/mingw64/include/opencv4
 }
 macx{
+    INCLUDEPATH += /usr/local/include
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
