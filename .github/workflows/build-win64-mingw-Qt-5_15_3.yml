@@ -28,7 +28,7 @@ jobs:
           pwd
           mkdir build
           cd build
-          qmake.exe -o Makefile ../swiftray.pro -spec wing32-g++ "CONFIG+=qtquickcompiler"
+          qmake.exe -o Makefile ../swiftray.pro -spec win32-g++ "CONFIG+=qtquickcompiler"
           #mingw32-make -j4
           make -j4
           ls
