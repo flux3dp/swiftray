@@ -1670,7 +1670,7 @@
     <message>
         <location filename="../src/windows/preferences-window.cpp" line="21"/>
         <source>Please restart Swiftray to enable new settings.</source>
-        <translation type="unfinished">請重開 Swiftyray 以啟用新設定</translation>
+        <translation type="unfinished">請重開 Swiftray 以啟用新設定</translation>
     </message>
 </context>
 <context>
