@@ -1,4 +1,4 @@
-name: build-macos-installer
+name: build-win64-installer
 on:
   push:
     tags:
@@ -24,7 +24,7 @@ jobs:
             make
             libxml2
         
-      - name: 
+      - name: Build
         shell: msys2 {0}
         run: |
           echo $PATH
