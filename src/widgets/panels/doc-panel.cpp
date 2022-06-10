@@ -76,10 +76,11 @@ void DocPanel::loadSettings() {
   updateScene();
 
   PresetSettings* preset_settings = &PresetSettings::getInstance();
+  QString current_preset_name = preset_settings->currentPreset().name;
   ui->presetComboBox->clear();
   for (auto &preset : preset_settings->presets()) {
     ui->presetComboBox->addItem(preset.name);
-    if (preset.name == preset_settings->currentPreset().name) {
+    if (preset.name == current_preset_name) {
       ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 1);
     }
   }
@@ -149,7 +150,6 @@ void DocPanel::updateScene() {
   main_window_->canvas()->document().setHeight(machine.height * 10);
   main_window_->canvas()->resize();
 }
-
 
 MachineSettings::MachineSet DocPanel::currentMachine() {
   if (ui->machineComboBox->count() == 0) {
