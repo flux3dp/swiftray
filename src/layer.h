@@ -66,6 +66,8 @@ public:
 
   int power() const;
 
+  int parameterIndex() const;
+
   double stepHeight() const;
 
   double targetHeight() const;
@@ -88,6 +90,8 @@ public:
   void setSpeed(int speed);
 
   void setStrength(int strength);
+
+  void setParameterIndex(int parameter_index);
 
   void setType(Type type);
 
@@ -118,6 +122,7 @@ private:
   int repeat_;
   int speed_;
   int power_;
+  int parameter_index_;
 
   /** Main properties **/
   mutable bool cache_valid_;
