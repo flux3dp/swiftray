@@ -31,7 +31,7 @@ jobs:
           pwd
           mkdir build
           cd build
-          export MINGW64_PATH=/mingw64
+          export MINGW64_PATH=${{ runner.temp }}/msys64/mingw64
           qmake.exe -o Makefile ../swiftray.pro -spec win32-g++ "CONFIG+=qtquickcompiler"
           #mingw32-make -j4
           make -j4
