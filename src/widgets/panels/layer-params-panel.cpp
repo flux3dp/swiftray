@@ -70,6 +70,7 @@ void LayerParamsPanel::registerEvents() {
         loadSettings();
       }
       ui->presetComboBox->setCurrentIndex(index_to_recover);
+      if (layer_ != nullptr) layer_->setParameterIndex(index_to_recover);
     } else if (index >= 0 && index < ui->presetComboBox->count() - 2) {
       auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->powerSpinBox->blockSignals(true);
@@ -85,8 +86,10 @@ void LayerParamsPanel::registerEvents() {
       layer_->setSpeed(p.speed);
       layer_->setRepeat(p.repeat);
       preset_previous_index_ = index;
+      layer_->setParameterIndex(index);
     } else {
       preset_previous_index_ = index;
+      layer_->setParameterIndex(index);
     }
   });
   connect(ui->movingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
@@ -136,11 +139,13 @@ void LayerParamsPanel::updateMovingComboBox() {
 }
 
 void LayerParamsPanel::updateLayer(Layer *layer) {
+  int previous_index = layer->parameterIndex();
   layer_ = layer;
   ui->presetParamLabel->setText(tr("Parameter Settings") + "("+ layer->name() + ")");
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
+  ui->presetComboBox->setCurrentIndex(previous_index);
   updateMovingComboBox();
 }
 

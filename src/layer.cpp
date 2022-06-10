@@ -81,6 +81,10 @@ int Layer::power() const {
   return power_;
 }
 
+int Layer::parameterIndex() const {
+  return parameter_index_;
+}
+
 const QString &Layer::name() const {
   return name_;
 }
@@ -154,6 +158,10 @@ void Layer::setStrength(int strength) {
 
 void Layer::setRepeat(int repeat) {
   repeat_ = repeat;
+}
+
+void Layer::setParameterIndex(int parameter_index) {
+  parameter_index_ = parameter_index;
 }
 
 void Layer::setUseDiode(bool is_diode) {
