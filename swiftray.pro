@@ -16,6 +16,8 @@ TARGET = Swiftray
 ICON=images/icon.icns
 CONFIG += c++17
 win32 {
+    QMAKE_CXXFLAGS_RELEASE -= -O2
+    QMAKE_CXXFLAGS_RELEASE += -Os
     isEmpty($$(MINGW64_PATH)) {
         message(MINGW64_PATH is empty)
     }
