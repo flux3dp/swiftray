@@ -16,15 +16,18 @@ TARGET = Swiftray
 ICON=images/icon.icns
 CONFIG += c++17
 win32 {
+    isEmpty($$(MINGW64_PATH)) {
+        message(MINGW64_PATH is empty)
+    }
     # libxml2, potrace, boost, opencv
-    LIBS += -L$${MINGW64_PATH}/lib
+    LIBS += -L$$(MINGW64_PATH)/lib
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
     DEFINES+=WIN32_LEAN_AND_MEAN
 }
 macx{
-    _BOOST_PATH = "/usr/local/Cellar/boost/1.76.0"
+    _BOOST_PATH = "/usr/local/Cellar/boost/1.78.0_1"
     LIBS += -L"/usr/lib"
     LIBS += -L"/usr/local/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
@@ -44,9 +47,9 @@ INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 win32 {
     # boost, libxml2, potrace
-    INCLUDEPATH += $${MINGW64_PATH}/include
-    INCLUDEPATH += $${MINGW64_PATH}/include/libxml2
-    INCLUDEPATH += $${MINGW64_PATH}/include/opencv4
+    INCLUDEPATH += $$(MINGW64_PATH)/include
+    INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
+    INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
 }
 macx{
     INCLUDEPATH += /usr/local/include
