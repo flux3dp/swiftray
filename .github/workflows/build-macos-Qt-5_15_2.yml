@@ -91,6 +91,7 @@ jobs:
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
       - name: Create dmg
+        run: |
           brew install create-dmg
           cd build
           create-dmg --volname "Swiftray Installer" \
