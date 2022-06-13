@@ -46,7 +46,7 @@ jobs:
         shell: msys2 {0}
         run: |
           export PATH="/mingw64/bin:$PATH"
-          windeployqt --qmldir src/windows/qml --compiler-runtime build/Swiftray.exe
+          windeployqt --qmldir src/windows/qml --compiler-runtime build/release/Swiftray.exe
       #- name: Copy necessary shared libraries
       #  shell: msys2 {0}
       #  run: |
