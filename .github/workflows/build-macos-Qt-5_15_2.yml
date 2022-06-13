@@ -85,14 +85,28 @@ jobs:
           make -j10
       - run: |
           brew install tree
-      - name: Package built executable into dmg
+      - name: Deploy (Copy necessary shared libraries)
         run: |
           cd build
-          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -dmg -verbose=2
+          # $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -dmg -verbose=2
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
-      
+      - name: Create dmg
+          brew install create-dmg
+          cd build
+          create-dmg --volname "Swiftray Installer" \
+            --volicon "Swiftray.app/Contents/Resources/icon.icns" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 128 \
+            --icon "Swiftray.app" 200 190 \
+            --hide-extension "Swiftray.app" \
+            --app-drop-link 600 190 \
+            "Swiftray-Installer.dmg" \
+            "Swiftray.app/"
+                
       - name: Create Github Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: build/Swiftray.dmg
+          files: build/Swiftray-Installer.dmg
