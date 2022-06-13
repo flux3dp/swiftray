@@ -23,7 +23,12 @@ jobs:
             mingw-w64-x86_64-gcc
             make
             libxml2
-        
+
+      #- name: Set 3GB compile memory
+      #  shell: msys2 {0}
+      #  run: |
+      #    bcdedit /set IncreaseUserVa 3072
+
       - name: Build
         shell: msys2 {0}
         run: |
@@ -38,4 +43,13 @@ jobs:
           qmake.exe -o Makefile ../swiftray.pro -spec win32-g++ "CONFIG+=qtquickcompiler"
           make -j4
           ls
-          
+      - name: Deploy
+        shell: msys2 {0}
+        run: |
+          export PATH="/mingw64/bin:$PATH"
+          windeployqt --qmldir <absolute path>/swiftray/src/windows/qml --compiler-runtime Swiftray.exe
+      #- name: Copy necessary shared libraries
+      #  shell: msys2 {0}
+      #  run: |
+      #- name: Create .msi installer
+      #  run: |
