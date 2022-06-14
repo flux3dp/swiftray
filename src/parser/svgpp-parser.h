@@ -14,7 +14,7 @@ namespace Parser {
   public:
     SVGPPParser() {};
 
-    bool parse(Document *doc, QByteArray &data);
+    bool parse(Document *doc, QByteArray &data, QList<LayerPtr> *svg_layers);
   };
 
 }
