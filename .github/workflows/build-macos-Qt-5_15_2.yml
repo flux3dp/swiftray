@@ -103,7 +103,7 @@ jobs:
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
           cd build
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign $SIGN_IDENTITY_ID "Swiftray.app"
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
 
       - name: "Notarize Release Build"
         uses: devbotsxyz/xcode-notarize@v1
