@@ -586,7 +586,7 @@ void MainWindow::registerEvents() {
     canvas_->document().paint(painter.get());
 
     job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJobFromDashboard);
+    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
     connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
@@ -1238,22 +1238,7 @@ void MainWindow::onStartNewJob() {
   }
 
   gcode_player_->attachJob(jobs_.last());
-  jobs_.last()->start();
-}
-
-void MainWindow::onStartNewJobFromDashboard() {
-  generateJob();
-  if (jobs_.empty()) {
-    return;
-  }
-
-  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
-    qInfo() << "Blocked: No job is ready to run";
-    return;
-  }
-
-  gcode_player_->attachJob(jobs_.last());
-  job_dashboard_->attachJob(jobs_.last());
+  if(job_dashboard_ != nullptr) job_dashboard_->attachJob(jobs_.last());
   jobs_.last()->start();
 }
 

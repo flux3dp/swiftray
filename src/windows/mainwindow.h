@@ -60,7 +60,6 @@ signals:
 
 public slots:
   void onStartNewJob();
-  void onStartNewJobFromDashboard();
   void onStopJob();
   void onPauseJob();
   void onResumeJob();
