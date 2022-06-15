@@ -162,6 +162,8 @@ void LayerListItem::onDeleteLayer() {
       Commands::RemoveSelections(&(layer_->document())),
       Commands::RemoveLayer(layer_)
     );
+    LayerPtr last_layer = canvas_->document().layers().last();
+    canvas_->setActiveLayer(last_layer);
   }
   emit canvas_->layerChanged();
 }
