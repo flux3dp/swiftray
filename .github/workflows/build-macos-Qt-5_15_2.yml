@@ -89,12 +89,29 @@ jobs:
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
 
+      - name: Codesign executable
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          SIGN_IDENTITY_ID: ${{ secrets.SIGN_IDENTITY_ID }}
+        run: |
+          echo $MACOS_CERTIFICATE | base64 —decode > certificate.p12
+          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
+          cd build
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign $SIGN_IDENTITY_ID "Swiftray.app"
+
       - name: "Notarize Release Build"
         uses: devbotsxyz/xcode-notarize@v1
         with:
           product-path: "build//Swiftray.app"
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          primary-bundle-id: "4Y92JWKV94"
           verbose: true
 
       - name: "Staple Release Build"
