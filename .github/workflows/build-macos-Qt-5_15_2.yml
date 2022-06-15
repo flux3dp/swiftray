@@ -95,6 +95,7 @@ jobs:
           path: build/ # or path/to/artifact
 
   codesign-notarize:
+    needs: setup-macos-build-environment
     runs-on: macos-10.15
     steps:
       - name: Checkout repo
