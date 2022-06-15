@@ -116,7 +116,7 @@ jobs:
           MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-          SIGN_IDENTITY_ID: ${{ secrets.SIGN_IDENTITY_ID }}
+          #SIGN_IDENTITY_ID: 
         run: |
           echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
           security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
@@ -124,7 +124,7 @@ jobs:
           security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign $SIGN_IDENTITY_ID "Swiftray.app"
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign ${{ secrets.SIGN_IDENTITY_ID }} "Swiftray.app"
 
       - name: Notarize Release Build
         env: 
