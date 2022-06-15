@@ -124,24 +124,14 @@ jobs:
           security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          cd build
           /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign $SIGN_IDENTITY_ID "Swiftray.app"
-
-      - name: "Notarize Release Build"
-        uses: devbotsxyz/xcode-notarize@v1
-        with:
-          product-path: "build//Swiftray.app"
-          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
-          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
-          primary-bundle-id: "4Y92JWKV94"
-          verbose: true
 
       - name: Notarize Release Build
         env: 
           ASC_PROVIDER: ${{ secrets.ASC_PROVIDER }}
         uses: erwin1/xcode-notarize@main
         with:
-          product-path: "build//Swiftray.app"
+          product-path: "Swiftray.app"
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           asc-provider: ${{ secrets.ASC_PROVIDER }}
@@ -150,12 +140,11 @@ jobs:
       - name: "Staple Release Build"
         uses: devbotsxyz/xcode-staple@v1
         with:
-          product-path: "build/Swiftray.app"
+          product-path: "Swiftray.app"
 
       - name: Create dmg
         run: |
           brew install create-dmg
-          cd build
           create-dmg --volname "Swiftray Installer" \
             --volicon "Swiftray.app/Contents/Resources/icon.icns" \
             --window-pos 200 120 \
@@ -171,4 +160,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: build/Swiftray-Installer.dmg
+          files: Swiftray-Installer.dmg
