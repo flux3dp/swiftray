@@ -34,12 +34,18 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
 } 
 
 void JoggingPanel::home() {
+  if(!control_enable_) {
+    return;
+  }
   QString job_str = "\n$H";
   qInfo() << "Homing!";
   sendJob(job_str);
 }
 
 void JoggingPanel::laser() {
+  if(!control_enable_) {
+    return;
+  }
   QString job_str;
   if (is_laser_on_) {
     job_str = "G1S0\nM5";
@@ -54,12 +60,18 @@ void JoggingPanel::laser() {
 }
 
 void JoggingPanel::laserPulse() {
+  if(!control_enable_) {
+    return;
+  }
   QString job_str = "$X\nM5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
   qInfo() << "laser pulse!";
   sendJob(job_str);
 }
 
 void JoggingPanel::moveRelatively(int dir, int level) {
+  if(!control_enable_) {
+    return;
+  }
   float magnitude = 0;
   QPointF movement(0,0);
 
@@ -113,6 +125,9 @@ void JoggingPanel::moveRelatively(int dir, int level) {
 }
 
 void JoggingPanel::moveToEdge(int dir) {
+  if(!control_enable_) {
+    return;
+  }
   QPointF movement(0,0);
   QString job_str;
 
@@ -143,6 +158,9 @@ void JoggingPanel::moveToEdge(int dir) {
 }
 
 void JoggingPanel::moveToCorner(int corner) {
+  if(!control_enable_) {
+    return;
+  }
   QPointF movement(0,0);
   // corner A:0 B:1 C:2 D:4
   switch (corner) {
@@ -202,7 +220,7 @@ void JoggingPanel::setControlEnable(bool control_enable) {
 }
 
 void JoggingPanel::sendJob(QString &job_str) {
-  if (!serial_port.isOpen() || !control_enable_) {
+  if (!serial_port.isOpen()) {
     return;
   }
 
