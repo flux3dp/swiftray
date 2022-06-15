@@ -12,7 +12,7 @@ jobs:
       - name: Select XCode version
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '12.4.0'
+          xcode-version: '11.3'
       #- uses: actions/setup-python@v3
       #  with:
       #    python-version: '3.9'
@@ -124,7 +124,7 @@ jobs:
           security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign ${{ secrets.SIGN_IDENTITY_ID }} "Swiftray.app"
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
 
       - name: Notarize Release Build
         env: 
