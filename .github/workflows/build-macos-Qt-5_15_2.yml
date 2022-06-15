@@ -89,6 +89,18 @@ jobs:
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: build/ # or path/to/artifact
+
+  codesign-notarize:
+      - uses: actions/download-artifact@v3
+        with:
+          name: build
+
+      - run: ls
+
       - name: Codesign executable
         env: 
           MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
@@ -103,7 +115,7 @@ jobs:
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
           cd build
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign $SIGN_IDENTITY_ID "Swiftray.app"
 
       - name: "Notarize Release Build"
         uses: devbotsxyz/xcode-notarize@v1
@@ -112,6 +124,17 @@ jobs:
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           primary-bundle-id: "4Y92JWKV94"
+          verbose: true
+
+      - name: Notarize Release Build
+        env: 
+          ASC_PROVIDER: ${{ secrets.ASC_PROVIDER }}
+        uses: erwin1/xcode-notarize@main
+        with:
+          product-path: "build//Swiftray.app"
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          asc-provider: ${{ secrets.ASC_PROVIDER }}
           verbose: true
 
       - name: "Staple Release Build"
