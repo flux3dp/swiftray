@@ -95,6 +95,7 @@ jobs:
           product-path: "build//Swiftray.app"
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          verbose: true
 
       - name: "Staple Release Build"
         uses: devbotsxyz/xcode-staple@v1
