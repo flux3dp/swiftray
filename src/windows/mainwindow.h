@@ -112,6 +112,8 @@ private slots:
 
   void genPreviewWindow();
 
+  void setJobStatus(BaseJob::Status status);
+
 private:
 
   void loadWidgets() override;

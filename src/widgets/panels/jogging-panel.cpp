@@ -197,8 +197,12 @@ QPointF JoggingPanel::transformDirection(QPointF movement) {
   return QPointF(x, y);
 }
 
+void JoggingPanel::setControlEnable(bool control_enable) {
+  control_enable_ = control_enable;
+}
+
 void JoggingPanel::sendJob(QString &job_str) {
-  if (!serial_port.isOpen()) {
+  if (!serial_port.isOpen() || !control_enable_) {
     return;
   }
 

@@ -590,6 +590,7 @@ void MainWindow::registerEvents() {
     connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
     if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
       job_dashboard_->attachJob(jobs_.last());
     }
@@ -661,6 +662,7 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
   connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
   connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_player_, &GCodePlayer::jobStatusReport, this, &MainWindow::setJobStatus);
   connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
   });
@@ -1265,4 +1267,40 @@ void MainWindow::onResumeJob() {
   }
   auto job = jobs_.last();
   job->resume();
+}
+
+void MainWindow::setJobStatus(BaseJob::Status status) {
+  switch (status) {
+    case BaseJob::Status::READY:
+      ui->actionPreview->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    case BaseJob::Status::STARTING:
+      ui->actionPreview->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::RUNNING:
+      ui->actionPreview->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::PAUSED:
+      ui->actionPreview->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::FINISHED:
+      ui->actionPreview->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    case BaseJob::Status::ALARM:
+      ui->actionPreview->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    case BaseJob::Status::STOPPED:
+    case BaseJob::Status::ALARM_STOPPED:
+      ui->actionPreview->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    default:
+      break;
+  }
 }

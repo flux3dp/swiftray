@@ -35,12 +35,16 @@ public slots:
 
   QPointF transformDirection(QPointF movement);
 
+  void setControlEnable(bool control_enable);
+
 private:
   Ui::JoggingPanel *ui;
 
   MainWindow *main_window_;
 
   bool is_laser_on_ = false;
+
+  bool control_enable_ = true;
 };
 
 #endif // JOGGING_WIDGET_H

@@ -127,6 +127,7 @@ void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
     default:
       break;
   }
+  emit jobStatusReport(status);
 }
 
 void JobDashboardDialog::onProgressChanged(QVariant progress) {
