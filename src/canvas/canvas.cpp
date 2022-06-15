@@ -86,11 +86,21 @@ void Canvas::loadSVG(QByteArray &svg_data) {
   // TODO(Add undo events for loading svg)
   QElapsedTimer t;
   t.start();
-  bool success = svgpp_parser_.parse(&document(), svg_data);
+  QList<LayerPtr> svg_layers;
+  bool success = svgpp_parser_.parse(&document(), svg_data, &svg_layers);
   setAntialiasing(true);
 
   if (success) {
-    editSelectAll();
+    QList<ShapePtr> all_shapes;
+    for (auto &layer : svg_layers) {
+      all_shapes.append(layer->children());
+    }
+    document().setSelections(all_shapes);
+    if (all_shapes.size() == 1) {
+      document().setActiveLayer(all_shapes.first()->layer()->name());
+      emit layerChanged();
+    }
+
     forceActiveFocus();
     emitAllChanges();
     update();
@@ -581,19 +591,19 @@ void Canvas::editDrawText() {
 }
 
 void Canvas::editClear() {
-  editSelectAll();
+  editSelectAll(true);
   document().execute(
     Commands::RemoveSelections(&document())
   );
 }
 
-void Canvas::editSelectAll() {
+void Canvas::editSelectAll(bool with_hiden) {
   if (mode() != Mode::Selecting)
     return;
   QList<ShapePtr> all_shapes;
 
   for (auto &layer : document().layers()) {
-    all_shapes.append(layer->children());
+    if(layer->isVisible() || with_hiden) all_shapes.append(layer->children());
   }
 
   document().setSelections(all_shapes);

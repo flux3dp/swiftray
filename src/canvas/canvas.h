@@ -112,7 +112,7 @@ public slots:
 
   void editRedo();
 
-  void editSelectAll();
+  void editSelectAll(bool with_hiden = false);
 
   void editClear();
 
