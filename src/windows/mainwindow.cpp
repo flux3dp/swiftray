@@ -1272,32 +1272,32 @@ void MainWindow::onResumeJob() {
 void MainWindow::setJobStatus(BaseJob::Status status) {
   switch (status) {
     case BaseJob::Status::READY:
-      ui->actionPreview->setCheckable(true);
+      ui->actionFrame->setCheckable(true);
       jogging_panel_->setControlEnable(true);
       break;
     case BaseJob::Status::STARTING:
-      ui->actionPreview->setCheckable(false);
+      ui->actionFrame->setCheckable(false);
       jogging_panel_->setControlEnable(false);
       break;
     case BaseJob::Status::RUNNING:
-      ui->actionPreview->setCheckable(false);
+      ui->actionFrame->setCheckable(false);
       jogging_panel_->setControlEnable(false);
       break;
     case BaseJob::Status::PAUSED:
-      ui->actionPreview->setCheckable(false);
+      ui->actionFrame->setCheckable(false);
       jogging_panel_->setControlEnable(false);
       break;
     case BaseJob::Status::FINISHED:
-      ui->actionPreview->setCheckable(true);
+      ui->actionFrame->setCheckable(true);
       jogging_panel_->setControlEnable(true);
       break;
     case BaseJob::Status::ALARM:
-      ui->actionPreview->setCheckable(false);
+      ui->actionFrame->setCheckable(false);
       jogging_panel_->setControlEnable(false);
       break;
     case BaseJob::Status::STOPPED:
     case BaseJob::Status::ALARM_STOPPED:
-      ui->actionPreview->setCheckable(true);
+      ui->actionFrame->setCheckable(true);
       jogging_panel_->setControlEnable(true);
       break;
     default:
