@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
      QMainWindow(parent),
      ui(new Ui::MainWindow),
      canvas_(nullptr),
+     job_dashboard_exist_(false),
      BaseContainer() {
   ui->setupUi(this);
   loadCanvas();
@@ -591,10 +592,12 @@ void MainWindow::registerEvents() {
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
     connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
+    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
     if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
       job_dashboard_->attachJob(jobs_.last());
     }
     job_dashboard_->show();
+    job_dashboard_exist_ = true;
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
     if (!serial_port.isOpen()) {
@@ -1240,7 +1243,9 @@ void MainWindow::onStartNewJob() {
   }
 
   gcode_player_->attachJob(jobs_.last());
-  if(job_dashboard_ != nullptr) job_dashboard_->attachJob(jobs_.last());
+  if(job_dashboard_exist_) {
+    job_dashboard_->attachJob(jobs_.last());
+  }
   jobs_.last()->start();
 }
 
@@ -1303,4 +1308,8 @@ void MainWindow::setJobStatus(BaseJob::Status status) {
     default:
       break;
   }
+}
+
+void MainWindow::jobDashboardFinish(int result) {
+  job_dashboard_exist_ = false;
 }
