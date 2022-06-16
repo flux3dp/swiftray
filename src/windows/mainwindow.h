@@ -60,7 +60,6 @@ signals:
 
 public slots:
   void onStartNewJob();
-  void onStartNewJobFromDashboard();
   void onStopJob();
   void onPauseJob();
   void onResumeJob();
@@ -113,6 +112,10 @@ private slots:
 
   void genPreviewWindow();
 
+  void setJobStatus(BaseJob::Status status);
+
+  void jobDashboardFinish(int result);
+
 private:
 
   void loadWidgets() override;
@@ -126,6 +129,7 @@ private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
   double x_, y_, r_, w_, h_;
+  bool job_dashboard_exist_;
 
   // Context menu of canvas
   QMenu *popMenu_;

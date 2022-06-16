@@ -36,6 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
      QMainWindow(parent),
      ui(new Ui::MainWindow),
      canvas_(nullptr),
+     job_dashboard_exist_(false),
      BaseContainer() {
   ui->setupUi(this);
   loadCanvas();
@@ -586,14 +587,17 @@ void MainWindow::registerEvents() {
     canvas_->document().paint(painter.get());
 
     job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJobFromDashboard);
+    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
     connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
     connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
     connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
+    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
     if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
       job_dashboard_->attachJob(jobs_.last());
     }
     job_dashboard_->show();
+    job_dashboard_exist_ = true;
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
     if (!serial_port.isOpen()) {
@@ -661,6 +665,7 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
   connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
   connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_player_, &GCodePlayer::jobStatusReport, this, &MainWindow::setJobStatus);
   connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
   });
@@ -1238,22 +1243,9 @@ void MainWindow::onStartNewJob() {
   }
 
   gcode_player_->attachJob(jobs_.last());
-  jobs_.last()->start();
-}
-
-void MainWindow::onStartNewJobFromDashboard() {
-  generateJob();
-  if (jobs_.empty()) {
-    return;
+  if(job_dashboard_exist_) {
+    job_dashboard_->attachJob(jobs_.last());
   }
-
-  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
-    qInfo() << "Blocked: No job is ready to run";
-    return;
-  }
-
-  gcode_player_->attachJob(jobs_.last());
-  job_dashboard_->attachJob(jobs_.last());
   jobs_.last()->start();
 }
 
@@ -1280,4 +1272,44 @@ void MainWindow::onResumeJob() {
   }
   auto job = jobs_.last();
   job->resume();
+}
+
+void MainWindow::setJobStatus(BaseJob::Status status) {
+  switch (status) {
+    case BaseJob::Status::READY:
+      ui->actionFrame->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    case BaseJob::Status::STARTING:
+      ui->actionFrame->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::RUNNING:
+      ui->actionFrame->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::PAUSED:
+      ui->actionFrame->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::FINISHED:
+      ui->actionFrame->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    case BaseJob::Status::ALARM:
+      ui->actionFrame->setCheckable(false);
+      jogging_panel_->setControlEnable(false);
+      break;
+    case BaseJob::Status::STOPPED:
+    case BaseJob::Status::ALARM_STOPPED:
+      ui->actionFrame->setCheckable(true);
+      jogging_panel_->setControlEnable(true);
+      break;
+    default:
+      break;
+  }
+}
+
+void MainWindow::jobDashboardFinish(int result) {
+  job_dashboard_exist_ = false;
 }

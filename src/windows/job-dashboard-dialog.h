@@ -34,6 +34,7 @@ signals:
     void stopBtnClicked();
     void pauseBtnClicked();
     void resumeBtnClicked();
+    void jobStatusReport(BaseJob::Status status);
 
 private:
     void registerEvents() override;

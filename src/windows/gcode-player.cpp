@@ -112,6 +112,7 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
     default:
       break;
   }
+  emit jobStatusReport(new_status);
 }
 
 void GCodePlayer::onProgressChanged(QVariant progress) {
