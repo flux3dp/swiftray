@@ -90,9 +90,6 @@ public:
   QString currentFile() { return current_file_; }
   bool currentFileModified() { return current_file_modified; }
 
-  // Frames rendered after start
-  int framesCount() const;
-
   // Setters:
   bool setActiveLayer(const QString &name);
 
@@ -167,8 +164,6 @@ private:
   QList<CmdPtr> redo2_stack_;
 
   QSize screen_size_;
-
-  int frames_count_;
 
   Canvas *canvas_;
 

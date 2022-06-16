@@ -11,7 +11,6 @@ Document::Document() noexcept:
      scroll_y_(0),
      scale_(1),
      screen_changed_(false),
-     frames_count_(0),
      width_(3000),
      height_(2000),
      font_(QFont("Tahoma", 100, QFont::Bold)),
@@ -276,8 +275,6 @@ void Document::ungroupSelections() {
 }
 
 void Document::paint(QPainter *painter) {
-  frames_count_++;
-
   int object_count = 0;
   for (const LayerPtr &layer : layers()) {
     if (screen_changed_) layer->flushCache();
@@ -285,10 +282,6 @@ void Document::paint(QPainter *painter) {
   }
 
   screen_changed_ = false;
-}
-
-int Document::framesCount() const {
-  return frames_count_;
 }
 
 QRectF Document::screenRect() const {

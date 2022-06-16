@@ -129,17 +129,6 @@ void Canvas::paint(QPainter *painter) {
   painter->restore();
 
   ctrl_ruler_.paint(painter);
-
-  // Calculate FPS
-  fps = (fps * 4 + float(++fps_count) * 1000 / fps_timer.elapsed()) / 5;
-  painter->setPen(Qt::black);
-  if (isDarkMode()) painter->setPen(Qt::white);
-  painter->drawText(QPointF(10, 20), "FPS: " + QString::number(round(fps * 100) / 100.0));
-  painter->drawText(QPointF(10, 40), "Frames: #" + QString::number(document().framesCount()));
-  if (fps_timer.elapsed() > 3000) {
-    fps_count = 0;
-    fps_timer.restart();
-  }
 }
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
