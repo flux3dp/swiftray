@@ -39,11 +39,14 @@ void GCodePlayer::registerEvents() {
   connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePlayer::exportGcode);
   connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
   connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
+  connect(ui->gcodeText, &QPlainTextEdit::textChanged, this, &GCodePlayer::checkGenerateGcode);
 
   connect(&serial_port, &SerialPort::connected, [=]() {
       qInfo() << "[SerialPort] Success connect!";
       ui->playBtn->setText(tr("Play"));
-      ui->playBtn->setEnabled(true);
+      if(!ui->gcodeText->toPlainText().isEmpty()) {
+        ui->playBtn->setEnabled(true);
+      }
   });
   connect(&serial_port, &SerialPort::disconnected, [=]() {
       qInfo() << "[SerialPort] Disconnected!";
@@ -51,6 +54,15 @@ void GCodePlayer::registerEvents() {
       ui->playBtn->setEnabled(false);
   });
 #endif
+}
+
+void GCodePlayer::checkGenerateGcode() {
+  if(ui->gcodeText->toPlainText().isEmpty()) {
+    ui->playBtn->setEnabled(false);
+  }
+  else if(serial_port.isOpen()) {
+    ui->playBtn->setEnabled(true);
+  }
 }
 
 void GCodePlayer::showError(const QString &msg) {
