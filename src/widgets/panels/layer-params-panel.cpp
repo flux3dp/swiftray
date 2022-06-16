@@ -125,8 +125,7 @@ void LayerParamsPanel::updateMovingComboBox() {
   ui->movingComboBox->clear();
   ui->movingComboBox->blockSignals(false);
   if (main_window_->canvas()->document().layers().length() > 1) {
-    ui->movingComboBox->setVisible(true);
-    ui->labelMoving->setVisible(true);
+    ui->movingComboBox->setEnabled(true);
     ui->movingComboBox->addItem(layer_->name());
     for (auto &layer: main_window_->canvas()->document().layers()) {
       if(layer.get() != layer_) {
@@ -139,8 +138,7 @@ void LayerParamsPanel::updateMovingComboBox() {
     }
   }
   else{
-    ui->movingComboBox->setVisible(false);
-    ui->labelMoving->setVisible(false);
+    ui->movingComboBox->setEnabled(false);
   }
 }
 
