@@ -45,6 +45,8 @@ private:
 
   void registerEvents() override;
 
+  void checkGenerateGcode();
+
   Ui::GCodePlayer *ui;
 
   BaseJob::Status status_;
