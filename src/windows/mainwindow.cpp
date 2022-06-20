@@ -858,55 +858,118 @@ void MainWindow::setToolbarFont() {
   connect(fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont selected_font) {
     QFont font = font_panel_->font();
     font.setFamily(selected_font.family());
-    font_panel_->setFont(font, font_panel_->lineHeight());
+    font_panel_->setFont(font);
   });
 
-  connect(spinBoxSize, spin_int_event, [=](int value) {
-    QFont font = font_panel_->font();
-    font.setPointSize(int(value));
-    font_panel_->setFont(font, font_panel_->lineHeight());
-  }); 
+  connect(spinBoxSize, spin_int_event, canvas(), &Canvas::setPointSize);
 
-  connect(doubleSpinBoxLetterSpacing, spin_event, [=](double value) {
-    QFont font = font_panel_->font();
-    font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, value);
-    font_panel_->setFont(font, font_panel_->lineHeight());
-  });
+  connect(spinBoxSize, spin_int_event, font_panel_, &FontPanel::setPointSize);
+
+  connect(doubleSpinBoxLetterSpacing, spin_event, canvas(), &Canvas::setLetterSpacing);
+
+  connect(doubleSpinBoxLetterSpacing, spin_event, font_panel_, &FontPanel::setLetterSpacing);
 
   connect(doubleSpinBoxLineHeight, spin_event, canvas(), &Canvas::setLineHeight);
 
   connect(doubleSpinBoxLineHeight, spin_event, font_panel_, &FontPanel::setLineHeight);
 
-  connect(boldToolButton, &QToolButton::toggled, [=](bool checked) {
-    QFont font = font_panel_->font();
-    font.setBold(checked);
-    font_panel_->setFont(font, font_panel_->lineHeight());
+  connect(boldToolButton, &QToolButton::toggled, canvas(), &Canvas::setBold);
+
+  connect(boldToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setBold);
+
+  connect(italicToolButton, &QToolButton::toggled, canvas(), &Canvas::setItalic);
+
+  connect(italicToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setItalic);
+
+  connect(underlineToolButton, &QToolButton::toggled, canvas(), &Canvas::setUnderline);
+
+  connect(underlineToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setUnderline);
+
+  connect(font_panel_, &FontPanel::fontChanged, [=](QFont new_font) {
+    fontComboBox->setCurrentFont(new_font);
   });
 
-  connect(italicToolButton, &QToolButton::toggled, [=](bool checked) {
-    QFont font = font_panel_->font();
-    font.setItalic(checked);
-    font_panel_->setFont(font, font_panel_->lineHeight());
+  connect(font_panel_, &FontPanel::fontPointSizeChanged, [=](int value){
+    spinBoxSize->setValue(value);
   });
 
-  connect(underlineToolButton, &QToolButton::toggled, [=](bool checked) {
-    QFont font = font_panel_->font();
-    font.setUnderline(checked);
-    font_panel_->setFont(font, font_panel_->lineHeight());
+  connect(font_panel_, &FontPanel::fontLetterSpacingChanged, [=](int value){
+    doubleSpinBoxLetterSpacing->setValue(value);
   });
 
-  connect(font_panel_, &FontPanel::fontSettingChanged, [=]() {
-    QFont font = font_panel_->font();
-    fontComboBox->setCurrentFont(font);
-    doubleSpinBoxLetterSpacing->setValue(font.letterSpacing());
-    spinBoxSize->setValue(font.pointSize());
-    boldToolButton->setChecked(font.bold());
-    italicToolButton->setChecked(font.italic());
-    underlineToolButton->setChecked(font.underline());
+  connect(font_panel_, &FontPanel::fontBoldChanged, [=](bool checked){
+    boldToolButton->setChecked(checked);
+  });
+
+  connect(font_panel_, &FontPanel::fontItalicChanged, [=](bool checked){
+    italicToolButton->setChecked(checked);
+  });
+
+  connect(font_panel_, &FontPanel::fontUnderlineChanged, [=](bool checked){
+    underlineToolButton->setChecked(checked);
   });
 
   connect(font_panel_, &FontPanel::lineHeightChanged, [=](double line_height) {
     doubleSpinBoxLineHeight->setValue(line_height);
+  });
+
+// the ui status is the same to the font panel
+  connect(canvas(), &Canvas::selectionsChanged, this, [=]() {
+    QFont first_qfont;
+    double first_linehight;
+    bool first_find = false, changed = false;
+    for (auto &shape : canvas_->document().selections()) {
+      if (shape->type() == ::Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        if(!first_find) {
+          first_linehight = t->lineHeight();
+          first_qfont = t->font();
+          first_find = true;
+        }
+        if(first_find && first_qfont.family() != t->font().family()) {
+          changed = true;
+          fontComboBox->blockSignals(true);
+          fontComboBox->setCurrentText("");
+          fontComboBox->blockSignals(false);
+        }
+        if(first_find && first_qfont.pointSize() != t->font().pointSize()) {
+          changed = true;
+          spinBoxSize->blockSignals(true);
+          spinBoxSize->blockSignals(false);
+        }
+        if(first_find && first_qfont.letterSpacing() != t->font().letterSpacing()) {
+          changed = true;
+          doubleSpinBoxLetterSpacing->blockSignals(true);
+          doubleSpinBoxLetterSpacing->blockSignals(false);
+        }
+        if(first_find && first_qfont.bold() != t->font().bold()) {
+          changed = true;
+          boldToolButton->blockSignals(true);
+          boldToolButton->setChecked(false);
+          boldToolButton->blockSignals(false);
+        }
+        if(first_find && first_qfont.italic() != t->font().italic()) {
+          changed = true;
+          italicToolButton->blockSignals(true);
+          italicToolButton->setChecked(false);
+          italicToolButton->blockSignals(false);
+        }
+        if(first_find && first_qfont.underline() != t->font().underline()) {
+          changed = true;
+          underlineToolButton->blockSignals(true);
+          underlineToolButton->setChecked(false);
+          underlineToolButton->blockSignals(false);
+        }
+        if(first_find && first_linehight != t->lineHeight()) {
+          changed = true;
+          doubleSpinBoxLineHeight->blockSignals(true);
+          doubleSpinBoxLineHeight->blockSignals(false);
+        }
+      }
+    }
+    if(first_find && !changed) {
+      fontComboBox->setCurrentText(fontComboBox->currentFont().family());
+    }
   });
 }
 

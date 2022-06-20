@@ -953,7 +953,10 @@ void Canvas::setFont(const QFont &font) {
     auto cmd = Commands::Joined();
     for (auto &shape: document().selections()) {
       if (shape->type() == Shape::Type::Text) {
-        cmd << Commands::SetFont((TextShape *) shape.get(), font);
+        auto *t = (TextShape *) shape.get();
+        QFont target_font = t->font();
+        target_font.setFamily(font.family());
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
       }
     }
     document().execute(cmd);
@@ -963,6 +966,111 @@ void Canvas::setFont(const QFont &font) {
   }
 
   font_ = font;
+}
+
+void Canvas::setPointSize(int point_size) {
+  QFont target_font = font_;
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        target_font = t->font();
+        target_font.setPointSize(point_size);
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(target_font);
+  }
+
+  font_ = target_font;
+}
+
+void Canvas::setLetterSpacing(double spacing) {
+  QFont target_font = font_;
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        target_font = t->font();
+        target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(target_font);
+  }
+
+  font_ = target_font;
+}
+
+void Canvas::setBold(bool bold) {
+  QFont target_font = font_;
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        target_font = t->font();
+        target_font.setBold(bold);
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(target_font);
+  }
+
+  font_ = target_font;
+}
+
+void Canvas::setItalic(bool italic) {
+  QFont target_font = font_;
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        target_font = t->font();
+        target_font.setItalic(italic);
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(target_font);
+  }
+
+  font_ = target_font;
+}
+
+void Canvas::setUnderline(bool underline) {
+  QFont target_font = font_;
+  if (!document().selections().isEmpty()) {
+    auto cmd = Commands::Joined();
+    for (auto &shape: document().selections()) {
+      if (shape->type() == Shape::Type::Text) {
+        auto *t = (TextShape *) shape.get();
+        target_font = t->font();
+        target_font.setUnderline(underline);
+        cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
+      }
+    }
+    document().execute(cmd);
+    emit selectionsChanged();
+  } else if (mode() == Mode::TextDrawing) {
+    ctrl_text_.target().setFont(target_font);
+  }
+
+  font_ = target_font;
 }
 
 void Canvas::setLineHeight(float line_height) {
