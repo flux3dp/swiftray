@@ -49,6 +49,7 @@ private:
   Ui::FontPanel *ui;
   MainWindow *main_window_;
   QFont font_;
+  double line_height_;
 
 signals:
   void lineHeightChanged(double line_height);

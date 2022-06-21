@@ -832,6 +832,7 @@ void MainWindow::setToolbarFont() {
 
   doubleSpinBoxLetterSpacing->setDecimals(1);
   doubleSpinBoxLetterSpacing->setMaximum(1000);
+  doubleSpinBoxLetterSpacing->setMinimum(-0.1);
   doubleSpinBoxLetterSpacing->setSingleStep(0.1);
   doubleSpinBoxLineHeight->setDecimals(1);
   doubleSpinBoxLineHeight->setMaximum(100);
@@ -893,7 +894,7 @@ void MainWindow::setToolbarFont() {
     spinBoxSize->setValue(value);
   });
 
-  connect(font_panel_, &FontPanel::fontLetterSpacingChanged, [=](int value){
+  connect(font_panel_, &FontPanel::fontLetterSpacingChanged, [=](double value){
     doubleSpinBoxLetterSpacing->setValue(value);
   });
 
@@ -917,7 +918,9 @@ void MainWindow::setToolbarFont() {
   connect(canvas(), &Canvas::selectionsChanged, this, [=]() {
     QFont first_qfont;
     double first_linehight;
-    bool first_find = false, changed = false;
+    bool first_find = false;
+    bool font_change = false, pt_change = false, ls_change = false, linehight_change = false;
+    bool bold_change = false, italic_change = false, underline_change = false;
     for (auto &shape : canvas_->document().selections()) {
       if (shape->type() == ::Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
@@ -926,49 +929,58 @@ void MainWindow::setToolbarFont() {
           first_qfont = t->font();
           first_find = true;
         }
-        if(first_find && first_qfont.family() != t->font().family()) {
-          changed = true;
-          fontComboBox->blockSignals(true);
-          fontComboBox->setCurrentText("");
-          fontComboBox->blockSignals(false);
-        }
-        if(first_find && first_qfont.pointSize() != t->font().pointSize()) {
-          changed = true;
-          spinBoxSize->blockSignals(true);
-          spinBoxSize->blockSignals(false);
-        }
-        if(first_find && first_qfont.letterSpacing() != t->font().letterSpacing()) {
-          changed = true;
-          doubleSpinBoxLetterSpacing->blockSignals(true);
-          doubleSpinBoxLetterSpacing->blockSignals(false);
-        }
-        if(first_find && first_qfont.bold() != t->font().bold()) {
-          changed = true;
-          boldToolButton->blockSignals(true);
-          boldToolButton->setChecked(false);
-          boldToolButton->blockSignals(false);
-        }
-        if(first_find && first_qfont.italic() != t->font().italic()) {
-          changed = true;
-          italicToolButton->blockSignals(true);
-          italicToolButton->setChecked(false);
-          italicToolButton->blockSignals(false);
-        }
-        if(first_find && first_qfont.underline() != t->font().underline()) {
-          changed = true;
-          underlineToolButton->blockSignals(true);
-          underlineToolButton->setChecked(false);
-          underlineToolButton->blockSignals(false);
-        }
-        if(first_find && first_linehight != t->lineHeight()) {
-          changed = true;
-          doubleSpinBoxLineHeight->blockSignals(true);
-          doubleSpinBoxLineHeight->blockSignals(false);
-        }
+        if(first_find && first_qfont.family() != t->font().family())                font_change = true;
+        if(first_find && first_qfont.pointSize() != t->font().pointSize())          pt_change = true;
+        if(first_find && first_qfont.letterSpacing() != t->font().letterSpacing())  ls_change = true;
+        if(first_find && first_qfont.bold() != t->font().bold())                    bold_change = true;
+        if(first_find && first_qfont.italic() != t->font().italic())                italic_change = true;
+        if(first_find && first_qfont.underline() != t->font().underline())          underline_change = true;
+        if(first_find && first_linehight != t->lineHeight())                        linehight_change = true;
       }
     }
-    if(first_find && !changed) {
+    if(font_change) {
+      fontComboBox->blockSignals(true);
+      fontComboBox->setCurrentText("");
+      fontComboBox->blockSignals(false);
+    }
+    else if(first_find) {
+      fontComboBox->setCurrentText(first_qfont.family());
+    }
+    else {
       fontComboBox->setCurrentText(fontComboBox->currentFont().family());
+    }
+    if(pt_change) {
+      spinBoxSize->blockSignals(true);
+      spinBoxSize->setSpecialValueText(tr(" "));
+      spinBoxSize->setValue(0);
+      spinBoxSize->blockSignals(false);
+    }
+    if(ls_change) {
+      doubleSpinBoxLetterSpacing->blockSignals(true);
+      doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
+      doubleSpinBoxLetterSpacing->setValue(-0.1);
+      doubleSpinBoxLetterSpacing->blockSignals(false);
+    }
+    if(bold_change) {
+      boldToolButton->blockSignals(true);
+      boldToolButton->setChecked(false);
+      boldToolButton->blockSignals(false);
+    }
+    if(italic_change) {
+      italicToolButton->blockSignals(true);
+      italicToolButton->setChecked(false);
+      italicToolButton->blockSignals(false);
+    }
+    if(underline_change) {
+      underlineToolButton->blockSignals(true);
+      underlineToolButton->setChecked(false);
+      underlineToolButton->blockSignals(false);
+    }
+    if(linehight_change) {
+      doubleSpinBoxLineHeight->blockSignals(true);
+      doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
+      doubleSpinBoxLineHeight->setValue(0);
+      doubleSpinBoxLineHeight->blockSignals(false);
     }
   });
 }
