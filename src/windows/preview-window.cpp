@@ -4,6 +4,7 @@
 #include <QDebug>
 #include "preview-window.h"
 #include "ui_preview-window.h"
+#include <windows/osxwindow.h>
 
 #include <QGraphicsView>
 #include <QGestureEvent>
@@ -29,6 +30,12 @@ private:
 PathGraphicsPreview::PathGraphicsPreview(QGraphicsScene *scene, QWidget *parent)
         : QGraphicsView(scene, parent)
 {
+  // Background color outside working area
+  setBackgroundBrush(QBrush(
+    isDarkMode() ? QColor("#454545") : QColor("#F0F0F0"), 
+    Qt::SolidPattern)
+  );
+  
   setDragMode(ScrollHandDrag); // mouse drag
 
   grabGesture(Qt::PinchGesture);
