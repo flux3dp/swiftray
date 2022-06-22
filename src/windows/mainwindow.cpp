@@ -918,65 +918,65 @@ void MainWindow::setToolbarFont() {
   connect(canvas(), &Canvas::selectionsChanged, this, [=]() {
     QFont first_qfont;
     double first_linehight;
-    bool first_find = false;
-    bool font_change = false, pt_change = false, ls_change = false, linehight_change = false;
-    bool bold_change = false, italic_change = false, underline_change = false;
+    bool has_txt = false;
+    bool is_font_changed = false, is_pt_changed = false, is_ls_changed = false, is_linehight_changed = false;
+    bool is_bold_changed = false, is_italic_changed = false, is_underline_changed = false;
     for (auto &shape : canvas_->document().selections()) {
       if (shape->type() == ::Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
-        if(!first_find) {
+        if(!has_txt) {
           first_linehight = t->lineHeight();
           first_qfont = t->font();
-          first_find = true;
+          has_txt = true;
         }
-        if(first_find && first_qfont.family() != t->font().family())                font_change = true;
-        if(first_find && first_qfont.pointSize() != t->font().pointSize())          pt_change = true;
-        if(first_find && first_qfont.letterSpacing() != t->font().letterSpacing())  ls_change = true;
-        if(first_find && first_qfont.bold() != t->font().bold())                    bold_change = true;
-        if(first_find && first_qfont.italic() != t->font().italic())                italic_change = true;
-        if(first_find && first_qfont.underline() != t->font().underline())          underline_change = true;
-        if(first_find && first_linehight != t->lineHeight())                        linehight_change = true;
+        if(has_txt && first_qfont.family() != t->font().family())                is_font_changed = true;
+        if(has_txt && first_qfont.pointSize() != t->font().pointSize())          is_pt_changed = true;
+        if(has_txt && first_qfont.letterSpacing() != t->font().letterSpacing())  is_ls_changed = true;
+        if(has_txt && first_qfont.bold() != t->font().bold())                    is_bold_changed = true;
+        if(has_txt && first_qfont.italic() != t->font().italic())                is_italic_changed = true;
+        if(has_txt && first_qfont.underline() != t->font().underline())          is_underline_changed = true;
+        if(has_txt && first_linehight != t->lineHeight())                        is_linehight_changed = true;
       }
     }
-    if(font_change) {
+    if(is_font_changed) {
       fontComboBox->blockSignals(true);
       fontComboBox->setCurrentText("");
       fontComboBox->blockSignals(false);
     }
-    else if(first_find) {
+    else if(has_txt) {
       fontComboBox->setCurrentText(first_qfont.family());
     }
     else {
       fontComboBox->setCurrentText(fontComboBox->currentFont().family());
     }
-    if(pt_change) {
+    if(is_pt_changed) {
       spinBoxSize->blockSignals(true);
       spinBoxSize->setSpecialValueText(tr(" "));
       spinBoxSize->setValue(0);
       spinBoxSize->blockSignals(false);
     }
-    if(ls_change) {
+    if(is_ls_changed) {
       doubleSpinBoxLetterSpacing->blockSignals(true);
       doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
       doubleSpinBoxLetterSpacing->setValue(-0.1);
       doubleSpinBoxLetterSpacing->blockSignals(false);
     }
-    if(bold_change) {
+    if(is_bold_changed) {
       boldToolButton->blockSignals(true);
       boldToolButton->setChecked(false);
       boldToolButton->blockSignals(false);
     }
-    if(italic_change) {
+    if(is_italic_changed) {
       italicToolButton->blockSignals(true);
       italicToolButton->setChecked(false);
       italicToolButton->blockSignals(false);
     }
-    if(underline_change) {
+    if(is_underline_changed) {
       underlineToolButton->blockSignals(true);
       underlineToolButton->setChecked(false);
       underlineToolButton->blockSignals(false);
     }
-    if(linehight_change) {
+    if(is_linehight_changed) {
       doubleSpinBoxLineHeight->blockSignals(true);
       doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
       doubleSpinBoxLineHeight->setValue(0);

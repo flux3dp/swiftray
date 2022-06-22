@@ -77,28 +77,28 @@ void FontPanel::registerEvents() {
   connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {
     QFont first_qfont;
     double first_linehight;
-    bool first_find = false;
-    bool font_change = false, pt_change = false, ls_change = false, linehight_change = false;
-    bool bold_change = false, italic_change = false, underline_change = false;
+    bool has_txt = false;
+    bool is_font_changed = false, is_pt_changed = false, is_ls_changed = false, is_linehight_changed = false;
+    bool is_bold_changed = false, is_italic_changed = false, is_underline_changed = false;
     for (auto &shape : main_window_->canvas()->document().selections()) {
       if (shape->type() == ::Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
-        if(!first_find) {
+        if(!has_txt) {
           first_linehight = t->lineHeight();
           first_qfont = t->font();
-          first_find = true;
+          has_txt = true;
         }
-        if(first_find && first_qfont.family() != t->font().family())                font_change = true;
-        if(first_find && first_qfont.pointSize() != t->font().pointSize())          pt_change = true;
-        if(first_find && first_qfont.letterSpacing() != t->font().letterSpacing())  ls_change = true;
-        if(first_find && first_qfont.bold() != t->font().bold())                    bold_change = true;
-        if(first_find && first_qfont.italic() != t->font().italic())                italic_change = true;
-        if(first_find && first_qfont.underline() != t->font().underline())          underline_change = true;
-        if(first_find && first_linehight != t->lineHeight())                        linehight_change = true;
+        if(has_txt && first_qfont.family() != t->font().family())                is_font_changed = true;
+        if(has_txt && first_qfont.pointSize() != t->font().pointSize())          is_pt_changed = true;
+        if(has_txt && first_qfont.letterSpacing() != t->font().letterSpacing())  is_ls_changed = true;
+        if(has_txt && first_qfont.bold() != t->font().bold())                    is_bold_changed = true;
+        if(has_txt && first_qfont.italic() != t->font().italic())                is_italic_changed = true;
+        if(has_txt && first_qfont.underline() != t->font().underline())          is_underline_changed = true;
+        if(has_txt && first_linehight != t->lineHeight())                        is_linehight_changed = true;
       }
     }
-    if(first_find) {
-      if(font_change) {
+    if(has_txt) {
+      if(is_font_changed) {
         ui->fontComboBox->blockSignals(true);
         ui->fontComboBox->setCurrentText("");
         ui->fontComboBox->blockSignals(false);
@@ -106,7 +106,7 @@ void FontPanel::registerEvents() {
       else {
         ui->fontComboBox->setCurrentText(first_qfont.family());
       }
-      if(pt_change) {
+      if(is_pt_changed) {
         ui->fontSizeSpinBox->blockSignals(true);
         ui->fontSizeSpinBox->setSpecialValueText(tr(" "));
         ui->fontSizeSpinBox->setValue(0);
@@ -115,7 +115,7 @@ void FontPanel::registerEvents() {
       else {
         ui->fontSizeSpinBox->setValue(first_qfont.pointSize());
       }
-      if(ls_change) {
+      if(is_ls_changed) {
         ui->letterSpacingSpinBox->blockSignals(true);
         ui->letterSpacingSpinBox->setSpecialValueText(tr(" "));
         ui->letterSpacingSpinBox->setValue(-0.1);
@@ -124,7 +124,7 @@ void FontPanel::registerEvents() {
       else {
         ui->letterSpacingSpinBox->setValue(first_qfont.letterSpacing());
       }
-      if(bold_change) {
+      if(is_bold_changed) {
         ui->boldToolButton->blockSignals(true);
         ui->boldToolButton->setChecked(false);
         font_.setBold(false);
@@ -133,7 +133,7 @@ void FontPanel::registerEvents() {
       else {
         ui->boldToolButton->setChecked(first_qfont.bold());
       }
-      if(italic_change) {
+      if(is_italic_changed) {
         ui->italicToolButton->blockSignals(true);
         ui->italicToolButton->setChecked(false);
         font_.setItalic(false);
@@ -142,7 +142,7 @@ void FontPanel::registerEvents() {
       else {
         ui->italicToolButton->setChecked(first_qfont.italic());
       }
-      if(underline_change) {
+      if(is_underline_changed) {
         ui->underlineToolButton->blockSignals(true);
         ui->underlineToolButton->setChecked(false);
         font_.setUnderline(false);
@@ -151,7 +151,7 @@ void FontPanel::registerEvents() {
       else {
         ui->underlineToolButton->setChecked(first_qfont.underline());
       }
-      if(linehight_change) {
+      if(is_linehight_changed) {
         ui->lineHeightSpinBox->blockSignals(true);
         ui->lineHeightSpinBox->setSpecialValueText(tr(" "));
         ui->lineHeightSpinBox->setValue(0);
