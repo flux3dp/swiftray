@@ -968,11 +968,21 @@ void MainWindow::setToolbarTransform() {
     r_ = r;
     w_ = w/10;
     h_ = h/10;
+    doubleSpinBoxX->blockSignals(true);
+    doubleSpinBoxY->blockSignals(true);
+    doubleSpinBoxRotation->blockSignals(true);
+    doubleSpinBoxWidth->blockSignals(true);
+    doubleSpinBoxHeight->blockSignals(true);
     doubleSpinBoxX->setValue(x/10);
     doubleSpinBoxY->setValue(y/10);
     doubleSpinBoxRotation->setValue(r);
     doubleSpinBoxWidth->setValue(w/10);
     doubleSpinBoxHeight->setValue(h/10);
+    doubleSpinBoxX->blockSignals(false);
+    doubleSpinBoxY->blockSignals(false);
+    doubleSpinBoxRotation->blockSignals(false);
+    doubleSpinBoxWidth->blockSignals(false);
+    doubleSpinBoxHeight->blockSignals(false);
   });
 
   connect(transform_panel_, &TransformPanel::transformPanelUpdated, [=](double x, double y, double r, double w, double h) {

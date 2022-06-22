@@ -72,11 +72,21 @@ void TransformPanel::registerEvents() {
     r_ = r;
     w_ = w / 10;
     h_ = h / 10;
+    ui->xSpinBox->blockSignals(true);
+    ui->ySpinBox->blockSignals(true);
+    ui->rotationSpinBox->blockSignals(true);
+    ui->widthSpinBox->blockSignals(true);
+    ui->heightSpinBox->blockSignals(true);
     ui->xSpinBox->setValue(x_);
     ui->ySpinBox->setValue(y_);
     ui->rotationSpinBox->setValue(r_);
     ui->widthSpinBox->setValue(w_);
     ui->heightSpinBox->setValue(h_);
+    ui->xSpinBox->blockSignals(false);
+    ui->ySpinBox->blockSignals(false);
+    ui->rotationSpinBox->blockSignals(false);
+    ui->widthSpinBox->blockSignals(false);
+    ui->heightSpinBox->blockSignals(false);
   });
 
   connect(main_window_, &MainWindow::toolbarTransformChanged, [=](double x, double y, double r, double w, double h) {
