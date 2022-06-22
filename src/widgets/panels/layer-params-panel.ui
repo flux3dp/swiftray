@@ -101,6 +101,9 @@
            <property name="text">
             <string>參數</string>
            </property>
+           <property name="alignment">
+            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+           </property>
           </widget>
          </item>
          <item>
