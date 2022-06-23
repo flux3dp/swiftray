@@ -1,3 +1,4 @@
+#include<QDebug>
 #include <QMessageBox>
 #include <QSettings>
 #include "preferences-window.h"
@@ -11,6 +12,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   initializeContainer();
   setTabWidget();
   setLanguageComboBox();
+  ui->checkBox->setCheckState(Qt::Unchecked);
 
   connect(ui->buttonBox, &QDialogButtonBox::accepted, [=](){
     QSettings settings;
@@ -21,7 +23,12 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
       msgbox.setInformativeText(tr("Please restart Swiftray to enable new settings."));
       msgbox.exec();
     }
+    emit setSpeedMode(ui->checkBox->checkState());
   });
+}
+
+bool PreferencesWindow::isHighSpeedMode() {
+  return ui->checkBox->checkState();
 }
 
 void PreferencesWindow::setLanguageComboBox() {

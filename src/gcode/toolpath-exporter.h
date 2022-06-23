@@ -16,7 +16,7 @@ class ToolpathExporter {
 public:
   ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept;
 
-  void convertStack(const QList<LayerPtr> &layers);
+  void convertStack(const QList<LayerPtr> &layers, bool is_high_speed);
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 
@@ -76,4 +76,5 @@ private:
 
   QPointF current_pos_; // in unit of mm
   qreal padding_mm_ = 10;
+  bool is_high_speed_;
 };

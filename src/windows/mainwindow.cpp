@@ -64,6 +64,7 @@ void MainWindow::loadSettings() {
     QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
+  is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
 }
 
 void MainWindow::loadCanvas() {
@@ -308,7 +309,7 @@ void MainWindow::exportGCodeFile() {
   ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
 
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers());
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
@@ -610,7 +611,7 @@ void MainWindow::registerEvents() {
     auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
     ToolpathExporter exporter(gen_outline_scanning_gcode.get(), canvas_->document().settings().dpmm());
     exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-    exporter.convertStack(canvas_->document().layers());
+    exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
     // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
     // Approach 1: use gcode player
@@ -671,6 +672,9 @@ void MainWindow::registerEvents() {
   });
   connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
+  });
+  connect(preferences_window_, &PreferencesWindow::setSpeedMode, [=](bool is_high_speed) {
+    is_high_speed_mode_ = is_high_speed;
   });
 }
 
@@ -1186,7 +1190,7 @@ void MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers());
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
 }
 
@@ -1194,14 +1198,14 @@ void MainWindow::genPreviewWindow() {
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
   ToolpathExporter preview_exporter(preview_path_generator.get(), canvas_->document().settings().dpmm());
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  preview_exporter.convertStack(canvas_->document().layers());
+  preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
   PreviewWindow *pw = new PreviewWindow(this,
                                         canvas_->document().width() / 10,
                                         canvas_->document().height() / 10);
   auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   ToolpathExporter gcode_exporter(gcode_generator.get(), canvas_->document().settings().dpmm());
   gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  gcode_exporter.convertStack(canvas_->document().layers());
+  gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
   QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
   QTime last_gcode_timestamp{0, 0};

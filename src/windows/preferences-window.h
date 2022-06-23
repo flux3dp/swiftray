@@ -15,10 +15,15 @@ public:
 
   ~PreferencesWindow();
 
+  bool isHighSpeedMode();
+
 private:
   Ui::PreferencesWindow *ui;
 
   void setLanguageComboBox();
 
   void setTabWidget();
+
+signals:
+  void setSpeedMode(bool is_high_speed);
 };
