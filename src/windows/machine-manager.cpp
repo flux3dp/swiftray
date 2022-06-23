@@ -58,9 +58,9 @@ void MachineManager::registerEvents() {
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
     QListWidgetItem *machine_item = new QListWidgetItem;
     auto machine = MachineSettings::database();
-    machine[0].name = ("New Machine");
+    machine[0].name = tr("New Machine");
     machine_item->setData(Qt::UserRole, machine[0].toJson());
-    machine_item->setText("New Machine");
+    machine_item->setText(machine[0].name);
     ui->machineList->addItem(machine_item);
     ui->removeBtn->setEnabled(true);
   });
