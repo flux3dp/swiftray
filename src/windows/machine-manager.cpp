@@ -39,6 +39,9 @@ void MachineManager::loadSettings() {
       ui->machineList->setCurrentRow(ui->machineList->count() - 1);
     }
   }
+  if(ui->machineList->count() == 1) {
+    ui->removeBtn->setEnabled(false);
+  }
 }
 
 void MachineManager::loadStyles() {
@@ -55,15 +58,20 @@ void MachineManager::registerEvents() {
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
     QListWidgetItem *machine_item = new QListWidgetItem;
     auto machine = MachineSettings::database();
+    machine[0].name = tr("New Machine");
     machine_item->setData(Qt::UserRole, machine[0].toJson());
-    machine_item->setText("New Machine");
+    machine_item->setText(machine[0].name);
     ui->machineList->addItem(machine_item);
+    ui->removeBtn->setEnabled(true);
   });
 
   connect(ui->removeBtn, &QAbstractButton::clicked, [=]() {
     if (ui->machineList->currentItem() != nullptr) {
       auto item = ui->machineList->currentItem();
       ui->machineList->takeItem(ui->machineList->row(item));
+    }
+    if(ui->machineList->count() == 1) {
+      ui->removeBtn->setEnabled(false);
     }
   });
 
