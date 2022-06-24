@@ -65,16 +65,13 @@
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Speed Optimization</string>
+          <string>Speed Optimization
+(Lazervida only)</string>
          </property>
         </widget>
        </item>
-       <item alignment="Qt::AlignHCenter">
-        <widget class="QCheckBox" name="checkBox">
-         <property name="text">
-          <string>(Lazervida only)</string>
-         </property>
-        </widget>
+       <item>
+        <widget class="QComboBox" name="comboBoxSpeedOptimization"/>
        </item>
       </layout>
      </item>
