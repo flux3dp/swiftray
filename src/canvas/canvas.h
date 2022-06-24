@@ -184,6 +184,16 @@ public slots:
 
   void setFont(const QFont &font);
 
+  void setPointSize(int point_size);
+
+  void setLetterSpacing(double spacing);
+
+  void setBold(bool bold);
+
+  void setItalic(bool italic);
+
+  void setUnderline(bool underline);
+
   void emitAllChanges();
 
   void setLineHeight(float line_height);
