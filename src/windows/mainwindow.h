@@ -130,6 +130,7 @@ private:
   Canvas *canvas_;
   double x_, y_, r_, w_, h_;
   bool job_dashboard_exist_;
+  bool is_high_speed_mode_ = false;
 
   // Context menu of canvas
   QMenu *popMenu_;

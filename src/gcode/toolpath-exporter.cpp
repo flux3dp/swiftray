@@ -21,7 +21,8 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcep
  * @brief Convert all visible layers in the document into gcode (result is stored in gcode generator)
  * @param layers MUST contain at least one layer
  */
-void ToolpathExporter::convertStack(const QList<LayerPtr> &layers) {
+void ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed) {
+  is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
   // Pre cmds
@@ -243,8 +244,12 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   gen_->useRelativePositioning();
 
   // Start raster
-  rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode);
-  //rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode);
+  if(is_high_speed_) {
+    rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode);
+  }
+  else {
+    rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode);
+  }
 
   gen_->useAbsolutePositioning();
 
