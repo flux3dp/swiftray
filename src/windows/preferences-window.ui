@@ -65,14 +65,14 @@
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>High Speed Mode</string>
+          <string>Speed Optimization</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item alignment="Qt::AlignHCenter">
         <widget class="QCheckBox" name="checkBox">
          <property name="text">
-          <string>High Speed</string>
+          <string>(Lazervida only)</string>
          </property>
         </widget>
        </item>
