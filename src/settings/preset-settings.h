@@ -109,11 +109,12 @@ private:
       QFile file(":/resources/parameters/"+file_list[i]);
       file.open(QFile::ReadOnly);
       // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
-      auto preset = Preset::fromJson(QJsonDocument::fromJson(file.readAll()).object());
+      auto file_json = QJsonDocument::fromJson(file.readAll()).object();
+      auto preset = Preset::fromJson(file_json);
       qInfo() << file.fileName();
-      preset.name = file_list[i].left(file_list[i].lastIndexOf('.'));
+      preset.name = file_json.take("name").toString();
       presets_ << preset;
-      if (preset.name == "5W") {
+      if (preset.name.indexOf("5W") > -1) {
         setCurrentIndex(i);
       }
     }
