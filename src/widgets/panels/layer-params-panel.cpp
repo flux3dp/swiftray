@@ -11,7 +11,7 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      ui(new Ui::LayerParamsPanel),
      main_window_(main_window),
      layer_(nullptr),
-     preset_previous_index_(0),
+     preset_previous_index_(-1),
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
@@ -36,13 +36,14 @@ void LayerParamsPanel::loadSettings() {
   }
   ui->presetComboBox->addItem(tr("Custom"));
   ui->presetComboBox->addItem(tr("More..."));
+  preset_previous_index_ = -1;
 }
 
 void LayerParamsPanel::registerEvents() {
   connect(preset_settings_, &PresetSettings::currentIndexChanged, [=]() {
     int index_to_recover = preset_previous_index_;
     loadSettings();
-    if (index_to_recover > ui->presetComboBox->count() - 3) {
+    if (index_to_recover > ui->presetComboBox->count() - 3 || index_to_recover < 0) {
       setToCustom();
     } else {
       ui->presetComboBox->setCurrentIndex(index_to_recover);
@@ -69,8 +70,8 @@ void LayerParamsPanel::registerEvents() {
         emit main_window_->presetSettingsChanged();
         loadSettings();
       }
-      ui->presetComboBox->setCurrentIndex(index_to_recover);
-      if (layer_ != nullptr) layer_->setParameterIndex(index_to_recover);
+      setToCustom();
+      if (layer_ != nullptr) layer_->setParameterIndex(-1);
     } else if (index >= 0 && index < ui->presetComboBox->count() - 2) {
       auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->powerSpinBox->blockSignals(true);
@@ -88,8 +89,8 @@ void LayerParamsPanel::registerEvents() {
       preset_previous_index_ = index;
       layer_->setParameterIndex(index);
     } else {
-      preset_previous_index_ = index;
-      layer_->setParameterIndex(index);
+      preset_previous_index_ = -1;
+      layer_->setParameterIndex(-1);
     }
   });
   connect(ui->movingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
@@ -144,12 +145,21 @@ void LayerParamsPanel::updateMovingComboBox() {
 
 void LayerParamsPanel::updateLayer(Layer *layer) {
   int previous_index = layer->parameterIndex();
+  if(previous_index < 0) previous_index = ui->presetComboBox->count() - 2;
   layer_ = layer;
   ui->presetParamLabel->setText(tr("Parameter Settings") + "("+ layer->name() + ")");
+  ui->powerSpinBox->blockSignals(true);
+  ui->speedSpinBox->blockSignals(true);
+  ui->repeatSpinBox->blockSignals(true);
+  ui->presetComboBox->blockSignals(true);
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
   ui->presetComboBox->setCurrentIndex(previous_index);
+  ui->powerSpinBox->blockSignals(false);
+  ui->speedSpinBox->blockSignals(false);
+  ui->repeatSpinBox->blockSignals(false);
+  ui->presetComboBox->blockSignals(false);
   updateMovingComboBox();
 }
 
@@ -158,5 +168,7 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   we change the preset combobox to `custom` whenever user changes the parameters.
 */
 void LayerParamsPanel::setToCustom() {
+  ui->presetComboBox->blockSignals(true);
   ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 2);
+  ui->presetComboBox->blockSignals(false);
 }

@@ -20,6 +20,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      speed_(20),
      power_(30),
      repeat_(1),
+     parameter_index_(-1),
      is_locked_(false),
      is_visible_(true),
      step_height_(0),
