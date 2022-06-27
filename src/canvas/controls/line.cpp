@@ -17,7 +17,19 @@ bool Line::mouseMoveEvent(QMouseEvent *e) {
 bool Line::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.moveTo(document().mousePressedCanvasCoord());
-  path.lineTo(document().getCanvasCoord(e->pos()));
+  QPointF new_point = e->pos();
+  if(direction_locked_) {
+    
+    qreal x_move = abs(e->pos().x() - document().mousePressedCanvasCoord().x());
+    qreal y_move = abs(e->pos().y() - document().mousePressedCanvasCoord().y());
+    if(x_move >= y_move) {
+      new_point.setY(document().mousePressedCanvasCoord().y());
+    }
+    else {
+      new_point.setX(document().mousePressedCanvasCoord().x());
+    }
+  }
+  path.lineTo(document().getCanvasCoord(new_point));
   ShapePtr new_line = std::make_shared<PathShape>(path);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_line),
@@ -33,7 +45,21 @@ void Line::paint(QPainter *painter) {
   QPen pen(document().activeLayer()->color(), 3, Qt::SolidLine);
   pen.setCosmetic(true);
   painter->setPen(pen);
-  painter->drawLine(document().mousePressedCanvasCoord(), cursor_);
+  if(direction_locked_) {
+    QPointF new_point = cursor_;
+    qreal x_move = abs(cursor_.x() - document().mousePressedCanvasCoord().x());
+    qreal y_move = abs(cursor_.y() - document().mousePressedCanvasCoord().y());
+    if(x_move >= y_move) {
+      new_point.setY(document().mousePressedCanvasCoord().y());
+    }
+    else {
+      new_point.setX(document().mousePressedCanvasCoord().x());
+    }
+    painter->drawLine(document().mousePressedCanvasCoord(), new_point);
+  }
+  else {
+    painter->drawLine(document().mousePressedCanvasCoord(), cursor_);
+  }
 }
 
 bool Line::keyPressEvent(QKeyEvent *e) {
@@ -47,4 +73,12 @@ bool Line::keyPressEvent(QKeyEvent *e) {
 void Line::exit() {
   cursor_ = QPointF();
   canvas().setMode(Canvas::Mode::Selecting);
+}
+
+bool Line::isDirectionLock() const {
+  return direction_locked_;
+}
+
+void Line::setDirectionLock(bool direction_lock) {
+  direction_locked_ = direction_lock;
 }
