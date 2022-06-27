@@ -4,6 +4,7 @@
 #include <windows/mainwindow.h>
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
+#include <windows/osxwindow.h>
 
 LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -31,7 +32,7 @@ void LayerPanel::loadWidgets() {
   add_layer_btn_ = new QToolButton(ui->layerList);
   add_layer_btn_->setObjectName("btnAddLayer");
   add_layer_btn_->setCursor(Qt::PointingHandCursor);
-  add_layer_btn_->setIcon(QIcon(":/images/icon-plus.png"));
+  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
   add_layer_btn_->raise();
