@@ -88,7 +88,7 @@ void LayerParamsPanel::registerEvents() {
       layer_->setRepeat(p.repeat);
       preset_previous_index_ = index;
       layer_->setParameterIndex(index);
-    } else {
+    } else if(index == ui->presetComboBox->count() - 2) {
       preset_previous_index_ = -1;
       layer_->setParameterIndex(-1);
     }
