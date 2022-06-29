@@ -33,11 +33,29 @@ CONFIG += c++17
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
     QMAKE_CXXFLAGS_RELEASE += -Os
-    isEmpty($$(MINGW64_PATH)) {
-        message(MINGW64_PATH is empty)
-    }
+
     # libxml2, potrace, boost, opencv
-    LIBS += -L$$(MINGW64_PATH)/lib
+    win32-msvc {
+        LIBS += "C:\Dev\libraries\libxml2\lib\libxml2.dll.a"
+        LIBS += "C:\Dev\libraries\potrace\libpotrace.dll.a"
+        LIBS += -LC:\Dev\libraries\potrace
+        LIBS += -LC:\Dev\boost_1_78_0_msvc\lib64-msvc-14.1
+        LIBS += -LC:\tools\opencv\build\x64\vc14\lib
+        LIBS += -lboost_thread-vc141-mt-x64-1_78
+        LIBS += -lboost_system-vc141-mt-x64-1_78
+        LIBS += -lopencv_world455
+    }
+    win32-g++ {
+        # MINGW
+        LIBS += -L$$(MINGW64_PATH)/lib
+        LIBS += -lboost_thread-mt
+        LIBS += -lboost_system-mt
+        LIBS += -lopencv_core
+        LIBS += -lopencv_imgproc
+        LIBS += -lxml2
+        LIBS += -lpotrace
+        LIBS += -llibpotrace
+    }
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
@@ -49,24 +67,48 @@ macx{
     LIBS += -L"/usr/local/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
     LIBS += -L"/usr/local/opt/opencv/lib"
+
+    LIBS += -lboost_thread-mt
+    LIBS += -lboost_system-mt
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lxml2
+    LIBS += -lpotrace
+    LIBS += -llibpotrace
 }
+unix:!macx{
+    # TODO: Linux
+    LIBS += -lboost_thread-mt
+    LIBS += -lboost_system-mt
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lxml2
+    LIBS += -lpotrace
+    LIBS += -llibpotrace
+}
+
 ios {
     LIBS += -framework Foundation -framework UIKit
 }
-LIBS += -lxml2
-LIBS += -lboost_thread-mt
-LIBS += -lboost_system-mt
-LIBS += -lopencv_core
-LIBS += -lopencv_imgproc
-LIBS += -lpotrace
+
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 win32 {
     # boost, libxml2, potrace
-    INCLUDEPATH += $$(MINGW64_PATH)/include
-    INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
-    INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+    win32-g++ {
+        # MINGW
+        INCLUDEPATH += $$(MINGW64_PATH)/include
+        INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
+        INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+    }
+    win32-msvc {
+        INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
+        INCLUDEPATH += C:\tools\opencv\build\include
+        INCLUDEPATH += C:\Dev\libraries\potrace
+        INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
+        INCLUDEPATH += C:\Dev\libraries\libconv\include
+    }
 }
 macx{
     INCLUDEPATH += /usr/local/include
@@ -77,21 +119,42 @@ macx{
 }
 
 # Remove -Wall and -Wextra flag
-QMAKE_CFLAGS_WARN_ON -= -Wall
-QMAKE_CXXFLAGS_WARN_ON -= -Wall
-QMAKE_CFLAGS_WARN_ON -= -Wextra
-QMAKE_CXXFLAGS_WARN_ON -= -Wextra
-QMAKE_CXXFLAGS += -Wall
-# QMAKE_CXXFLAGS += -Wextra
-QMAKE_CXXFLAGS += -Wno-unused-local-typedef
-QMAKE_CXXFLAGS += -Wno-unused-variable
-QMAKE_CXXFLAGS += -Wno-reorder-ctor
-QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+win32 {
+    win32-g++ {
+        QMAKE_CFLAGS_WARN_ON -= -Wall
+        QMAKE_CXXFLAGS_WARN_ON -= -Wall
+        QMAKE_CFLAGS_WARN_ON -= -Wextra
+        QMAKE_CXXFLAGS_WARN_ON -= -Wextra
+        QMAKE_CXXFLAGS += -Wall
+        # QMAKE_CXXFLAGS += -Wextra
+        QMAKE_CXXFLAGS += -Wno-unused-local-typedef
+        QMAKE_CXXFLAGS += -Wno-unused-variable
+        QMAKE_CXXFLAGS += -Wno-reorder-ctor
+        QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+        QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
+    }
+    win32-msvc {
+        debug:QMAKE_CXXFLAGS += -bigobj
+    }
+}
+unix {
+    QMAKE_CFLAGS_WARN_ON -= -Wall
+    QMAKE_CXXFLAGS_WARN_ON -= -Wall
+    QMAKE_CFLAGS_WARN_ON -= -Wextra
+    QMAKE_CXXFLAGS_WARN_ON -= -Wextra
+    QMAKE_CXXFLAGS += -Wall
+    # QMAKE_CXXFLAGS += -Wextra
+    QMAKE_CXXFLAGS += -Wno-unused-local-typedef
+    QMAKE_CXXFLAGS += -Wno-unused-variable
+    QMAKE_CXXFLAGS += -Wno-reorder-ctor
+    QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+    QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
+}
 macx{
     # flag for clang only
     QMAKE_CXXFLAGS += -ferror-limit=1
+    QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 }
-QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
