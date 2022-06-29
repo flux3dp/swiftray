@@ -35,6 +35,10 @@ namespace Controls {
 
     bool isActive() override;
 
+    bool isDirectionLock() const;
+
+    void setDirectionLock(bool direction_lock);
+
   private:
     QPainterPath working_path_;
     QPointF cursor_;
@@ -42,6 +46,7 @@ namespace Controls {
     bool is_closing_curve_;
     QPointF curve_target_;
     QPointF last_ctrl_pt_;
+    bool direction_locked_;
   };
 
 }
