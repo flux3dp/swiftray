@@ -16,10 +16,21 @@ PathDraw::PathDraw(Canvas *canvas) : CanvasControl(canvas) {
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
+  direction_locked_ = false;
 }
 
 bool PathDraw::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if(direction_locked_ && working_path_.elementCount() !=0) {
+    QPointF reference_point = working_path_.elementAt(working_path_.elementCount()-1);
+    QPointF move_point = canvas_coord - reference_point;
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(reference_point.y());
+    }
+    else {
+      canvas_coord.setX(reference_point.x());
+    }
+  }
 
   curve_target_ = canvas_coord;
 
@@ -37,13 +48,34 @@ bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
   if ((canvas_coord - curve_target_).manhattanLength() < 10)
     return false;
   is_drawing_curve_ = true;
-  cursor_ = document().getCanvasCoord(e->pos());
+  if(direction_locked_) {
+    QPointF reference_point = curve_target_;
+    QPointF move_point = canvas_coord - reference_point;
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(reference_point.y());
+    }
+    else {
+      canvas_coord.setX(reference_point.x());
+    }
+  }
+  cursor_ = canvas_coord;
   return true;
 }
 
 bool PathDraw::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   *cursor = Qt::CrossCursor;
-  cursor_ = document().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if(direction_locked_ && working_path_.elementCount() !=0) {
+    QPointF reference_point = working_path_.elementAt(working_path_.elementCount()-1);
+    QPointF move_point = canvas_coord - reference_point;
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(reference_point.y());
+    }
+    else {
+      canvas_coord.setX(reference_point.x());
+    }
+  }
+  cursor_ = canvas_coord;
   return true;
 }
 
@@ -80,7 +112,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     } else {
       qInfo() << "Release"
               << "Write Line Point";
-      working_path_.lineTo(canvas_coord);
+      working_path_.lineTo(cursor_);
     }
   }
 
@@ -194,4 +226,12 @@ void PathDraw::exit() {
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
   canvas().setMode(Canvas::Mode::Selecting);
+}
+
+bool PathDraw::isDirectionLock() const {
+  return direction_locked_;
+}
+
+void PathDraw::setDirectionLock(bool direction_lock) {
+  direction_locked_ = direction_lock;
 }

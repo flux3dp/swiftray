@@ -146,6 +146,12 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
     transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
   }
 
+  if (!is_temp_direction_lock_) {
+    is_temp_direction_lock_ = true;
+    ctrl_line_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
+    ctrl_path_draw_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
+  }
+
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyPressEvent(e))
       return;
@@ -175,6 +181,13 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
     is_temp_scale_lock_ = false;
     transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
   }
+
+  if (is_temp_direction_lock_) {
+    is_temp_direction_lock_ = false;
+    ctrl_line_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
+    ctrl_path_draw_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
+  }
+
   for (auto &control : ctrls_) {
     if (control->isActive() && control->keyReleaseEvent(e))
       return;

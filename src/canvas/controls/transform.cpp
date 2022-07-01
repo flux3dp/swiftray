@@ -330,6 +330,14 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
+      if(scale_locked_) {
+        if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
+          translate_to_apply_.setY(0);
+        }
+        else {
+          translate_to_apply_.setX(0);
+        }
+      }
       applyMove(true);
       break;
     case Canvas::Mode::Rotating:
