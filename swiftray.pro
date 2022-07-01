@@ -32,7 +32,7 @@ macx{
     _BOOST_PATH = "/usr/local/Cellar/boost/1.78.0_1"
     LIBS += -L"/usr/lib"
     LIBS += -L"/usr/local/lib"
-    LIBS += -L"/usr/local/opt/libxml2/lib"
+    #LIBS += -L"/usr/local/opt/libxml2/lib"
     LIBS += -L"/usr/local/opt/opencv/lib"
     LIBS += -L"$$PWD/third_party/sentry/lib/macOS"
 }
@@ -57,7 +57,7 @@ win32 {
 }
 macx{
     INCLUDEPATH += /usr/local/include
-    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
+    #INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
 }
