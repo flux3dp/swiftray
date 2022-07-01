@@ -73,6 +73,7 @@ macx{
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
+    INCLUDEPATH += /usr/local/opt/icu4c/include
 }
 
 # Remove -Wall and -Wextra flag
