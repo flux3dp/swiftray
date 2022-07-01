@@ -34,6 +34,7 @@ macx{
     LIBS += -L"/usr/local/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
     LIBS += -L"/usr/local/opt/opencv/lib"
+    LIBS += -L"$$PWD/third_party/sentry/lib/macOS"
 }
 ios {
     LIBS += -framework Foundation -framework UIKit
@@ -44,6 +45,7 @@ LIBS += -lboost_system-mt
 LIBS += -lopencv_core
 LIBS += -lopencv_imgproc
 LIBS += -lpotrace
+LIBS += -lsentry
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src

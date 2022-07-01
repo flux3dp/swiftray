@@ -8,10 +8,12 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
+#include <sentry/include/sentry.h>
 
 #ifdef Q_OS_MACOS
 #define MACOS
 #endif
+
 
 int mainCLI(int argc, char *argv[]) {
   qInfo() << "Swiftray CLI interface";
@@ -26,6 +28,15 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  // Launch Crashpad with Sentry
+  sentry_options_t *options = sentry_options_new();
+  sentry_options_set_dsn(options, "https://examplePublicKey@o0.ingest.sentry.io/0");
+  sentry_options_set_release(options, "my-project-name@2.3.12");
+  sentry_init(options);
+  // Make sure everything flushes
+  auto sentryClose = qScopeGuard([] { sentry_close(); });
+
+
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
   QApplication app(argc, argv);
