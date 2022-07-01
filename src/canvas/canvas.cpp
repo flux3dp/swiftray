@@ -962,6 +962,7 @@ void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
 }
 
 void Canvas::setFont(const QFont &font) {
+  font_.setFamily(font.family());
   if (!document().selections().isEmpty()) {
     auto cmd = Commands::Joined();
     for (auto &shape: document().selections()) {
@@ -975,10 +976,8 @@ void Canvas::setFont(const QFont &font) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
-    ctrl_text_.target().setFont(font);
+    ctrl_text_.target().setFont(font_);
   }
-
-  font_ = font;
 }
 
 void Canvas::setPointSize(int point_size) {
@@ -996,6 +995,7 @@ void Canvas::setPointSize(int point_size) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
+    target_font.setPointSize(point_size);
     ctrl_text_.target().setFont(target_font);
   }
 
@@ -1017,6 +1017,7 @@ void Canvas::setLetterSpacing(double spacing) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
+    target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
     ctrl_text_.target().setFont(target_font);
   }
 
@@ -1038,6 +1039,7 @@ void Canvas::setBold(bool bold) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
+    target_font.setBold(bold);
     ctrl_text_.target().setFont(target_font);
   }
 
@@ -1059,6 +1061,7 @@ void Canvas::setItalic(bool italic) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
+    target_font.setItalic(italic);
     ctrl_text_.target().setFont(target_font);
   }
 
@@ -1080,6 +1083,7 @@ void Canvas::setUnderline(bool underline) {
     document().execute(cmd);
     emit selectionsChanged();
   } else if (mode() == Mode::TextDrawing) {
+    target_font.setUnderline(underline);
     ctrl_text_.target().setFont(target_font);
   }
 
