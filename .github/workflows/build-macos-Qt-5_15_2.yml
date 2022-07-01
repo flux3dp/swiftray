@@ -91,7 +91,7 @@ jobs:
           tree .
       - name: Copy crashpad_hanlder executable
         run: |
-          cp ${{ github.workspace }}/third_party/sentry/bin/macOS/crashpad_handler Swiftray.app/Contents/MacOS/
+          cp ${{ github.workspace }}/third_party/sentry/bin/macOS/crashpad_handler build/Swiftray.app/Contents/MacOS/
 
       #- uses: actions/upload-artifact@v3
       #  with:
