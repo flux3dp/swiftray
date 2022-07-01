@@ -12,7 +12,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   initializeContainer();
   setTabWidget();
   setLanguageComboBox();
-  ui->checkBox->setCheckState(Qt::Unchecked);
+  setSpeedOptimizationComboBox();
 
   connect(ui->buttonBox, &QDialogButtonBox::accepted, [=](){
     QSettings settings;
@@ -23,12 +23,12 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
       msgbox.setInformativeText(tr("Please restart Swiftray to enable new settings."));
       msgbox.exec();
     }
-    emit setSpeedMode(ui->checkBox->checkState());
+    emit setSpeedMode(ui->comboBoxSpeedOptimization->currentIndex());
   });
 }
 
 bool PreferencesWindow::isHighSpeedMode() {
-  return ui->checkBox->checkState();
+  return ui->comboBoxSpeedOptimization->currentIndex();
 }
 
 void PreferencesWindow::setLanguageComboBox() {
@@ -37,6 +37,12 @@ void PreferencesWindow::setLanguageComboBox() {
   QSettings settings;
   QVariant language_code = settings.value("window/language", 0);
   ui->comboBox->setCurrentIndex(language_code.toInt());
+}
+
+void PreferencesWindow::setSpeedOptimizationComboBox() {
+  ui->comboBoxSpeedOptimization->addItem("Off");
+  ui->comboBoxSpeedOptimization->addItem("On");
+  ui->comboBoxSpeedOptimization->setCurrentIndex(0);
 }
 
 void PreferencesWindow::setTabWidget() {

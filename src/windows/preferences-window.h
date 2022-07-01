@@ -22,6 +22,8 @@ private:
 
   void setLanguageComboBox();
 
+  void setSpeedOptimizationComboBox();
+
   void setTabWidget();
 
 signals:
