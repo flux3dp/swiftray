@@ -763,7 +763,11 @@ void MainWindow::setConnectionToolBar() {
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
     portComboBox_->clear();
     for (const QSerialPortInfo &info : infos) {
-      portComboBox_->addItem(info.portName());
+      if(info.portName().toStdString().compare(0,3,"cu.") == 0 ||
+      info.portName().toStdString().compare(0,13,"tty.Bluetooth") == 0) {}
+      else {
+        portComboBox_->addItem(info.portName());
+      }
     }
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
 
