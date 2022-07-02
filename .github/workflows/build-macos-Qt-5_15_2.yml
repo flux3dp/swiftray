@@ -89,9 +89,10 @@ jobs:
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
-      - name: Copy crashpad_hanlder executable
+      - name: Copy crashpad_hanlder executable and libsentry
         run: |
           cp ${{ github.workspace }}/third_party/sentry/bin/macOS/crashpad_handler build/Swiftray.app/Contents/MacOS/
+          cp ${{ github.workspace }}/third_party/sentry/lib/macOS/libsentry.dylib build/Swiftray.app/Contents/Frameworks/
 
       #- uses: actions/upload-artifact@v3
       #  with:
