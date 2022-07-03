@@ -30,12 +30,18 @@ int mainCLI(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   // Launch Crashpad with Sentry
   sentry_options_t *options = sentry_options_new();
-  sentry_options_set_dsn(options, "https://examplePublicKey@o0.ingest.sentry.io/0");
-  sentry_options_set_release(options, "my-project-name@2.3.12");
+  sentry_options_set_dsn(options, "https://3410c8aa491d46dbbcfe3b40d338d9c8@o1289850.ingest.sentry.io/6546119");
+  sentry_options_set_handler_path(options, "../Frameworks/crashpad_handler");
+  sentry_options_set_release(options, "Swiftray@0.0.6");
   sentry_init(options);
   // Make sure everything flushes
   auto sentryClose = qScopeGuard([] { sentry_close(); });
 
+  sentry_capture_event(sentry_value_new_message_event(
+  /*   level */ SENTRY_LEVEL_INFO,
+  /*  logger */ "custom",
+  /* message */ "It works!"
+));
 
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);

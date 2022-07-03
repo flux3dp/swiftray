@@ -91,7 +91,7 @@ jobs:
           tree .
       - name: Copy crashpad_hanlder executable and libsentry
         run: |
-          cp ${{ github.workspace }}/third_party/sentry/bin/macOS/crashpad_handler build/Swiftray.app/Contents/MacOS/
+          cp ${{ github.workspace }}/third_party/sentry/bin/macOS/crashpad_handler build/Swiftray.app/Contents/Frameworks/
           cp ${{ github.workspace }}/third_party/sentry/lib/macOS/libsentry.dylib build/Swiftray.app/Contents/Frameworks/
 
       #- uses: actions/upload-artifact@v3
