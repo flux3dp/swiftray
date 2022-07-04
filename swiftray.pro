@@ -60,6 +60,23 @@ macx{
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
 }
 
+# To copy example
+macx {
+    QMAKE_POST_LINK += "mkdir -p $$OUT_PWD/example"
+    QMAKE_POST_LINK += "&& cp $$PWD/resources/example/Example-of-swiftray.bb $$OUT_PWD/example"
+    QMAKE_POST_LINK += "&& cp $$PWD/resources/example/Material-Cutting-Test.bb $$OUT_PWD/example"
+    QMAKE_POST_LINK += "&& cp $$PWD/resources/example/Material-Engraving-Test.bb $$OUT_PWD/example"
+}
+win32 {
+    QMAKE_POST_LINK += "copy /y $$shell_path($$PWD)\resources\example\Example-of-swiftray.bb $$shell_path($$OUT_PWD)\example"
+    QMAKE_POST_LINK += "&& copy /y $$shell_path($$PWD)\resources\example\Material-Cutting-Test.bb $$shell_path($$OUT_PWD)\example"
+    QMAKE_POST_LINK += "&& copy /y $$shell_path($$PWD)\resources\example\Material-Engraving-Test.bb $$shell_path($$OUT_PWD)\example"
+}
+linux {
+    QMAKE_POST_LINK += "cp $$PWD/resources/example/Example-of-swiftray.bb $$OUT_PWD/example"
+    QMAKE_POST_LINK += "&& cp $$PWD/resources/example/Material-Cutting-Test.bb $$OUT_PWD/example"
+    QMAKE_POST_LINK += "&& cp $$PWD/resources/example/Material-Engraving-Test.bb $$OUT_PWD/example"
+}
 # Remove -Wall and -Wextra flag
 QMAKE_CFLAGS_WARN_ON -= -Wall
 QMAKE_CXXFLAGS_WARN_ON -= -Wall

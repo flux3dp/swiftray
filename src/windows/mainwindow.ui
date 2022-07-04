@@ -89,10 +89,19 @@
      </property>
      <addaction name="actionExportGcode"/>
     </widget>
+    <widget class="QMenu" name="menuExample">
+     <property name="title">
+      <string>Example</string>
+     </property>
+     <addaction name="actionEampleOfSwiftray"/>
+     <addaction name="actionMaterialEngravingTest"/>
+     <addaction name="actionMaterialCuttingTest"/>
+    </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
+    <addaction name="menuExample"/>
     <addaction name="actionPreferences"/>
     <addaction name="actionPreview"/>
     <addaction name="menuExport"/>
@@ -1255,6 +1264,21 @@
    </property>
    <property name="text">
     <string>Framing</string>
+   </property>
+  </action>
+  <action name="actionMaterialCuttingTest">
+   <property name="text">
+    <string>Material Cutting Test</string>
+   </property>
+  </action>
+  <action name="actionMaterialEngravingTest">
+   <property name="text">
+    <string>Material Engraving Test</string>
+   </property>
+  </action>
+  <action name="actionEampleOfSwiftray">
+   <property name="text">
+    <string>Eample of swiftray</string>
    </property>
   </action>
  </widget>

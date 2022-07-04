@@ -84,6 +84,12 @@ private slots:
 
   void openFile();
 
+  void openExampleOfSwiftray();
+
+  void openMaterialCuttingTest();
+
+  void openMaterialEngravingTest();
+
   void openImageFile();
 
   void replaceImage();
