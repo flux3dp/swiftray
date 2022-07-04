@@ -188,6 +188,60 @@ void MainWindow::openFile() {
   }
 }
 
+void MainWindow::openExampleOfSwiftray() {
+  QString file_name = ":/resources/example/Example-of-swiftray.bb";
+  if (!QFile::exists(file_name)) 
+    return;
+  QFile file(file_name);
+  if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    QByteArray data = file.readAll();
+    QDataStream stream(data);
+    DocumentSerializer ds(stream);
+    canvas_->setDocument(ds.deserializeDocument());
+    canvas_->document().setCurrentFile(file_name);
+    canvas_->emitAllChanges();
+    emit canvas_->selectionsChanged();
+  }
+}
+
+void MainWindow::openMaterialCuttingTest() {
+  QString file_name = ":/resources/example/Material-Cutting-Test.bb";
+  if (!QFile::exists(file_name)) 
+    return;
+  QFile file(file_name);
+  if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    QByteArray data = file.readAll();
+    QDataStream stream(data);
+    DocumentSerializer ds(stream);
+    canvas_->setDocument(ds.deserializeDocument());
+    canvas_->document().setCurrentFile(file_name);
+    canvas_->emitAllChanges();
+    emit canvas_->selectionsChanged();
+  }
+}
+
+void MainWindow::openMaterialEngravingTest() {
+  QString file_name = ":/resources/example/Material-Engraving-Test.bb";
+  if (!QFile::exists(file_name)) 
+    return;
+  QFile file(file_name);
+  if (file.open(QFile::ReadOnly)) {
+    // Update default file path
+    QFileInfo file_info{file_name};
+    QByteArray data = file.readAll();
+    QDataStream stream(data);
+    DocumentSerializer ds(stream);
+    canvas_->setDocument(ds.deserializeDocument());
+    canvas_->document().setCurrentFile(file_name);
+    canvas_->emitAllChanges();
+    emit canvas_->selectionsChanged();
+  }
+}
+
 /**
  * @brief Save the document with the origin filename
  *        If the document has never been saved, force a new save as
@@ -519,6 +573,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
+  connect(ui->actionExampleOfSwiftray, &QAction::triggered, this, &MainWindow::openExampleOfSwiftray);
+  connect(ui->actionMaterialCuttingTest, &QAction::triggered, this, &MainWindow::openMaterialCuttingTest);
+  connect(ui->actionMaterialEngravingTest, &QAction::triggered, this, &MainWindow::openMaterialEngravingTest);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
