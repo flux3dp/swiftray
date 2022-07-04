@@ -147,5 +147,8 @@
         <file>qtquickcontrols2.conf</file>
         <file>essentialUI.ini</file>
         <file>classicUI.ini</file>
+        <file>resources/example/Example-of-swiftray.bb</file>
+        <file>resources/example/Material-Cutting-Test.bb</file>
+        <file>resources/example/Material-Engraving-Test.bb</file>
     </qresource>
 </RCC>

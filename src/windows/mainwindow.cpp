@@ -189,12 +189,7 @@ void MainWindow::openFile() {
 }
 
 void MainWindow::openExampleOfSwiftray() {
-  QString file_name = QDir::current().absolutePath();
-  #ifdef Q_OS_MACOS
-  file_name += "/../../../example/Example-of-swiftray.bb";
-  #else
-  file_name += "/example/Example-of-swiftray.bb";
-  #endif
+  QString file_name = ":/resources/example/Example-of-swiftray.bb";
   if (!QFile::exists(file_name)) 
     return;
   QFile file(file_name);
@@ -212,12 +207,7 @@ void MainWindow::openExampleOfSwiftray() {
 }
 
 void MainWindow::openMaterialCuttingTest() {
-  QString file_name = QDir::current().absolutePath();
-  #ifdef Q_OS_MACOS
-  file_name += "/../../../example/Material-Cutting-Test.bb";
-  #else
-  file_name += "/example/Material-Cutting-Test.bb";
-  #endif
+  QString file_name = ":/resources/example/Material-Cutting-Test.bb";
   if (!QFile::exists(file_name)) 
     return;
   QFile file(file_name);
@@ -235,12 +225,7 @@ void MainWindow::openMaterialCuttingTest() {
 }
 
 void MainWindow::openMaterialEngravingTest() {
-  QString file_name = QDir::current().absolutePath();
-  #ifdef Q_OS_MACOS
-  file_name += "/../../../example/Material-Engraving-Test.bb";
-  #else
-  file_name += "/example/Material-Engraving-Test.bb";
-  #endif
+  QString file_name = ":/resources/example/Material-Engraving-Test.bb";
   if (!QFile::exists(file_name)) 
     return;
   QFile file(file_name);
