@@ -32,7 +32,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
 
 Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
-           kLayerColors[layer_counter - 1],
+           kLayerColors[(layer_counter-1)%17],
            QObject::tr("Layer") + " " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
