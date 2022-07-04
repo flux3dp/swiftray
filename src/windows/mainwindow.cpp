@@ -494,6 +494,7 @@ void MainWindow::loadWidgets() {
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
   machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
+  about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
@@ -553,6 +554,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
+  connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
