@@ -93,7 +93,7 @@
      <property name="title">
       <string>Example</string>
      </property>
-     <addaction name="actionEampleOfSwiftray"/>
+     <addaction name="actionExampleOfSwiftray"/>
      <addaction name="actionMaterialEngravingTest"/>
      <addaction name="actionMaterialCuttingTest"/>
     </widget>
@@ -1276,9 +1276,9 @@
     <string>Material Engraving Test</string>
    </property>
   </action>
-  <action name="actionEampleOfSwiftray">
+  <action name="actionExampleOfSwiftray">
    <property name="text">
-    <string>Eample of swiftray</string>
+    <string>Example of swiftray</string>
    </property>
   </action>
  </widget>

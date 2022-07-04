@@ -587,7 +587,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionSave_As, &QAction::triggered, this, &MainWindow::saveAsFile);
-  connect(ui->actionEampleOfSwiftray, &QAction::triggered, this, &MainWindow::openExampleOfSwiftray);
+  connect(ui->actionExampleOfSwiftray, &QAction::triggered, this, &MainWindow::openExampleOfSwiftray);
   connect(ui->actionMaterialCuttingTest, &QAction::triggered, this, &MainWindow::openMaterialCuttingTest);
   connect(ui->actionMaterialEngravingTest, &QAction::triggered, this, &MainWindow::openMaterialEngravingTest);
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
