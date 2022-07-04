@@ -3,9 +3,11 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 #include <QObject>
+#include <QString>
+#include <QList>
 
 // Layer colors
-constexpr char const *kLayerColors[17] = {
+static QList<QString> layer_colors = {
      "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
      "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
      "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
@@ -32,7 +34,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
 
 Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
-           kLayerColors[layer_counter - 1],
+           layer_colors[(layer_counter-1) % layer_colors.count()],
            QObject::tr("Layer") + " " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
@@ -184,6 +186,7 @@ LayerPtr Layer::clone() {
   new_layer->setSpeed(speed());
   new_layer->setStrength(power());
   new_layer->setRepeat(repeat());
+  new_layer->setParameterIndex(parameterIndex());
   new_layer->setLocked(isLocked());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());

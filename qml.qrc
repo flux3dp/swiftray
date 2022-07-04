@@ -150,5 +150,7 @@
         <file>resources/example/Example-of-swiftray.bb</file>
         <file>resources/example/Material-Cutting-Test.bb</file>
         <file>resources/example/Material-Engraving-Test.bb</file>
+        <file>images/icon-about.png</file>
+        <file>images/dark/icon-about.png</file>
     </qresource>
 </RCC>

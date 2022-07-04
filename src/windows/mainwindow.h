@@ -25,6 +25,7 @@
 
 #include <windows/job-dashboard-dialog.h>
 #include <motion_controller_job/grbl-job.h>
+#include <windows/about-window.h>
 
 namespace Ui {
   class MainWindow;
@@ -167,6 +168,7 @@ private:
   WelcomeDialog *welcome_dialog_;
   JoggingPanel *jogging_panel_;
   PreferencesWindow *preferences_window_;
+  AboutWindow *about_window_;
 
 #ifndef Q_OS_IOS
     QList<GrblJob *> jobs_;
