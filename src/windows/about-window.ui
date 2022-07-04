@@ -13,13 +13,13 @@
   <property name="windowTitle">
    <string>About</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
      <width>201</width>
-     <height>341</height>
+     <height>354</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
@@ -60,7 +60,7 @@
          </font>
         </property>
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;版本：&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;版本：1.0.0b&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -120,7 +120,7 @@
          </font>
         </property>
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Swiftray的開發仰賴&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;開放原始碼計畫與&lt;/p&gt;&lt;p&gt;其他開放原始碼的軟體&lt;/p&gt;&lt;p&gt;的協助才得以完成&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Swiftray 的開發仰賴 &lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;p&gt;開放原始碼計畫與&lt;/p&gt;&lt;p&gt;其他開放原始碼的軟體&lt;/p&gt;&lt;p&gt;的協助才得以完成&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -166,7 +166,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../../qml.qrc">:/images/icon.png</pixmap>
+       <pixmap resource="../../qml.qrc">:/images/dark/icon-about.png</pixmap>
       </property>
       <property name="scaledContents">
        <bool>true</bool>
@@ -185,6 +185,19 @@
        <size>
         <width>80</width>
         <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="2">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
        </size>
       </property>
      </spacer>

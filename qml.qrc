@@ -148,5 +148,6 @@
         <file>essentialUI.ini</file>
         <file>classicUI.ini</file>
         <file>images/icon-about.png</file>
+        <file>images/dark/icon-about.png</file>
     </qresource>
 </RCC>
