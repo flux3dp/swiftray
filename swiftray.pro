@@ -13,7 +13,9 @@ QT += serialport
 
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
+VERSION = 0.1.10
 ICON=images/icon.icns
+RC_ICONS = images/icon.ico
 CONFIG += c++17
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2

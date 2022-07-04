@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(Swiftray)
+project(Swiftray VERSION 0.1.10)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
@@ -113,7 +113,7 @@ endif ()
 set(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
-set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/images/icon.rc")
+set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
 set(MACOSX_BUNDLE_ICON_FILE images/icon.icns)
 set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
 set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
