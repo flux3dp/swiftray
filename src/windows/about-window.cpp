@@ -12,7 +12,6 @@ AboutWindow::AboutWindow(QWidget *parent) :
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
-  // ui->label_4->setPixmap(QPixmap(":/images/dark/icon-about.png"));
   ui->label_4->setPixmap(QPixmap(isDarkMode() ? ":/images/dark/icon-about.png" : ":/images/icon-about.png"));
 }
 
