@@ -184,6 +184,7 @@ LayerPtr Layer::clone() {
   new_layer->setSpeed(speed());
   new_layer->setStrength(power());
   new_layer->setRepeat(repeat());
+  new_layer->setParameterIndex(parameterIndex());
   new_layer->setLocked(isLocked());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());

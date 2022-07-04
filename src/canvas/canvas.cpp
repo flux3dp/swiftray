@@ -96,6 +96,8 @@ void Canvas::loadSVG(QByteArray &svg_data) {
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
+    double scale = 254 / 72.0;
+    transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
       emit layerChanged();
@@ -782,6 +784,8 @@ void Canvas::importImage(QImage &image) {
     Commands::AddShape(document().activeLayer(), new_shape),
     Commands::Select(&(document()), {new_shape})
   );
+  scale = 254 / 72.0;
+  transformControl().applyScale(QPointF(0,0), scale, scale, false);
 }
 
 /**
