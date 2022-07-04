@@ -41,9 +41,10 @@ win32 {
         LIBS += -LC:\Dev\libraries\potrace
         LIBS += -LC:\Dev\boost_1_78_0_msvc\lib64-msvc-14.1
         LIBS += -LC:\tools\opencv\build\x64\vc14\lib
+        win32:CONFIG(release, debug|release): LIBS += -LC:\tools\opencv\build\x64\vc14\lib -lopencv_world455
+        else:win32:CONFIG(debug, debug|release): LIBS += -LC:\tools\opencv\build\x64\vc14\lib -lopencv_world455d
         LIBS += -lboost_thread-vc141-mt-x64-1_78
         LIBS += -lboost_system-vc141-mt-x64-1_78
-        LIBS += -lopencv_world455
     }
     win32-g++ {
         # MINGW
@@ -94,21 +95,19 @@ ios {
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
-win32 {
-    # boost, libxml2, potrace
-    win32-g++ {
-        # MINGW
-        INCLUDEPATH += $$(MINGW64_PATH)/include
-        INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
-        INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
-    }
-    win32-msvc {
-        INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
-        INCLUDEPATH += C:\tools\opencv\build\include
-        INCLUDEPATH += C:\Dev\libraries\potrace
-        INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
-        INCLUDEPATH += C:\Dev\libraries\libconv\include
-    }
+# boost, libxml2, potrace
+win32-g++ {
+    # MINGW
+    INCLUDEPATH += $$(MINGW64_PATH)/include
+    INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
+    INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+}
+win32-msvc {
+    INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
+    INCLUDEPATH += C:\tools\opencv\build\include
+    INCLUDEPATH += C:\Dev\libraries\potrace
+    INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
+    INCLUDEPATH += C:\Dev\libraries\libconv\include
 }
 macx{
     INCLUDEPATH += /usr/local/include
@@ -253,6 +252,3 @@ TR_EXCLUDE += $$PWD/third_party/* \
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
 
-#QMAKE_POST_LINK +=
-#    @sed -e "s,@SHORT_VERSION@,1.0.0,g" -e "s,@FULL_VERSION@,1.0.0-b,g"
-#     ../../project/subproject/Info.plist >MyProject.app/Contents/Info.plist
