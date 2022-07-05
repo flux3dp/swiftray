@@ -14,7 +14,7 @@ IDI_ICON1 ICON DISCARDABLE "images/icon.ico"
             VALUE "FileVersion",        "0.0.0.0\0"
             VALUE "OriginalFilename",   "Swiftray.exe\0"
             VALUE "ProductName",        "Swiftray\0"
-            VALUE "ProductVersion",     "0.0.1.10\0"
+            VALUE "ProductVersion",     "1.0.0.0\0"
         }
     }
     BLOCK "VarFileInfo"
