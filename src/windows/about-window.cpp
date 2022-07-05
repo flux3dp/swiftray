@@ -12,6 +12,15 @@ AboutWindow::AboutWindow(QWidget *parent) :
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
+
+  QString ver_str{"<html><head/><body><p>"};
+  ver_str.append(tr("版本：")); 
+  ver_str.append(QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD)); 
+  ver_str.append(QString{VERSION_SUFFIX});
+  ver_str.append("</p></body></html>");
+  qInfo() << "App version: " << ver_str;
+  ui->labelVersion->setText(ver_str);
+
   ui->label_4->setPixmap(QPixmap(isDarkMode() ? ":/images/dark/icon-about.png" : ":/images/icon-about.png"));
 }
 

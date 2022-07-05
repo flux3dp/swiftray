@@ -13,10 +13,23 @@ QT += serialport
 
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
-VERSION = 0.1.10
+#Application version
+VERSION_MAJOR = 1
+VERSION_MINOR = 0
+VERSION_BUILD = 0
+VERSION_SUFFIX = \\\"b\\\" # beta
+DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
+       "VERSION_MINOR=$$VERSION_MINOR"\
+       "VERSION_BUILD=$$VERSION_BUILD"
+DEFINES += "VERSION_SUFFIX=$$VERSION_SUFFIX"
+#Target version
+VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
+
+QMAKE_INFO_PLIST = Info.plist
 ICON=images/icon.icns
 RC_ICONS = images/icon.ico
 CONFIG += c++17
+
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
     QMAKE_CXXFLAGS_RELEASE += -Os
@@ -175,3 +188,7 @@ TR_EXCLUDE += $$PWD/third_party/* \
 
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
+
+#QMAKE_POST_LINK +=
+#    @sed -e "s,@SHORT_VERSION@,1.0.0,g" -e "s,@FULL_VERSION@,1.0.0-b,g"
+#     ../../project/subproject/Info.plist >MyProject.app/Contents/Info.plist
