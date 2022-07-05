@@ -2,6 +2,42 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_TW">
 <context>
+    <name>AboutWindow</name>
+    <message>
+        <location filename="../src/windows/about-window.ui" line="14"/>
+        <source>About</source>
+        <translation>關於</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/about-window.ui" line="75"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Version 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;版本: 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/about-window.ui" line="82"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/about-window.ui" line="89"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;the &lt;/span&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; open source project and&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;other open source software&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray的開發仰賴 &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; 開放原始碼計畫&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;與其他開放原始碼的軟體的協助才得以完成&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;the &lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt; open source project and&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;other open source software&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;Swiftray的開發仰賴 &lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt; 開放原始碼計畫&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;與其他開放原始碼的軟體的協助才得以完成&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Version 1.0.0b&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;版本: 1.0.0b&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/about-window.cpp" line="17"/>
+        <source>Version </source>
+        <translation>版本: </translation>
+    </message>
+</context>
+<context>
     <name>BaseJob</name>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="30"/>
@@ -52,7 +88,7 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="711"/>
+        <location filename="../src/canvas/canvas.cpp" line="713"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
@@ -996,7 +1032,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="741"/>
-        <location filename="../src/windows/mainwindow.cpp" line="785"/>
+        <location filename="../src/windows/mainwindow.cpp" line="772"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
@@ -1007,7 +1043,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="749"/>
-        <location filename="../src/windows/mainwindow.cpp" line="786"/>
+        <location filename="../src/windows/mainwindow.cpp" line="773"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
@@ -1018,7 +1054,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="757"/>
-        <location filename="../src/windows/mainwindow.cpp" line="787"/>
+        <location filename="../src/windows/mainwindow.cpp" line="774"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
@@ -1432,7 +1468,7 @@
         <translation>機器設定</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="288"/>
+        <location filename="../src/windows/mainwindow.cpp" line="273"/>
         <source>Save Image</source>
         <translation>儲存圖片</translation>
     </message>
@@ -1446,99 +1482,99 @@
         <translation>檔案 (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="335"/>
+        <location filename="../src/windows/mainwindow.cpp" line="320"/>
         <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp)</source>
         <translation>檔案 (*.png *.jpg *.jpeg *.svg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="361"/>
+        <location filename="../src/windows/mainwindow.cpp" line="346"/>
         <source>Image Files (*.png *.jpg *.jpeg *.bmp)</source>
         <translation>檔案 (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="385"/>
+        <location filename="../src/windows/mainwindow.cpp" line="370"/>
         <source>GCode Files (*.gcode)</source>
         <translation>檔案 (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="411"/>
+        <location filename="../src/windows/mainwindow.cpp" line="396"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="678"/>
+        <location filename="../src/windows/mainwindow.cpp" line="665"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="679"/>
+        <location filename="../src/windows/mainwindow.cpp" line="666"/>
         <source>Please connect to serial port first</source>
         <translation>請先與機器連線</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="788"/>
+        <location filename="../src/windows/mainwindow.cpp" line="775"/>
         <source>Paste in Place</source>
         <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="789"/>
+        <location filename="../src/windows/mainwindow.cpp" line="776"/>
         <source>Duplicate</source>
         <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="791"/>
+        <location filename="../src/windows/mainwindow.cpp" line="778"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="793"/>
+        <location filename="../src/windows/mainwindow.cpp" line="780"/>
         <source>group</source>
         <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="794"/>
+        <location filename="../src/windows/mainwindow.cpp" line="781"/>
         <source>ungroup</source>
         <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="902"/>
+        <location filename="../src/windows/mainwindow.cpp" line="893"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="903"/>
+        <location filename="../src/windows/mainwindow.cpp" line="894"/>
         <source>Line Height</source>
         <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="904"/>
+        <location filename="../src/windows/mainwindow.cpp" line="895"/>
         <source>Letter Spacing</source>
         <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1030"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1036"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1057"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1021"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1027"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1048"/>
         <source> </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1089"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1080"/>
         <source>Rotation</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1090"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1081"/>
         <source>Width</source>
         <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1091"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1082"/>
         <source>Height</source>
         <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1239"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1230"/>
         <source>Fit to Screen</source>
         <translation>配合視窗尺寸</translation>
     </message>
@@ -1547,7 +1583,7 @@
         <translation type="vanished">GCode檔案 (*gcode);; 所有檔案(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="387"/>
+        <location filename="../src/windows/mainwindow.cpp" line="372"/>
         <source>Save GCode</source>
         <translation>儲存 GCode</translation>
     </message>
@@ -1556,7 +1592,7 @@
         <translation type="vanished">未命名.gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="286"/>
+        <location filename="../src/windows/mainwindow.cpp" line="271"/>
         <source>Scene File (*.bb)</source>
         <translation>檔案 (*.bb)</translation>
     </message>
@@ -1852,8 +1888,8 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../src/layer.cpp" line="36"/>
-        <location filename="../src/layer.cpp" line="39"/>
+        <location filename="../src/layer.cpp" line="38"/>
+        <location filename="../src/layer.cpp" line="41"/>
         <source>Layer</source>
         <translation>圖層</translation>
     </message>

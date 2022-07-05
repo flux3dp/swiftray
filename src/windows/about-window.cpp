@@ -14,7 +14,7 @@ AboutWindow::AboutWindow(QWidget *parent) :
   initializeContainer();
 
   QString ver_str{"<html><head/><body><p>"};
-  ver_str.append(tr("版本：")); 
+  ver_str.append(tr("Version ")); 
   ver_str.append(QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD)); 
   ver_str.append(QString{VERSION_SUFFIX});
   ver_str.append("</p></body></html>");
