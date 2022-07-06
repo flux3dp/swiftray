@@ -10,6 +10,7 @@ using namespace Controls;
 
 Polygon::Polygon(Canvas *canvas) noexcept: CanvasControl(canvas) {
   num_side_ = kDefaultNumSide;
+  scale_locked_ = false;
 }
 
 bool Polygon::isActive() {

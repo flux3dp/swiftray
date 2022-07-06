@@ -11,7 +11,9 @@ namespace Controls {
    */
   class Oval : public CanvasControl {
   public:
-    explicit Oval(Canvas *canvas) : CanvasControl(canvas) {}
+    explicit Oval(Canvas *canvas) : CanvasControl(canvas) {
+      scale_locked_ = false;
+    }
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 

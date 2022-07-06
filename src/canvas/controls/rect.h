@@ -7,7 +7,9 @@ namespace Controls {
 
   class Rect : public CanvasControl {
   public:
-    Rect(Canvas *canvas) noexcept: CanvasControl(canvas) {}
+    Rect(Canvas *canvas) noexcept: CanvasControl(canvas) {
+      scale_locked_ = false;
+    }
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 
