@@ -1278,7 +1278,7 @@
   </action>
   <action name="actionExampleOfSwiftray">
    <property name="text">
-    <string>Example of swiftray</string>
+    <string>Example of Swiftray</string>
    </property>
   </action>
  </widget>
