@@ -70,106 +70,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1250</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menu_File">
-    <property name="title">
-     <string>&amp;File</string>
-    </property>
-    <widget class="QMenu" name="menuExport">
-     <property name="title">
-      <string>Export</string>
-     </property>
-     <addaction name="actionExportGcode"/>
-    </widget>
-    <widget class="QMenu" name="menuExample">
-     <property name="title">
-      <string>Example</string>
-     </property>
-     <addaction name="actionExampleOfSwiftray"/>
-     <addaction name="actionMaterialEngravingTest"/>
-     <addaction name="actionMaterialCuttingTest"/>
-    </widget>
-    <addaction name="actionNew"/>
-    <addaction name="actionOpen"/>
-    <addaction name="actionSave"/>
-    <addaction name="actionSave_As"/>
-    <addaction name="menuExample"/>
-    <addaction name="actionPreferences"/>
-    <addaction name="actionPreview"/>
-    <addaction name="menuExport"/>
-    <addaction name="separator"/>
-    <addaction name="actionClose"/>
-   </widget>
-   <widget class="QMenu" name="menu_Edit">
-    <property name="title">
-     <string>&amp;Edit</string>
-    </property>
-    <widget class="QMenu" name="menuImage">
-     <property name="title">
-      <string>Image</string>
-     </property>
-     <addaction name="actionTrace"/>
-     <addaction name="actionInvert"/>
-     <addaction name="actionCrop"/>
-     <addaction name="actionReplace_with"/>
-     <addaction name="actionSharpen"/>
-    </widget>
-    <widget class="QMenu" name="menuPath">
-     <property name="title">
-      <string>Path</string>
-     </property>
-     <addaction name="actionPathOffset"/>
-    </widget>
-    <addaction name="actionUndo"/>
-    <addaction name="actionRedo"/>
-    <addaction name="separator"/>
-    <addaction name="actionCut"/>
-    <addaction name="actionCopy"/>
-    <addaction name="actionPaste"/>
-    <addaction name="separator"/>
-    <addaction name="actionSelect_All"/>
-    <addaction name="actionClear"/>
-    <addaction name="actionGroupMenu"/>
-    <addaction name="actionUngroupMenu"/>
-    <addaction name="separator"/>
-    <addaction name="menuImage"/>
-    <addaction name="menuPath"/>
-    <addaction name="separator"/>
-    <addaction name="actionMachineSettings"/>
-    <addaction name="separator"/>
-   </widget>
-   <widget class="QMenu" name="menu_Help">
-    <property name="title">
-     <string>&amp;Help</string>
-    </property>
-    <addaction name="actionAbout"/>
-   </widget>
-   <widget class="QMenu" name="menuMachine">
-    <property name="title">
-     <string>Machine</string>
-    </property>
-   </widget>
-   <widget class="QMenu" name="menu_Window">
-    <property name="title">
-     <string>Window</string>
-    </property>
-    <addaction name="actionLoadClassic"/>
-    <addaction name="actionLoadEssential"/>
-   </widget>
-   <addaction name="menu_File"/>
-   <addaction name="menu_Edit"/>
-   <addaction name="menuMachine"/>
-   <addaction name="menu_Help"/>
-   <addaction name="menu_Window"/>
-  </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="minimumSize">
     <size>
@@ -703,6 +603,100 @@
      </item>
     </layout>
    </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1250</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExportGcode"/>
+    </widget>
+    <widget class="QMenu" name="menuExample">
+     <property name="title">
+      <string>Example</string>
+     </property>
+     <addaction name="actionExampleOfSwiftray"/>
+     <addaction name="actionMaterialEngravingTest"/>
+     <addaction name="actionMaterialCuttingTest"/>
+    </widget>
+    <addaction name="actionNew"/>
+    <addaction name="actionOpen"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSave_As"/>
+    <addaction name="menuExample"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="actionPreview"/>
+    <addaction name="menuExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionClose"/>
+   </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <widget class="QMenu" name="menuImage">
+     <property name="title">
+      <string>Image</string>
+     </property>
+     <addaction name="actionTrace"/>
+     <addaction name="actionInvert"/>
+     <addaction name="actionCrop"/>
+     <addaction name="actionReplace_with"/>
+     <addaction name="actionSharpen"/>
+    </widget>
+    <widget class="QMenu" name="menuPath">
+     <property name="title">
+      <string>Path</string>
+     </property>
+     <addaction name="actionPathOffset"/>
+    </widget>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="actionCut"/>
+    <addaction name="actionCopy"/>
+    <addaction name="actionPaste"/>
+    <addaction name="separator"/>
+    <addaction name="actionSelect_All"/>
+    <addaction name="actionClear"/>
+    <addaction name="actionGroupMenu"/>
+    <addaction name="actionUngroupMenu"/>
+    <addaction name="separator"/>
+    <addaction name="menuImage"/>
+    <addaction name="menuPath"/>
+    <addaction name="separator"/>
+    <addaction name="actionMachineSettings"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menu_Help">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menu_Window">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="actionLoadClassic"/>
+    <addaction name="actionLoadEssential"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
+   <addaction name="menu_Help"/>
+   <addaction name="menu_Window"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
