@@ -3,7 +3,7 @@ project(Swiftray VERSION 1.0.0)
 add_compile_definitions(VERSION_MAJOR=1)
 add_compile_definitions(VERSION_MINOR=0)
 add_compile_definitions(VERSION_BUILD=0)
-add_compile_definitions(VERSION_SUFFIX="_beta")
+add_compile_definitions(VERSION_SUFFIX="-beta")
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")

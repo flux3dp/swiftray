@@ -253,6 +253,7 @@ void  MainWindow::saveFile() {
     return;
   }
 
+  canvas_->document().setSelection(nullptr);
   QFile file(canvas_->document().currentFile());
   if (file.open(QFile::ReadWrite)) {
     QDataStream stream(&file);
@@ -276,7 +277,7 @@ void MainWindow::saveAsFile() {
 
   //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
   QFile file(file_name);
-
+  canvas_->document().setSelection(nullptr);
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
     QFileInfo file_info{file_name};
