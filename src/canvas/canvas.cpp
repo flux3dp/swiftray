@@ -143,13 +143,9 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
     is_holding_ctrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
-  if (!transformControl().isScaleLock()) {
+  if (e->modifiers() & Qt::ShiftModifier) {
     is_temp_scale_lock_ = true;
-    transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
-  }
-
-  if (!is_temp_direction_lock_) {
-    is_temp_direction_lock_ = true;
+    ctrl_transform_.setScaleLock(e->modifiers() & Qt::ShiftModifier);
     ctrl_line_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
     ctrl_path_draw_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
   }
@@ -181,11 +177,7 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
 
   if (is_temp_scale_lock_) {
     is_temp_scale_lock_ = false;
-    transformControl().setScaleLock(e->modifiers() & Qt::ShiftModifier);
-  }
-
-  if (is_temp_direction_lock_) {
-    is_temp_direction_lock_ = false;
+    ctrl_transform_.setScaleLock(e->modifiers() & Qt::ShiftModifier);
     ctrl_line_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
     ctrl_path_draw_.setDirectionLock(e->modifiers() & Qt::ShiftModifier);
   }
@@ -362,14 +354,14 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   if (is_holding_ctrl_) {
     mouse_pos = e->position() - widget_offset_;
     double orig_scale = document().scale();
-    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->pixelDelta().y() / document().height()));
+    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
     document().setScale(new_scale);
 
     new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
   } else {
-    new_scroll.setX(document().scroll().x() + e->pixelDelta().x() / 2.5);
-    new_scroll.setY(document().scroll().y() + e->pixelDelta().y() / 2.5);
-    mouse_pos = e->pixelDelta();
+    new_scroll.setX(document().scroll().x() + e->angleDelta().x() / 8 / 2.5);
+    new_scroll.setY(document().scroll().y() + e->angleDelta().y() / 8 / 2.5);
+    mouse_pos = e->angleDelta();
   }
 
   // Restrict the range of scroll
