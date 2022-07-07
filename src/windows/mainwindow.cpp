@@ -519,7 +519,9 @@ void MainWindow::updateSelections() {
   ungroupAction_->setEnabled(all_group);
 
   ui->actionGroup->setEnabled(items.size() > 1);
+  ui->actionGroupMenu->setEnabled(items.size() > 1);
   ui->actionUngroup->setEnabled(all_group);
+  ui->actionUngroupMenu->setEnabled(all_group);
   ui->actionUnion->setEnabled(items.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
   ui->actionSubtract->setEnabled(items.size() == 2 && all_path);
   ui->actionDiff->setEnabled(items.size() == 2 && all_path);
