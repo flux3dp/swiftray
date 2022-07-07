@@ -70,7 +70,9 @@ void DocPanel::loadSettings() {
   ui->machineComboBox->clear();
   for (auto &mach : machine_settings.machines()) {
     if (mach.name.isEmpty()) continue;
+    ui->machineComboBox->blockSignals(true);
     ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
+    ui->machineComboBox->blockSignals(false);
   }
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();
@@ -100,6 +102,7 @@ void DocPanel::registerEvents() {
     updateScene();
     QSettings settings;
     settings.setValue("defaultMachine", ui->machineComboBox->currentText());
+    emit machineChanged(ui->machineComboBox->currentText());
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     PresetSettings* preset_settings = &PresetSettings::getInstance();
@@ -161,4 +164,8 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
   auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
   auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
   return machine;
+}
+
+QString DocPanel::getMachineName() {
+  return ui->machineComboBox->currentText();
 }

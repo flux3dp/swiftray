@@ -23,6 +23,11 @@ public:
 
   MachineSettings::MachineSet currentMachine();
 
+  QString getMachineName();
+
+signals:
+  void machineChanged(QString machine_name);
+
 private:
   void loadSettings() override;
 

@@ -17,6 +17,8 @@ public:
 
   bool isHighSpeedMode();
 
+  void setSpeedMode(bool is_high_speed);
+
 private:
   Ui::PreferencesWindow *ui;
 
@@ -26,6 +28,8 @@ private:
 
   void setTabWidget();
 
+  bool is_high_speed_;
+
 signals:
-  void setSpeedMode(bool is_high_speed);
+  void speedModeChanged(bool is_high_speed);
 };

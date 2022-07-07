@@ -7,7 +7,8 @@
 PreferencesWindow::PreferencesWindow(QWidget *parent) :
      QDialog(parent),
      ui(new Ui::PreferencesWindow),
-     BaseContainer() {
+     BaseContainer(),
+     is_high_speed_(false) {
   ui->setupUi(this);
   initializeContainer();
   setTabWidget();
@@ -23,8 +24,13 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
       msgbox.setInformativeText(tr("Please restart Swiftray to enable new settings."));
       msgbox.exec();
     }
-    emit setSpeedMode(ui->comboBoxSpeedOptimization->currentIndex());
+    emit speedModeChanged(ui->comboBoxSpeedOptimization->currentIndex());
   });
+}
+
+void PreferencesWindow::setSpeedMode(bool is_high_speed) {
+  is_high_speed_ = is_high_speed;
+  ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
 }
 
 bool PreferencesWindow::isHighSpeedMode() {
@@ -42,7 +48,7 @@ void PreferencesWindow::setLanguageComboBox() {
 void PreferencesWindow::setSpeedOptimizationComboBox() {
   ui->comboBoxSpeedOptimization->addItem("Off");
   ui->comboBoxSpeedOptimization->addItem("On");
-  ui->comboBoxSpeedOptimization->setCurrentIndex(0);
+  ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
 }
 
 void PreferencesWindow::setTabWidget() {

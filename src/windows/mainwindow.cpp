@@ -64,6 +64,17 @@ void MainWindow::loadSettings() {
     QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
+  QString current_machine = doc_panel_->getMachineName();
+  if(current_machine.toStdString().compare(0,9,"Lazervida") == 0 ||
+    current_machine.toStdString().compare(1,9,"Lazervida") == 0 ||
+    current_machine.toStdString().compare(current_machine.size()-9,9,"Lazervida") == 0) {
+    is_high_speed_mode_ = true;
+    preferences_window_->setSpeedMode(is_high_speed_mode_);
+  }
+  else {
+    is_high_speed_mode_ = false;
+    preferences_window_->setSpeedMode(is_high_speed_mode_);
+  }
   is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
 }
 
@@ -733,8 +744,25 @@ void MainWindow::registerEvents() {
   connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
   });
-  connect(preferences_window_, &PreferencesWindow::setSpeedMode, [=](bool is_high_speed) {
+  connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
+  });
+  connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
+    qInfo() << "get name = " << machine_name;
+    if(machine_name.toStdString().compare(0,9,"Lazervida") == 0 ||
+      machine_name.toStdString().compare(1,9,"Lazervida") == 0 ||
+      machine_name.toStdString().compare(machine_name.size()-9,9,"Lazervida") == 0) {
+      is_high_speed_mode_ = true;
+      preferences_window_->setSpeedMode(is_high_speed_mode_);
+      QMessageBox msgbox;
+      msgbox.setText(tr("Alarm"));
+      msgbox.setInformativeText(tr("Please confirm that you are using the Lazervida machine."));
+      msgbox.exec();
+    }
+    else {
+      is_high_speed_mode_ = false;
+      preferences_window_->setSpeedMode(is_high_speed_mode_);
+    }
   });
 }
 
