@@ -26,6 +26,8 @@ namespace Controls {
 
     void setTarget(ShapePtr &target);
 
+    bool isEmpty();
+
   private:
     ShapePtr target_;
     QString text_cache_;
