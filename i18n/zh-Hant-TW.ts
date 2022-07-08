@@ -9,17 +9,17 @@
         <translation>關於</translation>
     </message>
     <message>
-        <location filename="../src/windows/about-window.ui" line="108"/>
+        <location filename="../src/windows/about-window.ui" line="113"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Version 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;版本: 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../src/windows/about-window.ui" line="121"/>
+        <location filename="../src/windows/about-window.ui" line="131"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../src/windows/about-window.ui" line="140"/>
+        <location filename="../src/windows/about-window.ui" line="155"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;the &lt;/span&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; open source project and&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;other open source software&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray 的開發仰賴 &lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; 開放原始碼計畫&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;與其他開放原始碼的軟體的協助才得以完成&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
@@ -1031,7 +1031,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="738"/>
-        <location filename="../src/windows/mainwindow.cpp" line="801"/>
+        <location filename="../src/windows/mainwindow.cpp" line="803"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
@@ -1042,7 +1042,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="746"/>
-        <location filename="../src/windows/mainwindow.cpp" line="802"/>
+        <location filename="../src/windows/mainwindow.cpp" line="804"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
@@ -1053,7 +1053,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="754"/>
-        <location filename="../src/windows/mainwindow.cpp" line="803"/>
+        <location filename="../src/windows/mainwindow.cpp" line="805"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
@@ -1505,89 +1505,89 @@
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="677"/>
+        <location filename="../src/windows/mainwindow.cpp" line="679"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="678"/>
+        <location filename="../src/windows/mainwindow.cpp" line="680"/>
         <source>Please connect to serial port first</source>
         <translation>請先與機器連線</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="758"/>
+        <location filename="../src/windows/mainwindow.cpp" line="760"/>
         <source>Alarm</source>
         <translation>提示</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="759"/>
+        <location filename="../src/windows/mainwindow.cpp" line="761"/>
         <source>Please confirm that you are using the Lazervida machine.</source>
         <translation>請確認您使用的機器是 Lazervida。</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="804"/>
+        <location filename="../src/windows/mainwindow.cpp" line="806"/>
         <source>Paste in Place</source>
         <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="805"/>
+        <location filename="../src/windows/mainwindow.cpp" line="807"/>
         <source>Duplicate</source>
         <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="807"/>
+        <location filename="../src/windows/mainwindow.cpp" line="809"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="809"/>
+        <location filename="../src/windows/mainwindow.cpp" line="811"/>
         <source>group</source>
         <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="810"/>
+        <location filename="../src/windows/mainwindow.cpp" line="812"/>
         <source>ungroup</source>
         <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="922"/>
+        <location filename="../src/windows/mainwindow.cpp" line="924"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="923"/>
+        <location filename="../src/windows/mainwindow.cpp" line="925"/>
         <source>Line Height</source>
         <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="924"/>
+        <location filename="../src/windows/mainwindow.cpp" line="926"/>
         <source>Letter Spacing</source>
         <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1050"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1056"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1077"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1052"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1058"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1079"/>
         <source> </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1109"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1111"/>
         <source>Rotation</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1110"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1112"/>
         <source>Width</source>
         <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1111"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1113"/>
         <source>Height</source>
         <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1259"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1261"/>
         <source>Fit to Screen</source>
         <translation>配合視窗尺寸</translation>
     </message>
@@ -1758,7 +1758,8 @@
         <location filename="../src/windows/preferences-window.ui" line="68"/>
         <source>Speed Optimization
 (Lazervida only)</source>
-        <translation type="unfinished"></translation>
+        <translation>速度優化
+(僅支援 Lazervida)</translation>
     </message>
     <message>
         <location filename="../src/windows/preferences-window.ui" line="95"/>
