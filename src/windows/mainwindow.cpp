@@ -65,9 +65,8 @@ void MainWindow::loadSettings() {
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
   QString current_machine = doc_panel_->getMachineName();
-  if(current_machine.toStdString().compare(0,9,"Lazervida") == 0 ||
-    current_machine.toStdString().compare(1,9,"Lazervida") == 0 ||
-    current_machine.toStdString().compare(current_machine.size()-9,9,"Lazervida") == 0) {
+  std::size_t found = current_machine.toStdString().find("Lazervida");
+  if(found!=std::string::npos) {
     is_high_speed_mode_ = true;
     preferences_window_->setSpeedMode(is_high_speed_mode_);
   }
@@ -750,10 +749,8 @@ void MainWindow::registerEvents() {
     is_high_speed_mode_ = is_high_speed;
   });
   connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
-    qInfo() << "get name = " << machine_name;
-    if(machine_name.toStdString().compare(0,9,"Lazervida") == 0 ||
-      machine_name.toStdString().compare(1,9,"Lazervida") == 0 ||
-      machine_name.toStdString().compare(machine_name.size()-9,9,"Lazervida") == 0) {
+    std::size_t found = machine_name.toStdString().find("Lazervida");
+    if(found!=std::string::npos) {
       is_high_speed_mode_ = true;
       preferences_window_->setSpeedMode(is_high_speed_mode_);
       QMessageBox msgbox;
