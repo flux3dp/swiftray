@@ -5,8 +5,8 @@
 
 TextShape::TextShape() noexcept: PathShape() { line_height_ = LINE_HEIGHT; }
 
-TextShape::TextShape(QString text, QFont font) : PathShape() {
-  line_height_ = LINE_HEIGHT;
+TextShape::TextShape(QString text, QFont font, double line_height) : PathShape() {
+  line_height_ = line_height;
   lines_ = text.split("\n");
   font_ = font;
   makePath();

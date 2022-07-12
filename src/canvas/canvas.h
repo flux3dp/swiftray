@@ -84,6 +84,8 @@ public:
 
   const QFont &font() const;
 
+  double lineHeight() const;
+
   CanvasTextEdit *textInput() const;
 
   // Graphics should be drawn in lower quality is this return true
@@ -210,6 +212,7 @@ private:
   std::unique_ptr<Document> doc_;
   Mode mode_;
   QFont font_;
+  double line_height_;
   Clipboard clipboard_;
   Parser::SVGPPParser svgpp_parser_;
 

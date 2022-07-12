@@ -37,6 +37,7 @@ Canvas::Canvas(QQuickItem *parent)
        widget_(nullptr),
        fps(0),
        font_(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold)),
+       line_height_(LINE_HEIGHT),
        timer(new QTimer(this)),
        mem_thread_(new QThread(this)) {
 
@@ -971,8 +972,10 @@ void Canvas::setFont(const QFont &font) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
-    ctrl_text_.target().setFont(font_);
+  } else {
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(font_);
+    }
   }
 }
 
@@ -990,11 +993,12 @@ void Canvas::setPointSize(int point_size) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
+  } else {
     target_font.setPointSize(point_size);
-    ctrl_text_.target().setFont(target_font);
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(target_font);
+    }
   }
-
   font_ = target_font;
 }
 
@@ -1012,11 +1016,12 @@ void Canvas::setLetterSpacing(double spacing) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
+  } else {
     target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
-    ctrl_text_.target().setFont(target_font);
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(target_font);
+    }
   }
-
   font_ = target_font;
 }
 
@@ -1034,11 +1039,12 @@ void Canvas::setBold(bool bold) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
+  } else {
     target_font.setBold(bold);
-    ctrl_text_.target().setFont(target_font);
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(target_font);
+    }
   }
-
   font_ = target_font;
 }
 
@@ -1056,11 +1062,12 @@ void Canvas::setItalic(bool italic) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
+  } else {
     target_font.setItalic(italic);
-    ctrl_text_.target().setFont(target_font);
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(target_font);
+    }
   }
-
   font_ = target_font;
 }
 
@@ -1078,15 +1085,17 @@ void Canvas::setUnderline(bool underline) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
+  } else {
     target_font.setUnderline(underline);
-    ctrl_text_.target().setFont(target_font);
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setFont(target_font);
+    }
   }
-
   font_ = target_font;
 }
 
 void Canvas::setLineHeight(float line_height) {
+  line_height_ = line_height;
   if (!document().selections().isEmpty()) {
     auto cmd = Commands::Joined();
     for (auto &shape: document().selections()) {
@@ -1096,8 +1105,10 @@ void Canvas::setLineHeight(float line_height) {
     }
     document().execute(cmd);
     emit selectionsChanged();
-  } else if (mode() == Mode::TextDrawing) {
-    ctrl_text_.target().setLineHeight(line_height);
+  } else {
+    if(!ctrl_text_.isEmpty()) {
+      ctrl_text_.target().setLineHeight(line_height);
+    }
   }
 }
 
@@ -1153,6 +1164,8 @@ bool Canvas::isVolatile() const {
 }
 
 const QFont &Canvas::font() const { return font_; }
+
+double Canvas::lineHeight() const { return line_height_;}
 
 void Canvas::editHFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);

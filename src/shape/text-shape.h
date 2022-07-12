@@ -7,7 +7,7 @@ class TextShape : public PathShape {
 public:
   TextShape() noexcept;
 
-  TextShape(QString text, QFont font);
+  TextShape(QString text, QFont font, double line_height);
 
   void paint(QPainter *painter) const override;
 

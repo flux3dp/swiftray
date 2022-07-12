@@ -22,7 +22,7 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
     // Create a virtual target
-    ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font());
+    ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font(), canvas().lineHeight());
     setTarget(new_shape);
     target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
   }
@@ -85,5 +85,14 @@ void Text::setTarget(ShapePtr &new_target) {
   target_ = new_target;
   if (target_ != nullptr) {
     canvas().textInput()->setPlainText(target().text());
+  }
+}
+
+bool Text::isEmpty() {
+  if(target_ != nullptr) {
+    return false;
+  }
+  else {
+    return true;
   }
 }
