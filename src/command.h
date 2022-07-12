@@ -118,6 +118,8 @@ namespace Commands {
 
     QList<ShapePtr> old_selections_;
     QList<ShapePtr> new_selections_;
+    QMutex old_select_mutex_;
+    QMutex new_select_mutex_;
   };
 
   /**

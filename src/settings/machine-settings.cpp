@@ -17,18 +17,22 @@ void MachineSettings::loadJson(const QJsonObject &obj) {
     return;
   }
   QJsonArray data = obj["data"].toArray();
+  machines_mutex_.lock();
   machines_.clear();
   for (QJsonValue item : data) {
     MachineSet machine = MachineSet::fromJson(item.toObject());
     machines_ << machine;
   }
+  machines_mutex_.unlock();
 }
 
 QJsonObject MachineSettings::toJson() {
   QJsonArray data;
+  machines_mutex_.lock();
   for (auto &mach : machines_) {
     data << mach.toJson();
   }
+  machines_mutex_.unlock();
   QJsonObject obj;
   obj["data"] = data;
   return obj;

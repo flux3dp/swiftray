@@ -56,7 +56,9 @@ class PreviewGenerator : public BaseGenerator {
         if (high_speed_raster_idx_ >= high_speed_raster_pc_ ||
             (high_speed_raster_idx_ / 32) > (high_speed_raster_array_.size() - 1)) {
           if (high_speed_raster_emitting) {
+            paths_mutex_.lock();
             paths_ << Path(QPointF(x_, y_), speed_, power_);
+            paths_mutex_.unlock();
             high_speed_raster_emitting = false;
           }
           break;
@@ -67,7 +69,9 @@ class PreviewGenerator : public BaseGenerator {
           y_ += (vect.y() * high_speed_raster_remaining_mm_to_next_dot_);
           bool next_emit_state = (high_speed_raster_array_[high_speed_raster_idx_ / 32]) & ((uint32_t)(0x80000000) >> (high_speed_raster_idx_ % 32));
           if (next_emit_state != high_speed_raster_emitting) {
+            paths_mutex_.lock();
             paths_ << Path(QPointF(x_, y_), speed_, high_speed_raster_emitting ? power_ : 0);
+            paths_mutex_.unlock();
             high_speed_raster_emitting  = next_emit_state;
           }
           high_speed_raster_remaining_mm_to_next_dot_ = mm_per_dot_;
@@ -86,9 +90,11 @@ class PreviewGenerator : public BaseGenerator {
       y_ = y;
     }
 
+    paths_mutex_.lock();
     paths_ << Path(QPointF(x_, y_), speed_,
                    high_speed_raster_mode_ ? high_speed_raster_emitting ? power_ : 0
                                                   : power_);
+    paths_mutex_.unlock();
   }
 
   void setLaserPower(float power) override {
@@ -142,7 +148,9 @@ class PreviewGenerator : public BaseGenerator {
         break;
     }
 
+    paths_mutex_.lock();
     paths_ << Path(QPointF(x_, y_), kHomingSpeed, 0);
+    paths_mutex_.unlock();
   }
 
   const QList<Path> &paths() const {
@@ -155,7 +163,9 @@ class PreviewGenerator : public BaseGenerator {
     machine_width_ = 0;
     machine_height_ = 0;
     machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+    paths_mutex_.lock();
     paths_.clear();
+    paths_mutex_.unlock();
   }
 
   void appendCustomCmd (const std::string& cmd) override {
@@ -247,4 +257,5 @@ class PreviewGenerator : public BaseGenerator {
   qreal mm_per_dot_ = 0.1;
 
   QList<Path> paths_;
+  QMutex paths_mutex_;
 };

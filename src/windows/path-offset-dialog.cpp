@@ -31,7 +31,9 @@ void PathOffsetDialog::reset() {
   ui->directionComboBox->setCurrentIndex(0);
 
   // reset internal data
+  path_list_mutex_.lock();
   path_list_.clear();
+  path_list_mutex_.unlock();
   offset_path_list_.clear();
 
   // reset graphicsview
@@ -64,7 +66,9 @@ void PathOffsetDialog::loadStyles() {
 }
 
 void PathOffsetDialog::addPath(QPolygonF path) {
+  path_list_mutex_.lock();
   path_list_ << path;
+  path_list_mutex_.unlock();
 
   QPen pen{Qt::black};
   pen.setWidth(3);
@@ -85,6 +89,7 @@ void PathOffsetDialog::addPath(QPolygonF path) {
 
 ClipperLib::Paths PathOffsetDialog::convertQtToClipper(bool closed_path) {
   ClipperLib::Paths clipper_paths;
+  path_list_mutex_.lock();
   for (auto polygon_path: path_list_) {
     if (closed_path && !polygon_path.isClosed()) {
       continue;
@@ -98,6 +103,7 @@ ClipperLib::Paths PathOffsetDialog::convertQtToClipper(bool closed_path) {
     }
     clipper_paths << clipper_path;
   }
+  path_list_mutex_.unlock();
   return clipper_paths;
 }
 

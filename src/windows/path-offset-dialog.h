@@ -37,6 +37,7 @@ private:
     QTransform scale_up_ = QTransform::fromScale(scale_factor_, scale_factor_);
     QTransform scale_down_ = QTransform::fromScale(scale_factor_invert_, scale_factor_invert_);
     QList<QPolygonF> path_list_; // source path
+    QMutex path_list_mutex_;
     QList<QPolygonF> offset_path_list_; // result
     QSizeF document_size_ = QSizeF{3000, 2000}; // default value
 

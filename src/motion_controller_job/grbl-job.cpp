@@ -128,6 +128,7 @@ void GrblJob::run() {
         throw "STOPPED PORT_DISCONNECTED";
       }
       sleep(1);
+      rcvd_mutex_.lock();
       while (!rcvd_lines_.empty()) {
         if (rcvd_lines_.front().contains(QString{"ok"}) ) {
           is_ready = true;
@@ -135,6 +136,7 @@ void GrblJob::run() {
         }
         rcvd_lines_.pop_front();
       }
+      rcvd_mutex_.unlock();
       if (is_ready) {
         qInfo() << "grbl ready";
         break;
@@ -149,7 +151,9 @@ void GrblJob::run() {
         serial_port.write(QString{"\n"});
       }
     }
+    rcvd_mutex_.lock();
     rcvd_lines_.clear();
+    rcvd_mutex_.unlock();
 
     // Start streaming g-code to grbl
     emit startRealTimeStatusTimer(1000);
@@ -195,8 +199,11 @@ void GrblJob::run() {
         if (rcvd_lines_.empty()) {
           continue;
         }
+        rcvd_mutex_.lock();
         Q_ASSERT_X(rcvd_lines_.size() > 0, "GRBL Job", "Receive buffer must has at least one item");
         QString out_temp = rcvd_lines_.front().trimmed(); // One line of grbl response
+        rcvd_lines_.pop_front();
+        rcvd_mutex_.unlock();
         if (out_temp.contains(QString{"ok"}) || out_temp.contains(QString{"error"})) {
           if (out_temp.contains("error")) {
             error_count += 1;
@@ -255,7 +262,6 @@ void GrblJob::run() {
           // Unknown msg
           qInfo() << "Unknown MSG: " + out_temp; // Debug response
         }
-        rcvd_lines_.pop_front();
       }
       // Send the cmd
       qInfo() << "SND>" << l_count << ": " << l_block;
@@ -288,8 +294,11 @@ void GrblJob::run() {
       if (rcvd_lines_.empty()) {
         continue;
       }
+      rcvd_mutex_.lock();
       Q_ASSERT_X(rcvd_lines_.size() > 0, "GRBL Job", "Receive buffer must has at least one item");
       QString out_temp = rcvd_lines_.front().trimmed(); // Wait for grbl response
+      rcvd_lines_.pop_front();
+      rcvd_mutex_.unlock();
       if (out_temp.contains(QString{"ok"}) || out_temp.contains(QString{"error"})) {
         if (out_temp.contains("error")) {
           error_count += 1;
@@ -327,7 +336,6 @@ void GrblJob::run() {
         // Unknown msg
         qInfo() << "    MSG: \"" + out_temp + "\""; // Debug response
       }
-      rcvd_lines_.pop_front();
     }
 
     progress_value_ = 100;
@@ -421,7 +429,9 @@ void GrblJob::onPortDisconnected() {
 }
 
 void GrblJob::onResponseReceived(QString line) {
+  rcvd_mutex_.lock();
   rcvd_lines_.push_back(line);
+  rcvd_mutex_.unlock();
 }
 
 void GrblJob::handleRealtimeStatusReport(const QStringList& tokens) {

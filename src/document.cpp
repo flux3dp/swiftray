@@ -62,10 +62,14 @@ void Document::undo() {
     qDebug() << "[Document] There is no command to undo!";
     return;
   }
+  undo_mutex_.lock();
   CmdPtr evt = undo2_stack_.last();
   evt->undo(this);
   undo2_stack_.pop_back();
+  undo_mutex_.unlock();
+  redo_mutex_.lock();
   redo2_stack_ << evt;
+  redo_mutex_.unlock();
 
   QString active_layer_name = activeLayer()->name();
 
@@ -75,10 +79,14 @@ void Document::undo() {
 
 void Document::redo() {
   if (redo2_stack_.isEmpty()) return;
+  redo_mutex_.lock();
   CmdPtr evt = redo2_stack_.last();
   evt->redo(this);
   redo2_stack_.pop_back();
+  redo_mutex_.unlock();
+  undo_mutex_.lock();
   undo2_stack_ << evt;
+  undo_mutex_.unlock();
 
   QString active_layer_name = activeLayer()->name();
 
@@ -90,9 +98,13 @@ void Document::execute(Commands::BaseCmd *cmd) {
 }
 
 void Document::execute(const CmdPtr &cmd) {
+  redo_mutex_.lock();
   redo2_stack_.clear();
+  redo_mutex_.unlock();
   cmd->redo(this);
+  undo_mutex_.lock();
   undo2_stack_.push_back(cmd);
+  undo_mutex_.unlock();
   if (!current_file_modified) {
     current_file_modified = true;
   }
@@ -108,14 +120,18 @@ void Document::execute(std::initializer_list<CmdPtr> cmds) {
 
 void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
+  layers_mutex_.lock();
   layers_ << layer;
+  layers_mutex_.unlock();
   active_layer_ = layers().last().get();
 }
 
 void Document::removeLayer(LayerPtr &layer) {
+  layers_mutex_.lock();
   if (!layers_.removeOne(layer)) {
     qInfo() << "Failed to remove layer";
   }
+  layers_mutex_.unlock();
 }
 
 QPointF Document::getCanvasCoord(QPointF window_coord) const {
@@ -195,7 +211,9 @@ const QList<LayerPtr> &Document::layers() const { return layers_; }
 
 void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
   // TODO (Add undo event)
+  layers_mutex_.lock();
   layers_ = new_order;
+  layers_mutex_.unlock();
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {

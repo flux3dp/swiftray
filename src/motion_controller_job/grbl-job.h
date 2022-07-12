@@ -157,4 +157,5 @@ private:
   void systemCmdNonblockingSend(SystemCmd cmd);
 
   std::list<QString> rcvd_lines_;
+  QMutex rcvd_mutex_;
 };
