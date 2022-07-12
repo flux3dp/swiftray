@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMutex>
 #include <shape/shape.h>
 #include <canvas/cache-stack.h>
 

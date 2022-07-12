@@ -5,6 +5,7 @@
 #include <settings/machine-settings.h>
 #include <QVector2D>
 #include <QtMath>
+#include <QMutex>
 
 /**
  * @brief 

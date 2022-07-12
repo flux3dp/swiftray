@@ -2,6 +2,7 @@
 
 #include <QList>
 #include <QPainter>
+#include <QMutex>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/path-shape.h>

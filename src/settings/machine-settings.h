@@ -9,6 +9,7 @@
 #include <QPointF>
 #include <QIcon>
 #include <QStringList>
+#include <QMutex>
 
 
 /**
