@@ -151,6 +151,7 @@ private:
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;
+  QMutex layers_mutex_;
 
   QFont font_;
 
@@ -162,6 +163,8 @@ private:
 
   QList<CmdPtr> undo2_stack_;
   QList<CmdPtr> redo2_stack_;
+  QMutex undo_mutex_;
+  QMutex redo_mutex_;
 
   QSize screen_size_;
 

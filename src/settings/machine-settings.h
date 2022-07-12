@@ -80,4 +80,5 @@ private:
   QJsonObject toJson();
 
   QList<MachineSet> machines_;
+  QMutex machines_mutex_;
 };

@@ -63,6 +63,7 @@ private:
   QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
   //QList<ShapePtr> layer_elements_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry
+  QMutex polygons_mutex_;
   QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path)
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;

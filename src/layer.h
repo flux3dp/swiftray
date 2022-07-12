@@ -113,6 +113,7 @@ private:
   QColor color_;
   QString name_;
   QList<ShapePtr> children_;
+  QMutex children_mutex_;
   Type type_;
   bool use_diode_;
   bool is_locked_;

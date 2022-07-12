@@ -55,14 +55,18 @@ int Layer::paint(QPainter *painter) const {
 
 void Layer::addShape(const ShapePtr &shape) {
   shape->setLayer(this);
+  children_mutex_.lock();
   children_.push_back(shape);
+  children_mutex_.unlock();
   cache_valid_ = false;
 }
 
 void Layer::removeShape(const ShapePtr &shape) {
+  children_mutex_.lock();
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
   }
+  children_mutex_.unlock();
   flushCache();
 }
 
@@ -193,8 +197,10 @@ LayerPtr Layer::clone() {
   new_layer->setUseDiode(isUseDiode());
   new_layer->setTargetHeight(targetHeight());
   new_layer->setType(type());
+  children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());
   }
+  children_mutex_.unlock();
   return new_layer;
 }

@@ -56,13 +56,19 @@ void RemoveShapeCmd::redo(Document *doc) {
 }
 
 SelectCmd::SelectCmd(Document *doc, const QList<ShapePtr> &new_selections) {
+  old_select_mutex_.lock();
   old_selections_ = doc->selections();
+  old_select_mutex_.unlock();
+  new_select_mutex_.lock();
   new_selections_ = new_selections;
+  new_select_mutex_.unlock();
 }
 
 void SelectCmd::undo(Document *doc) {
   qDebug() << "[Command] Undo select";
+  old_select_mutex_.lock();
   doc->setSelections(old_selections_);
+  old_select_mutex_.unlock();
 }
 
 void SelectCmd::redo(Document *doc) {
@@ -71,7 +77,9 @@ void SelectCmd::redo(Document *doc) {
   } else {
     qDebug() << "[Command] Do select none";
   }
+  new_select_mutex_.lock();
   doc->setSelections(new_selections_);
+  new_select_mutex_.unlock();
 }
 
 CmdPtr Commands::RemoveSelections(Document *doc) {

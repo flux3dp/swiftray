@@ -67,7 +67,9 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
   // TODO (Use layer_painter to manage transform over different sub objects)
   global_transform_ = QTransform() * resolution_scale_transform_;
+  polygons_mutex_.lock();
   layer_polygons_.clear();
+  polygons_mutex_.unlock();
   layer_painter_ = std::make_unique<QPainter>(&layer_bitmap_);
   //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
@@ -143,13 +145,16 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Line ||
       current_layer_->type() == Layer::Type::FillLine) {
+    polygons_mutex_.lock();
     layer_polygons_.append(transformed_path.toSubpathPolygons());
+    polygons_mutex_.unlock();
   }
 }
 
 void ToolpathExporter::sortPolygons() {
   // Performance: O(n^2)
   QList<QPolygonF> sort_result;
+  polygons_mutex_.lock();
   for (const auto& polygon: layer_polygons_) {
     int insert_idx = sort_result.size();
     for (int idx = sort_result.size() - 1; idx >= 0; idx--) {
@@ -161,6 +166,7 @@ void ToolpathExporter::sortPolygons() {
   }
 
   layer_polygons_ = sort_result;
+  polygons_mutex_.unlock();
   return;
 }
 
@@ -177,6 +183,7 @@ void ToolpathExporter::outputLayerPathGcode() {
   gen_->turnOnLaser(); // M3
 
   // NOTE: Should convert points from canvas unit to mm
+  polygons_mutex_.lock();
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
 
@@ -211,6 +218,7 @@ void ToolpathExporter::outputLayerPathGcode() {
 
     //gen_->turnOffLaser();
   }
+  polygons_mutex_.unlock();
   // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
   gen_->turnOffLaser();
 }
