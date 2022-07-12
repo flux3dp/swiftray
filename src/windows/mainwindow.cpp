@@ -371,8 +371,9 @@ void MainWindow::imageSelected(const QImage image) {
 
 void MainWindow::exportGCodeFile() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
-
+  ToolpathExporter exporter(gen_gcode.get(), 
+      canvas_->document().settings().dpmm(), 
+      ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
@@ -681,7 +682,9 @@ void MainWindow::registerEvents() {
       return;
     }
     auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), canvas_->document().settings().dpmm());
+    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+        canvas_->document().settings().dpmm(),
+        ToolpathExporter::PaddingType::kNoPadding);
     exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
     exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
@@ -1354,24 +1357,30 @@ void MainWindow::showJoggingPanel() {
  */
 void MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), canvas_->document().settings().dpmm());
+  ToolpathExporter exporter(gen_gcode.get(), 
+      canvas_->document().settings().dpmm(),
+      ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
 }
 
 void MainWindow::genPreviewWindow() {
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter preview_exporter(preview_path_generator.get(), canvas_->document().settings().dpmm());
+  ToolpathExporter preview_exporter(preview_path_generator.get(), 
+      canvas_->document().settings().dpmm(),
+      ToolpathExporter::PaddingType::kFixedPadding);
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-  PreviewWindow *pw = new PreviewWindow(this,
-                                        canvas_->document().width() / 10,
-                                        canvas_->document().height() / 10);
+    
   auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter gcode_exporter(gcode_generator.get(), canvas_->document().settings().dpmm());
+  ToolpathExporter gcode_exporter(gcode_generator.get(), 
+      canvas_->document().settings().dpmm(),
+      ToolpathExporter::PaddingType::kFixedPadding);
   gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
   QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
   QTime last_gcode_timestamp{0, 0};
@@ -1379,6 +1388,9 @@ void MainWindow::genPreviewWindow() {
     last_gcode_timestamp = timestamp_list.last();
   }
 
+  PreviewWindow *pw = new PreviewWindow(this,
+                                        canvas_->document().width() / 10,
+                                        canvas_->document().height() / 10);
   pw->setPreviewPath(preview_path_generator);
   pw->setRequiredTime(last_gcode_timestamp);
   pw->show();

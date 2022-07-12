@@ -13,8 +13,15 @@
 #include <QImage>
 
 class ToolpathExporter {
+
 public:
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept;
+  enum class PaddingType {
+      kNoPadding,
+      kFixedPadding,  // Padding with a fixed distance
+      kDynamicPadding // Based on layer speed and acceleration
+  };
+
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding) noexcept;
 
   void convertStack(const QList<LayerPtr> &layers, bool is_high_speed);
 
@@ -50,10 +57,10 @@ private:
   std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> adjustPrefixSuffixZero(
           const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt);
   bool rasterBitmap(const QImage &layer_image, QRect bbox,
-                    ScanDirectionMode direction_mode);
+                    ScanDirectionMode direction_mode, qreal padding_mm);
   bool rasterLine(const QLineF& path, const std::vector<std::bitset<32>>& data);
   bool rasterBitmapHighSpeed(const QImage &layer_image, QRect bbox,
-                             ScanDirectionMode direction_mode);
+                             ScanDirectionMode direction_mode, qreal padding_mm);
   bool rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data);
 
   QImage imageBinarize(QImage src, int threshold);
@@ -76,6 +83,7 @@ private:
                                        // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_size_)
 
   QPointF current_pos_; // in unit of mm
-  qreal padding_mm_ = 10;
+  PaddingType padding_type_ = PaddingType::kNoPadding;
+  qreal fixed_padding_mm_ = 10;
   bool is_high_speed_;
 };
