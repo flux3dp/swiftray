@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMutex>
 #include <layer.h>
 #include <shape/shape.h>
 #include <shape/text-shape.h>

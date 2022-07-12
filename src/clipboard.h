@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QList>
+#include <QMutex>
 #include <shape/shape.h>
 #include <document.h>
 

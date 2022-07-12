@@ -3,6 +3,7 @@
 #include <QPoint>
 #include <QWidget>
 #include <QElapsedTimer>
+#include <QMutex>
 #include <layer.h>
 #include <document-settings.h>
 #include <shape/shape.h>

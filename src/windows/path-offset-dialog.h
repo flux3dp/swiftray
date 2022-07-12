@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QMutex>
 #include <widgets//base-container.h>
 #include <clipper/clipper.hpp>
 
