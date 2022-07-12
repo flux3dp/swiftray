@@ -15,7 +15,7 @@ if(WIN32)
     set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
     set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
     set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
-    set (OpenCV_DIR "C:/Dev/opencv/build")
+    set (OpenCV_DIR "C:/Dev/opencv_452_mingw")
 endif()
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
