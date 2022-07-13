@@ -161,7 +161,7 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
       canceled = true;
   });
   progress.setWindowModality(Qt::WindowModal);
-
+  progress.show();
   while (current_line < gcode_list.size()) {
     if (canceled) {
       throw "Canceled";

@@ -1425,10 +1425,10 @@ void MainWindow::generateJob() {
     qInfo() << "Blocked: Some jobs are still running";
     return;
   }
-  QElapsedTimer timer;
-  qInfo() << "Start calcRequiredTime";
-  timer.start();
   try {
+    QElapsedTimer timer;
+    qInfo() << "Start calcRequiredTime";
+    timer.start();
     auto timestamp_list = gcode_player_->calcRequiredTime();
     auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
     job->setTimestampList(timestamp_list);
