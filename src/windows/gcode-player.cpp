@@ -2,6 +2,7 @@
 #include "ui_gcode-player.h"
 #include <QMessageBox>
 #include <QRegularExpression>
+#include <QProgressDialog>
 
 #ifndef Q_OS_IOS
 
@@ -143,6 +144,7 @@ QString GCodePlayer::getGCode() {
 /**
  * @brief Calculate the required time from the GCodes inside text area
  * @retval A list of timestamp corresponding to each line of GCode
+ *         throw exception when canceled
  */
 QList<QTime> GCodePlayer::calcRequiredTime() {
   QList<QTime> timestamp_list;
@@ -152,7 +154,21 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
   float last_x = 0, last_y = 0, f = 7500, x = 0, y = 0;
 
   QTime required_time{0, 0};
+
+  bool canceled = false;
+  QProgressDialog progress(tr("Estimating task time..."),  tr("Cancel"), 0, gcode_list.size()-1, this);
+  connect(&progress, &QProgressDialog::canceled, [&]() {
+      canceled = true;
+  });
+  progress.setWindowModality(Qt::WindowModal);
+
   while (current_line < gcode_list.size()) {
+    if (canceled) {
+      throw "Canceled";
+    }
+    if (current_line % 100 == 0 || current_line == (gcode_list.size() - 1)) {
+      progress.setValue(current_line);
+    }
     const QString& line = gcode_list[current_line];
     if (line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)

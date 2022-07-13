@@ -649,29 +649,34 @@ void MainWindow::registerEvents() {
     // Prepare GCodes
     generateGcode();
     // Prepare total required time
-    auto timestamp_list = gcode_player_->calcRequiredTime();
-    QTime total_required_time = QTime{0, 0};
-    if (!timestamp_list.empty()) {
-      total_required_time = timestamp_list.last();
-    }
-    // Prepare canvas scene pixmap
-    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
-    canvas_pixmap.fill(Qt::white);
-    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-    canvas_->document().paint(painter.get());
+    try {
+      auto timestamp_list = gcode_player_->calcRequiredTime();
+      QTime total_required_time = QTime{0, 0};
+      if (!timestamp_list.empty()) {
+        total_required_time = timestamp_list.last();
+      }
+      // Prepare canvas scene pixmap
+      QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
+      canvas_pixmap.fill(Qt::white);
+      auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+      canvas_->document().paint(painter.get());
 
-    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
-    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
-    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
-    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
-    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
-    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
-    if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
-      job_dashboard_->attachJob(jobs_.last());
+      job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+      connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
+      connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+      connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+      connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+      connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
+      connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
+      if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
+        job_dashboard_->attachJob(jobs_.last());
+      }
+      job_dashboard_->show();
+      job_dashboard_exist_ = true;
+    } catch (...) {
+      // Terminated
+      return;
     }
-    job_dashboard_->show();
-    job_dashboard_exist_ = true;
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
     if (!serial_port.isOpen()) {
@@ -1382,18 +1387,24 @@ void MainWindow::genPreviewWindow() {
   gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
   
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
-  QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
-  QTime last_gcode_timestamp{0, 0};
-  if (!timestamp_list.empty()) {
-    last_gcode_timestamp = timestamp_list.last();
+  try {
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    QTime last_gcode_timestamp{0, 0};
+    if (!timestamp_list.empty()) {
+      last_gcode_timestamp = timestamp_list.last();
+    }
+
+    PreviewWindow *pw = new PreviewWindow(this,
+                                          canvas_->document().width() / 10,
+                                          canvas_->document().height() / 10);
+    pw->setPreviewPath(preview_path_generator);
+    pw->setRequiredTime(last_gcode_timestamp);
+    pw->show();
+  } catch (...) {
+    // Terminated
+    return;
   }
 
-  PreviewWindow *pw = new PreviewWindow(this,
-                                        canvas_->document().width() / 10,
-                                        canvas_->document().height() / 10);
-  pw->setPreviewPath(preview_path_generator);
-  pw->setRequiredTime(last_gcode_timestamp);
-  pw->show();
 }
 
 /**
@@ -1414,10 +1425,20 @@ void MainWindow::generateJob() {
     qInfo() << "Blocked: Some jobs are still running";
     return;
   }
+  QElapsedTimer timer;
+  qInfo() << "Start calcRequiredTime";
+  timer.start();
+  try {
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
+    job->setTimestampList(timestamp_list);
+    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
 
-  auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
-  job->setTimestampList(gcode_player_->calcRequiredTime());
-  jobs_ << job;
+    jobs_ << job;
+  } catch (...) {
+    // Terminated
+    return;
+  }
 }
 
 /**
