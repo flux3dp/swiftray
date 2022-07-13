@@ -195,6 +195,7 @@ QList<QTime> GCodePlayer::calcRequiredTime() {
         }
       }
 
+      Q_ASSERT_X(f > 0, "GCode Player", "Feedrate must be larger than 0");
       // NOTE: F value is in unit of mm/min
       if (relative_mode) {
         required_time = required_time.addMSecs(1000 *

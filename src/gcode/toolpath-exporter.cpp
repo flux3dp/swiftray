@@ -9,8 +9,8 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm) noexcept :
- gen_(generator), dpmm_(dpmm)
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding_type) noexcept :
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
@@ -231,15 +231,27 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   // Get the image of entire layer
   QImage layer_image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
 
-  // Adjust padding based on layer speed
-  //qreal accelerate = 4000;
-  //padding_mm_ = qreal(current_layer_->speed()*current_layer_->speed()) / (2*accelerate); // d = v^2 / 2a
+  qreal padding_mm;
+  qreal accelerate = 4000; // mm/s^2
+  switch (padding_type_) {
+    case PaddingType::kFixedPadding:
+      padding_mm = fixed_padding_mm_;
+      break;
+    case PaddingType::kDynamicPadding:
+      // Adjust padding based on layer speed
+      padding_mm = qreal(current_layer_->speed()*current_layer_->speed()) / (2*accelerate); // d = v^2 / 2a
+      break;
+    case PaddingType::kNoPadding:
+    default:
+      padding_mm = 0;
+      break;
+  }
   // NOTE: Express bbox in # of dots
   //       Reserve x-direction padding in bounding box (for acceleration distance)
   const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
-  QRect bbox{QPoint{qMax(qRound(bitmap_dirty_area_.topLeft().x() - padding_mm_*dpmm_), 0),
+  QRect bbox{QPoint{qMax(qRound(bitmap_dirty_area_.topLeft().x() - padding_mm * dpmm_), 0),
                qMax(qRound(bitmap_dirty_area_.topLeft().y()), 0)},
-             QPoint{qMin(qRound(bitmap_dirty_area_.bottomRight().x() + padding_mm_*dpmm_), canvas_size_.toSize().width() - 1),
+             QPoint{qMin(qRound(bitmap_dirty_area_.bottomRight().x() + padding_mm * dpmm_), canvas_size_.toSize().width() - 1),
                qMin(qRound(bitmap_dirty_area_.bottomRight().y()), canvas_size_.toSize().height() - 1)}};
 
   gen_->turnOnLaserAdpatively(); // M4
@@ -253,10 +265,10 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // Start raster
   if(is_high_speed_) {
-    rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode);
+    rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode, padding_mm);
   }
   else {
-    rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode);
+    rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
   }
 
   gen_->useAbsolutePositioning();
@@ -345,7 +357,9 @@ std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> ToolpathExporter::a
  * @return
  */
 bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
-    QRect bbox, ScanDirectionMode direction_mode) {
+    QRect bbox, 
+    ScanDirectionMode direction_mode, 
+    qreal padding_mm) {
 
   const int white_pixel = 255;
   int current_grayscale = white_pixel; // 0-255 from dark (black) to bright (white)
@@ -415,7 +429,7 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
     }
 
     auto [ trimmed_bit_array, first_pos_idx, last_pos_idx ] =
-    adjustPrefixSuffixZero(dot_data_list, padding_mm_ * dpmm_);
+    adjustPrefixSuffixZero(dot_data_list, padding_mm * dpmm_);
     // NOTE +1 to the end pos because we move to "the end of the last dot"
     QLineF dirty_line_segment {
             path.pointAt(first_pos_idx * t_step),
@@ -481,7 +495,8 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
  */
 bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
     QRect bbox,
-    ScanDirectionMode direction_mode) {
+    ScanDirectionMode direction_mode,
+    qreal padding_mm) {
 
   // 1. Enter fast raster mode
   gen_->appendCustomCmd(std::string("D0R") +
@@ -560,7 +575,7 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
     }
 
     auto [ trimmed_bit_array, first_pos_idx, last_pos_idx ] =
-            adjustPrefixSuffixZero(dot_data_list, padding_mm_ * dpmm_);
+            adjustPrefixSuffixZero(dot_data_list, padding_mm * dpmm_);
     // NOTE +1 to the end pos because we move to "the end of the last dot"
     QLineF dirty_line_segment {
             path.pointAt(first_pos_idx * t_step),

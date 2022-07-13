@@ -18,6 +18,10 @@ public:
    * @param power
    */
   void moveTo(float x, float y, float speed, float power) override {
+    if (power == 0) {
+      return;
+    }
+
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
       case MachineSettings::MachineSet::OriginType::RearRight:
