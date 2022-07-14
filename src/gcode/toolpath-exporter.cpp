@@ -3,6 +3,8 @@
 #include <QDebug>
 #include <QVector2D>
 #include <QtMath>
+#include <QProgressDialog>
+#include <QCoreApplication>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -20,8 +22,10 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, Padding
 /**
  * @brief Convert all visible layers in the document into gcode (result is stored in gcode generator)
  * @param layers MUST contain at least one layer
+ * @retval true if completed,
+ *         false if canceled or error occurred
  */
-void ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed) {
+bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog) {
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
@@ -42,20 +46,36 @@ void ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 
   bitmap_dirty_area_ = QRectF();
 
+  bool canceled = false;
+  if (dialog != nullptr) {
+    connect(dialog, &QProgressDialog::canceled, [&]() {
+      canceled = true;
+    });
+  }
+  int processed_layer_cnt = 0;
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
-    if (!(*layer_rit)->isVisible()) {
-      continue;
+    if (canceled) {
+      return false;
     }
-    qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-    for (int i = 0; i < (*layer_rit)->repeat(); i++) {
-      convertLayer((*layer_rit));
+    if ((*layer_rit)->isVisible()) {
+      qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
+      for (int i = 0; i < (*layer_rit)->repeat(); i++) {
+        convertLayer((*layer_rit));
+      }
+    }
+    processed_layer_cnt++;
+    if (dialog != nullptr) {
+      dialog->setValue(100 * processed_layer_cnt / layers.count());
+      QCoreApplication::processEvents();
     }
   }
 
   // Post cmds
   gen_->home();
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
+  return true;
 }
+
 
 /**
  * @brief Convert Shapes on canvas layer into scaled polygons/layer_bitmap (by resolution)

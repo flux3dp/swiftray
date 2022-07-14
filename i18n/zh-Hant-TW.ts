@@ -265,8 +265,8 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="203"/>
-        <location filename="../src/windows/gcode-player.cpp" line="46"/>
-        <location filename="../src/windows/gcode-player.cpp" line="53"/>
+        <location filename="../src/windows/gcode-player.cpp" line="47"/>
+        <location filename="../src/windows/gcode-player.cpp" line="54"/>
         <source>Play</source>
         <translation>開始工作</translation>
     </message>
@@ -276,9 +276,9 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="219"/>
-        <location filename="../src/windows/gcode-player.cpp" line="91"/>
-        <location filename="../src/windows/gcode-player.cpp" line="104"/>
-        <location filename="../src/windows/gcode-player.cpp" line="119"/>
+        <location filename="../src/windows/gcode-player.cpp" line="92"/>
+        <location filename="../src/windows/gcode-player.cpp" line="105"/>
+        <location filename="../src/windows/gcode-player.cpp" line="120"/>
         <source>Pause</source>
         <translation>暫停工作</translation>
     </message>
@@ -288,9 +288,19 @@
         <translation>停止工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="99"/>
+        <location filename="../src/windows/gcode-player.cpp" line="100"/>
         <source>Resume</source>
         <translation>繼續工作</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/gcode-player.cpp" line="159"/>
+        <source>Estimating task time...</source>
+        <translation>估計工作時長中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/gcode-player.cpp" line="159"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -1025,7 +1035,7 @@
         <translation>Ctrl+W</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="741"/>
+        <location filename="../src/windows/mainwindow.ui" line="738"/>
         <location filename="../src/windows/mainwindow.cpp" line="809"/>
         <source>Cut</source>
         <translation>剪下</translation>
@@ -1036,7 +1046,7 @@
         <translation>Ctrl+X</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="749"/>
+        <location filename="../src/windows/mainwindow.ui" line="746"/>
         <location filename="../src/windows/mainwindow.cpp" line="810"/>
         <source>Copy</source>
         <translation>複製</translation>
@@ -1047,7 +1057,7 @@
         <translation>Ctrl+C</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="757"/>
+        <location filename="../src/windows/mainwindow.ui" line="754"/>
         <location filename="../src/windows/mainwindow.cpp" line="811"/>
         <source>Paste</source>
         <translation>貼上</translation>
@@ -1491,17 +1501,16 @@
         <translation>檔案 (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="425"/>
+        <location filename="../src/windows/mainwindow.cpp" line="383"/>
         <source>GCode Files (*.gcode)</source>
         <translation>檔案 (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="451"/>
+        <location filename="../src/windows/mainwindow.cpp" line="409"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="146"/>
         <location filename="../src/windows/mainwindow.cpp" line="685"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
@@ -1590,11 +1599,31 @@
         <translation>配合視窗尺寸</translation>
     </message>
     <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1389"/>
+        <source>Exporting toolpath...</source>
+        <translation>輸出路徑中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1390"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1401"/>
+        <source>Generating GCode...</source>
+        <translation>產生GCode中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1407"/>
+        <source>Copying GCode...</source>
+        <translation>複製GCode中...</translation>
+    </message>
+    <message>
         <source>GCode Files (*.gcode);; All files (*.*)</source>
         <translation type="vanished">GCode檔案 (*gcode);; 所有檔案(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="427"/>
+        <location filename="../src/windows/mainwindow.cpp" line="385"/>
         <source>Save GCode</source>
         <translation>儲存 GCode</translation>
     </message>
