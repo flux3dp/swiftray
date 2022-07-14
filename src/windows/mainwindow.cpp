@@ -372,11 +372,20 @@ void MainWindow::imageSelected(const QImage image) {
 
 void MainWindow::exportGCodeFile() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), 
+  QProgressDialog progress_dialog(tr("Generating GCode..."),
+                                   tr("Cancel"),
+                                   0,
+                                   100, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+
+  ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
       ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
 
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
@@ -1363,13 +1372,22 @@ void MainWindow::showJoggingPanel() {
  */
 void MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), 
+  QProgressDialog progress_dialog(tr("Generating GCode..."),
+                                   tr("Cancel"),
+                                   0,
+                                   101, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+  ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
       ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
   
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  progress_dialog.setValue(progress_dialog.maximum());
 }
 
 void MainWindow::genPreviewWindow() {
@@ -1393,16 +1411,13 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
-  int result;
-  result = preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog);
-  if (result != true) {
-    return;
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
   }
   progress_dialog.setLabelText(tr("Generating GCode..."));
   progress_dialog.setValue(0);
-  result = gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog);
-  if (result != true) {
-    return;
+  if ( true != gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
   }
   progress_dialog.setLabelText(tr("Copying GCode..."));
   progress_dialog.setValue(progress_dialog.maximum() / 2);
