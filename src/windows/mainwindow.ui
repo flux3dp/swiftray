@@ -639,9 +639,12 @@
     <addaction name="separator"/>
     <addaction name="menuExample"/>
     <addaction name="separator"/>
-    <addaction name="actionPreferences"/>
-    <addaction name="actionPreview"/>
     <addaction name="menuExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreview"/>
+    <addaction name="actionStart_2"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
     <addaction name="separator"/>
     <addaction name="actionClose"/>
    </widget>
@@ -1276,6 +1279,15 @@
   <action name="actionExampleOfSwiftray">
    <property name="text">
     <string>Example of Swiftray</string>
+   </property>
+  </action>
+  <action name="actionStart_2">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/images/icon-start.png</normaloff>:/images/icon-start.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start</string>
    </property>
   </action>
  </widget>
