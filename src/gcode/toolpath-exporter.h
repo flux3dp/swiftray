@@ -3,6 +3,7 @@
 #include <QList>
 #include <QPainter>
 #include <QMutex>
+#include <QProgressDialog>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/path-shape.h>
@@ -13,7 +14,9 @@
 
 #include <QImage>
 
-class ToolpathExporter {
+class ToolpathExporter : public QObject
+{
+Q_OBJECT
 
 public:
   enum class PaddingType {
@@ -24,7 +27,7 @@ public:
 
   ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding) noexcept;
 
-  void convertStack(const QList<LayerPtr> &layers, bool is_high_speed);
+  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 

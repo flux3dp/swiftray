@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <constants.h>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -371,11 +372,20 @@ void MainWindow::imageSelected(const QImage image) {
 
 void MainWindow::exportGCodeFile() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), 
+  QProgressDialog progress_dialog(tr("Generating GCode..."),
+                                   tr("Cancel"),
+                                   0,
+                                   100, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+
+  ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
       ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
 
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
@@ -649,29 +659,34 @@ void MainWindow::registerEvents() {
     // Prepare GCodes
     generateGcode();
     // Prepare total required time
-    auto timestamp_list = gcode_player_->calcRequiredTime();
-    QTime total_required_time = QTime{0, 0};
-    if (!timestamp_list.empty()) {
-      total_required_time = timestamp_list.last();
-    }
-    // Prepare canvas scene pixmap
-    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
-    canvas_pixmap.fill(Qt::white);
-    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-    canvas_->document().paint(painter.get());
+    try {
+      auto timestamp_list = gcode_player_->calcRequiredTime();
+      QTime total_required_time = QTime{0, 0};
+      if (!timestamp_list.empty()) {
+        total_required_time = timestamp_list.last();
+      }
+      // Prepare canvas scene pixmap
+      QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
+      canvas_pixmap.fill(Qt::white);
+      auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+      canvas_->document().paint(painter.get());
 
-    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
-    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
-    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
-    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
-    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
-    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
-    if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
-      job_dashboard_->attachJob(jobs_.last());
+      job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+      connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
+      connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+      connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+      connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+      connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
+      connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
+      if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
+        job_dashboard_->attachJob(jobs_.last());
+      }
+      job_dashboard_->show();
+      job_dashboard_exist_ = true;
+    } catch (...) {
+      // Terminated
+      return;
     }
-    job_dashboard_->show();
-    job_dashboard_exist_ = true;
   });
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
     if (!serial_port.isOpen()) {
@@ -1357,43 +1372,79 @@ void MainWindow::showJoggingPanel() {
  */
 void MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter exporter(gen_gcode.get(), 
+  QProgressDialog progress_dialog(tr("Generating GCode..."),
+                                   tr("Cancel"),
+                                   0,
+                                   101, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+  ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
       ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
   
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  progress_dialog.setValue(progress_dialog.maximum());
 }
 
 void MainWindow::genPreviewWindow() {
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter preview_exporter(preview_path_generator.get(), 
-      canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
-  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-    
   auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter gcode_exporter(gcode_generator.get(), 
-      canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
+
+  ToolpathExporter preview_exporter(preview_path_generator.get(),
+                                    canvas_->document().settings().dpmm(),
+                                    ToolpathExporter::PaddingType::kFixedPadding);
+  ToolpathExporter gcode_exporter(gcode_generator.get(),
+                                  canvas_->document().settings().dpmm(),
+                                  ToolpathExporter::PaddingType::kFixedPadding);
+
+  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-  
+
+  QProgressDialog progress_dialog(tr("Exporting toolpath..."),
+                                   tr("Cancel"),
+                                   0,
+                                   101, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
+  progress_dialog.setLabelText(tr("Generating GCode..."));
+  progress_dialog.setValue(0);
+  if ( true != gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+    return; // canceled
+  }
+  progress_dialog.setLabelText(tr("Copying GCode..."));
+  progress_dialog.setValue(progress_dialog.maximum() / 2);
+  QList<QPushButton *> L = progress_dialog.findChildren<QPushButton *>();
+  L.at(0)->hide();
+  QCoreApplication::processEvents();
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
-  QList<QTime> timestamp_list = gcode_player_->calcRequiredTime();
-  QTime last_gcode_timestamp{0, 0};
-  if (!timestamp_list.empty()) {
-    last_gcode_timestamp = timestamp_list.last();
+  progress_dialog.setValue(progress_dialog.maximum());
+
+  try {
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    QTime last_gcode_timestamp{0, 0};
+    if (!timestamp_list.empty()) {
+      last_gcode_timestamp = timestamp_list.last();
+    }
+
+    PreviewWindow *pw = new PreviewWindow(this,
+                                          canvas_->document().width() / 10,
+                                          canvas_->document().height() / 10);
+    pw->setPreviewPath(preview_path_generator);
+    pw->setRequiredTime(last_gcode_timestamp);
+    pw->show();
+  } catch (...) {
+    // Terminated
+    return;
   }
 
-  PreviewWindow *pw = new PreviewWindow(this,
-                                        canvas_->document().width() / 10,
-                                        canvas_->document().height() / 10);
-  pw->setPreviewPath(preview_path_generator);
-  pw->setRequiredTime(last_gcode_timestamp);
-  pw->show();
 }
 
 /**
@@ -1414,10 +1465,20 @@ void MainWindow::generateJob() {
     qInfo() << "Blocked: Some jobs are still running";
     return;
   }
+  try {
+    QElapsedTimer timer;
+    qInfo() << "Start calcRequiredTime";
+    timer.start();
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
+    job->setTimestampList(timestamp_list);
+    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
 
-  auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
-  job->setTimestampList(gcode_player_->calcRequiredTime());
-  jobs_ << job;
+    jobs_ << job;
+  } catch (...) {
+    // Terminated
+    return;
+  }
 }
 
 /**

@@ -88,7 +88,7 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="705"/>
+        <location filename="../src/canvas/canvas.cpp" line="706"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
@@ -265,8 +265,8 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="203"/>
-        <location filename="../src/windows/gcode-player.cpp" line="46"/>
-        <location filename="../src/windows/gcode-player.cpp" line="53"/>
+        <location filename="../src/windows/gcode-player.cpp" line="47"/>
+        <location filename="../src/windows/gcode-player.cpp" line="54"/>
         <source>Play</source>
         <translation>開始工作</translation>
     </message>
@@ -276,9 +276,9 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-player.ui" line="219"/>
-        <location filename="../src/windows/gcode-player.cpp" line="91"/>
-        <location filename="../src/windows/gcode-player.cpp" line="104"/>
-        <location filename="../src/windows/gcode-player.cpp" line="119"/>
+        <location filename="../src/windows/gcode-player.cpp" line="92"/>
+        <location filename="../src/windows/gcode-player.cpp" line="105"/>
+        <location filename="../src/windows/gcode-player.cpp" line="120"/>
         <source>Pause</source>
         <translation>暫停工作</translation>
     </message>
@@ -288,9 +288,19 @@
         <translation>停止工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="99"/>
+        <location filename="../src/windows/gcode-player.cpp" line="100"/>
         <source>Resume</source>
         <translation>繼續工作</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/gcode-player.cpp" line="159"/>
+        <source>Estimating task time...</source>
+        <translation>估計工作時長中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/gcode-player.cpp" line="159"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
     </message>
 </context>
 <context>
@@ -301,20 +311,20 @@
         <translation>未偵測到序列埠連接</translation>
     </message>
     <message>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="145"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="191"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="284"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="147"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="195"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="290"/>
         <source>Serial port not responding</source>
         <translation>序列埠沒有回應</translation>
     </message>
     <message>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="187"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="280"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="191"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="286"/>
         <source>Serial port disconnected</source>
         <translation>序列埠斷線</translation>
     </message>
     <message>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="227"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="234"/>
         <source>Alarm code: </source>
         <translation>錯誤代碼：</translation>
     </message>
@@ -854,8 +864,8 @@
 <context>
     <name>MachineSettings</name>
     <message>
-        <location filename="../src/settings/machine-settings.cpp" line="128"/>
-        <location filename="../src/settings/machine-settings.cpp" line="139"/>
+        <location filename="../src/settings/machine-settings.cpp" line="132"/>
+        <location filename="../src/settings/machine-settings.cpp" line="143"/>
         <source>Other</source>
         <translation>其它</translation>
     </message>
@@ -1031,7 +1041,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="738"/>
-        <location filename="../src/windows/mainwindow.cpp" line="803"/>
+        <location filename="../src/windows/mainwindow.cpp" line="809"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
@@ -1042,7 +1052,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="746"/>
-        <location filename="../src/windows/mainwindow.cpp" line="804"/>
+        <location filename="../src/windows/mainwindow.cpp" line="810"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
@@ -1053,7 +1063,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="754"/>
-        <location filename="../src/windows/mainwindow.cpp" line="805"/>
+        <location filename="../src/windows/mainwindow.cpp" line="811"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
@@ -1495,108 +1505,128 @@
         <translation>檔案 (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="382"/>
+        <location filename="../src/windows/mainwindow.cpp" line="383"/>
         <source>GCode Files (*.gcode)</source>
         <translation>檔案 (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="408"/>
+        <location filename="../src/windows/mainwindow.cpp" line="409"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="679"/>
+        <location filename="../src/windows/mainwindow.cpp" line="685"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="680"/>
+        <location filename="../src/windows/mainwindow.cpp" line="686"/>
         <source>Please connect to serial port first</source>
         <translation>請先與機器連線</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="760"/>
+        <location filename="../src/windows/mainwindow.cpp" line="766"/>
         <source>Alarm</source>
         <translation>提示</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="761"/>
+        <location filename="../src/windows/mainwindow.cpp" line="767"/>
         <source>Please confirm that you are using the Lazervida machine.</source>
         <translation>請確認您使用的機器是 Lazervida。</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="806"/>
+        <location filename="../src/windows/mainwindow.cpp" line="812"/>
         <source>Paste in Place</source>
         <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="807"/>
+        <location filename="../src/windows/mainwindow.cpp" line="813"/>
         <source>Duplicate</source>
         <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="809"/>
+        <location filename="../src/windows/mainwindow.cpp" line="815"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="811"/>
+        <location filename="../src/windows/mainwindow.cpp" line="817"/>
         <source>group</source>
         <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="812"/>
+        <location filename="../src/windows/mainwindow.cpp" line="818"/>
         <source>ungroup</source>
         <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="924"/>
+        <location filename="../src/windows/mainwindow.cpp" line="930"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="925"/>
+        <location filename="../src/windows/mainwindow.cpp" line="931"/>
         <source>Line Height</source>
         <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="926"/>
+        <location filename="../src/windows/mainwindow.cpp" line="932"/>
         <source>Letter Spacing</source>
         <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1052"/>
         <location filename="../src/windows/mainwindow.cpp" line="1058"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1079"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1064"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1085"/>
         <source> </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1111"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1117"/>
         <source>Rotation</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1112"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1118"/>
         <source>Width</source>
         <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1113"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1119"/>
         <source>Height</source>
         <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1261"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1267"/>
         <source>Fit to Screen</source>
         <translation>配合視窗尺寸</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1389"/>
+        <source>Exporting toolpath...</source>
+        <translation>輸出路徑中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1390"/>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1401"/>
+        <source>Generating GCode...</source>
+        <translation>產生GCode中...</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="1407"/>
+        <source>Copying GCode...</source>
+        <translation>複製GCode中...</translation>
     </message>
     <message>
         <source>GCode Files (*.gcode);; All files (*.*)</source>
         <translation type="vanished">GCode檔案 (*gcode);; 所有檔案(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="384"/>
+        <location filename="../src/windows/mainwindow.cpp" line="385"/>
         <source>Save GCode</source>
         <translation>儲存 GCode</translation>
     </message>
@@ -1727,12 +1757,12 @@
         <translation>mm</translation>
     </message>
     <message>
-        <location filename="../src/windows/path-offset-dialog.cpp" line="62"/>
+        <location filename="../src/windows/path-offset-dialog.cpp" line="64"/>
         <source>Ok</source>
         <translation>確定</translation>
     </message>
     <message>
-        <location filename="../src/windows/path-offset-dialog.cpp" line="63"/>
+        <location filename="../src/windows/path-offset-dialog.cpp" line="65"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
