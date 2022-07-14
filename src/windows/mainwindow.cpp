@@ -621,7 +621,11 @@ void MainWindow::registerEvents() {
   connect(ui->actionUndo, &QAction::triggered, canvas_, &Canvas::editUndo);
   connect(ui->actionRedo, &QAction::triggered, canvas_, &Canvas::editRedo);
   connect(ui->actionSelect_All, &QAction::triggered, canvas_, &Canvas::editSelectAll);
-  connect(ui->actionClear, &QAction::triggered, canvas_, &Canvas::editClear);
+  connect(ui->actionClear, &QAction::triggered, this, [=]() {
+    if(handleUnsavedChange() ) {
+      canvas_->editClear();
+    }
+  });
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
   connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
