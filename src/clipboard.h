@@ -15,6 +15,8 @@ public:
 
   void pasteTo(Document &doc);
 
+  void pasteTo(Document &doc, QPointF target_point);
+
   void pasteInPlace(Document &doc);
 
   void clear();

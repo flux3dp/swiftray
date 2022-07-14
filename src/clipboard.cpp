@@ -41,9 +41,26 @@ void Clipboard::pasteTo(Document &doc) {
   );
 }
 
-void Clipboard::pasteInPlace(Document &doc) {
-  paste_shift_ += QPointF(20, 20);
+void Clipboard::pasteTo(Document &doc, QPointF target_point) {
 
+  QList<ShapePtr> new_shapes;
+  shapes_mutex_.lock();
+  for (auto &shape : shapes_) {
+    ShapePtr new_shape = shape->clone();
+    QTransform shift_transform =
+       QTransform().translate((target_point-shape->pos()).x(), (target_point-shape->pos()).y());
+    new_shape->applyTransform(shift_transform);
+    new_shapes << new_shape;
+  }
+  shapes_mutex_.unlock();
+
+  doc.execute(
+       Commands::AddShapes(doc.activeLayer(), new_shapes),
+       Commands::Select(&doc, new_shapes)
+  );
+}
+
+void Clipboard::pasteInPlace(Document &doc) {
   QList<ShapePtr> new_shapes;
   shapes_mutex_.lock();
   for (auto &shape : shapes_) {

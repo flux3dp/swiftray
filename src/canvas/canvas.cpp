@@ -500,6 +500,10 @@ void Canvas::editPaste() {
   clipboard().pasteTo(document());
 }
 
+void Canvas::editPaste(QPointF target_point) {
+  clipboard().pasteTo(document(), document().getCanvasCoord(target_point));
+}
+
 void Canvas::editPasteInPlace() {
   clipboard().pasteInPlace(document());
 }

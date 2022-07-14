@@ -104,6 +104,8 @@ public slots:
 
   void editPaste();
 
+  void editPaste(QPointF target_point);
+
   void editPasteInPlace();
 
   void editDelete();
