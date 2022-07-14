@@ -127,13 +127,33 @@ void MainWindow::loadStyles() {
  *         false if unsaved change hasn't been resolved
  */
 bool MainWindow::handleUnsavedChange() {
-  if ( ! canvas_->document().currentFile().isEmpty()) { // current document is opened from a file
-    if (canvas_->document().currentFileModified()) {    // some modifications have been performed on this document
-      // TODO: Pop a dialog to ask whether save/cancel/don't save
-
+  bool handle_result = true;
+  if (canvas_->document().currentFileModified()) {
+    // some modifications have been performed on this document
+    QMessageBox msgBox;
+    msgBox.setText(tr("The document has been modified."));
+    msgBox.setInformativeText(tr("Do you want to save your changes?"));
+    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+    int ret = msgBox.exec();
+    switch (ret) {
+      case QMessageBox::Save:
+          if(!canvas_->document().currentFile().isEmpty()) saveFile();
+          else handle_result = saveAsFile();
+          break;
+      case QMessageBox::Discard:
+          // Don't Save was clicked
+          handle_result = true;
+          break;
+      case QMessageBox::Cancel:
+          // Cancel was clicked
+          handle_result = false;
+      default:
+          // should never be reached
+          handle_result = false;
     }
   }
-  return true;
+  return handle_result;
 }
 
 void MainWindow::newFile() {
@@ -269,6 +289,7 @@ void  MainWindow::saveFile() {
     QDataStream stream(&file);
     canvas_->save(stream);
     file.close();
+    canvas_->document().setCurrentFile(canvas_->document().currentFile());
     qInfo() << "Saved";
   }
 }
@@ -276,7 +297,8 @@ void  MainWindow::saveFile() {
 /**
  * @brief Save the document with a new filename
  */
-void MainWindow::saveAsFile() {
+bool MainWindow::saveAsFile() {
+  bool result = false;
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
   QString filter = tr("Scene File (*.bb)");
@@ -298,7 +320,9 @@ void MainWindow::saveAsFile() {
     file.close();
     canvas_->document().setCurrentFile(file_name);
     qInfo() << "Saved";
+    result = true;
   }
+  return result;
 }
 
 void MainWindow::importImage(QString file_name) {
@@ -769,10 +793,15 @@ void MainWindow::registerEvents() {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-  QSettings settings;
-  settings.setValue("window/geometry", saveGeometry());
-  settings.setValue("window/windowState", saveState());
-  QMainWindow::closeEvent(event);
+  if (!handleUnsavedChange()) {
+    event->ignore();
+  }
+  else{
+    QSettings settings;
+    settings.setValue("window/geometry", saveGeometry());
+    settings.setValue("window/windowState", saveState());
+    event->accept();
+  }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {

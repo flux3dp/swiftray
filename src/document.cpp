@@ -15,7 +15,8 @@ Document::Document() noexcept:
      height_(2000),
      font_(QFont("Tahoma", 100, QFont::Bold)),
      active_layer_(nullptr),
-     canvas_(nullptr) {
+     canvas_(nullptr),
+     current_file_modified_(false) {
   auto layer1 = std::make_shared<Layer>(this, 1);
   addLayer(layer1);
 }
@@ -105,8 +106,8 @@ void Document::execute(const CmdPtr &cmd) {
   undo_mutex_.lock();
   undo2_stack_.push_back(cmd);
   undo_mutex_.unlock();
-  if (!current_file_modified) {
-    current_file_modified = true;
+  if (!current_file_modified_) {
+    current_file_modified_ = true;
   }
 }
 
