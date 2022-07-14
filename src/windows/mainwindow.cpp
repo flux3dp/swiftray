@@ -131,21 +131,21 @@ bool MainWindow::handleUnsavedChange() {
   if (canvas_->document().currentFileModified()) {
     // some modifications have been performed on this document
     QMessageBox msgBox;
-    msgBox.setText(tr("The document has been modified."));
-    msgBox.setInformativeText(tr("Do you want to save your changes?"));
-    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Save);
+    msgBox.setText(tr("The document has been modified.\nDo you want to save your changes?"));
+    msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
+    msgBox.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
+    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
     int ret = msgBox.exec();
     switch (ret) {
-      case QMessageBox::Save:
+      case QMessageBox::AcceptRole:
           if(!canvas_->document().currentFile().isEmpty()) saveFile();
           else handle_result = saveAsFile();
           break;
-      case QMessageBox::Discard:
+      case QMessageBox::RejectRole:
           // Don't Save was clicked
           handle_result = true;
           break;
-      case QMessageBox::Cancel:
+      case QMessageBox::DestructiveRole:
           // Cancel was clicked
           handle_result = false;
       default:
