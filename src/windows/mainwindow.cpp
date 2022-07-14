@@ -120,6 +120,7 @@ void MainWindow::loadStyles() {
       ));
     }
   }
+  ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png")));
 }
 
 /**
@@ -135,6 +136,50 @@ bool MainWindow::handleUnsavedChange() {
     }
   }
   return true;
+}
+
+void MainWindow::actionStart() {
+  // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
+  canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
+
+  if (!serial_port.isOpen()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Serial Port Error"));
+    msgbox.setInformativeText(tr("Please connect to serial port first"));
+    msgbox.exec();
+    return;
+  }
+  // Prepare GCodes
+  generateGcode();
+  // Prepare total required time
+  try {
+    auto timestamp_list = gcode_player_->calcRequiredTime();
+    QTime total_required_time = QTime{0, 0};
+    if (!timestamp_list.empty()) {
+      total_required_time = timestamp_list.last();
+    }
+    // Prepare canvas scene pixmap
+    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
+    canvas_pixmap.fill(Qt::white);
+    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+    canvas_->document().paint(painter.get());
+
+    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
+    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
+    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
+    if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
+      job_dashboard_->attachJob(jobs_.last());
+    }
+    job_dashboard_->show();
+    job_dashboard_exist_ = true;
+  } catch (...) {
+    // Terminated
+    return;
+  }
 }
 
 void MainWindow::newFile() {
@@ -644,50 +689,8 @@ void MainWindow::registerEvents() {
   connect(ui->actionReplace_with, &QAction::triggered, this, &MainWindow::replaceImage);
   connect(ui->actionJogging, &QAction::triggered, this, &MainWindow::showJoggingPanel);
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
-  connect(ui->actionStart, &QAction::triggered, this, [=]() {
-    // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
-    canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
-
-    if (!serial_port.isOpen()) {
-      QMessageBox msgbox;
-      msgbox.setText("Error");
-      msgbox.setInformativeText("Please connect to serial port first");
-      msgbox.exec();
-      return;
-    }
-
-    // Prepare GCodes
-    generateGcode();
-    // Prepare total required time
-    try {
-      auto timestamp_list = gcode_player_->calcRequiredTime();
-      QTime total_required_time = QTime{0, 0};
-      if (!timestamp_list.empty()) {
-        total_required_time = timestamp_list.last();
-      }
-      // Prepare canvas scene pixmap
-      QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
-      canvas_pixmap.fill(Qt::white);
-      auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-      canvas_->document().paint(painter.get());
-
-      job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-      connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
-      connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
-      connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
-      connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
-      connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
-      connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
-      if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
-        job_dashboard_->attachJob(jobs_.last());
-      }
-      job_dashboard_->show();
-      job_dashboard_exist_ = true;
-    } catch (...) {
-      // Terminated
-      return;
-    }
-  });
+  connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
+  connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
     if (!serial_port.isOpen()) {
       QMessageBox msgbox;
