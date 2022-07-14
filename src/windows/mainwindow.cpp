@@ -15,6 +15,7 @@
 #include <QMessageBox>
 #include <constants.h>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <widgets/components/qdoublespinbox2.h>
 #include <shape/bitmap-shape.h>
 #include <widgets/components/canvas-text-edit.h>
@@ -1373,20 +1374,44 @@ void MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter preview_exporter(preview_path_generator.get(), 
-      canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
-  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-    
   auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
-  ToolpathExporter gcode_exporter(gcode_generator.get(), 
-      canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
+
+  ToolpathExporter preview_exporter(preview_path_generator.get(),
+                                    canvas_->document().settings().dpmm(),
+                                    ToolpathExporter::PaddingType::kFixedPadding);
+  ToolpathExporter gcode_exporter(gcode_generator.get(),
+                                  canvas_->document().settings().dpmm(),
+                                  ToolpathExporter::PaddingType::kFixedPadding);
+
+  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
   gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-  
+
+  QProgressDialog progress_dialog(tr("Exporting toolpath..."),
+                                   tr("Cancel"),
+                                   0,
+                                   101, this);
+  progress_dialog.setWindowModality(Qt::WindowModal);
+  progress_dialog.show();
+
+  int result;
+  result = preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog);
+  if (result != true) {
+    return;
+  }
+  progress_dialog.setLabelText(tr("Generating GCode..."));
+  progress_dialog.setValue(0);
+  result = gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog);
+  if (result != true) {
+    return;
+  }
+  progress_dialog.setLabelText(tr("Copying GCode..."));
+  progress_dialog.setValue(progress_dialog.maximum() / 2);
+  QList<QPushButton *> L = progress_dialog.findChildren<QPushButton *>();
+  L.at(0)->hide();
+  QCoreApplication::processEvents();
   gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
+  progress_dialog.setValue(progress_dialog.maximum());
+
   try {
     auto timestamp_list = gcode_player_->calcRequiredTime();
     QTime last_gcode_timestamp{0, 0};
