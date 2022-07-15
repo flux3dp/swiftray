@@ -89,7 +89,7 @@ public:
   DocumentSettings &settings();
 
   QString currentFile() { return current_file_; }
-  bool currentFileModified() { return current_file_modified; }
+  bool currentFileModified() { return current_file_modified_; }
 
   // Setters:
   bool setActiveLayer(const QString &name);
@@ -112,8 +112,8 @@ public:
 
   void setScreenSize(QSize size);
 
-  void setCurrentFile(QString filename) { current_file_ = filename; current_file_modified = false; }
-  void clearCurrentFileModified() { current_file_modified = false; }
+  void setCurrentFile(QString filename) { current_file_ = filename; current_file_modified_ = false; }
+  void clearCurrentFileModified() { current_file_modified_ = false; }
 
   const LayerPtr *findLayerByName(const QString &layer_name);
 
@@ -174,5 +174,5 @@ private:
   DocumentSettings settings_;
 
   QString current_file_;
-  bool current_file_modified;
+  bool current_file_modified_;
 };

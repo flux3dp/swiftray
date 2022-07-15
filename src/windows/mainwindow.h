@@ -176,7 +176,7 @@ private:
 
   void newFile();
   void saveFile();
-  void saveAsFile();
+  bool saveAsFile();
   void exportGCodeFile();
   void importGCodeFile();
   void generateGcode();
