@@ -182,6 +182,7 @@ private:
   void generateGcode();
   void generateJob();
   bool handleUnsavedChange();
+  void actionStart();
 };
 
 #endif // MAINWINDOW_H
