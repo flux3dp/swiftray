@@ -40,6 +40,9 @@ void ColorPickerButton::setColor(QColor new_color) {
 void ColorPickerButton::registerEvents() {
   connect(this, &QAbstractButton::clicked, [=](){
     QColor color = QColorDialog::getColor(this->color_, this, this->title_);
+    if (!color.isValid()) { // Canceled
+      return;
+    }
     if (color != this->color_) {
       this->updateIcon(color);
       emit colorChanged(this->color_);
