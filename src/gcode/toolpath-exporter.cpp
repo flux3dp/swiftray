@@ -139,7 +139,7 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   if (bmp->gradient()) { // gradient mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->sourceImage().convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)));
+    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->sourceImage()));
   } else { // binarize mode
     layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
   }
@@ -249,7 +249,9 @@ void ToolpathExporter::outputLayerPathGcode() {
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
   // Get the image of entire layer
-  QImage layer_image = layer_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
+  QImage layer_image = layer_bitmap_.toImage()
+                      .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
+                      .convertToFormat(QImage::Format_Grayscale8);
 
   qreal padding_mm;
   qreal accelerate = 4000; // mm/s^2
