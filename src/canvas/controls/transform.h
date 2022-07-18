@@ -94,6 +94,10 @@ namespace Controls {
 
     void setScaleLock(bool scale_lock);
 
+    bool isDirectionLock() const;
+
+    void setDirectionLock(bool direction_lock);
+
     void applyScale(QPointF center, double scale_x, double scale_y, bool temporarily = false);
 
   private:
@@ -122,6 +126,7 @@ namespace Controls {
     bool bbox_need_recalc_;
 
     bool scale_locked_;
+    bool direction_locked_;
 
   public slots:
     void updateSelections();
