@@ -672,7 +672,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close);
   connect(ui->actionCut, &QAction::triggered, canvas_, &Canvas::editCut);
   connect(ui->actionCopy, &QAction::triggered, canvas_, &Canvas::editCopy);
-  connect(ui->actionPaste, &QAction::triggered, canvas_, &Canvas::editPaste);
+  connect(ui->actionPaste, &QAction::triggered, [=]() {canvas_->editPaste();});
   connect(ui->actionUndo, &QAction::triggered, canvas_, &Canvas::editUndo);
   connect(ui->actionRedo, &QAction::triggered, canvas_, &Canvas::editRedo);
   connect(ui->actionSelect_All, &QAction::triggered, canvas_, &Canvas::editSelectAll);
@@ -873,7 +873,7 @@ void MainWindow::setCanvasContextMenu() {
 
   ui->quickWidget->connect(cutAction_, &QAction::triggered, canvas_, &Canvas::editCut);
   ui->quickWidget->connect(copyAction_, &QAction::triggered, canvas_, &Canvas::editCopy);
-  ui->quickWidget->connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPaste);
+  ui->quickWidget->connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPasteInRightButton);
   ui->quickWidget->connect(pasteInPlaceAction_, &QAction::triggered, canvas_, &Canvas::editPasteInPlace);
   ui->quickWidget->connect(duplicateAction_, &QAction::triggered, canvas_, &Canvas::editDuplicate);
   ui->quickWidget->connect(deleteAction_, &QAction::triggered, canvas_, &Canvas::editCut);

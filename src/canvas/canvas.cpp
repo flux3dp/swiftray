@@ -190,12 +190,6 @@ void Canvas::keyReleaseEvent(QKeyEvent *e) {
 }
 
 void Canvas::mousePressEvent(QMouseEvent *e) {
-  if (e->button()==Qt::RightButton) {
-    is_pop_menu_showing_ = true;
-    emit canvasContextMenuOpened();
-    return;
-  }
-
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   document().setMousePressedScreenCoord(e->pos());
   qInfo() << "Mouse Press (screen)" << e->pos() << " -> (canvas)"
@@ -264,6 +258,12 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 }
 
 void Canvas::mouseReleaseEvent(QMouseEvent *e) {
+  if (e->button()==Qt::RightButton) {
+    right_click_ = e->pos();
+    is_pop_menu_showing_ = true;
+    emit canvasContextMenuOpened();
+    return;
+  }
   if (e->button()==Qt::RightButton && !is_pop_menu_showing_) {
     is_pop_menu_showing_ = true;
     return;
@@ -498,6 +498,10 @@ void Canvas::editCopy() {
 
 void Canvas::editPaste() {
   clipboard().pasteTo(document());
+}
+
+void Canvas::editPasteInRightButton() {
+  clipboard().pasteTo(document(), right_click_);
 }
 
 void Canvas::editPasteInPlace() {
