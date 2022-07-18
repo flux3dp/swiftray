@@ -837,9 +837,7 @@ void MainWindow::setCanvasContextMenu() {
 
   ui->quickWidget->connect(cutAction_, &QAction::triggered, canvas_, &Canvas::editCut);
   ui->quickWidget->connect(copyAction_, &QAction::triggered, canvas_, &Canvas::editCopy);
-  ui->quickWidget->connect(pasteAction_, &QAction::triggered, [=]() {
-    canvas_->editPaste(popMenu_->pos());
-  });
+  ui->quickWidget->connect(pasteAction_, &QAction::triggered, canvas_, &Canvas::editPasteInRightButton);
   ui->quickWidget->connect(pasteInPlaceAction_, &QAction::triggered, canvas_, &Canvas::editPasteInPlace);
   ui->quickWidget->connect(duplicateAction_, &QAction::triggered, canvas_, &Canvas::editDuplicate);
   ui->quickWidget->connect(deleteAction_, &QAction::triggered, canvas_, &Canvas::editCut);

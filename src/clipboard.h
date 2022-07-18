@@ -21,7 +21,10 @@ public:
 
   void clear();
 
+
 private:
+  QRectF calculateBoundingRect();
+
   QList<ShapePtr> shapes_;
   QMutex shapes_mutex_;
   QPointF paste_shift_;
