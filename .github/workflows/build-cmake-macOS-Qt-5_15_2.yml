@@ -1,0 +1,94 @@
+name: build-macos-installer
+on:
+  push:
+    tags:
+      - "c*.*.*"
+jobs:
+  setup-macos-build-environment:
+    runs-on: macos-12
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Select XCode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '13.2.1'
+      #- uses: actions/setup-python@v3
+      #  with:
+      #    python-version: '3.9'
+      #    cache: 'pip'
+      - run: mkdir $RUNNER_WORKSPACE/dev/
+      
+      - name: Install dependencies for project
+        run: |
+          brew install icu4c
+          brew install libxml2
+      # Install Qt 5.15.2
+      # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
+      - name: Install Qt 5.15.2
+        run: |
+          brew install p7zip
+          python3 -m pip install setuptools wheel
+          python3 -m pip install py7zr==0.16.1
+          python3 -m pip install aqtinstall==2.1.0
+          python3 -m aqt install-qt  mac desktop 5.15.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+      # Build and Install Potrace library
+      #- name: Restore Potrace cache
+      #  uses: actions/cache@v3
+      #  id: cache-potrace
+      #  with:
+      #    path: |
+      #      /usr/local/lib/libpotrace.0.dylib
+      #      /usr/local/lib/libpotrace.a
+      #      /usr/local/lib/libpotrace.dylib
+      #      /usr/local/lib/libpotrace.la
+      #    key: potrace
+
+      - name: Install Potrace
+        #if: steps.cache-potrace.outputs.cache-hit != 'true'
+        run: |
+            cd $RUNNER_WORKSPACE/dev/
+            curl http://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+            tar -xvf potrace-1.16.tar.gz
+            cd potrace-1.16
+            ./configure --with-libpotrace
+            make install
+      # Build and Install OpenCV library
+      #- name: Restore OpenCV cache
+      #  uses: actions/cache@v3
+      #  id: cache-opencv
+      #  with:
+      #    path: |
+      #      /usr/local/include/opencv4/
+      #      /usr/local/lib/libopencv_**.dylib
+      #      /usr/local/bin/opencv_**
+      #      /usr/local/share/licenses/opencv4
+      #      /usr/local/share/opencv4
+      #      /usr/local/lib/cmake/opencv4
+      #      /usr/local/bin/setup_vars_opencv4.sh
+      #    key: opencv
+      - name: Install OpenCV
+        #if: steps.cache-opencv.outputs.cache-hit != 'true'
+        run: |
+          brew install opencv
+      
+      - name: CMake generate buildsystem
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt5/5.15.2/clang_64/lib/cmake -G "CodeBlocks - Unix Makefiles" ${{ github.workspace }}
+      - name: Compile (Build) project
+        run: |
+          cd build
+          cmake --build . --target Swiftray -- -j 6
+      - name: Install Bundle
+        run: |
+          cd build
+          cmake --build . --target install -- -j 6
+      - run: |
+          brew install tree
+      - name: Deploy (Copy necessary shared libraries)
+        run: |
+          cd build
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/debug/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
+          tree .
