@@ -1,4 +1,4 @@
-name: build-macos-installer
+name: build-cmake-macos-installer
 on:
   push:
     tags:
