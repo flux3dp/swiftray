@@ -62,7 +62,7 @@ void MainWindow::loadSettings() {
       restoreState(classic_settings.value("window/windowState").toByteArray());
     };
   #else
-    QSettings settings(":/essentialUI.ini", QSettings::IniFormat);
+    QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
   QString current_machine = doc_panel_->getMachineName();
