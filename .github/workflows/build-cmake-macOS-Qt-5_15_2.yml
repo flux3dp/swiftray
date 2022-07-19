@@ -91,4 +91,21 @@ jobs:
         run: |
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/debug/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
-          tree .
+          #tree .
+      - name: Fix bundle dependencies (workaround for bug in macdeployqt)
+        run: |
+            cd build
+            cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib install/debug/Swiftray.app/Contents/Frameworks/
+            chmod 644 install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+      - name: Copy libsentry to bundle
+        run: |
+            cd build
+            cp ../third_party/sentry/build/macOS/libsentry.dylib install/debug/Swiftray.app/Contents/Frameworks/
+      - name: Print otool result
+        run: |
+            otool -l build/install/debug/Swiftray.app/Contents/MacOS/Swiftray
+            otool -L build/install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+            otool -L build/install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+
