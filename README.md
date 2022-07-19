@@ -9,9 +9,9 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - Hack as you like - you can modify all codes to match you self-built lasers
 - Blazing performance - written in C++
 - Low memory usage - even runnable on embedded system
-- Cross-platform - compiles on Windows, macOS, and Linux
+- Cross-platform - compiles on Windows, and macOS
 
-## Dependencies
+## Requirement
 
 - Compilers must support C++17 standards.
 - Boost 1.7.0
