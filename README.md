@@ -61,7 +61,3 @@ Run `$ doxygen Doxygen` and view docs/index.html
 Swiftray is community developed, commercially supported for long-term development.
 
 Swiftray is brought to you by the development team at FLUX Inc.
-
-## License
-
-AGPLv3
