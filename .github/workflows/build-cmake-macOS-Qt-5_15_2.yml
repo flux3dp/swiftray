@@ -85,13 +85,14 @@ jobs:
         run: |
           cd build
           cmake --build . --target install -- -j 6
-      - run: |
-          brew install tree
       - name: Deploy (Copy necessary shared libraries)
         run: |
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/debug/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
-          #tree .
+      #- run: |
+      #    brew install tree
+      #    cd build/install/
+      #    tree .
       - name: Fix bundle dependencies (workaround for bug in macdeployqt)
         run: |
             cd build
@@ -99,6 +100,7 @@ jobs:
             chmod 644 install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+            install_name_tool -add_rpath @executable_path/../Frameworks install/debug/Swiftray.app/Contents/MacOS/Swiftray
       - name: Copy libsentry to bundle
         run: |
             cd build
@@ -109,3 +111,55 @@ jobs:
             otool -L build/install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
             otool -L build/install/debug/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
 
+      - name: Codesign executable
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          #SIGN_IDENTITY_ID: 
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
+          cd build/install/debug
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
+
+      - name: Notarize Release Build
+        env: 
+          ASC_PROVIDER: ${{ secrets.ASC_PROVIDER }}
+        uses: erwin1/xcode-notarize@main
+        with:
+          product-path: "build/install/debug/Swiftray.app"
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          asc-provider: ${{ secrets.ASC_PROVIDER }}
+          verbose: true
+
+      - name: "Staple Release Build"
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: "build/install/debug/Swiftray.app"
+
+      - name: Create dmg
+        run: |
+          brew install create-dmg
+          cd build/install/debug
+          create-dmg --volname "Swiftray Installer" \
+            --volicon "Swiftray.app/Contents/Resources/icon.icns" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 128 \
+            --icon "Swiftray.app" 200 190 \
+            --hide-extension "Swiftray.app" \
+            --app-drop-link 600 190 \
+            "Swiftray-Installer.dmg" \
+            "Swiftray.app/"
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/install/debug/Swiftray-Installer.dmg
