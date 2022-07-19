@@ -41,6 +41,17 @@ int main(int argc, char *argv[]) {
 
   // Set app icon
   app.setWindowIcon(QIcon(":/images/icon.png"));
+
+  // load Open Sans font(addApplicationFont fail in Mac)
+  #ifdef Q_OS_WIN
+  int id = QFontDatabase::addApplicationFont(":/fonts/open-sans-latin.ttf");
+  if(id != -1) {
+    QFont font("Open Sans");
+    font.setStyleHint(QFont::Monospace);
+    font.setPixelSize(9);
+    QApplication::setFont(font);
+  }
+  #endif
   
   // Force anti-aliasing
   

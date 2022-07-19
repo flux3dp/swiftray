@@ -152,5 +152,6 @@
         <file>resources/example/Material-Engraving-Test.bb</file>
         <file>images/icon-about.png</file>
         <file>images/dark/icon-about.png</file>
+        <file>fonts/open-sans-latin.ttf</file>
     </qresource>
 </RCC>
