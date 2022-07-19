@@ -172,8 +172,9 @@ target_link_libraries(${PROJECT_NAME} Boost::chrono)
 target_link_libraries(${PROJECT_NAME} Boost::atomic)
 
 target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
-
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+#target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} opencv_core)
+target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
@@ -190,9 +191,29 @@ if (MINGW)
   message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
 endif()
 
-# Build third_party libraries
-#add_subdirectory(third_party/clipper)
+if(WIN32)
+  install(TARGETS ${PROJECT_NAME} 
+    CONFIGURATIONS Debug
+    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/debug
+  )
+  install(TARGETS ${PROJECT_NAME} 
+    CONFIGURATIONS Release
+    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/release
+  )
+elseif(APPLE)
+  install(TARGETS ${PROJECT_NAME} 
+    CONFIGURATIONS Debug
+    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install/debug
+    )
+  install(TARGETS ${PROJECT_NAME} 
+    CONFIGURATIONS Release
+    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install/release
+    )
+else()
+  message(STATUS "Platform: Unknown")
+endif()
 
-install(SCRIPT cmake/Helpers/bundle.cmake)
+
+# TODO: BundleUtilities and CPack
 
 #add_subdirectory(tests)
