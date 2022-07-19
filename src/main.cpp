@@ -8,6 +8,7 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
+#include <sentry/include/sentry.h>
 
 #ifdef Q_OS_MACOS
 #define MACOS
@@ -26,6 +27,24 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  // Launch Crashpad with Sentry
+  sentry_options_t *options = sentry_options_new();
+  sentry_options_set_dsn(options, "https://3410c8aa491d46dbbcfe3b40d338d9c8@o1289850.ingest.sentry.io/6546119");
+  #ifdef Q_OS_MACOS
+  sentry_options_set_handler_path(options, "../Resources/crashpad_handler");
+  #endif
+  sentry_options_set_release(options, "Swiftray@1.0.0");
+  sentry_init(options);
+  // Make sure everything flushes
+  auto sentryClose = qScopeGuard([] { sentry_close(); });
+
+  // Test event
+  //sentry_capture_event(sentry_value_new_message_event(
+  //  SENTRY_LEVEL_INFO, // level
+  //  "custom",          // logger
+  //  "It works!"        // message
+  //));
+
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
   QApplication app(argc, argv);

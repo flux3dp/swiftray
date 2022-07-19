@@ -125,7 +125,9 @@ if(WIN32)
   )
 elseif(APPLE)
   set(APP_RESOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
+    ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry/build/macOS/crashpad_handler
+  )
   set_source_files_properties(${APP_RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
@@ -175,6 +177,13 @@ target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
+if(WIN32)
+
+elseif(APPLE)
+  target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/third_party/sentry/build/macOS/libsentry.dylib)
+else()
+
+endif()
 
 if (MINGW)
   target_link_libraries(${PROJECT_NAME} ws2_32)
