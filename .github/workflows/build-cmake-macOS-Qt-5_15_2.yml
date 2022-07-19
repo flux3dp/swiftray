@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt5/5.15.2/clang_64/lib/cmake -G "CodeBlocks - Unix Makefiles" ${{ github.workspace }}
+          cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake -G "CodeBlocks - Unix Makefiles" ${{ github.workspace }}
       - name: Compile (Build) project
         run: |
           cd build
