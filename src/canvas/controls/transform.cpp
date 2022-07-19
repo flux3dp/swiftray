@@ -12,6 +12,7 @@ Transform::Transform(Canvas *canvas) noexcept:
      CanvasControl(canvas),
      active_control_(Control::NONE),
      scale_locked_(false),
+     direction_locked_(false),
      scale_x_to_apply_(1),
      scale_y_to_apply_(1),
      rotation_to_apply_(0),
@@ -330,7 +331,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
-      if(scale_locked_) {
+      if(direction_locked_) {
         if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
           translate_to_apply_.setY(0);
         }
@@ -452,4 +453,12 @@ bool Transform::isScaleLock() const {
 
 void Transform::setScaleLock(bool scale_lock) {
   scale_locked_ = scale_lock;
+}
+
+bool Transform::isDirectionLock() const {
+  return direction_locked_;
+}
+
+void Transform::setDirectionLock(bool direction_lock) {
+  direction_locked_ = direction_lock;
 }
