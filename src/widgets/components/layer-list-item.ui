@@ -175,11 +175,6 @@
           <string>Fill</string>
          </property>
         </item>
-        <item>
-         <property name="text">
-          <string>Fill+Line</string>
-         </property>
-        </item>
        </widget>
       </item>
       <item>

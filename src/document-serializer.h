@@ -117,6 +117,8 @@ public:
     LayerPtr layer = std::make_shared<Layer>();
     in >> layer->name_;
     in >> layer->type_;
+    // remove the index bigger than FillLine(2), and replace it to Fill(1)
+    if((int)layer->type_ >= 2) layer->type_ = (Layer::Type)1;
     in >> layer->color_;
 
     in >> layer->use_diode_;

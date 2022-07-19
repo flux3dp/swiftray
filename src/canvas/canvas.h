@@ -104,6 +104,8 @@ public slots:
 
   void editPaste();
 
+  void editPasteInRightButton();
+
   void editPasteInPlace();
 
   void editDelete();
@@ -247,6 +249,7 @@ private:
   bool is_pop_menu_showing_;
   bool is_temp_scale_lock_;
   bool is_direction_lock_;
+  QPointF right_click_;
 
   QQuickWidget *widget_;
 
