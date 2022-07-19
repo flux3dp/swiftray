@@ -33,7 +33,6 @@ find_package(LibXml2 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Boost 1.70 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread system chrono atomic)
-find_package(Potrace REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
@@ -55,8 +54,6 @@ file(GLOB CONNECTION_SERIAL_CPP "${SRC_DIR}/connection/QAsyncSerial/*.cpp")
 file(GLOB MOTION_CONTROLLER_JOB_CPP "${SRC_DIR}/motion_controller_job/*.cpp")
 #file(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
 file(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
-file(GLOB QXPOTRACE_CPP "third_party/QxPotrace/src/qxpotrace.cpp")
-file(GLOB CLIPPER_CPP "third_party/clipper/clipper.cpp")
 file(GLOB PARSER_CPP "${SRC_DIR}/parser/*.cpp")
 file(GLOB GRAPHICSVIEW_ITEMS_CPP "${SRC_DIR}/widgets/components/graphicitems/*.cpp")
 
@@ -77,9 +74,7 @@ set(SOURCES
   ${SHAPES_CPP}
   ${SETTINGS_CPP}
   ${WINDOWS_CPP}
-  ${QXPOTRACE_CPP}
   #${SERIALPORT_CPP}
-  ${CLIPPER_CPP}
   ${PARSER_CPP}
   ${GRAPHICSVIEW_ITEMS_CPP}
   ${SRC_DIR}/gcode/toolpath-exporter.cpp
@@ -96,7 +91,6 @@ include_directories(
   third_party
   ${SRC_DIR}
   /usr/local/opt/libxml2/include
-  ${POTRACE_INCLUDE_DIRS}
 )
 
 link_libraries(
@@ -110,6 +104,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${SOURCES}
     ${SRC_DIR}/windows/osxwindow.mm)
 endif ()
+
+# third_party libraries
+add_subdirectory(third_party/clipper)
+add_subdirectory(third_party/QxPotrace)
+
 
 set(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
@@ -125,12 +124,9 @@ if(WIN32)
     WIN32 TRUE # Make it a GUI app instead of console app
   )
 elseif(APPLE)
-  # 1st method for adding files to bundle's Resource directory
-  #set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
-  #set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-  # 2nd method for adding files to bundle's Resource directory
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
+  set_source_files_properties(${APP_RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
     ${MAIN_SOURCE}
@@ -146,10 +142,10 @@ elseif(APPLE)
     MACOSX_BUNDLE_LONG_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MINOR}${VERSION_SUFFIX}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}
     MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2022, FLUX Inc."
-    RESOURCE "${APP_RESOURCE_FILES}")
+  )
 else()
     # Linux and others
-    MESSAGE(STATUS "Platform: Unknown")
+    message(STATUS "Platform: Unknown")
 endif()
 # Add macro definition
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MAJOR=${VERSION_MAJOR})
@@ -167,17 +163,19 @@ target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
-#target_link_libraries(${PROJECT_NAME} CLIPPER)
 target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} Boost::thread)
 target_link_libraries(${PROJECT_NAME} Boost::system)
 target_link_libraries(${PROJECT_NAME} Boost::chrono)
 target_link_libraries(${PROJECT_NAME} Boost::atomic)
 
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
-
 target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
+
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+#target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
+target_link_libraries(${PROJECT_NAME} clipper)
+target_link_libraries(${PROJECT_NAME} QxPotrace)
+
 if (MINGW)
   target_link_libraries(${PROJECT_NAME} ws2_32)
   message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
