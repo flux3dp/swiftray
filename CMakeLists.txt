@@ -9,13 +9,13 @@ add_compile_definitions(VERSION_SUFFIX="-beta.5")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
 if(WIN32)
-    add_compile_definitions(WIN32_LEAN_AND_MEAN)
-    set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
-    set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
-    set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
-    set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
-    set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
-    set (OpenCV_DIR "C:/Dev/opencv_452_mingw")
+  add_compile_definitions(WIN32_LEAN_AND_MEAN)
+  set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
+  set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
+  set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
+  set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
+  set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
+  set (OpenCV_DIR "C:/Dev/opencv_452_mingw")
 endif()
 
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -61,98 +61,102 @@ file(GLOB PARSER_CPP "${SRC_DIR}/parser/*.cpp")
 file(GLOB GRAPHICSVIEW_ITEMS_CPP "${SRC_DIR}/widgets/components/graphicitems/*.cpp")
 
 set(SOURCES
-        ${SRC_DIR}/globals.cpp
-        ${SRC_DIR}/layer.cpp
-        ${SRC_DIR}/document.cpp
-        ${SRC_DIR}/command.cpp
-        ${SRC_DIR}/clipboard.cpp
-        ${CONNECTION_CPP}
-        ${CONNECTION_SERIAL_CPP}
-        ${MOTION_CONTROLLER_JOB_CPP}
-        ${CANVAS_CPP}
-        ${CONTROLS_CPP}
-        ${WIDGETS_PANELS_CPP}
-        ${WIDGETS_COMPONENTS_CPP}
-        ${WIDGETS_COMPONENTS_GRAPHICSITEMS_CPP}
-        ${SHAPES_CPP}
-        ${SETTINGS_CPP}
-        ${WINDOWS_CPP}
-        ${QXPOTRACE_CPP}
-        #${SERIALPORT_CPP}
-        ${CLIPPER_CPP}
-        ${PARSER_CPP}
-        ${GRAPHICSVIEW_ITEMS_CPP}
-        ${SRC_DIR}/gcode/toolpath-exporter.cpp
-        )
+  ${SRC_DIR}/globals.cpp
+  ${SRC_DIR}/layer.cpp
+  ${SRC_DIR}/document.cpp
+  ${SRC_DIR}/command.cpp
+  ${SRC_DIR}/clipboard.cpp
+  ${CONNECTION_CPP}
+  ${CONNECTION_SERIAL_CPP}
+  ${MOTION_CONTROLLER_JOB_CPP}
+  ${CANVAS_CPP}
+  ${CONTROLS_CPP}
+  ${WIDGETS_PANELS_CPP}
+  ${WIDGETS_COMPONENTS_CPP}
+  ${WIDGETS_COMPONENTS_GRAPHICSITEMS_CPP}
+  ${SHAPES_CPP}
+  ${SETTINGS_CPP}
+  ${WINDOWS_CPP}
+  ${QXPOTRACE_CPP}
+  #${SERIALPORT_CPP}
+  ${CLIPPER_CPP}
+  ${PARSER_CPP}
+  ${GRAPHICSVIEW_ITEMS_CPP}
+  ${SRC_DIR}/gcode/toolpath-exporter.cpp
+)
 
 include_directories(
-        ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
-        ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIR}
-        ${LIBXML2_INCLUDE_DIR}
-        ${LIBXML2_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        third_party
-        ${SRC_DIR}
-        /usr/local/opt/libxml2/include
-        ${POTRACE_INCLUDE_DIRS}
+  ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+  ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
+  ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIR}
+  ${LIBXML2_INCLUDE_DIR}
+  ${LIBXML2_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  third_party
+  ${SRC_DIR}
+  /usr/local/opt/libxml2/include
+  ${POTRACE_INCLUDE_DIRS}
 )
 
 link_libraries(
-        ${LIBXML2_LIBRARY}
-
+  ${LIBXML2_LIBRARY}
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    link_libraries("-framework AppKit")
+  link_libraries("-framework AppKit")
 
-    set(SOURCES
-            ${SOURCES}
-            ${SRC_DIR}/windows/osxwindow.mm)
+  set(SOURCES
+    ${SOURCES}
+    ${SRC_DIR}/windows/osxwindow.mm)
 endif ()
-
-# Build third_party libraries
-#ADD_SUBDIRECTORY(third_party/clipper)
 
 set(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 
-
-# Swiftray Executable
+# Bundle properties
 if(WIN32)
-    add_executable(${PROJECT_NAME} WIN32 ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
-elseif(UNIX)
-    if(APPLE)
-        add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SRC_DIR}/main.cpp ${MAIN_SOURCE} ${APP_ICON_WINDOWS} ${APP_ICON_MACOSX})
-    else ()
-        MESSAGE(STATUS "Platform: Unknown")
-    endif ()
+  add_executable(${PROJECT_NAME} 
+    ${SRC_DIR}/main.cpp 
+    ${MAIN_SOURCE} 
+    ${APP_ICON_WINDOWS})
+  set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    WIN32 TRUE # Make it a GUI app instead of console app
+  )
+elseif(APPLE)
+  # 1st method for adding files to bundle's Resource directory
+  #set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
+  #set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+  # 2nd method for adding files to bundle's Resource directory
+  set(APP_RESOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
+  add_executable(${PROJECT_NAME} 
+    ${SRC_DIR}/main.cpp 
+    ${MAIN_SOURCE}
+    #${APP_ICON_MACOSX}
+    ${APP_RESOURCE_FILES})
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    MACOSX_BUNDLE TRUE # Create macOS app bundle
+    MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+    MACOSX_BUNDLE_EXECUTABLE_NAME ${PROJECT_NAME}
+    MACOSX_BUNDLE_INFO_STRING "Laser engraving software developed by FLUX Inc."
+    MACOSX_BUNDLE_ICON_FILE icon.icns
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.flux.Swiftray
+    MACOSX_BUNDLE_LONG_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MINOR}${VERSION_SUFFIX}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}
+    MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2022, FLUX Inc."
+    RESOURCE "${APP_RESOURCE_FILES}")
+else()
+    # Linux and others
+    MESSAGE(STATUS "Platform: Unknown")
 endif()
 # Add macro definition
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MAJOR=${VERSION_MAJOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MINOR=${VERSION_MINOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BUILD=${VERSION_BUILD})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_SUFFIX=\"${VERSION_SUFFIX}\")
-# Bundle properties
-if(WIN32)
-    set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
-else()
-    if(APPLE)
-        set(APP_ICON_MACOSX ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns)
-        set_source_files_properties(${APP_ICON_MACOSX} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-        set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
-        set(MACOSX_BUNDLE_EXECUTABLE_NAME ${PROJECT_NAME})
-        set(MACOSX_BUNDLE_INFO_STRING "Laser engraving software developed by FLUX Inc.")
-        set(MACOSX_BUNDLE_ICON_FILE icon.icns)
-        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.flux.Swiftray)
-        set(MACOSX_BUNDLE_LONG_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MINOR}${VERSION_SUFFIX})
-        set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2022, FLUX Inc.")
-    else()
-        MESSAGE(STATUS "Platform: Unknown")
-    endif()
-endif()
+
 
 target_link_libraries(${PROJECT_NAME} Qt::Core)
 target_link_libraries(${PROJECT_NAME} Qt::Quick)
@@ -164,22 +168,24 @@ target_link_libraries(${PROJECT_NAME} Qt::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
 #target_link_libraries(${PROJECT_NAME} CLIPPER)
-target_link_libraries(${PROJECT_NAME} 
-                          ${BOOST_LIBRARIES}
-                          Boost::thread
-                          Boost::system
-                          Boost::chrono
-                          Boost::atomic)
-target_link_libraries(${PROJECT_NAME} 
-                          ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} Boost::thread)
+target_link_libraries(${PROJECT_NAME} Boost::system)
+target_link_libraries(${PROJECT_NAME} Boost::chrono)
+target_link_libraries(${PROJECT_NAME} Boost::atomic)
 
-target_link_libraries(${PROJECT_NAME} 
-                          ${POTRACE_LIBRARIES}
-                          ${POTRACE_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 
 target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
 if (MINGW)
-    target_link_libraries(${PROJECT_NAME} ws2_32)
-    message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
+  target_link_libraries(${PROJECT_NAME} ws2_32)
+  message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
 endif()
+
+# Build third_party libraries
+#add_subdirectory(third_party/clipper)
+
+install(SCRIPT cmake/Helpers/bundle.cmake)
+
 #add_subdirectory(tests)
