@@ -47,6 +47,7 @@ void LayerParamsPanel::registerEvents() {
       setToCustom();
     } else {
       ui->presetComboBox->setCurrentIndex(index_to_recover);
+      ui->presetComboBox->currentIndexChanged(index_to_recover);
     }
   });
   connect(ui->powerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
@@ -69,9 +70,14 @@ void LayerParamsPanel::registerEvents() {
         preset_manager_->save();
         emit main_window_->presetSettingsChanged();
         loadSettings();
+        setToCustom();
+        preset_previous_index_ = -1;
+        if (layer_ != nullptr) layer_->setParameterIndex(-1);
       }
-      setToCustom();
-      if (layer_ != nullptr) layer_->setParameterIndex(-1);
+      else {
+        if (layer_ != nullptr) layer_->setParameterIndex(index_to_recover);
+        ui->presetComboBox->setCurrentIndex(index_to_recover);
+      }
     } else if (index >= 0 && index < ui->presetComboBox->count() - 2) {
       auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
       ui->powerSpinBox->blockSignals(true);
