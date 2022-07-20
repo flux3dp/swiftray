@@ -108,6 +108,7 @@ void Document::execute(const CmdPtr &cmd) {
   undo_mutex_.unlock();
   if (!current_file_modified_) {
     current_file_modified_ = true;
+    emit fileModifiedChange(current_file_modified_);
   }
 }
 
@@ -166,6 +167,17 @@ void Document::setScroll(QPointF scroll) {
 void Document::setScreenSize(QSize size) {
   screen_size_ = size;
   screen_changed_ = true;
+}
+
+void Document::setCurrentFile(QString filename) {
+  current_file_ = filename;
+  current_file_modified_ = false;
+  emit fileModifiedChange(current_file_modified_);
+}
+
+void Document::clearCurrentFileModified() {
+  current_file_modified_ = false;
+  emit fileModifiedChange(current_file_modified_);
 }
 
 void Document::setScale(qreal scale) {

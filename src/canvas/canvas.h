@@ -272,6 +272,8 @@ signals:
 
   void selectionsChanged();
 
+  void fileModifiedChange(bool file_modified);
+
   void layerChanged();
 
   void modeChanged();

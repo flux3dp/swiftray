@@ -14,8 +14,8 @@
    <string>Swiftray</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>../beam-studio/public/icon.png</normaloff>../beam-studio/public/icon.png</iconset>
+   <iconset resource="../../qml.qrc">
+    <normaloff>:/images/icon.icns</normaloff>:/images/icon.icns</iconset>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging</set>
