@@ -122,7 +122,7 @@ jobs:
         run: |
           cd $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib
           sentry-cli upload-dif -o flux3dp -p swiftray *.dSYM
-          cd ~
+          cd ${{ github.workspace }}
           cd build
           dsymutil Swiftray.app/Contents/MacOS/Swiftray
           sentry-cli upload-dif -o flux3dp -p Swiftray.app/Contents/MacOS/Swiftray.dSYM
