@@ -77,8 +77,7 @@ void MainWindow::loadSettings() {
   }
   is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
   setWindowModified(false);
-  setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/Untitled.bb");
-  qInfo() << "windowFilePath() = " << windowFilePath();
+  setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
 }
@@ -223,7 +222,6 @@ void MainWindow::newFile() {
   setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
-  // setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/Untitled.bb");
 }
 
 void MainWindow::onScalePlusClicked() {
@@ -266,7 +264,7 @@ void MainWindow::openFile() {
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
       current_filename_ = QFileInfo(file_name).baseName();
-      // setWindowFilePath(file_name);
+      setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
       canvas_->loadSVG(data);
@@ -284,7 +282,7 @@ void MainWindow::openExampleOfSwiftray() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
-    // setWindowFilePath(file_name);
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -304,7 +302,7 @@ void MainWindow::openMaterialCuttingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
-    // setWindowFilePath(file_name);
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -324,7 +322,7 @@ void MainWindow::openMaterialEngravingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
-    // setWindowFilePath(file_name);
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -377,7 +375,7 @@ bool MainWindow::saveAsFile() {
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
     QFileInfo file_info{file_name};
-    // setWindowFilePath(file_name);
+    setWindowFilePath(file_name);
     current_filename_ = QFileInfo(file_name).baseName();
     FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
@@ -639,9 +637,6 @@ void MainWindow::updateSelections() {
   ui->actionCrop->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
   ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
-#ifdef Q_OS_MACOS
-  setOSXWindowTitleColor(this);
-#endif
 }
 
 void MainWindow::updateToolbarTransform() {
