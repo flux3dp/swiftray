@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   if(id != -1) {
     QFont font("Open Sans");
     font.setStyleHint(QFont::Monospace);
-    font.setPixelSize(9);
+    font.setPixelSize(12);
     QApplication::setFont(font);
   }
   #endif
