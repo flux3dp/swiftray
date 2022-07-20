@@ -76,7 +76,8 @@ void MainWindow::loadSettings() {
     preferences_window_->setSpeedMode(is_high_speed_mode_);
   }
   is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
-  setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/"+tr("Untitled"));
+  setWindowModified(false);
+  setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/Untitled.bb");
   qInfo() << "windowFilePath() = " << windowFilePath();
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
@@ -219,8 +220,10 @@ void MainWindow::newFile() {
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
   emit canvas_->selectionsChanged();
+  setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
+  // setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/Untitled.bb");
 }
 
 void MainWindow::onScalePlusClicked() {
@@ -263,6 +266,7 @@ void MainWindow::openFile() {
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
       current_filename_ = QFileInfo(file_name).baseName();
+      // setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
       canvas_->loadSVG(data);
@@ -280,6 +284,7 @@ void MainWindow::openExampleOfSwiftray() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    // setWindowFilePath(file_name);
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -299,6 +304,7 @@ void MainWindow::openMaterialCuttingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    // setWindowFilePath(file_name);
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -318,6 +324,7 @@ void MainWindow::openMaterialEngravingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    // setWindowFilePath(file_name);
     current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
@@ -370,6 +377,7 @@ bool MainWindow::saveAsFile() {
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    // setWindowFilePath(file_name);
     current_filename_ = QFileInfo(file_name).baseName();
     FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
@@ -1617,6 +1625,7 @@ void MainWindow::jobDashboardFinish(int result) {
 }
 
 void MainWindow::updateTitle(bool file_modified) {
+  setWindowModified(file_modified);
   if(file_modified) {
     setWindowTitle(current_filename_ + "* - Swiftray");
   }
