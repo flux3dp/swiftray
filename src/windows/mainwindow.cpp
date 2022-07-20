@@ -79,7 +79,7 @@ void MainWindow::loadSettings() {
   setWindowFilePath(FilePathSettings::getDefaultFilePath()+"/"+tr("Untitled"));
   qInfo() << "windowFilePath() = " << windowFilePath();
   setWindowTitle(tr("Untitled") + " - Swiftray");
-  current_filename_ = "Untitled";
+  current_filename_ = tr("Untitled");
 }
 
 void MainWindow::loadCanvas() {
@@ -220,7 +220,7 @@ void MainWindow::newFile() {
   canvas_->emitAllChanges();
   emit canvas_->selectionsChanged();
   setWindowTitle(tr("Untitled") + " - Swiftray");
-  current_filename_ = "Untitled";
+  current_filename_ = tr("Untitled");
 }
 
 void MainWindow::onScalePlusClicked() {
