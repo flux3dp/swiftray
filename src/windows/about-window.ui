@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>282</width>
-    <height>331</height>
+    <height>330</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -96,7 +96,7 @@
    </item>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_2">
-     <item alignment="Qt::AlignHCenter|Qt::AlignTop">
+     <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
       <widget class="QLabel" name="labelVersion">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -104,17 +104,12 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="font">
-        <font>
-         <family>Helvetica Neue</family>
-        </font>
-       </property>
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Version 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
-     <item alignment="Qt::AlignHCenter|Qt::AlignTop">
+     <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
       <widget class="QLabel" name="label_5">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -122,17 +117,12 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="font">
-        <font>
-         <family>Helvetica Neue</family>
-        </font>
-       </property>
        <property name="text">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
-     <item alignment="Qt::AlignHCenter|Qt::AlignTop">
+     <item alignment="Qt::AlignHCenter|Qt::AlignVCenter">
       <widget class="QLabel" name="label">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -146,13 +136,11 @@
          <height>0</height>
         </size>
        </property>
-       <property name="font">
-        <font>
-         <family>Helvetica Neue</family>
-        </font>
+       <property name="midLineWidth">
+        <number>0</number>
        </property>
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;the &lt;/span&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; open source project and&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;other open source software&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;the &lt;/span&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; open source project and&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;other open source software&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
