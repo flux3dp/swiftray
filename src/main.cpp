@@ -9,6 +9,7 @@
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
 #include <sentry/include/sentry.h>
+#include <string>
 
 #ifdef Q_OS_MACOS
 #define MACOS
@@ -33,7 +34,14 @@ int main(int argc, char *argv[]) {
   #ifdef Q_OS_MACOS
   sentry_options_set_handler_path(options, "../Resources/crashpad_handler");
   #endif
-  sentry_options_set_release(options, "Swiftray@1.0.0");
+  sentry_options_set_release(options, 
+      std::string("Swiftray@")
+      .append(std::to_string(VERSION_MAJOR))
+      .append(std::to_string(VERSION_MINOR))
+      .append(std::to_string(VERSION_BUILD))
+      .append(VERSION_SUFFIX)
+      .c_str()
+  );
   sentry_init(options);
   // Make sure everything flushes
   auto sentryClose = qScopeGuard([] { sentry_close(); });
