@@ -168,11 +168,6 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <property name="font">
-    <font>
-     <family>Titillium Web</family>
-    </font>
-   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable</set>
    </property>

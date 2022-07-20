@@ -908,7 +908,7 @@ Rectangle {
                 width: 260
                 height: 60
                 text: qsTr("Laser Pulse")
-                font.pointSize: 28
+                font.pointSize: 26
                 onClicked: laserPulse()
             }
         }
@@ -925,7 +925,7 @@ Rectangle {
                 height: 60
                 checkable: true
                 text: qsTr("Laser")
-                font.pointSize: 28
+                font.pointSize: 26
                 onClicked: laser()
             }
         }
