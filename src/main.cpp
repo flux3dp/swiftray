@@ -29,7 +29,7 @@ int mainCLI(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   // Launch Crashpad with Sentry
   sentry_options_t *options = sentry_options_new();
-  sentry_options_set_dsn(options, "https://3410c8aa491d46dbbcfe3b40d338d9c8@o1289850.ingest.sentry.io/6546119");
+  sentry_options_set_dsn(options, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
   #ifdef Q_OS_MACOS
   sentry_options_set_handler_path(options, "../Resources/crashpad_handler");
   #endif
