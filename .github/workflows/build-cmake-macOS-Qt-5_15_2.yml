@@ -125,7 +125,7 @@ jobs:
           cd ${{ github.workspace }}
           cd build
           dsymutil Swiftray.app/Contents/MacOS/Swiftray
-          sentry-cli upload-dif -o flux3dp -p Swiftray.app/Contents/MacOS/Swiftray.dSYM
+          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
 
       - name: Codesign executable
         env: 
