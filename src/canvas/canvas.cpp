@@ -791,8 +791,6 @@ void Canvas::importImage(QImage &image) {
     Commands::AddShape(document().activeLayer(), new_shape),
     Commands::Select(&(document()), {new_shape})
   );
-  scale = 254 / 72.0;
-  transformControl().applyScale(QPointF(0,0), scale, scale, false);
 }
 
 /**
