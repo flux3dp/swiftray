@@ -76,6 +76,10 @@ void MainWindow::loadSettings() {
     preferences_window_->setSpeedMode(is_high_speed_mode_);
   }
   is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
+  setWindowModified(false);
+  setWindowFilePath(FilePathSettings::getDefaultFilePath());
+  setWindowTitle(tr("Untitled") + " - Swiftray");
+  current_filename_ = tr("Untitled");
 }
 
 void MainWindow::loadCanvas() {
@@ -215,6 +219,9 @@ void MainWindow::newFile() {
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
   emit canvas_->selectionsChanged();
+  setWindowModified(false);
+  setWindowTitle(tr("Untitled") + " - Swiftray");
+  current_filename_ = tr("Untitled");
 }
 
 void MainWindow::onScalePlusClicked() {
@@ -256,6 +263,9 @@ void MainWindow::openFile() {
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
       emit canvas_->selectionsChanged();
+      current_filename_ = QFileInfo(file_name).baseName();
+      setWindowFilePath(file_name);
+      setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
       canvas_->loadSVG(data);
     } else {
@@ -272,6 +282,8 @@ void MainWindow::openExampleOfSwiftray() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
+    current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
     DocumentSerializer ds(stream);
@@ -290,6 +302,8 @@ void MainWindow::openMaterialCuttingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
+    current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
     DocumentSerializer ds(stream);
@@ -308,6 +322,8 @@ void MainWindow::openMaterialEngravingTest() {
   if (file.open(QFile::ReadOnly)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    setWindowFilePath(FilePathSettings::getDefaultFilePath());
+    current_filename_ = QFileInfo(file_name).baseName();
     QByteArray data = file.readAll();
     QDataStream stream(data);
     DocumentSerializer ds(stream);
@@ -359,6 +375,8 @@ bool MainWindow::saveAsFile() {
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
     QFileInfo file_info{file_name};
+    setWindowFilePath(file_name);
+    current_filename_ = QFileInfo(file_name).baseName();
     FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
     QDataStream stream(&file);
@@ -619,9 +637,6 @@ void MainWindow::updateSelections() {
   ui->actionCrop->setEnabled(items.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
   ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
-#ifdef Q_OS_MACOS
-  setOSXWindowTitleColor(this);
-#endif
 }
 
 void MainWindow::updateToolbarTransform() {
@@ -660,6 +675,7 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   connect(canvas_, &Canvas::scaleChanged, this, &MainWindow::updateScale);
+  connect(canvas_, &Canvas::fileModifiedChange, this, &MainWindow::updateTitle);
   connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
   // Monitor UI events
   connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
@@ -1601,4 +1617,14 @@ void MainWindow::setJobStatus(BaseJob::Status status) {
 
 void MainWindow::jobDashboardFinish(int result) {
   job_dashboard_exist_ = false;
+}
+
+void MainWindow::updateTitle(bool file_modified) {
+  setWindowModified(file_modified);
+  if(file_modified) {
+    setWindowTitle(current_filename_ + "* - Swiftray");
+  }
+  else {
+    setWindowTitle(current_filename_ + " - Swiftray");
+  }
 }

@@ -112,8 +112,8 @@ public:
 
   void setScreenSize(QSize size);
 
-  void setCurrentFile(QString filename) { current_file_ = filename; current_file_modified_ = false; }
-  void clearCurrentFileModified() { current_file_modified_ = false; }
+  void setCurrentFile(QString filename);
+  void clearCurrentFileModified();
 
   const LayerPtr *findLayerByName(const QString &layer_name);
 
@@ -140,6 +140,8 @@ signals:
   void selectionsChanged();
 
   void scaleChanged();
+
+  void fileModifiedChange(bool file_modified);
 
 private:
   qreal scroll_x_;

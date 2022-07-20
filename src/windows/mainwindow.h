@@ -123,6 +123,8 @@ private slots:
 
   void jobDashboardFinish(int result);
 
+  void updateTitle(bool file_modified);
+
 private:
 
   void loadWidgets() override;
@@ -138,6 +140,7 @@ private:
   double x_, y_, r_, w_, h_;
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
+  QString current_filename_;
 
   // Context menu of canvas
   QMenu *popMenu_;

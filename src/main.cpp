@@ -86,8 +86,5 @@ int main(int argc, char *argv[]) {
   // Load MainWindow
   MainWindow win;
   win.show();
-#ifdef MACOS
-  setOSXWindowTitleColor(&win);
-#endif
   return app.exec();
 }

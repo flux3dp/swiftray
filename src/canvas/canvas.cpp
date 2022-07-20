@@ -1156,6 +1156,7 @@ void Canvas::setDocument(Document *document) {
   resize();
   connect(doc_.get(), &Document::selectionsChanged, this, &Canvas::selectionsChanged);
   connect(doc_.get(), &Document::scaleChanged, this, &Canvas::scaleChanged);
+  connect(doc_.get(), &Document::fileModifiedChange, this, &Canvas::fileModifiedChange);
 }
 
 Canvas::Mode Canvas::mode() const { return mode_; }

@@ -1023,7 +1023,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="720"/>
-        <location filename="../src/windows/mainwindow.cpp" line="137"/>
+        <location filename="../src/windows/mainwindow.cpp" line="141"/>
         <source>Save</source>
         <translation>儲存檔案</translation>
     </message>
@@ -1044,7 +1044,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="736"/>
-        <location filename="../src/windows/mainwindow.cpp" line="854"/>
+        <location filename="../src/windows/mainwindow.cpp" line="870"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
@@ -1055,7 +1055,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="744"/>
-        <location filename="../src/windows/mainwindow.cpp" line="855"/>
+        <location filename="../src/windows/mainwindow.cpp" line="871"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
@@ -1066,7 +1066,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="752"/>
-        <location filename="../src/windows/mainwindow.cpp" line="856"/>
+        <location filename="../src/windows/mainwindow.cpp" line="872"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
@@ -1485,7 +1485,7 @@
         <translation>機器設定</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="352"/>
+        <location filename="../src/windows/mainwindow.cpp" line="368"/>
         <source>Save Image</source>
         <translation>儲存圖片</translation>
     </message>
@@ -1502,152 +1502,160 @@
         <translation type="vanished">請問是否儲存變更?</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="136"/>
+        <location filename="../src/windows/mainwindow.cpp" line="140"/>
         <source>The document has been modified.
 Do you want to save your changes?</source>
         <translation>請問是否要儲存未儲存的變更,否則變更將會遺失?</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="138"/>
+        <location filename="../src/windows/mainwindow.cpp" line="142"/>
         <source>Don&apos;t Save</source>
         <translation>不要儲存</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="139"/>
-        <location filename="../src/windows/mainwindow.cpp" line="445"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1412"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1444"/>
+        <location filename="../src/windows/mainwindow.cpp" line="143"/>
+        <location filename="../src/windows/mainwindow.cpp" line="463"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1428"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1460"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="237"/>
+        <location filename="../src/windows/mainwindow.cpp" line="244"/>
         <source>Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</source>
         <translation>檔案 (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="401"/>
+        <location filename="../src/windows/mainwindow.cpp" line="419"/>
         <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp)</source>
         <translation>檔案 (*.png *.jpg *.jpeg *.svg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="427"/>
+        <location filename="../src/windows/mainwindow.cpp" line="445"/>
         <source>Image Files (*.png *.jpg *.jpeg *.bmp)</source>
         <translation>檔案 (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="461"/>
+        <location filename="../src/windows/mainwindow.cpp" line="479"/>
         <source>GCode Files (*.gcode)</source>
         <translation>檔案 (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="487"/>
+        <location filename="../src/windows/mainwindow.cpp" line="505"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
         <translation>檔案 (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="167"/>
-        <location filename="../src/windows/mainwindow.cpp" line="725"/>
+        <location filename="../src/windows/mainwindow.cpp" line="171"/>
+        <location filename="../src/windows/mainwindow.cpp" line="741"/>
         <source>Serial Port Error</source>
         <translation>序列埠錯誤</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="168"/>
-        <location filename="../src/windows/mainwindow.cpp" line="726"/>
+        <location filename="../src/windows/mainwindow.cpp" line="81"/>
+        <location filename="../src/windows/mainwindow.cpp" line="82"/>
+        <location filename="../src/windows/mainwindow.cpp" line="223"/>
+        <location filename="../src/windows/mainwindow.cpp" line="224"/>
+        <source>Untitled</source>
+        <translation>未命名</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.cpp" line="172"/>
+        <location filename="../src/windows/mainwindow.cpp" line="742"/>
         <source>Please connect to serial port first</source>
         <translation>請先與機器連線</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="806"/>
+        <location filename="../src/windows/mainwindow.cpp" line="822"/>
         <source>Alarm</source>
         <translation>提示</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="807"/>
+        <location filename="../src/windows/mainwindow.cpp" line="823"/>
         <source>Please confirm that you are using the Lazervida machine.</source>
         <translation>請確認您使用的機器是 Lazervida。</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="857"/>
+        <location filename="../src/windows/mainwindow.cpp" line="873"/>
         <source>Paste in Place</source>
         <translation>原地貼上</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="858"/>
+        <location filename="../src/windows/mainwindow.cpp" line="874"/>
         <source>Duplicate</source>
         <translation>重製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="860"/>
+        <location filename="../src/windows/mainwindow.cpp" line="876"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="862"/>
+        <location filename="../src/windows/mainwindow.cpp" line="878"/>
         <source>group</source>
         <translation>群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="863"/>
+        <location filename="../src/windows/mainwindow.cpp" line="879"/>
         <source>ungroup</source>
         <translation>解散群組</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="975"/>
+        <location filename="../src/windows/mainwindow.cpp" line="991"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="976"/>
+        <location filename="../src/windows/mainwindow.cpp" line="992"/>
         <source>Line Height</source>
         <translation>行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="977"/>
+        <location filename="../src/windows/mainwindow.cpp" line="993"/>
         <source>Letter Spacing</source>
         <translation>字距</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1103"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1109"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1130"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1119"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1125"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1146"/>
         <source> </source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1162"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1178"/>
         <source>Rotation</source>
         <translation>旋轉</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1163"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1179"/>
         <source>Width</source>
         <translation>工作區域寬度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1164"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1180"/>
         <source>Height</source>
         <translation>工作區域高度</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1312"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1328"/>
         <source>Fit to Screen</source>
         <translation>配合視窗尺寸</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1443"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1459"/>
         <source>Exporting toolpath...</source>
         <translation>輸出路徑中...</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="444"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1411"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1453"/>
+        <location filename="../src/windows/mainwindow.cpp" line="462"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1427"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1469"/>
         <source>Generating GCode...</source>
         <translation>產生GCode中...</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1458"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1474"/>
         <source>Copying GCode...</source>
         <translation>複製GCode中...</translation>
     </message>
@@ -1656,7 +1664,7 @@ Do you want to save your changes?</source>
         <translation type="vanished">GCode檔案 (*gcode);; 所有檔案(*.*)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="463"/>
+        <location filename="../src/windows/mainwindow.cpp" line="481"/>
         <source>Save GCode</source>
         <translation>儲存 GCode</translation>
     </message>
@@ -1665,7 +1673,7 @@ Do you want to save your changes?</source>
         <translation type="vanished">未命名.gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="350"/>
+        <location filename="../src/windows/mainwindow.cpp" line="366"/>
         <source>Scene File (*.bb)</source>
         <translation>檔案 (*.bb)</translation>
     </message>
