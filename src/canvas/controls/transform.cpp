@@ -330,6 +330,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
 
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
+      emit cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       if(direction_locked_) {
         if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
