@@ -28,13 +28,23 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+  QApplication app(argc, argv);
+  QCoreApplication::setOrganizationName("FLUX");
+  QCoreApplication::setOrganizationDomain("flux3dp.com");
+  QCoreApplication::setApplicationName("Swiftray");
+  QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+
   // Launch Crashpad with Sentry
   sentry_options_t *options = sentry_options_new();
   sentry_options_set_dsn(options, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
   #ifdef Q_OS_MACOS
-  sentry_options_set_handler_path(options, "../Resources/crashpad_handler");
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
+  sentry_options_set_handler_path(options,
+      QCoreApplication::applicationDirPath().toStdString().append("/../Resources/crashpad_handler").c_str());
   #endif
-  sentry_options_set_release(options, 
+  sentry_options_set_release(options,
       std::string("Swiftray@")
       .append(std::to_string(VERSION_MAJOR))
       .append(std::to_string(VERSION_MINOR))
@@ -52,14 +62,6 @@ int main(int argc, char *argv[]) {
   //  "custom",          // logger
   //  "It works!"        // message
   //));
-
-  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-  QApplication app(argc, argv);
-  QCoreApplication::setOrganizationName("FLUX");
-  QCoreApplication::setOrganizationDomain("flux3dp.com");
-  QCoreApplication::setApplicationName("Swiftray");
-  QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
   // CLI
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
