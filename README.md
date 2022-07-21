@@ -1,3 +1,13 @@
+<p align="center">
+  <img
+    alt="swiftray library logo"
+    src="images/icon.png"
+    height="300"
+    style="margin-top: 20px; margin-bottom: 20px;"
+  />
+</p>
+
+
 # Swiftray
 
 Swiftray is a free and open-sourced software for grbl-based laser cutters and engravers. 
@@ -11,7 +21,7 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - Low memory usage - even runnable on embedded system
 - Cross-platform - compiles on Windows, macOS, and Linux
 
-## Dependencies
+## Requirements
 
 - Compilers must support C++17 standards.
 - Boost 1.7.0
@@ -20,6 +30,9 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - Qt Framework and Creator can be installed via [online installer](https://www.qt.io/download-open-source)
 - OpenCV 4
 - Potrace
+- libxml2
+- libiconv (Windows)
+- icu4c (MacOS)
 
 ## Building
 
@@ -34,7 +47,7 @@ $ cmake ..
 $ make -j12
 ```
 
-### Qt Creator
+### Qt Creator (QMake)
 
 Open the .pro project file in the root directory, and click run.
 
@@ -61,3 +74,8 @@ Run `$ doxygen Doxygen` and view docs/index.html
 Swiftray is community developed, commercially supported for long-term development.
 
 Swiftray is brought to you by the development team at FLUX Inc.
+
+
+## License
+
+Swiftray is GNU General Public License v3.0 licensed.
