@@ -27,23 +27,23 @@ void BaseJob::resume() {};
 QString BaseJob::statusToString(BaseJob::Status status) {
   switch (status) {
     case BaseJob::Status::READY:
-      return tr("READY");
+      return tr("Ready");
     case BaseJob::Status::STARTING:
-      return tr("STARTING");
+      return tr("Starting");
     case BaseJob::Status::RUNNING:
-      return tr("RUNNING");
+      return tr("Running");
     case BaseJob::Status::PAUSED:
-      return tr("PAUSED");
+      return tr("Paused");
     case BaseJob::Status::ALARM:
-      return tr("ALARM");
+      return tr("Alarm");
     case BaseJob::Status::STOPPED:
-      return tr("STOPPED");
+      return tr("Stopped");
     case BaseJob::Status::ALARM_STOPPED:
-      return tr("ALARM_STOPPED");
+      return tr("Alarm Stopped");
     case BaseJob::Status::FINISHED:
-      return tr("FINISHED");
+      return tr("Finished");
     default:
-      return tr("UNDEFINED STATUS");
+      return tr("Undefined Status");
   }
 }
 

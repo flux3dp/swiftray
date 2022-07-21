@@ -48,48 +48,84 @@
 <context>
     <name>BaseJob</name>
     <message>
-        <location filename="../src/motion_controller_job/base-job.cpp" line="30"/>
         <source>READY</source>
+        <translation type="vanished">準備中</translation>
+    </message>
+    <message>
+        <source>STARTING</source>
+        <translation type="vanished">啟動中</translation>
+    </message>
+    <message>
+        <source>RUNNING</source>
+        <translation type="vanished">工作中</translation>
+    </message>
+    <message>
+        <source>PAUSED</source>
+        <translation type="vanished">暫停</translation>
+    </message>
+    <message>
+        <source>ALARM</source>
+        <translation type="vanished">警告</translation>
+    </message>
+    <message>
+        <source>STOPPED</source>
+        <translation type="vanished">停止</translation>
+    </message>
+    <message>
+        <source>ALARM_STOPPED</source>
+        <translation type="vanished">警告停止</translation>
+    </message>
+    <message>
+        <source>FINISHED</source>
+        <translation type="vanished">完成</translation>
+    </message>
+    <message>
+        <source>UNDEFINED STATUS</source>
+        <translation type="vanished">未定義狀態</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/base-job.cpp" line="30"/>
+        <source>Ready</source>
         <translation>準備中</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="32"/>
-        <source>STARTING</source>
+        <source>Starting</source>
         <translation>啟動中</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="34"/>
-        <source>RUNNING</source>
+        <source>Running</source>
         <translation>工作中</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="36"/>
-        <source>PAUSED</source>
+        <source>Paused</source>
         <translation>暫停</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="38"/>
-        <source>ALARM</source>
+        <source>Alarm</source>
         <translation>警告</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="40"/>
-        <source>STOPPED</source>
+        <source>Stopped</source>
         <translation>停止</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="42"/>
-        <source>ALARM_STOPPED</source>
+        <source>Alarm Stopped</source>
         <translation>警告停止</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="44"/>
-        <source>FINISHED</source>
+        <source>Finished</source>
         <translation>完成</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/base-job.cpp" line="46"/>
-        <source>UNDEFINED STATUS</source>
+        <source>Undefined Status</source>
         <translation>未定義狀態</translation>
     </message>
 </context>
@@ -729,7 +765,7 @@
         <translation>更多...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="150"/>
+        <location filename="../src/widgets/panels/layer-params-panel.cpp" line="156"/>
         <source>Parameter Settings</source>
         <translation>參數設置</translation>
     </message>
