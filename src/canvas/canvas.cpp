@@ -312,12 +312,18 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
           document().setSelection(hit);
           document().setActiveLayer(hit->layer()->name());
           emit layerChanged();
+          if (document().activeLayer()->isLocked()) {
+            break;
+          }
           ctrl_text_.setTarget(hit);
           setMode(Mode::TextDrawing);
           break;
         case Shape::Type::Path:
           qInfo() << "[Canvas] Double clicked path" << hit.get();
           document().setSelection(nullptr);
+          if (document().activeLayer()->isLocked()) {
+            break;
+          }
           ctrl_path_edit_.setTarget(hit);
           setMode(Mode::PathEditing);
           break;
@@ -576,6 +582,10 @@ void Canvas::editDrawRect() {
 }
 
 void Canvas::editDrawPolygon() {
+  if (document().activeLayer()->isLocked()) {
+    emit modeChanged();
+    return;
+  }
   document().setSelection(nullptr);
   setMode(Mode::PolygonDrawing);
 }
