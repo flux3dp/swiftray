@@ -76,6 +76,10 @@ Canvas::Canvas(QQuickItem *parent)
   connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
 
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
+
+  connect(&ctrl_transform_, &Controls::Transform::cursorChanged, [=](Qt::CursorShape cursor) {
+    emit cursorChanged(cursor);
+  });
 }
 
 Canvas::~Canvas() {
@@ -426,6 +430,9 @@ bool Canvas::event(QEvent *e) {
   // qInfo() << "QEvent" << e;
   QNativeGestureEvent *nge;
   Qt::CursorShape cursor;
+  QPointF canvas_coord;
+  ShapePtr hit;
+  bool cursor_changed = false;
 
   switch (e->type()) {
     case QEvent::HoverMove:
@@ -435,6 +442,7 @@ bool Canvas::event(QEvent *e) {
         case Mode::PolygonDrawing:
         case Mode::RectDrawing:
           emit cursorChanged(Qt::CrossCursor);
+          cursor_changed = true;
           break;
         default:
           emit cursorChanged(Qt::ArrowCursor);
@@ -448,10 +456,17 @@ bool Canvas::event(QEvent *e) {
           // Local cursor has a bug..
           // setCursor(cursor);
           emit cursorChanged(cursor);
+          cursor_changed = true;
           break;
         }
       }
-
+      if(!cursor_changed) {
+        canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
+        hit = document().hitTest(canvas_coord);
+        if(hit != nullptr) {
+          emit cursorChanged(Qt::OpenHandCursor);
+        }
+      }
       break;
 
     case QEvent::NativeGesture:

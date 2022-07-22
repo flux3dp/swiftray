@@ -132,5 +132,8 @@ namespace Controls {
     void updateSelections();
 
     void updateBoundingRect();
+
+  signals:
+    void cursorChanged(Qt::CursorShape cursor);
   };
 }
