@@ -357,13 +357,13 @@
     <message>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="147"/>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="195"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="290"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="299"/>
         <source>Serial port not responding</source>
         <translation>序列埠沒有回應</translation>
     </message>
     <message>
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="191"/>
-        <location filename="../src/motion_controller_job/grbl-job.cpp" line="286"/>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="295"/>
         <source>Serial port disconnected</source>
         <translation>序列埠斷線</translation>
     </message>
@@ -371,6 +371,16 @@
         <location filename="../src/motion_controller_job/grbl-job.cpp" line="234"/>
         <source>Alarm code: </source>
         <translation>錯誤代碼：</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="265"/>
+        <source>Machine is paused by drop or collision.</source>
+        <translation>機器暫停，偵測到碰撞或掉落</translation>
+    </message>
+    <message>
+        <location filename="../src/motion_controller_job/grbl-job.cpp" line="267"/>
+        <source>Machine is paused by tilt.</source>
+        <translation>機器暫停，偵測到傾斜</translation>
     </message>
 </context>
 <context>
