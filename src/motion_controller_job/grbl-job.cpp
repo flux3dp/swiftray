@@ -258,6 +258,15 @@ void GrblJob::run() {
           qInfo() << out_temp;
         } else if (out_temp.startsWith("[TLO:")) {
           qInfo() << out_temp;
+        } else if (out_temp.startsWith("[FLUX:")) {
+          // ======== FLUX's dedicated response ========
+          qInfo() << out_temp;
+          if (out_temp.contains("act")) {
+            emit error(tr("Machine is paused by drop or collision."));
+          } else if (out_temp.contains("tilt")) {
+            emit error(tr("Machine is paused by tilt."));
+          }
+          setStatus(Status::PAUSED);
         } else {
           // Unknown msg
           qInfo() << "Unknown MSG: " + out_temp; // Debug response
