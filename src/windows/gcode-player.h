@@ -9,7 +9,6 @@
 
 #include <motion_controller_job/base-job.h>
 #include <widgets/base-container.h>
-#include <QTime>
 
 #endif
 
@@ -25,8 +24,6 @@ public:
   explicit GCodePlayer(QWidget *parent = nullptr);
 
   ~GCodePlayer();
-
-  QList<QTime> calcRequiredTime();
 
   void setGCode(const QString &gcodes);
   QString getGCode();
