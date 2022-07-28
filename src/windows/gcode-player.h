@@ -26,8 +26,6 @@ public:
 
   ~GCodePlayer();
 
-  QList<QTime> calcRequiredTime();
-
   void setGCode(const QString &gcodes);
   QString getGCode();
 

@@ -177,7 +177,13 @@ void MainWindow::actionStart() {
   generateGcode();
   // Prepare total required time
   try {
-    auto timestamp_list = gcode_player_->calcRequiredTime();
+    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto progress_dialog = new QProgressDialog(
+      tr("Estimating task time..."),  
+      tr("Cancel"), 
+      0, gcode_list.size() - 1, 
+      this);
+    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
     QTime total_required_time = QTime{0, 0};
     if (!timestamp_list.empty()) {
       total_required_time = timestamp_list.last();
@@ -1480,7 +1486,13 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.setValue(progress_dialog.maximum());
 
   try {
-    auto timestamp_list = gcode_player_->calcRequiredTime();
+    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto progress_dialog = new QProgressDialog(
+      tr("Estimating task time..."),  
+      tr("Cancel"), 
+      0, gcode_list.size()-1, 
+      this);
+    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
     QTime last_gcode_timestamp{0, 0};
     if (!timestamp_list.empty()) {
       last_gcode_timestamp = timestamp_list.last();
@@ -1518,11 +1530,17 @@ void MainWindow::generateJob() {
     return;
   }
   try {
+    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto progress_dialog = new QProgressDialog(
+      tr("Estimating task time..."),  
+      tr("Cancel"), 
+      0, gcode_list.size()-1, 
+      job_dashboard_exist_ ? qobject_cast<QWidget*>(job_dashboard_) : qobject_cast<QWidget*>(this));
     QElapsedTimer timer;
     qInfo() << "Start calcRequiredTime";
     timer.start();
-    auto timestamp_list = gcode_player_->calcRequiredTime();
-    auto job = new GrblJob(this, "", gcode_player_->getGCode().split("\n"));
+    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
+    auto job = new GrblJob(this, "", gcode_list);
     job->setTimestampList(timestamp_list);
     qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
 

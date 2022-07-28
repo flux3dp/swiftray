@@ -8,6 +8,7 @@
 #include <QByteArray>
 #include <QVariant>
 #include <list>
+#include <QProgressDialog>
 
 #include <motion_controller_job/base-job.h>
 #include <connection/serial-port.h>
@@ -99,6 +100,8 @@ public:
   //void parseResponse(QString line);
 
   bool isPaused();
+
+  static QList<QTime> calcRequiredTime(QStringList gcode_list, QProgressDialog* progress_dialog);
 
 signals:
   void startTimeoutTimer(int);
