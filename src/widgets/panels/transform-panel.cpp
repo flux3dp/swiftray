@@ -7,6 +7,7 @@ TransformPanel::TransformPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      main_window_(main_window),
      ui(new Ui::TransformPanel),
+     scale_locked_(false),
      BaseContainer() {
   assert(parent != nullptr && main_window != nullptr);
   ui->setupUi(this);
