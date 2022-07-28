@@ -19,12 +19,26 @@ bool Text::isActive() {
 
 bool Text::mouseReleaseEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  ShapePtr hit = document().hitTest(canvas_coord);
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
-    // Create a virtual target
-    ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font(), canvas().lineHeight());
-    setTarget(new_shape);
-    target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
+    if(hit == nullptr || hit->type() != Shape::Type::Text) {
+      // Create a virtual target
+      ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font(), canvas().lineHeight());
+      setTarget(new_shape);
+      target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
+    }
+    else if(hit->type() == Shape::Type::Text){
+      setTarget(hit);
+      int cursor_index = target().calculateCursor(canvas_coord);
+      qInfo() << "index = " << cursor_index;
+      canvas().textInput()->textCursor().setPosition(cursor_index);
+    }
+  }
+  else {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    qInfo() << "index = " << cursor_index;
+    canvas().textInput()->textCursor().setPosition(cursor_index);
   }
   return true;
 }

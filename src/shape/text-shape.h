@@ -25,6 +25,8 @@ public:
 
   void makeCursorRect(int cursor);
 
+  int calculateCursor(QPointF point);
+
   bool isEditing() const;
 
   // Setters
