@@ -30,6 +30,7 @@
 #include <windows/preview-window.h>
 #include <windows/job-dashboard-dialog.h>
 #include <globals.h>
+#include "widgets/components/canvas-widget.h"
 
 #include "ui_mainwindow.h"
 
@@ -94,6 +95,41 @@ void MainWindow::loadCanvas() {
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
   ui->quickWidget->show();
+  connect(ui->quickWidget, &CanvasWidget::dropFile,[=](QPoint point, QString filename) {
+    QFile file(filename);
+
+    if (file.open(QFile::ReadOnly)) {
+      // Update default file path
+      QFileInfo file_info{filename};
+      FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
+
+      QByteArray data = file.readAll();
+      qInfo() << "File size:" << data.size();
+
+      if (filename.endsWith(".bb")) {
+        if ( ! handleUnsavedChange()) {
+          return;
+        }
+        QDataStream stream(data);
+        DocumentSerializer ds(stream);
+        canvas_->setDocument(ds.deserializeDocument());
+        canvas_->document().setCurrentFile(filename);
+        canvas_->emitAllChanges();
+        emit canvas_->selectionsChanged();
+        current_filename_ = QFileInfo(filename).baseName();
+        setWindowFilePath(filename);
+        setWindowTitle(current_filename_ + " - Swiftray");
+      } else if (filename.endsWith(".svg")) {
+        canvas_->loadSVG(data);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+      } else {
+        importImage(filename);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+      }
+    }
+  });
 }
 
 void MainWindow::loadStyles() {

@@ -38,33 +38,9 @@
      <number>3</number>
     </property>
     <item>
-     <widget class="QQuickWidget" name="quickWidget">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>600</width>
-        <height>663</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="sizeIncrement">
-       <size>
-        <width>0</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="resizeMode">
-       <enum>QQuickWidget::SizeRootObjectToView</enum>
+     <widget class="CanvasWidget" name="quickWidget" native="true">
+      <property name="acceptDrops">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -1288,9 +1264,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QQuickWidget</class>
+   <class>CanvasWidget</class>
    <extends>QWidget</extends>
-   <header location="global">QtQuickWidgets/QQuickWidget</header>
+   <header>widgets/components/canvas-widget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
