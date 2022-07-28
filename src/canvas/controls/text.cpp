@@ -31,14 +31,16 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
     else if(hit->type() == Shape::Type::Text){
       setTarget(hit);
       int cursor_index = target().calculateCursor(canvas_coord);
-      qInfo() << "index = " << cursor_index;
-      canvas().textInput()->textCursor().setPosition(cursor_index);
+      QTextCursor	current_cursor = canvas().textInput()->textCursor();
+      current_cursor.setPosition(cursor_index);
+      canvas().textInput()->setTextCursor(current_cursor);
     }
   }
   else {
     int cursor_index = target().calculateCursor(canvas_coord);
-    qInfo() << "index = " << cursor_index;
-    canvas().textInput()->textCursor().setPosition(cursor_index);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index);
+    canvas().textInput()->setTextCursor(current_cursor);
   }
   return true;
 }
