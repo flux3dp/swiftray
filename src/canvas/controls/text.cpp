@@ -17,7 +17,7 @@ bool Text::isActive() {
   return canvas().mode() == Canvas::Mode::TextDrawing;
 }
 
-bool Text::mouseReleaseEvent(QMouseEvent *e) {
+bool Text::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
   ShapePtr hit = document().hitTest(canvas_coord);
   canvas().textInput()->setFocus();
@@ -45,6 +45,30 @@ bool Text::mouseReleaseEvent(QMouseEvent *e) {
   return true;
 }
 
+bool Text::mouseReleaseEvent(QMouseEvent *e) {
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if (target_ != nullptr) {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index, QTextCursor::KeepAnchor);
+    canvas().textInput()->setTextCursor(current_cursor);
+    return true;
+  }
+  return false;
+}
+
+bool Text::mouseMoveEvent(QMouseEvent *e) {
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if (target_ != nullptr) {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index, QTextCursor::KeepAnchor);
+    canvas().textInput()->setTextCursor(current_cursor);
+    return true;
+  }
+  return false;
+}
+
 bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   *cursor = Qt::IBeamCursor;
   return true;
@@ -66,7 +90,7 @@ void Text::paint(QPainter *painter) {
     target().setText(text);
     text_cache_ = text;
   }
-  target().makeCursorRect(canvas().textInput()->textCursor().position());
+  target().makeCursorRect(canvas().textInput()->textCursor().selectionStart(), canvas().textInput()->textCursor().selectionEnd());
   target().setEditing(true);
   QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);

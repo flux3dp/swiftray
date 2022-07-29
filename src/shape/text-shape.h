@@ -2,6 +2,7 @@
 
 #include <QFont>
 #include <shape/path-shape.h>
+#include <QList>
 
 class TextShape : public PathShape {
 public:
@@ -23,7 +24,7 @@ public:
 
   float lineHeight() const;
 
-  void makeCursorRect(int cursor);
+  void makeCursorRect(int start_cursor, int end_cursor);
 
   int calculateCursor(QPointF point);
 
@@ -47,6 +48,7 @@ private:
   QStringList lines_;
   QFont font_;
   QRectF cursor_rect_;
+  QList<QRectF> select_box_;
 
   void makePath();
 };
