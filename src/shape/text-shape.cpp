@@ -87,7 +87,6 @@ void TextShape::makeCursorRect(int cursor) {
 }
 
 int TextShape::calculateCursor(QPointF point) {
-  bool is_found = false;
   int current_pos = 0;
   const qreal WIDTH_HEIGHT_RATIO = 0.03; // fixed ratio between width and height
   for (int i = 0; i < lines_.length(); i++) {
@@ -98,27 +97,27 @@ int TextShape::calculateCursor(QPointF point) {
                         font_, "A");
     qreal cursor_height = height_path.boundingRect().height();
     qreal cursor_y_pos = height_path.boundingRect().top();
-    if(((point-pos()).y()) >= cursor_y_pos && ((point-pos()).y()) <= (cursor_y_pos + cursor_height)) {
+    if(((point-pos()).y()) <= (cursor_y_pos + cursor_height) ||
+      i == lines_.length()-1 ) {
       for(unsigned int cursor_offset = 1; cursor_offset <= line.length(); cursor_offset++) {
+        current_pos++;
         QString test_string = line.chopped(line.length() - cursor_offset);
         QPainterPath line_path; // for calculating x pos of cursor rect
         line_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
                         font_, test_string);
         qreal cursor_x_pos = line_path.boundingRect().right();
         if((point-pos()).x() <= cursor_x_pos) {
-          is_found = true;
-          current_pos += cursor_offset-1;
+          cursor_x_pos = line_path.boundingRect().left();
+          if((point-pos()).x() <= cursor_x_pos) {
+            current_pos--;
+          }
           break;
         }
       }
-    }
-    if(is_found) {
       break;
     }
     current_pos += lines_[i].length() + 1; // Add "\n"'s offset
   };
-  if(!is_found)
-    return 0;
   return current_pos;
 }
 
