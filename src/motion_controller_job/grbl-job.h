@@ -147,7 +147,10 @@ private:
   // cmd state
   GcodeCmdCommState gcode_cmd_comm_state_ = GcodeCmdCommState::kIdle;
   //ctrlCmdState ctrl_cmd_state_ = { .cmd = ctrlCmd::kNull, .comm_state = ctrlCmdCommState::kIdle};
-  SystemCmdState system_cmd_state_ = { .cmd = SystemCmd::kNull, .comm_state = SystemCmdCommState::kIdle};
+  SystemCmdState system_cmd_state_ = { 
+	  SystemCmd::kNull, 
+	  SystemCmdCommState::kIdle
+  };
 
   // meta status flag
   bool timeout_occurred_ = false;
