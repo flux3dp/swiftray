@@ -43,6 +43,10 @@ int main(int argc, char *argv[]) {
   //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
   sentry_options_set_handler_path(options,
       QCoreApplication::applicationDirPath().toStdString().append("/../Resources/crashpad_handler").c_str());
+  #else
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
+  sentry_options_set_handler_path(options,
+      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
   #endif
   sentry_options_set_release(options,
       std::string("Swiftray@")

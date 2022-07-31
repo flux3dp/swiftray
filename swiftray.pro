@@ -24,6 +24,10 @@ DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
 DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
 #Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
+win32-msvc {
+  VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}
+  #$${VERSION_SUFFIX}
+}
 
 QMAKE_INFO_PLIST = Info.plist
 ICON=images/icon.icns
@@ -41,10 +45,11 @@ win32 {
         LIBS += -LC:\Dev\libraries\potrace
         LIBS += -LC:\Dev\boost_1_78_0_msvc\lib64-msvc-14.1
         LIBS += -LC:\tools\opencv\build\x64\vc14\lib
-        win32:CONFIG(release, debug|release): LIBS += -LC:\tools\opencv\build\x64\vc14\lib -lopencv_world455
-        else:win32:CONFIG(debug, debug|release): LIBS += -LC:\tools\opencv\build\x64\vc14\lib -lopencv_world455d
+        win32:CONFIG(release, debug|release): LIBS += -LC:\Dev\opencv_454_msvc\build\x64\vc14\lib -lopencv_world454
+        else:win32:CONFIG(debug, debug|release): LIBS += -LC:\Dev\opencv_454_msvc\build\x64\vc14\lib -lopencv_world454d
         LIBS += -lboost_thread-vc141-mt-x64-1_78
         LIBS += -lboost_system-vc141-mt-x64-1_78
+        LIBS += -L$$PWD\third_party\sentry\build\win -lsentry
     }
     win32-g++ {
         # MINGW
@@ -56,6 +61,7 @@ win32 {
         LIBS += -lxml2
         LIBS += -lpotrace
         LIBS += -llibpotrace
+        LIBS += -L$$PWD\third_party\sentry\build\win -lsentry
     }
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
@@ -104,10 +110,11 @@ win32-g++ {
 }
 win32-msvc {
     INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
-    INCLUDEPATH += C:\tools\opencv\build\include
+    INCLUDEPATH += C:\Dev\opencv_454_msvc\build\include
     INCLUDEPATH += C:\Dev\libraries\potrace
     INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
     INCLUDEPATH += C:\Dev\libraries\libconv\include
+    INCLUDEPATH += $$PWD\third_party
 }
 macx{
     INCLUDEPATH += /usr/local/include

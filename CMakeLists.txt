@@ -1,42 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 project(Swiftray VERSION 1.0.0)
-add_compile_definitions(VERSION_MAJOR=1)
-add_compile_definitions(VERSION_MINOR=0)
-add_compile_definitions(VERSION_BUILD=0)
-add_compile_definitions(VERSION_SUFFIX="-beta.5")
-
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-#set(CMAKE_FIND_DEBUG_MODE 1)
-if(WIN32)
-  add_compile_definitions(WIN32_LEAN_AND_MEAN)
-  set (LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
-  set (LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
-  set (BOOST_ROOT "C:/Dev/boost/boost_1_70_0")
-  set (BOOST_INCLUDEDIR "C:/Dev/boost/boost_1_70_0/boost")
-  set (BOOST_LIBRARYDIR "C:/boost_1_70_0/boost-build/lib")
-  if (MSVC) 
-      set (OpenCV_DIR "C:/Dev/opencv_454_msvc/build")
-  else()
-      set (OpenCV_DIR "C:/Dev/opencv_452_mingw")
-  endif()
-endif()
-
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Quick REQUIRED)
-find_package(Qt5 COMPONENTS QuickWidgets REQUIRED)
-find_package(Qt5 COMPONENTS OpenGL REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
-find_package(Qt5 COMPONENTS Svg REQUIRED)
-find_package(Qt5 COMPONENTS SerialPort REQUIRED)
-find_package(Qt5Gui COMPONENTS Private REQUIRED)
-find_package(Qt5Widgets COMPONENTS Private REQUIRED)
-find_package(Qt5Svg COMPONENTS Private REQUIRED)
-find_package(LibXml2 REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(Boost 1.70 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread system chrono atomic)
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
+set(VERSION_BUILD 0)
+set(VERSION_SUFFIX "-beta.5")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
@@ -44,6 +11,20 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
 #set(CMAKE_CXX_FLAGS "-O2")
+
+# Add additional FindXXX.cmake for the project
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+#set(CMAKE_FIND_DEBUG_MODE 1)
+if(WIN32)
+  add_compile_definitions(WIN32_LEAN_AND_MEAN)
+  if (MSVC)
+    add_compile_options(/bigobj)
+  endif(MSVC)
+endif(WIN32)
+if (MINGW)
+  link_libraries(ws2_32)
+  message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
+endif(MINGW)
 
 get_filename_component(SRC_DIR "src" REALPATH)
 
@@ -85,39 +66,40 @@ set(SOURCES
 )
 
 include_directories(
-  ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-  ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
-  ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIR}
-  ${LIBXML2_INCLUDE_DIR}
-  ${LIBXML2_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
   third_party
   ${SRC_DIR}
-  /usr/local/opt/libxml2/include
-)
-
-link_libraries(
-  ${LIBXML2_LIBRARY}
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   link_libraries("-framework AppKit")
-
   set(SOURCES
     ${SOURCES}
     ${SRC_DIR}/windows/osxwindow.mm)
 endif ()
 
-# third_party libraries
-add_subdirectory(third_party/clipper)
-add_subdirectory(third_party/QxPotrace)
+
+# Qt
+find_package(Qt5 COMPONENTS Core REQUIRED)
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Quick REQUIRED)
+find_package(Qt5 COMPONENTS QuickWidgets REQUIRED)
+find_package(Qt5 COMPONENTS OpenGL REQUIRED)
+find_package(Qt5 COMPONENTS Gui REQUIRED)
+find_package(Qt5 COMPONENTS Svg REQUIRED)
+find_package(Qt5 COMPONENTS SerialPort REQUIRED)
+find_package(Qt5Gui COMPONENTS Private REQUIRED)
+find_package(Qt5Widgets COMPONENTS Private REQUIRED)
+find_package(Qt5Svg COMPONENTS Private REQUIRED)
+include_directories(
+  ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
+  ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
+  ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+)
 
 
 set(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
-
-# Bundle properties
+# Set Bundle properties and add executable target
 if(WIN32)
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
@@ -153,13 +135,36 @@ else()
     # Linux and others
     message(STATUS "Platform: Unknown")
 endif()
-# Add macro definition
+# ====================== MACRO definition ======================
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MAJOR=${VERSION_MAJOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MINOR=${VERSION_MINOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BUILD=${VERSION_BUILD})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_SUFFIX=\"${VERSION_SUFFIX}\")
 
 
+# ====================== Subdirectory libraries =======================
+add_subdirectory(third_party/clipper)
+add_subdirectory(third_party/QxPotrace)
+target_link_libraries(${PROJECT_NAME} clipper)
+target_link_libraries(${PROJECT_NAME} QxPotrace)
+
+# Sentry
+# TODO: Include header sentry.h instead of implicitly from third_party dir
+if(WIN32)
+  target_link_libraries(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/third_party/sentry/build/win/sentry.lib
+  )
+elseif(APPLE)
+  target_link_libraries(${PROJECT_NAME} 
+    ${CMAKE_SOURCE_DIR}/third_party/sentry/build/macOS/libsentry.dylib
+  )
+else()
+
+endif()
+
+
+# ====================== External libraries =======================
+# Qt
 target_link_libraries(${PROJECT_NAME} Qt::Core)
 target_link_libraries(${PROJECT_NAME} Qt::Quick)
 target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
@@ -169,32 +174,91 @@ target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
-target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} Boost::thread)
-target_link_libraries(${PROJECT_NAME} Boost::system)
-target_link_libraries(${PROJECT_NAME} Boost::chrono)
-target_link_libraries(${PROJECT_NAME} Boost::atomic)
+# Boost
+if(WIN32)
+  add_compile_definitions(WIN32_LEAN_AND_MEAN)
+  if(MSVC)
+    add_compile_options(/bigobj)
+    set(Boost_NO_WARN_NEW_VERSIONS 1)
+    set(BOOST_ROOT "C:/Dev/boost_1_78_0_msvc14_2")
+    set(BOOST_INCLUDEDIR "C:/Dev/boost_1_78_0_msvc14_2/boost")
+    set(BOOST_LIBRARYDIR "C:/Dev/boost_1_78_0_msvc14_2/lib64-msvc-14.2")
+  else(MSVC)
+    set(BOOST_ROOT "C:/Dev/boost_1_78_0")
+    set(BOOST_INCLUDEDIR "C:/Dev/boost_1_78_0/include/boost-1_78/boost")
+    set(BOOST_LIBRARYDIR "C:/Dev/boost_1_78_0/lib")
+  endif(MSVC)
+endif()
+find_package(Boost 1.70 REQUIRED COMPONENTS thread system)
+if(Boost_FOUND)
+  message(STATUS "Found Boost")
+  include_directories(${Boost_INCLUDE_DIRS})
+  target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
+  if(WIN32)
+    if(MSVC)
+      # Fix incorrect linking for msvc with boost
+      target_link_libraries(${PROJECT_NAME} Boost::disable_autolinking)
+    endif(MSVC)
+  endif(WIN32)
+else(Boost_FOUND)
+  message(FATAL_ERROR "Couldn't find boost")
+endif(Boost_FOUND)
 
-target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
+# LibXml2
+if(WIN32)
+  if(MSVC) 
+    set(ICONV_INCLUDE_DIR "C:/Dev/libraries/libconv/include")
+    set(LIBXML2_LIBRARY "C:/Dev/libraries/libxml2/lib/libxml2.dll.a")
+    set(LIBXML2_INCLUDE_DIR "C:/Dev/libraries/libxml2/include/libxml2")
+  else(MSVC)
+    set(LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
+    set(LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
+  endif(MSVC)
+endif(WIN32)
+find_package(LibXml2 REQUIRED)
+if(LibXml2_FOUND)
+  message(STATUS "Found LibXml2")
+  include_directories(
+    ${LIBXML2_INCLUDE_DIR}
+    ${LIBXML2_INCLUDE_DIRS}
+    ${ICONV_INCLUDE_DIR}
+  )
+  target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
+else(LibXml2_FOUND)
+  message(FATAL_ERROR "Couldn't find LibXml2")
+endif(LibXml2_FOUND)
+
+# OpenCV
+if(WIN32)
+  if(MSVC) 
+    set(OpenCV_DIR "C:/Dev/opencv_454_msvc/build")
+  else(MSVC)
+    set(OpenCV_DIR "C:/Dev/opencv_452_mingw")
+  endif(MSVC)
+endif()
+find_package(OpenCV REQUIRED)
+include_directories(
+  ${OpenCV_INCLUDE_DIRS}
+)
 #target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} opencv_core)
 target_link_libraries(${PROJECT_NAME} opencv_imgproc)
+
+# Potrace
+find_package(Potrace REQUIRED)
+include_directories(
+  ${POTRACE_INCLUDE_DIRS}
+)
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
-target_link_libraries(${PROJECT_NAME} clipper)
-target_link_libraries(${PROJECT_NAME} QxPotrace)
-if(WIN32)
 
-elseif(APPLE)
-  target_link_libraries(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/third_party/sentry/build/macOS/libsentry.dylib)
-else()
 
-endif()
 
-if (MINGW)
-  target_link_libraries(${PROJECT_NAME} ws2_32)
-  message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
-endif()
 
+# ====================== tests =======================
+#add_subdirectory(tests)
+
+# ====================== install =======================
 if(WIN32)
   install(TARGETS ${PROJECT_NAME} 
     CONFIGURATIONS Debug
@@ -218,6 +282,6 @@ else()
 endif()
 
 
+# ====================== bundle =======================
 # TODO: BundleUtilities and CPack
 
-#add_subdirectory(tests)
