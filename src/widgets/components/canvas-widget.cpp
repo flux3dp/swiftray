@@ -25,7 +25,12 @@ void CanvasWidget::dropEvent(QDropEvent *event)
     if (event->mimeData()->hasUrls()) {
         foreach (QUrl url, event->mimeData()->urls()) {
             // qInfo() << url.path();
-            emit dropFile(event->pos(), url.path());
+            QString file_path = url.path();
+#ifdef Q_OS_WIN
+            // remove string start with "/"
+            file_path = file_path.right(file_path.size()-1);
+#endif
+            emit dropFile(event->pos(), file_path);
         }
     }
 }
