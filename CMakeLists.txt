@@ -101,11 +101,11 @@ set(MAIN_SOURCE ${SOURCES})
 qt5_add_resources(MAIN_SOURCE "qml.qrc")
 # Set Bundle properties and add executable target
 if(WIN32)
+  set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
     ${MAIN_SOURCE} 
     ${APP_ICON_WINDOWS})
-  set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
   set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32 TRUE # Make it a GUI app instead of console app
   )
