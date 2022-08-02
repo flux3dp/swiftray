@@ -194,6 +194,7 @@ if(Boost_FOUND)
   message(STATUS "Found Boost")
   include_directories(${Boost_INCLUDE_DIRS})
   target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
+  target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
   if(WIN32)
     if(MSVC)
       # Fix incorrect linking for msvc with boost
