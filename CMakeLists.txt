@@ -103,12 +103,13 @@ qt5_add_resources(MAIN_SOURCE "qml.qrc")
 if(WIN32)
   set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
   add_executable(${PROJECT_NAME} 
+    WIN32 # Make it a GUI app instead of console app
     ${SRC_DIR}/main.cpp 
     ${MAIN_SOURCE} 
     ${APP_ICON_WINDOWS})
-  set_target_properties(${PROJECT_NAME} PROPERTIES
-    WIN32 TRUE # Make it a GUI app instead of console app
-  )
+  #set_target_properties(${PROJECT_NAME} PROPERTIES
+  #  WIN32 TRUE # Make it a GUI app instead of console app
+  #)
 elseif(APPLE)
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns
@@ -188,7 +189,7 @@ if(WIN32)
     set(BOOST_INCLUDEDIR "C:/Dev/boost_1_78_0/include/boost-1_78/boost")
     set(BOOST_LIBRARYDIR "C:/Dev/boost_1_78_0/lib")
   endif(MSVC)
-endif()
+endif(WIN32)
 find_package(Boost 1.70 REQUIRED COMPONENTS thread system)
 if(Boost_FOUND)
   message(STATUS "Found Boost")
