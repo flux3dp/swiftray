@@ -69,7 +69,7 @@ win32 {
     DEFINES+=WIN32_LEAN_AND_MEAN
 }
 macx{
-    _BOOST_PATH = "/usr/local/Cellar/boost/1.78.0_1"
+    _BOOST_PATH = "/usr/local/opt/boost/"
     LIBS += -L"/usr/lib"
     LIBS += -L"/usr/local/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
@@ -81,7 +81,7 @@ macx{
     LIBS += -lopencv_imgproc
     LIBS += -lxml2
     LIBS += -lpotrace
-    LIBS += -llibpotrace
+    LIBS += -L$$PWD/third_party/sentry/build/macOS -lsentry
 }
 unix:!macx{
     # TODO: Linux
