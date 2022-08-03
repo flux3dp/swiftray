@@ -69,9 +69,17 @@ win32 {
     DEFINES+=WIN32_LEAN_AND_MEAN
 }
 macx{
+    LIBS += -L"/usr/local/lib"
+
+    # Mac M1
+    #_BOOST_PATH = "/opt/homebrew/opt/boost"
+    #LIBS += -L"/opt/homebrew/opt/boost/lib"
+    #LIBS += -L"/opt/homebrew/opt/libxml2/lib"
+    #LIBS += -L"/opt/homebrew/opt/opencv/lib"
+
+    # Mac Intel
     _BOOST_PATH = "/usr/local/opt/boost/"
     LIBS += -L"/usr/lib"
-    LIBS += -L"/usr/local/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
     LIBS += -L"/usr/local/opt/opencv/lib"
 
@@ -118,10 +126,15 @@ win32-msvc {
 }
 macx{
     INCLUDEPATH += /usr/local/include
-    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
-    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
+    # Mac M1
+    #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
+    #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+
+    # Mac Intel
+    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
+    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
 }
 
 # Remove -Wall and -Wextra flag
@@ -259,3 +272,5 @@ TR_EXCLUDE += $$PWD/third_party/* \
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
 
+# Mac M1
+#QMAKE_APPLE_DEVICE_ARCHS=arm64
