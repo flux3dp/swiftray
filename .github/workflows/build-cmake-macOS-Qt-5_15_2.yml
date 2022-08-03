@@ -2,7 +2,7 @@ name: build-cmake-macos-installer
 on:
   push:
     tags:
-      - "c*.*.*"
+      - "v*.*.*"
 jobs:
   setup-macos-build-environment:
     runs-on: macos-12
@@ -89,10 +89,6 @@ jobs:
         run: |
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/debug/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
-      #- run: |
-      #    brew install tree
-      #    cd build/install/
-      #    tree .
       - name: Fix bundle dependencies (workaround for bug in macdeployqt)
         run: |
             cd build

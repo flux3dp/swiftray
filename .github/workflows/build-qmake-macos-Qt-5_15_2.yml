@@ -2,7 +2,7 @@ name: build-macos-installer
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "q*.*.*"
 jobs:
   setup-macos-build-environment:
     runs-on: macos-10.15
@@ -89,6 +89,8 @@ jobs:
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
           tree .
+
+      # TODO: Copy crashpad_handler and sentry lib
 
       #- uses: actions/upload-artifact@v3
       #  with:
