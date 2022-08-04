@@ -38,6 +38,7 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 ### Clone the repo and checkout submodules
 ```
 git clone https://github.com/flux3dp/swiftray.git
+cd swiftray
 git submodule update --init --recursive
 ```
 
