@@ -278,21 +278,11 @@ include_directories(
 # ====================== install =======================
 if(WIN32)
   install(TARGETS ${PROJECT_NAME} 
-    CONFIGURATIONS Debug
-    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/debug
-  )
-  install(TARGETS ${PROJECT_NAME} 
-    CONFIGURATIONS Release
-    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install/release
+    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install
   )
 elseif(APPLE)
   install(TARGETS ${PROJECT_NAME} 
-    CONFIGURATIONS Debug
-    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install/debug
-    )
-  install(TARGETS ${PROJECT_NAME} 
-    CONFIGURATIONS Release
-    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install/release
+    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
     )
 else()
   message(STATUS "Platform: Unknown")

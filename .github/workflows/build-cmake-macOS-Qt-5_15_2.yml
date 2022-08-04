@@ -97,25 +97,25 @@ jobs:
       - name: Install Bundle
         run: |
           cd build
-          cmake --build . --target install -- -j 6
+          cmake --install .
       - name: Deploy (Copy necessary shared libraries)
         run: |
           cd build
-          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/release/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt install/Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
       - name: Fix bundle dependencies (workaround for bug in macdeployqt)
         run: |
             cd build
-            cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib install/release/Swiftray.app/Contents/Frameworks/
-            chmod 644 install/release/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
-            install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib install/release/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
-            install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib install/release/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
-            install_name_tool -add_rpath @executable_path/../Frameworks install/release/Swiftray.app/Contents/MacOS/Swiftray
+            cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib install/Swiftray.app/Contents/Frameworks/
+            chmod 644 install/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib install/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib install/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+            install_name_tool -add_rpath @executable_path/../Frameworks install/Swiftray.app/Contents/MacOS/Swiftray
 
       #- name: Print otool result
       #  run: |
-      #      otool -l build/install/release/Swiftray.app/Contents/MacOS/Swiftray
-      #      otool -L build/install/release/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
-      #      otool -L build/install/release/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+      #      otool -l build/install/Swiftray.app/Contents/MacOS/Swiftray
+      #      otool -L build/install/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+      #      otool -L build/install/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
 
       - name: Setup Sentry CLI
         uses: mathieu-bour/setup-sentry-cli@1.2.0
@@ -146,7 +146,7 @@ jobs:
           security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          cd build/install/release
+          cd build/install
           /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app/Contents/MacOS/crashpad_handler"
           /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
       
@@ -155,7 +155,7 @@ jobs:
           ASC_PROVIDER: ${{ secrets.ASC_PROVIDER }}
         uses: erwin1/xcode-notarize@main
         with:
-          product-path: "build/install/release/Swiftray.app"
+          product-path: "build/install/Swiftray.app"
           appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
           appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
           asc-provider: ${{ secrets.ASC_PROVIDER }}
@@ -164,12 +164,12 @@ jobs:
       - name: "Staple Release Build"
         uses: devbotsxyz/xcode-staple@v1
         with:
-          product-path: "build/install/release/Swiftray.app"
+          product-path: "build/install/Swiftray.app"
 
       - name: Create dmg
         run: |
           brew install create-dmg
-          cd build/install/release
+          cd build/install
           create-dmg --volname "Swiftray Installer" \
             --volicon "Swiftray.app/Contents/Resources/icon.icns" \
             --window-pos 200 120 \
@@ -185,4 +185,4 @@ jobs:
       #  uses: softprops/action-gh-release@v1
       #  if: startsWith(github.ref, 'refs/tags/')
       #  with:
-      #    files: build/install/release/Swiftray-Installer.dmg
+      #    files: build/install/Swiftray-Installer.dmg
