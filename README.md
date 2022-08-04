@@ -34,6 +34,28 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - libiconv (Windows)
 - icu4c (MacOS)
 
+## Setup
+### Clone the repo and checkout submodules
+```
+git clone https://github.com/flux3dp/swiftray.git
+git submodule update --init --recursive
+```
+
+### Build sentry-native
+```
+cd third_party/sentry-native
+cmake -B build -S . \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DSENTRY_BACKEND=crashpad \
+  -DSENTRY_INTEGRATION_QT=YES \
+  -DCMAKE_PREFIX_PATH=<PATH_TO_QT>/lib/cmake
+cmake --build build --config RelWithDebInfo --parallel
+cmake --install build --prefix install
+```
+NOTE: For Windows MSVC, you need to resolve the source code encoding issue of crashpad first
+ref: https://blog.sakurakooi.cyou/2022/04/06%E8%AE%B0Windows%E7%BC%96%E8%AF%91sentry-native%E9%9B%86%E6%88%90qt/
+
+
 ## Building
 
 ### CMake

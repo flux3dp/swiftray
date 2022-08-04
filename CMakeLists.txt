@@ -67,6 +67,7 @@ set(SOURCES
 
 include_directories(
   third_party
+  third_party/sentry-native/install/include
   ${SRC_DIR}
 )
 
@@ -111,20 +112,26 @@ if(WIN32)
   #  WIN32 TRUE # Make it a GUI app instead of console app
   #)
 elseif(APPLE)
+  set(CMAKE_MACOSX_RPATH 1)
   #set(APP_HELPER_FILES
   #  ${CMAKE_CURRENT_SOURCE_DIR}/xxxxx/<helper tools>
   #)
+  set(APP_FRAMEWORK_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
+    )
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry/build/macOS/crashpad_handler
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler
   )
   #set_source_files_properties(${APP_HELPER_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Helpers")
+  set_source_files_properties(${APP_FRAMEWORK_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Frameworks")
   set_source_files_properties(${APP_RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
     ${MAIN_SOURCE}
     #${APP_ICON_MACOSX}
     #${APP_HELPER_FILES}
+    ${APP_FRAMEWORK_FILES}
     ${APP_RESOURCE_FILES})
   set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE # Create macOS app bundle
@@ -155,17 +162,16 @@ target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
 
 # Sentry
-# TODO: Include header sentry.h instead of implicitly from third_party dir
 if(WIN32)
   target_link_libraries(${PROJECT_NAME}
-    ${CMAKE_SOURCE_DIR}/third_party/sentry/build/win/sentry.lib
+    ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/sentry.lib
   )
 elseif(APPLE)
   target_link_libraries(${PROJECT_NAME} 
-    ${CMAKE_SOURCE_DIR}/third_party/sentry/build/macOS/libsentry.dylib
+    ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
   )
 else()
-
+  # TODO: Linux
 endif()
 
 

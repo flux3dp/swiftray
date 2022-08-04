@@ -49,7 +49,7 @@ win32 {
         else:win32:CONFIG(debug, debug|release): LIBS += -LC:\Dev\opencv_454_msvc\build\x64\vc14\lib -lopencv_world454d
         LIBS += -lboost_thread-vc141-mt-x64-1_78
         LIBS += -lboost_system-vc141-mt-x64-1_78
-        LIBS += -L$$PWD\third_party\sentry\build\win -lsentry
+        LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
     }
     win32-g++ {
         # MINGW
@@ -61,7 +61,7 @@ win32 {
         LIBS += -lxml2
         LIBS += -lpotrace
         LIBS += -llibpotrace
-        LIBS += -L$$PWD\third_party\sentry\build\win -lsentry
+        LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
     }
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
@@ -89,8 +89,7 @@ macx{
     LIBS += -lopencv_imgproc
     LIBS += -lxml2
     LIBS += -lpotrace
-    LIBS += -L$$PWD/third_party/sentry/build/macOS -lsentry
-    QMAKE_RPATHDIR += $$PWD/third_party/sentry/build/macOS
+    LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
 unix:!macx{
     # TODO: Linux
@@ -116,6 +115,7 @@ win32-g++ {
     INCLUDEPATH += $$(MINGW64_PATH)/include
     INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
     INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
 }
 win32-msvc {
     INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
@@ -124,11 +124,13 @@ win32-msvc {
     INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
     INCLUDEPATH += C:\Dev\libraries\libconv\include
     INCLUDEPATH += $$PWD\third_party
+    INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }
 macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
+    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
     # Mac M1
     #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
     #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
@@ -275,3 +277,14 @@ QML_IMPORT_PATH = src/windows \
 
 # Mac M1
 #QMAKE_APPLE_DEVICE_ARCHS=arm64
+
+macx{
+  # Copy additional files to bundle
+  BUNDLE_FRAMEWORKS_FILES.files = $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
+  BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
+  QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
+  
+  BUNDLE_RESOURCE_FILES.files = $$PWD/third_party/sentry-native/install/bin/crashpad_handler
+  BUNDLE_RESOURCE_FILES.path = Contents/Resources
+  QMAKE_BUNDLE_DATA += BUNDLE_RESOURCE_FILES
+}

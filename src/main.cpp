@@ -8,7 +8,7 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
-#include <sentry/include/sentry.h>
+#include <sentry.h>
 #include <string>
 
 #ifdef Q_OS_MACOS
