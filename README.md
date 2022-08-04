@@ -53,7 +53,8 @@ cmake --build build --config RelWithDebInfo --parallel
 cmake --install build --prefix install
 ```
 NOTE: For Windows MSVC, you need to resolve the source code encoding issue of crashpad first
-ref: https://blog.sakurakooi.cyou/2022/04/06%E8%AE%B0Windows%E7%BC%96%E8%AF%91sentry-native%E9%9B%86%E6%88%90qt/
+
+See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
 
 
 ## Building
