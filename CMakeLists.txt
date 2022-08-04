@@ -276,17 +276,17 @@ include_directories(
 #add_subdirectory(tests)
 
 # ====================== install =======================
-if(WIN32)
-  install(TARGETS ${PROJECT_NAME} 
-    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install
-  )
-elseif(APPLE)
-  install(TARGETS ${PROJECT_NAME} 
-    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
-    )
-else()
-  message(STATUS "Platform: Unknown")
-endif()
+#if(WIN32)
+#  install(TARGETS ${PROJECT_NAME}
+#    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install
+#  )
+#elseif(APPLE)
+#  install(TARGETS ${PROJECT_NAME}
+#    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
+#    )
+#else()
+#  message(STATUS "Platform: Unknown")
+#endif()
 
 
 # ====================== bundle =======================
