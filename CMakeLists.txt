@@ -121,9 +121,12 @@ elseif(APPLE)
     )
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns
+  )
+  set(APP_ADDITIONAL_EXEC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler
   )
   #set_source_files_properties(${APP_HELPER_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Helpers")
+  set_source_files_properties(${APP_ADDITIONAL_EXEC_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
   set_source_files_properties(${APP_FRAMEWORK_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Frameworks")
   set_source_files_properties(${APP_RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(${PROJECT_NAME} 
@@ -131,6 +134,7 @@ elseif(APPLE)
     ${MAIN_SOURCE}
     #${APP_ICON_MACOSX}
     #${APP_HELPER_FILES}
+    ${APP_ADDITIONAL_EXEC_FILES}
     ${APP_FRAMEWORK_FILES}
     ${APP_RESOURCE_FILES})
   set_target_properties(${PROJECT_NAME} PROPERTIES

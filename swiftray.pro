@@ -284,7 +284,7 @@ macx{
   BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
   QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
   
-  BUNDLE_RESOURCE_FILES.files = $$PWD/third_party/sentry-native/install/bin/crashpad_handler
-  BUNDLE_RESOURCE_FILES.path = Contents/Resources
-  QMAKE_BUNDLE_DATA += BUNDLE_RESOURCE_FILES
+  BUNDLE_ADDITIONAL_EXEC_FILES.files = $$PWD/third_party/sentry-native/install/bin/crashpad_handler
+  BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
+  QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }
