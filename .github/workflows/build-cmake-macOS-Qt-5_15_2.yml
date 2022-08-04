@@ -109,7 +109,6 @@ jobs:
             chmod 644 install/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib install/Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib install/Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
-            install_name_tool -add_rpath @executable_path/../Frameworks install/Swiftray.app/Contents/MacOS/Swiftray
 
       #- name: Print otool result
       #  run: |

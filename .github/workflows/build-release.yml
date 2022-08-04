@@ -138,14 +138,14 @@ jobs:
         with:
           xcode-version: '12.4.0'
 
-      - name: Fix bundle dependencies (workaround for bug in macdeployqt)
+      - name: Fix bundle dependencies (workaround for bug in macdeployqt with Xcode version > 11.4)
+        if: ${{matrix.cfg.build == 'cmake' }}
         run: |
             cd build
             cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
             chmod 644 Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
-            install_name_tool -add_rpath @executable_path/../Frameworks Swiftray.app/Contents/MacOS/Swiftray
 
       - name: Setup Sentry CLI
         if: ${{ matrix.cfg.dist }}
@@ -219,8 +219,7 @@ jobs:
             "Swiftray.app/"
                 
       - name: Create Github Release
-        if: ${{ matrix.cfg.dist }}
+        if: ${{ matrix.cfg.dist }} && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: build/Swiftray-Installer.dmg
