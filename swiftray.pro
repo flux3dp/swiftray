@@ -90,6 +90,7 @@ macx{
     LIBS += -lxml2
     LIBS += -lpotrace
     LIBS += -L$$PWD/third_party/sentry/build/macOS -lsentry
+    QMAKE_RPATHDIR += $$PWD/third_party/sentry/build/macOS
 }
 unix:!macx{
     # TODO: Linux
