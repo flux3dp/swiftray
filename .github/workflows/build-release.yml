@@ -1,4 +1,4 @@
-name: qmake-build-macos-installer
+name: release-build
 on:
   push:
     tags:
