@@ -49,6 +49,14 @@ void LayerPanel::registerEvents() {
   });
 }
 
+void LayerPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void LayerPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}
+
 void LayerPanel::resizeEvent(QResizeEvent *e) {
   if (add_layer_btn_ == nullptr) return;
   QPointF button_pos = ui->layerList->geometry().bottomRight() - QPointF(35, 35);

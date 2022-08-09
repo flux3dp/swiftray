@@ -20,6 +20,9 @@ public:
 
   ~JoggingPanel();
 
+signals:
+  void panelShow(bool is_show);
+  
 public slots:
   void laser();
 
@@ -38,6 +41,9 @@ public slots:
   void setControlEnable(bool control_enable);
 
 private:
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
+  
   Ui::JoggingPanel *ui;
 
   MainWindow *main_window_;
