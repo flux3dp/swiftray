@@ -439,19 +439,24 @@ bool Canvas::event(QEvent *e) {
   QPointF canvas_coord;
   ShapePtr hit;
   bool cursor_changed = false;
+  Qt::CursorShape cursor_shape;
 
   switch (e->type()) {
     case QEvent::HoverMove:
       switch (mode()) {
+        case Mode::TextDrawing:
+          cursor_shape = Qt::IBeamCursor;
+          cursor_changed = true;
+          break;
         case Mode::LineDrawing:
         case Mode::OvalDrawing:
         case Mode::PolygonDrawing:
         case Mode::RectDrawing:
-          emit cursorChanged(Qt::CrossCursor);
+          cursor_shape = Qt::CrossCursor;
           cursor_changed = true;
           break;
         default:
-          emit cursorChanged(Qt::ArrowCursor);
+          cursor_shape = Qt::ArrowCursor;
           break;
       }
 
@@ -461,7 +466,7 @@ bool Canvas::event(QEvent *e) {
           // TODO (Hack this to mainwindow support global cursor)
           // Local cursor has a bug..
           // setCursor(cursor);
-          emit cursorChanged(cursor);
+          cursor_shape = cursor;
           cursor_changed = true;
           break;
         }
@@ -472,6 +477,12 @@ bool Canvas::event(QEvent *e) {
         if(hit != nullptr) {
           emit cursorChanged(Qt::OpenHandCursor);
         }
+        else {
+          emit cursorChanged(Qt::ArrowCursor);
+        }
+      }
+      else {
+        emit cursorChanged(cursor_shape);
       }
       break;
 
