@@ -52,8 +52,10 @@ public:
     qInfo() << "Doc Version" << doc_version;
     if(doc_version == "NINJAV1.2") 
       version_index_ = NINJAV1_2;
-    else 
+    else if(doc_version == "NINJAV1.1")
       version_index_ = NINJAV1_1;
+    else
+      return nullptr;
     Document *doc = new Document;
     QSize doc_size;
     in >> doc_size;
@@ -131,15 +133,15 @@ public:
     in >> layer->step_height_;
     in >> layer->repeat_;
     if(version_index_ >= NINJAV1_2) {
+      in >> layer->power_;
+      in >> layer->speed_;
+    }
+    else {
       int temp;
       in >> temp;
       layer->power_ = temp;
       in >> temp;
       layer->speed_ = temp;
-    }
-    else {
-      in >> layer->power_;
-      in >> layer->speed_;
     }
 
     int shape_size;

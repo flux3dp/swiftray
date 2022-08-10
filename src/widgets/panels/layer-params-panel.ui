@@ -157,7 +157,7 @@
             <string/>
            </property>
            <property name="suffix">
-            <string>%</string>
+            <string> %</string>
            </property>
            <property name="decimals">
             <number>1</number>
@@ -190,7 +190,7 @@
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="suffix">
-            <string>mm/s</string>
+            <string> mm/s</string>
            </property>
            <property name="decimals">
             <number>1</number>
