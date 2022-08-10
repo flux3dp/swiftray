@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(Swiftray VERSION 1.0.0)
+
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_BUILD 0)
-set(VERSION_SUFFIX "-beta.5")
+set(VERSION_SUFFIX "-beta.6")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
