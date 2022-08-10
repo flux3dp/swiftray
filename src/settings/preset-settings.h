@@ -20,8 +20,8 @@ public:
   struct Param {
   public:
     QString name;
-    int power;
-    int speed;
+    double power;
+    double speed;
     int repeat;
     double step_height;
     double target_height;

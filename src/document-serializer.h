@@ -23,7 +23,7 @@ public:
        in(stream) {}
 
   void serializeDocument(Document &doc) {
-    out << QString("NINJAV1.1");
+    out << QString("NINJAV1.2");
     out << QSize(doc.width(), doc.height());
     out << doc.layers().size();
     for (auto &layer : doc.layers()) {
@@ -50,6 +50,10 @@ public:
     QString doc_version;
     in >> doc_version;
     qInfo() << "Doc Version" << doc_version;
+    if(doc_version == "NINJAV1.2") 
+      version_index_ = NINJAV1_2;
+    else 
+      version_index_ = NINJAV1_1;
     Document *doc = new Document;
     QSize doc_size;
     in >> doc_size;
@@ -126,8 +130,17 @@ public:
     in >> layer->target_height_;
     in >> layer->step_height_;
     in >> layer->repeat_;
-    in >> layer->power_;
-    in >> layer->speed_;
+    if(version_index_ >= NINJAV1_2) {
+      int temp;
+      in >> temp;
+      layer->power_ = temp;
+      in >> temp;
+      layer->speed_ = temp;
+    }
+    else {
+      in >> layer->power_;
+      in >> layer->speed_;
+    }
 
     int shape_size;
     in >> shape_size;
@@ -268,4 +281,10 @@ public:
 
   QDataStream &out;
   QDataStream &in;
+  int version_index_;
+  enum version_id
+  {
+    NINJAV1_1 = 0,
+    NINJAV1_2 //change layer->power, layer->speed to double
+  };
 };

@@ -684,12 +684,12 @@ QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
   return result_img;
 }
 
-inline void ToolpathExporter::moveTo(QPointF&& dest, int speed, int power) {
+inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power) {
   gen_->moveTo(dest.x(), dest.y(), speed, power);
   current_pos_ = dest;
 }
 
-inline void ToolpathExporter::moveTo(const QPointF& dest, int speed, int power) {
+inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power) {
   gen_->moveTo(dest.x(), dest.y(), speed, power);
   current_pos_ = dest;
 }

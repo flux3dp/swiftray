@@ -55,8 +55,8 @@ private:
 
   void outputLayerBitmapGcode();
 
-  inline void moveTo(QPointF&& dest, int speed, int power);
-  inline void moveTo(const QPointF& dest, int speed, int power);
+  inline void moveTo(QPointF&& dest, double speed, double power);
+  inline void moveTo(const QPointF& dest, double speed, double power);
 
   std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> adjustPrefixSuffixZero(
           const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt);
