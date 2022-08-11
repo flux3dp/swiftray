@@ -50,11 +50,11 @@ void LayerParamsPanel::registerEvents() {
       ui->presetComboBox->currentIndexChanged(index_to_recover);
     }
   });
-  connect(ui->powerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int strength) {
+  connect(ui->powerSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double strength) {
     if (layer_ != nullptr) layer_->setStrength(strength);
     setToCustom();
   });
-  connect(ui->speedSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int speed) {
+  connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double speed) {
     if (layer_ != nullptr) layer_->setSpeed(speed);
     setToCustom();
   });

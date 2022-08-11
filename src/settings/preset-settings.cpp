@@ -3,8 +3,8 @@
 PresetSettings::Param PresetSettings::Param::fromJson(const QJsonObject &obj) {
   Param p;
   p.name = obj["name"].toString();
-  p.power = obj["power"].toInt();
-  p.speed = obj["speed"].toInt();
+  p.power = obj["power"].toDouble();
+  p.speed = obj["speed"].toDouble();
   p.repeat = obj["repeat"].toInt(1);
   p.step_height = obj["step_height"].toDouble();
   p.target_height = obj["target_height"].toDouble();

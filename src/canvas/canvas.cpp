@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
+#include <QMessageBox>
 #include <constants.h>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
@@ -1174,6 +1175,13 @@ void Canvas::backToSelectMode() {
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {
+  if(document == nullptr) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("File Open Error"));
+    msgbox.setInformativeText(tr("Please update the Swiftray version"));
+    msgbox.exec();
+    return;
+  }
   doc_ = std::unique_ptr<Document>(document);
   doc_->setCanvas(this);
   resize();
