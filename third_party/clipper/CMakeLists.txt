@@ -1,1 +1,3 @@
-ADD_LIBRARY(CLIPPER clipper.cpp)
+add_library(clipper STATIC 
+  clipper.cpp
+  clipper.hpp)

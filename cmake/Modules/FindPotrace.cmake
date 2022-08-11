@@ -18,12 +18,13 @@ ELSE (POTRACE_LIBRARIES AND POTRACE_INCLUDE_DIRS)
             )
 
     FIND_LIBRARY (POTRACE_LIBRARY
-            NAMES libpotrace.a potrace libpotrace
+            NAMES libpotrace.a potrace libpotrace libpotrace-0
             PATHS
             /usr/include
             /usr/local/include
             $ENV{DEVLIBS_PATH}/include
             C:/Dev/potrace/potrace-1.16/src/.libs
+            C:/Dev/libraries/potrace
             )
 
     if (POTRACE_LIBRARY)
