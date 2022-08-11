@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QHoverEvent>
 #include <QPainter>
+#include <QMessageBox>
 #include <constants.h>
 #include <layer.h>
 #include <shape/bitmap-shape.h>
@@ -439,19 +440,24 @@ bool Canvas::event(QEvent *e) {
   QPointF canvas_coord;
   ShapePtr hit;
   bool cursor_changed = false;
+  Qt::CursorShape cursor_shape;
 
   switch (e->type()) {
     case QEvent::HoverMove:
       switch (mode()) {
+        case Mode::TextDrawing:
+          cursor_shape = Qt::IBeamCursor;
+          cursor_changed = true;
+          break;
         case Mode::LineDrawing:
         case Mode::OvalDrawing:
         case Mode::PolygonDrawing:
         case Mode::RectDrawing:
-          emit cursorChanged(Qt::CrossCursor);
+          cursor_shape = Qt::CrossCursor;
           cursor_changed = true;
           break;
         default:
-          emit cursorChanged(Qt::ArrowCursor);
+          cursor_shape = Qt::ArrowCursor;
           break;
       }
 
@@ -461,7 +467,7 @@ bool Canvas::event(QEvent *e) {
           // TODO (Hack this to mainwindow support global cursor)
           // Local cursor has a bug..
           // setCursor(cursor);
-          emit cursorChanged(cursor);
+          cursor_shape = cursor;
           cursor_changed = true;
           break;
         }
@@ -472,6 +478,12 @@ bool Canvas::event(QEvent *e) {
         if(hit != nullptr) {
           emit cursorChanged(Qt::OpenHandCursor);
         }
+        else {
+          emit cursorChanged(Qt::ArrowCursor);
+        }
+      }
+      else {
+        emit cursorChanged(cursor_shape);
       }
       break;
 
@@ -1174,6 +1186,13 @@ void Canvas::backToSelectMode() {
 Document &Canvas::document() { return *doc_.get(); }
 
 void Canvas::setDocument(Document *document) {
+  if(document == nullptr) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("File Open Error"));
+    msgbox.setInformativeText(tr("Please update the Swiftray version"));
+    msgbox.exec();
+    return;
+  }
   doc_ = std::unique_ptr<Document>(document);
   doc_->setCanvas(this);
   resize();

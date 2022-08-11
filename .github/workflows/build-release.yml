@@ -1,0 +1,225 @@
+name: release-build
+on:
+  push:
+    tags:
+      - "b*.*.*"
+jobs:
+  macOS:
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+          - { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: true }
+          - { os: macos-12,    xcode_version: '13.2.1', build: 'cmake', dist: false}
+
+    name: ${{matrix.cfg.os}} ${{matrix.cfg.build}}
+
+    runs-on: ${{matrix.cfg.os}}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
+      - name: Select XCode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{matrix.cfg.xcode_version}}
+      #- uses: actions/setup-python@v3
+      #  with:
+      #    python-version: '3.9'
+      #    cache: 'pip'
+      - run: mkdir $RUNNER_WORKSPACE/dev/
+      
+      - name: Install dependencies for project
+        run: |
+          brew install icu4c
+          brew install libxml2
+      # Install Qt 5.15.2
+      # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
+      - name: Install Qt 5.15.2
+        run: |
+          brew install p7zip
+          python3 -m pip install setuptools wheel
+          python3 -m pip install py7zr==0.16.1
+          python3 -m pip install aqtinstall==2.1.0
+          python3 -m aqt install-qt  mac desktop 5.15.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+      # Build and Install Potrace library
+      #- name: Restore Potrace cache
+      #  uses: actions/cache@v3
+      #  id: cache-potrace
+      #  with:
+      #    path: |
+      #      /usr/local/lib/libpotrace.0.dylib
+      #      /usr/local/lib/libpotrace.a
+      #      /usr/local/lib/libpotrace.dylib
+      #      /usr/local/lib/libpotrace.la
+      #    key: potrace
+
+      - name: Install Potrace
+        #if: steps.cache-potrace.outputs.cache-hit != 'true'
+        run: |
+            cd $RUNNER_WORKSPACE/dev/
+            curl http://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+            tar -xvf potrace-1.16.tar.gz
+            cd potrace-1.16
+            ./configure --with-libpotrace
+            make install
+      # Build and Install OpenCV library
+      #- name: Restore OpenCV cache
+      #  uses: actions/cache@v3
+      #  id: cache-opencv
+      #  with:
+      #    path: |
+      #      /usr/local/include/opencv4/
+      #      /usr/local/lib/libopencv_**.dylib
+      #      /usr/local/bin/opencv_**
+      #      /usr/local/share/licenses/opencv4
+      #      /usr/local/share/opencv4
+      #      /usr/local/lib/cmake/opencv4
+      #      /usr/local/bin/setup_vars_opencv4.sh
+      #    key: opencv
+      - name: Install OpenCV
+        #if: steps.cache-opencv.outputs.cache-hit != 'true'
+        run: |
+          brew install opencv
+      
+      - name: build submodules in project - sentry-native
+        run: |
+          cd third_party/sentry-native
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -DSENTRY_BACKEND=crashpad \
+            -DSENTRY_INTEGRATION_QT=YES \
+            -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake
+          cmake --build build --config RelWithDebInfo --parallel
+          cmake --install build --prefix install
+
+      - name: QMake project
+        if: ${{matrix.cfg.build == 'qmake' }}
+        run: |
+          mkdir build
+          cd build
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/qmake ${{ github.workspace }}/swiftray.pro -spec macx-clang CONFIG+=qtquickcompiler
+      
+      - name: CMake generate buildsystem
+        if: ${{matrix.cfg.build == 'cmake' }}
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
+
+      - name: Compile (Build) project
+        if: ${{matrix.cfg.build == 'qmake' }}
+        run: |
+          cd build
+          make qmake_all
+          make -j10
+      
+      - name: Compile (Build) project
+        if: ${{matrix.cfg.build == 'cmake' }}
+        run: |
+          cd build
+          cmake --build . --target Swiftray -- -j 6
+
+      #- name: If install is needed
+      #  if: ${{matrix.cfg.build == 'cmake' }}
+      #  run: |
+      #    cd build
+      #    cmake --install .
+
+      - name: Deploy (Copy necessary shared libraries)
+        run: |
+          cd build
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
+
+      - name: Select XCode version (workaround for codesign fail)
+        if: ${{matrix.cfg.build == 'qmake' }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '12.4.0'
+
+      - name: Fix bundle dependencies (workaround for bug in macdeployqt with Xcode version > 11.4)
+        if: ${{matrix.cfg.build == 'cmake' }}
+        run: |
+            cd build
+            cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
+            chmod 644 Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+            install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+
+      - name: Setup Sentry CLI
+        if: ${{ matrix.cfg.dist }}
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        with:
+          version: latest # optional if 'latest'
+          token: ${{ SECRETS.SENTRY_TOKEN }} # from GitHub secrets
+          organization: flux3dp
+          project: swiftray
+
+      - name: Upload debug symbol to sentry
+        if: ${{ matrix.cfg.dist }}
+        run: |
+          cd $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib
+          sentry-cli upload-dif -o flux3dp -p swiftray *.dSYM
+          cd ${{ github.workspace }}
+          cd build
+          dsymutil Swiftray.app/Contents/MacOS/Swiftray
+          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
+
+      - name: Codesign executable
+        if: ${{ matrix.cfg.dist }}
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          #SIGN_IDENTITY_ID: 
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
+          cd build
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app/Contents/MacOS/crashpad_handler"
+          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
+
+      - name: Notarize Release Build
+        if: ${{ matrix.cfg.dist }}
+        env: 
+          ASC_PROVIDER: ${{ secrets.ASC_PROVIDER }}
+        uses: erwin1/xcode-notarize@main
+        with:
+          product-path: "build/Swiftray.app"
+          appstore-connect-username: ${{ secrets.NOTARIZATION_USERNAME }}
+          appstore-connect-password: ${{ secrets.NOTARIZATION_PASSWORD }}
+          asc-provider: ${{ secrets.ASC_PROVIDER }}
+          verbose: true
+
+      - name: "Staple Release Build"
+        if: ${{ matrix.cfg.dist }}
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: "build/Swiftray.app"
+
+      - name: Create dmg
+        if: ${{ matrix.cfg.dist }}
+        run: |
+          brew install create-dmg
+          cd build
+          create-dmg --volname "Swiftray Installer" \
+            --volicon "Swiftray.app/Contents/Resources/icon.icns" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 128 \
+            --icon "Swiftray.app" 200 190 \
+            --hide-extension "Swiftray.app" \
+            --app-drop-link 600 190 \
+            "Swiftray-Installer.dmg" \
+            "Swiftray.app/"
+                
+      - name: Create Github Release
+        if: ${{ matrix.cfg.dist }} && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/Swiftray-Installer.dmg

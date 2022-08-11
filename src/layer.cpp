@@ -80,11 +80,11 @@ int Layer::repeat() const {
   return repeat_;
 }
 
-int Layer::speed() const {
+double Layer::speed() const {
   return speed_;
 }
 
-int Layer::power() const {
+double Layer::power() const {
   return power_;
 }
 
@@ -155,11 +155,11 @@ void Layer::setName(const QString &name) {
   name_ = name;
 }
 
-void Layer::setSpeed(int speed) {
+void Layer::setSpeed(double speed) {
   speed_ = speed;
 }
 
-void Layer::setStrength(int strength) {
+void Layer::setStrength(double strength) {
   power_ = strength;
 }
 

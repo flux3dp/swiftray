@@ -63,9 +63,9 @@ public:
 
   int repeat() const;
 
-  int speed() const;
+  double speed() const;
 
-  int power() const;
+  double power() const;
 
   int parameterIndex() const;
 
@@ -88,9 +88,9 @@ public:
 
   void setRepeat(int repeat);
 
-  void setSpeed(int speed);
+  void setSpeed(double speed);
 
-  void setStrength(int strength);
+  void setStrength(double strength);
 
   void setParameterIndex(int parameter_index);
 
@@ -122,8 +122,8 @@ private:
   double target_height_;
   double step_height_;
   int repeat_;
-  int speed_;
-  int power_;
+  double speed_;
+  double power_;
   int parameter_index_;
 
   /** Main properties **/

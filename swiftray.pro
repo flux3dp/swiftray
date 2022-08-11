@@ -17,13 +17,17 @@ TARGET = Swiftray
 VERSION_MAJOR = 1
 VERSION_MINOR = 0
 VERSION_BUILD = 0
-VERSION_SUFFIX = -beta.5 # beta
+VERSION_SUFFIX = -beta.6 # beta
 DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
        "VERSION_MINOR=$$VERSION_MINOR"\
        "VERSION_BUILD=$$VERSION_BUILD"
 DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
 #Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
+win32-msvc {
+  VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}
+  #$${VERSION_SUFFIX}
+}
 
 QMAKE_INFO_PLIST = Info.plist
 ICON=images/icon.icns
@@ -33,65 +37,146 @@ CONFIG += c++17
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
     QMAKE_CXXFLAGS_RELEASE += -Os
-    isEmpty($$(MINGW64_PATH)) {
-        message(MINGW64_PATH is empty)
-    }
+
     # libxml2, potrace, boost, opencv
-    LIBS += -L$$(MINGW64_PATH)/lib
+    win32-msvc {
+        LIBS += "C:\Dev\libraries\libxml2\lib\libxml2.dll.a"
+        LIBS += "C:\Dev\libraries\potrace\libpotrace.dll.a"
+        LIBS += -LC:\Dev\libraries\potrace
+        LIBS += -LC:\Dev\boost_1_78_0_msvc\lib64-msvc-14.1
+        LIBS += -LC:\tools\opencv\build\x64\vc14\lib
+        win32:CONFIG(release, debug|release): LIBS += -LC:\Dev\opencv_454_msvc\build\x64\vc14\lib -lopencv_world454
+        else:win32:CONFIG(debug, debug|release): LIBS += -LC:\Dev\opencv_454_msvc\build\x64\vc14\lib -lopencv_world454d
+        LIBS += -lboost_thread-vc141-mt-x64-1_78
+        LIBS += -lboost_system-vc141-mt-x64-1_78
+        LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
+    }
+    win32-g++ {
+        # MINGW
+        LIBS += -L$$(MINGW64_PATH)/lib
+        LIBS += -lboost_thread-mt
+        LIBS += -lboost_system-mt
+        LIBS += -lopencv_core
+        LIBS += -lopencv_imgproc
+        LIBS += -lxml2
+        LIBS += -lpotrace
+        LIBS += -llibpotrace
+        LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
+    }
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
     DEFINES+=WIN32_LEAN_AND_MEAN
 }
 macx{
-    _BOOST_PATH = "/usr/local/Cellar/boost/1.78.0_1"
-    LIBS += -L"/usr/lib"
     LIBS += -L"/usr/local/lib"
+
+    # Mac M1
+    #_BOOST_PATH = "/opt/homebrew/opt/boost"
+    #LIBS += -L"/opt/homebrew/opt/boost/lib"
+    #LIBS += -L"/opt/homebrew/opt/libxml2/lib"
+    #LIBS += -L"/opt/homebrew/opt/opencv/lib"
+
+    # Mac Intel
+    _BOOST_PATH = "/usr/local/opt/boost/"
+    LIBS += -L"/usr/lib"
     LIBS += -L"/usr/local/opt/libxml2/lib"
     LIBS += -L"/usr/local/opt/opencv/lib"
+
+    LIBS += -lboost_thread-mt
+    LIBS += -lboost_system-mt
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lxml2
+    LIBS += -lpotrace
+    LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
+unix:!macx{
+    # TODO: Linux
+    LIBS += -lboost_thread-mt
+    LIBS += -lboost_system-mt
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lxml2
+    LIBS += -lpotrace
+    LIBS += -llibpotrace
+}
+
 ios {
     LIBS += -framework Foundation -framework UIKit
 }
-LIBS += -lxml2
-LIBS += -lboost_thread-mt
-LIBS += -lboost_system-mt
-LIBS += -lopencv_core
-LIBS += -lopencv_imgproc
-LIBS += -lpotrace
+
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
-win32 {
-    # boost, libxml2, potrace
+# boost, libxml2, potrace
+win32-g++ {
+    # MINGW
     INCLUDEPATH += $$(MINGW64_PATH)/include
     INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
     INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
+    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
+}
+win32-msvc {
+    INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
+    INCLUDEPATH += C:\Dev\opencv_454_msvc\build\include
+    INCLUDEPATH += C:\Dev\libraries\potrace
+    INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
+    INCLUDEPATH += C:\Dev\libraries\libconv\include
+    INCLUDEPATH += $$PWD\third_party
+    INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }
 macx{
     INCLUDEPATH += /usr/local/include
-    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
-    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
+    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
+    # Mac M1
+    #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
+    #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+
+    # Mac Intel
+    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
+    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
 }
 
 # Remove -Wall and -Wextra flag
-QMAKE_CFLAGS_WARN_ON -= -Wall
-QMAKE_CXXFLAGS_WARN_ON -= -Wall
-QMAKE_CFLAGS_WARN_ON -= -Wextra
-QMAKE_CXXFLAGS_WARN_ON -= -Wextra
-QMAKE_CXXFLAGS += -Wall
-# QMAKE_CXXFLAGS += -Wextra
-QMAKE_CXXFLAGS += -Wno-unused-local-typedef
-QMAKE_CXXFLAGS += -Wno-unused-variable
-QMAKE_CXXFLAGS += -Wno-reorder-ctor
-QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+win32 {
+    win32-g++ {
+        QMAKE_CFLAGS_WARN_ON -= -Wall
+        QMAKE_CXXFLAGS_WARN_ON -= -Wall
+        QMAKE_CFLAGS_WARN_ON -= -Wextra
+        QMAKE_CXXFLAGS_WARN_ON -= -Wextra
+        QMAKE_CXXFLAGS += -Wall
+        # QMAKE_CXXFLAGS += -Wextra
+        QMAKE_CXXFLAGS += -Wno-unused-local-typedef
+        QMAKE_CXXFLAGS += -Wno-unused-variable
+        QMAKE_CXXFLAGS += -Wno-reorder-ctor
+        QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+        QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
+    }
+    win32-msvc {
+        debug:QMAKE_CXXFLAGS += -bigobj
+    }
+}
+unix {
+    QMAKE_CFLAGS_WARN_ON -= -Wall
+    QMAKE_CXXFLAGS_WARN_ON -= -Wall
+    QMAKE_CFLAGS_WARN_ON -= -Wextra
+    QMAKE_CXXFLAGS_WARN_ON -= -Wextra
+    QMAKE_CXXFLAGS += -Wall
+    # QMAKE_CXXFLAGS += -Wextra
+    QMAKE_CXXFLAGS += -Wno-unused-local-typedef
+    QMAKE_CXXFLAGS += -Wno-unused-variable
+    QMAKE_CXXFLAGS += -Wno-reorder-ctor
+    QMAKE_CXXFLAGS += -Wno-deprecated-declarations
+    QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
+}
 macx{
     # flag for clang only
     QMAKE_CXXFLAGS += -ferror-limit=1
+    QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 }
-QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
@@ -190,6 +275,16 @@ TR_EXCLUDE += $$PWD/third_party/* \
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
 
-#QMAKE_POST_LINK +=
-#    @sed -e "s,@SHORT_VERSION@,1.0.0,g" -e "s,@FULL_VERSION@,1.0.0-b,g"
-#     ../../project/subproject/Info.plist >MyProject.app/Contents/Info.plist
+# Mac M1
+#QMAKE_APPLE_DEVICE_ARCHS=arm64
+
+macx{
+  # Copy additional files to bundle
+  BUNDLE_FRAMEWORKS_FILES.files = $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
+  BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
+  QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
+  
+  BUNDLE_ADDITIONAL_EXEC_FILES.files = $$PWD/third_party/sentry-native/install/bin/crashpad_handler
+  BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
+  QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
+}
