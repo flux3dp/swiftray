@@ -163,8 +163,10 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_SUFFIX=\"${VERSION_SUF
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
 add_subdirectory(third_party/QxPotrace)
+add_subdirectory(third_party/libdxfrw)
 target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
+target_link_libraries(${PROJECT_NAME} libdxfrw)
 
 # Sentry
 if(WIN32)

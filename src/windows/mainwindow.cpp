@@ -283,7 +283,7 @@ void MainWindow::openFile() {
   }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open File", default_open_dir,
-                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)"));
+                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -310,6 +310,8 @@ void MainWindow::openFile() {
       setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
       canvas_->loadSVG(data);
+    } else if (file_name.endsWith(".dxf")) {
+      canvas_->loadDXF(file_name);
     } else {
       importImage(file_name);
     }
@@ -458,7 +460,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -472,6 +474,8 @@ void MainWindow::openImageFile() {
       QByteArray data = file.readAll();
       canvas_->loadSVG(data);
     }
+  } else if (file_name.endsWith(".dxf")) {
+    canvas_->loadDXF(file_name);
   } else {
     importImage(file_name);
   }
