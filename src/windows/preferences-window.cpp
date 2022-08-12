@@ -39,6 +39,9 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   });
   connect(ui->horizontalSliderFontSize, &QAbstractSlider::valueChanged, [=](int value){
     ui->labelFontSize->setText(QString::number(value));
+    QFont current_font = QApplication::font();
+    current_font.setPixelSize(value);
+    QApplication::setFont(current_font);
   });
 }
 
