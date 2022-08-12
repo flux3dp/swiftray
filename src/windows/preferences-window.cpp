@@ -14,17 +14,31 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   setTabWidget();
   setLanguageComboBox();
   setSpeedOptimizationComboBox();
+  QFont current_font = QApplication::font();
+  if(current_font.pixelSize() > 0) {
+    ui->horizontalSliderFontSize->setValue(current_font.pixelSize());
+    ui->labelFontSize->setText(QString::number(current_font.pixelSize()));
+  }
+  else {
+    ui->horizontalSliderFontSize->setValue(13);
+    ui->labelFontSize->setText(QString::number(13));
+  }
 
   connect(ui->buttonBox, &QDialogButtonBox::accepted, [=](){
     QSettings settings;
     QVariant language_code = settings.value("window/language", 0);
-    if (language_code.toInt() != ui->comboBox->currentIndex()) {
+    QVariant font_size = settings.value("window/font_size", 0);
+    if (language_code.toInt() != ui->comboBox->currentIndex() || font_size.toInt() != ui->horizontalSliderFontSize->value()) {
       settings.setValue("window/language", ui->comboBox->currentIndex());
+      settings.setValue("window/font_size", ui->horizontalSliderFontSize->value());
       QMessageBox msgbox;
       msgbox.setInformativeText(tr("Please restart Swiftray to enable new settings."));
       msgbox.exec();
     }
     emit speedModeChanged(ui->comboBoxSpeedOptimization->currentIndex());
+  });
+  connect(ui->horizontalSliderFontSize, &QAbstractSlider::valueChanged, [=](int value){
+    ui->labelFontSize->setText(QString::number(value));
   });
 }
 
