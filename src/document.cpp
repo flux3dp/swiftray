@@ -182,7 +182,7 @@ void Document::clearCurrentFileModified() {
 
 void Document::setScale(qreal scale) {
   scale = scale > 2 ? 2 : scale;
-  scale = scale < 0.1 ? 0.1 : scale;
+  scale = scale < 0.01 ? 0.01 : scale;
   scale_ = scale;
   emit scaleChanged();
   screen_changed_ = true;
