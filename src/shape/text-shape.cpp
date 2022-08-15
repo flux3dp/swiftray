@@ -70,6 +70,7 @@ void TextShape::makeCursorRect(int start_cursor, int end_cursor) {
         if(start_offset >= 0) {
           QString select_string = line.chopped(line.length() - cursor_offset);
           select_string = select_string.right(select_string.length() - start_offset);
+          select_string = select_string.replace(" ", "i");
           if(line.length() == cursor_offset)
             select_string += "i";
           QString space_string = line.chopped(line.length() - start_offset);
@@ -88,6 +89,7 @@ void TextShape::makeCursorRect(int start_cursor, int end_cursor) {
         }
         else {
           QString select_string = line.chopped(line.length() - cursor_offset);
+          select_string = select_string.replace(" ", "i");
           if(line.length() == cursor_offset)
             select_string += "i";
           QPainterPath line_path; // for calculating x pos of cursor rect
@@ -103,6 +105,7 @@ void TextShape::makeCursorRect(int start_cursor, int end_cursor) {
       }
       else if(start_offset >= 0) {
         QString space_string = line.chopped(line.length() - start_offset);
+        space_string = space_string.replace(" ", "i");
         QPainterPath empty_path; // for calculating x pos of cursor rect
         empty_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
                           font_, space_string);
@@ -118,8 +121,10 @@ void TextShape::makeCursorRect(int start_cursor, int end_cursor) {
       }
       else {
         QPainterPath line_path; // for calculating width rect
+        QString select_string(line);
+        select_string = select_string.replace(" ", "i");
         line_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
-                          font_, line + "i");
+                          font_, select_string + "i");
         qreal select_x_pos = line_path.boundingRect().left();
         qreal select_y_pos = height_path.boundingRect().top();
         qreal select_height = height_path.boundingRect().height();
@@ -134,6 +139,7 @@ void TextShape::makeCursorRect(int start_cursor, int end_cursor) {
            ? "A"
            : line.chopped(line.length() - cursor_offset);
 
+      test_string = test_string.replace(" ", "i");
       QPainterPath line_path; // for calculating x pos of cursor rect
       line_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
                         font_, test_string);
@@ -170,6 +176,7 @@ int TextShape::calculateCursor(QPointF point) {
       for(unsigned int cursor_offset = 1; cursor_offset <= line.length(); cursor_offset++) {
         current_pos++;
         QString test_string = line.chopped(line.length() - cursor_offset);
+        test_string = test_string.replace(" ", "i");
         QPainterPath line_path; // for calculating x pos of cursor rect
         line_path.addText(QPointF(0, i * line_height_ * font_.pointSizeF()),
                         font_, test_string);
