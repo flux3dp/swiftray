@@ -219,6 +219,14 @@ void JoggingPanel::setControlEnable(bool control_enable) {
   control_enable_ = control_enable;
 }
 
+void JoggingPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void JoggingPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}
+
 void JoggingPanel::sendJob(QString &job_str) {
   if (!serial_port.isOpen()) {
     return;

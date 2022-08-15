@@ -714,6 +714,27 @@ void MainWindow::loadWidgets() {
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
+  //panel
+  ui->actionObjectPanel->setChecked(!ui->objectParamDock->isHidden());
+  ui->actionFontPanel->setChecked(!ui->fontDock->isHidden());
+  ui->actionImagePanel->setChecked(!ui->imageDock->isHidden());
+  ui->actionDocumentPanel->setChecked(!ui->documentDock->isHidden());
+  ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
+  ui->actionGCodeViewerPanel->setChecked(!gcode_player_->isHidden());
+  ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
+  //toolbar
+  ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
+  ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
+  ui->actionConnection->setChecked(!ui->toolBarConnection->isHidden());
+  ui->actionFlip->setChecked(!ui->toolBarFlip->isHidden());
+  ui->actionFont->setChecked(!ui->toolBarFont->isHidden());
+  ui->actionFunctional->setChecked(!ui->toolBar->isHidden());
+  ui->actionGroup_2->setChecked(!ui->toolBarGroup->isHidden());
+  ui->actionImage->setChecked(!ui->toolBarImage->isHidden());
+  ui->actionProject->setChecked(!ui->toolBarFile->isHidden());
+  ui->actionTask->setChecked(!ui->toolBarTask->isHidden());
+  ui->actionTransform->setChecked(!ui->toolBarTransform->isHidden());
+  ui->actionVector->setChecked(!ui->toolBarVector->isHidden());
 }
 
 void MainWindow::registerEvents() {
@@ -872,6 +893,160 @@ void MainWindow::registerEvents() {
     else {
       is_high_speed_mode_ = false;
       preferences_window_->setSpeedMode(is_high_speed_mode_);
+    }
+  });
+  //panel
+  connect(ui->actionFontPanel, &QAction::triggered, [=]() {
+    if(ui->fontDock->isHidden()) {
+      ui->fontDock->show();
+    }
+    else {
+      ui->fontDock->hide();
+    }
+  });
+  connect(ui->actionObjectPanel, &QAction::triggered, [=]() {
+    if(ui->objectParamDock->isHidden()) {
+      ui->objectParamDock->show();
+    }
+    else {
+      ui->objectParamDock->hide();
+    }
+  });
+  connect(ui->actionLayerPanel, &QAction::triggered, [=]() {
+    if(ui->layerDock->isHidden()) {
+      ui->layerDock->show();
+    }
+    else {
+      ui->layerDock->hide();
+    }
+  });
+  connect(ui->actionGCodeViewerPanel, &QAction::triggered, [=]() {
+    if(ui->serialPortDock->isHidden()) {
+      ui->serialPortDock->show();
+    }
+    else {
+      ui->serialPortDock->hide();
+    }
+  });
+  connect(ui->actionImagePanel, &QAction::triggered, [=]() {
+    if(ui->imageDock->isHidden()) {
+      ui->imageDock->show();
+    }
+    else {
+      ui->imageDock->hide();
+    }
+  });
+  connect(ui->actionDocumentPanel, &QAction::triggered, [=]() {
+    if(ui->documentDock->isHidden()) {
+      ui->documentDock->show();
+    }
+    else {
+      ui->documentDock->hide();
+    }
+  });
+  connect(ui->actionJoggingPanel, &QAction::triggered, [=]() {
+    if(ui->joggingDock->isHidden()) {
+      ui->joggingDock->show();
+    }
+    else {
+      ui->joggingDock->hide();
+    }
+  });
+  //toolbar
+  connect(ui->actionAlign, &QAction::triggered, [=]() {
+    if(ui->toolBarAlign->isHidden()) {
+      ui->toolBarAlign->show();
+    }
+    else {
+      ui->toolBarAlign->hide();
+    }
+  });
+  connect(ui->actionBoolean, &QAction::triggered, [=]() {
+    if(ui->toolBarBool->isHidden()) {
+      ui->toolBarBool->show();
+    }
+    else {
+      ui->toolBarBool->hide();
+    }
+  });
+  connect(ui->actionConnection, &QAction::triggered, [=]() {
+    if(ui->toolBarConnection->isHidden()) {
+      ui->toolBarConnection->show();
+    }
+    else {
+      ui->toolBarConnection->hide();
+    }
+  });
+  connect(ui->actionFlip, &QAction::triggered, [=]() {
+    if(ui->toolBarFlip->isHidden()) {
+      ui->toolBarFlip->show();
+    }
+    else {
+      ui->toolBarFlip->hide();
+    }
+  });
+  connect(ui->actionFont, &QAction::triggered, [=]() {
+    if(ui->toolBarFont->isHidden()) {
+      ui->toolBarFont->show();
+    }
+    else {
+      ui->toolBarFont->hide();
+    }
+  });
+  connect(ui->actionFunctional, &QAction::triggered, [=]() {
+    if(ui->toolBar->isHidden()) {
+      ui->toolBar->show();
+    }
+    else {
+      ui->toolBar->hide();
+    }
+  });
+  connect(ui->actionGroup_2, &QAction::triggered, [=]() {
+    if(ui->toolBarGroup->isHidden()) {
+      ui->toolBarGroup->show();
+    }
+    else {
+      ui->toolBarGroup->hide();
+    }
+  });
+  connect(ui->actionImage, &QAction::triggered, [=]() {
+    if(ui->toolBarImage->isHidden()) {
+      ui->toolBarImage->show();
+    }
+    else {
+      ui->toolBarImage->hide();
+    }
+  });
+  connect(ui->actionProject, &QAction::triggered, [=]() {
+    if(ui->toolBarFile->isHidden()) {
+      ui->toolBarFile->show();
+    }
+    else {
+      ui->toolBarFile->hide();
+    }
+  });
+  connect(ui->actionTask, &QAction::triggered, [=]() {
+    if(ui->toolBarTask->isHidden()) {
+      ui->toolBarTask->show();
+    }
+    else {
+      ui->toolBarTask->hide();
+    }
+  });
+  connect(ui->actionTransform, &QAction::triggered, [=]() {
+    if(ui->toolBarTransform->isHidden()) {
+      ui->toolBarTransform->show();
+    }
+    else {
+      ui->toolBarTransform->hide();
+    }
+  });
+  connect(ui->actionVector, &QAction::triggered, [=]() {
+    if(ui->toolBarVector->isHidden()) {
+      ui->toolBarVector->show();
+    }
+    else {
+      ui->toolBarVector->hide();
     }
   });
 }
@@ -1327,6 +1502,66 @@ void MainWindow::setToolbarTransform() {
 
   connect(buttonLock, &QToolButton::toggled, [=](bool checked) {
     transform_panel_->setScaleLock(checked);
+  });
+
+  //panel
+  connect(ui->objectParamDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
+    ui->actionObjectPanel->setChecked(is_visible);
+  });
+  connect(ui->fontDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
+    ui->actionFontPanel->setChecked(is_visible);
+  });
+  connect(ui->imageDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
+    ui->actionImagePanel->setChecked(is_visible);
+  });
+  connect(ui->documentDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
+    ui->actionDocumentPanel->setChecked(is_visible);
+  });
+  connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
+    ui->actionLayerPanel->setChecked(is_show);
+  });
+  connect(gcode_player_, &GCodePlayer::panelShow, [=](bool is_show) {
+    ui->actionGCodeViewerPanel->setChecked(is_show);
+  });
+  connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
+    ui->actionJoggingPanel->setChecked(is_show);
+  });
+  //toolbar
+  connect(ui->toolBarAlign, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionAlign->setChecked(is_visible);
+  });
+  connect(ui->toolBarBool, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionBoolean->setChecked(is_visible);
+  });
+  connect(ui->toolBarConnection, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionConnection->setChecked(is_visible);
+  });
+  connect(ui->toolBarFlip, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFlip->setChecked(is_visible);
+  });
+  connect(ui->toolBarFont, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFont->setChecked(is_visible);
+  });
+  connect(ui->toolBar, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFunctional->setChecked(is_visible);
+  });
+  connect(ui->toolBarGroup, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionGroup_2->setChecked(is_visible);
+  });
+  connect(ui->toolBarImage, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionImage->setChecked(is_visible);
+  });
+  connect(ui->toolBarFile, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionProject->setChecked(is_visible);
+  });
+  connect(ui->toolBarTask, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTask->setChecked(is_visible);
+  });
+  connect(ui->toolBarTransform, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTransform->setChecked(is_visible);
+  });
+  connect(ui->toolBarVector, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionVector->setChecked(is_visible);
   });
 }
 

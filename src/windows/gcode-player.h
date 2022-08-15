@@ -42,6 +42,10 @@ private:
 
   void registerEvents() override;
 
+  void hideEvent(QHideEvent *event) override;
+  
+  void showEvent(QShowEvent *event) override;
+
   void checkGenerateGcode();
 
   Ui::GCodePlayer *ui;
@@ -61,4 +65,5 @@ signals:
   void pauseBtnClicked();
   void resumeBtnClicked();
   void jobStatusReport(BaseJob::Status status);
+  void panelShow(bool is_show);
 };

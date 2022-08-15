@@ -54,7 +54,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Main Toolbar</string>
+    <string>Functional</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -85,7 +85,7 @@
   </widget>
   <widget class="QDockWidget" name="fontDock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -175,7 +175,7 @@
   </widget>
   <widget class="QDockWidget" name="objectParamDock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -228,6 +228,12 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="serialPortDock">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="floating">
+    <bool>false</bool>
+   </property>
    <property name="windowTitle">
     <string>GCode Viewer</string>
    </property>
@@ -239,6 +245,12 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="documentDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="floating">
     <bool>false</bool>
    </property>
@@ -255,7 +267,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarFile">
    <property name="windowTitle">
-    <string>toolBarFile</string>
+    <string>Project</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -281,7 +293,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarTransform">
    <property name="windowTitle">
-    <string>toolBarTransform</string>
+    <string>Transform</string>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -304,7 +316,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Boolean Operation</string>
+    <string>Boolean</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -337,7 +349,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarConnection">
    <property name="windowTitle">
-    <string>Connection Toolbar</string>
+    <string>Connection</string>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -361,7 +373,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Group Toolbar</string>
+    <string>Group </string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -398,7 +410,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Align Toolbar</string>
+    <string>Align</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -442,7 +454,7 @@
     </size>
    </property>
    <property name="windowTitle">
-    <string>Flip Toolbar</string>
+    <string>Flip</string>
    </property>
    <property name="styleSheet">
     <string notr="true"/>
@@ -473,7 +485,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarImage">
    <property name="windowTitle">
-    <string>toolBarImage</string>
+    <string>Image </string>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -494,7 +506,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarVector">
    <property name="windowTitle">
-    <string>toolBarVector</string>
+    <string>Vector</string>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -512,7 +524,7 @@
   </widget>
   <widget class="QToolBar" name="toolBarFont">
    <property name="windowTitle">
-    <string>toolBarFont</string>
+    <string>Font </string>
    </property>
    <property name="movable">
     <bool>true</bool>
@@ -541,7 +553,7 @@
     <bool>true</bool>
    </property>
    <property name="windowTitle">
-    <string>toolBarTask</string>
+    <string>Task</string>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -554,6 +566,12 @@
    <addaction name="actionStart"/>
   </widget>
   <widget class="QDockWidget" name="imageDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="windowTitle">
     <string>Image</string>
    </property>
@@ -564,6 +582,12 @@
     <layout class="QVBoxLayout" name="verticalLayout_5">
      <item>
       <widget class="QFrame" name="frame">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
        </property>
@@ -581,7 +605,7 @@
      <x>0</x>
      <y>0</y>
      <width>1250</width>
-     <height>22</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -667,8 +691,35 @@
     <property name="title">
      <string>Window</string>
     </property>
+    <widget class="QMenu" name="menuToolbar">
+     <property name="title">
+      <string>Toolbar</string>
+     </property>
+     <addaction name="actionAlign"/>
+     <addaction name="actionBoolean"/>
+     <addaction name="actionConnection"/>
+     <addaction name="actionFont"/>
+     <addaction name="actionFlip"/>
+     <addaction name="actionFunctional"/>
+     <addaction name="actionGroup_2"/>
+     <addaction name="actionImage"/>
+     <addaction name="actionProject"/>
+     <addaction name="actionTask"/>
+     <addaction name="actionTransform"/>
+     <addaction name="actionVector"/>
+    </widget>
     <addaction name="actionLoadClassic"/>
     <addaction name="actionLoadEssential"/>
+    <addaction name="separator"/>
+    <addaction name="menuToolbar"/>
+    <addaction name="separator"/>
+    <addaction name="actionLayerPanel"/>
+    <addaction name="actionGCodeViewerPanel"/>
+    <addaction name="actionJoggingPanel"/>
+    <addaction name="actionFontPanel"/>
+    <addaction name="actionObjectPanel"/>
+    <addaction name="actionDocumentPanel"/>
+    <addaction name="actionImagePanel"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -1259,6 +1310,167 @@
    </property>
    <property name="text">
     <string>Start</string>
+   </property>
+  </action>
+  <action name="actionFontPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Font</string>
+   </property>
+  </action>
+  <action name="actionLayerPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Layer</string>
+   </property>
+  </action>
+  <action name="actionObjectPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Object</string>
+   </property>
+  </action>
+  <action name="actionGCodeViewerPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>GCode Viewer</string>
+   </property>
+  </action>
+  <action name="actionDocumentPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Document</string>
+   </property>
+  </action>
+  <action name="actionJoggingPanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Jogging Panel</string>
+   </property>
+  </action>
+  <action name="actionImagePanel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Image</string>
+   </property>
+  </action>
+  <action name="actionAlign">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Align</string>
+   </property>
+  </action>
+  <action name="actionBoolean">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Boolean</string>
+   </property>
+  </action>
+  <action name="actionConnection">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Connection</string>
+   </property>
+  </action>
+  <action name="actionFont">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Font </string>
+   </property>
+   <property name="iconText">
+    <string>Font </string>
+   </property>
+  </action>
+  <action name="actionFlip">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Flip</string>
+   </property>
+  </action>
+  <action name="actionFunctional">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Functional</string>
+   </property>
+  </action>
+  <action name="actionGroup_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Group </string>
+   </property>
+   <property name="iconText">
+    <string>Group </string>
+   </property>
+  </action>
+  <action name="actionImage">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Image </string>
+   </property>
+   <property name="iconText">
+    <string>Image </string>
+   </property>
+  </action>
+  <action name="actionProject">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Project</string>
+   </property>
+  </action>
+  <action name="actionTask">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Task</string>
+   </property>
+  </action>
+  <action name="actionTransform">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Transform</string>
+   </property>
+  </action>
+  <action name="actionVector">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Vector</string>
    </property>
   </action>
  </widget>

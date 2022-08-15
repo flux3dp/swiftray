@@ -55,6 +55,14 @@ void GCodePlayer::registerEvents() {
 #endif
 }
 
+void GCodePlayer::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void GCodePlayer::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}
+
 void GCodePlayer::checkGenerateGcode() {
   if(ui->gcodeText->toPlainText().isEmpty()) {
     ui->playBtn->setEnabled(false);

@@ -973,27 +973,27 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="57"/>
         <source>Main Toolbar</source>
-        <translation>主工具列</translation>
+        <translation type="vanished">主工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="364"/>
         <source>Group Toolbar</source>
-        <translation>群組工具列</translation>
+        <translation type="vanished">群組工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="401"/>
         <source>Align Toolbar</source>
-        <translation>對齊工具列</translation>
+        <translation type="vanished">對齊工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="307"/>
         <source>Boolean Operation</source>
-        <translation>布林工具列</translation>
+        <translation type="vanished">布林工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="445"/>
         <source>Flip Toolbar</source>
-        <translation>翻轉工具列</translation>
+        <translation type="vanished">翻轉工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="109"/>
@@ -1028,32 +1028,32 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="258"/>
         <source>toolBarFile</source>
-        <translation>檔案工具列</translation>
+        <translation type="vanished">檔案工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="284"/>
         <source>toolBarTransform</source>
-        <translation>變形工具列</translation>
+        <translation type="vanished">變形工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="340"/>
         <source>Connection Toolbar</source>
-        <translation>連線工具列</translation>
+        <translation type="vanished">連線工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="476"/>
         <source>toolBarImage</source>
-        <translation>圖形工具列</translation>
+        <translation type="vanished">圖形工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="497"/>
         <source>toolBarVector</source>
-        <translation>向量工具列</translation>
+        <translation type="vanished">向量工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="515"/>
         <source>toolBarFont</source>
-        <translation>文字工具列</translation>
+        <translation type="vanished">文字工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="532"/>
@@ -1063,7 +1063,7 @@
     <message>
         <location filename="../src/windows/mainwindow.ui" line="544"/>
         <source>toolBarTask</source>
-        <translation>工作工具列</translation>
+        <translation type="vanished">工作工具列</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="684"/>
@@ -1425,12 +1425,87 @@
 </translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="232"/>
+        <location filename="../src/windows/mainwindow.ui" line="57"/>
+        <location filename="../src/windows/mainwindow.ui" line="1416"/>
+        <source>Functional</source>
+        <translation>主工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="238"/>
+        <location filename="../src/windows/mainwindow.ui" line="1344"/>
         <source>GCode Viewer</source>
         <translation>Gcode 檢視器</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.ui" line="915"/>
+        <location filename="../src/windows/mainwindow.ui" line="270"/>
+        <location filename="../src/windows/mainwindow.ui" line="1440"/>
+        <source>Project</source>
+        <translation>檔案工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="296"/>
+        <location filename="../src/windows/mainwindow.ui" line="1456"/>
+        <source>Transform</source>
+        <translation>變形工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="319"/>
+        <location filename="../src/windows/mainwindow.ui" line="1384"/>
+        <source>Boolean</source>
+        <translation>布林工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="352"/>
+        <location filename="../src/windows/mainwindow.ui" line="1392"/>
+        <source>Connection</source>
+        <translation>連線工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="376"/>
+        <source>Group </source>
+        <translation>群組工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="413"/>
+        <location filename="../src/windows/mainwindow.ui" line="1376"/>
+        <source>Align</source>
+        <translation>對齊工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="457"/>
+        <location filename="../src/windows/mainwindow.ui" line="1408"/>
+        <source>Flip</source>
+        <translation>翻轉工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="488"/>
+        <source>Image </source>
+        <translation>圖形工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="509"/>
+        <location filename="../src/windows/mainwindow.ui" line="1464"/>
+        <source>Vector</source>
+        <translation>向量工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="527"/>
+        <source>Font </source>
+        <translation>文字工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="556"/>
+        <location filename="../src/windows/mainwindow.ui" line="1448"/>
+        <source>Task</source>
+        <translation>工作工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="696"/>
+        <source>Toolbar</source>
+        <translation>工具列</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/mainwindow.ui" line="966"/>
         <source>D</source>
         <translation>D</translation>
     </message>
