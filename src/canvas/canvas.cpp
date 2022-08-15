@@ -20,6 +20,8 @@
 #include <windows/image-crop-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
+#include "parser/dxf_iface.h"
+#include "parser/dxf_data.h"
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -114,6 +116,30 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     update();
   }
   qInfo() << "[Parser] Took" << t.elapsed();
+}
+
+void Canvas::loadDXF(QString file_name) {
+  dxf_data dxf_data;
+  dxf_iface dxf_interface;
+  QList<LayerPtr> dxf_layers;
+  bool success = dxf_interface.printText(&document(), file_name.toStdString(), &dxf_data, &dxf_layers);
+  if (success) {
+    QList<ShapePtr> all_shapes;
+    for (auto &layer : dxf_layers) {
+      all_shapes.append(layer->children());
+    }
+    document().setSelections(all_shapes);
+    double scale = 10;
+    transformControl().applyScale(QPointF(0,0), scale, scale, false);
+    if (all_shapes.size() == 1) {
+      document().setActiveLayer(all_shapes.first()->layer()->name());
+      emit layerChanged();
+    }
+
+    forceActiveFocus();
+    emitAllChanges();
+    update();
+  }
 }
 
 void Canvas::paint(QPainter *painter) {

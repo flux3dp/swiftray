@@ -197,7 +197,27 @@ SOURCES += \
     $$files(src/windows/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
-    third_party/clipper/clipper.cpp
+    third_party/clipper/clipper.cpp \
+    third_party/libdxfrw/drw_base.cpp \
+    third_party/libdxfrw/drw_classes.cpp \
+    third_party/libdxfrw/drw_entities.cpp \
+    third_party/libdxfrw/drw_header.cpp \
+    third_party/libdxfrw/drw_objects.cpp \
+    third_party/libdxfrw/intern/drw_dbg.cpp \
+    third_party/libdxfrw/intern/drw_textcodec.cpp \
+    third_party/libdxfrw/intern/dwgbuffer.cpp \
+    third_party/libdxfrw/intern/dwgreader.cpp \
+    third_party/libdxfrw/intern/dwgreader15.cpp \
+    third_party/libdxfrw/intern/dwgreader18.cpp \
+    third_party/libdxfrw/intern/dwgreader21.cpp \
+    third_party/libdxfrw/intern/dwgreader24.cpp \
+    third_party/libdxfrw/intern/dwgreader27.cpp \
+    third_party/libdxfrw/intern/dwgutil.cpp \
+    third_party/libdxfrw/intern/dxfreader.cpp \
+    third_party/libdxfrw/intern/dxfwriter.cpp \
+    third_party/libdxfrw/intern/rscodec.cpp \
+    third_party/libdxfrw/libdwgr.cpp \
+    third_party/libdxfrw/libdxfrw.cpp
 
 RESOURCES += qml.qrc
 TRANSLATIONS += \
@@ -230,7 +250,34 @@ HEADERS += \
     $$files(src/windows/*.h) \
     src/gcode/generators/dirty-area-outline-generator.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
-    third_party/clipper/clipper.hpp
+    third_party/clipper/clipper.hpp \
+    third_party/libdxfrw/drw_base.h \
+    third_party/libdxfrw/drw_classes.h \
+    third_party/libdxfrw/drw_entities.h \
+    third_party/libdxfrw/drw_header.h \
+    third_party/libdxfrw/drw_interface.h \
+    third_party/libdxfrw/drw_objects.h \
+    third_party/libdxfrw/intern/drw_cptable932.h \
+    third_party/libdxfrw/intern/drw_cptable936.h \
+    third_party/libdxfrw/intern/drw_cptable949.h \
+    third_party/libdxfrw/intern/drw_cptable950.h \
+    third_party/libdxfrw/intern/drw_cptables.h \
+    third_party/libdxfrw/intern/drw_dbg.h \
+    third_party/libdxfrw/intern/drw_textcodec.h \
+    third_party/libdxfrw/intern/dwgbuffer.h \
+    third_party/libdxfrw/intern/dwgreader.h \
+    third_party/libdxfrw/intern/dwgreader15.h \
+    third_party/libdxfrw/intern/dwgreader18.h \
+    third_party/libdxfrw/intern/dwgreader21.h \
+    third_party/libdxfrw/intern/dwgreader24.h \
+    third_party/libdxfrw/intern/dwgreader27.h \
+    third_party/libdxfrw/intern/dwgutil.h \
+    third_party/libdxfrw/intern/dxfreader.h \
+    third_party/libdxfrw/intern/dxfwriter.h \
+    third_party/libdxfrw/intern/rscodec.h \
+    third_party/libdxfrw/libdwgr.h \
+    third_party/libdxfrw/libdxfrw.h \
+    third_party/libdxfrw/main_doc.h
 ios {
     HEADERS += \
             src/widgets/components/ios-image-picker.h \
