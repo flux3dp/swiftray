@@ -56,7 +56,8 @@ bool PreferencesWindow::isHighSpeedMode() {
 
 void PreferencesWindow::setLanguageComboBox() {
   ui->comboBox->addItem("English");
-  ui->comboBox->addItem("中文");
+  // \u4e2d\u6587 為“中文”unicode
+  ui->comboBox->addItem(QString::fromUtf16(u"\u4e2d\u6587"));
   QSettings settings;
   QVariant language_code = settings.value("window/language", 0);
   ui->comboBox->setCurrentIndex(language_code.toInt());
