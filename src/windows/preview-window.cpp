@@ -14,6 +14,7 @@ class PathGraphicsPreview: public QGraphicsView {
 public:
     PathGraphicsPreview(QGraphicsScene *scene = nullptr, QWidget *parent = nullptr);
     bool event(QEvent *e) override;
+    void wheelEvent(QWheelEvent *e) override;
 private:
 
     void gestureHandler(QGestureEvent *ge);
@@ -59,6 +60,22 @@ bool PathGraphicsPreview::event(QEvent *e) {
     keyHandler(static_cast<QKeyEvent*>(e));
   }
   return QGraphicsView::event(e);
+}
+
+void PathGraphicsPreview::wheelEvent(QWheelEvent *e) {
+  if (is_holding_ctrl_) {
+    double new_scale = 1 + (double)e->angleDelta().y() / 8 / this->height();
+    if (this->scaleFactor * new_scale >= 1) {
+      this->scaleFactor *= new_scale;
+      this->scale(new_scale, new_scale);
+    }
+    else {
+      this->scale(1.0/this->scaleFactor, 1.0/this->scaleFactor);
+      this->scaleFactor = 1;
+    }
+    return;
+  }
+  return QGraphicsView::wheelEvent(e);
 }
 
 void PathGraphicsPreview::gestureHandler(QGestureEvent *gesture_event) {
