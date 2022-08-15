@@ -76,15 +76,21 @@ int main(int argc, char *argv[]) {
   // Set app icon
   app.setWindowIcon(QIcon(":/images/icon.png"));
 
+  QSettings settings;
   // load Open Sans font(addApplicationFont fail in Mac)
+  QVariant font_size = settings.value("window/font_size", 0);
   #ifdef Q_OS_WIN
   int id = QFontDatabase::addApplicationFont(":/fonts/open-sans-latin.ttf");
   if(id != -1) {
     QFont font("Open Sans");
     font.setStyleHint(QFont::Monospace);
-    font.setPixelSize(12);
+    font.setPixelSize(font_size.toInt());
     QApplication::setFont(font);
   }
+  #else
+  QFont current_font = QApplication::font();
+  current_font.setPixelSize(font_size.toInt());
+  QApplication::setFont(current_font);
   #endif
   
   // Force anti-aliasing
@@ -94,7 +100,6 @@ int main(int argc, char *argv[]) {
   QSurfaceFormat::setDefaultFormat(format);*/
 
   // Set translator
-  QSettings settings;
   QString locale;
   QVariant language_code = settings.value("window/language", 0);
 

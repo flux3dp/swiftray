@@ -32,4 +32,6 @@ private:
 
 signals:
   void speedModeChanged(bool is_high_speed);
+
+  void fontSizeChanged(int font_size);
 };
