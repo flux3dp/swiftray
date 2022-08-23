@@ -21,10 +21,10 @@ public:
 
   ~LayerPanel();
 
-signals:
+Q_SIGNALS:
   void panelShow(bool is_show);
   
-private slots:
+private Q_SLOTS:
 
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
                          const QModelIndex &destinationParent, int destinationRow);

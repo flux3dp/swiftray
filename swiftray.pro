@@ -33,6 +33,7 @@ QMAKE_INFO_PLIST = Info.plist
 ICON=resources/images/icon.icns
 RC_ICONS = resources/images/icon.ico
 CONFIG += c++17
+CONFIG += no_keywords
 
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -89,6 +90,10 @@ macx{
     LIBS += -lopencv_imgproc
     LIBS += -lxml2
     LIBS += -lpotrace
+    LIBS += -lglib-2.0
+    LIBS += -lgobject-2.0
+    LIBS += -lpoppler-glib
+    LIBS += -lcairo
     LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
 unix:!macx{
@@ -130,6 +135,10 @@ macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
+    INCLUDEPATH += /usr/local/include/poppler/glib
+    INCLUDEPATH += /usr/local/include/glib-2.0
+    INCLUDEPATH += /usr/local/Cellar/glib/2.72.3/lib/glib-2.0/include
+    INCLUDEPATH += /usr/local/Cellar/cairo/1.16.0_5/include/cairo
     INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
     # Mac M1
     #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/

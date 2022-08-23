@@ -112,7 +112,7 @@ void DocPanel::registerEvents() {
     updateScene();
     QSettings settings;
     settings.setValue("defaultMachine", ui->machineComboBox->currentText());
-    emit machineChanged(ui->machineComboBox->currentText());
+    Q_EMIT machineChanged(ui->machineComboBox->currentText());
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     PresetSettings* preset_settings = &PresetSettings::getInstance();

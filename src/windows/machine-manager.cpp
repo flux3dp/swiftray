@@ -25,7 +25,7 @@ MachineManager::~MachineManager() {
 
 void MachineManager::loadSettings() {
   MachineSettings settings;
-  // If we call clear() when some item is selected, it lead to crash. Block signals here.
+  // If we call clear() when some item is selected, it lead to crash. Block Q_SIGNALS here.
   ui->machineList->blockSignals(true);
   ui->machineList->clear();
   ui->machineList->blockSignals(false);
@@ -102,19 +102,19 @@ void MachineManager::registerEvents() {
         break;
     }
     connect(ui->rearLeftRadioButton, &QRadioButton::toggled, [=](bool checked) {
-      if (checked) emit originChanged(MachineSettings::MachineSet::OriginType::RearLeft);
+      if (checked) Q_EMIT originChanged(MachineSettings::MachineSet::OriginType::RearLeft);
     });
 
     connect(ui->rearRightRadioButton, &QRadioButton::toggled, [=](bool checked) {
-      if (checked) emit originChanged(MachineSettings::MachineSet::OriginType::RearRight);
+      if (checked) Q_EMIT originChanged(MachineSettings::MachineSet::OriginType::RearRight);
     });
 
     connect(ui->frontLeftRadioButton, &QRadioButton::toggled, [=](bool checked) {
-      if (checked) emit originChanged(MachineSettings::MachineSet::OriginType::FrontLeft);
+      if (checked) Q_EMIT originChanged(MachineSettings::MachineSet::OriginType::FrontLeft);
     });
 
     connect(ui->frontRightRadioButton, &QRadioButton::toggled, [=](bool checked) {
-      if (checked) emit originChanged(MachineSettings::MachineSet::OriginType::FrontRight);
+      if (checked) Q_EMIT originChanged(MachineSettings::MachineSet::OriginType::FrontRight);
     });
   });
 

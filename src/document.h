@@ -135,7 +135,7 @@ public:
 
   friend class DocumentSerializer;
 
-signals:
+Q_SIGNALS:
 
   void selectionsChanged();
 

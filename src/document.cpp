@@ -40,7 +40,7 @@ void Document::setSelections(const QList<ShapePtr> &new_selections) {
   }
 
   selections_ = selection_list;
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 QList<ShapePtr> &Document::selections() { return selections_; }
@@ -108,7 +108,7 @@ void Document::execute(const CmdPtr &cmd) {
   undo_mutex_.unlock();
   if (!current_file_modified_) {
     current_file_modified_ = true;
-    emit fileModifiedChange(current_file_modified_);
+    Q_EMIT fileModifiedChange(current_file_modified_);
   }
 }
 
@@ -172,19 +172,19 @@ void Document::setScreenSize(QSize size) {
 void Document::setCurrentFile(QString filename) {
   current_file_ = filename;
   current_file_modified_ = false;
-  emit fileModifiedChange(current_file_modified_);
+  Q_EMIT fileModifiedChange(current_file_modified_);
 }
 
 void Document::clearCurrentFileModified() {
   current_file_modified_ = false;
-  emit fileModifiedChange(current_file_modified_);
+  Q_EMIT fileModifiedChange(current_file_modified_);
 }
 
 void Document::setScale(qreal scale) {
   scale = scale > 2 ? 2 : scale;
   scale = scale < 0.01 ? 0.01 : scale;
   scale_ = scale;
-  emit scaleChanged();
+  Q_EMIT scaleChanged();
   screen_changed_ = true;
 }
 

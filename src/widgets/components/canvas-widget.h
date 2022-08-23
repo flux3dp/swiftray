@@ -12,6 +12,6 @@ protected:
     void dragLeaveEvent(QDragLeaveEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
-signals:
+Q_SIGNALS:
     void dropFile(QPoint point, QString filename);
 };

@@ -82,7 +82,7 @@ public:
      */
      QString portName() const;
 
-signals:
+Q_SIGNALS:
     void connected();
     void disconnected();
     void lineReceived(QString resp);

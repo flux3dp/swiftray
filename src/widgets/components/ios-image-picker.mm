@@ -32,7 +32,7 @@
 
   [picker dismissViewControllerAnimated:YES completion:NULL];
 
-  emit ImagePicker::g_currentImagePicker->imageSelected(image2);
+  Q_EMIT ImagePicker::g_currentImagePicker->imageSelected(image2);
   ImagePicker::g_currentImagePicker = NULL;
 }
 

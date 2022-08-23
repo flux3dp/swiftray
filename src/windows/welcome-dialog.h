@@ -14,11 +14,11 @@ public:
 
   ~WelcomeDialog() = default;
 
-signals:
+Q_SIGNALS:
 
   void settingsChanged();
 
-public slots:
+public Q_SLOTS:
 
   void createStandardProfile(const QString brand, const QString model);
 

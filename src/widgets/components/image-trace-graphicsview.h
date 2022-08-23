@@ -34,11 +34,11 @@ public:
     void clearSelectionArea();
     void drawSelectionArea();
 
-public slots:
+public Q_SLOTS:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
-signals:
+Q_SIGNALS:
     void selectionAreaChanged();
 
 private:
