@@ -31,7 +31,7 @@ public:
 
   double getRotarySpeed();
 
-signals:
+Q_SIGNALS:
   void machineChanged(QString machine_name);
   void rotaryModeChange(bool is_rotary_mode);
   void panelShow(bool is_show);

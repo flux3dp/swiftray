@@ -39,39 +39,39 @@ void FontPanel::registerEvents() {
 
   connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont font) {
     font_.setFamily(font.family());
-    emit fontChanged(font);
+    Q_EMIT fontChanged(font);
   });
 
   connect(ui->fontSizeSpinBox, spin_int_event, [=](double value) {
     font_.setPointSize(value);
-    emit fontPointSizeChanged(value);
+    Q_EMIT fontPointSizeChanged(value);
   });
 
   connect(ui->letterSpacingSpinBox, spin_event, [=](double value) {
     font_.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, value);
-    emit fontLetterSpacingChanged(value);
+    Q_EMIT fontLetterSpacingChanged(value);
   });
 
   connect(ui->lineHeightSpinBox, spin_event, main_window_->canvas(), &Canvas::setLineHeight);
 
   connect(ui->lineHeightSpinBox, spin_event, [=](double value) {
     line_height_ = value;
-    emit lineHeightChanged(value);
+    Q_EMIT lineHeightChanged(value);
   });
 
   connect(ui->boldToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setBold(checked);
-    emit fontBoldChanged(checked);
+    Q_EMIT fontBoldChanged(checked);
   });
 
   connect(ui->italicToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setItalic(checked);
-    emit fontItalicChanged(checked);
+    Q_EMIT fontItalicChanged(checked);
   });
 
   connect(ui->underlineToolButton, &QToolButton::toggled, [=](bool checked) {
     font_.setUnderline(checked);
-    emit fontUnderlineChanged(checked);
+    Q_EMIT fontUnderlineChanged(checked);
   });
 
   connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {

@@ -23,7 +23,7 @@ public:
 
   ~LayerParamsPanel();
 
-public slots:
+public Q_SLOTS:
 
   void updateLayer(Layer *layer);
 

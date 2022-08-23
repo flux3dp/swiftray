@@ -11,11 +11,11 @@ Q_OBJECT
 public:
   static ImagePicker *g_currentImagePicker;
 
-public slots:
+public Q_SLOTS:
 
   void show(void);
 
-signals:
+Q_SIGNALS:
 
   void imageSelected(const QImage image);
 };

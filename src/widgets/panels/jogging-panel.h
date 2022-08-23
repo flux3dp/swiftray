@@ -23,7 +23,7 @@ public:
 
   ~JoggingPanel();
 
-signals:
+Q_SIGNALS:
   void panelShow(bool is_show);
   
   // Delegate action to other component
@@ -40,7 +40,7 @@ signals:
   void showCurrentPosition(bool show);
   void showUserOrigin(bool show);
   
-public slots:
+public Q_SLOTS:
   // Accepting signals from QML action
   void laser();
   void laserPulse();

@@ -52,7 +52,7 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
     }
     if(is_same) {
       document().setActiveLayer(target_layer);
-      emit canvas().layerChanged();
+      Q_EMIT canvas().layerChanged();
     }
   }
 

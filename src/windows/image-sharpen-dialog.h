@@ -27,7 +27,7 @@ public:
     void updateImageSharpen();
     QImage getSharpenedImage() { return sharpened_image_; };
 
-public slots:
+public Q_SLOTS:
     void onSharpnessChanged(int new_sharpness_val);
     void onRadiusChanged(int new_radius_val);
 
@@ -46,7 +46,7 @@ private:
     QImage FadeImage(const QImage &image);
     //QPainterPath contours_;
 
-    // used to prevent duplicate signals
+    // used to prevent duplicate Q_SIGNALS
     void setSharpnessSpinboxWithoutEmit(int sharpness);
     void setSharpnessSliderWithoutEmit(int sharpness);
     void setRadiusSpinboxWithoutEmit(int radius);

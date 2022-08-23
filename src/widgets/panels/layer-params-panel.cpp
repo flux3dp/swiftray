@@ -82,7 +82,7 @@ void LayerParamsPanel::registerEvents() {
       int index_to_recover = preset_previous_index_;
       if (preset_manager_->exec() == 1) {
         preset_manager_->save();
-        emit main_window_->presetSettingsChanged();
+        Q_EMIT main_window_->presetSettingsChanged();
         loadSettings();
         setToCustom();
         preset_previous_index_ = -1;
