@@ -73,10 +73,13 @@ macx{
     LIBS += -L"/usr/local/lib"
 
     # Mac M1
-    #_BOOST_PATH = "/opt/homebrew/opt/boost"
-    #LIBS += -L"/opt/homebrew/opt/boost/lib"
-    #LIBS += -L"/opt/homebrew/opt/libxml2/lib"
-    #LIBS += -L"/opt/homebrew/opt/opencv/lib"
+#    _BOOST_PATH = "/opt/homebrew/opt/boost"
+#    LIBS += -L"/opt/homebrew/opt/boost/lib"
+#    LIBS += -L"/opt/homebrew/opt/libxml2/lib"
+#    LIBS += -L"/opt/homebrew/opt/opencv/lib"
+#    LIBS += -L"/opt/homebrew/opt/glib/lib"
+#    LIBS += -L"/opt/homebrew/opt/poppler/lib"
+#    LIBS += -L"/opt/homebrew/opt/cairo/lib"
 
     # Mac Intel
     _BOOST_PATH = "/usr/local/opt/boost/"
@@ -135,18 +138,22 @@ macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
-    INCLUDEPATH += /usr/local/include/poppler/glib
-    INCLUDEPATH += /usr/local/include/glib-2.0
-    INCLUDEPATH += /usr/local/Cellar/glib/2.72.3/lib/glib-2.0/include
-    INCLUDEPATH += /usr/local/Cellar/cairo/1.16.0_5/include/cairo
     INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
     # Mac M1
-    #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
-    #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+#    INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
+#    INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+#    INCLUDEPATH += /opt/homebrew/include/poppler/glib
+#    INCLUDEPATH += /opt/homebrew/include/glib-2.0
+#    INCLUDEPATH += /opt/homebrew/Cellar/glib/2.72.3_1/lib/glib-2.0/include
+#    INCLUDEPATH += /opt/homebrew/Cellar/cairo/1.16.0_5/include/cairo
 
     # Mac Intel
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
+    INCLUDEPATH += /usr/local/include/poppler/glib
+    INCLUDEPATH += /usr/local/include/glib-2.0
+    INCLUDEPATH += /usr/local/Cellar/glib/2.72.3/lib/glib-2.0/include
+    INCLUDEPATH += /usr/local/Cellar/cairo/1.16.0_5/include/cairo
 }
 
 # Remove -Wall and -Wextra flag
