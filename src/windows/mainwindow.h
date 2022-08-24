@@ -26,6 +26,8 @@
 #include <windows/job-dashboard-dialog.h>
 #include <motion_controller_job/grbl-job.h>
 #include <windows/about-window.h>
+#include <sentry.h>
+#include <windows/privacy_window.h>
 
 namespace Ui {
   class MainWindow;
@@ -50,6 +52,8 @@ public:
   Canvas *canvas() const;
 
   MachineSettings::MachineSet currentMachine();
+
+  void setSentryHandle(sentry_options_t *options);
 
 signals:
 
@@ -140,6 +144,8 @@ private:
   double x_, y_, r_, w_, h_;
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
+  bool is_upload_enable_ = false;
+  sentry_options_t *options_ = nullptr;
   QString current_filename_;
 
   // Context menu of canvas
@@ -172,6 +178,7 @@ private:
   JoggingPanel *jogging_panel_;
   PreferencesWindow *preferences_window_;
   AboutWindow *about_window_;
+  PrivacyWindow *privacy_window_;
 
 #ifndef Q_OS_IOS
     QList<GrblJob *> jobs_;

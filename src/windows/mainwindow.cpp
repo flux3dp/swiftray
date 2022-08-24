@@ -81,6 +81,18 @@ void MainWindow::loadSettings() {
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
+
+  QSettings privacy_settings;
+  QVariant newstart_code = privacy_settings.value("window/newstart", 0);
+  if(!newstart_code.toInt()) {
+    privacy_window_->show();
+    privacy_window_->activateWindow();
+    privacy_window_->raise();
+    privacy_settings.setValue("window/newstart", 1);
+  }
+  QVariant upload_code = privacy_settings.value("window/upload", 0);
+  is_upload_enable_ = upload_code.toBool();
+  preferences_window_->setUpload(is_upload_enable_);
 }
 
 void MainWindow::loadCanvas() {
@@ -704,6 +716,7 @@ void MainWindow::loadWidgets() {
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
+  privacy_window_ = new PrivacyWindow(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
@@ -879,6 +892,33 @@ void MainWindow::registerEvents() {
   });
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
+  });
+  connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
+    is_upload_enable_ = enable_upload;
+    if(options_ != nullptr) {
+      if(is_upload_enable_) {
+        sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
+      }
+      else {
+        sentry_options_set_dsn(options_, NULL);
+      }
+    }
+    QSettings settings;
+    settings.setValue("window/upload", is_upload_enable_);
+  });
+  connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
+    is_upload_enable_ = enable_upload;
+    if(options_ != nullptr) {
+      if(is_upload_enable_) {
+        sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
+      }
+      else {
+        sentry_options_set_dsn(options_, NULL);
+      }
+    }
+    preferences_window_->setUpload(is_upload_enable_);
+    QSettings settings;
+    settings.setValue("window/upload", is_upload_enable_);
   });
   connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
     std::size_t found = machine_name.toStdString().find("Lazervida");
@@ -1076,6 +1116,10 @@ Canvas *MainWindow::canvas() const {
 
 MachineSettings::MachineSet MainWindow::currentMachine() {
   return doc_panel_->currentMachine();
+}
+
+void MainWindow::setSentryHandle(sentry_options_t *options) {
+  options_ = options;
 }
 
 bool isDarkMode() {

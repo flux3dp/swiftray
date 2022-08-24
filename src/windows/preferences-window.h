@@ -17,7 +17,11 @@ public:
 
   bool isHighSpeedMode();
 
+  bool isUploadEnable();
+
   void setSpeedMode(bool is_high_speed);
+
+  void setUpload(bool enable_upload);
 
 private:
   Ui::PreferencesWindow *ui;
@@ -26,12 +30,18 @@ private:
 
   void setSpeedOptimizationComboBox();
 
+  void setShareComboBox();
+
   void setTabWidget();
 
   bool is_high_speed_;
+
+  bool is_upload_enable_;
 
 signals:
   void speedModeChanged(bool is_high_speed);
 
   void fontSizeChanged(int font_size);
+
+  void privacyUpdate(bool enable_upload);
 };
