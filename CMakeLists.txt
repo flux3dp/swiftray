@@ -4,7 +4,7 @@ project(Swiftray VERSION 1.0.0)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_BUILD 0)
-set(VERSION_BETA. 6)
+set(VERSION_BETA  6)
 set(VERSION_SUFFIX "-beta.6")
 set(VER_PRODUCTVERSION_STR "1.0.0-beta.6")
 
