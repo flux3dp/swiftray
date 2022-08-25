@@ -4,7 +4,9 @@ project(Swiftray VERSION 1.0.0)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_BUILD 0)
+set(VERSION_BETA  7)
 set(VERSION_SUFFIX "-beta.7")
+set(VER_PRODUCTVERSION_STR "1.0.0-beta.7")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
@@ -142,7 +144,6 @@ elseif(APPLE)
     MACOSX_BUNDLE TRUE # Create macOS app bundle
     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_EXECUTABLE_NAME ${PROJECT_NAME}
-    MACOSX_BUNDLE_INFO_STRING "Laser engraving software developed by FLUX Inc."
     MACOSX_BUNDLE_ICON_FILE icon.icns
     MACOSX_BUNDLE_GUI_IDENTIFIER com.flux.Swiftray
     MACOSX_BUNDLE_LONG_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MINOR}${VERSION_SUFFIX}
@@ -157,8 +158,9 @@ endif()
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MAJOR=${VERSION_MAJOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MINOR=${VERSION_MINOR})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BUILD=${VERSION_BUILD})
+target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BETA=${VERSION_BETA})
 target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_SUFFIX=\"${VERSION_SUFFIX}\")
-
+target_compile_definitions(${PROJECT_NAME} PUBLIC VER_PRODUCTVERSION_STR=\"${VER_PRODUCTVERSION_STR}\\0\")
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
