@@ -36,31 +36,6 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
 
-  // Launch Crashpad with Sentry
-  sentry_options_t *options = sentry_options_new();
-  sentry_options_set_dsn(options, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
-  #ifdef Q_OS_MACOS
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
-  sentry_options_set_handler_path(options,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler").c_str());
-  #else
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
-  sentry_options_set_handler_path(options,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
-  #endif
-  //sentry_options_set_debug(options, 1); // More details for debug
-  sentry_options_set_release(options,
-      std::string("Swiftray@")
-      .append(std::to_string(VERSION_MAJOR))
-      .append(std::to_string(VERSION_MINOR))
-      .append(std::to_string(VERSION_BUILD))
-      .append(VERSION_SUFFIX)
-      .c_str()
-  );
-  sentry_init(options);
-  // Make sure everything flushes
-  auto sentryClose = qScopeGuard([] { sentry_close(); });
-
   // Test event
   //sentry_capture_event(sentry_value_new_message_event(
   //  SENTRY_LEVEL_INFO, // level
@@ -124,7 +99,7 @@ int main(int argc, char *argv[]) {
   
   // Load MainWindow
   MainWindow win;
-  win.setSentryHandle(options);
+  // win.setSentryHandle(options);
   win.show();
   return app.exec();
 }

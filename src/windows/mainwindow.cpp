@@ -93,6 +93,9 @@ void MainWindow::loadSettings() {
   QVariant upload_code = privacy_settings.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
   preferences_window_->setUpload(is_upload_enable_);
+  if(is_upload_enable_) {
+    startupSentry();
+  }
 }
 
 void MainWindow::loadCanvas() {
@@ -258,6 +261,34 @@ void MainWindow::actionStart() {
     // Terminated
     return;
   }
+}
+
+void MainWindow::startupSentry() {
+  // Launch Crashpad with Sentry
+  sentry_options_t *options_ = sentry_options_new();
+  sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
+  #ifdef Q_OS_MACOS
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
+  sentry_options_set_handler_path(options_,
+      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler").c_str());
+  #else
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
+  sentry_options_set_handler_path(options_,
+      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
+  #endif
+  //sentry_options_set_debug(options_, 1); // More details for debug
+  sentry_options_set_release(options_,
+      std::string("Swiftray@")
+      .append(std::to_string(VERSION_MAJOR))
+      .append(std::to_string(VERSION_MINOR))
+      .append(std::to_string(VERSION_BUILD))
+      .append(VERSION_SUFFIX)
+      .c_str()
+  );
+  sentry_init(options_);
+  // Make sure everything flushes
+  auto sentryClose = qScopeGuard([] { sentry_close(); });
+  qInfo() << "open sentry";
 }
 
 void MainWindow::newFile() {
@@ -895,26 +926,30 @@ void MainWindow::registerEvents() {
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
-    if(options_ != nullptr) {
-      if(is_upload_enable_) {
-        sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
-      }
-      else {
-        sentry_options_set_dsn(options_, NULL);
-      }
+    if(is_upload_enable_) {
+      startupSentry();
+    }
+    else {
+      qInfo() << "close sentry";
+      sentry_clear_modulecache();
+      sentry_clear_crashed_last_run();
+      sentry_close();
+      sentry_options_free(options_);
     }
     QSettings settings;
     settings.setValue("window/upload", is_upload_enable_);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
-    if(options_ != nullptr) {
-      if(is_upload_enable_) {
-        sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
-      }
-      else {
-        sentry_options_set_dsn(options_, NULL);
-      }
+    if(is_upload_enable_) {
+      startupSentry();
+    }
+    else {
+      qInfo() << "close sentry";
+      sentry_clear_modulecache();
+      sentry_clear_crashed_last_run();
+      sentry_close();
+      sentry_options_free(options_);
     }
     preferences_window_->setUpload(is_upload_enable_);
     QSettings settings;

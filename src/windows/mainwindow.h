@@ -193,6 +193,7 @@ private:
   void generateJob();
   bool handleUnsavedChange();
   void actionStart();
+  void startupSentry();
 };
 
 #endif // MAINWINDOW_H
