@@ -14,10 +14,12 @@ class PathGraphicsPreview: public QGraphicsView {
 public:
     PathGraphicsPreview(QGraphicsScene *scene = nullptr, QWidget *parent = nullptr);
     bool event(QEvent *e) override;
+    void wheelEvent(QWheelEvent *e) override;
 private:
 
     void gestureHandler(QGestureEvent *ge);
     void pinchGestureHandler(QPinchGesture *pg);
+    void keyHandler(QKeyEvent *ke);
 
     //qreal rotationAngle = 0;
     qreal scaleFactor = 1;
@@ -25,6 +27,7 @@ private:
     bool zooming_ = false;
     QPointF zoom_fixed_point_scene_; // the cursor location in scene when start zooming
     QPointF zoom_fixed_point_view_;  // initial zoom cursor location in view coord
+    bool is_holding_ctrl_  = false;
 };
 
 PathGraphicsPreview::PathGraphicsPreview(QGraphicsScene *scene, QWidget *parent)
@@ -50,7 +53,29 @@ bool PathGraphicsPreview::event(QEvent *e) {
   if (e->type() == QEvent::Gesture) {
     gestureHandler(static_cast<QGestureEvent*>(e));
   }
+  else if (e->type() == QEvent::KeyPress) {
+    keyHandler(static_cast<QKeyEvent*>(e));
+  }
+  else if (e->type() == QEvent::KeyRelease) {
+    keyHandler(static_cast<QKeyEvent*>(e));
+  }
   return QGraphicsView::event(e);
+}
+
+void PathGraphicsPreview::wheelEvent(QWheelEvent *e) {
+  if (is_holding_ctrl_) {
+    double new_scale = 1 + (double)e->angleDelta().y() / 8 / this->height();
+    if (this->scaleFactor * new_scale >= 1) {
+      this->scaleFactor *= new_scale;
+      this->scale(new_scale, new_scale);
+    }
+    else {
+      this->scale(1.0/this->scaleFactor, 1.0/this->scaleFactor);
+      this->scaleFactor = 1;
+    }
+    return;
+  }
+  return QGraphicsView::wheelEvent(e);
 }
 
 void PathGraphicsPreview::gestureHandler(QGestureEvent *gesture_event) {
@@ -92,6 +117,15 @@ void PathGraphicsPreview::pinchGestureHandler(QPinchGesture *pinch_gesture) {
   }
   if (pinch_gesture->state() == Qt::GestureFinished) {
     zooming_ = false;
+  }
+}
+
+void PathGraphicsPreview::keyHandler(QKeyEvent *ke) {
+  if (ke->modifiers() & Qt::ControlModifier) {
+    is_holding_ctrl_ = ke->modifiers() & Qt::ControlModifier;
+  }
+  else if(is_holding_ctrl_) {
+    is_holding_ctrl_ = ke->modifiers() & Qt::ControlModifier;
   }
 }
 
