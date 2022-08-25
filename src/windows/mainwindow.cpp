@@ -265,7 +265,7 @@ void MainWindow::actionStart() {
 
 void MainWindow::startupSentry() {
   // Launch Crashpad with Sentry
-  sentry_options_t *options_ = sentry_options_new();
+  options_ = sentry_options_new();
   sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
   #ifdef Q_OS_MACOS
   //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
@@ -276,7 +276,7 @@ void MainWindow::startupSentry() {
   sentry_options_set_handler_path(options_,
       QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
   #endif
-  //sentry_options_set_debug(options_, 1); // More details for debug
+  // sentry_options_set_debug(options_, 1); // More details for debug
   sentry_options_set_release(options_,
       std::string("Swiftray@")
       .append(std::to_string(VERSION_MAJOR))
@@ -931,8 +931,6 @@ void MainWindow::registerEvents() {
     }
     else {
       qInfo() << "close sentry";
-      sentry_clear_modulecache();
-      sentry_clear_crashed_last_run();
       sentry_close();
       sentry_options_free(options_);
     }
@@ -946,8 +944,6 @@ void MainWindow::registerEvents() {
     }
     else {
       qInfo() << "close sentry";
-      sentry_clear_modulecache();
-      sentry_clear_crashed_last_run();
       sentry_close();
       sentry_options_free(options_);
     }
@@ -1151,10 +1147,6 @@ Canvas *MainWindow::canvas() const {
 
 MachineSettings::MachineSet MainWindow::currentMachine() {
   return doc_panel_->currentMachine();
-}
-
-void MainWindow::setSentryHandle(sentry_options_t *options) {
-  options_ = options;
 }
 
 bool isDarkMode() {

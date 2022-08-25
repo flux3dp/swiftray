@@ -53,8 +53,6 @@ public:
 
   MachineSettings::MachineSet currentMachine();
 
-  void setSentryHandle(sentry_options_t *options);
-
 signals:
 
   void presetSettingsChanged();
@@ -145,7 +143,7 @@ private:
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
   bool is_upload_enable_ = false;
-  sentry_options_t *options_ = nullptr;
+  sentry_options_t *options_;
   QString current_filename_;
 
   // Context menu of canvas

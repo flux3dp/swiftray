@@ -99,7 +99,6 @@ int main(int argc, char *argv[]) {
   
   // Load MainWindow
   MainWindow win;
-  // win.setSentryHandle(options);
   win.show();
   return app.exec();
 }
