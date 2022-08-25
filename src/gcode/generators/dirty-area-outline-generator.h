@@ -98,6 +98,7 @@ public:
 
     str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
 
+    str_stream_ << "G90" << std::endl;
     str_stream_ << "G1F6000" << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
