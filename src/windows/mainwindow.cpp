@@ -82,17 +82,9 @@ void MainWindow::loadSettings() {
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
 
-  QSettings privacy_settings;
-  QVariant newstart_code = privacy_settings.value("window/newstart", 0);
-  if(!newstart_code.toInt()) {
-    privacy_window_->show();
-    privacy_window_->activateWindow();
-    privacy_window_->raise();
-    privacy_settings.setValue("window/newstart", 1);
-  }
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
-  QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/sentry-native";
+  QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
   sentry_options_set_database_path(options_, database_path.toStdString().c_str());
   sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
   #ifdef Q_OS_MACOS
@@ -115,6 +107,7 @@ void MainWindow::loadSettings() {
   );
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
+  QSettings privacy_settings;
   QVariant upload_code = privacy_settings.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
   if(is_upload_enable_) {
@@ -896,6 +889,16 @@ void MainWindow::registerEvents() {
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
     emit machineSettingsChanged();
+  });
+  connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
+    QSettings privacy_settings;
+    QVariant newstart_code = privacy_settings.value("window/newstart", 0);
+    if(!newstart_code.toInt()) {
+      privacy_window_->show();
+      privacy_window_->activateWindow();
+      privacy_window_->raise();
+      privacy_settings.setValue("window/newstart", 1);
+    }
   });
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
   connect(ui->actionPreview, &QAction::triggered, this, &MainWindow::genPreviewWindow);
