@@ -14,6 +14,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   setTabWidget();
   setLanguageComboBox();
   setSpeedOptimizationComboBox();
+  setShareComboBox();
   QFont current_font = QApplication::font();
   if(current_font.pixelSize() > 0) {
     ui->horizontalSliderFontSize->setValue(current_font.pixelSize());
@@ -36,11 +37,13 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
       msgbox.exec();
     }
     emit speedModeChanged(ui->comboBoxSpeedOptimization->currentIndex());
+    Q_EMIT privacyUpdate(ui->comboBoxShare->currentIndex());
   });
   connect(ui->horizontalSliderFontSize, &QAbstractSlider::valueChanged, [=](int value){
     ui->labelFontSize->setText(QString::number(value));
     QFont current_font = QApplication::font();
     current_font.setPixelSize(value);
+    ui->labelFontSize->setFont(current_font);
     QApplication::setFont(current_font);
   });
 }
@@ -50,8 +53,17 @@ void PreferencesWindow::setSpeedMode(bool is_high_speed) {
   ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
 }
 
+void PreferencesWindow::setUpload(bool enable_upload) {
+  is_upload_enable_ = enable_upload;
+  ui->comboBoxShare->setCurrentIndex(is_upload_enable_);
+}
+
 bool PreferencesWindow::isHighSpeedMode() {
   return ui->comboBoxSpeedOptimization->currentIndex();
+}
+
+bool PreferencesWindow::isUploadEnable() {
+  return ui->comboBoxShare->currentIndex();
 }
 
 void PreferencesWindow::setLanguageComboBox() {
@@ -67,6 +79,12 @@ void PreferencesWindow::setSpeedOptimizationComboBox() {
   ui->comboBoxSpeedOptimization->addItem("Off");
   ui->comboBoxSpeedOptimization->addItem("On");
   ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
+}
+
+void PreferencesWindow::setShareComboBox() {
+  ui->comboBoxShare->addItem("Off");
+  ui->comboBoxShare->addItem("On");
+  ui->comboBoxShare->setCurrentIndex(is_upload_enable_);
 }
 
 void PreferencesWindow::setTabWidget() {

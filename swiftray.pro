@@ -308,7 +308,8 @@ FORMS += \
     src/widgets/panels/image-panel.ui \
     src/widgets/components/color-picker-button.ui \
     src/windows/image-crop-dialog.ui \
-    src/windows/image-sharpen-dialog.ui
+    src/windows/image-sharpen-dialog.ui \
+    src/windows/privacy_window.ui
 ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {
