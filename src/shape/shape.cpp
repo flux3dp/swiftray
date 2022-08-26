@@ -92,6 +92,12 @@ bool Shape::hitTest(QRectF) const {
   return false;
 }
 
+/**
+ * @brief The bounding rect of the shape on canvas
+ *        NOTE: translation and rotation have already been considered
+ * 
+ * @return QRectF 
+ */
 QRectF Shape::boundingRect() const {
   if (bbox_need_recalc_) {
     calcBoundingBox();
