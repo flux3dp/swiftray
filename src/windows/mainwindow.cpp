@@ -115,7 +115,7 @@ void MainWindow::loadSettings() {
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
   // Make sure everything flushes
-  // auto sentryClose = qScopeGuard([] { sentry_close(); });
+  auto sentryClose = qScopeGuard([] { sentry_close(); });
   QVariant upload_code = privacy_settings.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
   if(is_upload_enable_) {
