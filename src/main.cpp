@@ -90,6 +90,9 @@ int main(int argc, char *argv[]) {
       break;
   }
 
+  // Make sure everything flushes
+  auto sentryClose = qScopeGuard([] { sentry_close(); });
+
   QTranslator translator;
   translator.load(":/i18n/" + locale);
   app.installTranslator(&translator);

@@ -92,7 +92,8 @@ void MainWindow::loadSettings() {
   }
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
-  sentry_options_set_database_path(options_, QCoreApplication::applicationDirPath().toStdString().c_str());
+  QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation) + "/sentry-native";
+  sentry_options_set_database_path(options_, database_path.toStdString().c_str());
   sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
   #ifdef Q_OS_MACOS
   //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
@@ -114,8 +115,6 @@ void MainWindow::loadSettings() {
   );
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
-  // Make sure everything flushes
-  auto sentryClose = qScopeGuard([] { sentry_close(); });
   QVariant upload_code = privacy_settings.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
   if(is_upload_enable_) {
