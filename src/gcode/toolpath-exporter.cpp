@@ -54,20 +54,24 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   }
   int processed_layer_cnt = 0;
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
-    if (canceled) {
-      return false;
-    }
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
       for (int i = 0; i < (*layer_rit)->repeat(); i++) {
         convertLayer((*layer_rit));
       }
     }
+    if (canceled) {
+      break;
+    }
     processed_layer_cnt++;
     if (dialog != nullptr) {
       dialog->setValue(100 * processed_layer_cnt / layers.count());
       QCoreApplication::processEvents();
     }
+  }
+  
+  if (canceled) {
+    return false;
   }
 
   // Post cmds
@@ -144,12 +148,31 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
     layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
   }
   layer_painter_->restore();
-  bitmap_dirty_area_ = bitmap_dirty_area_.united(global_transform_.mapRect(bmp->boundingRect()));
+  QRectF bmp_bounding_rect = global_transform_.mapRect(bmp->boundingRect());
+  bitmap_dirty_area_ = bitmap_dirty_area_.united(bmp_bounding_rect);
+  
+  // Boundary check
+  if (exceed_boundary_ == false && 
+    (bmp_bounding_rect.top() < 0 || 
+    bmp_bounding_rect.bottom() > machine_work_area_size_.height() ||
+    bmp_bounding_rect.left() < 0 || 
+    bmp_bounding_rect.right() > machine_work_area_size_.width())) {
+    exceed_boundary_ = true;
+  }
 }
 
 void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());
+
+  // Boundary check
+  if (exceed_boundary_ == false && 
+    (transformed_path.boundingRect().top() < 0 || 
+    transformed_path.boundingRect().bottom() > machine_work_area_size_.height() ||
+    transformed_path.boundingRect().left() < 0 || 
+    transformed_path.boundingRect().right() > machine_work_area_size_.width())) {
+    exceed_boundary_ = true;
+  }
 
   // Fill shape
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||

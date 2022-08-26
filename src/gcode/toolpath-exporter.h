@@ -31,6 +31,8 @@ public:
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
 
+  bool isExceedingBoundary() { return exceed_boundary_; }
+
   enum class ScanDirectionMode {
       kBidirectionMode,
       kUnidirectionMode
@@ -89,5 +91,6 @@ private:
   QPointF current_pos_; // in unit of mm
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
-  bool is_high_speed_;
+  bool is_high_speed_ = false;
+  bool exceed_boundary_ = false; // Whether source objects exceeding the work area
 };
