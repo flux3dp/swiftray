@@ -90,12 +90,38 @@ void MainWindow::loadSettings() {
     privacy_window_->raise();
     privacy_settings.setValue("window/newstart", 1);
   }
-  QVariant upload_code = privacy_settings.value("window/upload", 0);
-  is_upload_enable_ = upload_code.toBool();
+  // Launch Crashpad with Sentry
+  options_ = sentry_options_new();
+  sentry_options_set_database_path(options_, QCoreApplication::applicationDirPath().toStdString().c_str());
+  sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
+  #ifdef Q_OS_MACOS
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
+  sentry_options_set_handler_path(options_,
+      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler").c_str());
+  #else
+  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
+  sentry_options_set_handler_path(options_,
+      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
+  #endif
+  // sentry_options_set_debug(options_, 1); // More details for debug
+  sentry_options_set_release(options_,
+      std::string("Swiftray@")
+      .append(std::to_string(VERSION_MAJOR))
+      .append(std::to_string(VERSION_MINOR))
+      .append(std::to_string(VERSION_BUILD))
+      .append(VERSION_SUFFIX)
+      .c_str()
+  );
+  sentry_options_set_require_user_consent(options_, true);
+  sentry_init(options_);
+  // Make sure everything flushes
+  // auto sentryClose = qScopeGuard([] { sentry_close(); });
+  if(sentry_user_consent_get() == -1) {
+    is_upload_enable_ = false;
+  } else {
+    is_upload_enable_ = sentry_user_consent_get();
+  } 
   preferences_window_->setUpload(is_upload_enable_);
-  if(is_upload_enable_) {
-    startupSentry();
-  }
 }
 
 void MainWindow::loadCanvas() {
@@ -261,34 +287,6 @@ void MainWindow::actionStart() {
     // Terminated
     return;
   }
-}
-
-void MainWindow::startupSentry() {
-  // Launch Crashpad with Sentry
-  options_ = sentry_options_new();
-  sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
-  #ifdef Q_OS_MACOS
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
-  sentry_options_set_handler_path(options_,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler").c_str());
-  #else
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
-  sentry_options_set_handler_path(options_,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
-  #endif
-  // sentry_options_set_debug(options_, 1); // More details for debug
-  sentry_options_set_release(options_,
-      std::string("Swiftray@")
-      .append(std::to_string(VERSION_MAJOR))
-      .append(std::to_string(VERSION_MINOR))
-      .append(std::to_string(VERSION_BUILD))
-      .append(VERSION_SUFFIX)
-      .c_str()
-  );
-  sentry_init(options_);
-  // Make sure everything flushes
-  auto sentryClose = qScopeGuard([] { sentry_close(); });
-  qInfo() << "open sentry";
 }
 
 void MainWindow::newFile() {
@@ -927,12 +925,10 @@ void MainWindow::registerEvents() {
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
     if(is_upload_enable_) {
-      startupSentry();
+      sentry_user_consent_give();
     }
     else {
-      qInfo() << "close sentry";
-      sentry_close();
-      sentry_options_free(options_);
+      sentry_user_consent_revoke();
     }
     QSettings settings;
     settings.setValue("window/upload", is_upload_enable_);
@@ -940,12 +936,10 @@ void MainWindow::registerEvents() {
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
     if(is_upload_enable_) {
-      startupSentry();
+      sentry_user_consent_give();
     }
     else {
-      qInfo() << "close sentry";
-      sentry_close();
-      sentry_options_free(options_);
+      sentry_user_consent_revoke();
     }
     preferences_window_->setUpload(is_upload_enable_);
     QSettings settings;
