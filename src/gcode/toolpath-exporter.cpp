@@ -151,6 +151,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());
 
+  // Fill shape
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
@@ -162,6 +163,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     layer_painter_->setBrush(Qt::NoBrush);
     bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
   }
+  // Line shape
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Line ||
       current_layer_->type() == Layer::Type::FillLine) {
@@ -190,13 +192,18 @@ void ToolpathExporter::sortPolygons() {
   return;
 }
 
+/**
+ * @brief Export the layer_polygons_ and layer_bitmap_ converted from objects on canvas 
+ *        to generator
+ * 
+ */
 void ToolpathExporter::outputLayerGcode() {
   outputLayerBitmapGcode();
   outputLayerPathGcode();
 }
 
 /**
- * @brief Gcode for non-filled geometry
+ * @brief Export layer_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerPathGcode() {
 
@@ -244,7 +251,7 @@ void ToolpathExporter::outputLayerPathGcode() {
 }
 
 /**
- * @brief Gcode for filled geometry and images
+ * @brief Export layer_bitmap_ for filled geometry and images
  */
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;

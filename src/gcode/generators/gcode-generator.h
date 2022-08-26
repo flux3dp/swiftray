@@ -62,7 +62,19 @@ public:
         break;
     }
 
-    // 2. separate relative mode & absolute mode
+    // 2 Limit x,y position inside the work area
+    if (x > machine_width_) {
+      x = machine_width_;
+    } else if (x < 0) {
+      x = 0;
+    }
+    if (y > machine_height_) {
+      y = machine_height_;
+    } else if (y < 0) {
+      y = 0;
+    }
+
+    // 3. Separate relative mode & absolute mode
     if (distance_modal_ == GCodeDistanceModal::kG91) { // G91: relative distance
       if (x != x_ || y != y_) {
         if ( motion_modal_ != GCodeMotionModal::kG01) {

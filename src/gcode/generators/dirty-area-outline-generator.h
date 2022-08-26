@@ -44,8 +44,20 @@ public:
         break;
     }
 
-    // 2. Update boundary
-    if (x_min_ == 0 && x_max_ == 0) {
+    // 2 Limit x,y position inside the work area
+    if (x > machine_width_) {
+      x = machine_width_;
+    } else if (x < 0) {
+      x = 0;
+    }
+    if (y > machine_height_) {
+      y = machine_height_;
+    } else if (y < 0) {
+      y = 0;
+    }
+
+    // 3. Update boundary
+    if (x_min_ == -1 && x_max_ == -1) {
       x_min_ = x;
       x_max_ = x;
     } else if (x < x_min_) {
@@ -54,7 +66,7 @@ public:
       x_max_ = x;
     }
 
-    if (y_min_ == 0 && y_max_ == 0) {
+    if (y_min_ == -1 && y_max_ == -1) {
       y_min_ = y;
       y_max_ = y;
     } else if (y < y_min_) {
@@ -116,9 +128,9 @@ public:
 private:
     int machine_width_;
     int machine_height_;
-    qreal x_min_ = 0;
-    qreal x_max_ = 0;
-    qreal y_min_ = 0;
-    qreal y_max_ = 0;
+    qreal x_min_ = -1;
+    qreal x_max_ = -1;
+    qreal y_min_ = -1;
+    qreal y_max_ = -1;
     MachineSettings::MachineSet::OriginType machine_origin_;
 };
