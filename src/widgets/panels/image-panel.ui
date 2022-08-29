@@ -111,7 +111,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../../qml.qrc">
-            <normaloff>:/images/icon-crop.png</normaloff>:/images/icon-crop.png</iconset>
+            <normaloff>:/resources/images/icon-crop.png</normaloff>:/resources/images/icon-crop.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -134,7 +134,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../../qml.qrc">
-            <normaloff>:/images/icon-invert.png</normaloff>:/images/icon-invert.png</iconset>
+            <normaloff>:/resources/images/icon-invert.png</normaloff>:/resources/images/icon-invert.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -154,7 +154,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../../qml.qrc">
-            <normaloff>:/images/icon-sharpen.png</normaloff>:/images/icon-sharpen.png</iconset>
+            <normaloff>:/resources/images/icon-sharpen.png</normaloff>:/resources/images/icon-sharpen.png</iconset>
           </property>
           <property name="iconSize">
            <size>
@@ -177,7 +177,7 @@
           </property>
           <property name="icon">
            <iconset resource="../../../qml.qrc">
-            <normaloff>:/images/icon-trace.png</normaloff>:/images/icon-trace.png</iconset>
+            <normaloff>:/resources/images/icon-trace.png</normaloff>:/resources/images/icon-trace.png</iconset>
           </property>
           <property name="iconSize">
            <size>

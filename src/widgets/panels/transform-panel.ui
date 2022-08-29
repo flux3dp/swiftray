@@ -292,8 +292,8 @@
        </property>
        <property name="icon">
         <iconset resource="../../../qml.qrc">
-         <normaloff>:/images/icon-unlock.png</normaloff>
-         <normalon>:/images/icon-lock.png</normalon>:/images/icon-unlock.png</iconset>
+         <normaloff>:/resources/images/icon-unlock.png</normaloff>
+         <normalon>:/resources/images/icon-lock.png</normalon>:/resources/images/icon-unlock.png</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>

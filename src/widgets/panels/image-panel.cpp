@@ -90,8 +90,8 @@ void ImagePanel::registerEvents() {
 }
 
 void ImagePanel::setLayout() {
-  ui->toolButtonCrop->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-crop.png" : ":/images/icon-crop.png"));
-  ui->toolButtonInvert->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-invert.png" : ":/images/icon-invert.png"));
-  ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-sharpen.png" : ":/images/icon-sharpen.png"));
-  ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-trace.png" : ":/images/icon-trace.png"));
+  ui->toolButtonCrop->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
+  ui->toolButtonInvert->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
+  ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
+  ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
 }

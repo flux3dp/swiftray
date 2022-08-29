@@ -59,7 +59,7 @@
       </property>
       <property name="icon">
        <iconset resource="../../qml.qrc">
-        <normaloff>:/images/beamo.png</normaloff>:/images/beamo.png</iconset>
+        <normaloff>:/resources/images/beamo.png</normaloff>:/resources/images/beamo.png</iconset>
       </property>
       <property name="flags">
        <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -71,7 +71,7 @@
       </property>
       <property name="icon">
        <iconset resource="../../qml.qrc">
-        <normaloff>:/images/beambox.png</normaloff>:/images/beambox.png</iconset>
+        <normaloff>:/resources/images/beambox.png</normaloff>:/resources/images/beambox.png</iconset>
       </property>
       <property name="flags">
        <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -83,7 +83,7 @@
       </property>
       <property name="icon">
        <iconset resource="../../qml.qrc">
-        <normaloff>:/images/beambox.png</normaloff>:/images/beambox.png</iconset>
+        <normaloff>:/resources/images/beambox.png</normaloff>:/resources/images/beambox.png</iconset>
       </property>
       <property name="flags">
        <set>ItemIsSelectable|ItemIsEnabled</set>

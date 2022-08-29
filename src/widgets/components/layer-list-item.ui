@@ -202,8 +202,8 @@
         </property>
         <property name="icon">
          <iconset resource="../../../qml.qrc">
-          <normaloff>:/images/icon-eyeopen.png</normaloff>
-          <normalon>:/images/icon-eyeclose.png</normalon>:/images/icon-eyeopen.png</iconset>
+          <normaloff>:/resources/images/icon-eyeopen.png</normaloff>
+          <normalon>:/resources/images/icon-eyeclose.png</normalon>:/resources/images/icon-eyeopen.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -232,7 +232,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../qml.qrc">
-          <normaloff>:/images/icon-layerlock.png</normaloff>:/images/icon-layerlock.png</iconset>
+          <normaloff>:/resources/images/icon-layerlock.png</normaloff>:/resources/images/icon-layerlock.png</iconset>
         </property>
         <property name="iconSize">
          <size>

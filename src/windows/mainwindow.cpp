@@ -177,8 +177,8 @@ void MainWindow::loadCanvas() {
 
 void MainWindow::loadStyles() {
   QFile file(isDarkMode() ?
-             ":/styles/swiftray-dark.qss" :
-             ":/styles/swiftray-light.qss");
+             ":/resources/styles/swiftray-dark.qss" :
+             ":/resources/styles/swiftray-light.qss");
   file.open(QFile::ReadOnly);
   QString styleSheet = QLatin1String(file.readAll());
   setStyleSheet(styleSheet);
@@ -199,11 +199,11 @@ void MainWindow::loadStyles() {
     for (QAction *action : toolbar->actions()) {
       auto name = action->objectName().mid(6).toLower();
       action->setIcon(QIcon(
-           (isDarkMode() ? ":/images/dark/icon-" : ":/images/icon-") + name
+           (isDarkMode() ? ":/resources/images/dark/icon-" : ":/resources/images/icon-") + name
       ));
     }
   }
-  ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/images/dark/icon-start.png" : ":/images/icon-start.png")));
+  ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png")));
 }
 
 /**
@@ -916,10 +916,10 @@ void MainWindow::registerEvents() {
   connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
   connect(gcode_player_, &GCodePlayer::jobStatusReport, this, &MainWindow::setJobStatus);
   connect(&serial_port, &SerialPort::connected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-link.png" : ":/images/icon-link.png"));
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
   connect(&serial_port, &SerialPort::disconnected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
@@ -1193,7 +1193,7 @@ void MainWindow::setConnectionToolBar() {
   portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
   ui->toolBarConnection->insertWidget(ui->actionConnect, portComboBox_);
   ui->toolBarConnection->insertWidget(ui->actionConnect, baudComboBox_);
-  ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlink.png" : ":/images/icon-unlink.png"));
+  ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   QTimer *timer = new QTimer(this);
   QList<QSerialPortInfo> portList;
   baudComboBox_->addItem("9600");
@@ -1267,9 +1267,9 @@ void MainWindow::setToolbarFont() {
         border: none \
     } \
   ");
-  boldToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-bold.png" : ":/images/icon-bold.png"));
-  italicToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-I.png" : ":/images/icon-I.png"));
-  underlineToolButton->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-U.png" : ":/images/icon-U.png"));
+  boldToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-Bold.png" : ":/resources/images/icon-Bold.png"));
+  italicToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-I.png" : ":/resources/images/icon-I.png"));
+  underlineToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-U.png" : ":/resources/images/icon-U.png"));
   boldToolButton->setCheckable(true);
   italicToolButton->setCheckable(true);
   underlineToolButton->setCheckable(true);
@@ -1459,7 +1459,7 @@ void MainWindow::setToolbarTransform() {
       } \
   ");
   ui->toolBarTransform->setIconSize(QSize(16, 16));
-  buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+  buttonLock->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
   buttonLock->setCheckable(true);
   labelX->setText("X");
   labelY->setText("Y");
@@ -1561,9 +1561,9 @@ void MainWindow::setToolbarTransform() {
     buttonLock->setChecked(scale_locked);
 
     if (scale_locked) {
-      buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-lock.png" : ":/images/icon-lock.png"));
+      buttonLock->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-lock.png" : ":/resources/images/icon-lock.png"));
     } else {
-      buttonLock->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+      buttonLock->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
     }
   });
 
@@ -1664,10 +1664,10 @@ void MainWindow::setScaleBlock() {
   plusBtn_ = new QToolButton(ui->quickWidget);
   scale_block_->setGeometry(ui->quickWidget->geometry().left() + 60, this->size().height() - 150, 50, 30);
   scale_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  minusBtn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-minus.png" : ":/images/icon-minus.png"));
+  minusBtn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-minus.png" : ":/resources/images/icon-minus.png"));
   minusBtn_->setGeometry(ui->quickWidget->geometry().left() + 30, this->size().height() - 150, 40, 30);
   minusBtn_->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
-  plusBtn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
+  plusBtn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-plus.png" : ":/resources/images/icon-plus.png"));
   plusBtn_->setGeometry(ui->quickWidget->geometry().left() + 100, this->size().height() - 150, 40, 30);
   plusBtn_->setStyleSheet("QToolButton { border: none; } QToolButton::hover { border: none; background-color: transparent }");
 

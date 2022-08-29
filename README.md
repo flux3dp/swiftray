@@ -1,7 +1,7 @@
 <p align="center">
   <img
     alt="swiftray library logo"
-    src="images/icon.png"
+    src="resources/images/icon.png"
     height="300"
     style="margin-top: 20px; margin-bottom: 20px;"
   />
