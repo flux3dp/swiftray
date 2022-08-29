@@ -119,9 +119,9 @@ void TransformPanel::setScaleLock(bool scaleLock) {
   ui->lockBtn->setChecked(scaleLock);
 
   if (scaleLock) {
-    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-lock.png" : ":/images/icon-lock.png"));
+    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-lock.png" : ":/resources/images/icon-lock.png"));
   } else {
-    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+    ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
   }
 
   emit scaleLockToggled(scale_locked_);
@@ -133,5 +133,5 @@ void TransformPanel::updateControl() {
 }
 
 void TransformPanel::setLayout() {
-  ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-unlock.png" : ":/images/icon-unlock.png"));
+  ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
 }

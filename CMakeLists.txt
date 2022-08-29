@@ -124,7 +124,7 @@ elseif(APPLE)
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
     )
   set(APP_RESOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/images/icon.icns
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
   )
   set(APP_ADDITIONAL_EXEC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler

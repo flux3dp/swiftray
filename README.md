@@ -1,7 +1,7 @@
 <p align="center">
   <img
     alt="swiftray library logo"
-    src="images/icon.png"
+    src="resources/images/icon.png"
     height="300"
     style="margin-top: 20px; margin-bottom: 20px;"
   />
@@ -57,7 +57,7 @@ cmake -B build -S . \
 cmake --build build --config RelWithDebInfo --parallel
 cmake --install build --prefix install
 ```
-NOTE: For Windows MSVC, you need to resolve the source code encoding issue of crashpad first
+NOTE: For Windows MSVC(2019), you need to resolve the source code encoding issue of crashpad first
 
 See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
 

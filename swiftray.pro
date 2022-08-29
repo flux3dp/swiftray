@@ -30,8 +30,8 @@ win32-msvc {
 }
 
 QMAKE_INFO_PLIST = Info.plist
-ICON=images/icon.icns
-RC_ICONS = images/icon.ico
+ICON=resources/images/icon.icns
+RC_ICONS = resources/images/icon.ico
 CONFIG += c++17
 
 win32 {

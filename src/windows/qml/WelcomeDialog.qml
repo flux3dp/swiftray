@@ -46,7 +46,7 @@ Rectangle {
                     id: image
                     width: 200
                     height: 200
-                    source: "../../../images/icon.png"
+                    source: "../../../resources/images/icon.png"
                     anchors.horizontalCenter: parent.horizontalCenter
                     fillMode: Image.PreserveAspectFit
                 }

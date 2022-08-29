@@ -84,7 +84,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="../../qml.qrc">:/images/dark/icon-about.png</pixmap>
+      <pixmap resource="../../qml.qrc">:/resources/images/dark/icon-about.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
