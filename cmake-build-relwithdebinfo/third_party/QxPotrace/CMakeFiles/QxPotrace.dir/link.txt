@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libQxPotrace.a CMakeFiles/QxPotrace.dir/QxPotrace_autogen/mocs_compilation.cpp.o CMakeFiles/QxPotrace.dir/src/qxpotrace.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libQxPotrace.a

@@ -1,6 +1,0 @@
-# Hashes of file build rules.
-4f4ef93d26d6252fb062fa8590480bce CMakeFiles/Swiftray_autogen
-b01bfaa250b6071e2308a52ede0d9f56 qrc_qml.cpp
-26e9e6ec888e7570c4dcd50f8a246d74 third_party/QxPotrace/CMakeFiles/QxPotrace_autogen
-9ffe050b6e25b0394ddd3ed11334b9c5 third_party/clipper/CMakeFiles/clipper_autogen
-31aecd02186474ff2e136b7f6681aed6 third_party/libdxfrw/CMakeFiles/libdxfrw_autogen
