@@ -21,7 +21,7 @@ AboutWindow::AboutWindow(QWidget *parent) :
   qInfo() << "App version: " << ver_str;
   ui->labelVersion->setText(ver_str);
 
-  ui->label_4->setPixmap(QPixmap(isDarkMode() ? ":/images/dark/icon-about.png" : ":/images/icon-about.png"));
+  ui->label_4->setPixmap(QPixmap(isDarkMode() ? ":/resources/images/dark/icon-about.png" : ":/resources/images/icon-about.png"));
 }
 
 AboutWindow::~AboutWindow() {

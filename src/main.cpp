@@ -49,13 +49,13 @@ int main(int argc, char *argv[]) {
   }
 
   // Set app icon
-  app.setWindowIcon(QIcon(":/images/icon.png"));
+  app.setWindowIcon(QIcon(":/resources/images/icon.png"));
 
   QSettings settings;
   // load Open Sans font(addApplicationFont fail in Mac)
   QVariant font_size = settings.value("window/font_size", 0);
   #ifdef Q_OS_WIN
-  int id = QFontDatabase::addApplicationFont(":/fonts/open-sans-latin.ttf");
+  int id = QFontDatabase::addApplicationFont(":/resources/fonts/open-sans-latin.ttf");
   if(id != -1) {
     QFont font("Open Sans");
     font.setStyleHint(QFont::Monospace);

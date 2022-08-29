@@ -41,7 +41,7 @@ Item {
                 id: checkMark
                 width: 200
                 height: 200
-                source: "../../../images/checkmark.gif"
+                source: "../../../resources/images/checkmark.gif"
                 speed: 1.3
                 anchors.horizontalCenter: parent.horizontalCenter
                 fillMode: Image.PreserveAspectFit
