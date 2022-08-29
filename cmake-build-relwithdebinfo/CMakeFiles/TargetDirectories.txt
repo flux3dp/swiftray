@@ -1,0 +1,16 @@
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/CMakeFiles/rebuild_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/CMakeFiles/edit_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/CMakeFiles/Swiftray.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/CMakeFiles/Swiftray_autogen.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/CMakeFiles/rebuild_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/CMakeFiles/edit_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/CMakeFiles/clipper.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/CMakeFiles/clipper_autogen.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/CMakeFiles/rebuild_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/CMakeFiles/edit_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/CMakeFiles/QxPotrace.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/CMakeFiles/QxPotrace_autogen.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/CMakeFiles/rebuild_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/CMakeFiles/edit_cache.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/CMakeFiles/libdxfrw.dir
+/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/CMakeFiles/libdxfrw_autogen.dir

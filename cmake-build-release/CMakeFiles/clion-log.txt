@@ -1,0 +1,8 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=~/Qt5/5.15.2/clang_64 -G "CodeBlocks - Unix Makefiles" /Users/jasonshiao/FLUX/swiftray
+-- Found Potrace: /usr/local/lib/libpotrace.a
+-- Found Boost
+-- Found LibXml2
+-- Found Potrace: /usr/local/lib/libpotrace.a
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/jasonshiao/FLUX/swiftray/cmake-build-release

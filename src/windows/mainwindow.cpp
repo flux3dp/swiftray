@@ -731,7 +731,7 @@ void MainWindow::loadWidgets() {
   // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
-  gcode_player_ = new GCodePlayer(ui->serialPortDock);
+  gcode_player_ = new GCodePanel(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
@@ -910,14 +910,14 @@ void MainWindow::registerEvents() {
     }
   });
 
-  connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
-  connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
-  connect(gcode_player_, &GCodePlayer::generateGcode, this, &MainWindow::generateGcode);
-  connect(gcode_player_, &GCodePlayer::startBtnClicked, this, &MainWindow::onStartNewJob);
-  connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
-  connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
-  connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(gcode_player_, &GCodePlayer::jobStatusReport, this, &MainWindow::setJobStatus);
+  connect(gcode_player_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
+  connect(gcode_player_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
+  connect(gcode_player_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
+  connect(gcode_player_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(gcode_player_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(gcode_player_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(gcode_player_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_player_, &GCodePanel::jobStatusReport, this, &MainWindow::setJobStatus);
   connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
@@ -1590,7 +1590,7 @@ void MainWindow::setToolbarTransform() {
   connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
     ui->actionLayerPanel->setChecked(is_show);
   });
-  connect(gcode_player_, &GCodePlayer::panelShow, [=](bool is_show) {
+  connect(gcode_player_, &GCodePanel::panelShow, [=](bool is_show) {
     ui->actionGCodeViewerPanel->setChecked(is_show);
   });
   connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {

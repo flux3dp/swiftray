@@ -12,17 +12,17 @@
 #endif
 
 namespace Ui {
-  class GCodePlayer;
+  class GCodePanel;
 }
 
-class GCodePlayer : public QFrame, BaseContainer {
+class GCodePanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
 
-  explicit GCodePlayer(QWidget *parent = nullptr);
+  explicit GCodePanel(QWidget *parent = nullptr);
 
-  ~GCodePlayer();
+  ~GCodePanel();
 
   void setGCode(const QString &gcodes);
   QString getGCode();
@@ -47,7 +47,7 @@ private:
 
   void checkGenerateGcode();
 
-  Ui::GCodePlayer *ui;
+  Ui::GCodePanel *ui;
 
   BaseJob::Status status_;
   BaseJob *job_;

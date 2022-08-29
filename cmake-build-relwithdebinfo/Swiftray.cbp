@@ -1,0 +1,1303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="Swiftray"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\Qt5\;CMake Files\..\..\Qt5\5.15.2\;CMake Files\..\..\Qt5\5.15.2\clang_64\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Quick\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QmlModels\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Network\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QuickWidgets\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5OpenGL\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Svg\;CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5SerialPort\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\local\;CMake Files\..\..\..\..\usr\local\lib\;CMake Files\..\..\..\..\usr\local\lib\cmake\;CMake Files\..\..\..\..\usr\local\lib\cmake\Boost-1.79.0\;CMake Files\..\..\..\..\usr\local\lib\cmake\boost_headers-1.79.0\;CMake Files\..\..\..\..\usr\local\lib\cmake\boost_thread-1.79.0\;CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\;CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\;CMake Files\cmake\;CMake Files\cmake\Modules\;CMake Files\third_party\;CMake Files\third_party\clipper\;CMake Files\third_party\QxPotrace\;CMake Files\third_party\libdxfrw\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Swiftray">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Swiftray.app/Contents/MacOS/Swiftray" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option object_output="./"/>
+				<Option type="0"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DVERSION_MAJOR=1"/>
+					<Add option="-DVERSION_MINOR=0"/>
+					<Add option="-DVERSION_BUILD=1"/>
+					<Add option="-DVERSION_BETA=1"/>
+					<Add option="-DVERSION_SUFFIX=&quot;&quot;"/>
+					<Add option="-DVER_PRODUCTVERSION_STR=&quot;1.0.1\0&quot;"/>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_QUICK_LIB"/>
+					<Add option="-DQT_QMLMODELS_LIB"/>
+					<Add option="-DQT_QML_LIB"/>
+					<Add option="-DQT_NETWORK_LIB"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add option="-DQT_QUICKWIDGETS_LIB"/>
+					<Add option="-DQT_WIDGETS_LIB"/>
+					<Add option="-DQT_OPENGL_LIB"/>
+					<Add option="-DQT_SVG_LIB"/>
+					<Add option="-DQT_SERIALPORT_LIB"/>
+					<Add option="-DBOOST_THREAD_NO_LIB"/>
+					<Add option="-DBOOST_THREAD_DYN_LINK"/>
+					<Add option="-DBOOST_SYSTEM_NO_LIB"/>
+					<Add option="-DBOOST_SYSTEM_DYN_LINK"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Swiftray_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/libxml2"/>
+					<Add directory="/usr/local/Cellar/opencv/4.6.0/include/opencv4"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/./mkspecs/macx-clang"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuick.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuick.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQmlModels.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQmlModels.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQml.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQml.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtNetwork.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtNetwork.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuickWidgets.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuickWidgets.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtOpenGL.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtOpenGL.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSerialPort.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSerialPort.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 Swiftray"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Swiftray/fast">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Swiftray.app/Contents/MacOS/Swiftray" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option object_output="./"/>
+				<Option type="0"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DVERSION_MAJOR=1"/>
+					<Add option="-DVERSION_MINOR=0"/>
+					<Add option="-DVERSION_BUILD=1"/>
+					<Add option="-DVERSION_BETA=1"/>
+					<Add option="-DVERSION_SUFFIX=&quot;&quot;"/>
+					<Add option="-DVER_PRODUCTVERSION_STR=&quot;1.0.1\0&quot;"/>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_QUICK_LIB"/>
+					<Add option="-DQT_QMLMODELS_LIB"/>
+					<Add option="-DQT_QML_LIB"/>
+					<Add option="-DQT_NETWORK_LIB"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add option="-DQT_QUICKWIDGETS_LIB"/>
+					<Add option="-DQT_WIDGETS_LIB"/>
+					<Add option="-DQT_OPENGL_LIB"/>
+					<Add option="-DQT_SVG_LIB"/>
+					<Add option="-DQT_SERIALPORT_LIB"/>
+					<Add option="-DBOOST_THREAD_NO_LIB"/>
+					<Add option="-DBOOST_THREAD_DYN_LINK"/>
+					<Add option="-DBOOST_SYSTEM_NO_LIB"/>
+					<Add option="-DBOOST_SYSTEM_DYN_LINK"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Swiftray_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Library/Developer/CommandLineTools/SDKs/MacOSX11.sdk/usr/include/libxml2"/>
+					<Add directory="/usr/local/Cellar/opencv/4.6.0/include/opencv4"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/./mkspecs/macx-clang"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuick.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuick.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQmlModels.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQmlModels.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQml.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQml.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtNetwork.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtNetwork.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuickWidgets.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtQuickWidgets.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtOpenGL.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtOpenGL.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSerialPort.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSerialPort.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 Swiftray/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Swiftray_autogen">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 Swiftray_autogen"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="clipper">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/libclipper.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/clipper_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clipper"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="clipper/fast">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/libclipper.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/clipper_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clipper/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="clipper_autogen">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clipper_autogen"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="QxPotrace">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/libQxPotrace.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/QxPotrace_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/./mkspecs/macx-clang"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 QxPotrace"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="QxPotrace/fast">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/libQxPotrace.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DQT_CORE_LIB"/>
+					<Add option="-DQT_NO_DEBUG"/>
+					<Add option="-DQT_GUI_LIB"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/QxPotrace_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Headers"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/./mkspecs/macx-clang"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/OpenGL.framework/Headers"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 QxPotrace/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="QxPotrace_autogen">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 QxPotrace_autogen"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="libdxfrw">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/liblibdxfrw.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/libdxfrw_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 libdxfrw"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="libdxfrw/fast">
+				<Option output="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/liblibdxfrw.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/libdxfrw_autogen/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/include"/>
+					<Add directory="/Users/jasonshiao/FLUX/swiftray/src"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtGui.framework/Versions/5/Headers/5.15.2/QtGui"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtCore.framework/Versions/5/Headers/5.15.2/QtCore"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtSvg.framework/Versions/5/Headers/5.15.2/QtSvg"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2"/>
+					<Add directory="/Users/jasonshiao/Qt5/5.15.2/clang_64/lib/QtWidgets.framework/Versions/5/Headers/5.15.2/QtWidgets"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 libdxfrw/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="libdxfrw_autogen">
+				<Option working_dir="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 libdxfrw_autogen"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/Swiftray_autogen/mocs_compilation.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/qrc_qml.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/QxPotrace/QxPotrace_autogen/mocs_compilation.cpp">
+			<Option target="QxPotrace"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/clipper/clipper_autogen/mocs_compilation.cpp">
+			<Option target="clipper"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake-build-relwithdebinfo/third_party/libdxfrw/libdxfrw_autogen/mocs_compilation.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/images/icon.icns">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/qml.qrc">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/cache-stack.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/cache-stack.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/canvas.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/canvas.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/canvas-control.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/canvas-control.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/grid.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/grid.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/line.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/line.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/oval.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/oval.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/path-draw.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/path-draw.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/path-edit.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/path-edit.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/polygon.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/polygon.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/rect.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/rect.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/ruler.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/ruler.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/select.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/select.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/text.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/text.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/transform.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/canvas/controls/transform.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/clipboard.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/clipboard.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/command.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/command.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/connection/QAsyncSerial/AsyncSerial.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/connection/QAsyncSerial/AsyncSerial.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/connection/serial-port.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/connection/serial-port.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/document.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/document.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/gcode/toolpath-exporter.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/gcode/toolpath-exporter.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/globals.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/globals.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/layer.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/layer.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/machine/machine-controller.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/machine/machine-controller.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/main.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/motion_controller/grbl-motion-controller.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/motion_controller/grbl-motion-controller.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/motion_controller/motion-controller.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/motion_controller/motion-controller.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/dxf_iface.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/dxf_iface.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/svgpp-external-impl.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/svgpp-impl.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/svgpp-parser.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/parser/svgpp-parser.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/file-path-settings.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/file-path-settings.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/machine-settings.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/machine-settings.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/preset-settings.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/settings/preset-settings.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/bitmap-shape.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/bitmap-shape.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/group-shape.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/group-shape.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/path-shape.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/path-shape.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/shape.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/shape.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/text-shape.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/shape/text-shape.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/base-graphicsview.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/base-graphicsview.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/canvas-text-edit.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/canvas-text-edit.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/canvas-widget.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/canvas-widget.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/color-picker-button.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/color-picker-button.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/graphicitems/resizeable-rect-item.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/graphicitems/resizeable-rect-item.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/image-crop-graphicsview.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/image-crop-graphicsview.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/image-trace-graphicsview.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/image-trace-graphicsview.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/layer-list-item.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/layer-list-item.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/task-list-item.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/components/task-list-item.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/doc-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/doc-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/font-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/font-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/image-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/image-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/jogging-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/jogging-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/layer-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/layer-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/layer-params-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/layer-params-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/spooler-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/spooler-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/transform-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/widgets/panels/transform-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/about-window.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/about-window.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/gcode-panel.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/gcode-panel.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-crop-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-crop-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-sharpen-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-sharpen-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-trace-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/image-trace-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/job-dashboard-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/job-dashboard-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/machine-manager.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/machine-manager.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/machine-monitor.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/machine-monitor.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/mainwindow.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/mainwindow.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/new-machine-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/new-machine-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/osxwindow.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/osxwindow.mm">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/path-offset-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/path-offset-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preferences-window.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preferences-window.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preset-manager.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preset-manager.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preview-window.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/preview-window.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/privacy_window.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/privacy_window.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/welcome-dialog.cpp">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/src/windows/welcome-dialog.h">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/QxPotrace/include/qxpotrace.h">
+			<Option target="QxPotrace"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/QxPotrace/src/qxpotrace.cpp">
+			<Option target="QxPotrace"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/clipper/clipper.cpp">
+			<Option target="clipper"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/clipper/clipper.hpp">
+			<Option target="clipper"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_classes.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_classes.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_entities.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_entities.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_header.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_header.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_objects.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/drw_objects.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/drw_dbg.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/drw_dbg.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/drw_textcodec.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/drw_textcodec.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgbuffer.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgbuffer.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader15.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader15.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader18.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader18.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader21.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader21.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader24.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader24.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader27.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgreader27.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgutil.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dwgutil.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dxfreader.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dxfreader.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dxfwriter.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/dxfwriter.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/rscodec.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/intern/rscodec.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/libdwgr.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/libdwgr.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/libdxfrw.cpp">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/libdxfrw.h">
+			<Option target="libdxfrw"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/bin/crashpad_handler">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/sentry-native/install/lib/libsentry.dylib">
+			<Option target="Swiftray"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/qml.qrc">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5/Qt5Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5/Qt5ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5/Qt5ModuleLocation.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Core/Qt5CoreConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Core/Qt5CoreConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Core/Qt5CoreConfigExtrasMkspecDir.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Core/Qt5CoreConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Core/Qt5CoreMacros.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Core\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Widgets/Qt5WidgetsConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Widgets/Qt5WidgetsConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Widgets/Qt5WidgetsConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Widgets/Qt5WidgetsMacros.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Widgets/Qt5Widgets_QMacStylePlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Widgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5GuiConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5GuiConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QCocoaIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QGifPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QICNSPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QICOPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QJpegPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QMacHeifPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QMacJp2Plugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QMinimalIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QOffscreenIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QSvgIconPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QSvgPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QTgaPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QTiffPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QTuioTouchPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QVirtualKeyboardPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QWbmpPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QWebGLIntegrationPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QWebpPlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Gui/Qt5Gui_QXdgDesktopPortalThemePlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Gui\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Quick/Qt5QuickConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Quick\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Quick/Qt5QuickConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Quick\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5QmlModels/Qt5QmlModelsConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QmlModels\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5QmlModels/Qt5QmlModelsConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QmlModels\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5QmlConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5QmlConfigExtras.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5QmlConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QDebugMessageServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QLocalClientConnectionFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlDebugServerFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlDebuggerServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlInspectorServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlNativeDebugConnectorFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlNativeDebugServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlPreviewServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQmlProfilerServiceFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QQuickProfilerAdapterFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Qml/Qt5Qml_QTcpServerConnectionFactory.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Qml\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Network/Qt5NetworkConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Network\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Network/Qt5NetworkConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Network\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Network/Qt5Network_QGenericEnginePlugin.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Network\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5QuickWidgets/Qt5QuickWidgetsConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QuickWidgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5QuickWidgets/Qt5QuickWidgetsConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5QuickWidgets\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5OpenGL/Qt5OpenGLConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5OpenGL\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5OpenGL/Qt5OpenGLConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5OpenGL\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Svg/Qt5SvgConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5Svg/Qt5SvgConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5Svg\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5SerialPort/Qt5SerialPortConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5SerialPort\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../Qt5/5.15.2/clang_64/lib/cmake/Qt5SerialPort/Qt5SerialPortConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\Qt5\5.15.2\clang_64\lib\cmake\Qt5SerialPort\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/BoostDetectToolset-1.79.0.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/Boost-1.79.0/BoostConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\Boost-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/Boost-1.79.0/BoostConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\Boost-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_headers-1.79.0/boost_headers-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_headers-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_headers-1.79.0/boost_headers-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_headers-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_thread-1.79.0/boost_thread-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_thread-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_thread-1.79.0/boost_thread-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_thread-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_thread-1.79.0/libboost_thread-variant-mt-shared.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_thread-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_thread-1.79.0/libboost_thread-variant-mt-static.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_thread-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/boost_system-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/boost_system-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/libboost_system-variant-mt-shared.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/libboost_system-variant-mt-static.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/libboost_system-variant-shared.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/boost_system-1.79.0/libboost_system-variant-static.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\boost_system-1.79.0\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/opencv4/OpenCVModules-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/../../../../usr/local/lib/cmake/opencv4/OpenCVModules.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/cmake/Modules/FindPotrace.cmake">
+			<Option virtualFolder="CMake Files\cmake\Modules\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/clipper/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\third_party\clipper\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/QxPotrace/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\third_party\QxPotrace\"/>
+		</Unit>
+		<Unit filename="/Users/jasonshiao/FLUX/swiftray/third_party/libdxfrw/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\third_party\libdxfrw\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

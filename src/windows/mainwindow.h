@@ -18,7 +18,7 @@
 #include <widgets/panels/jogging-panel.h>
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
-#include <windows/gcode-player.h>
+#include <windows/gcode-panel.h>
 #include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
@@ -165,7 +165,7 @@ private:
   QComboBox* portComboBox_;
 
   TransformPanel *transform_panel_;
-  GCodePlayer *gcode_player_;
+  GCodePanel *gcode_player_;
   JobDashboardDialog *job_dashboard_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;

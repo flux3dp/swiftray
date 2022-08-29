@@ -66,21 +66,21 @@ public:
     /**
      * @return true if the port is open
      */
-    bool isOpen();
+    bool isOpen() const;
 
-    int write(const QString data);
-    int write(const std::string buf);
-    int write(const char *buf, const int &size);
+    int write(const QString data) const;
+    int write(const std::string buf) const;
+    int write(const char *buf, const int &size) const;
 
     /**
      * @return true if any error
      */
-    bool errorStatus();
+    bool errorStatus() const;
 
     /**
      * @return port name (get from QSerialPortInfo) if opened, otherwise, empty string
      */
-     QString portName();
+     QString portName() const;
 
 signals:
     void connected();

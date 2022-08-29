@@ -1,4 +1,4 @@
-#include "gcode-player.h"
+#include "gcode-panel.h"
 #include "ui_gcode-player.h"
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -13,20 +13,20 @@
 
 #endif
 
-GCodePlayer::GCodePlayer(QWidget *parent) :
+GCodePanel::GCodePanel(QWidget *parent) :
      QFrame(parent),
-     ui(new Ui::GCodePlayer),
+     ui(new Ui::GCodePanel),
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
 }
 
-void GCodePlayer::loadSettings() {}
+void GCodePanel::loadSettings() {}
 
-void GCodePlayer::registerEvents() {
+void GCodePanel::registerEvents() {
 #ifndef Q_OS_IOS
-  connect(ui->playBtn, &QAbstractButton::clicked, this, &GCodePlayer::startBtnClicked);
-  connect(ui->stopBtn, &QAbstractButton::clicked, this, &GCodePlayer::stopBtnClicked);
+  connect(ui->playBtn, &QAbstractButton::clicked, this, &GCodePanel::startBtnClicked);
+  connect(ui->stopBtn, &QAbstractButton::clicked, this, &GCodePanel::stopBtnClicked);
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
     // Pause / Resume
     if (status_ == BaseJob::Status::RUNNING) {
@@ -35,10 +35,10 @@ void GCodePlayer::registerEvents() {
       emit resumeBtnClicked();
     }
   });
-  connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePlayer::exportGcode);
-  connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePlayer::importGcode);
-  connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePlayer::generateGcode);
-  connect(ui->gcodeText, &QPlainTextEdit::textChanged, this, &GCodePlayer::checkGenerateGcode);
+  connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePanel::exportGcode);
+  connect(ui->importBtn, &QAbstractButton::clicked, this, &GCodePanel::importGcode);
+  connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePanel::generateGcode);
+  connect(ui->gcodeText, &QPlainTextEdit::textChanged, this, &GCodePanel::checkGenerateGcode);
 
   connect(&serial_port, &SerialPort::connected, [=]() {
       qInfo() << "[SerialPort] Success connect!";
@@ -55,15 +55,15 @@ void GCodePlayer::registerEvents() {
 #endif
 }
 
-void GCodePlayer::hideEvent(QHideEvent *event) {
+void GCodePanel::hideEvent(QHideEvent *event) {
   emit panelShow(false);
 }
 
-void GCodePlayer::showEvent(QShowEvent *event) {
+void GCodePanel::showEvent(QShowEvent *event) {
   emit panelShow(true);
 }
 
-void GCodePlayer::checkGenerateGcode() {
+void GCodePanel::checkGenerateGcode() {
   if(ui->gcodeText->toPlainText().isEmpty()) {
     ui->playBtn->setEnabled(false);
   }
@@ -72,14 +72,14 @@ void GCodePlayer::checkGenerateGcode() {
   }
 }
 
-void GCodePlayer::showError(const QString &msg) {
+void GCodePanel::showError(const QString &msg) {
   QMessageBox msgbox;
   msgbox.setText("Job Error");
   msgbox.setInformativeText(msg);
   msgbox.exec();
 }
 
-void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
+void GCodePanel::onStatusChanged(BaseJob::Status new_status) {
   status_ = new_status;
   switch (status_) {
     case BaseJob::Status::READY:
@@ -134,29 +134,29 @@ void GCodePlayer::onStatusChanged(BaseJob::Status new_status) {
   emit jobStatusReport(new_status);
 }
 
-void GCodePlayer::onProgressChanged(QVariant progress) {
+void GCodePanel::onProgressChanged(QVariant progress) {
   ui->progressBar->setValue(progress.toInt());
   ui->progressBarLabel->setText(ui->progressBar->text());
 }
 
-void GCodePlayer::setGCode(const QString &gcode) {
+void GCodePanel::setGCode(const QString &gcode) {
   ui->gcodeText->setPlainText(gcode);
 }
 
-QString GCodePlayer::getGCode() {
+QString GCodePanel::getGCode() {
   return ui->gcodeText->toPlainText();
 }
 
-GCodePlayer::~GCodePlayer() {
+GCodePanel::~GCodePanel() {
   delete ui;
 }
 
-void GCodePlayer::attachJob(BaseJob *job) {
+void GCodePanel::attachJob(BaseJob *job) {
   job_ = job;
   qRegisterMetaType<BaseJob::Status>(); // NOTE: This is necessary for passing custom type argument for signal/slot
-  connect(job_, &BaseJob::error, this, &GCodePlayer::showError);
-  connect(job_, &BaseJob::progressChanged, this, &GCodePlayer::onProgressChanged);
-  connect(job_, &BaseJob::statusChanged, this, &GCodePlayer::onStatusChanged);
+  connect(job_, &BaseJob::error, this, &GCodePanel::showError);
+  connect(job_, &BaseJob::progressChanged, this, &GCodePanel::onProgressChanged);
+  connect(job_, &BaseJob::statusChanged, this, &GCodePanel::onStatusChanged);
 
   onStatusChanged(job_->status());
   onProgressChanged(0);
