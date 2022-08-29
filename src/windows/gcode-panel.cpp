@@ -1,5 +1,5 @@
 #include "gcode-panel.h"
-#include "ui_gcode-player.h"
+#include "ui_gcode-panel.h"
 #include <QMessageBox>
 #include <QRegularExpression>
 

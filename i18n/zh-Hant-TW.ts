@@ -300,39 +300,39 @@
 <context>
     <name>GCodePlayer</name>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="26"/>
+        <location filename="../src/windows/gcode-panel.ui" line="26"/>
         <source>Dialog</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="58"/>
+        <location filename="../src/windows/gcode-panel.ui" line="58"/>
         <source>Gcode Import</source>
         <translation>匯入 Gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="102"/>
+        <location filename="../src/windows/gcode-panel.ui" line="102"/>
         <source>Gcode Export</source>
         <translation>匯出 Gcode</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="138"/>
+        <location filename="../src/windows/gcode-panel.ui" line="138"/>
         <source>Generate G-code</source>
         <translation>生成 G-code</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="161"/>
+        <location filename="../src/windows/gcode-panel.ui" line="161"/>
         <source>%p%</source>
         <translation>%p%</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="186"/>
+        <location filename="../src/windows/gcode-panel.ui" line="186"/>
         <source>0%</source>
         <translation>0%</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="203"/>
-        <location filename="../src/windows/gcode-player.cpp" line="45"/>
-        <location filename="../src/windows/gcode-player.cpp" line="52"/>
+        <location filename="../src/windows/gcode-panel.ui" line="203"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="45"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="52"/>
         <source>Play</source>
         <translation>開始工作</translation>
     </message>
@@ -341,20 +341,20 @@
         <translation type="vanished">送出工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="219"/>
-        <location filename="../src/windows/gcode-player.cpp" line="98"/>
-        <location filename="../src/windows/gcode-player.cpp" line="111"/>
-        <location filename="../src/windows/gcode-player.cpp" line="126"/>
+        <location filename="../src/windows/gcode-panel.ui" line="219"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="98"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="111"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="126"/>
         <source>Pause</source>
         <translation>暫停工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.ui" line="229"/>
+        <location filename="../src/windows/gcode-panel.ui" line="229"/>
         <source>Stop</source>
         <translation>停止工作</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-player.cpp" line="106"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="106"/>
         <source>Resume</source>
         <translation>繼續工作</translation>
     </message>

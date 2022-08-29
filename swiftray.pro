@@ -301,7 +301,7 @@ FORMS += \
     src/windows/preferences-window.ui \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \
-    src/windows/gcode-player.ui \
+    src/windows/gcode-panel.ui \
     src/windows/mainwindow.ui \
     src/windows/image-trace-dialog.ui \
     src/windows/path-offset-dialog.ui \

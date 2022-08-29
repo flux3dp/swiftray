@@ -1,6 +1,6 @@
 target_sources(Swiftray PRIVATE
   mainwindow.cpp
-  gcode-player.cpp
+  gcode-panel.cpp
   about-window.cpp
   image-crop-dialog.cpp
   image-sharpen-dialog.cpp
