@@ -1,5 +1,5 @@
 add_subdirectory(graphicitems)
-add_sources(
+target_sources(Swiftray PRIVATE
   canvas-text-edit.cpp
   canvas-widget.cpp
   color-picker-button.cpp

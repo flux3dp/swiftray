@@ -1,4 +1,4 @@
-add_sources(
+target_sources(Swiftray PRIVATE
   mainwindow.cpp
   gcode-player.cpp
   about-window.cpp

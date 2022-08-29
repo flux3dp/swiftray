@@ -1,4 +1,4 @@
-add_sources(
+target_sources(Swiftray PRIVATE
   doc-panel.cpp
   font-panel.cpp
   image-panel.cpp

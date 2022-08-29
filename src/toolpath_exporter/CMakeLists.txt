@@ -1,3 +1,3 @@
-add_sources(
+target_sources(Swiftray PRIVATE
   toolpath-exporter.cpp
 )

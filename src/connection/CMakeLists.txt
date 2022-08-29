@@ -1,4 +1,4 @@
 add_subdirectory(QAsyncSerial)
-add_sources(
+target_sources(Swiftray PRIVATE
   serial-port.cpp
 )

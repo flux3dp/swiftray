@@ -1,6 +1,6 @@
 add_subdirectory(controls)
 
-add_sources(
+target_sources(Swiftray PRIVATE
   canvas.cpp
   cache-stack.cpp
 )

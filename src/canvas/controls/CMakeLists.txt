@@ -1,4 +1,4 @@
-add_sources(
+target_sources(Swiftray PRIVATE
   canvas-control.cpp
   grid.cpp
   line.cpp
