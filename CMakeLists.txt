@@ -31,19 +31,21 @@ endif(MINGW)
 
 get_filename_component(SRC_DIR "src" REALPATH)
 
-file(GLOB SHAPES_CPP "${SRC_DIR}/shape/*.cpp")
-file(GLOB CANVAS_CPP "${SRC_DIR}/canvas/*.cpp")
-file(GLOB CONTROLS_CPP "${SRC_DIR}/canvas/controls/*.cpp")
-file(GLOB WIDGETS_PANELS_CPP "${SRC_DIR}/widgets/panels/*.cpp")
-file(GLOB WIDGETS_COMPONENTS_CPP "${SRC_DIR}/widgets/components/*.cpp")
-file(GLOB SETTINGS_CPP "${SRC_DIR}/settings/*.cpp")
-file(GLOB CONNECTION_CPP "${SRC_DIR}/connection/*.cpp")
-file(GLOB CONNECTION_SERIAL_CPP "${SRC_DIR}/connection/QAsyncSerial/*.cpp")
-file(GLOB MOTION_CONTROLLER_JOB_CPP "${SRC_DIR}/motion_controller_job/*.cpp")
-#file(GLOB SERIALPORT_CPP "third_party/SerialPort/SerialPort.cpp")
-file(GLOB WINDOWS_CPP "${SRC_DIR}/windows/*.cpp")
-file(GLOB PARSER_CPP "${SRC_DIR}/parser/*.cpp")
-file(GLOB GRAPHICSVIEW_ITEMS_CPP "${SRC_DIR}/widgets/components/graphicitems/*.cpp")
+# Ref: https://stackoverflow.com/questions/7046956/populating-srcs-from-cmakelists-txt-in-subdirectories
+#      https://stackoverflow.com/questions/10031953/how-to-set-the-global-variable-in-a-function-for-cmake
+set_property(GLOBAL PROPERTY source_list)
+function(add_sources)
+    get_property(tmp GLOBAL PROPERTY source_list)
+    file (RELATIVE_PATH _relPath "${PROJECT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+    foreach (_src ${ARGN})
+        if (_relPath)
+            list (APPEND tmp "${_relPath}/${_src}")
+        else()
+            list (APPEND tmp "${_src}")
+        endif()
+    endforeach()
+    set_property(GLOBAL PROPERTY source_list "${tmp}")
+endfunction(add_sources)
 
 set(SOURCES
   ${SRC_DIR}/globals.cpp
@@ -51,22 +53,20 @@ set(SOURCES
   ${SRC_DIR}/document.cpp
   ${SRC_DIR}/command.cpp
   ${SRC_DIR}/clipboard.cpp
-  ${CONNECTION_CPP}
-  ${CONNECTION_SERIAL_CPP}
   ${MOTION_CONTROLLER_JOB_CPP}
-  ${CANVAS_CPP}
-  ${CONTROLS_CPP}
-  ${WIDGETS_PANELS_CPP}
-  ${WIDGETS_COMPONENTS_CPP}
-  ${WIDGETS_COMPONENTS_GRAPHICSITEMS_CPP}
-  ${SHAPES_CPP}
-  ${SETTINGS_CPP}
-  ${WINDOWS_CPP}
-  #${SERIALPORT_CPP}
-  ${PARSER_CPP}
-  ${GRAPHICSVIEW_ITEMS_CPP}
-  ${SRC_DIR}/gcode/toolpath-exporter.cpp
 )
+add_subdirectory(src/canvas)
+add_subdirectory(src/windows)
+add_subdirectory(src/widgets)
+add_subdirectory(src/settings)
+add_subdirectory(src/shape)
+add_subdirectory(src/parser)
+add_subdirectory(src/toolpath_exporter)
+add_subdirectory(src/connection)
+add_subdirectory(src/motion_controller_job)
+
+get_property(source_list GLOBAL PROPERTY source_list)
+list(APPEND SOURCES ${source_list})
 
 include_directories(
   third_party
@@ -81,6 +81,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${SRC_DIR}/windows/osxwindow.mm)
 endif ()
 
+message(STATUS "Source files: " "${SOURCES}")
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)

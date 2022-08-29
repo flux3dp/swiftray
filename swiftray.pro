@@ -186,7 +186,7 @@ SOURCES += \
     $$files(src/canvas/controls/*.cpp) \
     $$files(src/connection/*.cpp) \
     $$files(src/connection/QAsyncSerial/*.cpp) \
-    $$files(src/gcode/*.cpp) \
+    $$files(src/toolpath_exporter/*.cpp) \
     $$files(src/motion_controller_job/*.cpp) \
     $$files(src/parser/*.cpp) \
     $$files(src/settings/*.cpp) \
@@ -238,7 +238,7 @@ HEADERS += \
     $$files(src/canvas/controls/*.h) \
     $$files(src/connection/*.h) \
     $$files(src/connection/QAsyncSerial/*.h) \
-    $$files(src/gcode/*.h) \
+    $$files(src/toolpath_exporter/*.h) \
     $$files(src/motion_controller_job/*.h) \
     $$files(src/parser/*.h) \
     $$files(src/parser/generators/*.h) \
@@ -248,7 +248,7 @@ HEADERS += \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
-    src/gcode/generators/dirty-area-outline-generator.h \
+    src/toolpath_exporter/generators/dirty-area-outline-generator.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
     third_party/clipper/clipper.hpp \
     third_party/libdxfrw/drw_base.h \

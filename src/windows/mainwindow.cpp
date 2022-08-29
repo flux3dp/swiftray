@@ -21,10 +21,10 @@
 #include <widgets/components/canvas-text-edit.h>
 #include <windows/mainwindow.h>
 #include <windows/osxwindow.h>
-#include <gcode/toolpath-exporter.h>
-#include <gcode/generators/gcode-generator.h>
-#include <gcode/generators/preview-generator.h>
-#include <gcode/generators/dirty-area-outline-generator.h>
+#include <toolpath_exporter/toolpath-exporter.h>
+#include <toolpath_exporter/generators/gcode-generator.h>
+#include <toolpath_exporter/generators/preview-generator.h>
+#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 #include <document-serializer.h>
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
