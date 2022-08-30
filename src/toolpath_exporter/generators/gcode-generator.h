@@ -1,7 +1,7 @@
 #pragma once
 
 #include <sstream>
-#include <gcode/generators/base-generator.h>
+#include <toolpath_exporter/generators/base-generator.h>
 #include <settings/machine-settings.h>
 
 /*

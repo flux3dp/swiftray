@@ -4,8 +4,8 @@
 #include <gtest/gtest.h>
 #include <QByteArray>
 #include <QDebug>
-#include <gcode/generators/gcode-generator.h>
-#include <gcode/toolpath-exporter.h>
+#include <toolpath_exporter/generators/gcode-generator.h>
+#include <toolpath_exporter/toolpath-exporter.h>
 
 using namespace testing;
 TEST(Canvas, Init) {

@@ -10,7 +10,7 @@
 #include <shape/bitmap-shape.h>
 #include <shape/group-shape.h>
 #include <shape/path-shape.h>
-#include <gcode/toolpath-exporter.h>
+#include <toolpath_exporter/toolpath-exporter.h>
 #include <windows/preview-window.h>
 #include <windows/osxwindow.h>
 #include <document-serializer.h>
