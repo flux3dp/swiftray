@@ -2,18 +2,18 @@
 #define MOTIONCONTROLLERFACTORY_H
 
 #include "motion_controller.h"
+#include "grbl_motion_controller.h"
 #include <settings/machine-settings.h>
-#include <QSharedPointer>
 
 class MotionControllerFactory
 {
 public:
 
-  static QSharedPointer<MotionController> getMotionController(
-      MachineSettings::MachineSet machine_settings) {
+  static MotionController* createMotionController(
+      MachineSettings::MachineSet machine_settings, QObject *parent = nullptr) {
     switch (machine_settings.board_type) {
       case MachineSettings::MachineSet::BoardType::GRBL_2020:
-        return QSharedPointer<GrblMotionController>::create();
+        return new GrblMotionController{parent};
       // TODO:
       case MachineSettings::MachineSet::BoardType::FLUX_2020:
       case MachineSettings::MachineSet::BoardType::M2NANO_7:
@@ -22,7 +22,7 @@ public:
         Q_ASSERT_X(false, "MotionControllerFactory", "Support for this machine hasn't benn implemented yet!");
         break;
     }
-    return QSharedPointer<GrblMotionController>::create();
+    return new GrblMotionController{parent};
   }
 };
 

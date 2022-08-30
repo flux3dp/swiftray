@@ -159,7 +159,7 @@ void SerialPort::close() {
   }
 }
 
-bool SerialPort::isOpen() {
+bool SerialPort::isOpen() const {
 #ifdef Q_OS_MACOS
   if (serial_ && serial_->is_open()) {
     return true;
@@ -171,15 +171,15 @@ bool SerialPort::isOpen() {
 #endif
 }
 
-int SerialPort::write(const QString data) {
+int SerialPort::write(const QString data) const {
   return write(data.toStdString().c_str(), data.size());
 }
 
-int SerialPort::write(const std::string buf) {
+int SerialPort::write(const std::string buf)const {
   return write(buf.c_str(), buf.size());
 }
 
-int SerialPort::write(const char *buf, const int &size) {
+int SerialPort::write(const char *buf, const int &size) const {
 #ifdef Q_OS_MACOS
   //qInfo() << "SerialPort write" << buf;
   boost::system::error_code ec;
@@ -248,7 +248,7 @@ void SerialPort::readCallback(const char *data, size_t size){
 }
 #endif
 
-bool SerialPort::errorStatus() {
+bool SerialPort::errorStatus() const {
 #ifdef Q_OS_MACOS
   // TODO: ?
   return false;
@@ -258,7 +258,7 @@ bool SerialPort::errorStatus() {
 #endif
 }
 
-QString SerialPort::portName() {
+QString SerialPort::portName() const {
   if (isOpen()) {
     return port_name_;
   } else {

@@ -926,6 +926,8 @@ void MainWindow::registerEvents() {
   connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
+  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
+
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
   });
@@ -1207,6 +1209,8 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("57600");
   baudComboBox_->addItem("115200");
   baudComboBox_->addItem("230400");
+  baudComboBox_->addItem("460800");
+  baudComboBox_->addItem("921600");
   baudComboBox_->setCurrentIndex(4); // default baudrate 115200
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
@@ -1775,7 +1779,7 @@ void MainWindow::showJoggingPanel() {
 /**
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
-void MainWindow::generateGcode() {
+bool MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),

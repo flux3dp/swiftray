@@ -159,6 +159,7 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
     // Return a default
     MachineSettings::MachineSet m;
     m.origin = MachineSettings::MachineSet::OriginType::RearLeft;
+    m.board_type = MachineSettings::MachineSet::BoardType::GRBL_2020;
     m.width = main_window_->canvas()->document().width() / 10;
     m.height = main_window_->canvas()->document().height() / 10;
     return m;

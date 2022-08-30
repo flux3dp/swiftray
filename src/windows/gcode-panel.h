@@ -8,6 +8,7 @@
 #ifndef Q_OS_IOS
 
 #include <widgets/base-container.h>
+#include <motion_controller_job/base-job.h>
 
 #endif
 

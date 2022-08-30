@@ -142,6 +142,7 @@ add_subdirectory(src/machine)
 add_subdirectory(src/machine_job)
 add_subdirectory(src/motion_controller)
 add_subdirectory(src/executor)
+add_subdirectory(src/motion_controller_job)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)

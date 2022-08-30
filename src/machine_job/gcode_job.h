@@ -1,7 +1,7 @@
 #ifndef GCODEJOB_H
 #define GCODEJOB_H
 
-#include <machine_job.h>
+#include "machine_job.h"
 #include <QStringList>
 
 class GCodeJob : public MachineJob

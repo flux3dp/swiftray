@@ -21,9 +21,9 @@ public:
   void setRepeat(uint32_t repeat);
   uint32_t getRepeat();
 
-  virtual bool isActive();
-  virtual std::tuple<Target, QString> getNextCmd();
-  virtual bool end();
+  virtual bool isActive() = 0;
+  virtual std::tuple<Target, QString> getNextCmd() = 0;
+  virtual bool end() = 0;
 
 signals:
 
