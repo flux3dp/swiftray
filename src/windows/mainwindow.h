@@ -187,7 +187,7 @@ private:
   bool saveAsFile();
   void exportGCodeFile();
   void importGCodeFile();
-  void generateGcode();
+  bool generateGcode();
   void generateJob();
   bool handleUnsavedChange();
   void actionStart();

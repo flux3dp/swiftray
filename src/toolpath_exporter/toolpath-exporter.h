@@ -29,7 +29,9 @@ public:
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
 
-  void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_size_ = work_area_size; }
+  void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_mm_ = work_area_size; }
+
+  bool isExceedingBoundary() { return exceed_boundary_; }
 
   enum class ScanDirectionMode {
       kBidirectionMode,
@@ -70,24 +72,28 @@ private:
   QImage imageBinarize(QImage src, int threshold);
 
   QTransform global_transform_;
-  qreal resolution_scale_; // = dots per unit_size_on_canvas
-  QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
-  //QList<ShapePtr> layer_elements_;
-  QList<QPolygonF> layer_polygons_; // place the unfilled path geometry
-  QMutex polygons_mutex_;
-  QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path)
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;
   BaseGenerator *gen_;
-  qreal dpmm_ = 10;
-  QSizeF machine_work_area_size_; // Work area in real world coordinate (in unit of mm)
-  QRectF bitmap_dirty_area_;  // Scaled by resolution (expressed in # of dot)
-  QSizeF canvas_size_;       // Scaled by resolution (expressed in # of dot)
+  // === The followings depend on DPI settings of document ===
+  qreal dpmm_ = 10;               // The DPMM settings of document
+  QMutex polygons_mutex_;
+  QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
+  QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path), expressed in unit of document dot
+  QRectF bitmap_dirty_area_;        // Expressed in unit of document dot.
+  QSizeF canvas_size_;              // Expressed in unit of document dot.
+  // === The followings depend on canvas resolution ===
   const qreal canvas_mm_ratio_ = 10.0; // Currently 10 units in canvas = 1 mm in real world
-                                       // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_size_)
-
-  QPointF current_pos_; // in unit of mm
+                                       // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_mm_)
+  // == The followings depend on both canvas resolution and document DPI settings ==
+  qreal resolution_scale_;                // = dots per unit_size_on_canvas
+  QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
+  // === The followings are expressed in unit of mm ===
+  QPointF current_pos_mm_; // in unit of mm
+  QSizeF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
-  bool is_high_speed_;
+  // ==================================================
+  bool is_high_speed_ = false;
+  bool exceed_boundary_ = false; // Whether source objects exceeding the work area
 };

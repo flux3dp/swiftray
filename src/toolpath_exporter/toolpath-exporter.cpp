@@ -54,20 +54,24 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   }
   int processed_layer_cnt = 0;
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
-    if (canceled) {
-      return false;
-    }
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
       for (int i = 0; i < (*layer_rit)->repeat(); i++) {
         convertLayer((*layer_rit));
       }
     }
+    if (canceled) {
+      break;
+    }
     processed_layer_cnt++;
     if (dialog != nullptr) {
       dialog->setValue(100 * processed_layer_cnt / layers.count());
       QCoreApplication::processEvents();
     }
+  }
+  
+  if (canceled) {
+    return false;
   }
 
   // Post cmds
@@ -145,12 +149,32 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   }
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(global_transform_.mapRect(bmp->boundingRect()));
+
+  // Boundary check
+  if (exceed_boundary_ == false && 
+      (bmp->boundingRect().top() < 0 || 
+      bmp->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      bmp->boundingRect().left() < 0 || 
+      bmp->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+    exceed_boundary_ = true;
+  }
 }
 
 void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
+  // transformed_path: Express path in unit of dots (depends on document resolution settings)
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());
 
+  // Boundary check
+  if (exceed_boundary_ == false && 
+      (path->boundingRect().top() < 0 || 
+      path->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      path->boundingRect().left() < 0 || 
+      path->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+    exceed_boundary_ = true;
+  }
+
+  // Fill shape
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
@@ -162,6 +186,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     layer_painter_->setBrush(Qt::NoBrush);
     bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
   }
+  // Line shape
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Line ||
       current_layer_->type() == Layer::Type::FillLine) {
@@ -190,13 +215,18 @@ void ToolpathExporter::sortPolygons() {
   return;
 }
 
+/**
+ * @brief Export the layer_polygons_ and layer_bitmap_ converted from objects on canvas 
+ *        to generator
+ * 
+ */
 void ToolpathExporter::outputLayerGcode() {
   outputLayerBitmapGcode();
   outputLayerPathGcode();
 }
 
 /**
- * @brief Gcode for non-filled geometry
+ * @brief Export layer_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerPathGcode() {
 
@@ -215,13 +245,13 @@ void ToolpathExporter::outputLayerPathGcode() {
     for (QPointF &point : poly) {
       next_point_mm = point / dpmm_;
       // Divide a long line into small segments
-      if ( (next_point_mm - current_pos_).manhattanLength() > 5 ) { // At most 5mm per segment
+      if ( (next_point_mm - current_pos_mm_).manhattanLength() > 5 ) { // At most 5mm per segment
         int segments = std::max(2.0,
-                           std::sqrt(std::pow(next_point_mm.x() - current_pos_.x(), 2) +
-                                std::pow(next_point_mm.y() - current_pos_.y(), 2)) / 5 );
+                           std::sqrt(std::pow(next_point_mm.x() - current_pos_mm_.x(), 2) +
+                                std::pow(next_point_mm.y() - current_pos_mm_.y(), 2)) / 5 );
         QList<QPointF> interpolate_points;
         for (int i = 1; i <= segments; i++) {
-          interpolate_points << (i * next_point_mm + (segments - i) * current_pos_) / float(segments);
+          interpolate_points << (i * next_point_mm + (segments - i) * current_pos_mm_) / float(segments);
         }
         for (const QPointF &interpolate_point : interpolate_points) {
           moveTo(interpolate_point,
@@ -244,7 +274,7 @@ void ToolpathExporter::outputLayerPathGcode() {
 }
 
 /**
- * @brief Gcode for filled geometry and images
+ * @brief Export layer_bitmap_ for filled geometry and images
  */
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
@@ -686,10 +716,10 @@ QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
 
 inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power) {
   gen_->moveTo(dest.x(), dest.y(), speed, power);
-  current_pos_ = dest;
+  current_pos_mm_ = dest;
 }
 
 inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power) {
   gen_->moveTo(dest.x(), dest.y(), speed, power);
-  current_pos_ = dest;
+  current_pos_mm_ = dest;
 }

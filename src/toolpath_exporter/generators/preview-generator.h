@@ -49,7 +49,9 @@ class PreviewGenerator : public BaseGenerator {
       power_ = power;
     }
 
-    // Insert sub path
+    // Special handling for high speed rastering: Insert sub paths (small line segments)
+    // Premise: The input move target position for high speed rasting always 
+    //          lies within the work area.
     if (high_speed_raster_mode_) {
       QVector2D vect{x - x_, y-y_};
       vect.normalize();
@@ -84,6 +86,19 @@ class PreviewGenerator : public BaseGenerator {
       }
     }
 
+    // Limit x,y position inside the work area
+    if (x > machine_width_) {
+      x = machine_width_;
+    } else if (x < 0) {
+      x = 0;
+    }
+    if (y > machine_height_) {
+      y = machine_height_;
+    } else if (y < 0) {
+      y = 0;
+    }
+
+    // 3. Update current position
     if (x_ != x) {
       x_ = x;
     }
