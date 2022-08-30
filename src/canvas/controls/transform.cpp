@@ -328,25 +328,64 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
     }
   }
 
+  double current_angle;
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
       emit cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       if(direction_locked_) {
-        if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
-          translate_to_apply_.setY(0);
+        current_angle = atan2 (translate_to_apply_.y(),translate_to_apply_.x()) * 180 / M_PI;
+        if(-157.5 < current_angle && current_angle <= -112.5) {
+          current_angle = -135;
+        } else if(-112.5 < current_angle && current_angle <= -67.5) {
+          current_angle = -90;
+        } else if(-67.5 < current_angle && current_angle <= -22.5) {
+          current_angle = -45;
+        } else if(-22.5 < current_angle && current_angle <= 22.5) {
+          current_angle = 0;
+        } else if(22.5 < current_angle && current_angle <= 67.5) {
+          current_angle = 45;
+        } else if(67.5 < current_angle && current_angle <= 112.5) {
+          current_angle = 90;
+        } else if(112.5 < current_angle && current_angle <= 157.5) {
+          current_angle = 135;
+        } else {
+          current_angle = 180;
         }
-        else {
-          translate_to_apply_.setX(0);
+        if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
+          translate_to_apply_.setY(tan(current_angle * M_PI / 180.0) * translate_to_apply_.x());
+        } else {
+          translate_to_apply_.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * translate_to_apply_.y());
         }
       }
       applyMove(true);
       break;
     case Canvas::Mode::Rotating:
-      rotation_to_apply_ = (atan2(canvas_coord.y() - action_center_.y(),
-                                  canvas_coord.x() - action_center_.x()) -
-                            rotated_from_) *
-                           180 / 3.1415926;
+      current_angle = atan2(canvas_coord.y() - action_center_.y(),
+                            canvas_coord.x() - action_center_.x()) * 180 / M_PI;        
+      current_angle -= rotated_from_ * 180 / M_PI;
+      if(current_angle > 180) current_angle -= 360;
+      if(current_angle < -180) current_angle += 360;
+      if(direction_locked_) {
+        if(-157.5 < current_angle && current_angle <= -112.5) {
+          current_angle = -135;
+        } else if(-112.5 < current_angle && current_angle <= -67.5) {
+          current_angle = -90;
+        } else if(-67.5 < current_angle && current_angle <= -22.5) {
+          current_angle = -45;
+        } else if(-22.5 < current_angle && current_angle <= 22.5) {
+          current_angle = 0;
+        } else if(22.5 < current_angle && current_angle <= 67.5) {
+          current_angle = 45;
+        } else if(67.5 < current_angle && current_angle <= 112.5) {
+          current_angle = 90;
+        } else if(112.5 < current_angle && current_angle <= 157.5) {
+          current_angle = 135;
+        } else {
+          current_angle = 180;
+        }
+      }
+      rotation_to_apply_ = current_angle;
       applyRotate(action_center_, rotation_to_apply_, true);
       break;
 
