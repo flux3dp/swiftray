@@ -1,4 +1,4 @@
-#include "grbl-motion-controller.h"
+#include "grbl_motion_controller.h"
 
 GrblMotionController::GrblMotionController(QObject *parent)
   : MotionController{parent}

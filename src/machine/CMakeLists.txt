@@ -1,3 +1,3 @@
-add_sources(
-  machine-controller.cpp
+target_sources(Swiftray PRIVATE
+  machine.cpp
 )

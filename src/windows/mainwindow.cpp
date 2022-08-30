@@ -540,7 +540,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -847,7 +847,7 @@ void MainWindow::registerEvents() {
       msgbox.exec();
       return;
     }
-    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
+    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
     ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
         canvas_->document().settings().dpmm(),
         ToolpathExporter::PaddingType::kNoPadding);
@@ -1774,7 +1774,7 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 void MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -1794,8 +1794,8 @@ void MainWindow::generateGcode() {
 }
 
 void MainWindow::genPreviewWindow() {
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine());
+  auto gcode_generator = std::make_shared<GCodeGenerator>(currentMachine());
 
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),

@@ -138,7 +138,10 @@ add_subdirectory(src/shape)
 add_subdirectory(src/parser)
 add_subdirectory(src/toolpath_exporter)
 add_subdirectory(src/connection)
-add_subdirectory(src/motion_controller_job)
+add_subdirectory(src/machine)
+add_subdirectory(src/machine_job)
+add_subdirectory(src/motion_controller)
+add_subdirectory(src/executor)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
