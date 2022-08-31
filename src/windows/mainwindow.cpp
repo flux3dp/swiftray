@@ -34,6 +34,9 @@
 
 #include "ui_mainwindow.h"
 
+#define xstr(s) str(s)
+#define str(s)  #s
+
 MainWindow::MainWindow(QWidget *parent) :
      QMainWindow(parent),
      ui(new Ui::MainWindow),
@@ -82,11 +85,14 @@ void MainWindow::loadSettings() {
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
 
+#ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
   QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
   sentry_options_set_database_path(options_, database_path.toStdString().c_str());
-  sentry_options_set_dsn(options_, "https://f27889563d3b4cefb80c5afaca760fdb@o28957.ingest.sentry.io/6586888");
+  std::string dsn_string(xstr(ENABLE_SENTRY));
+  dsn_string = "http://" + dsn_string;
+  sentry_options_set_dsn(options_, dsn_string.c_str());
   #ifdef Q_OS_MACOS
   //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
   sentry_options_set_handler_path(options_,
@@ -116,6 +122,7 @@ void MainWindow::loadSettings() {
   else {
     sentry_user_consent_revoke();
   }
+#endif
   preferences_window_->setUpload(is_upload_enable_);
 }
 
@@ -929,23 +936,27 @@ void MainWindow::registerEvents() {
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
+#ifdef ENABLE_SENTRY
     if(is_upload_enable_) {
       sentry_user_consent_give();
     }
     else {
       sentry_user_consent_revoke();
     }
+#endif
     QSettings settings;
     settings.setValue("window/upload", is_upload_enable_);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
+#ifdef ENABLE_SENTRY
     if(is_upload_enable_) {
       sentry_user_consent_give();
     }
     else {
       sentry_user_consent_revoke();
     }
+#endif
     preferences_window_->setUpload(is_upload_enable_);
     QSettings settings;
     settings.setValue("window/upload", is_upload_enable_);

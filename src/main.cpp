@@ -8,8 +8,14 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
-#include <sentry.h>
 #include <string>
+
+#ifdef ENABLE_SENTRY
+#include <sentry.h>
+#endif
+
+#define xstr(s) str(s)
+#define str(s)  #s
 
 #ifdef Q_OS_MACOS
 #define MACOS
@@ -90,8 +96,10 @@ int main(int argc, char *argv[]) {
       break;
   }
 
+#ifdef ENABLE_SENTRY
   // Make sure everything flushes
   auto sentryClose = qScopeGuard([] { sentry_close(); });
+#endif
 
   QTranslator translator;
   translator.load(":/i18n/" + locale);
