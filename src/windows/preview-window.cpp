@@ -63,19 +63,16 @@ bool PathGraphicsPreview::event(QEvent *e) {
 }
 
 void PathGraphicsPreview::wheelEvent(QWheelEvent *e) {
-  if (is_holding_ctrl_) {
-    double new_scale = 1 + (double)e->angleDelta().y() / 8 / this->height();
-    if (this->scaleFactor * new_scale >= 1) {
-      this->scaleFactor *= new_scale;
-      this->scale(new_scale, new_scale);
-    }
-    else {
-      this->scale(1.0/this->scaleFactor, 1.0/this->scaleFactor);
-      this->scaleFactor = 1;
-    }
-    return;
+  double new_scale = 1 + (double)e->angleDelta().y() / 8 / this->height();
+  if (this->scaleFactor * new_scale >= 1) {
+    this->scaleFactor *= new_scale;
+    this->scale(new_scale, new_scale);
   }
-  return QGraphicsView::wheelEvent(e);
+  else {
+    this->scale(1.0/this->scaleFactor, 1.0/this->scaleFactor);
+    this->scaleFactor = 1;
+  }
+  return;
 }
 
 void PathGraphicsPreview::gestureHandler(QGestureEvent *gesture_event) {
