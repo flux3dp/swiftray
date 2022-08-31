@@ -1,9 +1,18 @@
-**將這支 PR 所做的事情，取代這段文字，描述越詳細越好。**
+# Description
 
------------------
+Please include a summary of the changes and the related issue. Please also include relevant motivation and context. List any dependencies that are required for this change.
 
-Clickup task URL: https://app.clickup.com/t/<abcdefg>
+Fixes # (issue)
 
------------------
+## Type of change
 
-補充說明:
+Please delete options that are not relevant.
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+# How Has This Been Tested?
+
+Please describe the tests that you ran to verify your changes. Provide instructions so we can reproduce. Please also list any relevant details for your test configuration
