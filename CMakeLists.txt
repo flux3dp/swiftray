@@ -190,11 +190,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
     /usr/local/opt/cairo/include/cairo
-    /opt/homebrew/opt/cairo/include/cairo
+    #/opt/homebrew/opt/cairo/include/cairo
   )
   target_link_libraries(${PROJECT_NAME} 
     /usr/local/opt/cairo/lib/libcairo.dylib
-    /opt/homebrew/opt/cairo/lib/libcairo.dylib
+    #/opt/homebrew/opt/cairo/lib/libcairo.dylib
   )
 else()
   # TODO: Linux
@@ -214,14 +214,14 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
     /usr/local/opt/glib/include/glib-2.0
     /usr/local/opt/glib/lib/glib-2.0/include
-    /opt/homebrew/opt/glib/include/glib-2.0
-    /opt/homebrew/opt/glib/lib/glib-2.0/include
+    #/opt/homebrew/opt/glib/include/glib-2.0
+    #/opt/homebrew/opt/glib/lib/glib-2.0/include
   )
   target_link_libraries(${PROJECT_NAME} 
     /usr/local/opt/glib/lib/libglib-2.0.dylib
     /usr/local/opt/glib/lib/libgobject-2.0.dylib
-    /opt/homebrew/opt/glib/lib/libglib-2.0.dylib
-    /opt/homebrew/opt/glib/lib/libgobject-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libglib-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libgobject-2.0.dylib
   )
 else()
   # TODO: Linux
@@ -238,11 +238,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
     /usr/local/opt/poppler/include/poppler/glib
-    /opt/homebrew/opt/poppler/include/poppler/glib
+    #/opt/homebrew/opt/poppler/include/poppler/glib
   )
   target_link_libraries(${PROJECT_NAME} 
     /usr/local/opt/poppler/lib/libpoppler-glib.dylib
-    /opt/homebrew/opt/poppler/lib/libpoppler-glib.dylib
+    #/opt/homebrew/opt/poppler/lib/libpoppler-glib.dylib
   )
 else()
   # TODO: Linux
