@@ -83,5 +83,8 @@ void Machine::motionPortDisonnected() {
   job_executor_->deleteLater();
   machine_setup_executor_->deleteLater();
   rt_status_executor_->deleteLater();
+  job_executor_ = nullptr;
+  machine_setup_executor_ = nullptr;
+  rt_status_executor_ = nullptr;
   //current_job_;
 }

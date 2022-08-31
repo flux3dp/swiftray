@@ -26,10 +26,11 @@ public:
   explicit MotionController(QObject *parent = nullptr);
 
   void attachPort(SerialPort *port);
+  void sendCmdPacket(QString cmd_packet);
+  void sendCtrl(MotionCtrlerCtrlCmd ctrl_cmd);
 
 signals:
   void disconnected();
-  void sendCmdPacket(QString cmd_packet);
 
 public slots:
   //virtual void handleRawCmd(QString raw_cmd);
