@@ -91,7 +91,7 @@ void MainWindow::loadSettings() {
   QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
   sentry_options_set_database_path(options_, database_path.toStdString().c_str());
   std::string dsn_string(xstr(ENABLE_SENTRY));
-  dsn_string = "http://" + dsn_string;
+  dsn_string = "https://" + dsn_string;
   sentry_options_set_dsn(options_, dsn_string.c_str());
   #ifdef Q_OS_MACOS
   //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
