@@ -34,6 +34,9 @@ jobs:
         run: |
           brew install icu4c
           brew install libxml2
+          brew install glib
+          brew install cairo
+          brew install poppler
       # Install Qt 5.15.2
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
       - name: Install Qt 5.15.2
