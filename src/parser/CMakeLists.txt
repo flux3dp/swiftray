@@ -4,4 +4,5 @@ target_sources(Swiftray PRIVATE
   svgpp-external-impl.cpp
   dxf_iface.cpp
   my_qsvg_handler.cpp
+  pdf2svg.cpp
 )
