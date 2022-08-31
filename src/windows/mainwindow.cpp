@@ -926,6 +926,7 @@ void MainWindow::registerEvents() {
   connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
+  // TODO: Refactor it when supporting multi-ports and multi-machine connection
   connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {

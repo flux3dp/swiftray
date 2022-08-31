@@ -72,6 +72,7 @@ void Machine::motionPortConnected() {
 void Machine::motionPortActivated() {
   connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
     // TODO: handle machine not responding to realtime status cmd
+    qInfo() << "Realtime status updater hanging";
   });
   job_executor_->start();
   rt_status_executor_->start();

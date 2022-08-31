@@ -5,7 +5,7 @@
 #include <connection/serial-port.h>
 
 enum class MotionCtrlerCtrlCmd {
-    // Grbl ctrl cmd
+    // Grbl supported ctrl cmd
     kViewParserState,   // $G
     kUnlock,            // $X
     kHome,              // $H
@@ -16,6 +16,7 @@ enum class MotionCtrlerCtrlCmd {
     kStatusReport,      // ?
     kFeedHold,          // !
     kCycleStart,        // ~
+    // xxx supported ctrl cmd
 };
 
 class MotionController : public QObject
@@ -31,7 +32,6 @@ signals:
   void sendCmdPacket(QString cmd_packet);
 
 public slots:
-  void portDisconnected();
   //virtual void handleRawCmd(QString raw_cmd);
   //virtual void handleCtrlCmd(MotionCtrlerCtrlCmd ctrl_cmd);
   //virtual void handleJoggingCmd(qreal x, qreal y, bool relative);
