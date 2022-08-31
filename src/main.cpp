@@ -14,9 +14,6 @@
 #include <sentry.h>
 #endif
 
-#define xstr(s) str(s)
-#define str(s)  #s
-
 #ifdef Q_OS_MACOS
 #define MACOS
 #endif
