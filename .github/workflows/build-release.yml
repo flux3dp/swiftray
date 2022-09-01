@@ -99,14 +99,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/qmake ${{ github.workspace }}/swiftray.pro -spec macx-clang CONFIG+=qtquickcompiler
+          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/qmake DEFINES+=ENABLE_SENTRY=${{secrets.SENTRY_DSN}} ${{ github.workspace }}/swiftray.pro -spec macx-clang CONFIG+=qtquickcompiler
       
       - name: CMake generate buildsystem
         if: ${{matrix.cfg.build == 'cmake' }}
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
 
       - name: Compile (Build) project
         if: ${{matrix.cfg.build == 'qmake' }}
