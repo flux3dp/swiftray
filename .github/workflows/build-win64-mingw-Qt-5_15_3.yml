@@ -1,8 +1,8 @@
 name: build-win64-installer
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  # push:
+  #   tags:
+  #     - "v*.*.*"
 jobs:
   setup-win-mingw-build-environment:
     runs-on: windows-latest
