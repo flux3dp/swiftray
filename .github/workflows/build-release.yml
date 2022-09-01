@@ -142,7 +142,7 @@ jobs:
         if: ${{matrix.cfg.build == 'cmake' }}
         run: |
             cd build
-            cp /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
+            cp /usr/local/opt/gcc/lib/gcc/12/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
             chmod 644 Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
             install_name_tool -change /usr/local/opt/gcc/lib/gcc/11/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
