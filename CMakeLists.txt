@@ -32,9 +32,17 @@ endif()
 
 get_filename_component(SRC_DIR "src" REALPATH)
 
+if (DEFINED ENABLE_SENTRY)
+  message(STATUS "Sentry enabled")
+  add_definitions(-DENABLE_SENTRY=${ENABLE_SENTRY})
+  include_directories(
+    third_party/sentry-native/install/include
+  )
+endif()
+
+
 include_directories(
   third_party
-  third_party/sentry-native/install/include
   ${SRC_DIR}
 )
 
@@ -73,15 +81,19 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   #set(APP_HELPER_FILES
   #  ${CMAKE_CURRENT_SOURCE_DIR}/xxxxx/<helper tools>
   #)
+  if (DEFINED ENABLE_SENTRY)
   set(APP_FRAMEWORK_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
     )
+  endif()
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
   )
+  if (DEFINED ENABLE_SENTRY)
   set(APP_ADDITIONAL_EXEC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler
   )
+  endif()
   #set_source_files_properties(${APP_HELPER_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Helpers")
   set_source_files_properties(${APP_ADDITIONAL_EXEC_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
   set_source_files_properties(${APP_FRAMEWORK_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Frameworks")
@@ -153,16 +165,18 @@ target_link_libraries(${PROJECT_NAME} QxPotrace)
 target_link_libraries(${PROJECT_NAME} libdxfrw)
 
 # Sentry
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(${PROJECT_NAME}
-    ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/sentry.lib
-  )
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_libraries(${PROJECT_NAME} 
-    ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
-  )
-else()
-  # TODO: Linux
+if (DEFINED ENABLE_SENTRY)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_link_libraries(${PROJECT_NAME}
+      ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/sentry.lib
+    )
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(${PROJECT_NAME} 
+      ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
+    )
+  else()
+    # TODO: Linux
+  endif()
 endif()
 
 

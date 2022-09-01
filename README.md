@@ -57,7 +57,7 @@ cmake -B build -S . \
 cmake --build build --config RelWithDebInfo --parallel
 cmake --install build --prefix install
 ```
-NOTE: For Windows MSVC(2019), you need to resolve the source code encoding issue of crashpad first
+NOTE: For Windows MSVC(2019), you need to resolve the source code encoding issue of crashpad first.
 
 See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
 
