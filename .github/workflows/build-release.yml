@@ -138,14 +138,15 @@ jobs:
         with:
           xcode-version: '12.4.0'
 
-      - name: Fix bundle dependencies (workaround for bug in macdeployqt with Xcode version > 11.4)
-        if: ${{matrix.cfg.build == 'cmake' }}
-        run: |
-            cd build
-            cp /usr/local/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
-            chmod 644 Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
-            install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
-            install_name_tool -change /usr/local/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
+      # No longer needed
+      #- name: Fix bundle dependencies (workaround for bug in macdeployqt with Xcode version > 11.4)
+      #  if: ${{matrix.cfg.build == 'cmake' }}
+      #  run: |
+      #      cd build
+      #      cp /usr/local/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/
+      #      chmod 644 Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+      #      install_name_tool -id @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.1.dylib
+      #      install_name_tool -change /usr/local/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib @executable_path/../Frameworks/libgcc_s.1.1.dylib Swiftray.app/Contents/Frameworks/libgcc_s.1.dylib
 
       - name: Setup Sentry CLI
         if: ${{ matrix.cfg.dist }}
