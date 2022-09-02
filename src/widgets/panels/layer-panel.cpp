@@ -32,7 +32,7 @@ void LayerPanel::loadWidgets() {
   add_layer_btn_ = new QToolButton(ui->layerList);
   add_layer_btn_->setObjectName("btnAddLayer");
   add_layer_btn_->setCursor(Qt::PointingHandCursor);
-  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/images/dark/icon-plus.png" : ":/images/icon-plus.png"));
+  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-plus.png" : ":/resources/images/icon-plus.png"));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
   add_layer_btn_->raise();

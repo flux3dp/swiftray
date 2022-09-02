@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QDialog>
-#include <gcode/generators/preview-generator.h>
+#include <toolpath_exporter/generators/preview-generator.h>
 #include <widgets/base-container.h>
 
 #include <QGraphicsView>

@@ -2,6 +2,7 @@
 #include <canvas/controls/line.h>
 #include <shape/path-shape.h>
 #include <canvas/canvas.h>
+#include <math.h>
 
 using namespace Controls;
 
@@ -20,11 +21,28 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
   QPointF new_point = document().getCanvasCoord(e->pos());
   if(direction_locked_) {
     QPointF move_point = new_point - document().mousePressedCanvasCoord();
-    if(abs(move_point.x()) >= abs(move_point.y())) {
-      new_point.setY(document().mousePressedCanvasCoord().y());
+    double current_angle = atan2 (move_point.y(),move_point.x()) * 180 / M_PI;
+    if(-157.5 < current_angle && current_angle <= -112.5) {
+      current_angle = -135;
+    } else if(-112.5 < current_angle && current_angle <= -67.5) {
+      current_angle = -90;
+    } else if(-67.5 < current_angle && current_angle <= -22.5) {
+      current_angle = -45;
+    } else if(-22.5 < current_angle && current_angle <= 22.5) {
+      current_angle = 0;
+    } else if(22.5 < current_angle && current_angle <= 67.5) {
+      current_angle = 45;
+    } else if(67.5 < current_angle && current_angle <= 112.5) {
+      current_angle = 90;
+    } else if(112.5 < current_angle && current_angle <= 157.5) {
+      current_angle = 135;
+    } else {
+      current_angle = 180;
     }
-    else {
-      new_point.setX(document().mousePressedCanvasCoord().x());
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      new_point.setY(tan(current_angle * M_PI / 180.0) * move_point.x() + document().mousePressedCanvasCoord().y());
+    } else {
+      new_point.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * move_point.y() + document().mousePressedCanvasCoord().x());
     }
   }
   path.lineTo(new_point);
@@ -46,11 +64,28 @@ void Line::paint(QPainter *painter) {
   if(direction_locked_) {
     QPointF new_point = cursor_;
     QPointF move_point = cursor_ - document().mousePressedCanvasCoord();
-    if(abs(move_point.x()) >= abs(move_point.y())) {
-      new_point.setY(document().mousePressedCanvasCoord().y());
+    double current_angle = atan2 (move_point.y(),move_point.x()) * 180 / M_PI;
+    if(-157.5 < current_angle && current_angle <= -112.5) {
+      current_angle = -135;
+    } else if(-112.5 < current_angle && current_angle <= -67.5) {
+      current_angle = -90;
+    } else if(-67.5 < current_angle && current_angle <= -22.5) {
+      current_angle = -45;
+    } else if(-22.5 < current_angle && current_angle <= 22.5) {
+      current_angle = 0;
+    } else if(22.5 < current_angle && current_angle <= 67.5) {
+      current_angle = 45;
+    } else if(67.5 < current_angle && current_angle <= 112.5) {
+      current_angle = 90;
+    } else if(112.5 < current_angle && current_angle <= 157.5) {
+      current_angle = 135;
+    } else {
+      current_angle = 180;
     }
-    else {
-      new_point.setX(document().mousePressedCanvasCoord().x());
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      new_point.setY(tan(current_angle * M_PI / 180.0) * move_point.x() + document().mousePressedCanvasCoord().y());
+    } else {
+      new_point.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * move_point.y() + document().mousePressedCanvasCoord().x());
     }
     painter->drawLine(document().mousePressedCanvasCoord(), new_point);
   }

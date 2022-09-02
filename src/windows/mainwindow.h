@@ -26,8 +26,11 @@
 #include <windows/job-dashboard-dialog.h>
 #include <motion_controller_job/grbl-job.h>
 #include <windows/about-window.h>
-#include <sentry.h>
 #include <windows/privacy_window.h>
+
+#ifdef ENABLE_SENTRY
+#include <sentry.h>
+#endif
 
 namespace Ui {
   class MainWindow;
@@ -143,7 +146,9 @@ private:
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
   bool is_upload_enable_ = false;
+#ifdef ENABLE_SENTRY
   sentry_options_t *options_;
+#endif
   QString current_filename_;
 
   // Context menu of canvas
@@ -191,7 +196,6 @@ private:
   void generateJob();
   bool handleUnsavedChange();
   void actionStart();
-  void startupSentry();
 };
 
 #endif // MAINWINDOW_H

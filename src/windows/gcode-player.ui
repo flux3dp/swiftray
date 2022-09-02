@@ -59,7 +59,7 @@
        </property>
        <property name="icon">
         <iconset resource="../../qml.qrc">
-         <normaloff>:/images/icon-import.png</normaloff>:/images/icon-import.png</iconset>
+         <normaloff>:/resources/images/icon-import.png</normaloff>:/resources/images/icon-import.png</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -103,7 +103,7 @@
        </property>
        <property name="icon">
         <iconset resource="../../qml.qrc">
-         <normaloff>:/images/icon-export.png</normaloff>:/images/icon-export.png</iconset>
+         <normaloff>:/resources/images/icon-export.png</normaloff>:/resources/images/icon-export.png</iconset>
        </property>
        <property name="iconSize">
         <size>

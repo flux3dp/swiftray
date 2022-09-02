@@ -10,7 +10,7 @@
 #include <shape/bitmap-shape.h>
 #include <shape/group-shape.h>
 #include <shape/path-shape.h>
-#include <gcode/toolpath-exporter.h>
+#include <toolpath_exporter/toolpath-exporter.h>
 #include <windows/preview-window.h>
 #include <windows/osxwindow.h>
 #include <document-serializer.h>
@@ -399,18 +399,12 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF new_scroll;
   QPointF mouse_pos;
 
-  if (is_holding_ctrl_) {
-    mouse_pos = e->position() - widget_offset_;
-    double orig_scale = document().scale();
-    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
-    document().setScale(new_scale);
+  mouse_pos = e->position() - widget_offset_;
+  double orig_scale = document().scale();
+  double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
+  document().setScale(new_scale);
 
-    new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
-  } else {
-    new_scroll.setX(document().scroll().x() + e->angleDelta().x() / 8 / 2.5);
-    new_scroll.setY(document().scroll().y() + e->angleDelta().y() / 8 / 2.5);
-    mouse_pos = e->angleDelta();
-  }
+  new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
 
   // Restrict the range of scroll
   QPointF top_left_bound = getTopLeftScrollBoundary();

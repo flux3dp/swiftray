@@ -8,8 +8,11 @@
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
-#include <sentry.h>
 #include <string>
+
+#ifdef ENABLE_SENTRY
+#include <sentry.h>
+#endif
 
 #ifdef Q_OS_MACOS
 #define MACOS
@@ -49,13 +52,13 @@ int main(int argc, char *argv[]) {
   }
 
   // Set app icon
-  app.setWindowIcon(QIcon(":/images/icon.png"));
+  app.setWindowIcon(QIcon(":/resources/images/icon.png"));
 
   QSettings settings;
   // load Open Sans font(addApplicationFont fail in Mac)
   QVariant font_size = settings.value("window/font_size", 0);
   #ifdef Q_OS_WIN
-  int id = QFontDatabase::addApplicationFont(":/fonts/open-sans-latin.ttf");
+  int id = QFontDatabase::addApplicationFont(":/resources/fonts/open-sans-latin.ttf");
   if(id != -1) {
     QFont font("Open Sans");
     font.setStyleHint(QFont::Monospace);
@@ -90,8 +93,10 @@ int main(int argc, char *argv[]) {
       break;
   }
 
+#ifdef ENABLE_SENTRY
   // Make sure everything flushes
   auto sentryClose = qScopeGuard([] { sentry_close(); });
+#endif
 
   QTranslator translator;
   translator.load(":/i18n/" + locale);

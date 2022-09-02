@@ -8,7 +8,7 @@
 #include <shape/bitmap-shape.h>
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
-#include <gcode/generators/base-generator.h>
+#include <toolpath_exporter/generators/base-generator.h>
 #include <document.h>
 #include <bitset>
 

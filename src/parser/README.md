@@ -1,3 +1,5 @@
+Please refer to swiftray/README.md
+<!--
 # Understanding SVG++ library
 
 這個 Library 功能完整，但由於使用了大量 Template 跟 Metaprogramming，一開始不熟悉 C++ 會非常難 Debug。
@@ -44,3 +46,4 @@ struct ChildContextFactories::apply<BaseContext, tag::element::use_, void> {
 
 ### 6. 新增 attribute
 請參考 "data_config_name" 有出現的地方，通通有樣學樣即可，要注意的是 enumerate_all_attributes.inc **一定要按照字母順序排列！！**，跟 cariosvg 一樣，不然 debug 會很崩潰。
+-->
