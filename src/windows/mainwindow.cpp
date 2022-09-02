@@ -166,6 +166,10 @@ void MainWindow::loadCanvas() {
         canvas_->loadSVG(data);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+      }  else if (filename.endsWith(".dxf")) {
+        canvas_->loadDXF(filename);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
