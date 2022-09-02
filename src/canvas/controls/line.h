@@ -11,7 +11,9 @@ namespace Controls {
    */
   class Line : public CanvasControl {
   public:
-    explicit Line(Canvas *canvas) : CanvasControl(canvas) {}
+    explicit Line(Canvas *canvas) : CanvasControl(canvas) {
+      direction_locked_ = false;
+    }
 
     bool mouseMoveEvent(QMouseEvent *e) override;
 
@@ -25,8 +27,14 @@ namespace Controls {
 
     bool isActive() override;
 
+    bool isDirectionLock() const;
+
+    void setDirectionLock(bool direction_lock);
+
   private:
     QPointF cursor_;
+
+    bool direction_locked_;
   };
 
 }

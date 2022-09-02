@@ -21,6 +21,9 @@ public:
 
   ~LayerPanel();
 
+signals:
+  void panelShow(bool is_show);
+  
 private slots:
 
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
@@ -30,8 +33,10 @@ private slots:
 
 private:
   void loadWidgets() override;
-
+  void loadStyles() override;
   void registerEvents() override;
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
 
   Ui::LayerPanel *ui;
 

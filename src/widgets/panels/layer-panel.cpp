@@ -4,6 +4,7 @@
 #include <windows/mainwindow.h>
 #include <QAbstractItemView>
 #include <boost/range/adaptor/reversed.hpp>
+#include <windows/osxwindow.h>
 
 LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -15,13 +16,23 @@ LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
   updateLayers();
 }
 
+void LayerPanel::loadStyles() {
+  ui->layerList->setStyleSheet("\
+    QToolButton#btnAddLayer{ \
+      background-color: rgba(0, 0, 0, 0);\
+    } \
+  ");
+}
+
 void LayerPanel::loadWidgets() {
   layer_params_panel_ = new LayerParamsPanel(this, main_window_);
   this->layout()->addWidget(layer_params_panel_);
   // Add floating buttons
   QPointF button_pos = ui->layerList->mapToGlobal(ui->layerList->geometry().bottomRight()) - QPointF(35, 35);
   add_layer_btn_ = new QToolButton(ui->layerList);
-  add_layer_btn_->setIcon(QIcon(":/images/icon-plus-01.png"));
+  add_layer_btn_->setObjectName("btnAddLayer");
+  add_layer_btn_->setCursor(Qt::PointingHandCursor);
+  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-plus.png" : ":/resources/images/icon-plus.png"));
   add_layer_btn_->setIconSize(QSize(24, 24));
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
   add_layer_btn_->raise();
@@ -36,6 +47,14 @@ void LayerPanel::registerEvents() {
     // TODO (Add more UI logic here to prevent redrawing all list widget)
     main_window_->canvas()->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
+}
+
+void LayerPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void LayerPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
 }
 
 void LayerPanel::resizeEvent(QResizeEvent *e) {

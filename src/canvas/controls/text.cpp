@@ -17,16 +17,56 @@ bool Text::isActive() {
   return canvas().mode() == Canvas::Mode::TextDrawing;
 }
 
-bool Text::mouseReleaseEvent(QMouseEvent *e) {
+bool Text::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  ShapePtr hit = document().hitTest(canvas_coord);
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
-    // Create a virtual target
-    ShapePtr new_shape = make_shared<TextShape>("", canvas().font());
-    setTarget(new_shape);
-    target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
+    if(hit == nullptr || hit->type() != Shape::Type::Text) {
+      // Create a virtual target
+      ShapePtr new_shape = std::make_shared<TextShape>("", canvas().font(), canvas().lineHeight());
+      setTarget(new_shape);
+      target().setTransform(QTransform().translate(canvas_coord.x(), canvas_coord.y()));
+    }
+    else if(hit->type() == Shape::Type::Text){
+      setTarget(hit);
+      int cursor_index = target().calculateCursor(canvas_coord);
+      QTextCursor	current_cursor = canvas().textInput()->textCursor();
+      current_cursor.setPosition(cursor_index);
+      canvas().textInput()->setTextCursor(current_cursor);
+    }
+  }
+  else {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index);
+    canvas().textInput()->setTextCursor(current_cursor);
   }
   return true;
+}
+
+bool Text::mouseReleaseEvent(QMouseEvent *e) {
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if (target_ != nullptr) {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index, QTextCursor::KeepAnchor);
+    canvas().textInput()->setTextCursor(current_cursor);
+    return true;
+  }
+  return false;
+}
+
+bool Text::mouseMoveEvent(QMouseEvent *e) {
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if (target_ != nullptr) {
+    int cursor_index = target().calculateCursor(canvas_coord);
+    QTextCursor	current_cursor = canvas().textInput()->textCursor();
+    current_cursor.setPosition(cursor_index, QTextCursor::KeepAnchor);
+    canvas().textInput()->setTextCursor(current_cursor);
+    return true;
+  }
+  return false;
 }
 
 bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
@@ -46,8 +86,11 @@ void Text::paint(QPainter *painter) {
   if (target_ == nullptr)
     return;
   QString text = canvas().textInput()->toPlainText() + canvas().textInput()->preeditString();
-  target().setText(text);
-  target().makeCursorRect(canvas().textInput()->textCursor().position());
+  if (text_cache_ != text) {
+    target().setText(text);
+    text_cache_ = text;
+  }
+  target().makeCursorRect(canvas().textInput()->textCursor().selectionStart(), canvas().textInput()->textCursor().selectionEnd());
   target().setEditing(true);
   QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
@@ -82,5 +125,14 @@ void Text::setTarget(ShapePtr &new_target) {
   target_ = new_target;
   if (target_ != nullptr) {
     canvas().textInput()->setPlainText(target().text());
+  }
+}
+
+bool Text::isEmpty() {
+  if(target_ != nullptr) {
+    return false;
+  }
+  else {
+    return true;
   }
 }

@@ -59,17 +59,17 @@ namespace Controls {
     }
 
     void updateTransform(double new_x, double new_y, double new_r, double new_w, double new_h) {
-      if (abs(new_x - x()) > 0.01 || abs(new_y - y()) > 0.01) {
+      if (std::abs(new_x - x()) > 0.01 || std::abs(new_y - y()) > 0.01) {
         translate_to_apply_ = QPointF(new_x - x(), new_y - y());
         applyMove();
       }
-      if (abs(new_r - rotation()) > 0.01) {
+      if (std::abs(new_r - rotation()) > 0.01) {
         rotation_to_apply_ = new_r - rotation();
         applyRotate(boundingRect().center(), rotation_to_apply_);
       }
-      if (abs(new_w - width()) > 0.01 || abs(new_h - height()) > 0.01) {
-        scale_x_to_apply_ = new_w / width();
-        scale_y_to_apply_ = new_h / height();
+      if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
+        scale_x_to_apply_ = width() == 0 ? 1 : new_w / width();
+        scale_y_to_apply_ = height() == 0 ? 1 : new_h / height();
         applyScale(boundingRect().center(), scale_x_to_apply_, scale_y_to_apply_);
       }
     }
@@ -94,6 +94,10 @@ namespace Controls {
 
     void setScaleLock(bool scale_lock);
 
+    bool isDirectionLock() const;
+
+    void setDirectionLock(bool direction_lock);
+
     void applyScale(QPointF center, double scale_x, double scale_y, bool temporarily = false);
 
   private:
@@ -101,7 +105,7 @@ namespace Controls {
 
     Control hitTest(QPointF clickPoint, float tolerance);
 
-    QPointF controls_[8];
+    QPointF controls_[9];
     Control active_control_;
     QPointF action_center_;
     QRectF bounding_rect_;
@@ -122,11 +126,14 @@ namespace Controls {
     bool bbox_need_recalc_;
 
     bool scale_locked_;
-  public slots:
+    bool direction_locked_;
 
+  public slots:
     void updateSelections();
 
     void updateBoundingRect();
-  };
 
+  signals:
+    void cursorChanged(Qt::CursorShape cursor);
+  };
 }

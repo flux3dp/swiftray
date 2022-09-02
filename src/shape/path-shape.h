@@ -2,7 +2,7 @@
 
 #include <shape/shape.h>
 
-using namespace std;
+//using namespace std;
 
 class PathShape : public Shape {
 public:

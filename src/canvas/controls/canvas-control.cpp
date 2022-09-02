@@ -24,6 +24,9 @@ bool CanvasControl::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) { return
 /* Return true if the event is handled in this control when isActive==true */
 bool CanvasControl::keyPressEvent(QKeyEvent *e) { return true; }
 
+/* Return true if the event is handled in this control when isActive==true */
+bool CanvasControl::keyReleaseEvent(QKeyEvent *e) { return true; }
+
 void CanvasControl::paint(QPainter *painter) {}
 
 /* Exit will be called when we're exiting the active state */

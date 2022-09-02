@@ -2,6 +2,7 @@
 #define LAYER_PARAMS_PANEL_H
 
 #include <QFrame>
+#include <command.h>
 #include <layer.h>
 #include <settings/preset-settings.h>
 #include <widgets/base-container.h>
@@ -32,10 +33,15 @@ private:
 
   void registerEvents() override;
 
+  void setToCustom();
+
+  void updateMovingComboBox();
+
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
   MainWindow *main_window_;
   PresetManager *preset_manager_;
+  PresetSettings *preset_settings_ = &PresetSettings::getInstance();
   int preset_previous_index_;
 };
 

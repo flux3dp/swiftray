@@ -1,39 +1,44 @@
 {
   "data": [
     {
-      "brand": "FLUX",
-      "model": "beamo",
-      "icon": ":/images/beamo.png",
-      "width": 300,
-      "height": 210,
+      "brand": "Lazervida",
+      "model": "Lazervida",
+      "width": 406,
+      "height": 406,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 1
+      "boardType": 0
     },
     {
-      "brand": "FLUX",
-      "model": "Beambox Compact",
-      "icon": ":/images/beambox.png",
-      "width": 400,
-      "height": 375,
-      "origin": 0,
+      "brand": "Ortur",
+      "model": "Aufero Laser 1",
+      "width": 180,
+      "height": 180,
+      "origin": 2,
       "homeOnStart": true,
-      "boardType": 1
+      "boardType": 0
     },
     {
-      "brand": "FLUX",
-      "model": "Beambox Pro",
-      "icon": ":/images/beambox.png",
-      "width": 600,
-      "height": 375,
-      "origin": 0,
+      "brand": "Ortur",
+      "model": "Aufero Laser 2",
+      "width": 390,
+      "height": 390,
+      "origin": 2,
       "homeOnStart": true,
-      "boardType": 1
+      "boardType": 0
     },
     {
       "brand": "Ortur",
       "model": "Laser Master 2",
-      "icon": ":/images/beambox.png",
+      "width": 400,
+      "height": 430,
+      "origin": 2,
+      "homeOnStart": true,
+      "boardType": 0
+    },
+    {
+      "brand": "Ortur",
+      "model": "Laser Master 2 Pro S2",
       "width": 400,
       "height": 400,
       "origin": 2,
@@ -42,11 +47,28 @@
     },
     {
       "brand": "Neje",
-      "model": "Master 2S",
-      "icon": ":/images/beambox.png",
+      "model": "Master 2 mini",
+      "width": 110,
+      "height": 120,
+      "origin": 0,
+      "homeOnStart": true,
+      "boardType": 0
+    },
+    {
+      "brand": "Neje",
+      "model": "Neje 3",
       "width": 170,
       "height": 170,
-      "origin": 2,
+      "origin": 0,
+      "homeOnStart": true,
+      "boardType": 0
+    },
+    {
+      "brand": "Neje",
+      "model": "Master 2S",
+      "width": 255,
+      "height": 420,
+      "origin": 0,
       "homeOnStart": true,
       "boardType": 0
     }

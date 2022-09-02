@@ -16,10 +16,10 @@ bool Select::isActive() {
 bool Select::mouseMoveEvent(QMouseEvent *e) {
   QPointF start = document().mousePressedCanvasCoord();
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  selection_box_ = QRectF(min(start.x(), canvas_coord.x()),
-                          min(start.y(), canvas_coord.y()),
-                          abs(start.x() - canvas_coord.x()),
-                          abs(start.y() - canvas_coord.y()));
+  selection_box_ = QRectF(std::min(start.x(), canvas_coord.x()),
+                          std::min(start.y(), canvas_coord.y()),
+                          std::abs(start.x() - canvas_coord.x()),
+                          std::abs(start.y() - canvas_coord.y()));
   return true;
 }
 
@@ -27,6 +27,9 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
   if (selection_box_.width() != 0 || selection_box_.height() != 0) {
     QList<ShapePtr> selected;
     for (auto &layer : document().layers()) {
+      if (!layer->isVisible()) {
+        continue;
+      }
       for (auto &shape : layer->children()) {
         if (shape->hitTest(selection_box_)) {
           selected << shape;
@@ -34,6 +37,10 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       }
     }
     document().setSelections(selected);
+    if (selected.size() == 1) {
+      document().setActiveLayer(selected.first()->layer()->name());
+      emit canvas().layerChanged();
+    }
   }
 
   canvas().setMode(Canvas::Mode::Selecting);

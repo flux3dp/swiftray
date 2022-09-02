@@ -23,11 +23,19 @@ public:
 
   MachineSettings::MachineSet currentMachine();
 
+  QString getMachineName();
+
+signals:
+  void machineChanged(QString machine_name);
+
 private:
   void loadSettings() override;
 
   void registerEvents() override;
 
+  void syncDPISettingsUI();
+
+  void syncAdvancedSettingsUI();
 
   Ui::DocPanel *ui;
   MainWindow *main_window_;

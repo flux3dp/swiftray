@@ -37,7 +37,7 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>170</height>
+       <height>270</height>
       </size>
      </property>
      <property name="autoFillBackground">
@@ -50,7 +50,7 @@
       <enum>QFrame::Plain</enum>
      </property>
      <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOn</enum>
+      <enum>Qt::ScrollBarAsNeeded</enum>
      </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -63,7 +63,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>187</width>
+        <width>201</width>
         <height>274</height>
        </rect>
       </property>
@@ -75,35 +75,69 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QComboBox" name="presetComboBox">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="editable">
-          <bool>false</bool>
-         </property>
+        <layout class="QVBoxLayout" name="moveLayerLayout">
          <item>
-          <property name="text">
-           <string>Wood 3mm</string>
-          </property>
+          <widget class="QLabel" name="labelMoving">
+           <property name="text">
+            <string>Moving to</string>
+           </property>
+          </widget>
          </item>
          <item>
-          <property name="text">
-           <string>Acrylic 3mm</string>
-          </property>
+          <widget class="QComboBox" name="movingComboBox"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="presetParamLabel">
+           <property name="minimumSize">
+            <size>
+             <width>161</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>參數</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+           </property>
+          </widget>
          </item>
          <item>
-          <property name="text">
-           <string>Customized</string>
-          </property>
+          <widget class="QComboBox" name="presetComboBox">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="editable">
+            <bool>false</bool>
+           </property>
+           <item>
+            <property name="text">
+             <string>Wood 3mm</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Acrylic 3mm</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Customized</string>
+            </property>
+           </item>
+          </widget>
          </item>
-        </widget>
+        </layout>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -115,21 +149,27 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="powerSpinBox">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
+          <widget class="QDoubleSpinBox" name="powerSpinBox">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="prefix">
+            <string/>
            </property>
            <property name="suffix">
             <string> %</string>
            </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
            <property name="maximum">
-            <number>100</number>
+            <double>100.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
            </property>
            <property name="value">
-            <number>25</number>
+            <double>25.000000000000000</double>
            </property>
           </widget>
          </item>
@@ -145,18 +185,24 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="speedSpinBox">
+          <widget class="QDoubleSpinBox" name="speedSpinBox">
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
            <property name="suffix">
             <string> mm/s</string>
            </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
            <property name="maximum">
-            <number>300</number>
+            <double>300.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
            </property>
            <property name="value">
-            <number>300</number>
+            <double>300.000000000000000</double>
            </property>
           </widget>
          </item>

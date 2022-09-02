@@ -19,7 +19,6 @@
 #include <clipboard.h>
 #include <shape/shape.h>
 #include <parser/svgpp-parser.h>
-#include <gcode/generators/preview-generator.h>
 
 /**
   \class Canvas
@@ -59,6 +58,8 @@ public:
 
   void loadSVG(QByteArray &data);
 
+  void loadDXF(QString file_name);
+
   void keyPressEvent(QKeyEvent *e) override;
 
   void keyReleaseEvent(QKeyEvent *e) override;
@@ -85,6 +86,8 @@ public:
 
   const QFont &font() const;
 
+  double lineHeight() const;
+
   CanvasTextEdit *textInput() const;
 
   // Graphics should be drawn in lower quality is this return true
@@ -103,13 +106,21 @@ public slots:
 
   void editPaste();
 
+  void editPasteInRightButton();
+
+  void editPasteInPlace();
+
   void editDelete();
+
+  void editDuplicate();
 
   void editUndo();
 
   void editRedo();
 
-  void editSelectAll();
+  void editSelectAll(bool with_hiden = false);
+
+  void editClear();
 
   void editGroup();
 
@@ -153,19 +164,43 @@ public slots:
 
   void addEmptyLayer();
 
+  void duplicateLayer(LayerPtr layer);
+
   void importImage(QImage &image);
+
+  void genPathOffset();
+
+  void genImageTrace();
+
+  void invertImage();
+
+  void sharpenImage();
+
+  void replaceImage(QImage new_image);
+  
+  void cropImage();
 
   void setActiveLayer(LayerPtr &layer);
 
   void setLayerOrder(QList<LayerPtr> &order);
 
+  void setScaleWithCenter(qreal new_scale);
+
   void resize();
 
   void setFont(const QFont &font);
 
-  void emitAllChanges();
+  void setPointSize(int point_size);
 
-  shared_ptr<PreviewGenerator> exportGcode();
+  void setLetterSpacing(double spacing);
+
+  void setBold(bool bold);
+
+  void setItalic(bool italic);
+
+  void setUnderline(bool underline);
+
+  void emitAllChanges();
 
   void setLineHeight(float line_height);
 
@@ -178,9 +213,10 @@ public slots:
 
 private:
   // Basic attributes
-  unique_ptr<Document> doc_;
+  std::unique_ptr<Document> doc_;
   Mode mode_;
   QFont font_;
+  double line_height_;
   Clipboard clipboard_;
   Parser::SVGPPParser svgpp_parser_;
 
@@ -209,6 +245,13 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
+  bool is_holding_space_ = false;
+  bool is_holding_ctrl_  = false;
+  bool is_holding_middle_button_ = false;
+  bool is_pop_menu_showing_;
+  bool is_temp_scale_lock_;
+  bool is_direction_lock_;
+  QPointF right_click_;
 
   QQuickWidget *widget_;
 
@@ -225,11 +268,19 @@ protected:
 
 signals:
 
+  void canvasContextMenuOpened();
+
+  void scaleChanged();
+
   void selectionsChanged();
+
+  void fileModifiedChange(bool file_modified);
 
   void layerChanged();
 
   void modeChanged();
+
+  void docSettingsChanged();
 
   void undoCalled();
 

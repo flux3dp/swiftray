@@ -23,6 +23,8 @@ public:
 
   bool isScaleLock() const;
 
+  void setLayout();
+
   void setScaleLock(bool scaleLock);
 
   void updateControl();
@@ -40,6 +42,11 @@ private:
   double h_;
   bool scale_locked_;
   MainWindow *main_window_;
+
+signals:
+  void transformPanelUpdated(double x, double y, double r, double w, double h);
+
+  void scaleLockToggled(bool scale_locked);
 };
 
 #endif // TRANSFORM_WIDGET_H

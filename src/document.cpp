@@ -3,6 +3,7 @@
 #include <boost/range/adaptor/reversed.hpp>
 #include <document.h>
 #include <shape/group-shape.h>
+#include <limits>
 
 Document::Document() noexcept:
      new_layer_id_(1),
@@ -10,17 +11,17 @@ Document::Document() noexcept:
      scroll_y_(0),
      scale_(1),
      screen_changed_(false),
-     frames_count_(0),
      width_(3000),
      height_(2000),
-     font_(QFont("Tahoma", 200, QFont::Bold)),
+     font_(QFont("Tahoma", 100, QFont::Bold)),
      active_layer_(nullptr),
-     canvas_(nullptr) {
-  auto layer1 = make_shared<Layer>(this, 1);
+     canvas_(nullptr),
+     current_file_modified_(false) {
+  auto layer1 = std::make_shared<Layer>(this, 1);
   addLayer(layer1);
 }
 
-void Document::setSelection(nullptr_t) {
+void Document::setSelection(std::nullptr_t) {
   setSelections({});
 }
 
@@ -62,10 +63,14 @@ void Document::undo() {
     qDebug() << "[Document] There is no command to undo!";
     return;
   }
+  undo_mutex_.lock();
   CmdPtr evt = undo2_stack_.last();
   evt->undo(this);
   undo2_stack_.pop_back();
+  undo_mutex_.unlock();
+  redo_mutex_.lock();
   redo2_stack_ << evt;
+  redo_mutex_.unlock();
 
   QString active_layer_name = activeLayer()->name();
 
@@ -75,10 +80,14 @@ void Document::undo() {
 
 void Document::redo() {
   if (redo2_stack_.isEmpty()) return;
+  redo_mutex_.lock();
   CmdPtr evt = redo2_stack_.last();
   evt->redo(this);
   redo2_stack_.pop_back();
+  redo_mutex_.unlock();
+  undo_mutex_.lock();
   undo2_stack_ << evt;
+  undo_mutex_.unlock();
 
   QString active_layer_name = activeLayer()->name();
 
@@ -90,12 +99,20 @@ void Document::execute(Commands::BaseCmd *cmd) {
 }
 
 void Document::execute(const CmdPtr &cmd) {
+  redo_mutex_.lock();
   redo2_stack_.clear();
+  redo_mutex_.unlock();
   cmd->redo(this);
+  undo_mutex_.lock();
   undo2_stack_.push_back(cmd);
+  undo_mutex_.unlock();
+  if (!current_file_modified_) {
+    current_file_modified_ = true;
+    emit fileModifiedChange(current_file_modified_);
+  }
 }
 
-void Document::execute(initializer_list<CmdPtr> cmds) {
+void Document::execute(std::initializer_list<CmdPtr> cmds) {
   auto joined = Commands::Joined();
   for (auto cmd: cmds) {
     joined << cmd;
@@ -105,14 +122,18 @@ void Document::execute(initializer_list<CmdPtr> cmds) {
 
 void Document::addLayer(LayerPtr &layer) {
   layer->setDocument(this);
+  layers_mutex_.lock();
   layers_ << layer;
+  layers_mutex_.unlock();
   active_layer_ = layers().last().get();
 }
 
 void Document::removeLayer(LayerPtr &layer) {
+  layers_mutex_.lock();
   if (!layers_.removeOne(layer)) {
     qInfo() << "Failed to remove layer";
   }
+  layers_mutex_.unlock();
 }
 
 QPointF Document::getCanvasCoord(QPointF window_coord) const {
@@ -127,9 +148,15 @@ qreal Document::width() const { return width_; }
 
 qreal Document::height() const { return height_; }
 
-void Document::setWidth(qreal width) { width_ = width; }
+void Document::setWidth(qreal width) {
+  width_ = width;
+  settings_.width = width;
+}
 
-void Document::setHeight(qreal height) { height_ = height; }
+void Document::setHeight(qreal height) {
+  height_ = height;
+  settings_.height = height;
+}
 
 void Document::setScroll(QPointF scroll) {
   scroll_x_ = scroll.x();
@@ -142,8 +169,22 @@ void Document::setScreenSize(QSize size) {
   screen_changed_ = true;
 }
 
+void Document::setCurrentFile(QString filename) {
+  current_file_ = filename;
+  current_file_modified_ = false;
+  emit fileModifiedChange(current_file_modified_);
+}
+
+void Document::clearCurrentFileModified() {
+  current_file_modified_ = false;
+  emit fileModifiedChange(current_file_modified_);
+}
+
 void Document::setScale(qreal scale) {
+  scale = scale > 2 ? 2 : scale;
+  scale = scale < 0.01 ? 0.01 : scale;
   scale_ = scale;
+  emit scaleChanged();
   screen_changed_ = true;
 }
 
@@ -183,22 +224,39 @@ const QList<LayerPtr> &Document::layers() const { return layers_; }
 
 void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
   // TODO (Add undo event)
+  layers_mutex_.lock();
   layers_ = new_order;
+  layers_mutex_.unlock();
 }
 
 ShapePtr Document::hitTest(QPointF canvas_coord) {
+  qreal smallest_area = std::numeric_limits<qreal>::max();
+  ShapePtr selected_shape = nullptr;
   for (auto &layer : layers()) {
+    if (!layer->isVisible()) {
+      continue;
+    }
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
-        return shape;
+        // NOTE: Select the shape with the smallest bounding box
+        // Alwyas iterate through all shapes -> Performance should be considered carefully
+        qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
+        if (bounding_area < smallest_area) {
+          smallest_area = bounding_area;
+          selected_shape = shape;
+        }
       }
     }
   }
-  return nullptr;
+  return selected_shape;
 }
 
 QPointF Document::mousePressedCanvasCoord() const {
   return getCanvasCoord(mouse_pressed_screen_coord_);
+}
+
+QPointF Document::mousePressedCanvasScroll() const {
+  return mouse_pressed_scroll_coord_;
 }
 
 QPointF Document::mousePressedScreenCoord() const {
@@ -207,12 +265,13 @@ QPointF Document::mousePressedScreenCoord() const {
 
 void Document::setMousePressedScreenCoord(QPointF screen_coord) {
   mouse_pressed_screen_coord_ = screen_coord;
+  mouse_pressed_scroll_coord_ = QPointF(scroll_x_, scroll_y_);
 }
 
 void Document::groupSelections() {
   if (selections().empty()) return;
 
-  ShapePtr group_ptr = make_shared<GroupShape>(selections());
+  ShapePtr group_ptr = std::make_shared<GroupShape>(selections());
   auto cmd = Commands::Joined();
   for (auto &shape: selections()) {
     cmd << Commands::SetParent(shape.get(), group_ptr.get());
@@ -247,8 +306,6 @@ void Document::ungroupSelections() {
 }
 
 void Document::paint(QPainter *painter) {
-  frames_count_++;
-
   int object_count = 0;
   for (const LayerPtr &layer : layers()) {
     if (screen_changed_) layer->flushCache();
@@ -256,10 +313,6 @@ void Document::paint(QPainter *painter) {
   }
 
   screen_changed_ = false;
-}
-
-int Document::framesCount() const {
-  return frames_count_;
 }
 
 QRectF Document::screenRect() const {

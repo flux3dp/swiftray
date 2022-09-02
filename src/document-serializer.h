@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <document.h>
+#include <QJsonObject>
 
 /**
  *  \class DocumentSerializer
@@ -22,18 +23,39 @@ public:
        in(stream) {}
 
   void serializeDocument(Document &doc) {
-    out << QString("NINJAV1.1");
+    out << QString("NINJAV1.2");
     out << QSize(doc.width(), doc.height());
     out << doc.layers().size();
     for (auto &layer : doc.layers()) {
       serializeLayer(layer);
     }
+
+    QJsonObject doc_settings_json = {
+        {"machine_model", doc.settings().machine_model},
+        {"dpi", doc.settings().dpi},
+        { "advanced",
+          QJsonObject {
+            {"use_af", doc.settings().use_af},
+            {"use_diode", doc.settings().use_diode},
+            {"use_rotary", doc.settings().use_rotary},
+            {"use_open_bottom", doc.settings().use_open_bottom}
+          }
+        }
+    };
+    out << doc_settings_json;
+
   }
 
   Document *deserializeDocument() {
     QString doc_version;
     in >> doc_version;
     qInfo() << "Doc Version" << doc_version;
+    if(doc_version == "NINJAV1.2") 
+      version_index_ = NINJAV1_2;
+    else if(doc_version == "NINJAV1.1")
+      version_index_ = NINJAV1_1;
+    else
+      return nullptr;
     Document *doc = new Document;
     QSize doc_size;
     in >> doc_size;
@@ -47,6 +69,32 @@ public:
       LayerPtr layer = deserializeLayer();
       doc->addLayer(layer);
     }
+
+    QJsonObject doc_settings_obj;
+    in >> doc_settings_obj;
+    qInfo() << "Doc settings: " << doc_settings_obj;
+    if ( doc_settings_obj.contains("machine_model") && doc_settings_obj.value("machine_model").isString() ) {
+      doc->settings().machine_model = doc_settings_obj.value("machine_model").toString();
+    }
+    if ( doc_settings_obj.contains("dpi") && doc_settings_obj.value("dpi").isDouble() ) {
+      doc->settings().dpi = doc_settings_obj.value("dpi").toDouble();
+    }
+    if ( doc_settings_obj.contains("advanced") && doc_settings_obj.value("advanced").isObject() ) {
+      QJsonObject advanced_setting_obj = doc_settings_obj.value("advanced").toObject();
+      if ( advanced_setting_obj.contains("use_af") && advanced_setting_obj.value("use_af").isBool() ) {
+        doc->settings().use_af = advanced_setting_obj.value("use_af").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_diode") && advanced_setting_obj.value("use_diode").isBool() ) {
+        doc->settings().use_diode = advanced_setting_obj.value("use_diode").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_rotary") && advanced_setting_obj.value("use_rotary").isBool() ) {
+        doc->settings().use_rotary = advanced_setting_obj.value("use_rotary").toBool();
+      }
+      if ( advanced_setting_obj.contains("use_open_bottom") && advanced_setting_obj.value("use_open_bottom").isBool() ) {
+        doc->settings().use_open_bottom = advanced_setting_obj.value("use_open_bottom").toBool();
+      }
+    }
+
     return doc;
   }
 
@@ -60,6 +108,7 @@ public:
     out << layer->target_height_;
     out << layer->step_height_;
     out << layer->repeat_;
+    out << layer->power_;
     out << layer->speed_;
 
     out << layer->children().size();
@@ -71,9 +120,11 @@ public:
   }
 
   LayerPtr deserializeLayer() {
-    LayerPtr layer = make_shared<Layer>();
+    LayerPtr layer = std::make_shared<Layer>();
     in >> layer->name_;
     in >> layer->type_;
+    // remove the index bigger than FillLine(2), and replace it to Fill(1)
+    if((int)layer->type_ >= 2) layer->type_ = (Layer::Type)1;
     in >> layer->color_;
 
     in >> layer->use_diode_;
@@ -81,7 +132,17 @@ public:
     in >> layer->target_height_;
     in >> layer->step_height_;
     in >> layer->repeat_;
-    in >> layer->speed_;
+    if(version_index_ >= NINJAV1_2) {
+      in >> layer->power_;
+      in >> layer->speed_;
+    }
+    else {
+      int temp;
+      in >> temp;
+      layer->power_ = temp;
+      in >> temp;
+      layer->speed_ = temp;
+    }
 
     int shape_size;
     in >> shape_size;
@@ -148,15 +209,17 @@ public:
 
   void serializeBitmapShape(BitmapShape *shape) {
     serializeShapeProp(shape);
-    out << *shape->bitmap_.get();
+    out << shape->src_image_;
+    out << shape->gradient_;
+    out << shape->thrsh_brightness_;
   }
 
   BitmapShape *deserializeBitmapShape() {
     BitmapShape *shape = new BitmapShape();
     deserializeShapeProp(shape);
-    QPixmap pixmap;
-    in >> pixmap;
-    shape->bitmap_ = make_unique<QPixmap>(pixmap);
+    in >> shape->src_image_;
+    in >> shape->gradient_;
+    in >> shape->thrsh_brightness_;
     return shape;
   }
 
@@ -220,4 +283,10 @@ public:
 
   QDataStream &out;
   QDataStream &in;
+  int version_index_;
+  enum version_id
+  {
+    NINJAV1_1 = 0,
+    NINJAV1_2 //change layer->power, layer->speed to double
+  };
 };

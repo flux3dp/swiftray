@@ -10,8 +10,6 @@
 
 #define SELECTION_TOLERANCE 15
 
-using namespace std;
-
 Shape::Shape() noexcept:
      rotation_(0),
      transform_(),
@@ -94,6 +92,12 @@ bool Shape::hitTest(QRectF) const {
   return false;
 }
 
+/**
+ * @brief The bounding rect of the shape on canvas
+ *        NOTE: translation and rotation have already been considered
+ * 
+ * @return QRectF 
+ */
 QRectF Shape::boundingRect() const {
   if (bbox_need_recalc_) {
     calcBoundingBox();
@@ -114,8 +118,8 @@ void Shape::paint(QPainter *) const {
   qWarning() << "Shape::Paint not implemented" << this;
 }
 
-shared_ptr<Shape> Shape::clone() const {
-  shared_ptr<Shape> shape = make_shared<Shape>(*this);
+std::shared_ptr<Shape> Shape::clone() const {
+  std::shared_ptr<Shape> shape = std::make_shared<Shape>(*this);
   qInfo() << "Clone Shape" << shape.get();
   return shape;
 }

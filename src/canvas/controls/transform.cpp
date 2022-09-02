@@ -2,6 +2,7 @@
 #include <QObject>
 #include <canvas/controls/transform.h>
 #include <canvas/canvas.h>
+#include <QtMath>
 
 using namespace Controls;
 
@@ -11,6 +12,7 @@ Transform::Transform(Canvas *canvas) noexcept:
      CanvasControl(canvas),
      active_control_(Control::NONE),
      scale_locked_(false),
+     direction_locked_(false),
      scale_x_to_apply_(1),
      scale_y_to_apply_(1),
      rotation_to_apply_(0),
@@ -37,10 +39,14 @@ void Transform::updateSelections() {
 }
 
 void Transform::updateBoundingRect() {
+  if (selections().empty()) {
+    bounding_rect_ = QRectF(0, 0, 0, 0);
+    bbox_angle_ = 0;
+  }
+
   // Check if all selection's rotation are the same
   bool all_same_direction = true;
-  qreal rotation =
-       selections().size() > 0 ? selections().first()->rotation() : 0;
+  qreal rotation = selections().empty() ? 0 : selections().first()->rotation();
 
   for (ShapePtr &selection : selections()) {
     if (selection->rotation() != rotation) {
@@ -71,6 +77,8 @@ void Transform::updateBoundingRect() {
          QRectF(global_center - QPointF(unrotated_bbox.width() / 2,
                                         unrotated_bbox.height() / 2),
                 unrotated_bbox.size());
+    rotation = rotation - qFloor(rotation/360) * 360 ;
+
     bbox_angle_ = rotation;
   } else {
     for (ShapePtr &shape : selections()) {
@@ -98,7 +106,6 @@ QRectF Transform::boundingRect() {
 }
 
 void Transform::applyRotate(QPointF center, double rotation, bool temporarily) {
-  qDebug() << "Transform rotated";
   QTransform transform =
        QTransform()
             .translate(center.x(), center.y())
@@ -181,6 +188,7 @@ const QPointF *Transform::controlPoints() {
             .translate(bbox.center().x(), bbox.center().y())
             .rotate(bbox_angle_ + rotation_to_apply_)
             .translate(-bbox.center().x(), -bbox.center().y());
+  QTransform transformNoScale = transform;
 
   if (scale_x_to_apply_ != 1 || scale_y_to_apply_ != 1) {
     transform = transform *
@@ -200,20 +208,21 @@ const QPointF *Transform::controlPoints() {
   controls_[5] = transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
   controls_[6] = transform.map(bbox.bottomLeft());
   controls_[7] = transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
+  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);;
   return controls_;
 }
 
 Transform::Control Transform::hitTest(QPointF clickPoint,
                                       float tolerance) {
   controlPoints();
-  for (int i = (int) Control::NW; i != (int) Control::ROTATION; i++) {
+  for (int i = (int) Control::NW; i <= (int) Control::ROTATION; i++) {
     if ((controls_[i] - clickPoint).manhattanLength() < tolerance) {
       return (Control) i;
     }
   }
 
   if (!this->boundingRect().contains(clickPoint)) {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
       if ((controls_[i] - clickPoint).manhattanLength() < tolerance * 1.5) {
         return Control::ROTATION;
       }
@@ -285,13 +294,19 @@ void Transform::calcScale(QPointF canvas_coord) {
       active_control_ == Control::SW)
     d.setX(-d.x());
 
-  scale_x_to_apply_ = d.x() / transformed_from_.width();
-  scale_y_to_apply_ = d.y() / transformed_from_.height();
+  scale_x_to_apply_ = transformed_from_.width() == 0 ? 1 : d.x() / transformed_from_.width();
+  scale_y_to_apply_ = transformed_from_.height() == 0 ? 1 : d.y() / transformed_from_.height();
 
   if (scale_locked_) {
-    double min_scale = min(scale_x_to_apply_, scale_y_to_apply_);
-    scale_x_to_apply_ = min_scale;
-    scale_y_to_apply_ = min_scale;
+    if (active_control_ == Control::N || active_control_ == Control::S) {
+      scale_x_to_apply_ = scale_y_to_apply_;
+    } else if (active_control_ == Control::W || active_control_ == Control::E) {
+      scale_y_to_apply_ = scale_x_to_apply_;
+    } else {
+      double min_scale = std::min(scale_x_to_apply_, scale_y_to_apply_);
+      scale_x_to_apply_ = min_scale;
+      scale_y_to_apply_ = min_scale;
+    }
   } else {
     if (active_control_ == Control::N || active_control_ == Control::S) {
       scale_x_to_apply_ = 1;
@@ -313,16 +328,64 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
     }
   }
 
+  double current_angle;
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
+      emit cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
+      if(direction_locked_) {
+        current_angle = atan2 (translate_to_apply_.y(),translate_to_apply_.x()) * 180 / M_PI;
+        if(-157.5 < current_angle && current_angle <= -112.5) {
+          current_angle = -135;
+        } else if(-112.5 < current_angle && current_angle <= -67.5) {
+          current_angle = -90;
+        } else if(-67.5 < current_angle && current_angle <= -22.5) {
+          current_angle = -45;
+        } else if(-22.5 < current_angle && current_angle <= 22.5) {
+          current_angle = 0;
+        } else if(22.5 < current_angle && current_angle <= 67.5) {
+          current_angle = 45;
+        } else if(67.5 < current_angle && current_angle <= 112.5) {
+          current_angle = 90;
+        } else if(112.5 < current_angle && current_angle <= 157.5) {
+          current_angle = 135;
+        } else {
+          current_angle = 180;
+        }
+        if(abs(translate_to_apply_.x()) >= abs(translate_to_apply_.y())) {
+          translate_to_apply_.setY(tan(current_angle * M_PI / 180.0) * translate_to_apply_.x());
+        } else {
+          translate_to_apply_.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * translate_to_apply_.y());
+        }
+      }
       applyMove(true);
       break;
     case Canvas::Mode::Rotating:
-      rotation_to_apply_ = (atan2(canvas_coord.y() - action_center_.y(),
-                                  canvas_coord.x() - action_center_.x()) -
-                            rotated_from_) *
-                           180 / 3.1415926;
+      current_angle = atan2(canvas_coord.y() - action_center_.y(),
+                            canvas_coord.x() - action_center_.x()) * 180 / M_PI;        
+      current_angle -= rotated_from_ * 180 / M_PI;
+      if(current_angle > 180) current_angle -= 360;
+      if(current_angle < -180) current_angle += 360;
+      if(direction_locked_) {
+        if(-157.5 < current_angle && current_angle <= -112.5) {
+          current_angle = -135;
+        } else if(-112.5 < current_angle && current_angle <= -67.5) {
+          current_angle = -90;
+        } else if(-67.5 < current_angle && current_angle <= -22.5) {
+          current_angle = -45;
+        } else if(-22.5 < current_angle && current_angle <= 22.5) {
+          current_angle = 0;
+        } else if(22.5 < current_angle && current_angle <= 67.5) {
+          current_angle = 45;
+        } else if(67.5 < current_angle && current_angle <= 112.5) {
+          current_angle = 90;
+        } else if(112.5 < current_angle && current_angle <= 157.5) {
+          current_angle = 135;
+        } else {
+          current_angle = 180;
+        }
+      }
+      rotation_to_apply_ = current_angle;
       applyRotate(action_center_, rotation_to_apply_, true);
       break;
 
@@ -372,21 +435,26 @@ bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   return false;
 }
 
+/**
+ * @brief Draw bounding box and control points of selections
+ * @param painter
+ */
 void Transform::paint(QPainter *painter) {
   auto sky_blue = QColor::fromRgb(0x00, 0x99, 0xCC, 255);
-  auto blue_pen = QPen(QBrush(sky_blue), 1, Qt::SolidLine);
-  blue_pen.setCosmetic(true);
+  auto dash_pen = QPen(QColor(20, 20, 20), 2, Qt::DashLine);
+  dash_pen.setCosmetic(true);
+  dash_pen.setDashPattern(QVector<qreal>({5, 5}));
   auto pt_pen = QPen(sky_blue, 10 / document().scale(), Qt::PenStyle::SolidLine,
                      Qt::RoundCap);
 
   if (selections().size() > 0) {
     controlPoints();
-    painter->setPen(blue_pen);
+    painter->setPen(dash_pen);
     painter->drawPolyline(controls_, 8);
     painter->drawLine(controls_[7], controls_[0]);
+    painter->drawLine(controls_[8], controls_[1]);
     painter->setPen(pt_pen);
-    painter->drawPoints(controls_, 8);
-    painter->drawPoint((controls_[0] + controls_[4]) / 2);
+    painter->drawPoints(controls_, 9);
   }
 }
 
@@ -425,4 +493,12 @@ bool Transform::isScaleLock() const {
 
 void Transform::setScaleLock(bool scale_lock) {
   scale_locked_ = scale_lock;
+}
+
+bool Transform::isDirectionLock() const {
+  return direction_locked_;
+}
+
+void Transform::setDirectionLock(bool direction_lock) {
+  direction_locked_ = direction_lock;
 }

@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>249</width>
+    <width>243</width>
     <height>42</height>
    </rect>
   </property>
@@ -23,6 +23,12 @@
    <size>
     <width>200</width>
     <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>300</width>
+    <height>16777215</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -68,9 +74,6 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>3</number>
-      </property>
       <property name="leftMargin">
        <number>6</number>
       </property>
@@ -84,33 +87,47 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QLabel" name="labelIcon">
-        <property name="enabled">
-         <bool>true</bool>
+       <spacer name="leftHorizontalFixedSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>15</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="ColorPickerButton" name="btnColorPicker">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>3</horstretch>
-          <verstretch>3</verstretch>
+          <horstretch>16</horstretch>
+          <verstretch>16</verstretch>
          </sizepolicy>
         </property>
         <property name="maximumSize">
          <size>
-          <width>40</width>
-          <height>40</height>
+          <width>16</width>
+          <height>16</height>
          </size>
         </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QToolButton:hover {
+  background-color: transparent;
+  border: 0px;
+}
+</string>
+        </property>
         <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>:/images/icon-cursor-01.png</pixmap>
-        </property>
-        <property name="scaledContents">
-         <bool>true</bool>
-        </property>
-        <property name="wordWrap">
-         <bool>false</bool>
+         <string>...</string>
         </property>
        </widget>
       </item>
@@ -131,6 +148,19 @@
        </widget>
       </item>
       <item>
+       <spacer name="expandingHorizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QComboBox" name="comboBox">
         <property name="currentText">
          <string>Line</string>
@@ -143,16 +173,6 @@
         <item>
          <property name="text">
           <string>Fill</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Fill+Line</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Mixed</string>
          </property>
         </item>
        </widget>
@@ -171,6 +191,9 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="styleSheet">
          <string notr="true">background: none;</string>
         </property>
@@ -179,8 +202,8 @@
         </property>
         <property name="icon">
          <iconset resource="../../../qml.qrc">
-          <normaloff>:/images/icon-eyeopen.png</normaloff>
-          <normalon>:/images/icon-eyeclose.png</normalon>:/images/icon-eyeopen.png</iconset>
+          <normaloff>:/resources/images/icon-eyeopen.png</normaloff>
+          <normalon>:/resources/images/icon-eyeclose.png</normalon>:/resources/images/icon-eyeopen.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -198,6 +221,9 @@
       </item>
       <item>
        <widget class="QToolButton" name="btnLock">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
         <property name="styleSheet">
          <string notr="true">background: none;</string>
         </property>
@@ -206,7 +232,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../qml.qrc">
-          <normaloff>:/images/icon-layerlock.png</normaloff>:/images/icon-layerlock.png</iconset>
+          <normaloff>:/resources/images/icon-layerlock.png</normaloff>:/resources/images/icon-layerlock.png</iconset>
         </property>
         <property name="iconSize">
          <size>
@@ -224,6 +250,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ColorPickerButton</class>
+   <extends>QToolButton</extends>
+   <header location="global">widgets/components/color-picker-button.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../../qml.qrc"/>
  </resources>

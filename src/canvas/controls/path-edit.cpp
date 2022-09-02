@@ -104,7 +104,7 @@ void PathEdit::moveElementTo(int index, QPointF local_coord) {
 }
 
 qreal PathEdit::distance(QPointF point) {
-  return sqrt(pow(point.x(), 2) + pow(point.y(), 2));
+  return std::sqrt(std::pow(point.x(), 2) + std::pow(point.y(), 2));
 }
 
 bool PathEdit::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {

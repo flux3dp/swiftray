@@ -1,5 +1,5 @@
-#ifndef VECTY_SVG_STYLE_SELECTOR_H
-#define VECTY_SVG_STYLE_SELECTOR_H
+#ifndef SWIFTRAY_SVG_STYLE_SELECTOR_H
+#define SWIFTRAY_SVG_STYLE_SELECTOR_H
 
 #include <shape/shape.h>
 #include <QtGui/private/qcssparser_p.h>
@@ -122,4 +122,4 @@ public:
   }
 };
 
-#endif //VECTY_SVG_STYLE_SELECTOR_H
+#endif //SWIFTRAY_SVG_STYLE_SELECTOR_H

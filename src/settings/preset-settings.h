@@ -9,13 +9,19 @@
 
 // TODO (Redesign logic to PresetSettings -> Preset -> Param)
 
-class PresetSettings {
+class PresetSettings : public QObject
+{
+    Q_OBJECT
 public:
+  static PresetSettings& getInstance() {
+    static PresetSettings sInstance;
+    return sInstance;
+  }
   struct Param {
   public:
     QString name;
-    int power;
-    int speed;
+    double power;
+    double speed;
     int repeat;
     double step_height;
     double target_height;
@@ -46,21 +52,6 @@ public:
     QJsonObject toJson() const;
   };
 
-  PresetSettings() {
-    QSettings settings;
-    QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
-    if (obj["data"].isNull()) {
-      QFile file(":/resources/parameters/default.json");
-      file.open(QFile::ReadOnly);
-      // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
-      auto preset = Preset::fromJson(QJsonDocument::fromJson(file.readAll()).object());
-      preset.name = "FLUX beamo Preset";
-      presets_ << preset;
-    } else {
-      loadJson(obj);
-    }
-  }
-
   void loadJson(const QJsonObject &obj) {
     QJsonArray data = obj["data"].toArray();
     presets_.clear();
@@ -83,10 +74,52 @@ public:
     return presets_;
   }
 
+  void setCurrentIndex(int index) {
+    current_index_ = index;
+    currentIndexChanged();
+  }
+
+  const Preset currentPreset() {
+    qInfo() << "Current Preset:" << current_index_ ;
+    return presets_[current_index_];
+  }
+
   void save() {
     QSettings settings;
     settings.setValue("preset/user", QJsonDocument(toJson()));
   }
 
   QList<Preset> presets_;
+  int current_index_ = 0;
+
+signals:
+  void currentIndexChanged();
+
+private:
+  PresetSettings() {
+    //QSettings settings;
+    //QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
+    //if (obj["data"].isNull()) {
+    QList<QString> file_list;
+    //file_list.append("default.json");
+    file_list.append("1.6W.json");
+    file_list.append("5W.json");
+    file_list.append("10W.json");
+    for (int i = 0; i < file_list.size(); ++i) {
+      QFile file(":/resources/parameters/"+file_list[i]);
+      file.open(QFile::ReadOnly);
+      // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
+      auto file_json = QJsonDocument::fromJson(file.readAll()).object();
+      auto preset = Preset::fromJson(file_json);
+      qInfo() << file.fileName();
+      preset.name = file_json.take("name").toString();
+      presets_ << preset;
+      if (preset.name.indexOf("5W") > -1) {
+        setCurrentIndex(i);
+      }
+    }
+    //} else {
+    //  loadJson(obj);
+    //}
+  }
 };

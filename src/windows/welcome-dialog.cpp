@@ -23,7 +23,7 @@ void WelcomeDialog::createStandardProfile(const QString brand, const QString mod
   auto m = MachineSettings::findPreset(brand, model);
   assert(!m.brand.isEmpty());
   MachineSettings settings;
-  m.name = brand + " " + model;
+  m.name = model.contains(brand) ? model : (brand + " " + model);
   settings.machines() << m;
   settings.save();
   emit settingsChanged();

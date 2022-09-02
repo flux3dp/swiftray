@@ -10,7 +10,11 @@ namespace Controls {
   public:
     Text(Canvas *canvas) noexcept;
 
+    bool mousePressEvent(QMouseEvent *e) override;
+
     bool mouseReleaseEvent(QMouseEvent *e) override;
+
+    bool mouseMoveEvent(QMouseEvent *e) override;
 
     bool hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) override;
 
@@ -26,8 +30,11 @@ namespace Controls {
 
     void setTarget(ShapePtr &target);
 
+    bool isEmpty();
+
   private:
     ShapePtr target_;
+    QString text_cache_;
   };
 
 }

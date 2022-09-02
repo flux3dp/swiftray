@@ -8,7 +8,9 @@ class BitmapShape : public Shape {
 public:
   BitmapShape();
 
-  BitmapShape(QImage &image);
+  BitmapShape(const QImage &image);
+
+  BitmapShape(QImage &&image);
 
   BitmapShape(const BitmapShape &orig);
 
@@ -22,16 +24,26 @@ public:
 
   Shape::Type type() const override;
 
-  const QPixmap *pixmap() const;
+  const QImage &imageForDisplay() const;
+  const QImage &sourceImage() const;
 
-  QImage &image() const;
+  void invertPixels();
+
+  void setGradient(bool gradient) { gradient_ = gradient; }
+  bool gradient() const { return gradient_; }
+  void setThrshBrightness(int thrsh) { thrsh_brightness_ = thrsh; }
+  int thrsh_brightness() const { return thrsh_brightness_; }
 
   friend class DocumentSerializer;
 
 private:
   void calcBoundingBox() const override;
 
-  unique_ptr<QPixmap> bitmap_;
-  mutable QImage tinted_image_;            // Cache object
-  mutable std::uintptr_t tinted_signature; // Cache object
+  mutable QImage src_image_;
+  mutable bool dirty_ = true;                  // Force an update for Cache object
+  mutable QImage tinted_image_;                // Cache object
+  mutable std::uintptr_t tinted_signature = 0; // Cache object
+
+  bool gradient_ = true; // gradient or binarized
+  int thrsh_brightness_ = 128; // threshold value for binarization
 };

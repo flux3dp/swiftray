@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMutex>
 #include <layer.h>
 #include <shape/shape.h>
 #include <shape/text-shape.h>
@@ -33,7 +34,7 @@ namespace Commands {
     }
   };
 
-  typedef shared_ptr<BaseCmd> CmdPtr;
+  typedef std::shared_ptr<BaseCmd> CmdPtr;
 
 
   /**
@@ -118,6 +119,8 @@ namespace Commands {
 
     QList<ShapePtr> old_selections_;
     QList<ShapePtr> new_selections_;
+    QMutex old_select_mutex_;
+    QMutex new_select_mutex_;
   };
 
   /**
@@ -129,9 +132,9 @@ namespace Commands {
 
     JoinedCmd() = default;
 
-    JoinedCmd(initializer_list<BaseCmd *> undo_events);
+    JoinedCmd(std::initializer_list<BaseCmd *> undo_events);
 
-    JoinedCmd(initializer_list<CmdPtr> undo_events);
+    JoinedCmd(std::initializer_list<CmdPtr> undo_events);
 
     void undo(Document *doc) override;
 
@@ -140,7 +143,7 @@ namespace Commands {
     QList<CmdPtr> events;
   };
 
-  typedef shared_ptr<JoinedCmd> JoinedPtr;
+  typedef std::shared_ptr<JoinedCmd> JoinedPtr;
 
   /**
       \class SetCmd
@@ -209,13 +212,13 @@ namespace Commands {
   template<typename T, typename PropType, PropType (T::*PropGetter)() const, void (T::*PropSetter)(
        PropType)>
   CmdPtr Set(T *target, PropType new_value) {
-    return make_shared<SetCmd<T, PropType, PropGetter, PropSetter>>(target, new_value);
+    return std::make_shared<SetCmd<T, PropType, PropGetter, PropSetter>>(target, new_value);
   }
 
   template<typename T, typename PropType, const PropType &(T::*PropGetter)() const, void (T::*PropSetter)(
        const PropType &)>
   CmdPtr SetRef(T *target, PropType new_value) {
-    return make_shared<SetRefCmd<T, PropType, PropGetter, PropSetter>>
+    return std::make_shared<SetRefCmd<T, PropType, PropGetter, PropSetter>>
          (target, new_value);
   }
 

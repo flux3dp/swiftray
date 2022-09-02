@@ -21,16 +21,50 @@ public:
 
   QFont font();
 
-  void setFont(QFont font, float line_height);
+  double lineHeight();
+
+  void setLayout();
+
+  void setFont(const QFont &font);
+
+  void setPointSize(int point_size);
+
+  void setLetterSpacing(double spacing);
+
+  void setBold(bool bold);
+
+  void setItalic(bool italic);
+
+  void setUnderline(bool underline);
+
+  void setLineHeight(double line_height);
 
 private:
   void loadStyles() override;
 
   void registerEvents() override;
 
+  void setFont(QFont font, float line_height);
+
   Ui::FontPanel *ui;
   MainWindow *main_window_;
   QFont font_;
+  double line_height_;
+
+signals:
+  void lineHeightChanged(double line_height);
+
+  void fontChanged(QFont font);
+
+  void fontPointSizeChanged(int point_size);
+
+  void fontLetterSpacingChanged(double letter_spacing);
+
+  void fontBoldChanged(bool font_bold);
+
+  void fontItalicChanged(bool font_italic);
+
+  void fontUnderlineChanged(bool font_underline);
 };
 
 #endif // FONTPANEL_H

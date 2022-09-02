@@ -16,10 +16,38 @@ PathDraw::PathDraw(Canvas *canvas) : CanvasControl(canvas) {
   last_ctrl_pt_ = invalid_point;
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
+  direction_locked_ = false;
 }
 
 bool PathDraw::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if(direction_locked_ && working_path_.elementCount() !=0) {
+    QPointF reference_point = working_path_.elementAt(working_path_.elementCount()-1);
+    QPointF move_point = canvas_coord - reference_point;
+    double current_angle = atan2 (move_point.y(),move_point.x()) * 180 / M_PI;
+    if(-157.5 < current_angle && current_angle <= -112.5) {
+      current_angle = -135;
+    } else if(-112.5 < current_angle && current_angle <= -67.5) {
+      current_angle = -90;
+    } else if(-67.5 < current_angle && current_angle <= -22.5) {
+      current_angle = -45;
+    } else if(-22.5 < current_angle && current_angle <= 22.5) {
+      current_angle = 0;
+    } else if(22.5 < current_angle && current_angle <= 67.5) {
+      current_angle = 45;
+    } else if(67.5 < current_angle && current_angle <= 112.5) {
+      current_angle = 90;
+    } else if(112.5 < current_angle && current_angle <= 157.5) {
+      current_angle = 135;
+    } else {
+      current_angle = 180;
+    }
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(tan(current_angle * M_PI / 180.0) * move_point.x() + reference_point.y());
+    } else {
+      canvas_coord.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * move_point.y() + reference_point.x());
+    }
+  }
 
   curve_target_ = canvas_coord;
 
@@ -37,13 +65,68 @@ bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
   if ((canvas_coord - curve_target_).manhattanLength() < 10)
     return false;
   is_drawing_curve_ = true;
-  cursor_ = document().getCanvasCoord(e->pos());
+  if(direction_locked_) {
+    QPointF reference_point = curve_target_;
+    QPointF move_point = canvas_coord - reference_point;
+    double current_angle = atan2 (move_point.y(),move_point.x()) * 180 / M_PI;
+    if(-157.5 < current_angle && current_angle <= -112.5) {
+      current_angle = -135;
+    } else if(-112.5 < current_angle && current_angle <= -67.5) {
+      current_angle = -90;
+    } else if(-67.5 < current_angle && current_angle <= -22.5) {
+      current_angle = -45;
+    } else if(-22.5 < current_angle && current_angle <= 22.5) {
+      current_angle = 0;
+    } else if(22.5 < current_angle && current_angle <= 67.5) {
+      current_angle = 45;
+    } else if(67.5 < current_angle && current_angle <= 112.5) {
+      current_angle = 90;
+    } else if(112.5 < current_angle && current_angle <= 157.5) {
+      current_angle = 135;
+    } else {
+      current_angle = 180;
+    }
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(tan(current_angle * M_PI / 180.0) * move_point.x() + reference_point.y());
+    } else {
+      canvas_coord.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * move_point.y() + reference_point.x());
+    }
+  }
+  cursor_ = canvas_coord;
   return true;
 }
 
 bool PathDraw::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
   *cursor = Qt::CrossCursor;
-  cursor_ = document().getCanvasCoord(e->pos());
+  QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if(direction_locked_ && working_path_.elementCount() !=0) {
+    QPointF reference_point = working_path_.elementAt(working_path_.elementCount()-1);
+    QPointF move_point = canvas_coord - reference_point;
+    double current_angle = atan2 (move_point.y(),move_point.x()) * 180 / M_PI;
+    if(-157.5 < current_angle && current_angle <= -112.5) {
+      current_angle = -135;
+    } else if(-112.5 < current_angle && current_angle <= -67.5) {
+      current_angle = -90;
+    } else if(-67.5 < current_angle && current_angle <= -22.5) {
+      current_angle = -45;
+    } else if(-22.5 < current_angle && current_angle <= 22.5) {
+      current_angle = 0;
+    } else if(22.5 < current_angle && current_angle <= 67.5) {
+      current_angle = 45;
+    } else if(67.5 < current_angle && current_angle <= 112.5) {
+      current_angle = 90;
+    } else if(112.5 < current_angle && current_angle <= 157.5) {
+      current_angle = 135;
+    } else {
+      current_angle = 180;
+    }
+    if(abs(move_point.x()) >= abs(move_point.y())) {
+      canvas_coord.setY(tan(current_angle * M_PI / 180.0) * move_point.x() + reference_point.y());
+    } else {
+      canvas_coord.setX(tan(M_PI/2.0 - (current_angle * M_PI / 180.0)) * move_point.y() + reference_point.x());
+    }
+  }
+  cursor_ = canvas_coord;
   return true;
 }
 
@@ -80,12 +163,12 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     } else {
       qInfo() << "Release"
               << "Write Line Point";
-      working_path_.lineTo(canvas_coord);
+      working_path_.lineTo(cursor_);
     }
   }
 
   if (is_closing_curve_) {
-    ShapePtr new_shape = make_shared<PathShape>(working_path_);
+    ShapePtr new_shape = std::make_shared<PathShape>(working_path_);
     document().execute(
          Commands::AddShape(document().activeLayer(), new_shape),
          Commands::Select(&document(), {new_shape})
@@ -170,7 +253,17 @@ void PathDraw::paint(QPainter *painter) {
 
 
 bool PathDraw::keyPressEvent(QKeyEvent *e) {
-  if (e->key() == Qt::Key::Key_Escape) {
+  if (e->key() == Qt::Key::Key_Backspace) {
+    exit();
+    return true;
+  } else if (e->key() == Qt::Key::Key_Escape) {
+    if (working_path_.elementCount() > 1) { // require at least two points to form a path
+      ShapePtr new_shape = std::make_shared<PathShape>(working_path_);
+      document().execute(
+              Commands::AddShape(document().activeLayer(), new_shape),
+              Commands::Select(&document(), {new_shape})
+      );
+    }
     exit();
     return true;
   }
@@ -184,4 +277,12 @@ void PathDraw::exit() {
   is_drawing_curve_ = false;
   is_closing_curve_ = false;
   canvas().setMode(Canvas::Mode::Selecting);
+}
+
+bool PathDraw::isDirectionLock() const {
+  return direction_locked_;
+}
+
+void PathDraw::setDirectionLock(bool direction_lock) {
+  direction_locked_ = direction_lock;
 }

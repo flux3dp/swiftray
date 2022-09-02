@@ -39,5 +39,5 @@ private:
 
 
   QList<ShapePtr> children_;
-  mutable unique_ptr<CacheStack> cache_;
+  mutable std::unique_ptr<CacheStack> cache_;
 };

@@ -2,18 +2,19 @@
 
 #include <QFont>
 #include <shape/path-shape.h>
+#include <QList>
 
 class TextShape : public PathShape {
 public:
   TextShape() noexcept;
 
-  TextShape(QString text, QFont font);
+  TextShape(QString text, QFont font, double line_height);
 
   void paint(QPainter *painter) const override;
 
   Shape::Type type() const override;
 
-  shared_ptr<Shape> clone() const override;
+  std::shared_ptr<Shape> clone() const override;
 
   // Getters
 
@@ -23,7 +24,9 @@ public:
 
   float lineHeight() const;
 
-  void makeCursorRect(int cursor);
+  void makeCursorRect(int start_cursor, int end_cursor);
+
+  int calculateCursor(QPointF point);
 
   bool isEditing() const;
 
@@ -45,8 +48,9 @@ private:
   QStringList lines_;
   QFont font_;
   QRectF cursor_rect_;
+  QList<QRectF> select_box_;
 
   void makePath();
 };
 
-typedef shared_ptr<TextShape *> TextShapePtr;
+typedef std::shared_ptr<TextShape *> TextShapePtr;

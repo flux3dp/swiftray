@@ -9,7 +9,7 @@ Rectangle {
     color: "#F8F8F8"
 
     signal setupComplete
-    signal createStandardeProfile(string brand, string model)
+    signal createStandardProfile(string brand, string model)
     signal createOtherProfile(string name, int width, int height, int origin)
 
     StackView {
@@ -42,12 +42,11 @@ Rectangle {
                 width: parent.parent.width
                 height: 200
 
-                AnimatedImage {
+                Image {
                     id: image
                     width: 200
                     height: 200
-                    source: "../../../images/earth.gif"
-                    speed: 1.3
+                    source: "../../../resources/images/icon.png"
                     anchors.horizontalCenter: parent.horizontalCenter
                     fillMode: Image.PreserveAspectFit
                 }

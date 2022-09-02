@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>265</width>
+    <width>287</width>
     <height>82</height>
    </rect>
   </property>
@@ -269,8 +269,11 @@
          <property name="suffix">
           <string/>
          </property>
+         <property name="minimum">
+          <double>0</double>
+         </property>
          <property name="maximum">
-          <double>999999.989999999990687</double>
+          <double>360</double>
          </property>
         </widget>
        </item>
@@ -289,7 +292,11 @@
        </property>
        <property name="icon">
         <iconset resource="../../../qml.qrc">
-         <normaloff>:/images/icon-lock.png</normaloff>:/images/icon-lock.png</iconset>
+         <normaloff>:/resources/images/icon-unlock.png</normaloff>
+         <normalon>:/resources/images/icon-lock.png</normalon>:/resources/images/icon-unlock.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

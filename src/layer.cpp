@@ -3,9 +3,11 @@
 #include <shape/shape.h>
 #include <canvas/canvas.h>
 #include <QObject>
+#include <QString>
+#include <QList>
 
 // Layer colors
-constexpr char const *kLayerColors[17] = {
+static QList<QString> layer_colors = {
      "#333333", "#3F51B5", "#F44336", "#FFC107", "#8BC34A",
      "#2196F3", "#009688", "#FF9800", "#CDDC39", "#00BCD4",
      "#FFEB3B", "#E91E63", "#673AB7", "#03A9F4", "#9C27B0",
@@ -20,18 +22,19 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      speed_(20),
      power_(30),
      repeat_(1),
+     parameter_index_(-1),
      is_locked_(false),
      is_visible_(true),
      step_height_(0),
      use_diode_(false),
      target_height_(0),
-     cache_(make_unique<CacheStack>(this)),
+     cache_(std::make_unique<CacheStack>(this)),
      cache_valid_(false),
      type_(Type::Line) {}
 
 Layer::Layer(Document *doc, int layer_counter) :
      Layer(doc,
-           kLayerColors[layer_counter - 1],
+           layer_colors[(layer_counter-1) % layer_colors.count()],
            QObject::tr("Layer") + " " + QString::number(layer_counter)) {}
 
 Layer::Layer() :
@@ -52,14 +55,18 @@ int Layer::paint(QPainter *painter) const {
 
 void Layer::addShape(const ShapePtr &shape) {
   shape->setLayer(this);
+  children_mutex_.lock();
   children_.push_back(shape);
+  children_mutex_.unlock();
   cache_valid_ = false;
 }
 
 void Layer::removeShape(const ShapePtr &shape) {
+  children_mutex_.lock();
   if (!children_.removeOne(shape)) {
     qInfo() << "[Layer] Failed to remove children";
   }
+  children_mutex_.unlock();
   flushCache();
 }
 
@@ -73,12 +80,16 @@ int Layer::repeat() const {
   return repeat_;
 }
 
-int Layer::speed() const {
+double Layer::speed() const {
   return speed_;
 }
 
-int Layer::power() const {
+double Layer::power() const {
   return power_;
+}
+
+int Layer::parameterIndex() const {
+  return parameter_index_;
 }
 
 const QString &Layer::name() const {
@@ -131,6 +142,7 @@ void Layer::setColor(const QColor &color) {
 }
 
 void Layer::setType(Layer::Type type) {
+  // TODO: Whether setFilled of all shapes in this layer?
   type_ = type;
   flushCache();
 }
@@ -143,16 +155,20 @@ void Layer::setName(const QString &name) {
   name_ = name;
 }
 
-void Layer::setSpeed(int speed) {
+void Layer::setSpeed(double speed) {
   speed_ = speed;
 }
 
-void Layer::setStrength(int strength) {
+void Layer::setStrength(double strength) {
   power_ = strength;
 }
 
 void Layer::setRepeat(int repeat) {
   repeat_ = repeat;
+}
+
+void Layer::setParameterIndex(int parameter_index) {
+  parameter_index_ = parameter_index;
 }
 
 void Layer::setUseDiode(bool is_diode) {
@@ -170,18 +186,21 @@ void Layer::setDocument(Document *doc) {
 // Clone
 
 LayerPtr Layer::clone() {
-  LayerPtr new_layer = make_shared<Layer>(document_, color(), name());
+  LayerPtr new_layer = std::make_shared<Layer>(document_, color(), name());
   new_layer->setSpeed(speed());
   new_layer->setStrength(power());
   new_layer->setRepeat(repeat());
+  new_layer->setParameterIndex(parameterIndex());
   new_layer->setLocked(isLocked());
   new_layer->setVisible(isVisible());
   new_layer->setStepHeight(stepHeight());
   new_layer->setUseDiode(isUseDiode());
   new_layer->setTargetHeight(targetHeight());
   new_layer->setType(type());
+  children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());
   }
+  children_mutex_.unlock();
   return new_layer;
 }

@@ -1,9 +1,8 @@
 #include <QDebug>
 #include <shape/path-shape.h>
+#include <layer.h>
 
 #define SELECTION_TOLERANCE 10
-
-using namespace std;
 
 PathShape::PathShape() noexcept: Shape(), filled_(false) {}
 
@@ -39,6 +38,10 @@ bool PathShape::hitTest(QRectF global_coord_rect) const {
   // TODO (Test revese transform to map rect back to local coord)
   QPainterPath new_path = transform().map(path_);
   // TODO (Consider cases that the path is not closed)
+
+  if (layer()->type() == Layer::Type::Fill || layer()->type() == Layer::Type::FillLine) {
+    return new_path.intersects(global_coord_rect);
+  }
   return new_path.intersects(global_coord_rect) &&
          !new_path.contains(global_coord_rect);
 }
@@ -62,8 +65,8 @@ void PathShape::paint(QPainter *painter) const {
   painter->restore();
 }
 
-shared_ptr<Shape> PathShape::clone() const {
-  shared_ptr<PathShape> shape = make_shared<PathShape>(*this);
+std::shared_ptr<Shape> PathShape::clone() const {
+  std::shared_ptr<PathShape> shape = std::make_shared<PathShape>(*this);
   return shape;
 }
 

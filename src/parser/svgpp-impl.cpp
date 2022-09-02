@@ -274,7 +274,7 @@ void svgpp_add_shape(ShapePtr &shape, QString &color_string) {
       (*layer_iter)->addShape(shape);
     }
   } else {
-    svgpp_layers->push_back(make_shared<Layer>());
+    svgpp_layers->push_back(std::make_shared<Layer>());
     svgpp_layers->last()->setName(color_string);
     svgpp_layers->last()->setColor(QColor(color_string));
     svgpp_layers->last()->addShape(shape);

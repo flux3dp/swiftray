@@ -1,0 +1,83 @@
+{
+  "name": "5W (Diode Laser)",
+  "data": [
+    {
+      "name": "Wood 3mm Cutting",
+      "power": 100,
+      "speed": 2
+    },
+    {
+      "name": "Wood 5mm Cutting",
+      "power": 100,
+      "speed": 4,
+      "repeat": 3
+    },
+    {
+      "name": "Wood Engraving",
+      "power": 40,
+      "speed": 25
+    },
+    {
+      "name": "Acrylic 3mm Cutting",
+      "power": 100,
+      "speed": 1
+    },
+    {
+      "name": "Acrylic 5mm Cutting",
+      "power": 100,
+      "speed": 4,
+      "repeat": 3
+    },
+    {
+      "name": "Acrylic Engraving",
+      "power": 100,
+      "speed": 10
+    },
+    {
+      "name": "Leather 3mm Cutting",
+      "power": 100,
+      "speed": 6
+    },
+    {
+      "name": "Leather 5mm Cutting",
+      "power": 100,
+      "speed": 2,
+      "repeat": 3
+    },
+    {
+      "name": "Leather Engraving",
+      "power": 30,
+      "speed": 10
+    },
+    {
+      "name": "Fabric 3mm cutting",
+      "power": 100,
+      "speed": 5
+    },
+    {
+      "name": "Fabric 5mm cutting",
+      "power": 100,
+      "speed": 2
+    },
+    {
+      "name": "Fabric Engraving",
+      "power": 35,
+      "speed": 20
+    },
+    {
+      "name": "Rubber Engraving",
+      "power": 70,
+      "speed": 20
+    },
+    {
+      "name": "Glass Engraving",
+      "power": 40,
+      "speed": 10
+    },
+    {
+      "name": "Metal Engraving",
+      "power": 100,
+      "speed": 10
+    }
+  ]
+}

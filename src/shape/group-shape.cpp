@@ -4,11 +4,11 @@
 
 GroupShape::GroupShape() :
      Shape(),
-     cache_(make_unique<CacheStack>(this)) {}
+     cache_(std::make_unique<CacheStack>(this)) {}
 
 GroupShape::GroupShape(QList<ShapePtr> &children) :
      Shape(),
-     cache_(make_unique<CacheStack>(this)) {
+     cache_(std::make_unique<CacheStack>(this)) {
   children_ = children;
   flushCache();
 }

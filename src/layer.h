@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMutex>
 #include <shape/shape.h>
 #include <canvas/cache-stack.h>
 
@@ -38,7 +39,7 @@ public:
   QList<ShapePtr> &children();
 
   // Clone the children and the layer itself
-  shared_ptr<Layer> clone();
+  std::shared_ptr<Layer> clone();
 
   // Remove specific ShapePtr
   void removeShape(const ShapePtr &shape);
@@ -62,9 +63,11 @@ public:
 
   int repeat() const;
 
-  int speed() const;
+  double speed() const;
 
-  int power() const;
+  double power() const;
+
+  int parameterIndex() const;
 
   double stepHeight() const;
 
@@ -85,9 +88,11 @@ public:
 
   void setRepeat(int repeat);
 
-  void setSpeed(int speed);
+  void setSpeed(double speed);
 
-  void setStrength(int strength);
+  void setStrength(double strength);
+
+  void setParameterIndex(int parameter_index);
 
   void setType(Type type);
 
@@ -99,7 +104,7 @@ public:
 
   void setDocument(Document *doc);
 
-  void setLayerCounter(int i);
+  //void setLayerCounter(int i);
 
   friend class DocumentSerializer;
 
@@ -109,6 +114,7 @@ private:
   QColor color_;
   QString name_;
   QList<ShapePtr> children_;
+  QMutex children_mutex_;
   Type type_;
   bool use_diode_;
   bool is_locked_;
@@ -116,12 +122,13 @@ private:
   double target_height_;
   double step_height_;
   int repeat_;
-  int speed_;
-  int power_;
+  double speed_;
+  double power_;
+  int parameter_index_;
 
   /** Main properties **/
   mutable bool cache_valid_;
-  mutable unique_ptr<CacheStack> cache_;
+  mutable std::unique_ptr<CacheStack> cache_;
 };
 
-typedef shared_ptr<Layer> LayerPtr;
+typedef std::shared_ptr<Layer> LayerPtr;

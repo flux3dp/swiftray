@@ -1,14 +1,16 @@
 #include <QAction>
 #include <QDebug>
+#include <QListWidgetItem>
+#include <windows/mainwindow.h>
 #include <windows/new-machine-dialog.h>
 #include <settings/machine-settings.h>
-#include <QListWidgetItem>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
 
-MachineManager::MachineManager(QWidget *parent) :
+MachineManager::MachineManager(QWidget *parent, MainWindow *main_window) :
      QDialog(parent),
      ui(new Ui::MachineManager),
+     main_window_(main_window),
      BaseContainer() {
   ui->setupUi(this);
   ui->machineList->
@@ -23,37 +25,44 @@ MachineManager::~MachineManager() {
 
 void MachineManager::loadSettings() {
   MachineSettings settings;
+  // If we call clear() when some item is selected, it lead to crash. Block signals here.
+  ui->machineList->blockSignals(true);
   ui->machineList->clear();
+  ui->machineList->blockSignals(false);
   for (auto &machine : settings.machines()) {
     QListWidgetItem *param_item = new QListWidgetItem;
     param_item->setData(Qt::UserRole, machine.toJson());
     param_item->setText(machine.name);
     param_item->setIcon(machine.icon());
     ui->machineList->addItem(param_item);
+    if (main_window_->currentMachine().name == machine.name) {
+      ui->machineList->setCurrentRow(ui->machineList->count() - 1);
+    }
+  }
+  if(ui->machineList->count() == 1) {
+    ui->removeBtn->setEnabled(false);
   }
 }
-
 
 void MachineManager::loadStyles() {
   ui->nameLineEdit->setStyleSheet("padding-left: 3px");
 }
 
 void MachineManager::loadWidgets() {
-  ui->editorTabs->setEnabled(false);
+  ui->frame->setEnabled(false);
 }
 
 void MachineManager::registerEvents() {
   connect(this, &QDialog::accepted, this, &MachineManager::save);
 
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
-    auto *dialog = new NewMachineDialog(this);
-    if (dialog->exec() == 0) return;
     QListWidgetItem *machine_item = new QListWidgetItem;
-    auto machine = dialog->machine();
-    machine_item->setData(Qt::UserRole, machine.toJson());
-    machine_item->setText(machine.name);
-    machine_item->setIcon(machine.icon());
+    auto machine = MachineSettings::database();
+    machine[0].name = "New Machine";
+    machine_item->setData(Qt::UserRole, machine[0].toJson());
+    machine_item->setText(machine[0].name);
     ui->machineList->addItem(machine_item);
+    ui->removeBtn->setEnabled(true);
   });
 
   connect(ui->removeBtn, &QAbstractButton::clicked, [=]() {
@@ -61,12 +70,15 @@ void MachineManager::registerEvents() {
       auto item = ui->machineList->currentItem();
       ui->machineList->takeItem(ui->machineList->row(item));
     }
+    if(ui->machineList->count() == 1) {
+      ui->removeBtn->setEnabled(false);
+    }
   });
 
   connect(ui->machineList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
     auto obj = item->data(Qt::UserRole).toJsonObject();
     auto mach = MachineSettings::MachineSet::fromJson(obj);
-    ui->editorTabs->setEnabled(true);
+    ui->frame->setEnabled(true);
     ui->nameLineEdit->setText(mach.name);
     ui->widthSpinBox->setValue(mach.width);
     ui->heightSpinBox->setValue(mach.height);

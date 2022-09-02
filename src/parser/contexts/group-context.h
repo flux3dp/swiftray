@@ -68,7 +68,7 @@ public:
   Layer &layer() {
     if (layer_ptr_ == nullptr) {
       qInfo() << "[SVGPP] Created an empty layer";
-      layer_ptr_ = make_shared<Layer>();
+      layer_ptr_ = std::make_shared<Layer>();
     }
     svgpp_set_active_layer(layer_ptr_);
     return *layer_ptr_;
@@ -77,7 +77,7 @@ public:
   void on_exit_element() {
     if (layer_ptr_ != nullptr) {
       layer_ptr_->setColor(data_color_);
-      layer_ptr_->setType(Layer::Type::Mixed);
+      // layer_ptr_->setType(Layer::Type::Mixed);
       svgpp_add_layer(layer_ptr_);
       svgpp_unset_active_layer();
 
@@ -91,7 +91,7 @@ public:
     }
   }
 
-  string type() {
+  std::string type() {
     return "g";
   }
 

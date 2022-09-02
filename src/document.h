@@ -3,6 +3,7 @@
 #include <QPoint>
 #include <QWidget>
 #include <QElapsedTimer>
+#include <QMutex>
 #include <layer.h>
 #include <document-settings.h>
 #include <shape/shape.h>
@@ -26,7 +27,7 @@ public:
 
   QList<ShapePtr> &selections();
 
-  void setSelection(nullptr_t);
+  void setSelection(std::nullptr_t);
 
   void setSelection(ShapePtr &shape);
 
@@ -79,14 +80,16 @@ public:
 
   QPointF mousePressedCanvasCoord() const;
 
+  QPointF mousePressedCanvasScroll() const;
+
   const QFont &font() const;
 
   const Canvas *canvas() const;
 
   DocumentSettings &settings();
 
-  // Frames rendered after start
-  int framesCount() const;
+  QString currentFile() { return current_file_; }
+  bool currentFileModified() { return current_file_modified_; }
 
   // Setters:
   bool setActiveLayer(const QString &name);
@@ -109,6 +112,9 @@ public:
 
   void setScreenSize(QSize size);
 
+  void setCurrentFile(QString filename);
+  void clearCurrentFileModified();
+
   const LayerPtr *findLayerByName(const QString &layer_name);
 
   /* Undo functions */
@@ -120,7 +126,7 @@ public:
 
   void execute(const CmdPtr &cmd);
 
-  void execute(initializer_list<CmdPtr> cmds);
+  void execute(std::initializer_list<CmdPtr> cmds);
 
   template<typename... Args>
   void execute(const CmdPtr cmd0, Args... args) {
@@ -133,17 +139,22 @@ signals:
 
   void selectionsChanged();
 
+  void scaleChanged();
+
+  void fileModifiedChange(bool file_modified);
+
 private:
   qreal scroll_x_;
   qreal scroll_y_;
   qreal scale_;
-  qreal width_;
-  qreal height_;
+  qreal width_;  // the document width = canvas (mm) * 10
+  qreal height_; // the document height = canvas (mm) * 10
 
   bool screen_changed_;
 
   QList<LayerPtr> layers_;
   QList<ShapePtr> selections_;
+  QMutex layers_mutex_;
 
   QFont font_;
 
@@ -151,15 +162,19 @@ private:
   Layer *active_layer_;
 
   QPointF mouse_pressed_screen_coord_;
+  QPointF mouse_pressed_scroll_coord_;
 
   QList<CmdPtr> undo2_stack_;
   QList<CmdPtr> redo2_stack_;
+  QMutex undo_mutex_;
+  QMutex redo_mutex_;
 
   QSize screen_size_;
-
-  int frames_count_;
 
   Canvas *canvas_;
 
   DocumentSettings settings_;
+
+  QString current_file_;
+  bool current_file_modified_;
 };

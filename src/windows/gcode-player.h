@@ -3,11 +3,11 @@
 #include <QDialog>
 #include <QFrame>
 #include <QThread>
+#include <QQuickItem>
 
 #ifndef Q_OS_IOS
 
-#include <QSerialPort>
-#include <connection/serial-job.h>
+#include <motion_controller_job/base-job.h>
 #include <widgets/base-container.h>
 
 #endif
@@ -25,29 +25,45 @@ public:
 
   ~GCodePlayer();
 
-  void calcRequiredTime(const QString &string);
-
-  QString requiredTime() const;
-
-  void setSerialPort();
-
-  void setGCode(const QString &string);
+  void setGCode(const QString &gcodes);
+  QString getGCode();
 
   void showError(const QString &string);
 
-  void updateProgress();
+  void attachJob(BaseJob *job);
 
+public slots:
+  void onStatusChanged(BaseJob::Status);
+  void onProgressChanged(QVariant);
+  
 private:
 
   void loadSettings() override;
 
   void registerEvents() override;
 
+  void hideEvent(QHideEvent *event) override;
+  
+  void showEvent(QShowEvent *event) override;
+
+  void checkGenerateGcode();
+
   Ui::GCodePlayer *ui;
 
-  float required_time_;
+  BaseJob::Status status_;
+  BaseJob *job_;
 
-#ifndef Q_OS_IOS
-  QList<SerialJob *> jobs_;
-#endif
+signals:
+  void exportGcode();
+
+  void importGcode();
+
+  void generateGcode();
+
+  void startBtnClicked();
+  void stopBtnClicked();
+  void pauseBtnClicked();
+  void resumeBtnClicked();
+  void jobStatusReport(BaseJob::Status status);
+  void panelShow(bool is_show);
 };
