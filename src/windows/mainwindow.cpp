@@ -257,7 +257,9 @@ void MainWindow::actionStart() {
     return;
   }
   // Prepare GCodes
-  generateGcode();
+  if (generateGcode() == false) {
+    return;
+  }
   // Prepare total required time
   try {
     auto gcode_list = gcode_player_->getGCode().split('\n');
@@ -1788,7 +1790,7 @@ void MainWindow::showJoggingPanel() {
 /**
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
-void MainWindow::generateGcode() {
+bool MainWindow::generateGcode() {
   auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
@@ -1801,26 +1803,30 @@ void MainWindow::generateGcode() {
       ToolpathExporter::PaddingType::kFixedPadding);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
-    return; // canceled
+    return false; // canceled
+  }
+  if (exporter.isExceedingBoundary()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
+    msgbox.exec();
   }
   
   gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
   progress_dialog.setValue(progress_dialog.maximum());
+
+  return true;
 }
 
 void MainWindow::genPreviewWindow() {
+  // Draw preview
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-  auto gcode_generator = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
 
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
                                     ToolpathExporter::PaddingType::kFixedPadding);
-  ToolpathExporter gcode_exporter(gcode_generator.get(),
-                                  canvas_->document().settings().dpmm(),
-                                  ToolpathExporter::PaddingType::kFixedPadding);
 
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
-  gcode_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
 
   QProgressDialog progress_dialog(tr("Exporting toolpath..."),
                                    tr("Cancel"),
@@ -1832,19 +1838,15 @@ void MainWindow::genPreviewWindow() {
   if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
     return; // canceled
   }
-  progress_dialog.setLabelText(tr("Generating GCode..."));
-  progress_dialog.setValue(0);
-  if ( true != gcode_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  progress_dialog.setValue(progress_dialog.maximum());
+  QCoreApplication::processEvents();
+  
+  // Prepare GCodes
+  if (generateGcode() == false) {
     return; // canceled
   }
-  progress_dialog.setLabelText(tr("Copying GCode..."));
-  progress_dialog.setValue(progress_dialog.maximum() / 2);
-  QList<QPushButton *> L = progress_dialog.findChildren<QPushButton *>();
-  L.at(0)->hide();
-  QCoreApplication::processEvents();
-  gcode_player_->setGCode(QString::fromStdString(gcode_generator->toString()));
-  progress_dialog.setValue(progress_dialog.maximum());
 
+  // Prepare total required time
   try {
     auto gcode_list = gcode_player_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
