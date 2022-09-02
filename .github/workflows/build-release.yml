@@ -2,7 +2,7 @@ name: release-build
 on:
   push:
     tags:
-      - "b*.*.*"
+      - "v*.*.*"
 jobs:
   macOS:
     strategy:
