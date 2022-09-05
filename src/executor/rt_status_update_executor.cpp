@@ -2,13 +2,19 @@
 
 #include <QDebug>
 
-RTStatusUpdateExecutor::RTStatusUpdateExecutor(MotionController *motion_controller, 
+RTStatusUpdateExecutor::RTStatusUpdateExecutor(QPointer<MotionController> motion_controller, 
                                               QObject *parent)
   : Executor{parent}, motion_controller_{motion_controller}
 {
   qInfo() << "RTStatusUpdateExecutor created";
 }
 
-void RTStatusUpdateExecutor::start() {
-  qInfo() << "RTStatusUpdateExecutor start()";
+void RTStatusUpdateExecutor::exec() {
+  qInfo() << "RTStatusUpdateExecutor exec()";
+
+  while (true) {
+    // TODO:
+  }
+
+  emit Executor::finished();
 }

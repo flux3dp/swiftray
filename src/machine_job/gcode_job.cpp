@@ -26,3 +26,7 @@ bool GCodeJob::end() {
 bool GCodeJob::isActive() {
   return current_gcode_idx_ > 0 && current_gcode_idx_ < gcode_list_.length();
 }
+
+void GCodeJob::reload() {
+  current_gcode_idx_ = 0;
+}

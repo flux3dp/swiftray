@@ -2,15 +2,15 @@
 
 #include <QDebug>
 
-MachineSetupExecutor::MachineSetupExecutor(MotionController *motion_controller, 
+MachineSetupExecutor::MachineSetupExecutor(QPointer<MotionController> motion_controller, 
                                             QObject *parent)
   : Executor{parent}, motion_controller_{motion_controller}
 {
   qInfo() << "MachineSetupExecutor created";
 }
 
-void MachineSetupExecutor::start() {
-  qInfo() << "MachineSetupExecutor start()";
+void MachineSetupExecutor::exec() {
+  qInfo() << "MachineSetupExecutor exec()";
 
   emit Executor::finished();
 }

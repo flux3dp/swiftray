@@ -7,6 +7,7 @@
 #include <tuple>
 
 enum class Target {
+  kNone,
   kMotionControl,
   //kAutofocusControl,
   //kCameraControl
@@ -19,18 +20,19 @@ public:
   explicit MachineJob(QString job_name = "Job", QObject *parent = nullptr);
 
   void setRepeat(uint32_t repeat);
-  uint32_t getRepeat();
+  uint32_t getRepeat() const;
 
   virtual bool isActive() = 0;
   virtual std::tuple<Target, QString> getNextCmd() = 0;
   virtual bool end() = 0;
+  virtual void reload() = 0;
 
 signals:
 
 private:
   QString job_name_;
   uint32_t repeat_ = 1;
-  std::mutex repeat_mutex_;
+  mutable std::mutex repeat_mutex_;
   
 };
 

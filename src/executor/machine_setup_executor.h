@@ -4,17 +4,19 @@
 #include <QObject>
 #include "executor.h"
 #include <motion_controller/motion_controller.h>
+#include <QPointer>
 
 class MachineSetupExecutor : public Executor
 {
 public:
-  explicit MachineSetupExecutor(MotionController *motion_controller, 
+  explicit MachineSetupExecutor(QPointer<MotionController> motion_controller, 
                                 QObject *parent = nullptr);
 
-  void start() override;
+public slots:
+  void exec() override;
 
 private:
-  MotionController *motion_controller_;
+  QPointer<MotionController> motion_controller_;
 };
 
 #endif // MACHINESETUPEXECUTOR_H

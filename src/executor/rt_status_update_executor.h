@@ -4,21 +4,23 @@
 #include <QObject>
 #include "executor.h"
 #include <motion_controller/motion_controller.h>
+#include <QPointer>
 
 class RTStatusUpdateExecutor : public Executor
 {
   Q_OBJECT
 public:
-  explicit RTStatusUpdateExecutor(MotionController *motion_controller, 
+  explicit RTStatusUpdateExecutor(QPointer<MotionController> motion_controller, 
                                   QObject *parent = nullptr);
 
-  void start() override;
+public slots:
+  void exec() override;
 
 signals:
   void hanging();
 
 private:
-  MotionController *motion_controller_;
+  QPointer<MotionController> motion_controller_;
 };
 
 #endif // RTSTATUSUPDATEEXECUTOR_H

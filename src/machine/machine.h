@@ -2,6 +2,8 @@
 #define MACHINE_H
 
 #include <QObject>
+#include <QSharedPointer>
+#include <QThread>
 #include <connection/serial-port.h>
 #include <settings/machine-settings.h>
 #include <motion_controller/motion_controller.h>
@@ -16,8 +18,8 @@ class Machine : public QObject
 public:
   explicit Machine(QObject *parent = nullptr);
 
-  bool setNewJob(MachineJob* new_job);
-  MachineJob* getCurrentJob() const { return current_job_; }
+  bool setNewJob(QSharedPointer<MachineJob> new_job);
+  QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
   MotionController* getMotionController() const { return motion_controller_; }
   JobExecutor* getJobExecutor() const { return job_executor_; }
   RTStatusUpdateExecutor* getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
@@ -39,10 +41,13 @@ private:
   //CameraController *camera_controller_;
   
   // Task Executors
-  MachineJob *current_job_;
+  QSharedPointer<MachineJob> current_job_;
   JobExecutor *job_executor_;
   MachineSetupExecutor *machine_setup_executor_;
   RTStatusUpdateExecutor *rt_status_executor_;
+  QThread *job_exec_thread_;
+  QThread *machine_setup_exec_thread_;
+  QThread *rt_status_exec_thread_;
   //UserCmdExecutor *user_cmd_executor_;
   //JoggingExecutor *jogging_executor_;
 };

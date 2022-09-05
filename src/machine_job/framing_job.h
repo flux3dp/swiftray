@@ -11,6 +11,7 @@ public:
   bool isActive() override;
   std::tuple<Target, QString> getNextCmd() override;
   bool end() override;
+  void reload() override;
 };
 
 #endif // FRAMINGJOB_H

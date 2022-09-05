@@ -3,21 +3,40 @@
 
 #include <QObject>
 #include <connection/serial-port.h>
+#include <mutex>
 
-enum class MotionCtrlerCtrlCmd {
-    // Grbl supported ctrl cmd
-    kViewParserState,   // $G
-    kUnlock,            // $X
-    kHome,              // $H
-    kViewGrblSettings,  // $$
-    kViewBuildInfo,     // $I
-    kViewStartupBlocks, // $N
-    kToggleCheckMode,   // $C
-    kStatusReport,      // ?
-    kFeedHold,          // !
-    kCycleStart,        // ~
-    // xxx supported ctrl cmd
+enum class MotionControllerSystemCmd {
+  // Grbl supported system cmd
+  kViewParserState,   // $G
+  kUnlock,            // $X
+  kHome,              // $H
+  kViewGrblSettings,  // $$
+  kViewBuildInfo,     // $I
+  kViewStartupBlocks, // $N
+  kToggleCheckMode,   // $C
+  // xxx supported system cmd
+  // ...
 };
+
+enum class MotionControllerCtrlCmd {
+  // Grbl supported ctrl cmd
+  kStatusReport,      // ?
+  kFeedHold,          // !
+  kCycleStart,        // ~
+  kSoftReset,         // 0x18
+  // xxx supported ctrl cmd
+  // ...
+};
+
+enum class MotionControllerState {
+  kIdle,
+  kRunning, // including CYCLE, JOG, HOMING
+  kPaused,  // including HOLD, SAFETY_DOOR
+  kAlarm,   
+  kSleep,
+  kCheck,
+};
+
 
 class MotionController : public QObject
 {
@@ -26,10 +45,13 @@ public:
   explicit MotionController(QObject *parent = nullptr);
 
   void attachPort(SerialPort *port);
-  void sendCmdPacket(QString cmd_packet);
-  void sendCtrl(MotionCtrlerCtrlCmd ctrl_cmd);
+  virtual bool sendCmdPacket(QString cmd_packet) = 0;
+  virtual bool sendSysCmd(MotionControllerSystemCmd sys_cmd) = 0;
+  virtual bool sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) = 0;
+  MotionControllerState getState() const;
 
 signals:
+  void stateChanged(MotionControllerState);
   void disconnected();
 
 public slots:
@@ -39,8 +61,10 @@ public slots:
 
 private slots:
 
-private:
+protected:
   SerialPort* port_;
+  mutable std::mutex state_mutex_;
+  MotionControllerState state_;
 };
 
 #endif // MOTIONCONTROLLER_H

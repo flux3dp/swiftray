@@ -11,7 +11,7 @@ void MachineJob::setRepeat(uint32_t repeat) {
   repeat_ = repeat;
 }
 
-uint32_t MachineJob::getRepeat() {
+uint32_t MachineJob::getRepeat() const {
   std::lock_guard<std::mutex> lk(repeat_mutex_);
   return repeat_; 
 };

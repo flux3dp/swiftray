@@ -9,10 +9,12 @@ class Executor : public QObject
 public:
   explicit Executor(QObject *parent = nullptr);
 
-  virtual void start() = 0;
+public slots:
+  virtual void exec() = 0;
 
 signals:
   void finished();
+  //void error(QString err);
 
 };
 

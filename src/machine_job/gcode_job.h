@@ -13,6 +13,7 @@ public:
   bool isActive() override;
   std::tuple<Target, QString> getNextCmd() override;
   bool end() override;
+  void reload() override;
 
 private:
   qsizetype current_gcode_idx_ = 0;

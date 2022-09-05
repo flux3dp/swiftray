@@ -29,7 +29,7 @@ Machine::Machine(QObject *parent)
 
 }
 
-bool Machine::setNewJob(MachineJob *new_job) {
+bool Machine::setNewJob(QSharedPointer<MachineJob> new_job) {
   
   if (!job_executor_->setNewJob(new_job)) {
     return false;
@@ -62,11 +62,26 @@ void Machine::motionPortConnected() {
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
   
   // TODO: Create only when nullptr? In case executor already exists
-  job_executor_ = new JobExecutor{motion_controller_, this};
-  machine_setup_executor_ = new MachineSetupExecutor{motion_controller_, this};
-  rt_status_executor_ = new RTStatusUpdateExecutor{motion_controller_, this};
+  job_executor_ = new JobExecutor{motion_controller_};
+  job_exec_thread_ = new QThread;
+  job_executor_->moveToThread(job_exec_thread_);
+  connect(job_exec_thread_, &QThread::started, job_executor_, &JobExecutor::exec);
+  connect(job_executor_, &Executor::finished, job_exec_thread_, &QThread::quit);
+
+  machine_setup_executor_ = new MachineSetupExecutor{motion_controller_};
+  machine_setup_exec_thread_ = new QThread;
+  machine_setup_executor_->moveToThread(machine_setup_exec_thread_);
+  connect(machine_setup_exec_thread_, &QThread::started, machine_setup_executor_, &MachineSetupExecutor::exec);
+  connect(machine_setup_executor_, &Executor::finished, machine_setup_exec_thread_, &QThread::quit);
+
+  rt_status_executor_ = new RTStatusUpdateExecutor{motion_controller_};
+  rt_status_exec_thread_ = new QThread;
+  rt_status_executor_->moveToThread(rt_status_exec_thread_);
+  connect(rt_status_exec_thread_, &QThread::started, rt_status_executor_, &RTStatusUpdateExecutor::exec);
+  connect(rt_status_executor_, &Executor::finished, rt_status_exec_thread_, &QThread::quit);
+
   connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
-  machine_setup_executor_->start();
+  machine_setup_exec_thread_->start();
 }
 
 void Machine::motionPortActivated() {
@@ -74,8 +89,8 @@ void Machine::motionPortActivated() {
     // TODO: handle machine not responding to realtime status cmd
     qInfo() << "Realtime status updater hanging";
   });
-  job_executor_->start();
-  rt_status_executor_->start();
+  job_exec_thread_->start();
+  rt_status_exec_thread_->start();
 }
 
 void Machine::motionPortDisonnected() {

@@ -13,3 +13,8 @@ void MotionController::attachPort(SerialPort *port) {
   port_ = port;
   connect(port_, &SerialPort::disconnected, this, &MotionController::disconnected);
 }
+
+MotionControllerState MotionController::getState() const {
+  std::lock_guard<std::mutex> lk(state_mutex_);
+  return state_;
+};

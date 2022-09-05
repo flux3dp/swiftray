@@ -7,13 +7,21 @@ FramingJob::FramingJob(QString job_name, QObject *parent)
 }
 
 bool FramingJob::isActive() {
+  // TODO: 
   return true;
 }
 
 std::tuple<Target, QString> FramingJob::getNextCmd() {
+  // TODO: 
   return std::make_tuple(Target::kMotionControl, "");
 }
 
 bool FramingJob::end() {
+  // TODO: 
   return true;
+}
+
+void FramingJob::reload() {
+  // TODO:
+
 }
