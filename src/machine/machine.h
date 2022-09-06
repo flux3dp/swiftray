@@ -33,7 +33,7 @@ public slots:
   void motionPortDisonnected();// Closed
 
 private:
-  //MachineSettings::MachineSet machine_settings_; // Settings for software, NOT the grbl settings
+  MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
 
   // Hardware equipment controllers
   MotionController *motion_controller_;

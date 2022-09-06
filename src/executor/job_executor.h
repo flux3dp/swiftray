@@ -17,7 +17,9 @@ public:
   bool setNewJob(QSharedPointer<MachineJob> new_job);
 
 public slots:
+  void start() override;
   void exec() override;
+  void stop() override;
 
   void onCmdAcked();
 
@@ -34,6 +36,7 @@ private:
   size_t acked_cmd_cnt_ = 0;  // Updated in slot
   std::mutex acked_cmd_cnt_mutex_;
 
+  bool stopped_ = false;
 };
 
 #endif // JOBEXECUTOR_H

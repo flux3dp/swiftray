@@ -179,6 +179,15 @@ int SerialPort::write(const std::string buf)const {
   return write(buf.c_str(), buf.size());
 }
 
+/**
+ * @brief Write char buf to serial port
+ *        Safe to be called when disconnected
+ * 
+ * @param buf 
+ * @param size 
+ * @return int the sent byte count
+ *             -1 when port not open
+ */
 int SerialPort::write(const char *buf, const int &size) const {
 #ifdef Q_OS_MACOS
   //qInfo() << "SerialPort write" << buf;

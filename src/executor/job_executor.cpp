@@ -8,7 +8,12 @@ JobExecutor::JobExecutor(QPointer<MotionController> motion_controller, QObject *
   qInfo() << "JobExecutor created";
 }
 
+void JobExecutor::start() {
+  // TODO: 
+}
+
 void JobExecutor::exec() {
+  stopped_ = false;
   qInfo() << "JobExecutor exec(): start executing job";
   if (!active_job_.isNull()) {
     emit Executor::finished();
@@ -45,7 +50,7 @@ void JobExecutor::exec() {
   BlockCondition block_cond = BlockCondition::kNone;
   //bool resend_required = false;
 
-  while (!error_occurred_) {
+  while (!error_occurred_ && !stopped_) {
     // 0. Check end of job
     if (active_job_->end() && acquired_cmd_cnt_ == sent_cmd_cnt_) {
       // No cmd need to be sent -> proceed to the next stage
@@ -87,7 +92,7 @@ void JobExecutor::exec() {
   }
 
   // All cmd have been sent -> wait for ack and finish
-  while (!error_occurred_) {
+  while (!error_occurred_ && !stopped_) {
     if (block_cond == BlockCondition::kForAllAckedAndIdle) {
       if (acquired_cmd_cnt_ == acked_cmd_cnt_ && idle()) {
         break;
@@ -121,4 +126,9 @@ bool JobExecutor::idle() {
   // TODO: Check other controllers if exist
 
   return false;
+}
+
+void JobExecutor::stop() {
+  stopped_ = true;
+  emit Executor::finished();
 }

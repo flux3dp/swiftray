@@ -51,10 +51,14 @@ public:
   MotionControllerState getState() const;
 
 signals:
+  void cmdSent(QString cmd);
+  void ackRcvd();
+  void realTimeStatusReceived();
   void stateChanged(MotionControllerState);
   void disconnected();
 
 public slots:
+  virtual void respReceived(QString resp) = 0;
   //virtual void handleRawCmd(QString raw_cmd);
   //virtual void handleCtrlCmd(MotionCtrlerCtrlCmd ctrl_cmd);
   //virtual void handleJoggingCmd(qreal x, qreal y, bool relative);

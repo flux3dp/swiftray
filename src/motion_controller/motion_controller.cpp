@@ -11,6 +11,7 @@ MotionController::MotionController(QObject *parent)
 void MotionController::attachPort(SerialPort *port) {
   qInfo() << "MotionController::attachPort()";
   port_ = port;
+  connect(port_, &SerialPort::lineReceived, this, &MotionController::respReceived);
   connect(port_, &SerialPort::disconnected, this, &MotionController::disconnected);
 }
 

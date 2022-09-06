@@ -10,7 +10,9 @@ public:
   explicit Executor(QObject *parent = nullptr);
 
 public slots:
+  virtual void start() = 0;
   virtual void exec() = 0;
+  virtual void stop() = 0;
 
 signals:
   void finished();
