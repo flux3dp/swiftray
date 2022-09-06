@@ -13,8 +13,17 @@ Machine::Machine(QObject *parent)
   //       The followings is just a placeholder
   machine_param_.origin = MachineSettings::MachineSet::OriginType::RearLeft;
   machine_param_.board_type = MachineSettings::MachineSet::BoardType::GRBL_2020;
-  //motion_controller_ = MotionControllerFactory::createMotionController(m, this);
 
+  // Create executors belong to the machine
+  job_executor_ = new JobExecutor{motion_controller_};
+  machine_setup_executor_ = new MachineSetupExecutor{this};
+  rt_status_executor_ = new RTStatusUpdateExecutor{this};
+
+  connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
+    // TODO: 
+    qInfo() << "Realtime status updater hanging";
+  });
+  connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
 }
 
 bool Machine::setNewJob(QSharedPointer<MachineJob> new_job) {
@@ -53,67 +62,40 @@ void Machine::motionPortConnected() {
   // TODO: Pass MachineSettings::MachineSet as argument
   //       Should refactor/restructure MachineSettings beforehand
   //       The followings is just a placeholder
+  if (motion_controller_) {
+    motion_controller_->deleteLater();
+    motion_controller_ = nullptr;
+  }
   motion_controller_ = MotionControllerFactory::createMotionController(machine_param_, this);
-  
-  motion_controller_->attachPort(port);
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
+  motion_controller_->attachPort(port);
   
-  // TODO: Create only when nullptr? In case executor already exists
-  //job_executor_ = new JobExecutor{motion_controller_};
-  //job_exec_thread_ = new QThread;
-  //job_executor_->moveToThread(job_exec_thread_);
-  //connect(job_exec_thread_, &QThread::started, job_executor_, &JobExecutor::start);
-  //connect(job_executor_, &Executor::finished, job_exec_thread_, &QThread::quit);
+  // Attach motion_controller to executors
+  rt_status_executor_->attachMotionController(motion_controller_);
+  machine_setup_executor_->attachMotionController(motion_controller_);
+  job_executor_->attachMotionController(motion_controller_);
 
-  machine_setup_executor_ = new MachineSetupExecutor{motion_controller_};
-  machine_setup_exec_thread_ = new QThread;
-  machine_setup_executor_->moveToThread(machine_setup_exec_thread_);
-  connect(machine_setup_exec_thread_, &QThread::started, machine_setup_executor_, &MachineSetupExecutor::start);
-  connect(machine_setup_executor_, &Executor::finished, machine_setup_exec_thread_, &QThread::quit);
-  connect(machine_setup_executor_, &Executor::finished, machine_setup_executor_, &MachineSetupExecutor::deleteLater);
-  connect(machine_setup_exec_thread_, &QThread::finished, machine_setup_exec_thread_,  &QThread::deleteLater);
-
-  rt_status_executor_ = new RTStatusUpdateExecutor{motion_controller_};
-  rt_status_exec_thread_ = new QThread;
-  rt_status_executor_->moveToThread(rt_status_exec_thread_);
-  connect(rt_status_exec_thread_, &QThread::started, rt_status_executor_, &RTStatusUpdateExecutor::start);
-  connect(rt_status_executor_, &Executor::finished, rt_status_exec_thread_, &QThread::quit);
-  connect(rt_status_executor_, &Executor::finished, rt_status_executor_, &RTStatusUpdateExecutor::deleteLater);
-  connect(rt_status_exec_thread_, &QThread::finished, rt_status_exec_thread_,  &QThread::deleteLater);
-
-  connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
-  machine_setup_exec_thread_->start();
+  machine_setup_executor_->start();
 }
 
 void Machine::motionPortActivated() {
-  connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
-    // TODO: handle machine not responding to realtime status cmd
-    qInfo() << "Realtime status updater hanging";
-  });
-  //job_exec_thread_->start();
-  rt_status_exec_thread_->start();
+  rt_status_executor_->start();
 }
 
 void Machine::motionPortDisonnected() {
-  motion_controller_->deleteLater();
-  motion_controller_ = nullptr;
-  //qInfo() << "Machine::motionPortDisonnected()";
-  //qInfo() << "rt_status_exec_thread_ state: ";
-  //qInfo() << rt_status_exec_thread_->isFinished();
-  //qInfo() << rt_status_exec_thread_->isInterruptionRequested();
-  //qInfo() << rt_status_exec_thread_->isRunning();
+  // ...
+  qInfo() << "Machine::motionPortDisonnected()";
+}
 
-  //job_executor_->deleteLater();
-  //machine_setup_executor_->deleteLater();
-  //rt_status_executor_->deleteLater();
-  //job_exec_thread_->deleteLater();
-  //machine_setup_exec_thread_->deleteLater();
-  //rt_status_exec_thread_->deleteLater();
-  //job_executor_ = nullptr;
-  //machine_setup_executor_ = nullptr;
-  //rt_status_executor_ = nullptr;
-  //job_exec_thread_ = nullptr;
-  //machine_setup_exec_thread_ = nullptr;
-  //rt_status_exec_thread_ = nullptr;
-  //current_job_; ?
+void Machine::testJobStart() {
+  QStringList cmd_list;
+  cmd_list << "$X";
+  cmd_list << "G1F3000";
+  cmd_list << "G1X50";
+  cmd_list << "G1Y50";
+  cmd_list << "G1X0";
+  cmd_list << "G1Y0";
+  current_job_ = QSharedPointer<GCodeJob>::create(cmd_list);
+  job_executor_->setNewJob(current_job_);
+  job_executor_->start();
 }

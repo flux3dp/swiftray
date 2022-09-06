@@ -8,13 +8,15 @@
 #include <QPointer>
 #include <QSharedPointer>
 #include <mutex>
+#include <QTimer>
 
 class JobExecutor : public Executor
 {
 public:
-  explicit JobExecutor(QPointer<MotionController> motion_controller, QObject *parent = nullptr);
+  explicit JobExecutor(QObject *parent = nullptr);
 
   bool setNewJob(QSharedPointer<MachineJob> new_job);
+  void attachMotionController(QPointer<MotionController> motion_controller);
 
 public slots:
   void start() override;
@@ -31,10 +33,14 @@ private:
   QSharedPointer<MachineJob> pending_job_;// The next job to be activated
   QSharedPointer<MachineJob> last_job_;   // When finished, move active_job_ to here for replay later
   bool error_occurred_ = false;
-  size_t acquired_cmd_cnt_ = 0; // acquired_cmd_cnt_ >= sent_cmd_cnt_ >= acked_cmd_cnt_
   size_t sent_cmd_cnt_ = 0;
   size_t acked_cmd_cnt_ = 0;  // Updated in slot
   std::mutex acked_cmd_cnt_mutex_;
+  bool current_cmd_is_sent_ = true;
+  bool block_until_idle_ = false;
+  std::tuple<Target, QString> current_cmd = std::make_tuple(Target::kNone, ""); // cmd to be sent
+
+  QTimer *exec_timer_;
 
   bool stopped_ = false;
 };

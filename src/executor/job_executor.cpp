@@ -2,19 +2,143 @@
 
 #include <QDebug>
 
-JobExecutor::JobExecutor(QPointer<MotionController> motion_controller, QObject *parent)
-  : Executor{parent}, motion_controller_{motion_controller}
+JobExecutor::JobExecutor(QObject *parent)
+  : Executor{parent}
 {
   qInfo() << "JobExecutor created";
+  exec_timer_ = new QTimer(this); // trigger immediately when started
+  connect(exec_timer_, &QTimer::timeout, this, &JobExecutor::exec);
+}
+
+void JobExecutor::attachMotionController(
+    QPointer<MotionController> motion_controller) {
+  if (!motion_controller_.isNull()) {
+    // If already attached, detach first
+    disconnect(motion_controller_, nullptr, this, nullptr);
+    motion_controller_.clear();
+    stop();
+  }
+  motion_controller_ = motion_controller;
+  connect(motion_controller_, &MotionController::ackRcvd, this, &JobExecutor::onCmdAcked);
+  
+  // TODO: Change the following
+  connect(motion_controller_, &MotionController::stateChanged, this, [=](){
+      exec_timer_->start();
+  });
 }
 
 void JobExecutor::start() {
-  // TODO: 
+  error_occurred_ = false;
+  sent_cmd_cnt_ = 0;
+  acked_cmd_cnt_ = 0;  // Updated in slot
+  current_cmd_is_sent_ = true;
+  block_until_idle_ = false;
+  current_cmd = std::make_tuple(Target::kNone, "");
+
+  if (!active_job_.isNull()) {
+    active_job_.reset();
+  }
+  // Next job selection order:
+  //   1. pendning_job_ = start new job
+  //   2. last_job_     = retry
+  if (!pending_job_.isNull()) {
+    active_job_ = pending_job_;
+    pending_job_.reset();
+    last_job_.reset();
+  } else if (!last_job_.isNull()) {
+    active_job_ = last_job_;
+    last_job_.reset();
+  } else {
+    qInfo() << "JobExecutor active_job_ empty";
+    return;
+  }
+  exec_timer_->start();
 }
 
 void JobExecutor::exec() {
+  if (motion_controller_.isNull()) {
+    stop();
+    return;
+  }
+
+  if (active_job_.isNull()) {
+    stop();
+    return;
+  }
+
+  if (current_cmd_is_sent_) {
+    if (active_job_->end()) { // Job cmd all sent, wait for end condition to be met
+      if (sent_cmd_cnt_ > acked_cmd_cnt_) {
+        // All cmd have been sent, wait for ack
+        exec_timer_->stop();
+        return;
+      } else {
+        // All cmd have been sent and acked, wait for motion to finish
+        block_until_idle_ = true;
+      }
+    } else { // Job hasn't ended, get the next cmd
+      std::tuple<Target, QString> last_cmd = current_cmd;
+      current_cmd = active_job_->getNextCmd();
+      current_cmd_is_sent_ = false;
+      if (std::get<0>(last_cmd) != std::get<0>(current_cmd)) { // Switching execution target
+        block_until_idle_ = true;
+      }
+    }
+  }
+
+  // Handle blocked condition
+  if (block_until_idle_) {
+    if (motion_controller_->getState() != MotionControllerState::kRunning
+      && motion_controller_->getState() != MotionControllerState::kPaused) {
+      if (active_job_->end() && sent_cmd_cnt_ <= acked_cmd_cnt_) {
+        emit Executor::finished();
+        active_job_.reset();
+        return;
+      }
+    } else { // Stop exec until next resp (ack) or state change
+      exec_timer_->stop();
+      return;
+    }
+  }
+
+  // Check if current cmd needs to be sent
+  if (current_cmd_is_sent_) {
+    // Stop exec until next resp (ack) or state change
+    exec_timer_->stop();
+    return;
+  }
+
+  // 4. Send cmd
+  bool send_success = true;
+  switch (std::get<0>(current_cmd)) {
+    case Target::kMotionControl:
+      send_success = motion_controller_->sendCmdPacket(std::get<1>(current_cmd));
+      break;
+    default:
+      break;
+  }
+  if (send_success) {
+    sent_cmd_cnt_ += 1;
+    current_cmd_is_sent_ = true;
+  } else {
+    current_cmd_is_sent_ = false;
+    // Stop exec until next resp (ack) or state change
+    exec_timer_->stop();
+    return;
+  }
+
+}
+
+/*
+void JobExecutor::exec() {
   stopped_ = false;
   qInfo() << "JobExecutor exec(): start executing job";
+
+  if (motion_controller_.isNull()) {
+    stop();
+    return;
+  }
+  
   if (!active_job_.isNull()) {
     emit Executor::finished();
     return;
@@ -107,6 +231,7 @@ void JobExecutor::exec() {
   emit Executor::finished();
   return;
 }
+*/
 
 bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
   pending_job_ = new_job;
@@ -116,6 +241,8 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
 void JobExecutor::onCmdAcked() {
   std::lock_guard<std::mutex> lk(acked_cmd_cnt_mutex_);
   acked_cmd_cnt_ += 1;
+  // Activate exec_timer_ again (if deactivated)
+  exec_timer_->start();
 }
 
 bool JobExecutor::idle() {
@@ -130,5 +257,4 @@ bool JobExecutor::idle() {
 
 void JobExecutor::stop() {
   stopped_ = true;
-  emit Executor::finished();
 }

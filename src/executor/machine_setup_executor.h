@@ -10,8 +10,9 @@
 class MachineSetupExecutor : public Executor
 {
 public:
-  explicit MachineSetupExecutor(QPointer<MotionController> motion_controller, 
-                                QObject *parent = nullptr);
+  explicit MachineSetupExecutor(QObject *parent = nullptr);
+
+  void attachMotionController(QPointer<MotionController> motion_controller);
 
 public slots:
   void start() override;

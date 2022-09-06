@@ -11,9 +11,8 @@ class RTStatusUpdateExecutor : public Executor
 {
   Q_OBJECT
 public:
-  explicit RTStatusUpdateExecutor(QPointer<MotionController> motion_controller, 
-                                  QObject *parent = nullptr);
-  ~RTStatusUpdateExecutor();
+  explicit RTStatusUpdateExecutor(QObject *parent = nullptr);
+  void attachMotionController(QPointer<MotionController> motion_controller);
 
 public slots:
   void start() override;

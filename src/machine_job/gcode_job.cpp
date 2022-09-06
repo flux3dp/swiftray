@@ -16,7 +16,7 @@ std::tuple<Target, QString> GCodeJob::getNextCmd() {
   if (end()) {
     return std::make_tuple(Target::kMotionControl, "");
   }
-  return std::make_tuple(Target::kMotionControl, gcode_list_.at(current_gcode_idx_));
+  return std::make_tuple(Target::kMotionControl, gcode_list_.at(current_gcode_idx_).append("\n"));
 }
 
 bool GCodeJob::end() {

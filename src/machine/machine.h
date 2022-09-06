@@ -32,6 +32,8 @@ public slots:
   void motionPortActivated();  // Motion controller working
   void motionPortDisonnected();// Closed
 
+  void testJobStart();
+
 private:
   MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
 
@@ -45,9 +47,9 @@ private:
   JobExecutor *job_executor_;
   MachineSetupExecutor *machine_setup_executor_;
   RTStatusUpdateExecutor *rt_status_executor_;
-  QThread *job_exec_thread_;
-  QThread *machine_setup_exec_thread_;
-  QThread *rt_status_exec_thread_;
+  //QThread *job_exec_thread_;
+  //QThread *machine_setup_exec_thread_;
+  //QThread *rt_status_exec_thread_;
   //UserCmdExecutor *user_cmd_executor_;
   //JoggingExecutor *jogging_executor_;
 };
