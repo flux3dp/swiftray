@@ -316,7 +316,7 @@ void MainWindow::newFile() {
 }
 
 void MainWindow::onScalePlusClicked() {
-  canvas_->setScaleWithCenter(qreal(qRound((canvas_->document().scale() + 0.005)*100))/100);
+  canvas_->setScaleWithCenter(qreal(qRound((canvas_->document().scale() + 0.0051)*100))/100);
 }
 
 void MainWindow::onScaleMinusClicked() {
