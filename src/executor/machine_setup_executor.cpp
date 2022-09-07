@@ -40,7 +40,8 @@ void MachineSetupExecutor::exec() {
     stop();
     return;
   }
-  // "\x18": reset first
+  // "\x18": soft reset first
+  //         get machine brand and version info
   // "$#": gcode parameters
   // "$G": gcode parser state
   // "$$": settings

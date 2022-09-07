@@ -32,7 +32,7 @@ public slots:
   void motionPortActivated();  // Motion controller working
   void motionPortDisonnected();// Closed
 
-  void testJobStart();
+  void startJob();
 
 private:
   MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings

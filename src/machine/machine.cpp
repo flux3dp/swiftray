@@ -88,15 +88,6 @@ void Machine::motionPortDisonnected() {
   qInfo() << "Machine::motionPortDisonnected()";
 }
 
-void Machine::testJobStart() {
-  QStringList cmd_list;
-  cmd_list << "$X";
-  cmd_list << "G1F3000";
-  cmd_list << "G1X50";
-  cmd_list << "G1Y50";
-  cmd_list << "G1X0";
-  cmd_list << "G1Y0";
-  current_job_ = QSharedPointer<GCodeJob>::create(cmd_list);
-  job_executor_->setNewJob(current_job_);
+void Machine::startJob() {
   job_executor_->start();
 }
