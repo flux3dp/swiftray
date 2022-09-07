@@ -105,9 +105,7 @@ public:
     QIODevice *device() const;
     QSvgTinyDocument *document() const;
 
-    inline bool ok() const {
-        return document() != 0 && !xml->hasError();
-    }
+    bool ok() const;
 
     inline QString errorString() const { return xml->errorString(); }
     inline int lineNumber() const { return xml->lineNumber(); }

@@ -268,7 +268,7 @@ include_directories(
 
 #QSvg
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(QSvg_INCLUDE_DIR "")
+  set(QSvg_INCLUDE_DIR "C:/Qt/5.15.2/Src/qtsvg/include/QtSvg/5.15.2/QtSvg/private")
 else()
   set(QSvg_INCLUDE_DIR "/usr/local/Cellar/qt@5/5.15.5_1/lib/QtSvg.framework/Versions/5/Headers/5.15.5/QtSvg/private")
 endif()

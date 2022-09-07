@@ -3961,6 +3961,11 @@ QSvgTinyDocument * MyQSvgHandler::document() const
     return m_doc;
 }
 
+bool MyQSvgHandler::ok() const
+{
+    return document() != 0 && !xml->hasError();
+}
+
 MyQSvgHandler::LengthType MyQSvgHandler::defaultCoordinateSystem() const
 {
     return m_defaultCoords;
