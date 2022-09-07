@@ -2,6 +2,7 @@
 
 #include <string>
 #include <QDebug>
+#include <regex>
 
 GrblMotionController::GrblMotionController(QObject *parent)
   : MotionController{parent}
@@ -31,8 +32,8 @@ bool GrblMotionController::sendCmdPacket(QString cmd_packet) {
   }
   qInfo() << "SND: " << cmd_packet;
   emit MotionController::cmdSent(cmd_packet);
-  cmd_in_buf_.push_back(cmd_packet);
   cbuf_occupied_ += cmd_packet.size();
+  cmd_size_buf_.push_back(cmd_packet.size());
 
   return true;
 }
@@ -103,14 +104,39 @@ bool GrblMotionController::sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) {
  * @param resp 
  */
 void GrblMotionController::respReceived(QString resp) {
-  // TODO: keywords or packet format: 
+  // TODO: Handle the case that the resp isn't a complete line or contains multiple lines
+  //       Manually split resp here
+
+  // Handle single line of resp
   //    "ok", "error", 
   //    "<....>", 
   //    "[MSG:...]", "[DEBUG:...]", "[FLUX:...]", ...
   qInfo() << "RECV<" << resp;
   resp = resp.trimmed();
-  if (resp.startsWith("<")) {
+  if (resp.contains(QString{"ok"}) || resp.contains(QString{"error"})) {
+    if (resp.contains("error")) {
+      //error_count += 1;
+    }
+    if (!cmd_size_buf_.isEmpty()){
+      cmd_size_buf_.pop_front(); //  Delete the block character count corresponding to the last 'ok'
+    }
+    cbuf_occupied_ = std::accumulate(cmd_size_buf_.begin(), cmd_size_buf_.end(), 0);
+    qInfo() << "cbuf_occupied: " << cbuf_occupied_;
+    emit MotionController::ackRcvd();
+  } else if (resp.startsWith("<")) {
     emit MotionController::realTimeStatusReceived();
+    // Only match some of the necessary info, reduce the workload
+    std::cmatch m;
+    std::regex rt_status_regex(
+      "<"
+      "(Idle|Run|Jog|Home|Alarm|Check|Sleep|Hold:\\d|Door:\\d)"
+      "(\\|(MPos:|WPos:)([+-]?([0-9]*[.])?[0-9]+),([+-]?([0-9]*[.])?[0-9]+),([+-]?([0-9]*[.])?[0-9]+))"
+      ".*"
+      ">");
+    std::regex_match(resp, m, rt_status_regex);
+    for (unsigned i=0; i < m.size(); ++i) {
+      qInfo() << "match " << i << ": " << m[i];
+    }
     //qInfo() << "rt status: " << resp;
     //auto len = resp.indexOf('>') - 1;
     //auto extracted = out_temp.mid(1, len > 0 ? len : 0);

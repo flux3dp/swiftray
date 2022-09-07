@@ -3,6 +3,7 @@
 
 #include <settings/machine-settings.h>
 #include <motion_controller/motion_controller_factory.h>
+#include <machine_job/gcode_job.h>
 
 Machine::Machine(QObject *parent)
   : QObject{parent}

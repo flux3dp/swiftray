@@ -253,11 +253,13 @@ void MainWindow::actionStart() {
     return;
   }
   // Prepare GCodes
-  if (generateGcode() == false) {
-    return;
-  }
+  //if (generateGcode() == false) {
+  //  return;
+  //}
   // Prepare total required time
   try {
+    active_machine.testJobStart();
+    /*
     auto gcode_list = gcode_player_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
       tr("Estimating task time..."),  
@@ -287,6 +289,7 @@ void MainWindow::actionStart() {
     }
     job_dashboard_->show();
     job_dashboard_exist_ = true;
+    */
   } catch (...) {
     // Terminated
     return;

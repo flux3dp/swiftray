@@ -28,6 +28,7 @@ void JobExecutor::attachMotionController(
 }
 
 void JobExecutor::start() {
+  qInfo() << "JobExecutor::start()";
   error_occurred_ = false;
   sent_cmd_cnt_ = 0;
   acked_cmd_cnt_ = 0;  // Updated in slot
@@ -83,6 +84,7 @@ void JobExecutor::exec() {
       if (std::get<0>(last_cmd) != std::get<0>(current_cmd)) { // Switching execution target
         block_until_idle_ = true;
       }
+      qInfo() << "Get new cmd:" << std::get<1>(current_cmd);
     }
   }
 

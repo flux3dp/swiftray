@@ -16,12 +16,12 @@ public:
   bool sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) override;
 
 public slots:
-  void respReceived(QString resp);
+  void respReceived(QString resp) override;
 
 private:
   std::mutex port_tx_mutex_;
   size_t cbuf_space_ = 80;    // TODO: Assign settings to it
-  QStringList cmd_in_buf_;
+  QList<size_t> cmd_size_buf_;
   size_t cbuf_occupied_ = 0;  // sum of size of all cmds in buffer
 };
 
