@@ -266,7 +266,15 @@ include_directories(
 )
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 
-
+#QSvg
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(QSvg_INCLUDE_DIR "")
+else()
+  set(QSvg_INCLUDE_DIR "/usr/local/Cellar/qt@5/5.15.5_1/lib/QtSvg.framework/Versions/5/Headers/5.15.5/QtSvg/private")
+endif()
+include_directories(
+  ${QSvg_INCLUDE_DIR}
+)
 
 
 # ====================== tests =======================
