@@ -58,6 +58,8 @@ public:
 
   void loadSVG(QByteArray &data);
 
+  void loadSVG(QString file_name);
+
   void loadDXF(QString file_name);
 
   void keyPressEvent(QKeyEvent *e) override;

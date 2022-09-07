@@ -131,6 +131,10 @@ macx{
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
     INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
+    INCLUDEPATH += /usr/local/Cellar/qt@5/5.15.5_1/lib/QtSvg.framework/Versions/5/Headers/5.15.5/QtSvg/private
+    INCLUDEPATH += /usr/local/Cellar/qt@5/5.15.5_1/lib/QtGui.framework/Versions/5/Headers/5.15.5/QtGui
+    INCLUDEPATH += /usr/local/Cellar/qt@5/5.15.5_1/lib/QtGui.framework/Versions/5/Headers/5.15.5
+    INCLUDEPATH += /usr/local/Cellar/qt@5/5.15.5_1/lib/QtCore.framework/Versions/5/Headers/5.15.5
     # Mac M1
     #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
     #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
