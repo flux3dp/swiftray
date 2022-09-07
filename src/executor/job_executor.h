@@ -36,8 +36,9 @@ private:
   size_t sent_cmd_cnt_ = 0;
   size_t acked_cmd_cnt_ = 0;  // Updated in slot
   std::mutex acked_cmd_cnt_mutex_;
+  bool finishing_ = false;
   bool current_cmd_is_sent_ = true;
-  bool block_until_idle_ = false;
+  bool block_until_all_acked_and_idle_ = false;
   std::tuple<Target, QString> current_cmd = std::make_tuple(Target::kNone, ""); // cmd to be sent
 
   QTimer *exec_timer_;

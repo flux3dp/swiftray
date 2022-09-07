@@ -29,8 +29,9 @@ enum class MotionControllerCtrlCmd {
 };
 
 enum class MotionControllerState {
+  kUnknown, // default state
   kIdle,
-  kRunning, // including CYCLE, JOG, HOMING
+  kRun,     // including RUN, JOG, HOMING
   kPaused,  // including HOLD, SAFETY_DOOR
   kAlarm,   
   kSleep,
@@ -49,12 +50,13 @@ public:
   virtual bool sendSysCmd(MotionControllerSystemCmd sys_cmd) = 0;
   virtual bool sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) = 0;
   MotionControllerState getState() const;
+  void setState(MotionControllerState new_state);
 
 signals:
   void cmdSent(QString cmd);
   void ackRcvd();
   void realTimeStatusReceived();
-  void stateChanged(MotionControllerState);
+  void stateUpdated(MotionControllerState);
   void disconnected();
 
 public slots:

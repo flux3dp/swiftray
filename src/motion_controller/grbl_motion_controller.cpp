@@ -1,8 +1,8 @@
 #include "grbl_motion_controller.h"
 
 #include <string>
+#include <memory>
 #include <QDebug>
-#include <regex>
 
 GrblMotionController::GrblMotionController(QObject *parent)
   : MotionController{parent}
@@ -125,25 +125,45 @@ void GrblMotionController::respReceived(QString resp) {
     emit MotionController::ackRcvd();
   } else if (resp.startsWith("<")) {
     emit MotionController::realTimeStatusReceived();
-    // Only match some of the necessary info, reduce the workload
-    std::cmatch m;
-    std::regex rt_status_regex(
-      "<"
-      "(Idle|Run|Jog|Home|Alarm|Check|Sleep|Hold:\\d|Door:\\d)"
-      "(\\|(MPos:|WPos:)([+-]?([0-9]*[.])?[0-9]+),([+-]?([0-9]*[.])?[0-9]+),([+-]?([0-9]*[.])?[0-9]+))"
-      ".*"
-      ">");
-    std::regex_match(resp, m, rt_status_regex);
-    for (unsigned i=0; i < m.size(); ++i) {
-      qInfo() << "match " << i << ": " << m[i];
+    QRegularExpressionMatch match = rt_status_expr.match(resp);
+    if (match.hasMatch()) {
+      MotionControllerState new_state;
+      if (match.captured("state").startsWith("Run") || 
+          match.captured("state").startsWith("Jog") ||
+          match.captured("state").startsWith("Home")) {
+        new_state = MotionControllerState::kRun;
+      } else if (match.captured("state").startsWith("Idle")) {
+        new_state = MotionControllerState::kIdle;
+      } else if (match.captured("state").startsWith("Alarm")) {
+        new_state = MotionControllerState::kAlarm;
+      } else if (match.captured("state").startsWith("Hold") || 
+          match.captured("state").startsWith("Door")) {
+        new_state = MotionControllerState::kPaused;
+      } else if (match.captured("state").startsWith("Check")) {
+        new_state = MotionControllerState::kCheck;
+      } else if (match.captured("state").startsWith("Sleep")) {
+        new_state = MotionControllerState::kSleep;
+      } else {
+        new_state = MotionControllerState::kUnknown;
+      }
+      auto res = std::make_shared<bool>();
+      x_pos_ = match.captured("x_pos").toFloat(res.get());
+      if (*res != true) {
+        x_pos_ = 0;
+      }
+      y_pos_ = match.captured("y_pos").toFloat(res.get());
+      if (*res != true) {
+        y_pos_ = 0;
+      }
+      z_pos_ = match.captured("z_pos").toFloat(res.get());
+      if (*res != true) {
+        z_pos_ = 0;
+      }
+      qInfo() << match.captured("state");
+      qInfo() << match.captured("pos_type");
+      qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
+      setState(new_state);
     }
-    //qInfo() << "rt status: " << resp;
-    //auto len = resp.indexOf('>') - 1;
-    //auto extracted = out_temp.mid(1, len > 0 ? len : 0);
-    //auto status_tokens = extracted.split('|', Qt::SkipEmptyParts);
-    //handleRealtimeStatusReport(status_tokens);
-    //if (status() == Status::ALARM) {
-    //  throw "ALARM";
-    //}
   }
+  // TODO: Handle [FLUX: ...]
 }
