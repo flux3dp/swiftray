@@ -23,6 +23,7 @@
 #include "parser/dxf_iface.h"
 #include "parser/dxf_data.h"
 
+#include <private/qsvgtinydocument_p.h>
 #include "parser/my_qsvg_handler.h"
 
 Canvas::Canvas(QQuickItem *parent)

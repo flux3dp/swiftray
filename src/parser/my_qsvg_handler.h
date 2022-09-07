@@ -52,13 +52,13 @@
 //
 
 #include "QtCore/qxmlstream.h"
-#include "QtCore/qhash.h"
-#include "QtCore/qstack.h"
-#include <QtCore/QLoggingCategory>
-#include "qsvgstyle_p.h"
-#include "private/qcssparser_p.h"
-#include "qsvggraphics_p.h"
-#include "qtsvgglobal_p.h"
+#include <QHash>
+#include <QStack>
+#include <QLoggingCategory>
+#include <private/qsvgstyle_p.h>
+#include <private/qcssparser_p.h>
+#include <private/qsvggraphics_p.h>
+#include <private/qtsvgglobal_p.h>
 
 #include "layer.h"
 #include "document.h"

@@ -39,30 +39,30 @@
 **
 ****************************************************************************/
 
-#include "qplatformdefs.h"
+#include <qplatformdefs.h>
 
-#include "qsvgtinydocument_p.h"
-#include "qsvgstructure_p.h"
-#include "qsvggraphics_p.h"
-#include "qsvgnode_p.h"
-#include "qsvgfont_p.h"
+#include <private/qsvgtinydocument_p.h>
+#include <private/qsvgstructure_p.h>
+#include <private/qsvggraphics_p.h>
+#include <private/qsvgnode_p.h>
+#include <private/qsvgfont_p.h>
 
-#include "qpen.h"
-#include "qpainterpath.h"
-#include "qbrush.h"
-#include "qcolor.h"
-#include "qtextformat.h"
-#include "qvector.h"
-#include "qfileinfo.h"
-#include "qfile.h"
-#include "qdir.h"
-#include "qdebug.h"
-#include "qmath.h"
-#include "qnumeric.h"
-#include <qregularexpression.h>
-#include "qtransform.h"
-#include "qvarlengtharray.h"
-#include "private/qmath_p.h"
+#include <QPen>
+#include <QPainterPath>
+#include <QBrush>
+#include <QColor>
+#include <QTextFormat>
+#include <QVector>
+#include <QFileInfo>
+#include <QFile>
+#include <QDir>
+#include <QDebug>
+#include <QtMath>
+#include <QtGlobal>
+#include <QRegularExpression>
+#include <QTransform>
+#include <QVarLengthArray>
+#include <private/qmath_p.h>
 
 #include "shape/bitmap-shape.h"
 
