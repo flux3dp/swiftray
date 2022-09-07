@@ -37,8 +37,16 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       }
     }
     document().setSelections(selected);
-    if (selected.size() == 1) {
-      document().setActiveLayer(selected.first()->layer()->name());
+    QString target_layer = selected.first()->layer()->name();
+    bool is_same = true;
+    for(unsigned int i = 0; i < selected.size(); ++i) {
+      if(target_layer != selected[i]->layer()->name()) {
+        is_same = false;
+        break;
+      }
+    }
+    if(is_same) {
+      document().setActiveLayer(target_layer);
       emit canvas().layerChanged();
     }
   }
