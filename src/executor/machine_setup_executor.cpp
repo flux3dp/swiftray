@@ -6,11 +6,11 @@ MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
   : Executor{parent}
 {
   qInfo() << "MachineSetupExecutor created";
-  timer_ = new QTimer(this);
-  connect(timer_, &QTimer::timeout, this, &MachineSetupExecutor::exec);
+  exec_timer_ = new QTimer(this);
+  connect(exec_timer_, &QTimer::timeout, this, &MachineSetupExecutor::exec);
 
   // TODO: non single shot
-  timer_->setSingleShot(true);
+  exec_timer_->setSingleShot(true);
 }
 
 void MachineSetupExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
@@ -29,7 +29,7 @@ void MachineSetupExecutor::start() {
   stop();
   // TODO: 
   qInfo() << "MachineSetupExecutor::start()";
-  timer_->start(100);
+  exec_timer_->start(100);
 }
 
 void MachineSetupExecutor::exec() {
@@ -51,7 +51,15 @@ void MachineSetupExecutor::exec() {
   emit Executor::finished();
 }
 
+void MachineSetupExecutor::pause() {
+
+}
+
+void MachineSetupExecutor::resume() {
+  
+}
+
 void MachineSetupExecutor::stop() {
   stopped_ = true;
-  timer_->stop();
+  exec_timer_->stop();
 }

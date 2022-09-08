@@ -17,6 +17,8 @@ public:
 public slots:
   void start() override;
   void exec() override;
+  void pause() override;
+  void resume() override;
   void stop() override;
 
   void onReportRcvd();
@@ -25,9 +27,10 @@ signals:
   void hanging();
 
 private:
+
   QPointer<MotionController> motion_controller_;
-  bool responded_ = true;
-  QTimer *timer_;
+  bool hanging_ = false;
+  QTimer *exec_timer_;
   QTimer *hangning_detect_timer_;
 };
 

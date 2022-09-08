@@ -7,10 +7,10 @@ RTStatusUpdateExecutor::RTStatusUpdateExecutor(QObject *parent)
   : Executor{parent}
 {
   qInfo() << "RTStatusUpdateExecutor created";
-  timer_ = new QTimer(this);
+  exec_timer_ = new QTimer(this);
   hangning_detect_timer_ = new QTimer(this);
   hangning_detect_timer_->setSingleShot(true);
-  connect(timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::exec);
+  connect(exec_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::exec);
   connect(hangning_detect_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::hanging);
 }
 
@@ -29,33 +29,44 @@ void RTStatusUpdateExecutor::attachMotionController(
           this, &RTStatusUpdateExecutor::stop);
 }
 
+/**
+ * @brief Re-initialize state and start
+ * 
+ */
 void RTStatusUpdateExecutor::start() {
   stop();
-  timer_->start(500);
-  responded_ = true;
+  exec_timer_->start(300);
 }
 
 void RTStatusUpdateExecutor::exec() {
   //qInfo() << "RTStatusUpdateExecutor exec()";
-  if (!responded_) {
-    return;
-  }
   if (motion_controller_.isNull()) {
     stop();
     return;
   }
+  // NOTE: Keep sending even when hanging
   motion_controller_->sendCtrlCmd(MotionControllerCtrlCmd::kStatusReport);
-  responded_ = false;
-  hangning_detect_timer_->start(8000);
+  if (!hanging_) {
+    hanging_ = true;
+    hangning_detect_timer_->start(6000);
+  }
+}
+
+void RTStatusUpdateExecutor::pause() {
+  exec_timer_->stop();
+}
+
+void RTStatusUpdateExecutor::resume() {
+  exec_timer_->start();
 }
 
 void RTStatusUpdateExecutor::onReportRcvd() {
-  responded_ = true;
   hangning_detect_timer_->stop();
+  hanging_ = false;
 }
 
 void RTStatusUpdateExecutor::stop() {
   qInfo() << "RTStatusUpdateExecutor::stop()";
-  timer_->stop();
+  exec_timer_->stop();
   hangning_detect_timer_->stop();
 }

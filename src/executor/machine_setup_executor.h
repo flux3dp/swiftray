@@ -17,11 +17,13 @@ public:
 public slots:
   void start() override;
   void exec() override;
+  void pause() override;
+  void resume() override;
   void stop() override;
 
 private:
   QPointer<MotionController> motion_controller_;
-  QTimer *timer_;
+  QTimer *exec_timer_;
   bool stopped_ = false;
 };
 

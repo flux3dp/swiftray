@@ -21,12 +21,18 @@ public:
 public slots:
   void start() override;
   void exec() override;
+  void pause() override;
+  void resume() override;
   void stop() override;
 
   void onCmdAcked();
 
 private:
-  bool idle(); // All acked cmds have finished execution
+  enum class State {
+    kIdle,
+    kActive,
+    kPaused
+  };
 
   QPointer<MotionController> motion_controller_;
   QSharedPointer<MachineJob> active_job_; // current running job
@@ -43,7 +49,7 @@ private:
 
   QTimer *exec_timer_;
 
-  bool stopped_ = false;
+  State state_ = State::kIdle;
 };
 
 #endif // JOBEXECUTOR_H

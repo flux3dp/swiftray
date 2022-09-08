@@ -21,8 +21,8 @@ enum class MotionControllerSystemCmd {
 enum class MotionControllerCtrlCmd {
   // Grbl supported ctrl cmd
   kStatusReport,      // ?
-  kFeedHold,          // !
-  kCycleStart,        // ~
+  kPause,          // !
+  kResume,        // ~
   kSoftReset,         // 0x18
   // xxx supported ctrl cmd
   // ...

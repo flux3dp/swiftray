@@ -12,6 +12,8 @@ public:
 public slots:
   virtual void start() = 0;
   virtual void exec() = 0;
+  virtual void pause() = 0;
+  virtual void resume() = 0; // resume from pause
   virtual void stop() = 0;
 
 signals:

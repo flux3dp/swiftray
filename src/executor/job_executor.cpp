@@ -57,6 +57,14 @@ void JobExecutor::start() {
   connect(motion_controller_, &MotionController::ackRcvd, this, &JobExecutor::onCmdAcked);
   connect(motion_controller_, &MotionController::stateUpdated, this, [=](MotionControllerState new_state){
     qInfo() << "stateUpdated slot";
+    if (new_state == MotionControllerState::kAlarm) {
+      // Stop by alarm
+      exec_timer_->stop();
+      return;
+    } else if ( new_state == MotionControllerState::kSleep) {
+      exec_timer_->stop();
+      return;
+    }
     if (block_until_all_acked_and_idle_) {
       if (sent_cmd_cnt_ <= acked_cmd_cnt_ 
         && new_state != MotionControllerState::kRun
@@ -80,11 +88,29 @@ void JobExecutor::start() {
     }
   });
 
+  state_ = State::kActive;
   exec_timer_->start();
+}
+
+void JobExecutor::pause() {
+  if (state_ == State::kActive) {
+    motion_controller_->sendCtrlCmd(MotionControllerCtrlCmd::kPause);
+    state_ = State::kPaused;
+    exec_timer_->stop();
+  }
+}
+
+void JobExecutor::resume() {
+  if (state_ == State::kPaused) {
+    motion_controller_->sendCtrlCmd(MotionControllerCtrlCmd::kResume);
+    state_ = State::kActive;
+    exec_timer_->start();
+  }
 }
 
 /**
  * @brief Main operation for job execution: send a single cmd
+ *        only perform execution when in active state
  * 
  */
 void JobExecutor::exec() {
@@ -108,6 +134,11 @@ void JobExecutor::exec() {
     return;
   }
 
+  // Don't try to send if not in active state
+  if (state_ != State::kActive) {
+    return;
+  }
+
   if (current_cmd_is_sent_) {
     std::tuple<Target, QString> last_cmd = current_cmd;
     current_cmd = active_job_->getNextCmd();
@@ -117,7 +148,7 @@ void JobExecutor::exec() {
       exec_timer_->stop();
       return;
     }
-    qInfo() << "Get new cmd:" << std::get<1>(current_cmd);
+    //qInfo() << "Get new cmd:" << std::get<1>(current_cmd);
   }
 
   // 4. Send cmd
@@ -155,16 +186,6 @@ void JobExecutor::onCmdAcked() {
   exec_timer_->start();
 }
 
-bool JobExecutor::idle() {
-  // All acked cmds have finished execution
-  if (motion_controller_->getState() == MotionControllerState::kIdle) {
-    return true;
-  }
-  // TODO: Check other controllers if exist
-
-  return false;
-}
-
 void JobExecutor::stop() {
-  stopped_ = true;
+  state_ = State::kIdle;
 }

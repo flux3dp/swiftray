@@ -71,10 +71,10 @@ bool GrblMotionController::sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) {
       case MotionControllerCtrlCmd::kStatusReport:      // ?
         cmd = "?";
         break;
-      case MotionControllerCtrlCmd::kFeedHold:          // !
+      case MotionControllerCtrlCmd::kPause:          // !
         cmd = "!";
         break;
-      case MotionControllerCtrlCmd::kCycleStart:        // ~
+      case MotionControllerCtrlCmd::kResume:        // ~
         cmd = "~";
         break;
       case MotionControllerCtrlCmd::kSoftReset:         // 0x18
@@ -164,6 +164,18 @@ void GrblMotionController::respReceived(QString resp) {
       qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
       setState(new_state);
     }
+  } else if (resp.startsWith("Grbl")) {
+    // A reset occurred
+    cmd_size_buf_.clear();
+    cbuf_occupied_ = 0;
+    x_pos_ = y_pos_ = z_pos_ = 0;
+    // TODO: Parse Grbl version info
+  } else if (resp.startsWith("FLUX")) {
+    // e.g. FLUX Lazervida:0.1.2 Ready!
+    // TODO: Parse FLUX machine model and fw version
+  } else if (resp.startsWith("[FLUX:")) {
+    // TODO: Handle [FLUX: ...]
+    // Handle FLUX's dedicated response
   }
-  // TODO: Handle [FLUX: ...]
+
 }
