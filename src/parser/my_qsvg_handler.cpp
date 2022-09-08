@@ -74,7 +74,9 @@ Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 
 static const char *qt_inherit_text = "inherit";
 LayerPtr g_layer_ptr_ = nullptr;
+QList<LayerPtr> g_svgpp_layers_;
 QTransform g_transform_;
+QColor g_color = Qt::black;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
 
 static QByteArray prefixMessage(const QByteArray &msg, const QXmlStreamReader *r)
@@ -1330,6 +1332,8 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
                 bool ok = qsvg_get_hex_rgb(colorStrTr.unicode(), colorStrTr.length(), &rgb);
                 if (ok)
                     color.setRgb(rgb);
+                g_color = color;
+                // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                 return ok;
             }
             break;
@@ -1354,6 +1358,8 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
                         color = QColor(int(compo[0]),
                                        int(compo[1]),
                                        int(compo[2]));
+                        g_color = color;
+                        // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                         return true;
                     }
                     return false;
@@ -1364,6 +1370,8 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
         case 'c':
             if (colorStrTr == QLatin1String("currentColor")) {
                 color = handler->currentColor();
+                g_color = color;
+                // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                 return true;
             }
             break;
@@ -1376,6 +1384,8 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
     }
 
     color = QColor(colorStrTr.toString());
+    g_color = color;
+    // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
     return color.isValid();
 }
 
@@ -1495,6 +1505,8 @@ static void parseColor(QSvgNode *,
 {
     QColor color;
     if (constructColor(attributes.color, attributes.colorOpacity, color, handler)) {
+        g_color = color;
+        // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
         handler->popColor();
         handler->pushColor(color);
     }
@@ -3585,10 +3597,18 @@ static StyleParseMethod findStyleUtilFactoryMethod(const QString &name)
 MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers) : xml(new QXmlStreamReader(device))
                                              , m_ownsReader(true)
 {
+    g_color = Qt::black;
+    g_svgpp_layers_.clear();
     g_layer_ptr_ = std::make_shared<Layer>();
     init();
-    doc->addLayer(g_layer_ptr_);
-    svg_layers->push_back(g_layer_ptr_);
+    if(!g_layer_ptr_->children().empty()) {
+        g_svgpp_layers_.push_back(g_layer_ptr_);
+    }
+    for(unsigned int i = 0; i < g_svgpp_layers_.size(); ++i)
+    {
+        doc->addLayer(g_svgpp_layers_[i]);
+        svg_layers->push_back(g_svgpp_layers_[i]);
+    }
 }
 
 MyQSvgHandler::MyQSvgHandler(const QByteArray &data) : xml(new QXmlStreamReader(data))
@@ -3711,6 +3731,11 @@ bool MyQSvgHandler::startElement(const QString &localName,
             case QSvgNode::DEFS:
             case QSvgNode::SWITCH:
             {
+                // qInfo() << Q_FUNC_INFO << __LINE__;
+                if(!g_layer_ptr_->children().empty()) {
+                    g_svgpp_layers_.push_back(g_layer_ptr_);
+                    g_layer_ptr_ = std::make_shared<Layer>();
+                }
                 QSvgStructureNode *group =
                     static_cast<QSvgStructureNode*>(m_nodes.top());
                 group->addChild(node, someId(attributes));
@@ -3820,10 +3845,18 @@ bool MyQSvgHandler::startElement(const QString &localName,
             ShapePtr new_shape = std::make_shared<PathShape>(qpath[0]);
             new_shape->applyTransform(g_transform_);
             g_layer_ptr_->addShape(new_shape);
+            g_layer_ptr_->setColor(g_color);
+            QString layer_name("Svg_");
+            layer_name += QString::number(g_svgpp_layers_.size());
+            g_layer_ptr_->setName(layer_name);
         }
         else if(node->type() == QSvgNode::IMAGE) {
             QList<ShapePtr> shape_list = g_layer_ptr_->children();
             shape_list[shape_list.size()-1]->applyTransform(g_transform_);
+            g_layer_ptr_->setColor(g_color);
+            QString layer_name("Svg_");
+            layer_name += QString::number(g_svgpp_layers_.size());
+            g_layer_ptr_->setName(layer_name);
         }
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
@@ -3978,6 +4011,7 @@ void MyQSvgHandler::setDefaultCoordinateSystem(LengthType type)
 
 void MyQSvgHandler::pushColor(const QColor &color)
 {
+    // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
     m_colorStack.push(color);
     m_colorTagCount.push(1);
 }
