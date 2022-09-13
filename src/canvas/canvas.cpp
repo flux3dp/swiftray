@@ -237,8 +237,12 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
           << canvas_coord;
 
   if (e->button()==Qt::MiddleButton) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
     is_holding_middle_button_ = true;
     return;
+  }
+  if (is_holding_space_) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
   }
 
   for (auto &control : ctrls_) {
@@ -250,6 +254,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     ShapePtr hit = document().hitTest(canvas_coord);
 
     if (hit != nullptr) {
+      emit cursorChanged(	Qt::ClosedHandCursor);
       if (!hit->selected()) {
         document().setSelection(hit);
         document().setActiveLayer(hit->layer()->name());
@@ -269,6 +274,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 
   QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
   if (is_holding_space_ || is_holding_middle_button_) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
     qreal movement_x = movement.x() * document().scale();
     qreal movement_y = movement.y() * document().scale();
     qreal new_scroll_x = (document().mousePressedCanvasScroll().x() + movement_x);
@@ -503,7 +509,9 @@ bool Canvas::event(QEvent *e) {
         if(hit != nullptr) {
           emit cursorChanged(Qt::OpenHandCursor);
         }
-        else {
+        else if(is_holding_space_) {
+          emit cursorChanged(Qt::OpenHandCursor);
+        } else {
           emit cursorChanged(Qt::ArrowCursor);
         }
       }
