@@ -37,6 +37,11 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       }
     }
     document().setSelections(selected);
+    if(selected.empty()) {
+      canvas().setMode(Canvas::Mode::Selecting);
+      selection_box_ = QRectF(0, 0, 0, 0);
+      return true;
+    }
     QString target_layer = selected.first()->layer()->name();
     bool is_same = true;
     for(unsigned int i = 0; i < selected.size(); ++i) {
