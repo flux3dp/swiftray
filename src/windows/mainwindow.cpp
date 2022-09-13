@@ -163,9 +163,11 @@ void MainWindow::loadCanvas() {
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
       } else if (filename.endsWith(".svg")) {
-        canvas_->loadSVG(data);
+        canvas_->loadSVG(filename);
+        // canvas_->loadSVG(data);
+        double scale = 3.0 / 8.5 * 10;
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
       }  else if (filename.endsWith(".dxf")) {
         canvas_->loadDXF(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
@@ -358,7 +360,8 @@ void MainWindow::openFile() {
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
-      canvas_->loadSVG(data);
+      canvas_->loadSVG(file_name);
+      // canvas_->loadSVG(data);
     } else if (file_name.endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
     } else {
@@ -518,11 +521,7 @@ void MainWindow::openImageFile() {
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
   if (file_name.endsWith(".svg")) {
-      QFile file(file_name);
-    if (file.open(QFile::ReadOnly)) {
-      QByteArray data = file.readAll();
-      canvas_->loadSVG(data);
-    }
+    canvas_->loadSVG(file_name);
   } else if (file_name.endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
   } else {

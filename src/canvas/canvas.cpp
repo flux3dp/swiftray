@@ -23,6 +23,9 @@
 #include "parser/dxf_iface.h"
 #include "parser/dxf_data.h"
 
+#include <private/qsvgtinydocument_p.h>
+#include "parser/my_qsvg_handler.h"
+
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
        ctrl_transform_(Controls::Transform(this)),
@@ -116,6 +119,38 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     update();
   }
   qInfo() << "[Parser] Took" << t.elapsed();
+}
+
+void Canvas::loadSVG(QString file_name) {
+  QFile file(file_name);
+  if (!file.open(QFile::ReadOnly)) {
+      return;
+  }
+
+  // QSvgTinyDocument *doc = 0;
+  QList<LayerPtr> svg_layers;
+  MyQSvgHandler handler(&file, &document(), &svg_layers);
+  if (handler.ok()) {
+    handler.document();
+    handler.animationDuration();
+    QList<ShapePtr> all_shapes;
+    for (auto &layer : svg_layers) {
+      all_shapes.append(layer->children());
+    }
+    document().setSelections(all_shapes);
+    double scale = 3.0 / 8.5;
+    transformControl().applyScale(QPointF(0,0), scale, scale, false);
+    if (all_shapes.size() == 1) {
+      document().setActiveLayer(all_shapes.first()->layer()->name());
+      emit layerChanged();
+    }
+
+    forceActiveFocus();
+    emitAllChanges();
+    update();
+  } else {
+    delete handler.document();
+  }
 }
 
 void Canvas::loadDXF(QString file_name) {
