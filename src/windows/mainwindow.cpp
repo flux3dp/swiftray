@@ -299,6 +299,35 @@ void MainWindow::actionStart() {
   }
 }
 
+void MainWindow::actionFrame() {
+  if (!serial_port.isOpen()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Serial Port Error"));
+    msgbox.setInformativeText(tr("Please connect to serial port first"));
+    msgbox.exec();
+    return;
+  }
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
+  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+      canvas_->document().settings().dpmm(),
+      ToolpathExporter::PaddingType::kNoPadding);
+  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+
+  // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
+  // Approach 1: use gcode player
+  // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
+  // Approach 2: directy control serial port
+  if (!serial_port.isOpen()) {
+    return;
+  }
+  QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
+  for (auto cmd: cmd_list) {
+    serial_port.write(cmd + "\n");
+    // TODO: Wait for ok?
+  }
+}
+
 void MainWindow::newFile() {
   if ( ! handleUnsavedChange()) {
     return;
@@ -748,6 +777,7 @@ void MainWindow::loadWidgets() {
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
+  laser_panel_ = new LaserPanel(ui->laserDock, this);
   machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
@@ -761,6 +791,7 @@ void MainWindow::loadWidgets() {
   ui->imageDock->setWidget(image_panel_);
   ui->layerDock->setWidget(layer_panel_);
   ui->documentDock->setWidget(doc_panel_);
+  ui->laserDock->setWidget(laser_panel_);
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
@@ -772,6 +803,7 @@ void MainWindow::loadWidgets() {
   ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
   ui->actionGCodeViewerPanel->setChecked(!gcode_player_->isHidden());
   ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
+  ui->actionLaser->setChecked(!laser_panel_->isHidden());
   //toolbar
   ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
   ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
@@ -853,35 +885,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
-  connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    if (!serial_port.isOpen()) {
-      QMessageBox msgbox;
-      msgbox.setText(tr("Serial Port Error"));
-      msgbox.setInformativeText(tr("Please connect to serial port first"));
-      msgbox.exec();
-      return;
-    }
-    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
-        canvas_->document().settings().dpmm(),
-        ToolpathExporter::PaddingType::kNoPadding);
-    exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-    exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-
-    // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
-    // Approach 1: use gcode player
-    // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
-    // Approach 2: directy control serial port
-    if (!serial_port.isOpen()) {
-      return;
-    }
-    QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
-    for (auto cmd: cmd_list) {
-      serial_port.write(cmd + "\n");
-      // TODO: Wait for ok?
-    }
-
-  });
+  connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
@@ -1044,6 +1048,14 @@ void MainWindow::registerEvents() {
       ui->joggingDock->hide();
     }
   });
+  connect(ui->actionLaser, &QAction::triggered, [=]() {
+    if(ui->laserDock->isHidden()) {
+      ui->laserDock->show();
+    }
+    else {
+      ui->laserDock->hide();
+    }
+  });
   //toolbar
   connect(ui->actionAlign, &QAction::triggered, [=]() {
     if(ui->toolBarAlign->isHidden()) {
@@ -1151,6 +1163,10 @@ void MainWindow::registerEvents() {
   connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](QString rotary_axis) {
     rotary_axis_ = rotary_axis;
   });
+  connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
+  connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
+  connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
+  connect(laser_panel_, &LaserPanel::actionHome, jogging_panel_, &JoggingPanel::home);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -1607,17 +1623,20 @@ void MainWindow::setToolbarTransform() {
   });
 
   //panel
-  connect(ui->objectParamDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionObjectPanel->setChecked(is_visible);
+  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
+    ui->actionObjectPanel->setChecked(is_show);
   });
-  connect(ui->fontDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionFontPanel->setChecked(is_visible);
+  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
+    ui->actionFontPanel->setChecked(is_show);
   });
-  connect(ui->imageDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionImagePanel->setChecked(is_visible);
+  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
+    ui->actionImagePanel->setChecked(is_show);
   });
-  connect(ui->documentDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionDocumentPanel->setChecked(is_visible);
+  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
+    ui->actionDocumentPanel->setChecked(is_show);
+  });
+  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
+    ui->actionLaser->setChecked(is_show);
   });
   connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
     ui->actionLayerPanel->setChecked(is_show);

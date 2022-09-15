@@ -135,3 +135,11 @@ void TransformPanel::updateControl() {
 void TransformPanel::setLayout() {
   ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
 }
+
+void TransformPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void TransformPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}

@@ -769,11 +769,30 @@
     <addaction name="actionObjectPanel"/>
     <addaction name="actionDocumentPanel"/>
     <addaction name="actionImagePanel"/>
+    <addaction name="actionLaser"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Help"/>
    <addaction name="menu_Window"/>
+  </widget>
+  <widget class="QDockWidget" name="laserDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>Laser</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -1525,6 +1544,14 @@
   <action name="actionRotarySetup">
    <property name="text">
     <string>Rotary Setup</string>
+   </property>
+  </action>
+  <action name="actionLaser">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Laser</string>
    </property>
   </action>
  </widget>

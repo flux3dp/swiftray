@@ -16,6 +16,7 @@
 #include <widgets/panels/font-panel.h>
 #include <widgets/panels/image-panel.h>
 #include <widgets/panels/jogging-panel.h>
+#include <widgets/panels/laser-panel.h>
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
 #include <windows/gcode-player.h>
@@ -180,6 +181,7 @@ private:
   FontPanel *font_panel_;
   ImagePanel *image_panel_;
   LayerPanel *layer_panel_;
+  LaserPanel *laser_panel_;
   MachineManager *machine_manager_;
   WelcomeDialog *welcome_dialog_;
   JoggingPanel *jogging_panel_;
@@ -201,6 +203,7 @@ private:
   void generateJob();
   bool handleUnsavedChange();
   void actionStart();
+  void actionFrame();
 };
 
 #endif // MAINWINDOW_H

@@ -95,3 +95,11 @@ void ImagePanel::setLayout() {
   ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
   ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
 }
+
+void ImagePanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void ImagePanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}

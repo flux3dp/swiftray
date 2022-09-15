@@ -250,6 +250,7 @@ HEADERS += \
     $$files(src/windows/*.h) \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
+    src/widgets/panels/laser-panel.h \
     src/windows/rotary_setup.h \
     third_party/clipper/clipper.hpp \
     third_party/libdxfrw/drw_base.h \
@@ -290,6 +291,7 @@ FORMS += \
     src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
     src/widgets/panels/jogging-panel.ui \
+    src/widgets/panels/laser-panel.ui \
     src/widgets/panels/layer-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/spooler-panel.ui \

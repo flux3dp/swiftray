@@ -183,3 +183,11 @@ void DocPanel::setRotaryMode(bool is_rotary_mode) {
     ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
   }
 }
+
+void DocPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void DocPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}
