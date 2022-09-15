@@ -19,6 +19,9 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   ui->maintenanceController->rootContext()->setContextProperty("is_dark_mode", isDarkMode());
   ui->maintenanceController->show();
 
+  ui->clearOriginBtn->hide();
+  ui->setOriginBtn->hide();
+
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveRelatively(int, int)),
                   this, SLOT(moveRelatively(int, int)));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveToCorner(int)),

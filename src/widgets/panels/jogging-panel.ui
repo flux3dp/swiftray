@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>QFrame</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -278,6 +278,24 @@
       <string>Go</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="setOriginBtn">
+       <property name="text">
+        <string>Set Origin</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="clearOriginBtn">
+       <property name="text">
+        <string>Clear Origin</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <spacer name="verticalSpacer_5">
