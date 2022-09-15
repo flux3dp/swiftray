@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>275</width>
-    <height>320</height>
+    <height>629</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -338,6 +338,13 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="laserPulseBtn">
+       <property name="text">
+        <string>Laser Pulse</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="0">
       <widget class="QDoubleSpinBox" name="laserSpinBox">
        <property name="alignment">
@@ -354,19 +361,28 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
+     <item row="0" column="2">
       <widget class="QPushButton" name="laserBtn">
        <property name="text">
         <string>Laser</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QPushButton" name="laserPulseBtn">
-       <property name="text">
-        <string>Laser Pulse</string>
+     <item row="0" column="1">
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
-      </widget>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>
