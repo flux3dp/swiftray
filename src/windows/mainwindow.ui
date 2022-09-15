@@ -727,6 +727,7 @@
     <addaction name="menuPath"/>
     <addaction name="separator"/>
     <addaction name="actionMachineSettings"/>
+    <addaction name="actionRotarySetup"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -1519,6 +1520,11 @@
    </property>
    <property name="text">
     <string>Vector</string>
+   </property>
+  </action>
+  <action name="actionRotarySetup">
+   <property name="text">
+    <string>Rotary Setup</string>
    </property>
   </action>
  </widget>

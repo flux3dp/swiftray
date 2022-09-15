@@ -250,6 +250,7 @@ HEADERS += \
     $$files(src/windows/*.h) \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
+    src/windows/rotary_setup.h \
     third_party/clipper/clipper.hpp \
     third_party/libdxfrw/drw_base.h \
     third_party/libdxfrw/drw_classes.h \
@@ -309,7 +310,8 @@ FORMS += \
     src/widgets/components/color-picker-button.ui \
     src/windows/image-crop-dialog.ui \
     src/windows/image-sharpen-dialog.ui \
-    src/windows/privacy_window.ui
+    src/windows/privacy_window.ui \
+    src/windows/rotary_setup.ui
 ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {

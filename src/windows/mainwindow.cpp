@@ -753,6 +753,7 @@ void MainWindow::loadWidgets() {
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   privacy_window_ = new PrivacyWindow(this);
+  rotary_setup_ = new RotarySetup(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_player_);
@@ -842,6 +843,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionRotarySetup, &QAction::triggered, rotary_setup_, &RotarySetup::show);
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
@@ -980,6 +982,10 @@ void MainWindow::registerEvents() {
       is_high_speed_mode_ = false;
       preferences_window_->setSpeedMode(is_high_speed_mode_);
     }
+  });
+  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    rotary_setup_->setRotaryMode(is_rotary_mode);
   });
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
@@ -1134,6 +1140,16 @@ void MainWindow::registerEvents() {
     else {
       ui->toolBarVector->hide();
     }
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    doc_panel_->setRotaryMode(is_rotary_mode_);
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    is_mirror_mode_ = is_mirror_mode;
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](QString rotary_axis) {
+    rotary_axis_ = rotary_axis;
   });
 }
 

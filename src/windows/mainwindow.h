@@ -27,6 +27,7 @@
 #include <motion_controller_job/grbl-job.h>
 #include <windows/about-window.h>
 #include <windows/privacy_window.h>
+#include <windows/rotary_setup.h>
 
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
@@ -146,6 +147,9 @@ private:
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
   bool is_upload_enable_ = false;
+  bool is_rotary_mode_ = false;
+  bool is_mirror_mode_ = false;
+  QString rotary_axis_ = "Y";
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
 #endif
@@ -182,6 +186,7 @@ private:
   PreferencesWindow *preferences_window_;
   AboutWindow *about_window_;
   PrivacyWindow *privacy_window_;
+  RotarySetup *rotary_setup_;
 
 #ifndef Q_OS_IOS
     QList<GrblJob *> jobs_;

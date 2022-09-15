@@ -142,6 +142,9 @@ void DocPanel::registerEvents() {
   connect(ui->useOpenBottom, QOverload<int>::of(&QCheckBox::stateChanged), [=](int state) {
     main_window_->canvas()->document().settings().use_open_bottom = state == Qt::Checked ? true : false;
   });
+  connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state) {
+    Q_EMIT rotaryModeChange(state);
+  });
 }
 
 void DocPanel::updateScene() {
@@ -170,4 +173,13 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
 
 QString DocPanel::getMachineName() {
   return ui->machineComboBox->currentText();
+}
+
+void DocPanel::setRotaryMode(bool is_rotary_mode) {
+  if(is_rotary_mode) {
+    ui->rotaryCheckBox->setCheckState(Qt::Checked);
+  }
+  else {
+    ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+  }
 }

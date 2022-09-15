@@ -25,8 +25,11 @@ public:
 
   QString getMachineName();
 
+  void setRotaryMode(bool is_rotary_mode);
+
 signals:
   void machineChanged(QString machine_name);
+  void rotaryModeChange(bool is_rotary_mode);
 
 private:
   void loadSettings() override;
