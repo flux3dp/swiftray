@@ -18,6 +18,8 @@ public:
 
   void sendJob(QString &job_str);
 
+  void setAxisPosition(double x_position, double y_position);
+
   ~JoggingPanel();
 
 signals:

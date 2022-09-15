@@ -27,10 +27,12 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
                   this, SLOT(moveToEdge(int)));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(home()),
                   this, SLOT(home()));
-  QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(laser()),
-                  this, SLOT(laser()));
-  QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(laserPulse()),
-                  this, SLOT(laserPulse()));
+  QObject::connect(ui->laserBtn, &QAbstractButton::clicked, this, &JoggingPanel::laser);
+  QObject::connect(ui->laserPulseBtn, &QAbstractButton::clicked, this, &JoggingPanel::laserPulse);
+  connect(ui->syncBtn, &QAbstractButton::clicked, [=]() {
+    ui->moveXSpinBox->setValue(ui->currentXSpinBox->value());
+    ui->moveYSpinBox->setValue(ui->currentYSpinBox->value());
+  });
 } 
 
 void JoggingPanel::home() {
@@ -239,6 +241,11 @@ void JoggingPanel::sendJob(QString &job_str) {
   for (auto cmd: cmd_list) {
     serial_port.write((cmd + "\n"));
   }
+}
+
+void JoggingPanel::setAxisPosition(double x_position, double y_position) {
+  ui->currentXSpinBox->setValue(x_position);
+  ui->currentYSpinBox->setValue(y_position);
 }
 
 JoggingPanel::~JoggingPanel() {
