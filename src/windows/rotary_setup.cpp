@@ -10,6 +10,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
     ui->setupUi(this);
     ui->label->hide();
     ui->deviceComboBox->hide();
+    ui->mirrorCheckBox->hide();
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         ui->testBtn->setEnabled(true);
@@ -25,9 +26,6 @@ RotarySetup::RotarySetup(QWidget *parent) :
         ui->mirrorCheckBox->setCheckState(Qt::Unchecked);
     }
     switch (rotary_axis_.at(0).unicode()) {
-        case 'X':
-            ui->XRadioButton->setChecked(true);
-            break;
         case 'Y':
             ui->YRadioButton->setChecked(true);
             break;
@@ -52,10 +50,6 @@ RotarySetup::RotarySetup(QWidget *parent) :
     connect(ui->mirrorCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_mirror_mode_ = state;
         Q_EMIT mirrorModeChanged(is_mirror_mode_);
-    });
-    connect(ui->XRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = "X";
-        Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
     connect(ui->YRadioButton, &QAbstractButton::clicked, [=](bool checked){
         rotary_axis_ = "Y";
@@ -112,7 +106,6 @@ void RotarySetup::setMirrorMode(bool is_mirror_mode)
 void RotarySetup::setRotaryAxis(QString rotary_axis)
 {
     switch (rotary_axis.at(0).unicode()) {
-        case 'X':
         case 'Y':
         case 'Z':
         case 'A':

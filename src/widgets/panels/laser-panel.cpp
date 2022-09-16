@@ -9,8 +9,6 @@ LaserPanel::LaserPanel(QWidget *parent, MainWindow *main_window) :
 {
     ui->setupUi(this);
     ui->toOriginBtn->hide();
-    ui->label->hide();
-    ui->comboBox->hide();
     setJobOrigin(job_origin_);
     initializeContainer();
     setLayout();

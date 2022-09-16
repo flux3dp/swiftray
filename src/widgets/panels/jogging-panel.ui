@@ -97,14 +97,23 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::NoButtons</enum>
        </property>
        <property name="suffix">
         <string> mm</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
        </property>
       </widget>
      </item>
@@ -136,11 +145,23 @@
        <property name="enabled">
         <bool>false</bool>
        </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
        <property name="buttonSymbols">
         <enum>QAbstractSpinBox::NoButtons</enum>
        </property>
        <property name="suffix">
         <string> mm</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
        </property>
       </widget>
      </item>
@@ -219,8 +240,20 @@
      </item>
      <item row="0" column="1">
       <widget class="QDoubleSpinBox" name="moveXSpinBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
        <property name="suffix">
         <string> mm</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
        </property>
       </widget>
      </item>
@@ -249,8 +282,20 @@
      </item>
      <item row="0" column="4">
       <widget class="QDoubleSpinBox" name="moveYSpinBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
        <property name="suffix">
         <string> mm</string>
+       </property>
+       <property name="decimals">
+        <number>1</number>
        </property>
       </widget>
      </item>

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Rorary Setup</string>
+   <string>Rotary Setup</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -78,13 +78,6 @@
          </property>
          <property name="text">
           <string>Axis:</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="XRadioButton">
-         <property name="text">
-          <string>X</string>
          </property>
         </widget>
        </item>
