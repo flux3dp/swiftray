@@ -443,7 +443,7 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   if (is_holding_ctrl_) {
     mouse_pos = e->position() - widget_offset_;
     double orig_scale = document().scale();
-    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
+    double new_scale = std::min(30.0, std::max(0.01, document().scale() + e->angleDelta().y() / 8 / document().height()));
     document().setScale(new_scale);
     new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
   } else {
