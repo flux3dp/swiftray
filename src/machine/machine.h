@@ -3,11 +3,13 @@
 
 #include <QObject>
 #include <QSharedPointer>
+#include <QPointer>
 #include <QThread>
+#include <QStringList>
 #include <connection/serial-port.h>
 #include <settings/machine-settings.h>
-#include <motion_controller/motion_controller.h>
-#include <machine_job/machine_job.h>
+#include <periph/motion_controller/motion_controller.h>
+#include <executor/machine_job/machine_job.h>
 #include <executor/machine_setup_executor.h>
 #include <executor/job_executor.h>
 #include <executor/rt_status_update_executor.h>
@@ -18,11 +20,11 @@ class Machine : public QObject
 public:
   explicit Machine(QObject *parent = nullptr);
 
-  bool setNewJob(QSharedPointer<MachineJob> new_job);
-  QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
-  MotionController* getMotionController() const { return motion_controller_; }
-  JobExecutor* getJobExecutor() const { return job_executor_; }
-  RTStatusUpdateExecutor* getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
+  bool createGCodeJob(QStringList gcode_list);
+  //QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
+  QPointer<MotionController> getMotionController() const { return motion_controller_; }
+  QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
+  QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
   
   //bool setMachineSettings(MachineSettings::MachineSet machine_settings);
   //MachineSettings::MachineSet getMachineSettings() const { return machine_settings_; }
@@ -43,7 +45,6 @@ private:
   //CameraController *camera_controller_;
   
   // Task Executors
-  QSharedPointer<MachineJob> current_job_;
   JobExecutor *job_executor_;
   MachineSetupExecutor *machine_setup_executor_;
   RTStatusUpdateExecutor *rt_status_executor_;

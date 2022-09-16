@@ -6,10 +6,10 @@
 class FramingJob : public MachineJob
 {
 public:
-  explicit FramingJob(QString job_name = "FramingJob", QObject *parent = nullptr);
+  explicit FramingJob(QString job_name = "FramingJob");
 
   bool isActive() override;
-  std::tuple<Target, QString> getNextCmd() override;
+  std::shared_ptr<OperationCmd> getNextCmd() override;
   bool end() override;
   void reload() override;
 };

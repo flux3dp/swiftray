@@ -12,9 +12,7 @@ class GrblMotionController : public MotionController
 public:
   explicit GrblMotionController(QObject *parent = nullptr);
 
-  bool sendCmdPacket(QString cmd_packet) override;
-  bool sendSysCmd(MotionControllerSystemCmd sys_cmd) override;
-  bool sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) override;
+  bool sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
 
 public slots:
   void respReceived(QString resp) override;
@@ -25,11 +23,6 @@ private:
   QList<size_t> cmd_size_buf_;
   size_t cbuf_occupied_ = 0;  // sum of size of all cmds in buffer
   
-  // Grbl Status info
-  qreal x_pos_ = 0;
-  qreal y_pos_ = 0;
-  qreal z_pos_ = 0;
-
   // Only match some of the necessary info, reduce the workload
   QRegularExpression rt_status_expr{
       "<"

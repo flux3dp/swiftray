@@ -25,5 +25,14 @@ void MotionController::setState(MotionControllerState new_state) {
     std::lock_guard<std::mutex> lk(state_mutex_);
     state_ = new_state;
   }
-  emit stateUpdated(state_);
+}
+
+void MotionController::enqueueCmdExecutor(QPointer<Executor> executor) {
+  cmd_executor_queue_.push_back(executor);
+  qInfo() << "enqueueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
+}
+
+void MotionController::dequeueCmdExecutor() {
+  cmd_executor_queue_.pop_front();
+  qInfo() << "dequeueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
 }

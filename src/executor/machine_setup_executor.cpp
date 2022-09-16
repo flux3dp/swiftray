@@ -63,3 +63,9 @@ void MachineSetupExecutor::stop() {
   stopped_ = true;
   exec_timer_->stop();
 }
+
+void MachineSetupExecutor::handleCmdFinish(int result_code) {
+  // TODO:
+
+  return ;
+}

@@ -2,8 +2,8 @@
 #include <QThread>
 
 #include <settings/machine-settings.h>
-#include <motion_controller/motion_controller_factory.h>
-#include <machine_job/gcode_job.h>
+#include <periph/motion_controller/motion_controller_factory.h>
+#include <executor/machine_job/gcode_job.h>
 
 Machine::Machine(QObject *parent)
   : QObject{parent}
@@ -27,17 +27,26 @@ Machine::Machine(QObject *parent)
   connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
 }
 
-bool Machine::setNewJob(QSharedPointer<MachineJob> new_job) {
+/**
+ * @brief Create and set the gcode job as the next job
+ * 
+ * @param gcode_list 
+ * @return true 
+ * @return false 
+ */
+bool Machine::createGCodeJob(QStringList gcode_list) {
+  auto job = QSharedPointer<GCodeJob>::create(gcode_list);
+  job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;
   }
-  if (!job_executor_->setNewJob(new_job)) {
+  if (!job_executor_->setNewJob(job)) {
     return false;
   }
-  current_job_ = new_job;
 
   return true;
 }
+
 /*
 bool Machine::setMachineSettings(MachineSettings::MachineSet machine_settings) {
   // Block if machine is connected
@@ -89,5 +98,7 @@ void Machine::motionPortDisonnected() {
 }
 
 void Machine::startJob() {
+  // TODO: allow different repeat count
+  job_executor_->setRepeat(1);
   job_executor_->start();
 }

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include "executor.h"
-#include <motion_controller/motion_controller.h>
+#include <periph/motion_controller/motion_controller.h>
 #include <QPointer>
 #include <QTimer>
 
@@ -12,6 +12,8 @@ class RTStatusUpdateExecutor : public Executor
   Q_OBJECT
 public:
   explicit RTStatusUpdateExecutor(QObject *parent = nullptr);
+  void handleCmdFinish(int) override;
+
   void attachMotionController(QPointer<MotionController> motion_controller);
 
 public slots:

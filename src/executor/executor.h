@@ -2,12 +2,23 @@
 #define EXECUTOR_H
 
 #include <QObject>
+#include "operation_cmd/operation_cmd.h"
 
 class Executor : public QObject
 {
   Q_OBJECT
 public:
   explicit Executor(QObject *parent = nullptr);
+  size_t inProgressCmdCnt();
+  virtual void handleCmdFinish(int result_code) = 0;
+
+  enum class State {
+    kIdle,
+    kRunning,
+    kPaused,
+    kCompleted,
+    kStopped
+  };
 
 public slots:
   virtual void start() = 0;
@@ -18,8 +29,13 @@ public slots:
 
 signals:
   void finished();
+  void stateChanged(State new_state);
   //void error(QString err);
 
+protected:
+  void changeState(State new_state);
+  State state_ = State::kIdle;
+  QList<std::shared_ptr<OperationCmd>> cmd_in_progress_;
 };
 
 #endif // EXECUTOR_H

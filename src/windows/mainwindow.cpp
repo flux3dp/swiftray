@@ -31,7 +31,7 @@
 #include <windows/job-dashboard-dialog.h>
 #include <globals.h>
 #include "widgets/components/canvas-widget.h"
-#include <machine_job/gcode_job.h>
+#include <executor/machine_job/gcode_job.h>
 
 #include "ui_mainwindow.h"
 
@@ -260,11 +260,10 @@ void MainWindow::actionStart() {
   // Prepare total required time
   try {
 
-    auto job = QSharedPointer<GCodeJob>::create(gcode_player_->getGCode().split('\n'));
-    if (active_machine.setNewJob(job) == true) {
+    if (active_machine.createGCodeJob(gcode_player_->getGCode().split('\n')) == true) {
       active_machine.startJob();
     } else {
-      qInfo() << "Unable to set job";
+      qInfo() << "Unable to create or set job for machine";
     }
     
     /*

@@ -12,12 +12,36 @@ GrblMotionController::GrblMotionController(QObject *parent)
 
 /**
  * @brief Send the cmd_packet immediately
- *        But consider the available buffer space at first
+ *        
+ * @param executor cmd sender (cmd source)
  * @param cmd_packet 
  * @return true if cmd_packet is sent
  * @return false if port is busy or buffer is full
  */
-bool GrblMotionController::sendCmdPacket(QString cmd_packet) {
+bool GrblMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
+  // Special handling for control command
+  if (cmd_packet.size() == 1 && 
+      (cmd_packet.at(0) == '?' || cmd_packet.at(0) == '!' || cmd_packet.at(0) == '~' || cmd_packet.at(0) > 0x7f )) {
+    // NOTE: Ctrl cmd is handled immediately so it won't occupy cmd buffer.
+    //       Thus, no need to consider cmd_in_buf
+    port_tx_mutex_.lock();
+    try {
+      if (port_->write(cmd_packet) < 0) {
+        port_tx_mutex_.unlock();
+        qInfo() << "port_->write failed";
+        return false;
+      }
+      qInfo() << "SND>" << cmd_packet;
+      emit MotionController::cmdSent(cmd_packet);
+    } catch(...) {
+      port_tx_mutex_.unlock();
+      return false;
+    }
+    port_tx_mutex_.unlock();
+    return true;
+  }
+
+  // Normal handling line of command, consider the available buffer space at first
   std::unique_lock<std::mutex> lk(port_tx_mutex_, std::try_to_lock);
   if (!lk.owns_lock()) {
       // mutex wasn't locked. Handle it.
@@ -31,70 +55,11 @@ bool GrblMotionController::sendCmdPacket(QString cmd_packet) {
     return false;
   }
   qInfo() << "SND: " << cmd_packet;
-  emit MotionController::cmdSent(cmd_packet);
   cbuf_occupied_ += cmd_packet.size();
   cmd_size_buf_.push_back(cmd_packet.size());
+  enqueueCmdExecutor(executor);
+  emit MotionController::cmdSent(cmd_packet);
 
-  return true;
-}
-
-bool GrblMotionController::sendSysCmd(MotionControllerSystemCmd sys_cmd) {
-  // NOTE: port lock is handled in sendCmdPacket
-  switch(sys_cmd) {
-    case MotionControllerSystemCmd::kViewParserState:   // $G
-      return sendCmdPacket("$G\n");
-    case MotionControllerSystemCmd::kUnlock:            // $X
-      return sendCmdPacket("$X\n");
-    case MotionControllerSystemCmd::kHome:              // $H
-      return sendCmdPacket("$H\n");
-    case MotionControllerSystemCmd::kViewGrblSettings:  // $$
-      return sendCmdPacket("$$\n");
-    case MotionControllerSystemCmd::kViewBuildInfo:     // $I
-      return sendCmdPacket("$I\n");
-    case MotionControllerSystemCmd::kViewStartupBlocks: // $N
-      return sendCmdPacket("$N\n");
-    case MotionControllerSystemCmd::kToggleCheckMode:   // $C
-      return sendCmdPacket("$C\n");
-    default:
-      // Unsupported cmd, consider as sent?
-      return true;
-  }
-}
-
-bool GrblMotionController::sendCtrlCmd(MotionControllerCtrlCmd ctrl_cmd) {
-  // NOTE: Ctrl cmd is handled immediately so it won't occupy cmd buffer.
-  //       Thus, no need to consider cmd_in_buf
-  port_tx_mutex_.lock();
-  std::string cmd;
-  try {
-    switch(ctrl_cmd) {
-      case MotionControllerCtrlCmd::kStatusReport:      // ?
-        cmd = "?";
-        break;
-      case MotionControllerCtrlCmd::kPause:          // !
-        cmd = "!";
-        break;
-      case MotionControllerCtrlCmd::kResume:        // ~
-        cmd = "~";
-        break;
-      case MotionControllerCtrlCmd::kSoftReset:         // 0x18
-        cmd = "0x18";
-        break;
-      default:
-        break;
-    }
-    if (port_->write(cmd) < 0) {
-      port_tx_mutex_.unlock();
-      qInfo() << "port_->write failed";
-      return false;
-    }
-    qInfo() << "SND>" << cmd.c_str();
-    emit MotionController::cmdSent(QString::fromStdString(cmd));
-  } catch(...) {
-    port_tx_mutex_.unlock();
-    return false;
-  }
-  port_tx_mutex_.unlock();
   return true;
 }
 
@@ -114,17 +79,22 @@ void GrblMotionController::respReceived(QString resp) {
   qInfo() << "RECV<" << resp;
   resp = resp.trimmed();
   if (resp.contains(QString{"ok"}) || resp.contains(QString{"error"})) {
+    int result_code = 0; 
     if (resp.contains("error")) {
+      result_code = 1;// TODO: To be parsed from resp
       //error_count += 1;
     }
     if (!cmd_size_buf_.isEmpty()){
       cmd_size_buf_.pop_front(); //  Delete the block character count corresponding to the last 'ok'
     }
     cbuf_occupied_ = std::accumulate(cmd_size_buf_.begin(), cmd_size_buf_.end(), 0);
+    if (!cmd_executor_queue_.isEmpty()) {
+      cmd_executor_queue_.at(0)->handleCmdFinish(result_code);
+      dequeueCmdExecutor();
+    }
     qInfo() << "cbuf_occupied: " << cbuf_occupied_;
-    emit MotionController::ackRcvd();
   } else if (resp.startsWith("<")) {
-    emit MotionController::realTimeStatusReceived();
+    MotionControllerState old_state = state_;
     QRegularExpressionMatch match = rt_status_expr.match(resp);
     if (match.hasMatch()) {
       MotionControllerState new_state;
@@ -160,12 +130,14 @@ void GrblMotionController::respReceived(QString resp) {
         z_pos_ = 0;
       }
       qInfo() << match.captured("state");
-      qInfo() << match.captured("pos_type");
-      qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
+      //qInfo() << match.captured("pos_type");
+      //qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
       setState(new_state);
+      emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_, a_pos_);
     }
   } else if (resp.startsWith("Grbl")) {
     // A reset occurred
+    cmd_executor_queue_.clear();
     cmd_size_buf_.clear();
     cbuf_occupied_ = 0;
     x_pos_ = y_pos_ = z_pos_ = 0;
