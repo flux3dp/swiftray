@@ -99,7 +99,13 @@
    <property name="minimumSize">
     <size>
      <width>44</width>
-     <height>200</height>
+     <height>38</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
     </size>
    </property>
    <property name="floating">
@@ -119,7 +125,7 @@
    </attribute>
    <widget class="QWidget" name="fontDockContents">
     <property name="sizePolicy">
-     <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
       <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
@@ -189,13 +195,13 @@
    <property name="minimumSize">
     <size>
      <width>229</width>
-     <height>101</height>
+     <height>0</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
      <width>524287</width>
-     <height>101</height>
+     <height>524287</height>
     </size>
    </property>
    <property name="features">

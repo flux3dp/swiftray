@@ -66,6 +66,13 @@ void LaserPanel::registerEvents() {
         job_origin_ = SE;
         Q_EMIT selectJobOrigin(SE);
     });
+    connect(ui->comboBox, &QComboBox::currentTextChanged, [=](const QString &text) {
+        if(text == "Current Position") {
+            ui->widget->show();
+        } else {
+            ui->widget->hide();
+        }
+    });
 }
 
 LaserPanel::~LaserPanel()
@@ -117,6 +124,8 @@ void LaserPanel::setLayout()
     ui->previewBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-preview.png" : ":/resources/images/icon-preview.png"));
     ui->frameBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-frame.png" : ":/resources/images/icon-frame.png"));
     ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
+    ui->comboBox->setCurrentIndex(0);
+    ui->widget->hide();
 }
 
 void LaserPanel::hideEvent(QHideEvent *event) {
