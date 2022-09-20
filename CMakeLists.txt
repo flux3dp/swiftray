@@ -45,9 +45,6 @@ include_directories(
   third_party
   ${SRC_DIR}
 )
-#target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} opencv_core)
-target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 
 
 # Qt
@@ -67,30 +64,6 @@ include_directories(
   ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
   ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
 )
-#target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
-
-
-
-
-# ====================== tests =======================
-#add_subdirectory(tests)
-
-# ====================== install =======================
-#if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-#  install(TARGETS ${PROJECT_NAME}
-#    RUNTIME DESTINATION ${CMAKE_BINARY_DIR}/install
-#  )
-#elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#  install(TARGETS ${PROJECT_NAME}
-#    BUNDLE DESTINATION ${CMAKE_BINARY_DIR}/install
-#    )
-#else()
-#  message(STATUS "Platform: Unknown")
-#endif()
-
-
-# ====================== bundle =======================
-# TODO: BundleUtilities and CPack
 
 
 # Set Bundle properties and add executable target
