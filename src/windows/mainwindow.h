@@ -116,6 +116,8 @@ private slots:
 
   //void setToolbarImage();
 
+  void setModeBlock();
+  
   void setScaleBlock();
 
   void showCanvasPopMenu();
@@ -131,6 +133,8 @@ private slots:
   void jobDashboardFinish(int result);
 
   void updateTitle(bool file_modified);
+
+  void updateRotary();
 
 private:
 
@@ -173,6 +177,8 @@ private:
   QMenu *popScaleMenu_;
   QComboBox* baudComboBox_;
   QComboBox* portComboBox_;
+  QPushButton *mode_block_;
+  QMenu *popModeMenu_;
 
   TransformPanel *transform_panel_;
   GCodePlayer *gcode_player_;

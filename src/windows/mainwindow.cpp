@@ -54,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
+  setModeBlock();
   setConnectionToolBar();
 }
 
@@ -767,6 +768,14 @@ void MainWindow::updateToolbarTransform() {
   emit toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
+void MainWindow::updateRotary() {
+  if(is_rotary_mode_) {
+    mode_block_->setText(tr("Rotary Mode"));
+  } else {
+    mode_block_->setText(tr("XY Mode"));
+  }
+}
+
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
@@ -990,6 +999,7 @@ void MainWindow::registerEvents() {
   connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
     rotary_setup_->setRotaryMode(is_rotary_mode);
+    updateRotary();
   });
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
@@ -1156,6 +1166,7 @@ void MainWindow::registerEvents() {
   connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
     doc_panel_->setRotaryMode(is_rotary_mode_);
+    updateRotary();
   });
   connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
     is_mirror_mode_ = is_mirror_mode;
@@ -1711,6 +1722,13 @@ void MainWindow::setToolbarImage() {
 
 }
 */
+
+void MainWindow::setModeBlock() {
+  mode_block_ = new QPushButton(ui->quickWidget);
+  mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
+  mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
+  updateRotary();
+}
 
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
