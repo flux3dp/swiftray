@@ -20,3 +20,20 @@ void Executor::changeState(State new_state) {
 Executor::State Executor::getState() const {
   return state_;
 }
+
+QString Executor::stateToString(State state) {
+  switch (state) {
+    case State::kIdle:
+      return tr("Ready");
+    case State::kRunning:
+      return tr("Running");
+    case State::kPaused:
+      return tr("Paused");
+    case State::kCompleted:
+      return tr("Finished");
+    case State::kStopped:
+      return tr("Stopped");
+    default:
+      return tr("Undefined State");
+  }
+}

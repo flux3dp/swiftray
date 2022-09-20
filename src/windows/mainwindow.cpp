@@ -32,6 +32,7 @@
 #include <globals.h>
 #include "widgets/components/canvas-widget.h"
 #include <executor/machine_job/gcode_job.h>
+#include <common/timestamp.h>
 
 #include "ui_mainwindow.h"
 
@@ -242,10 +243,15 @@ bool MainWindow::handleUnsavedChange() {
   return handle_result;
 }
 
+/**
+ * @brief When start button on the toolbar is pressed, 
+ *        try to open job dashboard
+ */
 void MainWindow::actionStart() {
   // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
   canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
 
+  // TODO: Restriction 1: Reject if active_machine not connected
   if (!serial_port.isOpen()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Serial Port Error"));
@@ -253,54 +259,73 @@ void MainWindow::actionStart() {
     msgbox.exec();
     return;
   }
-  // Prepare GCodes
-  if (generateGcode() == false) {
+
+  // Restriction 2: Reject if not job_executor exists in active_machine
+  if (active_machine.getJobExecutor().isNull()) {
     return;
   }
-  // Prepare total required time
-  try {
-
-    if (active_machine.createGCodeJob(gcode_panel_->getGCode().split('\n')) == true) {
-      active_machine.startJob();
+  // Restriction 3: Reject if active job exists, but doesn't contain preview 
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    if (active_machine.getJobExecutor()->getActiveJob()->withPreview()) {
+      // Re-open job dashboard for existing job
+      //if (job_dashboard_) {
+      //  job_dashboard_->deleteLater();
+      //}
+      job_dashboard_ = new JobDashboardDialog(
+          active_machine.getJobExecutor()->getActiveJob()->getTotalRequiredTime(), 
+          active_machine.getJobExecutor()->getActiveJob()->getPreview(), 
+          this
+      );
+      // Attach to existing job
+      job_dashboard_->attachJob(active_machine.getJobExecutor());
     } else {
-      qInfo() << "Unable to create or set job for machine";
+      return;
     }
-    
-    /*
-    auto gcode_list = gcode_panel_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size() - 1, 
-      this);
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    QTime total_required_time = QTime{0, 0};
-    if (!timestamp_list.empty()) {
-      total_required_time = timestamp_list.last();
+  } else {
+    // If active job doesn't exist, Prepare (Generate) GCodes before launching job dashboard
+    if (generateGcode() == false) {
+      return;
     }
-    // Prepare canvas scene pixmap
-    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
-    canvas_pixmap.fill(Qt::white);
-    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-    canvas_->document().paint(painter.get());
-
-    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
-    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
-    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
-    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
-    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
-    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
-    if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
-      job_dashboard_->attachJob(jobs_.last());
+    try {
+      auto gcode_list = gcode_panel_->getGCode().split('\n');
+      // Estimate total required time
+      auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size() - 1, 
+        this);
+      auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+      Timestamp total_required_time{0, 0};
+      if (!timestamp_list.empty()) {
+        total_required_time = timestamp_list.last();
+      }
+      // Prepare canvas scene pixmap
+      QPixmap canvas_pixmap{
+          static_cast<int>(canvas_->document().width()), 
+          static_cast<int>(canvas_->document().height())
+      };
+      canvas_pixmap.fill(Qt::white);
+      auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+      canvas_->document().paint(painter.get());
+      //if (job_dashboard_) {
+      //  job_dashboard_->deleteLater();
+      //}
+      job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+    } catch (...) {
+      // Terminated in required time estimation
+      return;
     }
-    job_dashboard_->show();
-    job_dashboard_exist_ = true;
-    */
-  } catch (...) {
-    // Terminated
-    return;
   }
+
+  connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::syncJobState);
+
+  connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
+  job_dashboard_->show();
+  job_dashboard_exist_ = true;
 }
 
 void MainWindow::newFile() {
@@ -859,6 +884,11 @@ void MainWindow::registerEvents() {
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionFrame, &QAction::triggered, this, [=]() {
+    // Make sure active machine and job executor exist, 
+    if (active_machine.getJobExecutor().isNull()) {
+      return;
+    }
+    // Make sure port connected
     if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Serial Port Error"));
@@ -866,6 +896,12 @@ void MainWindow::registerEvents() {
       msgbox.exec();
       return;
     }
+    // Make sure no active job running
+    if (active_machine.getJobExecutor()->getActiveJob()) {
+      return;
+    }
+
+    // Generate gcode for framing
     auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
     ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
         canvas_->document().settings().dpmm(),
@@ -873,19 +909,26 @@ void MainWindow::registerEvents() {
     exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
     exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
-    // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
-    // Approach 1: use gcode player
-    // gcode_panel_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
-    // Approach 2: directy control serial port
+    // Again, make sure active machine and job executor exist, 
+    if (active_machine.getJobExecutor().isNull()) {
+      return;
+    }
+    // Again, make sure port connected
     if (!serial_port.isOpen()) {
       return;
     }
-    QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
-    for (auto cmd: cmd_list) {
-      serial_port.write(cmd + "\n");
-      // TODO: Wait for ok?
+    // Again, make sure no active job running
+    if (active_machine.getJobExecutor()->getActiveJob()) {
+      return;
     }
 
+    // Create Framing Job and start
+    if (true == active_machine.createFramingJob(
+          QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
+    {
+      gcode_panel_->attachJob(active_machine.getJobExecutor());
+      active_machine.startJob();
+    }
   });
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
@@ -936,14 +979,15 @@ void MainWindow::registerEvents() {
   connect(gcode_panel_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
   connect(gcode_panel_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
   connect(gcode_panel_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::setJobStatus);
+  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::syncJobState);
+
   connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
   connect(&serial_port, &SerialPort::disconnected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
-  // TODO: Refactor it when supporting multi-ports and multi-machine connection
+  // TODO: Refactor it when supporting multi-port and multi-machine connection
   connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
@@ -1867,8 +1911,8 @@ void MainWindow::genPreviewWindow() {
       tr("Cancel"), 
       0, gcode_list.size()-1, 
       this);
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    QTime last_gcode_timestamp{0, 0};
+    auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+    Timestamp last_gcode_timestamp{0, 0};
     if (!timestamp_list.empty()) {
       last_gcode_timestamp = timestamp_list.last();
     }
@@ -1887,119 +1931,73 @@ void MainWindow::genPreviewWindow() {
 }
 
 /**
- * @brief Generate a new job from Gcodes in gcode editor (gcode player)
+ * @brief Create and launch a new Job,
+ *        Attach control panel (gcode panel & job dashboard) to the active job
+ *        Currently, support gcode job only
  */
-void MainWindow::generateJob() {
-  // Delete and pop all finished jobs
-  if (!jobs_.isEmpty()) {
-    qInfo() << "delete finished jobs";
-    if (jobs_.last()->thread() != nullptr && jobs_.last()->isFinished()) {
-      jobs_.last()->deleteLater();
-      jobs_.pop_back();
+void MainWindow::onStartNewJob() {
+  auto gcode_list = gcode_panel_->getGCode().split('\n');
+  JobDashboardDialog* job_dialog = qobject_cast<JobDashboardDialog*>(sender());
+  if (job_dialog != NULL) {
+    // Job launched from job dashboard -> with preview
+    auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size()-1, 
+        qobject_cast<QWidget*>(job_dialog));
+    if (true == active_machine.createGCodeJob(gcode_list, 
+                                              job_dialog->getPreview(),
+                                              progress_dialog)) {
+      gcode_panel_->attachJob(active_machine.getJobExecutor());
+      job_dashboard_->attachJob(active_machine.getJobExecutor());
+      active_machine.startJob();
+    }
+  } else {
+    // Job launched from other component, e.g. gcode panel -> no preview (i.e. no job dashboard)
+    auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size()-1, 
+        qobject_cast<QWidget*>(this));
+    if (true == active_machine.createGCodeJob(gcode_list, progress_dialog)) {
+      gcode_panel_->attachJob(active_machine.getJobExecutor());
+      active_machine.startJob();
     }
   }
 
-  // Check whether any job still running
-  if (!jobs_.isEmpty()) { // at least one job hasn't finist -> don't start execute
-    qInfo() << "Blocked: Some jobs are still running";
-    return;
-  }
-  try {
-    auto gcode_list = gcode_panel_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size()-1, 
-      job_dashboard_exist_ ? qobject_cast<QWidget*>(job_dashboard_) : qobject_cast<QWidget*>(this));
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    auto job = new GrblJob(this, "", gcode_list);
-    job->setTimestampList(timestamp_list);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-
-    jobs_ << job;
-  } catch (...) {
-    // Terminated
-    return;
-  }
-}
-
-/**
- * @brief launch a new Serial Job (might be other job in the future)
- */
-void MainWindow::onStartNewJob() {
-  generateJob();
-  if (jobs_.empty()) {
-    return;
-  }
-
-  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
-    qInfo() << "Blocked: No job is ready to run";
-    return;
-  }
-
-  gcode_panel_->attachJob(jobs_.last());
-  if(job_dashboard_exist_) {
-    job_dashboard_->attachJob(jobs_.last());
-  }
-  jobs_.last()->start();
 }
 
 void MainWindow::onStopJob() {
-  // Delete finished jobs
-  for (auto job: jobs_) {
-    if (!jobs_.last()->isFinished()) {
-      jobs_.last()->stop();
-    }
-  }
+  active_machine.stopJob();
 }
 
 void MainWindow::onPauseJob() {
-  if (jobs_.isEmpty()) {
-    return;
-  }
-  auto job = jobs_.last();
-  job->pause();
+  active_machine.pauseJob();
 }
 
 void MainWindow::onResumeJob() {
-  if (jobs_.isEmpty()) {
-    return;
-  }
-  auto job = jobs_.last();
-  job->resume();
+  active_machine.resumeJob();
 }
 
-void MainWindow::setJobStatus(BaseJob::Status status) {
-  switch (status) {
-    case BaseJob::Status::READY:
+void MainWindow::syncJobState(Executor::State new_state) {
+  switch (new_state) {
+    case Executor::State::kIdle:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       break;
-    case BaseJob::Status::STARTING:
+    case Executor::State::kRunning:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       break;
-    case BaseJob::Status::RUNNING:
+    case Executor::State::kPaused:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       break;
-    case BaseJob::Status::PAUSED:
-      ui->actionFrame->setEnabled(false);
-      jogging_panel_->setControlEnable(false);
-      break;
-    case BaseJob::Status::FINISHED:
+    case Executor::State::kCompleted:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       break;
-    case BaseJob::Status::ALARM:
-      ui->actionFrame->setEnabled(false);
-      jogging_panel_->setControlEnable(false);
-      break;
-    case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ALARM_STOPPED:
+    case Executor::State::kStopped:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       break;

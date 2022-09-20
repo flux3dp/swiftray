@@ -4,13 +4,13 @@
 #include <QFrame>
 #include <QThread>
 #include <QQuickItem>
-
-#ifndef Q_OS_IOS
+#include <QPointer>
 
 #include <widgets/base-container.h>
 #include <motion_controller_job/base-job.h>
-
-#endif
+#include <executor/machine_job/machine_job.h>
+#include <executor/executor.h>
+#include <executor/job_executor.h>
 
 namespace Ui {
   class GCodePanel;
@@ -30,11 +30,11 @@ public:
 
   void showError(const QString &string);
 
-  void attachJob(BaseJob *job);
+  void attachJob(QPointer<JobExecutor> job_executor);
 
 public slots:
-  void onStatusChanged(BaseJob::Status);
-  void onProgressChanged(QVariant);
+  void onJobStateChanged(Executor::State);
+  void onJobProgressChanged(QVariant);
   
 private:
 
@@ -50,8 +50,9 @@ private:
 
   Ui::GCodePanel *ui;
 
-  BaseJob::Status status_;
-  BaseJob *job_;
+  Executor::State job_state_;
+
+  QPointer<JobExecutor> job_executor_;
 
 signals:
   void exportGcode();
@@ -64,6 +65,6 @@ signals:
   void stopBtnClicked();
   void pauseBtnClicked();
   void resumeBtnClicked();
-  void jobStatusReport(BaseJob::Status status);
+  void jobStatusReport(Executor::State state);
   void panelShow(bool is_show);
 };

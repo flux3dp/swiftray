@@ -29,7 +29,7 @@ void GCodePanel::registerEvents() {
   connect(ui->stopBtn, &QAbstractButton::clicked, this, &GCodePanel::stopBtnClicked);
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
     // Pause / Resume
-    if (status_ == BaseJob::Status::RUNNING) {
+    if (job_state_ == Executor::State::kRunning) {
       emit pauseBtnClicked();
     } else {
       emit resumeBtnClicked();
@@ -79,62 +79,49 @@ void GCodePanel::showError(const QString &msg) {
   msgbox.exec();
 }
 
-void GCodePanel::onStatusChanged(BaseJob::Status new_status) {
-  status_ = new_status;
-  switch (status_) {
-    case BaseJob::Status::READY:
+void GCodePanel::onJobStateChanged(Executor::State new_state) {
+  job_state_ = new_state;
+  switch (job_state_) {
+    case Executor::State::kIdle:
       ui->pauseBtn->setEnabled(false);
       ui->playBtn->setEnabled(true);
       ui->stopBtn->setEnabled(false);
       break;
-    case BaseJob::Status::STARTING:
-      ui->pauseBtn->setEnabled(false);
-      ui->playBtn->setEnabled(false);
-      ui->stopBtn->setEnabled(false);
-      break;
-    case BaseJob::Status::RUNNING:
+    case Executor::State::kRunning:
       qInfo() << "Running";
       ui->pauseBtn->setEnabled(true);
       ui->pauseBtn->setText(tr("Pause"));
       ui->playBtn->setEnabled(false);
       ui->stopBtn->setEnabled(true);
-      //ui->playBtn->setText(tr("Stop"));
       break;
-    case BaseJob::Status::PAUSED:
+    case Executor::State::kPaused:
       qInfo() << "Paused";
       ui->pauseBtn->setEnabled(true);
       ui->pauseBtn->setText(tr("Resume"));
       break;
-    case BaseJob::Status::FINISHED:
+    case Executor::State::kCompleted:
       qInfo() << "Finished";
       ui->pauseBtn->setEnabled(false);
       ui->pauseBtn->setText(tr("Pause"));
       ui->playBtn->setEnabled(true);
       ui->stopBtn->setEnabled(false);
-      onProgressChanged(100);
+      onJobProgressChanged(100);
       break;
-    case BaseJob::Status::ALARM:
-      ui->pauseBtn->setEnabled(false);
-      ui->playBtn->setEnabled(false);
-      ui->stopBtn->setEnabled(false);
-      onProgressChanged(0);
-      break;
-    case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ALARM_STOPPED:
+    case Executor::State::kStopped:
       qInfo() << "Stopped";
       ui->pauseBtn->setEnabled(false);
       ui->pauseBtn->setText(tr("Pause"));
       ui->playBtn->setEnabled(true);
       ui->stopBtn->setEnabled(false);
-      onProgressChanged(0);
+      onJobProgressChanged(0);
       break;
     default:
       break;
   }
-  emit jobStatusReport(new_status);
+  emit jobStatusReport(job_state_);
 }
 
-void GCodePanel::onProgressChanged(QVariant progress) {
+void GCodePanel::onJobProgressChanged(QVariant progress) {
   ui->progressBar->setValue(progress.toInt());
   ui->progressBarLabel->setText(ui->progressBar->text());
 }
@@ -151,13 +138,17 @@ GCodePanel::~GCodePanel() {
   delete ui;
 }
 
-void GCodePanel::attachJob(BaseJob *job) {
-  job_ = job;
-  qRegisterMetaType<BaseJob::Status>(); // NOTE: This is necessary for passing custom type argument for signal/slot
-  connect(job_, &BaseJob::error, this, &GCodePanel::showError);
-  connect(job_, &BaseJob::progressChanged, this, &GCodePanel::onProgressChanged);
-  connect(job_, &BaseJob::statusChanged, this, &GCodePanel::onStatusChanged);
-
-  onStatusChanged(job_->status());
-  onProgressChanged(0);
+void GCodePanel::attachJob(QPointer<JobExecutor> job_executor) {
+  // 1. Disconnect from current job first
+  if (!job_executor_.isNull()) {
+    disconnect(job_executor_, nullptr, this, nullptr);
+  }
+  // 2. Connect to new job
+  qRegisterMetaType<Executor::State>(); // NOTE: This is necessary for passing custom type argument for signal/slot
+  //connect(job_executor, &BaseJob::error, this, &GCodePanel::showError);
+  connect(job_executor, &JobExecutor::progressChanged, this, &GCodePanel::onJobProgressChanged);
+  connect(job_executor, &Executor::stateChanged, this, &GCodePanel::onJobStateChanged);
+  job_executor_ = job_executor;
+  onJobStateChanged(job_executor->getState());
+  onJobProgressChanged(0);
 }

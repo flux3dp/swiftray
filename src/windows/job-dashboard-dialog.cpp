@@ -16,8 +16,8 @@ JobDashboardDialog::JobDashboardDialog(const QPixmap &preview, QWidget *parent) 
   ui->setupUi(this);
 
   setAttribute(Qt::WA_DeleteOnClose);
-  ui->statusLabel->setText(BaseJob::statusToString(status_));
-  ui->estTotalRequiredTime->setText(QTime{0, 0}.toString("hh:mm:ss"));
+  ui->statusLabel->setText(Executor::stateToString(job_state_));
+  ui->estTotalRequiredTime->setText(Timestamp{0, 0}.toString());
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
   scene->addPixmap(preview_);
   ui->canvasView->setScene(scene);
@@ -27,7 +27,8 @@ JobDashboardDialog::JobDashboardDialog(const QPixmap &preview, QWidget *parent) 
   initializeContainer();
 }
 
-JobDashboardDialog::JobDashboardDialog(QTime total_required_time, const QPixmap &preview, QWidget *parent) :
+JobDashboardDialog::JobDashboardDialog(
+  Timestamp total_required_time, const QPixmap &preview, QWidget *parent) :
     QDialog(parent),
     preview_(preview),
     ui(new Ui::JobDashboardDialog)
@@ -36,8 +37,8 @@ JobDashboardDialog::JobDashboardDialog(QTime total_required_time, const QPixmap 
 
   setAttribute(Qt::WA_DeleteOnClose);
 
-  ui->statusLabel->setText(BaseJob::statusToString(status_));
-  ui->estTotalRequiredTime->setText(total_required_time.toString("hh:mm:ss"));
+  ui->statusLabel->setText(Executor::stateToString(job_state_));
+  ui->estTotalRequiredTime->setText(total_required_time.toString());
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
   scene->addPixmap(preview_);
   ui->canvasView->setScene(scene);
@@ -54,14 +55,13 @@ JobDashboardDialog::~JobDashboardDialog()
 
 void JobDashboardDialog::registerEvents() {
   connect(ui->startBtn, &QToolButton::clicked, this, [=](){
-    if (status_ == BaseJob::Status::READY ||
-        status_ == BaseJob::Status::FINISHED ||
-        status_ == BaseJob::Status::ALARM_STOPPED ||
-        status_ == BaseJob::Status::STOPPED) {
+    if (job_state_ == Executor::State::kIdle ||
+        job_state_ == Executor::State::kCompleted ||
+        job_state_ == Executor::State::kStopped) {
       emit startBtnClicked(); // try to start a new job
-    } else if (status_ == BaseJob::Status::RUNNING) {
+    } else if (job_state_ == Executor::State::kRunning) {
       emit pauseBtnClicked();
-    } else if (status_ == BaseJob::Status::PAUSED) {
+    } else if (job_state_ == Executor::State::kPaused) {
       emit resumeBtnClicked();
     }
   });
@@ -80,79 +80,78 @@ void JobDashboardDialog::loadStyles() {
   ui->stopBtn->setIconSize(QSize{50, 50});
 }
 
-void JobDashboardDialog::onStatusChanged(BaseJob::Status status) {
-  status_ = status;
-  ui->statusLabel->setText(BaseJob::statusToString(status_));
+QPixmap JobDashboardDialog::getPreview() {
+  return preview_;
+}
+
+void JobDashboardDialog::onJobStateChanged(Executor::State state) {
+  job_state_ = state;
+
+  ui->statusLabel->setText(Executor::stateToString(job_state_));
 
   // TODO: Change button states
-  switch (status_) {
-    case BaseJob::Status::READY:
+  switch (job_state_) {
+    case Executor::State::kIdle:
       ui->startBtn->setEnabled(true); // act as start btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
       break;
-    case BaseJob::Status::STARTING:
-      ui->startBtn->setEnabled(false);
-      ui->stopBtn->setEnabled(false);
-      break;
-    case BaseJob::Status::RUNNING:
+    case Executor::State::kRunning:
       ui->startBtn->setEnabled(true); // act as pause btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-pause.png" : ":/resources/images/icon-pause.png"));
       ui->stopBtn->setEnabled(true);
       break;
-    case BaseJob::Status::PAUSED:
+    case Executor::State::kPaused:
       ui->startBtn->setEnabled(true); // act as resume btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
       ui->stopBtn->setEnabled(true);
       break;
-    case BaseJob::Status::ALARM:
-      ui->startBtn->setEnabled(false); // act as start (restart) btn
-      ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
-      ui->stopBtn->setEnabled(false);
-      onProgressChanged(0);
-      break;
-    case BaseJob::Status::FINISHED:
+    case Executor::State::kCompleted:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
-      onProgressChanged(100);
+      onJobProgressChanged(100);
       break;
-    case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ALARM_STOPPED:
+    case Executor::State::kStopped:
       ui->startBtn->setEnabled(true); // act as start (restart) btn
       ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
       ui->stopBtn->setEnabled(false);
-      onProgressChanged(0);
+      onJobProgressChanged(0);
       break;
     default:
       break;
   }
-  emit jobStatusReport(status);
+  emit jobStatusReport(job_state_);
 }
 
-void JobDashboardDialog::onProgressChanged(QVariant progress) {
+void JobDashboardDialog::onJobProgressChanged(QVariant progress) {
   ui->progressBar->setValue(progress.toInt());
   ui->progressLabel->setText(ui->progressBar->text());
 }
 
-void JobDashboardDialog::onElapsedTimeChanged(QTime new_timestamp) {
-  QTime time_left{0, 0};
-  time_left = time_left.addSecs(new_timestamp.secsTo(job_->getTotalRequiredTime()));
-  ui->timeLeft->setText(time_left.toString("hh:mm:ss") + " left");
+void JobDashboardDialog::onElapsedTimeChanged(Timestamp new_timestamp) {
+  Timestamp time_left{0, 0};
+  time_left = time_left.addSecs(new_timestamp.secsTo(total_required_time_));
+  ui->timeLeft->setText(time_left.toString() + " left");
 }
 
-void JobDashboardDialog::attachJob(BaseJob *job) {
-  job_ = job;
-  qRegisterMetaType<BaseJob::Status>();  // NOTE: This is necessary for passing custom type argument for signal/slot
-  connect(job_, &BaseJob::statusChanged, this, &JobDashboardDialog::onStatusChanged);
-  connect(job_, &BaseJob::progressChanged, this, &JobDashboardDialog::onProgressChanged);
-  connect(job_, &BaseJob::elapsedTimeChanged, this, &JobDashboardDialog::onElapsedTimeChanged);
-
+void JobDashboardDialog::attachJob(QPointer<JobExecutor> job_executor) {
+  // 1. Disconnect from current job first
+  if (!job_executor_.isNull()) {
+    disconnect(job_executor_, nullptr, this, nullptr);
+  }
+  // 2. Connect to new job
+  qRegisterMetaType<Executor::State>();  // NOTE: This is necessary for passing custom type argument for signal/slot
+  connect(job_executor, &Executor::stateChanged, this, &JobDashboardDialog::onJobStateChanged);
+  connect(job_executor, &JobExecutor::progressChanged, this, &JobDashboardDialog::onJobProgressChanged);
+  //connect(job_executor, &Executor::elapsedTimeChanged, this, &JobDashboardDialog::onElapsedTimeChanged);
+  job_executor_ = job_executor;
   // Initialize displayed job info
-  ui->estTotalRequiredTime->setText(job_->getTotalRequiredTime().toString("hh:mm:ss"));
-  onStatusChanged(job_->status());
-  onProgressChanged(job_->progress());
-  onElapsedTimeChanged(job_->getElapsedTime());
+  total_required_time_ = job_executor->getTotalRequiredTime();
+  ui->estTotalRequiredTime->setText(total_required_time_.toString());
+  onJobStateChanged(job_executor->getState());
+  onJobProgressChanged(job_executor->getProgress());
+  onElapsedTimeChanged(job_executor->getElapsedTime());
 }
 
 void JobDashboardDialog::showEvent(QShowEvent *event) {

@@ -216,6 +216,6 @@ void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_pa
   update();
 }
 
-void PreviewWindow::setRequiredTime(const QTime &required_time) {
-  ui->requiredTimeLabel->setText(required_time.toString("hh:mm:ss"));
+void PreviewWindow::setRequiredTime(const Timestamp &required_time) {
+  ui->requiredTimeLabel->setText(required_time.toString());
 }

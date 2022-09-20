@@ -143,6 +143,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif ()
 
 add_subdirectory(src/canvas)
+add_subdirectory(src/common)
 add_subdirectory(src/windows)
 add_subdirectory(src/widgets)
 add_subdirectory(src/settings)

@@ -37,7 +37,7 @@ void RTStatusUpdateExecutor::attachMotionController(
 void RTStatusUpdateExecutor::start() {
   stop();
   changeState(State::kRunning);
-  exec_timer_->start(300);
+  exec_timer_->start(400);
 }
 
 void RTStatusUpdateExecutor::exec() {

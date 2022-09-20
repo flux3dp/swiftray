@@ -2,12 +2,13 @@
 #define JOBDASHBOARDDIALOG_H
 
 #include <QDialog>
-#include <widgets/base-container.h>
-#include <motion_controller_job/base-job.h>
-
+#include <QPointer>
 #include <QString>
 #include <QPixmap>
-#include <QTime>
+#include <widgets/base-container.h>
+#include <executor/executor.h>
+#include <executor/job_executor.h>
+#include <common/timestamp.h>
 
 namespace Ui {
 class JobDashboardDialog;
@@ -19,22 +20,23 @@ class JobDashboardDialog : public QDialog, BaseContainer
 
 public:
     explicit JobDashboardDialog(const QPixmap &preview, QWidget *parent = nullptr);
-    explicit JobDashboardDialog(QTime total_required_time, const QPixmap &preview, QWidget *parent = nullptr);
+    explicit JobDashboardDialog(Timestamp total_required_time, const QPixmap &preview, QWidget *parent = nullptr);
     ~JobDashboardDialog();
 
-    void attachJob(BaseJob *job);
+    void attachJob(QPointer<JobExecutor> job_executor);
+    QPixmap getPreview();
 
 public slots:
-    void onStatusChanged(BaseJob::Status);
-    void onProgressChanged(QVariant);
-    void onElapsedTimeChanged(QTime);
+    void onJobStateChanged(Executor::State);
+    void onJobProgressChanged(QVariant);
+    void onElapsedTimeChanged(Timestamp);
 
 signals:
     void startBtnClicked();
     void stopBtnClicked();
     void pauseBtnClicked();
     void resumeBtnClicked();
-    void jobStatusReport(BaseJob::Status status);
+    void jobStatusReport(Executor::State);
 
 private:
     void registerEvents() override;
@@ -44,8 +46,9 @@ private:
     void resizeEvent(QResizeEvent *event) override;
 
     QPixmap preview_;
-    BaseJob::Status status_ = BaseJob::Status::READY;
-    BaseJob *job_;
+    Executor::State job_state_ = Executor::State::kIdle;
+    Timestamp total_required_time_;
+    QPointer<JobExecutor> job_executor_;
 
     Ui::JobDashboardDialog *ui;
 };

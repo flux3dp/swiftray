@@ -24,9 +24,9 @@
 #include <widgets/base-container.h>
 
 #include <windows/job-dashboard-dialog.h>
-#include <motion_controller_job/grbl-job.h>
 #include <windows/about-window.h>
 #include <windows/privacy_window.h>
+#include <executor/executor.h>
 
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
@@ -124,7 +124,7 @@ private slots:
 
   void genPreviewWindow();
 
-  void setJobStatus(BaseJob::Status status);
+  void syncJobState(Executor::State state);
 
   void jobDashboardFinish(int result);
 
@@ -184,7 +184,6 @@ private:
   PrivacyWindow *privacy_window_;
 
 #ifndef Q_OS_IOS
-    QList<GrblJob *> jobs_;
 #endif
 
   void newFile();
@@ -193,7 +192,6 @@ private:
   void exportGCodeFile();
   void importGCodeFile();
   bool generateGcode();
-  void generateJob();
   bool handleUnsavedChange();
   void actionStart();
 };

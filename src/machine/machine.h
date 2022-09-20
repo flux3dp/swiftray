@@ -6,6 +6,8 @@
 #include <QPointer>
 #include <QThread>
 #include <QStringList>
+#include <QProgressDialog>
+#include <QPixmap>
 #include <connection/serial-port.h>
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
@@ -22,7 +24,9 @@ public:
   explicit Machine(QObject *parent = nullptr);
 
   void applyMachineParam(MachineSettings::MachineSet mach);
-  bool createGCodeJob(QStringList gcode_list);
+  bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
+  bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
+  bool createFramingJob(QStringList gcode_list);
   //QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }

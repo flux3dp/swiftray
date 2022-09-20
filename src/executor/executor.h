@@ -2,6 +2,7 @@
 #define EXECUTOR_H
 
 #include <QObject>
+#include <QString>
 #include "operation_cmd/operation_cmd.h"
 
 class Executor : public QObject
@@ -15,6 +16,9 @@ public:
     kCompleted,
     kStopped
   };
+  Q_ENUM(State)
+
+  static QString stateToString(State state);
 
   explicit Executor(QObject *parent = nullptr);
   size_t inProgressCmdCnt();

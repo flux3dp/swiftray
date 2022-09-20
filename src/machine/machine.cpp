@@ -1,9 +1,12 @@
 #include "machine.h"
-#include <QThread>
+//#include <QThread>
+#include <QElapsedTimer>
+#include <QtMath>
 
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller_factory.h>
 #include <executor/machine_job/gcode_job.h>
+#include <executor/machine_job/framing_job.h>
 #include <executor/operation_cmd/grbl_cmd.h>
 
 Machine::Machine(QObject *parent)
@@ -51,10 +54,74 @@ void Machine::applyMachineParam(MachineSettings::MachineSet mach) {
  * 
  * @param gcode_list 
  * @return true 
- * @return false 
+ * @return false: cancelled, no job executor exists or already running a job
  */
-bool Machine::createGCodeJob(QStringList gcode_list) {
+bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog) {
+  QList<Timestamp> timestamp_list;
+  try {
+    QElapsedTimer timer;
+    qInfo() << "Start calcRequiredTime";
+    timer.start();
+    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
+  } catch (...) {
+    // Terminated (Cancelled)
+    return false;
+  }
   auto job = QSharedPointer<GCodeJob>::create(gcode_list);
+  job->setMotionController(motion_controller_);
+  job->setTimestampList(timestamp_list);
+  if (!job_executor_) {
+    return false;
+  }
+  if (!job_executor_->setNewJob(job)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief Create and set the gcode job as the next job
+ * 
+ * @param gcode_list 
+ * @return true 
+ * @return false: cancelled, no job executor exists or already running a job
+ */
+bool Machine::createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog) {
+  QList<Timestamp> timestamp_list;
+  try {
+    QElapsedTimer timer;
+    qInfo() << "Start calcRequiredTime";
+    timer.start();
+    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
+  } catch (...) {
+    // Terminated (Cancelled)
+    return false;
+  }
+  auto job = QSharedPointer<GCodeJob>::create(gcode_list, preview);
+  job->setMotionController(motion_controller_);
+  job->setTimestampList(timestamp_list);
+  if (!job_executor_) {
+    return false;
+  }
+  if (!job_executor_->setNewJob(job)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @param gcode_list 
+ * @return true 
+ * @return false: no job executor exists or already running a job
+ */
+bool Machine::createFramingJob(QStringList gcode_list) {
+  auto job = QSharedPointer<FramingJob>::create(gcode_list);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;
@@ -118,8 +185,6 @@ void Machine::motionPortDisonnected() {
 }
 
 void Machine::startJob() {
-  // TODO: allow different repeat count
-  job_executor_->setRepeat(1);
   job_executor_->start();
 }
 

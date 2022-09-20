@@ -28,7 +28,7 @@ void MachineSetupExecutor::start() {
   qInfo() << "MachineSetupExecutor::start()";
   pending_cmd_.clear();
   pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo, motion_controller_));
-  //pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_));
+  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_));
 
   exec_timer_->start(200);
 }
@@ -54,7 +54,7 @@ void MachineSetupExecutor::exec() {
     emit Executor::finished();
     return;
   }
-  
+
   OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // retry later

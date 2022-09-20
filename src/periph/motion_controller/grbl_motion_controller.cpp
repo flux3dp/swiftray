@@ -169,8 +169,12 @@ void GrblMotionController::respReceived(QString resp) {
     }
 
   } else if (resp.startsWith("ALARM:")) {
-    // TODO:
-    qInfo() << "Alarm rcvd";
+    MotionControllerState old_state = state_;
+    // TODO: Parse alarm code
+    qInfo() << "Alarm detected";
+
+    setState(MotionControllerState::kAlarm);
+    emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_, a_pos_);
   } else if (resp.startsWith("FLUX")) {
     // e.g. FLUX Lazervida:0.1.2 Ready!
     // TODO: Parse FLUX machine model and fw version

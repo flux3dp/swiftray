@@ -15,14 +15,11 @@ void JobExecutor::attachMotionController(
     QPointer<MotionController> motion_controller) {
   // In case running, stop first
   stop();
-  // In case already attached, detach first
-  motion_controller_.clear();
-
   motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::disconnected,
-        this, &JobExecutor::stop);
-  connect(motion_controller_, &MotionController::resetDetected,
-        this, &JobExecutor::stop);
+}
+
+MachineJob const *JobExecutor::getActiveJob() const {
+  return active_job_.data();
 }
 
 /**
@@ -64,6 +61,10 @@ void JobExecutor::start() {
     return;
   }
 
+  connect(motion_controller_, &MotionController::disconnected,
+        this, &JobExecutor::stop);
+  connect(motion_controller_, &MotionController::resetDetected,
+        this, &JobExecutor::stop);
   // Register signal slot
   connect(motion_controller_, &MotionController::realTimeStatusUpdated, 
       this, [=](MotionControllerState last_state, MotionControllerState current_state, 
@@ -87,7 +88,8 @@ void JobExecutor::start() {
   });
 
   // Start running
-  repeat_ -= 1;
+  completed_cmd_cnt_ = 0;
+  emit progressChanged(0);
   changeState(State::kRunning);
   wakeUp();
 }
@@ -143,17 +145,11 @@ void JobExecutor::exec() {
     if (!pending_cmd_ && cmd_in_progress_.isEmpty()) {
       if (latest_mc_state_ != MotionControllerState::kRun
           && latest_mc_state_ != MotionControllerState::kPaused) {
-        if (repeat_ <= 0) {
-          // Complete
-          qInfo() << "Job complete";
-          complete();
-          emit Executor::finished();
-          return;
-        } else {
-          qInfo() << "Repeat again, " << repeat_ << " remaining";
-          repeat_ -= 1;
-          active_job_->reload();
-        }
+        // Complete
+        qInfo() << "Job complete";
+        complete();
+        emit Executor::finished();
+        return;
       }
     }
   }
@@ -177,6 +173,11 @@ void JobExecutor::exec() {
     cmd_in_progress_.push_back(pending_cmd_);
     pending_cmd_.reset();
   } else { // Finish immediately: ok or error
+    completed_cmd_cnt_ += 1;
+    //if (completed_cmd_cnt_ % 25) {
+      emit progressChanged(active_job_->getProgressPercent());
+      emit elapsedTimeChanged(active_job_->getElapsedTime());
+    //}
     pending_cmd_.reset();
   }
 
@@ -184,13 +185,16 @@ void JobExecutor::exec() {
 
 /**
  * @brief Add a new job waiting for execute
+ *        Reject if active job exists, 
+ *        Override pending_job
+ *        NOTE: Currently only allow one job in either active_job or pending_job
  * 
  * @param new_job 
  * @return true if added to pending list
  * @return false if unable to add new job to pending list
  */
 bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
-  if (!pending_job_.isNull()) {
+  if (!active_job_.isNull()) {
     return false;
   }
   pending_job_ = new_job;
@@ -205,8 +209,11 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
  */
 void JobExecutor::handleCmdFinish(int code) {
   std::lock_guard<std::mutex> lk(exec_mutex_);
+
+  if (active_job_.isNull()) {
+    return;
+  }
   
-  // TODO: Seperate the cmds belong to different controllers
   if (!cmd_in_progress_.isEmpty()) {
     if (code == 0) {
       cmd_in_progress_.first()->succeed();
@@ -215,6 +222,11 @@ void JobExecutor::handleCmdFinish(int code) {
     }
     cmd_in_progress_.pop_front();
   }
+  completed_cmd_cnt_ += 1;
+  //if (completed_cmd_cnt_ % 25) {
+    emit progressChanged(active_job_->getProgressPercent());
+    emit elapsedTimeChanged(active_job_->getElapsedTime());
+  //}
   emit trigger(); // ~ wakeUp() (might be triggered from different thread)
 }
 
@@ -222,6 +234,7 @@ void JobExecutor::complete() {
   if (!motion_controller_.isNull()) {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
+  emit progressChanged(100);
   // Take out the active job to last job
   last_job_ = active_job_;
   if (!last_job_.isNull()) {
@@ -244,6 +257,7 @@ void JobExecutor::stopImpl() {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
   // Take out the active job to last job
+  emit progressChanged(0);
   last_job_ = active_job_;
   if (!last_job_.isNull()) {
     last_job_->reload();
@@ -275,10 +289,38 @@ void JobExecutor::wakeUp() {
   }
 }
 
-void JobExecutor::setRepeat(size_t repeat) {
-  repeat_ = repeat;
+/**
+ * @brief Get the total required Time for active job
+ * 
+ * @return Timestamp 
+ */
+Timestamp JobExecutor::getTotalRequiredTime() const {
+  if (active_job_.isNull()) {
+    return Timestamp{};
+  }
+  return active_job_->getTotalRequiredTime();
 }
 
-size_t JobExecutor::getRepeat() {
-  return repeat_;
+/**
+ * @brief Get progress of active job
+ * 
+ * @return float 
+ */
+float JobExecutor::getProgress() const {
+  if (active_job_.isNull()) {
+    return 0;
+  }
+  return active_job_->getProgressPercent();
+}
+
+/**
+ * @brief Get elapsed time of active job
+ * 
+ * @return float 
+ */
+Timestamp JobExecutor::getElapsedTime() const {
+  if (active_job_.isNull()) {
+    return Timestamp{};
+  }
+  return active_job_->getElapsedTime();
 }

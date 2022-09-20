@@ -5,6 +5,7 @@
 #include "executor.h"
 #include <periph/motion_controller/motion_controller.h>
 #include "machine_job/machine_job.h"
+#include <common/timestamp.h>
 #include <QPointer>
 #include <QSharedPointer>
 #include <mutex>
@@ -19,8 +20,10 @@ public:
 
   bool setNewJob(QSharedPointer<MachineJob> new_job);
   void attachMotionController(QPointer<MotionController> motion_controller);
-  void setRepeat(size_t repeat);
-  size_t getRepeat();
+  MachineJob const *getActiveJob() const;
+  Timestamp getTotalRequiredTime() const;
+  float getProgress() const;
+  Timestamp getElapsedTime() const;
 
 
 public slots:
@@ -36,6 +39,8 @@ private slots:
   //void onCmdAcked();
 signals:
   void trigger();
+  void progressChanged(float prog);
+  void elapsedTimeChanged(Timestamp);
 
 private:
   void complete();
@@ -50,7 +55,7 @@ private:
   QTimer *exec_timer_;
   std::shared_ptr<OperationCmd> pending_cmd_;
   MotionControllerState latest_mc_state_;
-  size_t repeat_ = 1; // remaining repeat count
+  size_t completed_cmd_cnt_ = 0;
 };
 
 #endif // JOBEXECUTOR_H

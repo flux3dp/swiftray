@@ -556,7 +556,7 @@ QList<QTime> GrblJob::calcRequiredTime(QStringList gcode_list, QProgressDialog* 
               // G1 Motion modal group
             }
           } else if (current_param == 'M') {
-            // ignore
+            // ignore M-code
           }
 
           // Finish a param
