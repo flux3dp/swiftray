@@ -30,6 +30,8 @@ public:
 
   virtual void home() { NO_BASIC_IMPL }
 
+  virtual void syncProgramFlow() { NO_BASIC_IMPL }
+
   virtual void reset() {
     x_ = 0;
     y_ = 0;

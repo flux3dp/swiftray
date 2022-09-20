@@ -159,6 +159,10 @@ public:
     x_ = y_ = 0;
   }
 
+  void syncProgramFlow() override {
+    str_stream_ << "M2" << std::endl;
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;

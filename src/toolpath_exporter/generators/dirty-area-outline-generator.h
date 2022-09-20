@@ -98,6 +98,9 @@ public:
   void home() override {
   }
 
+  void syncProgramFlow() override {
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;

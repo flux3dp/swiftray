@@ -69,6 +69,8 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
       QCoreApplication::processEvents();
     }
   }
+
+  gen_->syncProgramFlow();
   
   if (canceled) {
     return false;
