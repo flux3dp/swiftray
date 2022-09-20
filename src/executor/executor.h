@@ -8,10 +8,6 @@ class Executor : public QObject
 {
   Q_OBJECT
 public:
-  explicit Executor(QObject *parent = nullptr);
-  size_t inProgressCmdCnt();
-  virtual void handleCmdFinish(int result_code) = 0;
-
   enum class State {
     kIdle,
     kRunning,
@@ -19,6 +15,11 @@ public:
     kCompleted,
     kStopped
   };
+
+  explicit Executor(QObject *parent = nullptr);
+  size_t inProgressCmdCnt();
+  virtual void handleCmdFinish(int result_code) = 0;
+  State getState() const;
 
 public slots:
   virtual void start() = 0;

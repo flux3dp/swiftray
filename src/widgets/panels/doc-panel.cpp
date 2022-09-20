@@ -5,6 +5,7 @@
 #include <windows/mainwindow.h>
 #include "doc-panel.h"
 #include "ui_doc-panel.h"
+#include <globals.h>
 
 DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -68,15 +69,20 @@ void DocPanel::loadSettings() {
   MachineSettings machine_settings;
   QString current_machine = settings.value("defaultMachine").toString();
   ui->machineComboBox->clear();
-  for (auto &mach : machine_settings.machines()) {
+  for (const auto &mach : machine_settings.machines()) {
     if (mach.name.isEmpty()) continue;
     ui->machineComboBox->blockSignals(true);
     ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
     ui->machineComboBox->blockSignals(false);
   }
+  // select the item in combobox with matching current_machine name
+  // NOTE: This works only when there is no duplicate name in machines_
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();
+  active_machine.applyMachineParam(currentMachine());
 
+
+  // Preset working params (speed & power) for various laser_heads and materials (indepedent of machine)
   PresetSettings* preset_settings = &PresetSettings::getInstance();
   QString current_preset_name = preset_settings->currentPreset().name;
   ui->presetComboBox->clear();

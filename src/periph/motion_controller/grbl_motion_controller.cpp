@@ -18,10 +18,17 @@ GrblMotionController::GrblMotionController(QObject *parent)
  * @return true if cmd_packet is sent
  * @return false if port is busy or buffer is full
  */
-bool GrblMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
+MotionController::CmdSendResult GrblMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
+  size_t newline_cnt = cmd_packet.count(QChar('\n'));
+  if (newline_cnt > 1) {
+    // TODO: return other value to tell apart from buffer full?
+    return CmdSendResult::kInvalid;
+  }
+
   // Special handling for control command
-  if (cmd_packet.size() == 1 && 
-      (cmd_packet.at(0) == '?' || cmd_packet.at(0) == '!' || cmd_packet.at(0) == '~' || cmd_packet.at(0) > 0x7f )) {
+  if (newline_cnt == 0) { // No "ok" or "error" expected
+  //if (cmd_packet.size() == 1 && 
+  //    (cmd_packet.at(0) == '?' || cmd_packet.at(0) == '!' || cmd_packet.at(0) == '~' || cmd_packet.at(0) > 0x7f )) {
     // NOTE: Ctrl cmd is handled immediately so it won't occupy cmd buffer.
     //       Thus, no need to consider cmd_in_buf
     port_tx_mutex_.lock();
@@ -29,30 +36,31 @@ bool GrblMotionController::sendCmdPacket(QPointer<Executor> executor, QString cm
       if (port_->write(cmd_packet) < 0) {
         port_tx_mutex_.unlock();
         qInfo() << "port_->write failed";
-        return false;
+        return CmdSendResult::kFail;
       }
       qInfo() << "SND>" << cmd_packet;
       emit MotionController::cmdSent(cmd_packet);
     } catch(...) {
       port_tx_mutex_.unlock();
-      return false;
+      return CmdSendResult::kFail;
     }
     port_tx_mutex_.unlock();
-    return true;
+    return CmdSendResult::kOk;
   }
 
   // Normal handling line of command, consider the available buffer space at first
+  // newline_cnt == 1, expect an "ok" or "error" resp
   std::unique_lock<std::mutex> lk(port_tx_mutex_, std::try_to_lock);
   if (!lk.owns_lock()) {
       // mutex wasn't locked. Handle it.
-      return false;
+      return CmdSendResult::kBusy;
   }
 
   if (cbuf_space_ < cbuf_occupied_ + cmd_packet.size()) {
-    return false;
+    return CmdSendResult::kBusy;
   }
   if (port_->write(cmd_packet) < 0) {
-    return false;
+    return CmdSendResult::kFail;
   }
   qInfo() << "SND: " << cmd_packet;
   cbuf_occupied_ += cmd_packet.size();
@@ -60,7 +68,7 @@ bool GrblMotionController::sendCmdPacket(QPointer<Executor> executor, QString cm
   enqueueCmdExecutor(executor);
   emit MotionController::cmdSent(cmd_packet);
 
-  return true;
+  return CmdSendResult::kOk;
 }
 
 /**
@@ -89,7 +97,9 @@ void GrblMotionController::respReceived(QString resp) {
     }
     cbuf_occupied_ = std::accumulate(cmd_size_buf_.begin(), cmd_size_buf_.end(), 0);
     if (!cmd_executor_queue_.isEmpty()) {
-      cmd_executor_queue_.at(0)->handleCmdFinish(result_code);
+      if (!cmd_executor_queue_.at(0).isNull()) {
+        cmd_executor_queue_.at(0)->handleCmdFinish(result_code);
+      }
       dequeueCmdExecutor();
     }
     qInfo() << "cbuf_occupied: " << cbuf_occupied_;
@@ -141,13 +151,34 @@ void GrblMotionController::respReceived(QString resp) {
     cmd_size_buf_.clear();
     cbuf_occupied_ = 0;
     x_pos_ = y_pos_ = z_pos_ = 0;
+
+    emit MotionController::resetDetected();
     // TODO: Parse Grbl version info
+  } else if (resp.startsWith("[MSG:")) {
+    // TODO: Handle Grbl msg
+    if (resp.contains("Reset to continue")) {
+      sendCmdPacket(nullptr, "\x18");
+    } else if (resp.contains("'$H'|'$X' to unlock")) {
+      sendCmdPacket(nullptr, "$X\n");
+    } else if (resp.contains("Pgm End")) {
+      // TODO:
+    } else if (resp.contains("Restoring defaults")) {
+      // TODO:
+    } else if (resp.contains("Sleeping")) {
+      // TODO:
+    }
+
+  } else if (resp.startsWith("ALARM:")) {
+    // TODO:
+    qInfo() << "Alarm rcvd";
   } else if (resp.startsWith("FLUX")) {
     // e.g. FLUX Lazervida:0.1.2 Ready!
     // TODO: Parse FLUX machine model and fw version
   } else if (resp.startsWith("[FLUX:")) {
     // TODO: Handle [FLUX: ...]
-    // Handle FLUX's dedicated response
-  }
+    // Handle FLUX's dedicated responses:
+    // * [FLUX: act]
+    // * [FLUX: tilt]
+  } 
 
 }

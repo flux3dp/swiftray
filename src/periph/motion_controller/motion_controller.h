@@ -21,10 +21,17 @@ class MotionController : public QObject
 {
   Q_OBJECT
 public:
+  enum class CmdSendResult {
+    kOk,      // cmd sent
+    kBusy,    // ask to try again later
+    kInvalid, // rejected, invalid cmd format
+    kFail     // Other error
+  };
+
   explicit MotionController(QObject *parent = nullptr);
 
   void attachPort(SerialPort *port);
-  virtual bool sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
+  virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   MotionControllerState getState() const;
   void setState(MotionControllerState new_state);
   void enqueueCmdExecutor(QPointer<Executor>);
@@ -32,6 +39,7 @@ public:
 
 signals:
   void cmdSent(QString cmd);
+  void resetDetected();
   void realTimeStatusUpdated(MotionControllerState last_state, MotionControllerState new_state, 
       qreal x, qreal y, qreal z, qreal a);
   void disconnected();
@@ -42,6 +50,7 @@ public slots:
 private slots:
 
 protected:
+
   SerialPort* port_;
   mutable std::mutex state_mutex_;
   QList<QPointer<Executor>> cmd_executor_queue_;

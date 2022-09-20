@@ -24,9 +24,20 @@ OperationCmd::ExecStatus GCodeCmd::execute(QPointer<Executor> executor) {
     fail();
     return status_;
   }
-  if (false == motion_controller_->sendCmdPacket(executor, gcode_)) {
-    return status_; // Remain idle
+
+  MotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, gcode_);
+  switch (result) {
+    case MotionController::CmdSendResult::kBusy:
+      return status_;
+    case MotionController::CmdSendResult::kOk:
+      status_ = ExecStatus::kProcessing;
+      return status_;
+    case MotionController::CmdSendResult::kInvalid:
+      [[fallthrough]];
+    case MotionController::CmdSendResult::kFail:
+      [[fallthrough]];
+    default:
+      fail();
+      return status_;
   }
-  status_ = ExecStatus::kProcessing;
-  return status_;
 }

@@ -170,7 +170,7 @@ private:
   QComboBox* portComboBox_;
 
   TransformPanel *transform_panel_;
-  GCodePanel *gcode_player_;
+  GCodePanel *gcode_panel_;
   JobDashboardDialog *job_dashboard_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;

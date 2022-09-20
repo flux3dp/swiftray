@@ -13,6 +13,7 @@
 #include <executor/machine_setup_executor.h>
 #include <executor/job_executor.h>
 #include <executor/rt_status_update_executor.h>
+#include <executor/console_executor.h>
 
 class Machine : public QObject
 {
@@ -20,6 +21,7 @@ class Machine : public QObject
 public:
   explicit Machine(QObject *parent = nullptr);
 
+  void applyMachineParam(MachineSettings::MachineSet mach);
   bool createGCodeJob(QStringList gcode_list);
   //QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
@@ -35,6 +37,9 @@ public slots:
   void motionPortDisonnected();// Closed
 
   void startJob();
+  void pauseJob();
+  void resumeJob();
+  void stopJob();
 
 private:
   MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
@@ -46,6 +51,7 @@ private:
   
   // Task Executors
   JobExecutor *job_executor_;
+  ConsoleExecutor *console_executor_; // A general-purpose simple cmd executor
   MachineSetupExecutor *machine_setup_executor_;
   RTStatusUpdateExecutor *rt_status_executor_;
   //QThread *job_exec_thread_;

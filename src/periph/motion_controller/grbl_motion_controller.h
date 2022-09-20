@@ -12,7 +12,7 @@ class GrblMotionController : public MotionController
 public:
   explicit GrblMotionController(QObject *parent = nullptr);
 
-  bool sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
+  CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
 
 public slots:
   void respReceived(QString resp) override;

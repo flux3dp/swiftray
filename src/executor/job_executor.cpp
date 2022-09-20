@@ -21,16 +21,19 @@ void JobExecutor::attachMotionController(
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::disconnected,
         this, &JobExecutor::stop);
+  connect(motion_controller_, &MotionController::resetDetected,
+        this, &JobExecutor::stop);
 }
 
 /**
- * @brief Setup executor and start workhorse timer
+ * @brief Start or Replay job execution
+ *        Setup executor and start workhorse timer
  * 
  */
 void JobExecutor::start() {
-  qInfo() << "JobExecutor::start()";
   std::lock_guard<std::mutex> lk(exec_mutex_);
 
+  // Reject if already runnign a job
   if (state_ != State::kIdle &&
       state_ != State::kCompleted &&
       state_ != State::kStopped) {
@@ -38,12 +41,14 @@ void JobExecutor::start() {
     return;
   }
 
-  // Clear the current job
-  if (!active_job_.isNull()) {
-    active_job_.reset();
+  // Reject in case any operation is running
+  if (motion_controller_->getState() != MotionControllerState::kIdle) {
+    qInfo() << "Motion controller must be idle before job start";
+    return;
   }
-  // Next job selection order:
-  //   1. pendning_job_ = start new job
+
+  // Next job selection rule:
+  //   1. pendning_job_ = start new (next) job
   //   2. last_job_     = retry
   if (!pending_job_.isNull()) {
     active_job_ = pending_job_;
@@ -53,7 +58,9 @@ void JobExecutor::start() {
     active_job_ = last_job_;
     last_job_.reset();
   } else {
-    qInfo() << "JobExecutor active_job_ empty";
+    active_job_.reset();
+    // Reject if no job available
+    qInfo() << "JobExecutor no job available";
     return;
   }
 
@@ -67,10 +74,10 @@ void JobExecutor::start() {
     latest_mc_state_ = current_state;
     if (latest_mc_state_ == MotionControllerState::kAlarm ||
         latest_mc_state_ == MotionControllerState::kSleep) {
+      qInfo() << "Stopped by alarm or sleep";
       stop();
     } else if (latest_mc_state_ == MotionControllerState::kIdle || 
                 latest_mc_state_ == MotionControllerState::kRun) {
-      // try to resume if paused
       resume();
     } else if (latest_mc_state_ == MotionControllerState::kPaused) {
       pause();
@@ -148,8 +155,6 @@ void JobExecutor::exec() {
           active_job_->reload();
         }
       }
-    } else {
-      qInfo() << "hasn't ended";
     }
   }
 
@@ -177,7 +182,17 @@ void JobExecutor::exec() {
 
 }
 
+/**
+ * @brief Add a new job waiting for execute
+ * 
+ * @param new_job 
+ * @return true if added to pending list
+ * @return false if unable to add new job to pending list
+ */
 bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
+  if (!pending_job_.isNull()) {
+    return false;
+  }
   pending_job_ = new_job;
   return true;
 }
@@ -194,9 +209,9 @@ void JobExecutor::handleCmdFinish(int code) {
   // TODO: Seperate the cmds belong to different controllers
   if (!cmd_in_progress_.isEmpty()) {
     if (code == 0) {
-      cmd_in_progress_.at(0)->succeed();
+      cmd_in_progress_.first()->succeed();
     } else {
-      cmd_in_progress_.at(0)->fail();
+      cmd_in_progress_.first()->fail();
     }
     cmd_in_progress_.pop_front();
   }
@@ -208,8 +223,10 @@ void JobExecutor::complete() {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
   // Take out the active job to last job
-  last_job_.reset();
   last_job_ = active_job_;
+  if (!last_job_.isNull()) {
+    last_job_->reload();
+  }
   active_job_.reset();
 
   exec_timer_->stop();
@@ -227,8 +244,10 @@ void JobExecutor::stopImpl() {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
   // Take out the active job to last job
-  last_job_.reset();
   last_job_ = active_job_;
+  if (!last_job_.isNull()) {
+    last_job_->reload();
+  }
   active_job_.reset();
 
   exec_timer_->stop();

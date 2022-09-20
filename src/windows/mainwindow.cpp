@@ -260,14 +260,14 @@ void MainWindow::actionStart() {
   // Prepare total required time
   try {
 
-    if (active_machine.createGCodeJob(gcode_player_->getGCode().split('\n')) == true) {
+    if (active_machine.createGCodeJob(gcode_panel_->getGCode().split('\n')) == true) {
       active_machine.startJob();
     } else {
       qInfo() << "Unable to create or set job for machine";
     }
     
     /*
-    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto gcode_list = gcode_panel_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
       tr("Estimating task time..."),  
       tr("Cancel"), 
@@ -618,7 +618,7 @@ void MainWindow::importGCodeFile() {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
     QTextStream stream(data);
-    gcode_player_->setGCode(stream.readAll());
+    gcode_panel_->setGCode(stream.readAll());
   }
 }
 
@@ -750,7 +750,7 @@ void MainWindow::loadWidgets() {
   // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
-  gcode_player_ = new GCodePanel(ui->serialPortDock);
+  gcode_panel_ = new GCodePanel(ui->serialPortDock);
   font_panel_ = new FontPanel(ui->fontDock, this);
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
@@ -762,7 +762,7 @@ void MainWindow::loadWidgets() {
   privacy_window_ = new PrivacyWindow(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
-  ui->serialPortDock->setWidget(gcode_player_);
+  ui->serialPortDock->setWidget(gcode_panel_);
   ui->fontDock->setWidget(font_panel_);
   ui->imageDock->setWidget(image_panel_);
   ui->layerDock->setWidget(layer_panel_);
@@ -776,7 +776,7 @@ void MainWindow::loadWidgets() {
   ui->actionImagePanel->setChecked(!ui->imageDock->isHidden());
   ui->actionDocumentPanel->setChecked(!ui->documentDock->isHidden());
   ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
-  ui->actionGCodeViewerPanel->setChecked(!gcode_player_->isHidden());
+  ui->actionGCodeViewerPanel->setChecked(!gcode_panel_->isHidden());
   ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
   //toolbar
   ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
@@ -875,7 +875,7 @@ void MainWindow::registerEvents() {
 
     // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
     // Approach 1: use gcode player
-    // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
+    // gcode_panel_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
     // Approach 2: directy control serial port
     if (!serial_port.isOpen()) {
       return;
@@ -929,14 +929,14 @@ void MainWindow::registerEvents() {
     }
   });
 
-  connect(gcode_player_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
-  connect(gcode_player_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
-  connect(gcode_player_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
-  connect(gcode_player_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
-  connect(gcode_player_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
-  connect(gcode_player_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
-  connect(gcode_player_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(gcode_player_, &GCodePanel::jobStatusReport, this, &MainWindow::setJobStatus);
+  connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
+  connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
+  connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
+  connect(gcode_panel_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(gcode_panel_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(gcode_panel_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(gcode_panel_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::setJobStatus);
   connect(&serial_port, &SerialPort::connected, [=]() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
@@ -977,6 +977,8 @@ void MainWindow::registerEvents() {
     settings.setValue("window/upload", is_upload_enable_);
   });
   connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
+    active_machine.applyMachineParam(currentMachine());
+
     std::size_t found = machine_name.toStdString().find("Lazervida");
     if(found!=std::string::npos) {
       is_high_speed_mode_ = true;
@@ -1618,7 +1620,7 @@ void MainWindow::setToolbarTransform() {
   connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
     ui->actionLayerPanel->setChecked(is_show);
   });
-  connect(gcode_player_, &GCodePanel::panelShow, [=](bool is_show) {
+  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
     ui->actionGCodeViewerPanel->setChecked(is_show);
   });
   connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
@@ -1823,7 +1825,7 @@ bool MainWindow::generateGcode() {
     msgbox.exec();
   }
   
-  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  gcode_panel_->setGCode(QString::fromStdString(gen_gcode->toString()));
   progress_dialog.setValue(progress_dialog.maximum());
 
   return true;
@@ -1859,7 +1861,7 @@ void MainWindow::genPreviewWindow() {
 
   // Prepare total required time
   try {
-    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto gcode_list = gcode_panel_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
       tr("Estimating task time..."),  
       tr("Cancel"), 
@@ -1903,7 +1905,7 @@ void MainWindow::generateJob() {
     return;
   }
   try {
-    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto gcode_list = gcode_panel_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
       tr("Estimating task time..."),  
       tr("Cancel"), 
@@ -1938,7 +1940,7 @@ void MainWindow::onStartNewJob() {
     return;
   }
 
-  gcode_player_->attachJob(jobs_.last());
+  gcode_panel_->attachJob(jobs_.last());
   if(job_dashboard_exist_) {
     job_dashboard_->attachJob(jobs_.last());
   }

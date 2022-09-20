@@ -16,3 +16,7 @@ void Executor::changeState(State new_state) {
     emit stateChanged(state_);
   }
 }
+
+Executor::State Executor::getState() const {
+  return state_;
+}

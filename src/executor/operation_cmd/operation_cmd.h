@@ -8,14 +8,6 @@ class Executor;
 class OperationCmd
 {
 public:
-  /*
-  enum class Target {
-    kNone,
-    kMotionControl,
-    //kAutofocusControl,
-    //kCameraControl
-  };
-  */
   enum ExecStatus {
     kIdle,
     kProcessing,
@@ -24,7 +16,6 @@ public:
   };
 
   explicit OperationCmd();
-  //void setTarget(Target);
   ExecStatus getStatus();
 
   virtual ExecStatus execute(QPointer<Executor> executor) = 0;
@@ -33,7 +24,6 @@ public:
 
 protected:
   ExecStatus status_ = ExecStatus::kIdle;
-  //Target target_ = Target::kNone;
 };
 
 #endif // OPERATION_COMMAND_H

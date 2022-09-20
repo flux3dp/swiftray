@@ -1,5 +1,6 @@
 #include "machine_setup_executor.h"
 
+#include "operation_cmd/grbl_cmd.h"
 #include <QDebug>
 
 MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
@@ -8,9 +9,6 @@ MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
   qInfo() << "MachineSetupExecutor created";
   exec_timer_ = new QTimer(this);
   connect(exec_timer_, &QTimer::timeout, this, &MachineSetupExecutor::exec);
-
-  // TODO: non single shot
-  exec_timer_->setSingleShot(true);
 }
 
 void MachineSetupExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
@@ -27,28 +25,47 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
 
 void MachineSetupExecutor::start() {
   stop();
-  // TODO: 
   qInfo() << "MachineSetupExecutor::start()";
-  exec_timer_->start(100);
+  pending_cmd_.clear();
+  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo, motion_controller_));
+  //pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_));
+
+  exec_timer_->start(200);
 }
 
 void MachineSetupExecutor::exec() {
-  stopped_ = false;
   qInfo() << "MachineSetupExecutor exec()";
 
   if (motion_controller_.isNull()) {
     stop();
     return;
   }
-  // "\x18": soft reset first
-  //         get machine brand and version info
-  // "$#": gcode parameters
-  // "$G": gcode parser state
-  // "$$": settings
-  // "$I": build info
-  
 
-  emit Executor::finished();
+  // Setup procedure:
+  //   "\x18": soft reset first
+  //         get machine brand and version info
+  //   "$#": gcode parameters
+  //   "$G": gcode parser state
+  //   "$$": settings
+  //   "$I": build info
+  //   "$X": unlock immediately
+  if (pending_cmd_.isEmpty()) {
+    exec_timer_->stop();
+    emit Executor::finished();
+    return;
+  }
+  
+  OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this);
+  if (exec_status == OperationCmd::ExecStatus::kIdle) {
+    // retry later
+    return;
+  } else if (exec_status == OperationCmd::ExecStatus::kProcessing) {
+    cmd_in_progress_.push_back(pending_cmd_.first());
+    pending_cmd_.pop_front();
+  } else { // Finish immediately: ok or error
+    pending_cmd_.pop_front();
+  }
+  
 }
 
 void MachineSetupExecutor::pause() {
@@ -60,12 +77,19 @@ void MachineSetupExecutor::resume() {
 }
 
 void MachineSetupExecutor::stop() {
-  stopped_ = true;
   exec_timer_->stop();
+  pending_cmd_.clear();
+  cmd_in_progress_.clear();
 }
 
 void MachineSetupExecutor::handleCmdFinish(int result_code) {
-  // TODO:
-
+  if (!cmd_in_progress_.isEmpty()) {
+    if (result_code == 0) {
+      cmd_in_progress_.first()->succeed();
+    } else {
+      cmd_in_progress_.first()->fail();
+    }
+    cmd_in_progress_.pop_front();
+  }  
   return ;
 }
