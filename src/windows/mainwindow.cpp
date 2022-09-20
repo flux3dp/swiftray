@@ -167,7 +167,7 @@ void MainWindow::loadCanvas() {
         // canvas_->loadSVG(data);
         double scale = 30.0 / 8.5 * 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);emotes/origin/main
       }  else if (filename.endsWith(".dxf")) {
         canvas_->loadDXF(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
