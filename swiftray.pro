@@ -221,7 +221,8 @@ SOURCES += \
 
 RESOURCES += qml.qrc
 TRANSLATIONS += \
-    i18n/zh-Hant-TW.ts
+    i18n/zh-Hant-TW.ts \
+    i18n/zh-Hant-JP.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 # Additional import path used to resolve QML modules in Qt Creator's code model
@@ -336,3 +337,5 @@ macx{
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }
+
+DISTFILES +=

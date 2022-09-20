@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     case 1:
       locale = "zh-Hant-TW";
       break;
+    case 2:
+      locale = "zh-Hant-JP";
+      break;
     default:
       locale = "en-US";
       break;
