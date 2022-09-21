@@ -26,10 +26,16 @@ public:
         W,
         CENTER
     };
+    enum StartFrom{
+        AbsoluteCoords = 0,
+        CurrentPosition
+    };
     explicit LaserPanel(QWidget *parent, MainWindow *main_window_);
     ~LaserPanel();
     void setJobOrigin(JobOrigin position);
+    void setStartFrom(StartFrom start_from);
     int getJobOrigin();
+    int getStartFrom();
 
 signals:
   void actionFrame();
@@ -37,6 +43,7 @@ signals:
   void actionStart();
   void actionHome();
   void selectJobOrigin(JobOrigin position);
+  void switchStartFrom(StartFrom start_from);
   void panelShow(bool is_show);
 
 private:
@@ -47,6 +54,7 @@ private:
     void showEvent(QShowEvent *event) override;
     Ui::LaserPanel *ui;
     JobOrigin job_origin_ = NW;
+    StartFrom start_from_ = AbsoluteCoords;
     MainWindow *main_window_;
 };
 

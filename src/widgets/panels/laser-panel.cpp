@@ -69,8 +69,10 @@ void LaserPanel::registerEvents() {
     connect(ui->comboBox, &QComboBox::currentTextChanged, [=](const QString &text) {
         if(text == "Current Position") {
             ui->widget->show();
+            start_from_ = CurrentPosition;
         } else {
             ui->widget->hide();
+            start_from_ = AbsoluteCoords;
         }
     });
 }
@@ -114,9 +116,19 @@ void LaserPanel::setJobOrigin(JobOrigin position)
     }
 }
 
+void LaserPanel::setStartFrom(StartFrom start_from)
+{
+    start_from_ = start_from;
+}
+
 int LaserPanel::getJobOrigin()
 {
     return job_origin_;
+}
+
+int LaserPanel::getStartFrom()
+{
+    return start_from_;
 }
 
 void LaserPanel::setLayout()

@@ -309,9 +309,11 @@ void MainWindow::actionFrame() {
     return;
   }
   auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kNoPadding);
+      ToolpathExporter::PaddingType::kNoPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
 
@@ -327,6 +329,95 @@ void MainWindow::actionFrame() {
     serial_port.write(cmd + "\n");
     // TODO: Wait for ok?
   }
+}
+
+QTransform MainWindow::calculateTranslate() {
+  int start_from = laser_panel_->getStartFrom();
+  QTransform move_translate = QTransform();
+  //to get shape bounding
+  double x_min = -1, x_max = -1, y_min = -1, y_max = -1;
+  for (auto &layer : canvas_->document().layers()) {
+    double x, y;
+    if (!layer->isVisible()) {
+      continue;
+    }
+    for (auto &shape : layer->children()) {
+      x = shape->boundingRect().left();
+      y = shape->boundingRect().top();
+      if (x_min == -1 && x_max == -1) {
+        x_min = x;
+        x_max = x;
+      } else if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y_min == -1 && y_max == -1) {
+        y_min = y;
+        y_max = y;
+      } else if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+      x = shape->boundingRect().right();
+      y = shape->boundingRect().bottom();
+      if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+    }
+  }
+  //unit??
+  switch(start_from) {
+    case LaserPanel::StartFrom::AbsoluteCoords:
+      break;
+    case LaserPanel::StartFrom::CurrentPosition:
+      {
+        int job_origin = laser_panel_->getJobOrigin();
+        switch(job_origin) {
+          case LaserPanel::JobOrigin::NW:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::N:
+            move_translate.translate(current_x_- x_min - (x_max-x_min)/2.0, current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::NE:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::E:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          case LaserPanel::JobOrigin::SE:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::S:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min)/2.0, current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::SW:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::W:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          case LaserPanel::JobOrigin::CENTER:
+            move_translate.translate(current_x_- x_min - (x_max-x_min)/2.0, current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          default:
+            break;
+        }
+      }
+      break;
+    default:
+      break;
+  }
+  return move_translate;
 }
 
 void MainWindow::newFile() {
@@ -590,9 +681,11 @@ void MainWindow::exportGCodeFile() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
-      ToolpathExporter::PaddingType::kFixedPadding);
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
     return; // canceled
@@ -1850,9 +1943,11 @@ bool MainWindow::generateGcode() {
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
     return false; // canceled
@@ -1873,10 +1968,11 @@ bool MainWindow::generateGcode() {
 void MainWindow::genPreviewWindow() {
   // Draw preview
   auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
-                                    ToolpathExporter::PaddingType::kFixedPadding);
+                                    ToolpathExporter::PaddingType::kFixedPadding,
+                                    move_translate);
 
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
 
