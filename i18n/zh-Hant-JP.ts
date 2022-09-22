@@ -2042,7 +2042,9 @@ to the development team when errors occur?</source>
         <source>Welcome!
 This is your first time using Swiftray,
 what would you like to do first?</source>
-        <translation type="unfinished">ようこそ！初めてSwiftrayをご利用されていますが､先ず何をしたいですか？</translation>
+        <translation type="unfinished">ようこそ！
+初めてSwiftrayをご利用されていますが､
+先ず何をしたいですか？</translation>
     </message>
     <message>
         <location filename="src/windows/qml/WelcomeDialog.qml" line="90"/>
