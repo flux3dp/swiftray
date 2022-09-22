@@ -36,20 +36,20 @@ public:
 
     //tables
     virtual void addLType(const DRW_LType& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addLayer(const DRW_Layer& data);
     virtual void addDimStyle(const DRW_Dimstyle& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addVport(const DRW_Vport& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addTextStyle(const DRW_Textstyle& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addAppId(const DRW_AppId& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
 
     //blocks
@@ -64,25 +64,21 @@ public:
 
     //entities
     virtual void addPoint(const DRW_Point& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addLine(const DRW_Line& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addLine(const DRW_Line& data);
     virtual void addRay(const DRW_Ray& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addXline(const DRW_Xline& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addArc(const DRW_Arc& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addCircle(const DRW_Circle& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addCircle(const DRW_Circle& data);
     virtual void addEllipse(const DRW_Ellipse& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addLWPolyline(const DRW_LWPolyline& data);
     virtual void addPolyline(const DRW_Polyline& data);
@@ -91,55 +87,55 @@ public:
     virtual void addKnot(const DRW_Entity& data){}
 
     virtual void addInsert(const DRW_Insert& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addTrace(const DRW_Trace& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void add3dFace(const DRW_3Dface& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addSolid(const DRW_Solid& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addMText(const DRW_MText& data){
         // std::cout << __func__ << " " << data.text << " " << data.height << std::endl;
     }
     virtual void addText(const DRW_Text& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimAlign(const DRW_DimAligned *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimLinear(const DRW_DimLinear *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimRadial(const DRW_DimRadial *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimDiametric(const DRW_DimDiametric *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimAngular(const DRW_DimAngular *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimAngular3P(const DRW_DimAngular3p *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addDimOrdinate(const DRW_DimOrdinate *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addLeader(const DRW_Leader *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addHatch(const DRW_Hatch *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addViewport(const DRW_Viewport& data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addImage(const DRW_Image *data){
-        std::cout << __func__ << " " << __LINE__ << std::endl;
+        // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
 
     virtual void linkImage(const DRW_ImageDef *data){
