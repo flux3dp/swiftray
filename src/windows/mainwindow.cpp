@@ -2213,8 +2213,10 @@ void MainWindow::laserPulse(qreal power_percentage) {
     // TODO: Use G04Pxxx to dwell for a given time duration?
     gcode_list.push_back("M5");
     gcode_list.push_back("G91");
-    gcode_list.push_back("M3S300");
-    gcode_list.push_back("G1F1200S300");
+    // TODO: Convert from percentage to S value based on machine settings
+    //       We currently assumet 100% = S1000 here
+    gcode_list.push_back(QString("M3S") + QString::number(qRound(power_percentage * 10)));
+    gcode_list.push_back(QString("G1F1200S") + QString::number(qRound(power_percentage * 10)));
     gcode_list.push_back("G1X0Y0");
     gcode_list.push_back("G1F1200S0");
     gcode_list.push_back("G1X0Y0");

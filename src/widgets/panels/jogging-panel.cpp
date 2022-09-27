@@ -66,8 +66,7 @@ void JoggingPanel::laser() {
     emit actionLaser(0); // turn off laser
   } else {
     is_laser_on_ = true;
-    // TODO: Get laser power from UI component
-    emit actionLaser(2); // 2%
+    emit actionLaser(ui->laserSpinBox->value()); // default: 2%
   }
 }
 
@@ -75,8 +74,7 @@ void JoggingPanel::laserPulse() {
   if(!control_enable_) {
     return;
   }
-  // TODO: Get laser power from UI component
-  emit actionLaserPulse(30); // 30%
+  emit actionLaserPulse(ui->laserPulseSpinBox->value()); // default: 30%
 }
 
 /**
