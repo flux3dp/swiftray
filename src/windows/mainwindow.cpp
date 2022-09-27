@@ -2019,3 +2019,93 @@ void MainWindow::updateTitle(bool file_modified) {
     setWindowTitle(current_filename_ + " - Swiftray");
   }
 }
+
+/**
+ * @brief 
+ * 
+ * @param power 0: turn off laser
+ *              otherwise, represent percentage of laser emission (0-100%)
+ */
+void MainWindow::laser(qreal power_percent) {
+  QStringList gcode_list;
+  if (power_percent == 0) {
+    qInfo() << "laser off!";
+    gcode_list.push_back("G1S0");
+    gcode_list.push_back("M5");
+  } else {
+    qInfo() << "laser on!";
+    gcode_list.push_back("M3");
+    gcode_list.push_back("G1F1000");
+    // TODO: Convert percent to S value based on machine settings
+    //       We currently assume 100% = S1000 here
+    gcode_list.push_back(QString("G1S") + QString::number(qRound(10*power_percent)));
+  }
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+/**
+ * @brief Emit a short laser pulse
+ * 
+ * @param power_percentage 0-100 (%)
+ */
+void MainWindow::laserPulse(qreal power_percentage) {
+  qInfo() << "laser pulse!";
+  QStringList gcode_list;
+  if (power_percentage > 0) {
+    // TODO: Use G04Pxxx to dwell for a given time duration?
+    gcode_list.push_back("M5");
+    gcode_list.push_back("G91");
+    gcode_list.push_back("M3S300");
+    gcode_list.push_back("G1F1200S300");
+    gcode_list.push_back("G1X0Y0");
+    gcode_list.push_back("G1F1200S0");
+    gcode_list.push_back("G1X0Y0");
+    gcode_list.push_back("G90");
+  } else {
+    gcode_list.push_back("M5");
+  }
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::home() {
+  QStringList gcode_list;
+  // TODO: Determine Job based on motion controller
+  //       Send GrblHomeCmd() instead of gcode cmd for grbl controller
+  //       Send XXXHomeCmd() for other controller
+  gcode_list.push_back("$H");
+  qInfo() << "Homing!";
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveRelatively(qreal x, qreal y, qreal feedrate) {
+  if (true == active_machine.createJoggingRelativeJob(x, y, 0, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveToEdge(int edge_id, qreal feedrate) {
+  if (true == active_machine.createJoggingEdgeJob(edge_id, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveToCorner(int corner_id, qreal feedrate) {
+  if (true == active_machine.createJoggingCornerJob(corner_id, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}

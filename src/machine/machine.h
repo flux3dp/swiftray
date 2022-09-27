@@ -21,19 +21,26 @@ class Machine : public QObject
 {
   Q_OBJECT
 public:
+  enum ConnectionState {
+    kDisconnected, // Port closed
+    kConnecting,   // Port open, but hasn't receive any response from machine
+    kConnected     // Port open and has receive some response from machine
+  };
+
   explicit Machine(QObject *parent = nullptr);
 
-  void applyMachineParam(MachineSettings::MachineSet mach);
+  bool applyMachineParam(MachineSettings::MachineSet mach);
+  //MachineSettings::MachineSet getMachineParam() const;
   bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
   bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
   bool createFramingJob(QStringList gcode_list);
-  //QSharedPointer<MachineJob> getCurrentJob() const { return current_job_; }
+  bool createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist, qreal feedrate);
+  bool createJoggingCornerJob(int corner_id, qreal feedrate);
+  bool createJoggingEdgeJob(int edge_id, qreal feedrate);
+  void syncPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
-  
-  //bool setMachineSettings(MachineSettings::MachineSet machine_settings);
-  //MachineSettings::MachineSet getMachineSettings() const { return machine_settings_; }
 
 public slots:
   void motionPortConnected();  // Opened but not check
@@ -45,11 +52,15 @@ public slots:
   void resumeJob();
   void stopJob();
 
+signals:
+  void positionCached(std::tuple<qreal, qreal, qreal>);
+
 private:
   MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
+  ConnectionState connect_state_ = ConnectionState::kDisconnected;
 
   // Hardware equipment controllers
-  MotionController *motion_controller_;
+  MotionController *motion_controller_; // created when port connected
   //AutofocusController *af_controller_;
   //CameraController *camera_controller_;
   
@@ -63,6 +74,13 @@ private:
   //QThread *rt_status_exec_thread_;
   //UserCmdExecutor *user_cmd_executor_;
   //JoggingExecutor *jogging_executor_;
+
+  qreal cached_x_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
+  qreal cached_y_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
+  qreal cached_z_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
+
+  std::tuple<qreal, qreal, qreal> canvasToMachineCoordConvert(std::tuple<qreal, qreal, qreal>, bool);
+  std::tuple<qreal, qreal, qreal> machineToCanvasCoordConvert(std::tuple<qreal, qreal, qreal>, bool);
 };
 
 #endif // MACHINE_H

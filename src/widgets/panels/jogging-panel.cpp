@@ -31,43 +31,60 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
                   this, SLOT(laser()));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(laserPulse()),
                   this, SLOT(laserPulse()));
+
+  // Delegate action to mainwindow (controller)
+  connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
+  connect(this, &JoggingPanel::actionLaserPulse, main_window_, &MainWindow::laserPulse);
+  connect(this, &JoggingPanel::actionHome, main_window_, &MainWindow::home);
+  connect(this, &JoggingPanel::actionMoveRelatively, main_window_, &MainWindow::moveRelatively);
+  connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
+  connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
 } 
 
 void JoggingPanel::home() {
   if(!control_enable_) {
     return;
   }
-  QString job_str = "\n$H";
-  qInfo() << "Homing!";
-  sendJob(job_str);
+  emit actionHome();
 }
 
+/**
+ * @brief Toggle laser emit state
+ * 
+ */
 void JoggingPanel::laser() {
   if(!control_enable_) {
     return;
   }
-  QString job_str;
   if (is_laser_on_) {
-    job_str = "G1S0\nM5";
-    qInfo() << "laser off!";
     is_laser_on_ = false;
+    emit actionLaser(0); // turn off laser
   } else {
-    job_str = "$X\nM3\nG1F1000\nG1S20";
     is_laser_on_ = true;
-    qInfo() << "laser on!";
+    // TODO: Get laser power from UI component
+    emit actionLaser(2); // 2%
   }
-  sendJob(job_str);
 }
 
 void JoggingPanel::laserPulse() {
   if(!control_enable_) {
     return;
   }
-  QString job_str = "$X\nM5\nG91\nM3S300\nG1F1200S300\nG1X0Y0\nG1F1200S0\nG1X0Y0\nG90";
-  qInfo() << "laser pulse!";
-  sendJob(job_str);
+  // TODO: Get laser power from UI component
+  emit actionLaserPulse(30); // 30%
 }
 
+/**
+ * @brief 
+ * 
+ * @param dir   0: move right (in canvas coord)
+ *              1: move up    (in canvas coord)
+ *              2: move left  (in canvas coord)
+ *              3: move down  (in canvas coord)
+ * @param level 0: 0.1mm
+ *              1: 2 mm
+ *              2: 10mm
+ */
 void JoggingPanel::moveRelatively(int dir, int level) {
   if(!control_enable_) {
     return;
@@ -102,117 +119,26 @@ void JoggingPanel::moveRelatively(int dir, int level) {
       break;
   }
 
-  switch (main_window_->currentMachine().origin) {
-    case MachineSettings::MachineSet::OriginType::RearRight:
-      // Canvas x axis direction is opposite to machine coordinate
-      movement.setX(-movement.x());
-      break;
-    case MachineSettings::MachineSet::OriginType::FrontRight:
-      // Canvas x, y axis directions are opposite to machine coordinate
-      movement.setX(-movement.x());
-      movement.setY(-movement.y());
-      break;
-    case MachineSettings::MachineSet::OriginType::FrontLeft:
-      // Canvas y axis direction is opposite to machine coordinate
-      movement.setY(-movement.y());
-      break;
-    default:  
-      break;
-  }
-
-  QString job_str = "$X\nM5\n$J=G91 F1200 X" + QString::number(movement.x()) + "Y" + QString::number(movement.y());
-  sendJob(job_str);
+  // TODO: Get feedrate from UI
+  emit actionMoveRelatively(movement.x(), movement.y(), 1200);
 }
 
-void JoggingPanel::moveToEdge(int dir) {
+void JoggingPanel::moveToEdge(int edge_id) {
   if(!control_enable_) {
     return;
   }
-  QPointF movement(0,0);
-  QString job_str;
 
-  switch (dir) {
-    case 0:
-      movement.setX(main_window_->currentMachine().width);
-      movement = transformDirection(movement);
-      job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
-      break;
-    case 1:
-      movement.setY(0);
-      movement = transformDirection(movement);
-      job_str = "$X\nM5\n$J=G90 F1200 Y" + QString::number(movement.y());
-      break;
-    case 2:
-      movement.setX(0);
-      movement = transformDirection(movement);
-      job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x());
-      break;
-    case 3:
-      movement.setY(main_window_->currentMachine().height);
-      movement = transformDirection(movement);
-      job_str = "$X\nM5\n$J=G90 F1200 Y" + QString::number(movement.y());
-      break;
-  }
-
-  sendJob(job_str);
+  // TODO: Get feedrate from UI
+  emit actionMoveToEdge(edge_id, 1200);
 }
 
-void JoggingPanel::moveToCorner(int corner) {
+void JoggingPanel::moveToCorner(int corner_id) {
   if(!control_enable_) {
     return;
   }
-  QPointF movement(0,0);
-  // corner A:0 B:1 C:2 D:4
-  switch (corner) {
-    case 0:
-      movement.setX(0);
-      movement.setY(0);
-      break;
-    case 1:
-      movement.setX(main_window_->currentMachine().width);
-      movement.setY(0);
-      break;
-    case 2:
-      movement.setX(0);
-      movement.setY(main_window_->currentMachine().height);
-      break;
-    case 3:
-      movement.setX(main_window_->currentMachine().width);
-      movement.setY(main_window_->currentMachine().height);
-      break;
-  }
-  movement = transformDirection(movement);
 
-  QString job_str = "$X\nM5\n$J=G90 F1200 X" + QString::number(movement.x()) + "Y" + QString::number(movement.y());
-  sendJob(job_str);
-}
-
-QPointF JoggingPanel::transformDirection(QPointF movement) {
-  float x, y;
-  switch (main_window_->currentMachine().origin) {
-    case MachineSettings::MachineSet::OriginType::RearRight:
-      // Canvas x axis direction is opposite to machine coordinate
-      x = main_window_->currentMachine().width - movement.x();
-      y = movement.y();
-      break;
-    case MachineSettings::MachineSet::OriginType::FrontRight:
-      // Canvas x, y axis directions are opposite to machine coordinate
-      x = main_window_->currentMachine().width - movement.x();
-      y = main_window_->currentMachine().height - movement.y();
-      break;
-    case MachineSettings::MachineSet::OriginType::RearLeft:
-      // NORMAL canvas x, y axis directions are the same as machine coordinate
-      x = movement.x();
-      y = movement.y();
-      break;
-    case MachineSettings::MachineSet::OriginType::FrontLeft:
-      // Canvas y axis direction is opposite to machine coordinate
-      x = movement.x();
-      y = main_window_->currentMachine().height - movement.y();
-      break;
-  }
-
-  return QPointF(x, y);
+  // TODO: Get feedrate from UI
+  emit actionMoveToCorner(corner_id, 1200);
 }
 
 void JoggingPanel::setControlEnable(bool control_enable) {
@@ -225,20 +151,6 @@ void JoggingPanel::hideEvent(QHideEvent *event) {
 
 void JoggingPanel::showEvent(QShowEvent *event) {
   emit panelShow(true);
-}
-
-void JoggingPanel::sendJob(QString &job_str) {
-  if (!serial_port.isOpen()) {
-    return;
-  }
-
-  QStringList cmd_list = job_str.split("\n");
-  // Directly access serial port
-  // TODO: Wait for ok for each cmd
-  //       (Connect the responseReceive signal of SerialPort)
-  for (auto cmd: cmd_list) {
-    serial_port.write((cmd + "\n"));
-  }
 }
 
 JoggingPanel::~JoggingPanel() {

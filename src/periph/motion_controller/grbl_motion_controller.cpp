@@ -143,7 +143,7 @@ void GrblMotionController::respReceived(QString resp) {
       //qInfo() << match.captured("pos_type");
       //qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
       setState(new_state);
-      emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_, a_pos_);
+      emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
     }
   } else if (resp.startsWith("Grbl")) {
     // A reset occurred
@@ -174,7 +174,7 @@ void GrblMotionController::respReceived(QString resp) {
     qInfo() << "Alarm detected";
 
     setState(MotionControllerState::kAlarm);
-    emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_, a_pos_);
+    emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
   } else if (resp.startsWith("FLUX")) {
     // e.g. FLUX Lazervida:0.1.2 Ready!
     // TODO: Parse FLUX machine model and fw version

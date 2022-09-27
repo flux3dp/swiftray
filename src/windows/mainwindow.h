@@ -70,6 +70,15 @@ public slots:
   void onPauseJob();
   void onResumeJob();
 
+  // Launch simple job (e.g. from jogging panel)
+  void laser(qreal power);
+  void laserPulse(qreal power);
+  void home();
+  void moveRelatively(qreal x, qreal y, qreal feedrate);
+  void moveToEdge(int edge_id, qreal feedrate);
+  void moveToCorner(int corner_id, qreal feedrate);
+
+
 private slots:
 
   void canvasLoaded(QQuickWidget::Status status);

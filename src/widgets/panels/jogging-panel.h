@@ -16,27 +16,27 @@ Q_OBJECT
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
 
-  void sendJob(QString &job_str);
-
   ~JoggingPanel();
 
 signals:
   void panelShow(bool is_show);
   
+  // Delegate action to other component
+  void actionLaser(qreal power_percent);
+  void actionLaserPulse(qreal power_percent);
+  void actionHome();
+  void actionMoveRelatively(qreal x, qreal y, qreal feedrate);
+  void actionMoveToEdge(int edge_id, qreal feedrate);
+  void actionMoveToCorner(int corner_id, qreal feedrate);
+  
 public slots:
+  // Accepting signals from QML action
   void laser();
-
   void laserPulse();
-
   void home();
-
   void moveRelatively(int dir, int level);
-
   void moveToEdge(int dir);
-
   void moveToCorner(int corner);
-
-  QPointF transformDirection(QPointF movement);
 
   void setControlEnable(bool control_enable);
 

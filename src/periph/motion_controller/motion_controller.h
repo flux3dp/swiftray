@@ -5,6 +5,7 @@
 #include <connection/serial-port.h>
 #include <executor/executor.h>
 #include <mutex>
+#include <tuple>
 
 enum class MotionControllerState {
   kUnknown, // default state
@@ -34,6 +35,7 @@ public:
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   MotionControllerState getState() const;
   void setState(MotionControllerState new_state);
+  std::tuple<qreal, qreal, qreal> getPos() const;
   void enqueueCmdExecutor(QPointer<Executor>);
   void dequeueCmdExecutor();
 
@@ -41,7 +43,7 @@ signals:
   void cmdSent(QString cmd);
   void resetDetected();
   void realTimeStatusUpdated(MotionControllerState last_state, MotionControllerState new_state, 
-      qreal x, qreal y, qreal z, qreal a);
+      qreal x, qreal y, qreal z);
   void disconnected();
 
 public slots:
@@ -60,7 +62,7 @@ protected:
   qreal x_pos_ = 0;
   qreal y_pos_ = 0;
   qreal z_pos_ = 0;
-  qreal a_pos_ = 0;
+  //qreal a_pos_ = 0;
 };
 
 #endif // MOTIONCONTROLLER_H

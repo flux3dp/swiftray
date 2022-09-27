@@ -27,6 +27,11 @@ void MotionController::setState(MotionControllerState new_state) {
   }
 }
 
+std::tuple<qreal, qreal, qreal> MotionController::getPos() const {
+  return {x_pos_, y_pos_, z_pos_};
+}
+
+
 void MotionController::enqueueCmdExecutor(QPointer<Executor> executor) {
   cmd_executor_queue_.push_back(executor);
   qInfo() << "enqueueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();

@@ -68,7 +68,7 @@ void JobExecutor::start() {
   // Register signal slot
   connect(motion_controller_, &MotionController::realTimeStatusUpdated, 
       this, [=](MotionControllerState last_state, MotionControllerState current_state, 
-      qreal x_pos, qreal y_pos, qreal z_pos, qreal a_pos){
+      qreal x_pos, qreal y_pos, qreal z_pos){
     // NOTE: Currently, state ofjob executor only depends on state of motion controller
     //       Thus, we update job executor state based on motion controller state
     //       allow the condition pause/resume/stop from other executor
