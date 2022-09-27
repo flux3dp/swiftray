@@ -19,6 +19,9 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   ui->maintenanceController->rootContext()->setContextProperty("is_dark_mode", isDarkMode());
   ui->maintenanceController->show();
 
+  ui->clearOriginBtn->hide();
+  ui->setOriginBtn->hide();
+
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveRelatively(int, int)),
                   this, SLOT(moveRelatively(int, int)));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveToCorner(int)),
@@ -27,10 +30,12 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
                   this, SLOT(moveToEdge(int)));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(home()),
                   this, SLOT(home()));
-  QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(laser()),
-                  this, SLOT(laser()));
-  QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(laserPulse()),
-                  this, SLOT(laserPulse()));
+  QObject::connect(ui->laserBtn, &QAbstractButton::clicked, this, &JoggingPanel::laser);
+  QObject::connect(ui->laserPulseBtn, &QAbstractButton::clicked, this, &JoggingPanel::laserPulse);
+  connect(ui->syncBtn, &QAbstractButton::clicked, [=]() {
+    ui->moveXSpinBox->setValue(ui->currentXSpinBox->value());
+    ui->moveYSpinBox->setValue(ui->currentYSpinBox->value());
+  });
 
   // Delegate action to mainwindow (controller)
   connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
@@ -151,6 +156,11 @@ void JoggingPanel::hideEvent(QHideEvent *event) {
 
 void JoggingPanel::showEvent(QShowEvent *event) {
   emit panelShow(true);
+}
+
+void JoggingPanel::setAxisPosition(double x_position, double y_position) {
+  ui->currentXSpinBox->setValue(x_position);
+  ui->currentYSpinBox->setValue(y_position);
 }
 
 JoggingPanel::~JoggingPanel() {

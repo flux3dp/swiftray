@@ -46,6 +46,10 @@ private:
 
   void setFont(QFont font, float line_height);
 
+  void hideEvent(QHideEvent *event) override;
+  
+  void showEvent(QShowEvent *event) override;
+
   Ui::FontPanel *ui;
   MainWindow *main_window_;
   QFont font_;
@@ -65,6 +69,8 @@ signals:
   void fontItalicChanged(bool font_italic);
 
   void fontUnderlineChanged(bool font_underline);
+
+  void panelShow(bool is_show);
 };
 
 #endif // FONTPANEL_H

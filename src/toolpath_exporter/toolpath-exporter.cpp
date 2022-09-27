@@ -11,12 +11,13 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding_type) noexcept :
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding_type, QTransform move_translate) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  move_translate_ = move_translate;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
 }
 
 /**
@@ -69,6 +70,10 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
       QCoreApplication::processEvents();
     }
   }
+  
+  if (canceled) {
+    return false;
+  }
 
   gen_->syncProgramFlow();
   
@@ -92,7 +97,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
   // TODO (Use layer_painter to manage transform over different sub objects)
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
   polygons_mutex_.lock();
   layer_polygons_.clear();
   polygons_mutex_.unlock();
@@ -129,11 +134,11 @@ void ToolpathExporter::convertShape(const ShapePtr &shape) {
 }
 
 void ToolpathExporter::convertGroup(const GroupShape *group) {
-  global_transform_ = group->globalTransform() * resolution_scale_transform_;
+  global_transform_ = group->globalTransform() * move_translate_ * resolution_scale_transform_;
   for (auto &shape : group->children()) {
     convertShape(shape);
   }
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
 }
 
 /**

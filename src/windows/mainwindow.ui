@@ -99,7 +99,13 @@
    <property name="minimumSize">
     <size>
      <width>44</width>
-     <height>200</height>
+     <height>38</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>524287</width>
+     <height>524287</height>
     </size>
    </property>
    <property name="floating">
@@ -119,7 +125,7 @@
    </attribute>
    <widget class="QWidget" name="fontDockContents">
     <property name="sizePolicy">
-     <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+     <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
       <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
@@ -189,13 +195,13 @@
    <property name="minimumSize">
     <size>
      <width>229</width>
-     <height>101</height>
+     <height>0</height>
     </size>
    </property>
    <property name="maximumSize">
     <size>
      <width>524287</width>
-     <height>101</height>
+     <height>524287</height>
     </size>
    </property>
    <property name="features">
@@ -727,6 +733,7 @@
     <addaction name="menuPath"/>
     <addaction name="separator"/>
     <addaction name="actionMachineSettings"/>
+    <addaction name="actionRotarySetup"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -768,11 +775,30 @@
     <addaction name="actionObjectPanel"/>
     <addaction name="actionDocumentPanel"/>
     <addaction name="actionImagePanel"/>
+    <addaction name="actionLaser"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
    <addaction name="menu_Help"/>
    <addaction name="menu_Window"/>
+  </widget>
+  <widget class="QDockWidget" name="laserDock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::AllDockWidgetAreas</set>
+   </property>
+   <property name="windowTitle">
+    <string>Laser</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionOpen">
    <property name="icon">
@@ -1519,6 +1545,19 @@
    </property>
    <property name="text">
     <string>Vector</string>
+   </property>
+  </action>
+  <action name="actionRotarySetup">
+   <property name="text">
+    <string>Rotary Setup</string>
+   </property>
+  </action>
+  <action name="actionLaser">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Laser</string>
    </property>
   </action>
  </widget>

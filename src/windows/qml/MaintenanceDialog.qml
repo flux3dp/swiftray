@@ -21,9 +21,9 @@ Rectangle {
         x: 10
         y: 10
         width: 538
-        height: 538
+        height: 460
         color: "transparent"
-        transform: Scale { origin.x: 0; origin.y: 0; xScale: 260/538; yScale: 260/538 }
+        transform: Scale { origin.x: 0; origin.y: 0; xScale: 260/538; yScale: 260/460 }
 
         Shape {
             id: pathSvg
@@ -894,39 +894,6 @@ Rectangle {
 
             TapHandler {
                 onTapped: moveToCorner(3)
-            }
-        }
-
-        Rectangle {
-            x: 0
-            y: 553
-            width: 260
-            height: 50
-            color: "transparent"
-
-            Button {
-                width: 260
-                height: 60
-                text: qsTr("Laser Pulse")
-                font.pointSize: 26
-                onClicked: laserPulse()
-            }
-        }
-
-        Rectangle {
-            x: 270
-            y: 553
-            width: 260
-            height: 50
-            color: "transparent"
-
-            Button {
-                width: 260
-                height: 60
-                checkable: true
-                text: qsTr("Laser")
-                font.pointSize: 26
-                onClicked: laser()
             }
         }
     }

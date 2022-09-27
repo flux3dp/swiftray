@@ -26,7 +26,7 @@ void LayerPanel::loadStyles() {
 
 void LayerPanel::loadWidgets() {
   layer_params_panel_ = new LayerParamsPanel(this, main_window_);
-  this->layout()->addWidget(layer_params_panel_);
+  ui->scrollAreaWidgetContents->layout()->addWidget(layer_params_panel_);
   // Add floating buttons
   QPointF button_pos = ui->layerList->mapToGlobal(ui->layerList->geometry().bottomRight()) - QPointF(35, 35);
   add_layer_btn_ = new QToolButton(ui->layerList);

@@ -25,7 +25,7 @@ public:
       kDynamicPadding // Based on layer speed and acceleration
   };
 
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding, QTransform move_translate) noexcept;
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
 
@@ -88,6 +88,7 @@ private:
   // == The followings depend on both canvas resolution and document DPI settings ==
   qreal resolution_scale_;                // = dots per unit_size_on_canvas
   QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
+  QTransform move_translate_;             // move matrix
   // === The followings are expressed in unit of mm ===
   QPointF current_pos_mm_; // in unit of mm
   QSizeF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)

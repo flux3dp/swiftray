@@ -16,6 +16,8 @@ Q_OBJECT
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
 
+  void setAxisPosition(double x_position, double y_position);
+
   ~JoggingPanel();
 
 signals:

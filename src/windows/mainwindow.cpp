@@ -56,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
+  setModeBlock();
   setConnectionToolBar();
 }
 
@@ -165,9 +166,15 @@ void MainWindow::loadCanvas() {
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
       } else if (filename.endsWith(".svg")) {
-        canvas_->loadSVG(data);
+        canvas_->loadSVG(filename);
+        // canvas_->loadSVG(data);
+        double scale = 3.0 / 8.5 * 10;
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
+      }  else if (filename.endsWith(".dxf")) {
+        canvas_->loadDXF(filename);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
@@ -328,6 +335,146 @@ void MainWindow::actionStart() {
   job_dashboard_exist_ = true;
 }
 
+void MainWindow::actionFrame() {
+
+  // Make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Make sure port connected
+  if (!serial_port.isOpen()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Serial Port Error"));
+    msgbox.setInformativeText(tr("Please connect to serial port first"));
+    msgbox.exec();
+    return;
+  }
+  // Make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  // Generate gcode for framing
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
+  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+      canvas_->document().settings().dpmm(),
+      ToolpathExporter::PaddingType::kNoPadding,
+      move_translate);
+  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+
+
+  // Again, make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Again, make sure port connected
+  if (!serial_port.isOpen()) {
+    return;
+  }
+  // Again, make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  // Create Framing Job and start
+  if (true == active_machine.createFramingJob(
+        QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+QTransform MainWindow::calculateTranslate() {
+  int start_from = laser_panel_->getStartFrom();
+  QTransform move_translate = QTransform();
+  //to get shape bounding
+  double x_min = -1, x_max = -1, y_min = -1, y_max = -1;
+  for (auto &layer : canvas_->document().layers()) {
+    double x, y;
+    if (!layer->isVisible()) {
+      continue;
+    }
+    for (auto &shape : layer->children()) {
+      x = shape->boundingRect().left();
+      y = shape->boundingRect().top();
+      if (x_min == -1 && x_max == -1) {
+        x_min = x;
+        x_max = x;
+      } else if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y_min == -1 && y_max == -1) {
+        y_min = y;
+        y_max = y;
+      } else if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+      x = shape->boundingRect().right();
+      y = shape->boundingRect().bottom();
+      if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+    }
+  }
+  //unit??
+  switch(start_from) {
+    case LaserPanel::StartFrom::AbsoluteCoords:
+      break;
+    case LaserPanel::StartFrom::CurrentPosition:
+      {
+        int job_origin = laser_panel_->getJobOrigin();
+        switch(job_origin) {
+          case LaserPanel::JobOrigin::NW:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::N:
+            move_translate.translate(current_x_- x_min - (x_max-x_min)/2.0, current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::NE:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min);
+            break;
+          case LaserPanel::JobOrigin::E:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          case LaserPanel::JobOrigin::SE:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min), current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::S:
+            move_translate.translate(current_x_ - x_min - (x_max-x_min)/2.0, current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::SW:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min - (y_max-y_min));
+            break;
+          case LaserPanel::JobOrigin::W:
+            move_translate.translate(current_x_ - x_min, current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          case LaserPanel::JobOrigin::CENTER:
+            move_translate.translate(current_x_- x_min - (x_max-x_min)/2.0, current_y_ - y_min - (y_max-y_min)/2.0);
+            break;
+          default:
+            break;
+        }
+      }
+      break;
+    default:
+      break;
+  }
+  return move_translate;
+}
+
 void MainWindow::newFile() {
   if ( ! handleUnsavedChange()) {
     return;
@@ -389,7 +536,8 @@ void MainWindow::openFile() {
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
     } else if (file_name.endsWith(".svg")) {
-      canvas_->loadSVG(data);
+      canvas_->loadSVG(file_name);
+      // canvas_->loadSVG(data);
     } else if (file_name.endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
     } else {
@@ -549,11 +697,7 @@ void MainWindow::openImageFile() {
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
   if (file_name.endsWith(".svg")) {
-      QFile file(file_name);
-    if (file.open(QFile::ReadOnly)) {
-      QByteArray data = file.readAll();
-      canvas_->loadSVG(data);
-    }
+    canvas_->loadSVG(file_name);
   } else if (file_name.endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
   } else {
@@ -592,9 +736,11 @@ void MainWindow::exportGCodeFile() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
-      ToolpathExporter::PaddingType::kFixedPadding);
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
     return; // canceled
@@ -770,6 +916,14 @@ void MainWindow::updateToolbarTransform() {
   emit toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
+void MainWindow::updateRotary() {
+  if(is_rotary_mode_) {
+    mode_block_->setText(tr("Rotary Mode"));
+  } else {
+    mode_block_->setText(tr("XY Mode"));
+  }
+}
+
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
@@ -780,11 +934,13 @@ void MainWindow::loadWidgets() {
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
+  laser_panel_ = new LaserPanel(ui->laserDock, this);
   machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   privacy_window_ = new PrivacyWindow(this);
+  rotary_setup_ = new RotarySetup(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_panel_);
@@ -792,6 +948,7 @@ void MainWindow::loadWidgets() {
   ui->imageDock->setWidget(image_panel_);
   ui->layerDock->setWidget(layer_panel_);
   ui->documentDock->setWidget(doc_panel_);
+  ui->laserDock->setWidget(laser_panel_);
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
@@ -803,6 +960,7 @@ void MainWindow::loadWidgets() {
   ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
   ui->actionGCodeViewerPanel->setChecked(!gcode_panel_->isHidden());
   ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
+  ui->actionLaser->setChecked(!laser_panel_->isHidden());
   //toolbar
   ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
   ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
@@ -874,6 +1032,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionRotarySetup, &QAction::triggered, rotary_setup_, &RotarySetup::show);
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
@@ -883,53 +1042,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
-  connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    // Make sure active machine and job executor exist, 
-    if (active_machine.getJobExecutor().isNull()) {
-      return;
-    }
-    // Make sure port connected
-    if (!serial_port.isOpen()) {
-      QMessageBox msgbox;
-      msgbox.setText(tr("Serial Port Error"));
-      msgbox.setInformativeText(tr("Please connect to serial port first"));
-      msgbox.exec();
-      return;
-    }
-    // Make sure no active job running
-    if (active_machine.getJobExecutor()->getActiveJob()) {
-      return;
-    }
-
-    // Generate gcode for framing
-    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
-    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
-        canvas_->document().settings().dpmm(),
-        ToolpathExporter::PaddingType::kNoPadding);
-    exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-    exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-
-    // Again, make sure active machine and job executor exist, 
-    if (active_machine.getJobExecutor().isNull()) {
-      return;
-    }
-    // Again, make sure port connected
-    if (!serial_port.isOpen()) {
-      return;
-    }
-    // Again, make sure no active job running
-    if (active_machine.getJobExecutor()->getActiveJob()) {
-      return;
-    }
-
-    // Create Framing Job and start
-    if (true == active_machine.createFramingJob(
-          QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
-    {
-      gcode_panel_->attachJob(active_machine.getJobExecutor());
-      active_machine.startJob();
-    }
-  });
+  connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
@@ -1037,6 +1150,11 @@ void MainWindow::registerEvents() {
       preferences_window_->setSpeedMode(is_high_speed_mode_);
     }
   });
+  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    rotary_setup_->setRotaryMode(is_rotary_mode);
+    updateRotary();
+  });
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {
@@ -1092,6 +1210,14 @@ void MainWindow::registerEvents() {
     }
     else {
       ui->joggingDock->hide();
+    }
+  });
+  connect(ui->actionLaser, &QAction::triggered, [=]() {
+    if(ui->laserDock->isHidden()) {
+      ui->laserDock->show();
+    }
+    else {
+      ui->laserDock->hide();
     }
   });
   //toolbar
@@ -1191,6 +1317,21 @@ void MainWindow::registerEvents() {
       ui->toolBarVector->hide();
     }
   });
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    doc_panel_->setRotaryMode(is_rotary_mode_);
+    updateRotary();
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    is_mirror_mode_ = is_mirror_mode;
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](QString rotary_axis) {
+    rotary_axis_ = rotary_axis;
+  });
+  connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
+  connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
+  connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
+  connect(laser_panel_, &LaserPanel::actionHome, jogging_panel_, &JoggingPanel::home);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -1649,17 +1790,20 @@ void MainWindow::setToolbarTransform() {
   });
 
   //panel
-  connect(ui->objectParamDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionObjectPanel->setChecked(is_visible);
+  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
+    ui->actionObjectPanel->setChecked(is_show);
   });
-  connect(ui->fontDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionFontPanel->setChecked(is_visible);
+  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
+    ui->actionFontPanel->setChecked(is_show);
   });
-  connect(ui->imageDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionImagePanel->setChecked(is_visible);
+  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
+    ui->actionImagePanel->setChecked(is_show);
   });
-  connect(ui->documentDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionDocumentPanel->setChecked(is_visible);
+  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
+    ui->actionDocumentPanel->setChecked(is_show);
+  });
+  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
+    ui->actionLaser->setChecked(is_show);
   });
   connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
     ui->actionLayerPanel->setChecked(is_show);
@@ -1734,6 +1878,13 @@ void MainWindow::setToolbarImage() {
 
 }
 */
+
+void MainWindow::setModeBlock() {
+  mode_block_ = new QPushButton(ui->quickWidget);
+  mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
+  mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
+  updateRotary();
+}
 
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
@@ -1855,9 +2006,11 @@ bool MainWindow::generateGcode() {
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
     return false; // canceled
@@ -1878,10 +2031,11 @@ bool MainWindow::generateGcode() {
 void MainWindow::genPreviewWindow() {
   // Draw preview
   auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine());
-
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
-                                    ToolpathExporter::PaddingType::kFixedPadding);
+                                    ToolpathExporter::PaddingType::kFixedPadding,
+                                    move_translate);
 
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
 

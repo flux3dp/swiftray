@@ -15,4 +15,5 @@ target_sources(Swiftray PRIVATE
   preview-window.cpp
   privacy_window.cpp
   welcome-dialog.cpp
+  rotary_setup.cpp
 )

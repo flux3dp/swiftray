@@ -23,6 +23,9 @@
 #include "parser/dxf_iface.h"
 #include "parser/dxf_data.h"
 
+#include <private/qsvgtinydocument_p.h>
+#include "parser/my_qsvg_handler.h"
+
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
        ctrl_transform_(Controls::Transform(this)),
@@ -116,6 +119,38 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     update();
   }
   qInfo() << "[Parser] Took" << t.elapsed();
+}
+
+void Canvas::loadSVG(QString file_name) {
+  QFile file(file_name);
+  if (!file.open(QFile::ReadOnly)) {
+      return;
+  }
+
+  // QSvgTinyDocument *doc = 0;
+  QList<LayerPtr> svg_layers;
+  MyQSvgHandler handler(&file, &document(), &svg_layers);
+  if (handler.ok()) {
+    handler.document();
+    handler.animationDuration();
+    QList<ShapePtr> all_shapes;
+    for (auto &layer : svg_layers) {
+      all_shapes.append(layer->children());
+    }
+    document().setSelections(all_shapes);
+    double scale = 3.0 / 8.5;
+    transformControl().applyScale(QPointF(0,0), scale, scale, false);
+    if (all_shapes.size() == 1) {
+      document().setActiveLayer(all_shapes.first()->layer()->name());
+      emit layerChanged();
+    }
+
+    forceActiveFocus();
+    emitAllChanges();
+    update();
+  } else {
+    delete handler.document();
+  }
 }
 
 void Canvas::loadDXF(QString file_name) {
@@ -237,8 +272,12 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
           << canvas_coord;
 
   if (e->button()==Qt::MiddleButton) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
     is_holding_middle_button_ = true;
     return;
+  }
+  if (is_holding_space_) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
   }
 
   for (auto &control : ctrls_) {
@@ -250,6 +289,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     ShapePtr hit = document().hitTest(canvas_coord);
 
     if (hit != nullptr) {
+      emit cursorChanged(	Qt::ClosedHandCursor);
       if (!hit->selected()) {
         document().setSelection(hit);
         document().setActiveLayer(hit->layer()->name());
@@ -269,6 +309,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
 
   QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
   if (is_holding_space_ || is_holding_middle_button_) {
+    emit cursorChanged(	Qt::ClosedHandCursor);
     qreal movement_x = movement.x() * document().scale();
     qreal movement_y = movement.y() * document().scale();
     qreal new_scroll_x = (document().mousePressedCanvasScroll().x() + movement_x);
@@ -399,12 +440,17 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF new_scroll;
   QPointF mouse_pos;
 
-  mouse_pos = e->position() - widget_offset_;
-  double orig_scale = document().scale();
-  double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
-  document().setScale(new_scale);
-
-  new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
+  if (is_holding_ctrl_) {
+    mouse_pos = e->position() - widget_offset_;
+    double orig_scale = document().scale();
+    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
+    document().setScale(new_scale);
+    new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
+  } else {
+    new_scroll.setX(document().scroll().x() + e->angleDelta().x() / 8 / 2.5);
+    new_scroll.setY(document().scroll().y() + e->angleDelta().y() / 8 / 2.5);
+    mouse_pos = e->angleDelta();
+  }
 
   // Restrict the range of scroll
   QPointF top_left_bound = getTopLeftScrollBoundary();
@@ -498,7 +544,9 @@ bool Canvas::event(QEvent *e) {
         if(hit != nullptr) {
           emit cursorChanged(Qt::OpenHandCursor);
         }
-        else {
+        else if(is_holding_space_) {
+          emit cursorChanged(Qt::OpenHandCursor);
+        } else {
           emit cursorChanged(Qt::ArrowCursor);
         }
       }
