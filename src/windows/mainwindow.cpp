@@ -355,6 +355,7 @@ void MainWindow::actionFrame() {
   }
 
   // Generate gcode for framing
+  QTransform move_translate = calculateTranslate();
   auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
