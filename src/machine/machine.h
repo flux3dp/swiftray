@@ -47,6 +47,8 @@ public slots:
   void motionPortActivated();  // Motion controller working
   void motionPortDisonnected();// Closed
 
+  void handleNotif(QString title, QString msg);
+
   void startJob();
   void pauseJob();
   void resumeJob();

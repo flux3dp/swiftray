@@ -36,6 +36,27 @@ private:
       ".*"
       ">"
    };
+
+  enum class AlarmCode {
+    kNone = 0,
+    kMin = 1,
+
+    kHardLimit = 1,
+    kSoftLimit = 2,
+    kAbortCycle = 3,
+    kProbeFailInitial = 4,
+    kProbeFailContact = 5,
+    kHomingFailReset = 6,
+    kHomingFailDoor = 7,
+    kHomingFailPullOff = 8,
+    kHomingFailApproach = 9,
+    kHomingFailDualApproach = 10,
+
+    kMax = 10,
+  };
+
+  QString getAlarmMsg(AlarmCode code);
+
 };
 
 #endif // GRBLMOTIONCONTROLLER_H

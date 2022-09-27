@@ -42,6 +42,7 @@ public:
 signals:
   void cmdSent(QString cmd);
   void resetDetected();
+  void notif(QString title, QString msg);
   void realTimeStatusUpdated(MotionControllerState last_state, MotionControllerState new_state, 
       qreal x, qreal y, qreal z);
   void disconnected();

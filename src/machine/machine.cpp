@@ -2,6 +2,7 @@
 //#include <QThread>
 #include <QElapsedTimer>
 #include <QtMath>
+#include <QMessageBox>
 
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller_factory.h>
@@ -333,6 +334,7 @@ void Machine::motionPortConnected() {
   }
   motion_controller_ = MotionControllerFactory::createMotionController(machine_param_, this);
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
+  connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   motion_controller_->attachPort(port);
   
   connect_state_ = ConnectionState::kConnecting;
@@ -442,4 +444,21 @@ std::tuple<qreal, qreal, qreal> Machine::machineToCanvasCoordConvert(
 {  
   // NOTE: The forward and backward convert are the same
   return canvasToMachineCoordConvert(machine_pos, relative);
+}
+
+/**
+ * @brief Display notification from machine to user
+ * 
+ * @param title 
+ * @param msg 
+ */
+void Machine::handleNotif(QString title, QString msg) {
+  if (job_executor_->getState() == Executor::State::kRunning || 
+        job_executor_->getState() == Executor::State::kPaused) {
+    auto msgbox = new QMessageBox;
+    //msgbox->setWindowTitle();
+    msgbox->setText(title);
+    msgbox->setInformativeText(msg);
+    msgbox->show();
+  }
 }

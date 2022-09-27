@@ -155,7 +155,7 @@ void GrblMotionController::respReceived(QString resp) {
     emit MotionController::resetDetected();
     // TODO: Parse Grbl version info
   } else if (resp.startsWith("[MSG:")) {
-    // TODO: Handle Grbl msg
+    // TODO: Handle Grbl msg immediately
     if (resp.contains("Reset to continue")) {
       sendCmdPacket(nullptr, "\x18");
     } else if (resp.contains("'$H'|'$X' to unlock")) {
@@ -170,11 +170,23 @@ void GrblMotionController::respReceived(QString resp) {
 
   } else if (resp.startsWith("ALARM:")) {
     MotionControllerState old_state = state_;
-    // TODO: Parse alarm code
     qInfo() << "Alarm detected";
-
+    QString subString = resp.mid(strlen("ALARM:"));
+    int code = subString.toInt();
+    if (code >= static_cast<int>(AlarmCode::kMin) &&
+        code <= static_cast<int>(AlarmCode::kMax) ) {
+      emit notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));
+    } else {
+      // Unknown alarm code
+    }
     setState(MotionControllerState::kAlarm);
     emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
+  } else if (resp.startsWith("[VER:]")) {
+    // TODO: Parse grbl version
+  } else if (resp.startsWith("[OPT:]")) {
+    // TODO: Parse block buffer size & serial buffer size
+    //       * update cbuf_space_ based on serial buffer size
+    //       * update xxx based on block buffer size
   } else if (resp.startsWith("FLUX")) {
     // e.g. FLUX Lazervida:0.1.2 Ready!
     // TODO: Parse FLUX machine model and fw version
@@ -185,4 +197,31 @@ void GrblMotionController::respReceived(QString resp) {
     // * [FLUX: tilt]
   } 
 
+}
+
+QString GrblMotionController::getAlarmMsg(AlarmCode code) {
+  switch (code) {
+    case AlarmCode::kHardLimit:
+      return tr("Hard limit");
+    case AlarmCode::kSoftLimit:
+      return tr("Soft limit");
+    case AlarmCode::kAbortCycle:
+      return tr("Abort during cycle");
+    case AlarmCode::kProbeFailInitial:
+      return tr("Probe fail");
+    case AlarmCode::kProbeFailContact:
+      return tr("Probe fail");
+    case AlarmCode::kHomingFailReset:
+      return tr("Homing fail");
+    case AlarmCode::kHomingFailDoor:
+      return tr("Homing fail");
+    case AlarmCode::kHomingFailPullOff:
+      return tr("Homing fail");
+    case AlarmCode::kHomingFailApproach:
+      return tr("Homing fail");
+    case AlarmCode::kHomingFailDualApproach:
+      return tr("Homing fail");
+    default:
+      return "Unknown alarm";
+  }
 }
