@@ -30,7 +30,11 @@ public:
 
   virtual void home() { NO_BASIC_IMPL }
 
+  // Sync motion (finish all motion command in buffer)
   virtual void syncProgramFlow() { NO_BASIC_IMPL }
+
+  // Sync motion and End the program (clear state)
+  virtual void finishProgramFlow() { NO_BASIC_IMPL }
 
   virtual void reset() {
     x_ = 0;

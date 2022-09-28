@@ -13,7 +13,7 @@ JoggingRelativeJob::JoggingRelativeJob(qreal x_pos, qreal y_pos, qreal feedrate,
                   + "S0";
   gcode_list_.push_back(move_gc);
   gcode_list_.push_back("G90");
-  gcode_list_.push_back("M2");
+  gcode_list_.push_back("M2"); // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
 }
 
 void JoggingRelativeJob::setMotionController(QPointer<MotionController> motion_controller) {
@@ -81,7 +81,7 @@ JoggingAbsoluteJob::JoggingAbsoluteJob(bool x_exist, qreal x_pos, bool y_exist, 
   }
   move_gc += "S0";
   gcode_list_.push_back(move_gc);
-  gcode_list_.push_back("M2");
+  gcode_list_.push_back("M2"); // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
 }
 
 void JoggingAbsoluteJob::setMotionController(QPointer<MotionController> motion_controller) {

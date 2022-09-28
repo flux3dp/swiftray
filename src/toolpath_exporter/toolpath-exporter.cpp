@@ -75,7 +75,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     return false;
   }
 
-  gen_->syncProgramFlow();
+  gen_->finishProgramFlow();
   
   if (canceled) {
     return false;
