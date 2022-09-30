@@ -75,6 +75,7 @@ Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 static const char *qt_inherit_text = "inherit";
 LayerPtr g_layer_ptr_ = nullptr;
 QList<LayerPtr> g_svgpp_layers_;
+QMap<QString, QTransform> g_transform_map_;
 QTransform g_transform_;
 QColor g_color = Qt::black;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
@@ -3839,6 +3840,13 @@ bool MyQSvgHandler::startElement(const QString &localName,
     }
 
     if (node) {
+        if (!m_nodes.isEmpty()) {
+            QMap<QString, QTransform>::iterator iter = g_transform_map_.find(m_nodes.top()->nodeId());
+            if(iter != g_transform_map_.end()) {
+                g_transform_ *= iter.value();
+            }
+            g_transform_map_.insert(someId(attributes), g_transform_);
+        }
         if(node->type() == QSvgNode::PATH) {
             QSvgPath *tmp_node = (QSvgPath*) node;
             QPainterPath *qpath = tmp_node->qpath();
