@@ -222,7 +222,7 @@ SOURCES += \
 RESOURCES += qml.qrc
 TRANSLATIONS += \
     i18n/zh-Hant-TW.ts \
-    i18n/zh-Hant-JP.ts
+    i18n/ja-JP.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 # Additional import path used to resolve QML modules in Qt Creator's code model

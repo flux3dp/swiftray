@@ -13,6 +13,7 @@
         <file>resources/parameters/10W.json</file>
         <file>resources/machines.json</file>
         <file>i18n/zh-Hant-TW.qm</file>
+        <file>i18n/ja-JP.qm</file>
         <file>essentialUI.ini</file>
         <file>classicUI.ini</file>
         <file>resources/example/Example-of-swiftray.bb</file>
