@@ -27,6 +27,8 @@ public:
 
     void setRotaryAxis(QString rotary_axis);
 
+    double getCircumference();
+
 private:
     Ui::RotarySetup *ui;
     void testRotaryAxis();

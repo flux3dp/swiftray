@@ -864,8 +864,11 @@ void MainWindow::updateToolbarTransform() {
 void MainWindow::updateRotary() {
   if(is_rotary_mode_) {
     mode_block_->setText(tr("Rotary Mode"));
+    canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
+    canvas()->resize();
   } else {
     mode_block_->setText(tr("XY Mode"));
+    doc_panel_->updateScene();
   }
 }
 
