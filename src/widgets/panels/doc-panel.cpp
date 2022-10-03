@@ -152,9 +152,10 @@ void DocPanel::updateScene() {
   auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
   auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
   // TODO (change width/height to QSize)
-  main_window_->canvas()->document().setWidth(machine.width * 10);
-  main_window_->canvas()->document().setHeight(machine.height * 10);
-  main_window_->canvas()->resize();
+  Q_EMIT updateMachineRange(QSize(machine.width, machine.height));
+  // main_window_->canvas()->document().setWidth(machine.width * 10);
+  // main_window_->canvas()->document().setHeight(machine.height * 10);
+  // main_window_->canvas()->resize();
 }
 
 MachineSettings::MachineSet DocPanel::currentMachine() {

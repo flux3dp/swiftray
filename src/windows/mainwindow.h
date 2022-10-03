@@ -134,7 +134,7 @@ private slots:
 
   void updateTitle(bool file_modified);
 
-  void updateRotary();
+  void updateScene();
 
 private:
 
@@ -155,6 +155,7 @@ private:
   bool is_rotary_mode_ = false;
   bool is_mirror_mode_ = false;
   QString rotary_axis_ = "Y";
+  QSize machine_range_;
   double current_x_ = 0, current_y_ = 0;//unit??
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;

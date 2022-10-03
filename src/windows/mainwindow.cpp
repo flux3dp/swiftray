@@ -70,6 +70,9 @@ void MainWindow::loadSettings() {
     QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
+  MachineSettings::MachineSet machine_info = doc_panel_->currentMachine();
+  machine_range_.setHeight(machine_info.height);
+  machine_range_.setWidth(machine_info.width);
   QString current_machine = doc_panel_->getMachineName();
   std::size_t found = current_machine.toStdString().find("Lazervida");
   if(found!=std::string::npos) {
@@ -861,14 +864,17 @@ void MainWindow::updateToolbarTransform() {
   emit toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
-void MainWindow::updateRotary() {
+void MainWindow::updateScene() {
   if(is_rotary_mode_) {
     mode_block_->setText(tr("Rotary Mode"));
+    canvas()->document().setWidth(machine_range_.width() * 10);
     canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
     canvas()->resize();
   } else {
     mode_block_->setText(tr("XY Mode"));
-    doc_panel_->updateScene();
+    canvas()->document().setWidth(machine_range_.width() * 10);
+    canvas()->document().setHeight(machine_range_.height() * 10);
+    canvas()->resize();
   }
 }
 
@@ -1095,7 +1101,11 @@ void MainWindow::registerEvents() {
   connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
     rotary_setup_->setRotaryMode(is_rotary_mode);
-    updateRotary();
+    updateScene();
+  });
+  connect(doc_panel_, &DocPanel::updateMachineRange, [=](QSize machine_range) {
+    machine_range_ = machine_range;
+    updateScene();
   });
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
@@ -1262,7 +1272,7 @@ void MainWindow::registerEvents() {
   connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
     doc_panel_->setRotaryMode(is_rotary_mode_);
-    updateRotary();
+    updateScene();
   });
   connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
     is_mirror_mode_ = is_mirror_mode;
@@ -1823,7 +1833,7 @@ void MainWindow::setModeBlock() {
   mode_block_ = new QPushButton(ui->quickWidget);
   mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
   mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  updateRotary();
+  updateScene();
 }
 
 void MainWindow::setScaleBlock() {

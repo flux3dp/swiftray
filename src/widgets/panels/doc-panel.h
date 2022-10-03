@@ -31,6 +31,7 @@ signals:
   void machineChanged(QString machine_name);
   void rotaryModeChange(bool is_rotary_mode);
   void panelShow(bool is_show);
+  void updateMachineRange(QSize machine_range);
 
 private:
   void loadSettings() override;
