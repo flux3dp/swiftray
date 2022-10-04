@@ -1,5 +1,6 @@
 #include "rotary_setup.h"
 #include "ui_rotary_setup.h"
+#include <math.h>
 
 #include <QDebug>
 
@@ -63,6 +64,20 @@ RotarySetup::RotarySetup(QWidget *parent) :
         rotary_axis_ = "A";
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
+    connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
+        circumference_ = circumference;
+        object_diameter_ = circumference_ / M_PI;
+        ui->ObjectSpinBox->blockSignals(true);
+        ui->ObjectSpinBox->setValue(object_diameter_);
+        ui->ObjectSpinBox->blockSignals(false);
+    });
+    connect(ui->ObjectSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double diameter){
+        object_diameter_ = diameter;
+        circumference_ = object_diameter_ * M_PI;
+        ui->CircumSpinBox->blockSignals(true);
+        ui->CircumSpinBox->setValue(circumference_);
+        ui->CircumSpinBox->blockSignals(false);
+    });
 }
 
 RotarySetup::~RotarySetup()
@@ -115,6 +130,11 @@ void RotarySetup::setRotaryAxis(QString rotary_axis)
             qInfo() << Q_FUNC_INFO << " get axis: " << rotary_axis << " over range";
             break;
     }
+}
+
+double RotarySetup::getCircumference()
+{
+    return circumference_;
 }
 
 void RotarySetup::testRotaryAxis()
