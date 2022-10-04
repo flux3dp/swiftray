@@ -290,15 +290,19 @@ void JobExecutor::wakeUp() {
 }
 
 /**
- * @brief Get the total required Time for active job
+ * @brief Get the total required Time for active/pending/last job
  * 
  * @return Timestamp 
  */
 Timestamp JobExecutor::getTotalRequiredTime() const {
-  if (active_job_.isNull()) {
-    return Timestamp{};
+  if (!active_job_.isNull()) {
+    return active_job_->getTotalRequiredTime();
+  } else if (!pending_job_.isNull()) {
+    return pending_job_->getTotalRequiredTime();
+  } else if (!last_job_.isNull()) {
+    return pending_job_->getTotalRequiredTime();
   }
-  return active_job_->getTotalRequiredTime();
+  return Timestamp{};
 }
 
 /**

@@ -144,7 +144,7 @@ void JobDashboardDialog::attachJob(QPointer<JobExecutor> job_executor) {
   qRegisterMetaType<Executor::State>();  // NOTE: This is necessary for passing custom type argument for signal/slot
   connect(job_executor, &Executor::stateChanged, this, &JobDashboardDialog::onJobStateChanged);
   connect(job_executor, &JobExecutor::progressChanged, this, &JobDashboardDialog::onJobProgressChanged);
-  //connect(job_executor, &Executor::elapsedTimeChanged, this, &JobDashboardDialog::onElapsedTimeChanged);
+  connect(job_executor, &JobExecutor::elapsedTimeChanged, this, &JobDashboardDialog::onElapsedTimeChanged);
   job_executor_ = job_executor;
   // Initialize displayed job info
   total_required_time_ = job_executor->getTotalRequiredTime();
