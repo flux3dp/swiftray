@@ -1473,6 +1473,7 @@ void MainWindow::setConnectionToolBar() {
       // Do something?
       return;
     }
+    connect(&active_machine, &Machine::positionCached,this, &MainWindow::positionCached);
   });
   timer->start(4000);
 }

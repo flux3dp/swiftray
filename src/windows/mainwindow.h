@@ -66,6 +66,8 @@ signals:
 
   void toolbarTransformChanged(double x, double y, double r, double w, double h);
 
+  void positionCached(std::tuple<qreal, qreal, qreal>);
+
 public slots:
   void onStartNewJob();
   void onStopJob();

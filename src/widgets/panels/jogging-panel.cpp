@@ -44,6 +44,12 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   connect(this, &JoggingPanel::actionMoveRelatively, main_window_, &MainWindow::moveRelatively);
   connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
   connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
+
+  connect(main_window_, &MainWindow::positionCached, this, [=](std::tuple<qreal, qreal, qreal> pos) {
+    qInfo() << "Cached pos: " << std::get<0>(pos) << " " << std::get<1>(pos) << " " << std::get<2>(pos);
+    ui->currentXSpinBox->setValue(std::get<0>(pos));
+    ui->currentYSpinBox->setValue(std::get<1>(pos));
+  });
 } 
 
 void JoggingPanel::home() {
