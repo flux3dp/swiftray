@@ -1468,6 +1468,7 @@ void MainWindow::setConnectionToolBar() {
     QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
+    active_machine.applyMachineParam(currentMachine());
     serial_port.open(port_name, baudrate.toInt());
     if (!serial_port.isOpen()) {
       // Do something?
