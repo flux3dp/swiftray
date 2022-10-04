@@ -180,7 +180,7 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
   // Additional steps:
   // 1. Sync position with motion controller
   auto [current_x_pos, current_y_pos, current_z_pos] = motion_controller_->getPos();
-  // 2. Calculate destination (final) position and emit
+  // 2. Pre-calculate destination (final) position and emit
   cached_x_pos_ = current_x_pos + x_dist;
   cached_y_pos_ = current_y_pos + y_dist;
   cached_z_pos_ = current_z_pos + z_dist;
@@ -231,7 +231,7 @@ bool Machine::createJoggingCornerJob(int corner_id, qreal feedrate) {
   }
 
   // Additional steps:
-  // 1. Calculate destination (final) position and emit
+  // 1. Pre-calculate destination (final) position and emit
   cached_x_pos_ = std::get<0>(target_pos);
   cached_y_pos_ = std::get<1>(target_pos);
   cached_z_pos_ = std::get<2>(target_pos);
@@ -300,7 +300,7 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
   }
 
   // Additional steps:
-  // 1. Calculate destination (final) position and emit
+  // 1. Pre-calculate destination (final) position and emit
   cached_x_pos_ = std::get<0>(target_machine_pos);
   cached_y_pos_ = std::get<1>(target_machine_pos);
   cached_z_pos_ = std::get<2>(target_machine_pos);

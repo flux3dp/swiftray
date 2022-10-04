@@ -34,11 +34,11 @@ public slots:
   void stop() override;
 
 private slots:
-  void wakeUp();
+  void wakeUp();   // wake up this job executor
 
   //void onCmdAcked();
 signals:
-  void trigger();
+  void trigger();  // wake up this job executor
   void progressChanged(float prog);
   void elapsedTimeChanged(Timestamp);
 

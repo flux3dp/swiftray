@@ -138,7 +138,7 @@ void JoggingPanel::moveToEdge(int edge_id) {
   }
 
   // TODO: Get feedrate from UI
-  emit actionMoveToEdge(edge_id, 1200);
+  emit actionMoveToEdge(edge_id, 3000);
 }
 
 void JoggingPanel::moveToCorner(int corner_id) {
@@ -147,7 +147,7 @@ void JoggingPanel::moveToCorner(int corner_id) {
   }
 
   // TODO: Get feedrate from UI
-  emit actionMoveToCorner(corner_id, 1200);
+  emit actionMoveToCorner(corner_id, 3000);
 }
 
 void JoggingPanel::setControlEnable(bool control_enable) {
