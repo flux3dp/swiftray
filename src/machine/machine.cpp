@@ -259,38 +259,34 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
 
   std::tuple<qreal, qreal, qreal> target_pos = std::make_tuple(0, 0, 0);
   std::tuple<qreal, qreal, qreal> target_machine_pos = std::make_tuple(0, 0, 0);
+  bool move_x = false;
+  bool move_y = false;
   QSharedPointer<JoggingAbsoluteJob> job;
   switch (edge_id) {
     case 0: // to right
       std::get<0>(target_pos) = machine_param_.width;
+      move_x = true;
       target_machine_pos = canvasToMachineCoordConvert(target_pos, false);
-      job = QSharedPointer<JoggingAbsoluteJob>::create(true, std::get<0>(target_machine_pos), 
-                                                        false, std::get<1>(target_machine_pos), 
-                                                        feedrate);
       break;
     case 1: // to top
-          // Transform position according to origin position
+      move_y = true;
+      // Transform position according to origin position
       target_machine_pos = canvasToMachineCoordConvert(target_pos, false);
-      job = QSharedPointer<JoggingAbsoluteJob>::create(false, std::get<0>(target_machine_pos), 
-                                                        true, std::get<1>(target_machine_pos), 
-                                                        feedrate);
       break;
     case 2: // to left
+      move_x = true;
       target_machine_pos = canvasToMachineCoordConvert(target_pos, false);
-      job = QSharedPointer<JoggingAbsoluteJob>::create(true, std::get<0>(target_machine_pos), 
-                                                        false, std::get<1>(target_machine_pos), 
-                                                        feedrate);
       break;
     case 3: // to bottom
     default:
       std::get<1>(target_pos) = machine_param_.height;
+      move_y = true;
       target_machine_pos = canvasToMachineCoordConvert(target_pos, false);
-      job = QSharedPointer<JoggingAbsoluteJob>::create(false, std::get<0>(target_machine_pos),
-                                                        true, std::get<1>(target_machine_pos), 
-                                                        feedrate);
       break;
   }
-  
+  job = QSharedPointer<JoggingAbsoluteJob>::create(move_x, std::get<0>(target_machine_pos), 
+                                                  move_y, std::get<1>(target_machine_pos), 
+                                                  feedrate);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;
@@ -301,8 +297,8 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
 
   // Additional steps:
   // 1. Pre-calculate destination (final) position and emit
-  cached_x_pos_ = std::get<0>(target_machine_pos);
-  cached_y_pos_ = std::get<1>(target_machine_pos);
+  cached_x_pos_ = move_x ? std::get<0>(target_machine_pos) : cached_x_pos_;
+  cached_y_pos_ = move_y ? std::get<1>(target_machine_pos) : cached_y_pos_;
   cached_z_pos_ = std::get<2>(target_machine_pos);
   emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
 
