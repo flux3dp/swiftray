@@ -96,9 +96,14 @@ bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> p
  * 
  * @param gcode_list 
  * @return true 
- * @return false: cancelled, no job executor exists or already running a job
+ * @return false: cancelled, no job executor exists or already running a job or machine not connected
  */
 bool Machine::createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+
   QList<Timestamp> timestamp_list;
   try {
     QElapsedTimer timer;
@@ -131,6 +136,11 @@ bool Machine::createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<Q
  * @return false: no job executor exists or already running a job
  */
 bool Machine::createFramingJob(QStringList gcode_list) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
