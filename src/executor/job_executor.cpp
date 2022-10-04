@@ -28,7 +28,7 @@ MachineJob const *JobExecutor::getActiveJob() const {
  * 
  */
 void JobExecutor::start() {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
 
   // Reject if already runnign a job
   if (state_ != State::kIdle &&
@@ -100,7 +100,7 @@ void JobExecutor::start() {
  * 
  */
 void JobExecutor::pause() {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
 
   if (state_ == State::kRunning) {
     changeState(State::kPaused);
@@ -114,7 +114,7 @@ void JobExecutor::pause() {
  * 
  */
 void JobExecutor::resume() {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
 
   if (state_ == State::kPaused) {
     changeState(State::kRunning);
@@ -128,7 +128,7 @@ void JobExecutor::resume() {
  * 
  */
 void JobExecutor::exec() {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
 
   // 1. Check state first
   if (state_ != State::kRunning) {
@@ -208,7 +208,7 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
  *             >0 for failure
  */
 void JobExecutor::handleCmdFinish(int code) {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
 
   if (active_job_.isNull()) {
     return;
@@ -275,7 +275,7 @@ void JobExecutor::stopImpl() {
  * 
  */
 void JobExecutor::stop() {
-  std::lock_guard<std::mutex> lk(exec_mutex_);
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
   stopImpl();
 }
 

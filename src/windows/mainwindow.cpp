@@ -276,21 +276,20 @@ void MainWindow::actionStart() {
   }
   // Restriction 3: Reject if active job exists, but doesn't contain preview 
   if (active_machine.getJobExecutor()->getActiveJob()) {
-    if (active_machine.getJobExecutor()->getActiveJob()->withPreview()) {
-      // Re-open job dashboard for existing job
-      //if (job_dashboard_) {
-      //  job_dashboard_->deleteLater();
-      //}
-      job_dashboard_ = new JobDashboardDialog(
-          active_machine.getJobExecutor()->getActiveJob()->getTotalRequiredTime(), 
-          active_machine.getJobExecutor()->getActiveJob()->getPreview(), 
-          this
-      );
-      // Attach to existing job
-      job_dashboard_->attachJob(active_machine.getJobExecutor());
-    } else {
+    if (!active_machine.getJobExecutor()->getActiveJob()->withPreview()) {
       return;
     }
+    // Re-open job dashboard for existing job
+    //if (job_dashboard_) {
+    //  job_dashboard_->deleteLater();
+    //}
+    job_dashboard_ = new JobDashboardDialog(
+        active_machine.getJobExecutor()->getActiveJob()->getTotalRequiredTime(), 
+        active_machine.getJobExecutor()->getActiveJob()->getPreview(), 
+        this
+    );
+    // Attach to existing job
+    job_dashboard_->attachJob(active_machine.getJobExecutor());
   } else {
     // If active job doesn't exist, Prepare (Generate) GCodes before launching job dashboard
     if (generateGcode() == false) {

@@ -16,13 +16,13 @@ void MotionController::attachPort(SerialPort *port) {
 }
 
 MotionControllerState MotionController::getState() const {
-  std::lock_guard<std::mutex> lk(state_mutex_);
+  std::scoped_lock<std::mutex> lk(state_mutex_);
   return state_;
 };
 
 void MotionController::setState(MotionControllerState new_state) {
   {
-    std::lock_guard<std::mutex> lk(state_mutex_);
+    std::scoped_lock<std::mutex> lk(state_mutex_);
     state_ = new_state;
   }
 }
