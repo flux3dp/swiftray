@@ -1344,7 +1344,16 @@ void MainWindow::registerEvents() {
   connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
   connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
-  connect(laser_panel_, &LaserPanel::actionHome, jogging_panel_, &JoggingPanel::home);
+  connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
+
+  connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
+  connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
+  connect(jogging_panel_, &JoggingPanel::actionHome, this, &MainWindow::home);
+  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, this, &MainWindow::moveRelatively);
+  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, this, &MainWindow::moveAbsolutely);
+  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
+  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
+  connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {

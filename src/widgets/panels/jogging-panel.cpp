@@ -45,16 +45,6 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   connect(ui->setOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::setOrigin);
   connect(ui->clearOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::clearOrigin);
 
-  // Delegate actions to mainwindow (controller)
-  connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
-  connect(this, &JoggingPanel::actionLaserPulse, main_window_, &MainWindow::laserPulse);
-  connect(this, &JoggingPanel::actionHome, main_window_, &MainWindow::home);
-  connect(this, &JoggingPanel::actionMoveRelatively, main_window_, &MainWindow::moveRelatively);
-  connect(this, &JoggingPanel::actionMoveAbsolutely, main_window_, &MainWindow::moveAbsolutely);
-  connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
-  connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
-  connect(this, &JoggingPanel::actionSetOrigin, main_window_, &MainWindow::setCustomOrigin);
-
   // Receive signals from mainwindow
   connect(main_window_, &MainWindow::positionCached, this, &JoggingPanel::updateCurrentPos);
 } 
