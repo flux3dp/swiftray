@@ -27,8 +27,6 @@ public:
   void setGCode(const QString &gcodes);
   QString getGCode();
 
-  void showError(const QString &string);
-
   void attachJob(QPointer<JobExecutor> job_executor);
 
 public slots:

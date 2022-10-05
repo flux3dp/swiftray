@@ -68,6 +68,11 @@ MachineSettings::MachineSet Machine::getMachineParam() const {
  * @return false: cancelled, no job executor exists or already running a job
  */
 bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+
   QList<Timestamp> timestamp_list;
   try {
     QElapsedTimer timer;
@@ -348,6 +353,9 @@ void Machine::motionPortDisonnected() {
 }
 
 void Machine::startJob() {
+  if (connect_state_ != ConnectionState::kConnected) {
+    return;
+  }
   job_executor_->start();
 }
 
@@ -431,7 +439,7 @@ std::tuple<qreal, qreal, qreal> Machine::machineToCanvasCoordConvert(
 }
 
 /**
- * @brief Display notification from machine to user
+ * @brief Display notification from machine to user during job execution
  * 
  * @param title 
  * @param msg 

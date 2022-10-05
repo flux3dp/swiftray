@@ -72,13 +72,6 @@ void GCodePanel::checkGenerateGcode() {
   }
 }
 
-void GCodePanel::showError(const QString &msg) {
-  QMessageBox msgbox;
-  msgbox.setText("Job Error");
-  msgbox.setInformativeText(msg);
-  msgbox.exec();
-}
-
 void GCodePanel::onJobStateChanged(Executor::State new_state) {
   job_state_ = new_state;
   switch (job_state_) {
@@ -145,7 +138,6 @@ void GCodePanel::attachJob(QPointer<JobExecutor> job_executor) {
   }
   // 2. Connect to new job
   qRegisterMetaType<Executor::State>(); // NOTE: This is necessary for passing custom type argument for signal/slot
-  //connect(job_executor, &BaseJob::error, this, &GCodePanel::showError);
   connect(job_executor, &JobExecutor::progressChanged, this, &GCodePanel::onJobProgressChanged);
   connect(job_executor, &Executor::stateChanged, this, &GCodePanel::onJobStateChanged);
   job_executor_ = job_executor;

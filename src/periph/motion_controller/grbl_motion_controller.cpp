@@ -175,7 +175,7 @@ void GrblMotionController::respReceived(QString resp) {
     int code = subString.toInt();
     if (code >= static_cast<int>(AlarmCode::kMin) &&
         code <= static_cast<int>(AlarmCode::kMax) ) {
-      emit notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));
+      emit MotionController::notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));
     } else {
       // Unknown alarm code
     }
@@ -193,6 +193,11 @@ void GrblMotionController::respReceived(QString resp) {
   } else if (resp.startsWith("[FLUX:")) {
     // TODO: Handle [FLUX: ...]
     // Handle FLUX's dedicated responses:
+    if (resp.contains("act")) {
+      emit MotionController::notif(tr("NOTICE"), tr("Machine is paused by drop or collision."));
+    } else if (resp.contains("tilt")) {
+      emit MotionController::notif(tr("NOTICE"), tr("Machine is paused by tilt."));
+    }
     // * [FLUX: act]
     // * [FLUX: tilt]
   } 
