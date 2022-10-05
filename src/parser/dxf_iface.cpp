@@ -50,13 +50,50 @@ bool dxf_iface::printText(Document *doc, const std::string& fileI, dxf_data *fDa
 }
 
 void dxf_iface::addLayer(const DRW_Layer& data) {
-    if(data.name.compare("0") != 0) {
-        layer_ptr_ = std::make_shared<Layer>();
-        layer_ptr_->setName(QString::fromStdString(data.name));
-        dxf_layers_.push_back(layer_ptr_);
-    }
+    layer_ptr_ = std::make_shared<Layer>();
+    layer_ptr_->setName(QString::fromStdString(data.name));
+    dxf_layers_.push_back(layer_ptr_);
 
-    std::cout << __func__ << " " << data.name << " " << data.color << std::endl;
+    // std::cout << __func__ << " " << data.name << " " << data.color << std::endl;
+}
+
+void dxf_iface::addLine(const DRW_Line& data) {
+    // std::cout << __func__ << " " << __LINE__ << std::endl;
+    if(layer_ptr_ == nullptr) {
+        return;
+    }
+    // std::cout << __func__ << " basePoint.x = " << data.basePoint.x << " basePoint.y = " << data.basePoint.y << std::endl;
+    // std::cout << __func__ << " secPoint.x = " << data.secPoint.x << " secPoint.y = " << data.secPoint.y << std::endl;
+    QPainterPath working_path;
+    working_path.moveTo(data.basePoint.x, data.basePoint.y);
+    working_path.lineTo(data.secPoint.x, data.secPoint.y);
+    ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+    layer_ptr_->addShape(new_shape);
+}
+
+void dxf_iface::addCircle(const DRW_Circle& data) {
+    if(layer_ptr_ == nullptr) {
+        return;
+    }
+    QPointF center(data.basePoint.x, data.basePoint.y);
+    QPainterPath working_path;
+    working_path.addEllipse(center, data.radious, data.radious);
+    ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+    layer_ptr_->addShape(new_shape);
+}
+
+void dxf_iface::addLWPolyline(const DRW_LWPolyline& data) {
+    // std::cout << __func__ << " " << __LINE__ << std::endl;
+    if(layer_ptr_ == nullptr) {
+        return;
+    }
+    QPainterPath working_path;
+    working_path.moveTo(data.vertlist[0]->x, data.vertlist[0]->y);
+    for(unsigned int i = 1; i < data.vertlist.size(); ++i) {
+        working_path.lineTo(data.vertlist[i]->x, data.vertlist[i]->y);
+    }
+    ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+    layer_ptr_->addShape(new_shape);
 }
 
 void dxf_iface::addPolyline(const DRW_Polyline& data) {
@@ -66,9 +103,14 @@ void dxf_iface::addPolyline(const DRW_Polyline& data) {
     QPainterPath working_path;
     working_path.moveTo(data.vertlist[0]->basePoint.x, data.vertlist[0]->basePoint.y);
     for(unsigned int i = 1; i < data.vertlist.size(); ++i) {
-        std::cout << data.vertlist[i]->basePoint.x << " " << data.vertlist[i]->basePoint.y << std::endl;
+        // std::cout << data.vertlist[i]->basePoint.x << " " << data.vertlist[i]->basePoint.y << std::endl;
         working_path.lineTo(data.vertlist[i]->basePoint.x, data.vertlist[i]->basePoint.y);
     }
+    // bool closed = data.flags & (1 << 0);
+    // std::cout << "closed = " << closed << std::endl;
+    // if(closed) {
+    //     working_path.lineTo(data.vertlist[0]->basePoint.x, data.vertlist[0]->basePoint.y);
+    // }
     ShapePtr new_shape = std::make_shared<PathShape>(working_path);
     layer_ptr_->addShape(new_shape);
 }
@@ -79,21 +121,34 @@ void dxf_iface::addSpline(const DRW_Spline* data) {
     }
     QPainterPath working_path;
     working_path.moveTo(data->controllist[0]->x, data->controllist[0]->y);
-    for(unsigned int i = 1; (i+2) < data->controllist.size(); i+=3) {
-        working_path.cubicTo(data->controllist[i]->x, data->controllist[i]->y, 
-                              data->controllist[i+1]->x, data->controllist[i+1]->y,
-                              data->controllist[i+2]->x, data->controllist[i+2]->y);
+    // std::cout << __func__ << " controllist.size() = " << data->controllist.size() << std::endl;
+    unsigned int index = 1;
+    for(; (index+2) < data->controllist.size(); index+=3) {
+        working_path.cubicTo(data->controllist[index]->x, data->controllist[index]->y, 
+                              data->controllist[index+1]->x, data->controllist[index+1]->y,
+                              data->controllist[index+2]->x, data->controllist[index+2]->y);
     }
+    // std::cout << __func__ << " index = " << index << std::endl;
+    if(index != data->controllist.size()) {
+        working_path.cubicTo(data->controllist[data->controllist.size()-3]->x, data->controllist[data->controllist.size()-3]->y, 
+                              data->controllist[data->controllist.size()-2]->x, data->controllist[data->controllist.size()-2]->y,
+                              data->controllist[data->controllist.size()-1]->x, data->controllist[data->controllist.size()-1]->y);
+    }
+
+    // bool closed = data->flags & (1 << 0);
+    // std::cout << "closed = " << closed << std::endl;
+    // if(closed) {
+    //     working_path.cubicTo(data->controllist[data->controllist.size()-2]->x, data->controllist[data->controllist.size()-2]->y, 
+    //                           data->controllist[data->controllist.size()-1]->x, data->controllist[data->controllist.size()-1]->y,
+    //                           data->controllist[0]->x, data->controllist[0]->y);
+    // }
     ShapePtr new_shape = std::make_shared<PathShape>(working_path);
     layer_ptr_->addShape(new_shape);
-
-    bool closed = data->flags & (1 << 0);
-    std::cout << "closed = " << closed << std::endl;
-    std::cout << "controllist(" << data->ncontrol << "):" << std::endl;
-    int degree = data->degree;
-    std::cout << "degree = " << degree << std::endl;
-    for(unsigned int i = 0; i < data->controllist.size(); ++i)
-    {
-        std::cout << data->controllist[i]->x << " " << data->controllist[i]->y << std::endl;
-    }
+    // std::cout << "controllist(" << data->ncontrol << "):" << std::endl;
+    // int degree = data->degree;
+    // std::cout << "degree = " << degree << std::endl;
+    // for(unsigned int i = 0; i < data->controllist.size(); ++i)
+    // {
+    //     std::cout << data->controllist[i]->x << " " << data->controllist[i]->y << std::endl;
+    // }
 }

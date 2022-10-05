@@ -138,7 +138,7 @@ void Canvas::loadSVG(QString file_name) {
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
-    double scale = 3.0 / 8.5;
+    double scale = 30.0 / 8.5;//define by 3cm Ruler
     transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
@@ -443,7 +443,7 @@ void Canvas::wheelEvent(QWheelEvent *e) {
   if (is_holding_ctrl_) {
     mouse_pos = e->position() - widget_offset_;
     double orig_scale = document().scale();
-    double new_scale = std::min(30.0, std::max(0.1, document().scale() + e->angleDelta().y() / 8 / document().height()));
+    double new_scale = std::min(30.0, std::max(0.01, document().scale() + e->angleDelta().y() / 8 / document().height()));
     document().setScale(new_scale);
     new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
   } else {

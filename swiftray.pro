@@ -16,7 +16,7 @@ TARGET = Swiftray
 #Application version
 VERSION_MAJOR = 1
 VERSION_MINOR = 0
-VERSION_BUILD = 1
+VERSION_BUILD = 2
 VERSION_SUFFIX = "" # beta
 DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
        "VERSION_MINOR=$$VERSION_MINOR"\
@@ -227,7 +227,8 @@ SOURCES += \
 
 RESOURCES += qml.qrc
 TRANSLATIONS += \
-    i18n/zh-Hant-TW.ts
+    i18n/zh-Hant-TW.ts \
+    i18n/ja-JP.ts
 CONFIG += lrelease
 CONFIG += embed_translations
 # Additional import path used to resolve QML modules in Qt Creator's code model
@@ -352,3 +353,5 @@ macx{
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }
+
+DISTFILES +=
