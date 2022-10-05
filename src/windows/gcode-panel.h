@@ -7,7 +7,6 @@
 #include <QPointer>
 
 #include <widgets/base-container.h>
-#include <motion_controller_job/base-job.h>
 #include <executor/machine_job/machine_job.h>
 #include <executor/executor.h>
 #include <executor/job_executor.h>
