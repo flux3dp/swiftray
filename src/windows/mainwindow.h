@@ -82,6 +82,7 @@ public slots:
   void moveAbsolutely(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
   void moveToEdge(int edge_id, qreal feedrate);
   void moveToCorner(int corner_id, qreal feedrate);
+  void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
 
 
 private slots:

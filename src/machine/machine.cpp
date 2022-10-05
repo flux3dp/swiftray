@@ -336,6 +336,17 @@ void Machine::syncPosition() {
   emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
 }
 
+void Machine::setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin) {
+  if (connect_state_ != ConnectionState::kConnected) {
+    return;
+  }
+  custom_origin_ = new_origin;
+}
+
+std::tuple<qreal, qreal, qreal> Machine::getCustomOrigin() {
+  return custom_origin_;
+}
+
 void Machine::motionPortConnected() {
   qInfo() << "Machine::motionPortConnected()";
   // TODO: Use general Port class instead of SerialPort class
@@ -356,10 +367,13 @@ void Machine::motionPortConnected() {
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   motion_controller_->attachPort(port);
   
+  // Reset state variables
   connect_state_ = ConnectionState::kConnecting;
   cached_x_pos_ = 0;
   cached_y_pos_ = 0;
   cached_z_pos_ = 0;
+
+  custom_origin_ = std::make_tuple<qreal, qreal, qreal>(0, 0, 0);
 
   // Attach motion_controller to executors
   rt_status_executor_->attachMotionController(motion_controller_);
@@ -378,6 +392,10 @@ void Machine::motionPortActivated() {
 
 void Machine::motionPortDisonnected() {
   connect_state_ = ConnectionState::kDisconnected;
+
+  // Reset state variables
+  custom_origin_ = std::make_tuple<qreal, qreal, qreal>(0, 0, 0);
+
   // ...
   qInfo() << "Machine::motionPortDisonnected()";
 }

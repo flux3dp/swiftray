@@ -30,6 +30,7 @@ signals:
   void actionMoveAbsolutely(std::tuple<qreal, qreal, qreal>pos, qreal feedrate);
   void actionMoveToEdge(int edge_id, qreal feedrate);
   void actionMoveToCorner(int corner_id, qreal feedrate);
+  void actionSetOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   
 public slots:
   // Accepting signals from QML action
@@ -41,6 +42,8 @@ public slots:
   void moveToEdge(int dir);
   void moveToCorner(int corner);
   void updateCurrentPos(std::tuple<qreal, qreal, qreal> pos);
+  void setOrigin();
+  void clearOrigin();
 
   void setControlEnable(bool control_enable);
 

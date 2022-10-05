@@ -2290,3 +2290,7 @@ void MainWindow::moveToCorner(int corner_id, qreal feedrate) {
     active_machine.startJob();
   }
 }
+
+void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) {
+  active_machine.setCustomOrigin(custom_origin);
+}

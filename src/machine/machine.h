@@ -39,6 +39,8 @@ public:
   bool createJoggingCornerJob(int corner_id, qreal feedrate);
   bool createJoggingEdgeJob(int edge_id, qreal feedrate);
   void syncPosition();
+  void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
+  std::tuple<qreal, qreal, qreal> getCustomOrigin();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
@@ -81,6 +83,8 @@ private:
   qreal cached_x_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
   qreal cached_y_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
   qreal cached_z_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
+
+  std::tuple<qreal, qreal, qreal> custom_origin_; // store the custom origin set by user
 
   std::tuple<qreal, qreal, qreal> canvasToMachineCoordConvert(std::tuple<qreal, qreal, qreal>, bool);
   std::tuple<qreal, qreal, qreal> machineToCanvasCoordConvert(std::tuple<qreal, qreal, qreal>, bool);

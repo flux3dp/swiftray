@@ -19,9 +19,10 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   ui->maintenanceController->rootContext()->setContextProperty("is_dark_mode", isDarkMode());
   ui->maintenanceController->show();
 
-  ui->clearOriginBtn->hide();
-  ui->setOriginBtn->hide();
+  //ui->clearOriginBtn->hide();
+  //ui->setOriginBtn->hide();
 
+  // Handle event from QML UI
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveRelatively(int, int)),
                   this, SLOT(moveRelatively(int, int)));
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveToCorner(int)),
@@ -41,6 +42,8 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
       std::make_tuple<qreal, qreal, qreal>(ui->moveXSpinBox->value(), ui->moveYSpinBox->value(), 0)
     );
   });
+  connect(ui->setOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::setOrigin);
+  connect(ui->clearOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::clearOrigin);
 
   // Delegate actions to mainwindow (controller)
   connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
@@ -50,6 +53,7 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   connect(this, &JoggingPanel::actionMoveAbsolutely, main_window_, &MainWindow::moveAbsolutely);
   connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
   connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
+  connect(this, &JoggingPanel::actionSetOrigin, main_window_, &MainWindow::setCustomOrigin);
 
   // Receive signals from mainwindow
   connect(main_window_, &MainWindow::positionCached, this, &JoggingPanel::updateCurrentPos);
@@ -158,6 +162,24 @@ void JoggingPanel::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos) {
   emit actionMoveAbsolutely(pos, 2400);
 }
 
+void JoggingPanel::setOrigin() {
+  if(!control_enable_) {
+    return;
+  }
+  emit actionSetOrigin(
+    std::make_tuple<qreal, qreal, qreal>(
+      ui->currentXSpinBox->value(), 
+      ui->currentYSpinBox->value(), 
+      0)
+  );
+}
+
+void JoggingPanel::clearOrigin() {
+  if(!control_enable_) {
+    return;
+  }
+  emit actionSetOrigin(std::make_tuple<qreal, qreal, qreal>(0, 0, 0));
+}
 
 void JoggingPanel::setControlEnable(bool control_enable) {
   control_enable_ = control_enable;
