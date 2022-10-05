@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QString>
 #include <QPixmap>
+#include <QVariant>
 #include <widgets/base-container.h>
 #include <executor/executor.h>
 #include <executor/job_executor.h>

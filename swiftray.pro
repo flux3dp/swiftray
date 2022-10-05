@@ -187,7 +187,6 @@ SOURCES += \
     $$files(src/connection/*.cpp) \
     $$files(src/connection/QAsyncSerial/*.cpp) \
     $$files(src/toolpath_exporter/*.cpp) \
-    $$files(src/motion_controller_job/*.cpp) \
     $$files(src/parser/*.cpp) \
     $$files(src/settings/*.cpp) \
     $$files(src/shape/*.cpp) \
@@ -195,6 +194,13 @@ SOURCES += \
     $$files(src/widgets/panels/*.cpp) \
     $$files(src/widgets/components/*.cpp) \
     $$files(src/windows/*.cpp) \
+    $$files(src/executor/*.cpp) \
+    $$files(src/executor/machine_job/*.cpp) \
+    $$files(src/executor/operation_cmd/*.cpp) \
+    $$files(src/machine/*.cpp) \
+    $$files(src/periph/*.cpp) \
+    $$files(src/periph/motion_controller/*.cpp) \
+    $$files(src/common/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
@@ -239,7 +245,6 @@ HEADERS += \
     $$files(src/connection/*.h) \
     $$files(src/connection/QAsyncSerial/*.h) \
     $$files(src/toolpath_exporter/*.h) \
-    $$files(src/motion_controller_job/*.h) \
     $$files(src/parser/*.h) \
     $$files(src/parser/generators/*.h) \
     $$files(src/settings/*.h) \
@@ -249,6 +254,13 @@ HEADERS += \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
+    $$files(src/executor/*.h) \
+    $$files(src/executor/machine_job/*.h) \
+    $$files(src/executor/operation_cmd/*.h) \
+    $$files(src/machine/*.h) \
+    $$files(src/periph/*.h) \
+    $$files(src/periph/motion_controller/*.h) \
+    $$files(src/common/*.h) \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
     src/widgets/panels/laser-panel.h \
     src/windows/rotary_setup.h \

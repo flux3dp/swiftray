@@ -154,7 +154,6 @@ add_subdirectory(src/connection)
 add_subdirectory(src/machine)
 add_subdirectory(src/periph)
 add_subdirectory(src/executor)
-add_subdirectory(src/motion_controller_job)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
