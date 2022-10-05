@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QDebug>
 #include <widgets/base-container.h>
+#include <tuple>
 
 class MainWindow; 
 namespace Ui {
@@ -15,8 +16,6 @@ Q_OBJECT
 
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
-
-  void setAxisPosition(double x_position, double y_position);
 
   ~JoggingPanel();
 
@@ -39,6 +38,7 @@ public slots:
   void moveRelatively(int dir, int level);
   void moveToEdge(int dir);
   void moveToCorner(int corner);
+  void updateCurrentPos(std::tuple<qreal, qreal, qreal> pos);
 
   void setControlEnable(bool control_enable);
 

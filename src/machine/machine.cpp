@@ -32,6 +32,7 @@ Machine::Machine(QObject *parent)
     qInfo() << "Realtime status updater hanging";
   });
   connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
+  connect(job_executor_, &Executor::finished, this, &Machine::syncPosition); // Always sync the realtime position at the end of job
 }
 
 /**
@@ -177,15 +178,6 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
     return false;
   }
 
-  // Additional steps:
-  // 1. Sync position with motion controller
-  auto [current_x_pos, current_y_pos, current_z_pos] = motion_controller_->getPos();
-  // 2. Pre-calculate destination (final) position and emit
-  cached_x_pos_ = current_x_pos + x_dist;
-  cached_y_pos_ = current_y_pos + y_dist;
-  cached_z_pos_ = current_z_pos + z_dist;
-  emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
-
   return true;
 }
 
@@ -229,13 +221,6 @@ bool Machine::createJoggingCornerJob(int corner_id, qreal feedrate) {
   if (!job_executor_->setNewJob(job)) {
     return false;
   }
-
-  // Additional steps:
-  // 1. Pre-calculate destination (final) position and emit
-  cached_x_pos_ = std::get<0>(target_pos);
-  cached_y_pos_ = std::get<1>(target_pos);
-  cached_z_pos_ = std::get<2>(target_pos);
-  emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
 
   return true;
 }
@@ -294,13 +279,6 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
   if (!job_executor_->setNewJob(job)) {
     return false;
   }
-
-  // Additional steps:
-  // 1. Pre-calculate destination (final) position and emit
-  cached_x_pos_ = move_x ? std::get<0>(target_machine_pos) : cached_x_pos_;
-  cached_y_pos_ = move_y ? std::get<1>(target_machine_pos) : cached_y_pos_;
-  cached_z_pos_ = std::get<2>(target_machine_pos);
-  emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
 
   return true;
 }

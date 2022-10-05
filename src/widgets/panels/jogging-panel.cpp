@@ -37,7 +37,7 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
     ui->moveYSpinBox->setValue(ui->currentYSpinBox->value());
   });
 
-  // Delegate action to mainwindow (controller)
+  // Delegate actions to mainwindow (controller)
   connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
   connect(this, &JoggingPanel::actionLaserPulse, main_window_, &MainWindow::laserPulse);
   connect(this, &JoggingPanel::actionHome, main_window_, &MainWindow::home);
@@ -45,11 +45,8 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
   connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
 
-  connect(main_window_, &MainWindow::positionCached, this, [=](std::tuple<qreal, qreal, qreal> pos) {
-    qInfo() << "Cached pos: " << std::get<0>(pos) << " " << std::get<1>(pos) << " " << std::get<2>(pos);
-    ui->currentXSpinBox->setValue(std::get<0>(pos));
-    ui->currentYSpinBox->setValue(std::get<1>(pos));
-  });
+  // Receive signals from mainwindow
+  connect(main_window_, &MainWindow::positionCached, this, &JoggingPanel::updateCurrentPos);
 } 
 
 void JoggingPanel::home() {
@@ -128,7 +125,7 @@ void JoggingPanel::moveRelatively(int dir, int level) {
       break;
   }
 
-  // TODO: Get feedrate from UI
+  // TODO: Get feedrate from UI?
   emit actionMoveRelatively(movement.x(), movement.y(), 1200);
 }
 
@@ -137,7 +134,7 @@ void JoggingPanel::moveToEdge(int edge_id) {
     return;
   }
 
-  // TODO: Get feedrate from UI
+  // TODO: Get feedrate from UI?
   emit actionMoveToEdge(edge_id, 3000);
 }
 
@@ -146,7 +143,7 @@ void JoggingPanel::moveToCorner(int corner_id) {
     return;
   }
 
-  // TODO: Get feedrate from UI
+  // TODO: Get feedrate from UI?
   emit actionMoveToCorner(corner_id, 3000);
 }
 
@@ -162,9 +159,9 @@ void JoggingPanel::showEvent(QShowEvent *event) {
   emit panelShow(true);
 }
 
-void JoggingPanel::setAxisPosition(double x_position, double y_position) {
-  ui->currentXSpinBox->setValue(x_position);
-  ui->currentYSpinBox->setValue(y_position);
+void JoggingPanel::updateCurrentPos(std::tuple<qreal, qreal, qreal> pos) {
+  ui->currentXSpinBox->setValue(std::get<0>(pos));
+  ui->currentYSpinBox->setValue(std::get<1>(pos));
 }
 
 JoggingPanel::~JoggingPanel() {
