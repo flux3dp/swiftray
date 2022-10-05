@@ -35,6 +35,7 @@ public:
   bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
   bool createFramingJob(QStringList gcode_list);
   bool createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist, qreal feedrate);
+  bool createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
   bool createJoggingCornerJob(int corner_id, qreal feedrate);
   bool createJoggingEdgeJob(int edge_id, qreal feedrate);
   void syncPosition();

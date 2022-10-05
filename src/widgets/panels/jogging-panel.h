@@ -27,6 +27,7 @@ signals:
   void actionLaserPulse(qreal power_percent);
   void actionHome();
   void actionMoveRelatively(qreal x, qreal y, qreal feedrate);
+  void actionMoveAbsolutely(std::tuple<qreal, qreal, qreal>pos, qreal feedrate);
   void actionMoveToEdge(int edge_id, qreal feedrate);
   void actionMoveToCorner(int corner_id, qreal feedrate);
   
@@ -36,6 +37,7 @@ public slots:
   void laserPulse();
   void home();
   void moveRelatively(int dir, int level);
+  void moveAbsolutely(std::tuple<qreal, qreal, qreal> pos);
   void moveToEdge(int dir);
   void moveToCorner(int corner);
   void updateCurrentPos(std::tuple<qreal, qreal, qreal> pos);

@@ -79,6 +79,7 @@ public slots:
   void laserPulse(qreal power);
   void home();
   void moveRelatively(qreal x, qreal y, qreal feedrate);
+  void moveAbsolutely(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
   void moveToEdge(int edge_id, qreal feedrate);
   void moveToCorner(int corner_id, qreal feedrate);
 

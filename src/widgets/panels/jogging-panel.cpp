@@ -36,12 +36,18 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
     ui->moveXSpinBox->setValue(ui->currentXSpinBox->value());
     ui->moveYSpinBox->setValue(ui->currentYSpinBox->value());
   });
+  connect(ui->goBtn, &QAbstractButton::clicked, [=]() {
+    moveAbsolutely(
+      std::make_tuple<qreal, qreal, qreal>(ui->moveXSpinBox->value(), ui->moveYSpinBox->value(), 0)
+    );
+  });
 
   // Delegate actions to mainwindow (controller)
   connect(this, &JoggingPanel::actionLaser, main_window_, &MainWindow::laser);
   connect(this, &JoggingPanel::actionLaserPulse, main_window_, &MainWindow::laserPulse);
   connect(this, &JoggingPanel::actionHome, main_window_, &MainWindow::home);
   connect(this, &JoggingPanel::actionMoveRelatively, main_window_, &MainWindow::moveRelatively);
+  connect(this, &JoggingPanel::actionMoveAbsolutely, main_window_, &MainWindow::moveAbsolutely);
   connect(this, &JoggingPanel::actionMoveToEdge, main_window_, &MainWindow::moveToEdge);
   connect(this, &JoggingPanel::actionMoveToCorner, main_window_, &MainWindow::moveToCorner);
 
@@ -126,14 +132,13 @@ void JoggingPanel::moveRelatively(int dir, int level) {
   }
 
   // TODO: Get feedrate from UI?
-  emit actionMoveRelatively(movement.x(), movement.y(), 1200);
+  emit actionMoveRelatively(movement.x(), movement.y(), 2400);
 }
 
 void JoggingPanel::moveToEdge(int edge_id) {
   if(!control_enable_) {
     return;
   }
-
   // TODO: Get feedrate from UI?
   emit actionMoveToEdge(edge_id, 3000);
 }
@@ -142,10 +147,17 @@ void JoggingPanel::moveToCorner(int corner_id) {
   if(!control_enable_) {
     return;
   }
-
   // TODO: Get feedrate from UI?
   emit actionMoveToCorner(corner_id, 3000);
 }
+
+void JoggingPanel::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos) {
+  if(!control_enable_) {
+    return;
+  }
+  emit actionMoveAbsolutely(pos, 2400);
+}
+
 
 void JoggingPanel::setControlEnable(bool control_enable) {
   control_enable_ = control_enable;

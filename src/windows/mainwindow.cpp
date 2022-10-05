@@ -2265,6 +2265,16 @@ void MainWindow::moveRelatively(qreal x, qreal y, qreal feedrate) {
   }
 }
 
+void MainWindow::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos, 
+                                qreal feedrate) {
+  if (true == active_machine.createJoggingAbsoluteJob(pos, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+
 void MainWindow::moveToEdge(int edge_id, qreal feedrate) {
   if (true == active_machine.createJoggingEdgeJob(edge_id, feedrate)) 
   {
