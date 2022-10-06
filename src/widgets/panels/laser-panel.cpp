@@ -72,7 +72,7 @@ void LaserPanel::registerEvents() {
         job_origin_ = SE;
         Q_EMIT selectJobOrigin(SE);
     });
-    connect(ui->startFromComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index) {
+    connect(ui->startFromComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
         StartFrom start_from = ui->startFromComboBox->itemData(index).value<StartFrom>();
         start_from_ = start_from;
         if(start_from_ == AbsoluteCoords) {
@@ -143,7 +143,6 @@ void LaserPanel::setLayout()
     ui->frameBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-frame.png" : ":/resources/images/icon-frame.png"));
     ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
     ui->startFromComboBox->setCurrentIndex(0);
-    ui->widget->hide();
 }
 
 void LaserPanel::hideEvent(QHideEvent *event) {
