@@ -2308,12 +2308,11 @@ void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) 
 }
 
 void MainWindow::moveToCustomOrigin() {
-  auto target_pos = active_machine.getCustomOrigin();
   bool result = false;
   if (is_rotary_mode_) { // Only move X pos
-    result == active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), 2400);
+    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), 2400);
   } else {
-    result == active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), 2400);
+    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), 2400);
   }
   if (result == true)
   {
