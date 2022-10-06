@@ -217,6 +217,35 @@ bool Machine::createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> target_po
 }
 
 /**
+ * @brief Create a Jogging Job for moving to absolute x position
+ * 
+ * @param x_pos 
+ * @param feedrate 
+ * @return true 
+ * @return false 
+ */
+bool createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+  // Transform position according to origin position
+  target_pos = canvasToMachineCoordConvert(target_pos, false);
+  auto job = QSharedPointer<JoggingAbsoluteJob>::create(true, std::get<0>(target_pos), 
+                                                        false, 0, 
+                                                        feedrate);
+  job->setMotionController(motion_controller_);
+  if (!job_executor_) {
+    return false;
+  }
+  if (!job_executor_->setNewJob(job)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * @brief Create a Jogging Job for moving to anchor point
  * 
  * @param corner_id 0: top left
