@@ -1,6 +1,7 @@
 #include "job_executor.h"
 
 #include <QDebug>
+#include <QMessageBox>
 
 JobExecutor::JobExecutor(QObject *parent)
   : Executor{parent}
@@ -62,7 +63,15 @@ void JobExecutor::start() {
   }
 
   connect(motion_controller_, &MotionController::disconnected,
-        this, &JobExecutor::stop);
+        this, [=](){
+    if (state_ == State::kRunning || state_ == State::kPaused) {
+      auto msgbox = new QMessageBox;
+      msgbox->setText(tr("Error"));
+      msgbox->setInformativeText(tr("Serial port disconnected"));
+      msgbox->show();
+    }
+    stop();
+  });
   connect(motion_controller_, &MotionController::resetDetected,
         this, &JobExecutor::stop);
   // Register signal slot

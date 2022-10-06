@@ -11,6 +11,8 @@
 #include <executor/executor.h>
 #include <executor/job_executor.h>
 
+class MainWindow;
+
 namespace Ui {
   class GCodePanel;
 }
@@ -20,7 +22,7 @@ Q_OBJECT
 
 public:
 
-  explicit GCodePanel(QWidget *parent = nullptr);
+  explicit GCodePanel(QWidget *parent, MainWindow *main_window);
 
   ~GCodePanel();
 
@@ -32,6 +34,9 @@ public:
 public slots:
   void onJobStateChanged(Executor::State);
   void onJobProgressChanged(QVariant);
+
+  void onEnableJobCtrl();
+  void onDisableJobCtrl();
   
 private:
 
@@ -48,8 +53,10 @@ private:
   Ui::GCodePanel *ui;
 
   Executor::State job_state_;
+  bool enabled_ = false;
 
   QPointer<JobExecutor> job_executor_;
+  QPointer<MainWindow> main_window_;
 
 signals:
   void exportGcode();

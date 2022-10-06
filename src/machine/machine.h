@@ -29,6 +29,7 @@ public:
 
   explicit Machine(QObject *parent = nullptr);
 
+  ConnectionState getConnectionState();
   bool applyMachineParam(MachineSettings::MachineSet mach);
   //MachineSettings::MachineSet getMachineParam() const;
   bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
@@ -60,6 +61,8 @@ public slots:
   void stopJob();
 
 signals:
+  void connected();
+  void disconnected();
   void positionCached(std::tuple<qreal, qreal, qreal>);
 
 private:

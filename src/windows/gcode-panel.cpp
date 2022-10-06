@@ -3,17 +3,12 @@
 #include <QMessageBox>
 #include <QRegularExpression>
 
-#ifndef Q_OS_IOS
-
 #include <QTimer>
-#include <connection/serial-port.h>
-#include <globals.h>
-
 #include <QDebug>
+#include <windows/mainwindow.h>
 
-#endif
-
-GCodePanel::GCodePanel(QWidget *parent) :
+GCodePanel::GCodePanel(QWidget *parent, MainWindow* main_window) :
+     main_window_(main_window),
      QFrame(parent),
      ui(new Ui::GCodePanel),
      BaseContainer() {
@@ -40,18 +35,8 @@ void GCodePanel::registerEvents() {
   connect(ui->generateBtn, &QAbstractButton::clicked, this, &GCodePanel::generateGcode);
   connect(ui->gcodeText, &QPlainTextEdit::textChanged, this, &GCodePanel::checkGenerateGcode);
 
-  connect(&serial_port, &SerialPort::connected, [=]() {
-      qInfo() << "[SerialPort] Success connect!";
-      ui->playBtn->setText(tr("Play"));
-      if(!ui->gcodeText->toPlainText().isEmpty()) {
-        ui->playBtn->setEnabled(true);
-      }
-  });
-  connect(&serial_port, &SerialPort::disconnected, [=]() {
-      qInfo() << "[SerialPort] Disconnected!";
-      ui->playBtn->setText(tr("Play"));
-      ui->playBtn->setEnabled(false);
-  });
+  connect(main_window_, &MainWindow::activeMachineConnected, this, &GCodePanel::onEnableJobCtrl);
+  connect(main_window_, &MainWindow::activeMachineDisconnected, this, &GCodePanel::onDisableJobCtrl);
 #endif
 }
 
@@ -63,12 +48,25 @@ void GCodePanel::showEvent(QShowEvent *event) {
   emit panelShow(true);
 }
 
+void GCodePanel::onEnableJobCtrl() {
+  enabled_ = true;
+  ui->playBtn->setText(tr("Play"));
+  if(!ui->gcodeText->toPlainText().isEmpty()) {
+    ui->playBtn->setEnabled(true);
+  }
+}
+
+void GCodePanel::onDisableJobCtrl() {
+  enabled_ = false;
+  ui->playBtn->setText(tr("Play"));
+  ui->playBtn->setEnabled(false);
+}
+
 void GCodePanel::checkGenerateGcode() {
   if(ui->gcodeText->toPlainText().isEmpty()) {
     ui->playBtn->setEnabled(false);
-  }
-  else if(serial_port.isOpen()) {
-    ui->playBtn->setEnabled(true);
+  } else {
+    ui->playBtn->setEnabled(true && enabled_);
   }
 }
 
@@ -76,36 +74,36 @@ void GCodePanel::onJobStateChanged(Executor::State new_state) {
   job_state_ = new_state;
   switch (job_state_) {
     case Executor::State::kIdle:
-      ui->pauseBtn->setEnabled(false);
-      ui->playBtn->setEnabled(true);
-      ui->stopBtn->setEnabled(false);
+      ui->pauseBtn->setEnabled(false && enabled_);
+      ui->playBtn->setEnabled(true && enabled_);
+      ui->stopBtn->setEnabled(false && enabled_);
       break;
     case Executor::State::kRunning:
       qInfo() << "Running";
-      ui->pauseBtn->setEnabled(true);
+      ui->pauseBtn->setEnabled(true && enabled_);
       ui->pauseBtn->setText(tr("Pause"));
-      ui->playBtn->setEnabled(false);
-      ui->stopBtn->setEnabled(true);
+      ui->playBtn->setEnabled(false && enabled_);
+      ui->stopBtn->setEnabled(true && enabled_);
       break;
     case Executor::State::kPaused:
       qInfo() << "Paused";
-      ui->pauseBtn->setEnabled(true);
+      ui->pauseBtn->setEnabled(true && enabled_);
       ui->pauseBtn->setText(tr("Resume"));
       break;
     case Executor::State::kCompleted:
       qInfo() << "Finished";
-      ui->pauseBtn->setEnabled(false);
+      ui->pauseBtn->setEnabled(false && enabled_);
       ui->pauseBtn->setText(tr("Pause"));
-      ui->playBtn->setEnabled(true);
-      ui->stopBtn->setEnabled(false);
+      ui->playBtn->setEnabled(true && enabled_);
+      ui->stopBtn->setEnabled(false && enabled_);
       onJobProgressChanged(100);
       break;
     case Executor::State::kStopped:
       qInfo() << "Stopped";
-      ui->pauseBtn->setEnabled(false);
+      ui->pauseBtn->setEnabled(false && enabled_);
       ui->pauseBtn->setText(tr("Pause"));
-      ui->playBtn->setEnabled(true);
-      ui->stopBtn->setEnabled(false);
+      ui->playBtn->setEnabled(true && enabled_);
+      ui->stopBtn->setEnabled(false && enabled_);
       onJobProgressChanged(0);
       break;
     default:

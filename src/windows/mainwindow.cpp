@@ -262,7 +262,7 @@ void MainWindow::actionStart() {
   canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
 
   // TODO: Restriction 1: Reject if active_machine not connected
-  if (!serial_port.isOpen()) {
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
     QMessageBox msgbox;
     msgbox.setText(tr("Serial Port Error"));
     msgbox.setInformativeText(tr("Please connect to serial port first"));
@@ -344,7 +344,7 @@ void MainWindow::actionFrame() {
     return;
   }
   // Make sure port connected
-  if (!serial_port.isOpen()) {
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
     QMessageBox msgbox;
     msgbox.setText(tr("Serial Port Error"));
     msgbox.setInformativeText(tr("Please connect to serial port first"));
@@ -372,7 +372,7 @@ void MainWindow::actionFrame() {
     return;
   }
   // Again, make sure port connected
-  if (!serial_port.isOpen()) {
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
     return;
   }
   // Again, make sure no active job running
@@ -938,7 +938,7 @@ void MainWindow::loadWidgets() {
   // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
-  gcode_panel_ = new GCodePanel(ui->serialPortDock);
+  gcode_panel_ = new GCodePanel(ui->serialPortDock, this);
   font_panel_ = new FontPanel(ui->fontDock, this);
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
@@ -1093,24 +1093,6 @@ void MainWindow::registerEvents() {
       setCursor(cursor);
     }
   });
-
-  connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
-  connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
-  connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
-  connect(gcode_panel_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
-  connect(gcode_panel_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
-  connect(gcode_panel_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
-  connect(gcode_panel_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::syncJobState);
-
-  connect(&serial_port, &SerialPort::connected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
-  });
-  connect(&serial_port, &SerialPort::disconnected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
-  });
-  // TODO: Refactor it when supporting multi-port and multi-machine connection
-  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
@@ -1331,18 +1313,14 @@ void MainWindow::registerEvents() {
     }
   });
 
-  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
-    is_rotary_mode_ = is_rotary_mode;
-    doc_panel_->setRotaryMode(is_rotary_mode_);
-    updateScene();
-  });
-  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
-    is_mirror_mode_ = is_mirror_mode;
-  });
-  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
-    rotary_axis_ = rotary_axis;
-  });
-  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
+  connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
+  connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
+  connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
+  connect(gcode_panel_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(gcode_panel_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(gcode_panel_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(gcode_panel_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::syncJobState);
 
   connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
   connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
@@ -1358,6 +1336,27 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
   connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
+
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    doc_panel_->setRotaryMode(is_rotary_mode_);
+    updateScene();
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    is_mirror_mode_ = is_mirror_mode;
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
+    rotary_axis_ = rotary_axis;
+  });
+  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
+
+  // TODO: Refactor it when supporting multi-port and multi-machine connection
+  //       NOTE: The active_machine might be null at the beginning
+  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
+  connect(&active_machine, &Machine::connected, [=]() {
+    emit MainWindow::activeMachineConnected();
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
+  });
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -1447,6 +1446,7 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("460800");
   baudComboBox_->addItem("921600");
   baudComboBox_->setCurrentIndex(4); // default baudrate 115200
+  
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
@@ -1467,6 +1467,7 @@ void MainWindow::setConnectionToolBar() {
               [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
       );
       if (matchIt == infos.end()) { // Unplugged -> close opened port
+        qInfo() << "Serial port unplugged";
         serial_port.close();
       }
     }
@@ -1481,13 +1482,19 @@ void MainWindow::setConnectionToolBar() {
     QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
-    active_machine.applyMachineParam(currentMachine());
     serial_port.open(port_name, baudrate.toInt());
     if (!serial_port.isOpen()) {
       // Do something?
       return;
     }
-    connect(&active_machine, &Machine::positionCached,this, &MainWindow::positionCached);
+    active_machine.applyMachineParam(currentMachine());
+    connect(&active_machine, &Machine::positionCached,
+            this, &MainWindow::positionCached);
+    connect(&active_machine, &Machine::disconnected, [=]() {
+      emit MainWindow::activeMachineDisconnected();
+      ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+  });
+
   });
   timer->start(4000);
 }
@@ -2263,7 +2270,6 @@ void MainWindow::home() {
   //       Send GrblHomeCmd() instead of gcode cmd for grbl controller
   //       Send XXXHomeCmd() for other controller
   gcode_list.push_back("$H");
-  qInfo() << "Homing!";
   if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();

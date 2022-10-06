@@ -37,6 +37,10 @@ Machine::Machine(QObject *parent)
   connect(job_executor_, &Executor::finished, this, &Machine::syncPosition); // Always sync the realtime position at the end of job
 }
 
+Machine::ConnectionState Machine::getConnectionState() {
+  return connect_state_;
+}
+
 /**
  * @brief Apply (change) machine params to this machine controller
  * 
@@ -446,6 +450,8 @@ void Machine::motionPortConnected() {
   job_executor_->attachMotionController(motion_controller_);
   console_executor_->attachMotionController(motion_controller_);
 
+  emit connected();
+
   machine_setup_executor_->start();
 }
 
@@ -460,9 +466,11 @@ void Machine::motionPortDisonnected() {
 
   // Reset state variables
   custom_origin_ = std::make_tuple<qreal, qreal, qreal>(0, 0, 0);
-
+  
   // ...
   qInfo() << "Machine::motionPortDisonnected()";
+
+  emit disconnected();
 }
 
 void Machine::startJob() {

@@ -68,6 +68,9 @@ signals:
 
   void positionCached(std::tuple<qreal, qreal, qreal>);
 
+  void activeMachineConnected();
+  void activeMachineDisconnected();
+
 public slots:
   void onStartNewJob();
   void onStopJob();
