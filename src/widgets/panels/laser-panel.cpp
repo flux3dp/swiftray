@@ -10,6 +10,10 @@ LaserPanel::LaserPanel(QWidget *parent, MainWindow *main_window) :
     ui->setupUi(this);
     setJobOrigin(job_origin_);
     initializeContainer();
+    qRegisterMetaType<StartFrom>();
+    ui->startFromComboBox->addItem(tr("Absolute Coords"), StartFrom::AbsoluteCoords);
+    ui->startFromComboBox->addItem(tr("User Origin"), StartFrom::UserOrigin);
+    ui->startFromComboBox->addItem(tr("Current Position"), StartFrom::CurrentPosition);
     setLayout();
 }
 
@@ -68,13 +72,13 @@ void LaserPanel::registerEvents() {
         job_origin_ = SE;
         Q_EMIT selectJobOrigin(SE);
     });
-    connect(ui->comboBox, &QComboBox::currentTextChanged, [=](const QString &text) {
-        if(text == "Current Position") {
-            ui->widget->show();
-            start_from_ = CurrentPosition;
-        } else {
+    connect(ui->startFromComboBox, QOverload<int>::of(&QComboBox::activated), [=](int index) {
+        StartFrom start_from = ui->startFromComboBox->itemData(index).value<StartFrom>();
+        start_from_ = start_from;
+        if(start_from_ == AbsoluteCoords) {
             ui->widget->hide();
-            start_from_ = AbsoluteCoords;
+        } else {
+            ui->widget->show();
         }
     });
 }
@@ -138,7 +142,7 @@ void LaserPanel::setLayout()
     ui->previewBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-preview.png" : ":/resources/images/icon-preview.png"));
     ui->frameBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-frame.png" : ":/resources/images/icon-frame.png"));
     ui->startBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png"));
-    ui->comboBox->setCurrentIndex(0);
+    ui->startFromComboBox->setCurrentIndex(0);
     ui->widget->hide();
 }
 

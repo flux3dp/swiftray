@@ -157,18 +157,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox">
-           <item>
-            <property name="text">
-             <string>Absolute Coords</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Current Position</string>
-            </property>
-           </item>
-          </widget>
+          <widget class="QComboBox" name="startFromComboBox"/>
          </item>
         </layout>
        </item>
