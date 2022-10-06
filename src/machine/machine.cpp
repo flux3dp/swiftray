@@ -3,6 +3,7 @@
 #include <QElapsedTimer>
 #include <QtMath>
 #include <QMessageBox>
+#include <tuple>
 
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller_factory.h>
@@ -175,8 +176,8 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
   }
 
   // Transform position according to origin position
-  auto move = std::make_tuple<qreal, qreal, qreal>(x_dist, y_dist, 0);
-  move = canvasToMachineCoordConvert(move, false);
+  auto move = std::make_tuple(x_dist, y_dist, 0);
+  move = canvasToMachineCoordConvert(move, true);
   auto job = QSharedPointer<JoggingRelativeJob>::create(
       std::get<0>(move), 
       std::get<1>(move), 
@@ -231,7 +232,7 @@ bool Machine::createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> target_po
  * @return true 
  * @return false 
  */
-bool createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate) {
+bool Machine::createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> target_pos, qreal feedrate) {
   // Check state
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
