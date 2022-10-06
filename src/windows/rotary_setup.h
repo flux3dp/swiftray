@@ -19,23 +19,23 @@ public:
 
     bool isMirrorMode();
 
-    QString getRotaryAxis();
+    char getRotaryAxis();
 
     void setRotaryMode(bool is_rotary_mode);
 
     void setMirrorMode(bool is_mirror_mode);
 
-    void setRotaryAxis(QString rotary_axis);
+    void setRotaryAxis(char rotary_axis);
 
     double getCircumference();
 
 private:
     Ui::RotarySetup *ui;
-    void testRotaryAxis();
+    void testRotary();
 
     bool is_rotary_mode_ = false;
     bool is_mirror_mode_ = false;
-    QString rotary_axis_ = "Y";
+    char rotary_axis_ = 'Y';
     double mm_per_rotation_;
     double roller_diameter_;
     double object_diameter_;
@@ -44,7 +44,8 @@ private:
 signals:
   void rotaryModeChanged(bool is_rotary_mode);
   void mirrorModeChanged(bool is_mirror_mode);
-  void rotaryAxisChanged(QString axis);
+  void rotaryAxisChanged(char axis);
+  void actionTestRotary(QRectF bbox, char rotary_axis, qreal feedrate);
 };
 
 #endif // ROTARY_SETUP_H

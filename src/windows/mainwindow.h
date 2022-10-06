@@ -84,7 +84,7 @@ public slots:
   void moveToCorner(int corner_id, qreal feedrate);
   void moveToCustomOrigin();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
-
+  void testRotary(QRectF bbox, char rotary_axis, qreal feedrate);
 
 private slots:
 
@@ -168,7 +168,7 @@ private:
   bool is_upload_enable_ = false;
   bool is_rotary_mode_ = false;
   bool is_mirror_mode_ = false;
-  QString rotary_axis_ = "Y";
+  char rotary_axis_ = 'Y';
   QSize machine_range_;
   double current_x_ = 0, current_y_ = 0;//unit??
 #ifdef ENABLE_SENTRY

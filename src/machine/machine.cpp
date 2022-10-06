@@ -10,6 +10,7 @@
 #include <executor/machine_job/gcode_job.h>
 #include <executor/machine_job/framing_job.h>
 #include <executor/machine_job/jogging_job.h>
+#include <executor/machine_job/rotary_test_job.h>
 #include <executor/operation_cmd/grbl_cmd.h>
 
 Machine::Machine(QObject *parent)
@@ -149,6 +150,33 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   }
 
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
+  job->setMotionController(motion_controller_);
+  if (!job_executor_) {
+    return false;
+  }
+  if (!job_executor_->setNewJob(job)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @param bbox 
+ * @param rotary_axis 
+ * @param feedrate 
+ * @return true 
+ * @return false 
+ */
+bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+
+  auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;

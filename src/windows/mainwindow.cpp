@@ -1330,6 +1330,7 @@ void MainWindow::registerEvents() {
       ui->toolBarVector->hide();
     }
   });
+
   connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
     doc_panel_->setRotaryMode(is_rotary_mode_);
@@ -1338,9 +1339,11 @@ void MainWindow::registerEvents() {
   connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
     is_mirror_mode_ = is_mirror_mode;
   });
-  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](QString rotary_axis) {
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
     rotary_axis_ = rotary_axis;
   });
+  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
+
   connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
   connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
@@ -2284,7 +2287,6 @@ void MainWindow::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos,
   }
 }
 
-
 void MainWindow::moveToEdge(int edge_id, qreal feedrate) {
   if (true == active_machine.createJoggingEdgeJob(edge_id, feedrate)) 
   {
@@ -2314,6 +2316,14 @@ void MainWindow::moveToCustomOrigin() {
     result == active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), 2400);
   }
   if (result == true)
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate) {
+  if (true == active_machine.createRotaryTestJob(bbox, rotary_axis, feedrate)) 
   {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
