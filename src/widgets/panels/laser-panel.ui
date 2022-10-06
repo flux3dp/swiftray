@@ -139,7 +139,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="toOriginBtn">
+          <widget class="QPushButton" name="moveToOriginBtn">
            <property name="text">
             <string>Go to Origin</string>
            </property>

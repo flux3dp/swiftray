@@ -1345,6 +1345,7 @@ void MainWindow::registerEvents() {
   connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
   connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
+  connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
 
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
   connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
@@ -2302,4 +2303,12 @@ void MainWindow::moveToCorner(int corner_id, qreal feedrate) {
 
 void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) {
   active_machine.setCustomOrigin(custom_origin);
+}
+
+void MainWindow::moveToCustomOrigin() {
+  if (true == active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), 2400)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
 }

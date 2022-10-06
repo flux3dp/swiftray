@@ -42,6 +42,7 @@ signals:
   void actionPreview();
   void actionStart();
   void actionHome();
+  void actionMoveToOrigin();
   void selectJobOrigin(JobOrigin position);
   void switchStartFrom(StartFrom start_from);
   void panelShow(bool is_show);

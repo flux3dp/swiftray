@@ -8,7 +8,6 @@ LaserPanel::LaserPanel(QWidget *parent, MainWindow *main_window) :
     main_window_(main_window)
 {
     ui->setupUi(this);
-    ui->toOriginBtn->hide();
     setJobOrigin(job_origin_);
     initializeContainer();
     setLayout();
@@ -29,6 +28,9 @@ void LaserPanel::registerEvents() {
     });
     connect(ui->homeBtn, &QAbstractButton::clicked, [=]() {
         Q_EMIT actionHome();
+    });
+    connect(ui->moveToOriginBtn, &QAbstractButton::clicked, [=]() {
+        Q_EMIT actionMoveToOrigin();
     });
     connect(ui->NWRadioButton, &QAbstractButton::clicked, [=](bool checked) {
         job_origin_ = NW;
