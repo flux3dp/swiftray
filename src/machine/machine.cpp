@@ -174,7 +174,14 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
     return false;
   }
 
-  auto job = QSharedPointer<JoggingRelativeJob>::create(x_dist, y_dist, feedrate);
+  // Transform position according to origin position
+  auto move = std::make_tuple<qreal, qreal, qreal>(x_dist, y_dist, 0);
+  move = canvasToMachineCoordConvert(move, false);
+  auto job = QSharedPointer<JoggingRelativeJob>::create(
+      std::get<0>(move), 
+      std::get<1>(move), 
+      feedrate
+  );
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;
