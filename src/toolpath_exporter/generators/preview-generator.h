@@ -169,6 +169,12 @@ class PreviewGenerator : public BaseGenerator {
     paths_mutex_.unlock();
   }
 
+  void syncProgramFlow() override { 
+  }
+
+  void finishProgramFlow() override {
+  }
+
   const QList<Path> &paths() const {
     return paths_;
   }

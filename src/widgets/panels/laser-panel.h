@@ -28,8 +28,11 @@ public:
     };
     enum StartFrom{
         AbsoluteCoords = 0,
+        UserOrigin,
         CurrentPosition
     };
+    Q_ENUM(StartFrom)
+
     explicit LaserPanel(QWidget *parent, MainWindow *main_window_);
     ~LaserPanel();
     void setJobOrigin(JobOrigin position);
@@ -42,6 +45,7 @@ signals:
   void actionPreview();
   void actionStart();
   void actionHome();
+  void actionMoveToOrigin();
   void selectJobOrigin(JobOrigin position);
   void switchStartFrom(StartFrom start_from);
   void panelShow(bool is_show);

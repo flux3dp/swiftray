@@ -1,13 +1,12 @@
 #pragma once
 
 #include <QDialog>
-#include <toolpath_exporter/generators/preview-generator.h>
-#include <widgets/base-container.h>
-
 #include <QGraphicsView>
 #include <QGestureEvent>
-#include <QTime>
 
+#include <toolpath_exporter/generators/preview-generator.h>
+#include <widgets/base-container.h>
+#include <common/timestamp.h>
 
 namespace Ui {
   class PreviewWindow;
@@ -27,7 +26,7 @@ public:
 
   void setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_path);
 
-  void setRequiredTime(const QTime &required_time);
+  void setRequiredTime(const Timestamp &required_time);
 
 private:
 

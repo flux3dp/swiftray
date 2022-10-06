@@ -75,6 +75,12 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     return false;
   }
 
+  gen_->finishProgramFlow();
+  
+  if (canceled) {
+    return false;
+  }
+
   // Post cmds
   gen_->home();
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";

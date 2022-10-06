@@ -159,6 +159,23 @@ public:
     x_ = y_ = 0;
   }
 
+  /**
+   * @brief Wait until all motions in the buffer to finish
+   * 
+   */
+  void syncProgramFlow() override { 
+    str_stream_ << "M0" << std::endl;
+  }
+
+  /**
+   * @brief Wait until all motions in the buffer to finish 
+   *        and then clear state: turn off laser, turn off coolant, ...
+   * 
+   */
+  void finishProgramFlow() override {
+    str_stream_ << "M2" << std::endl;
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;

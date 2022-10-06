@@ -98,6 +98,12 @@ public:
   void home() override {
   }
 
+  void syncProgramFlow() override { 
+  }
+
+  void finishProgramFlow() override {
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;
@@ -114,14 +120,19 @@ public:
     str_stream_ << "G1F6000" << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1S20" << std::endl;
-    str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1S0" << std::endl;
-    str_stream_ << "M5" << std::endl;
+    if (x_min_ == x_max_ && x_min_ == -1) {
+      str_stream_ << "G1S20" << std::endl;
+      str_stream_ << "G1S0" << std::endl;
+    } else {
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1S20" << std::endl;
+      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1S0" << std::endl;
+    }
+    str_stream_ << "M2" << std::endl; // // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
     return str_stream_.str();
   };
 

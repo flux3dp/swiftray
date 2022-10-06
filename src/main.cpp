@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     case 1:
       locale = "zh-Hant-TW";
       break;
+    case 2:
+      locale = "ja-JP";
+      break;
     default:
       locale = "en-US";
       break;
@@ -108,5 +111,6 @@ int main(int argc, char *argv[]) {
   // Load MainWindow
   MainWindow win;
   win.show();
+
   return app.exec();
 }

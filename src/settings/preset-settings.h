@@ -9,6 +9,10 @@
 
 // TODO (Redesign logic to PresetSettings -> Preset -> Param)
 
+/**
+ * @brief Predefined working params (power & speed) for various laser head and materials
+ * 
+ */
 class PresetSettings : public QObject
 {
     Q_OBJECT

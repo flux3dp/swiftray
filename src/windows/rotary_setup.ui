@@ -161,12 +161,15 @@
      <item>
       <layout class="QGridLayout" name="gridLayout">
        <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="rollerSpinBox">
+        <widget class="QDoubleSpinBox" name="rollerDiameterSpinBox">
          <property name="suffix">
           <string> mm</string>
          </property>
          <property name="decimals">
           <number>1</number>
+         </property>
+         <property name="maximum">
+          <double>999999.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>
@@ -204,12 +207,15 @@
         </spacer>
        </item>
        <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="rotationSpinBox">
+        <widget class="QDoubleSpinBox" name="mmPerRotationSpinBox">
          <property name="suffix">
           <string> mm</string>
          </property>
          <property name="decimals">
           <number>1</number>
+         </property>
+         <property name="maximum">
+          <double>999999.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>
@@ -232,7 +238,7 @@
           <number>1</number>
          </property>
          <property name="maximum">
-          <double>1000.000000000000000</double>
+          <double>999999.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>
@@ -262,7 +268,7 @@
           <number>1</number>
          </property>
          <property name="maximum">
-          <double>1000.000000000000000</double>
+          <double>999999.000000000000000</double>
          </property>
          <property name="singleStep">
           <double>0.100000000000000</double>

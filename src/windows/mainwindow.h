@@ -19,15 +19,15 @@
 #include <widgets/panels/laser-panel.h>
 #include <windows/machine-manager.h>
 #include <windows/preferences-window.h>
-#include <windows/gcode-player.h>
+#include <windows/gcode-panel.h>
 #include <windows/welcome-dialog.h>
 #include <canvas/canvas.h>
 #include <widgets/base-container.h>
 
 #include <windows/job-dashboard-dialog.h>
-#include <motion_controller_job/grbl-job.h>
 #include <windows/about-window.h>
 #include <windows/privacy_window.h>
+#include <executor/executor.h>
 #include <windows/rotary_setup.h>
 
 #ifdef ENABLE_SENTRY
@@ -66,11 +66,28 @@ signals:
 
   void toolbarTransformChanged(double x, double y, double r, double w, double h);
 
+  void positionCached(std::tuple<qreal, qreal, qreal>);
+
+  void activeMachineConnected();
+  void activeMachineDisconnected();
+
 public slots:
   void onStartNewJob();
   void onStopJob();
   void onPauseJob();
   void onResumeJob();
+
+  // Launch simple job (e.g. from jogging panel)
+  void laser(qreal power);
+  void laserPulse(qreal power);
+  void home();
+  void moveRelatively(qreal x, qreal y, qreal feedrate);
+  void moveAbsolutely(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
+  void moveToEdge(int edge_id, qreal feedrate);
+  void moveToCorner(int corner_id, qreal feedrate);
+  void moveToCustomOrigin();
+  void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
+  void testRotary(QRectF bbox, char rotary_axis, qreal feedrate);
 
 private slots:
 
@@ -128,7 +145,7 @@ private slots:
 
   void genPreviewWindow();
 
-  void setJobStatus(BaseJob::Status status);
+  void syncJobState(Executor::State state);
 
   void jobDashboardFinish(int result);
 
@@ -154,7 +171,7 @@ private:
   bool is_upload_enable_ = false;
   bool is_rotary_mode_ = false;
   bool is_mirror_mode_ = false;
-  QString rotary_axis_ = "Y";
+  char rotary_axis_ = 'Y';
   QSize machine_range_;
   double current_x_ = 0, current_y_ = 0;//unit??
 #ifdef ENABLE_SENTRY
@@ -183,7 +200,7 @@ private:
   QMenu *popModeMenu_;
 
   TransformPanel *transform_panel_;
-  GCodePlayer *gcode_player_;
+  GCodePanel *gcode_panel_;
   JobDashboardDialog *job_dashboard_;
   DocPanel *doc_panel_;
   FontPanel *font_panel_;
@@ -199,7 +216,6 @@ private:
   RotarySetup *rotary_setup_;
 
 #ifndef Q_OS_IOS
-    QList<GrblJob *> jobs_;
 #endif
 
   void newFile();
@@ -208,7 +224,6 @@ private:
   void exportGCodeFile();
   void importGCodeFile();
   bool generateGcode();
-  void generateJob();
   bool handleUnsavedChange();
   void actionStart();
   void actionFrame();

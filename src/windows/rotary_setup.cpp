@@ -26,7 +26,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
     else {
         ui->mirrorCheckBox->setCheckState(Qt::Unchecked);
     }
-    switch (rotary_axis_.at(0).unicode()) {
+    switch (rotary_axis_) {
         case 'Y':
             ui->YRadioButton->setChecked(true);
             break;
@@ -37,7 +37,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
             ui->ARadioButton->setChecked(true);
             break;
     }
-    connect(ui->testBtn, &QAbstractButton::clicked, this, &RotarySetup::testRotaryAxis);
+    connect(ui->testBtn, &QAbstractButton::clicked, this, &RotarySetup::testRotary);
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_rotary_mode_ = state;
         if(is_rotary_mode_) {
@@ -53,15 +53,15 @@ RotarySetup::RotarySetup(QWidget *parent) :
         Q_EMIT mirrorModeChanged(is_mirror_mode_);
     });
     connect(ui->YRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = "Y";
+        rotary_axis_ = 'Y';
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
     connect(ui->ZRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = "Z";
+        rotary_axis_ = 'Z';
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
     connect(ui->ARadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = "A";
+        rotary_axis_ = 'A';
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
@@ -95,7 +95,7 @@ bool RotarySetup::isMirrorMode()
     return is_mirror_mode_;
 }
 
-QString RotarySetup::getRotaryAxis()
+char RotarySetup::getRotaryAxis()
 {
     return rotary_axis_;
 }
@@ -118,9 +118,9 @@ void RotarySetup::setMirrorMode(bool is_mirror_mode)
     is_mirror_mode_ = is_mirror_mode;
 }
 
-void RotarySetup::setRotaryAxis(QString rotary_axis)
+void RotarySetup::setRotaryAxis(char rotary_axis)
 {
-    switch (rotary_axis.at(0).unicode()) {
+    switch (rotary_axis) {
         case 'Y':
         case 'Z':
         case 'A':
@@ -137,6 +137,14 @@ double RotarySetup::getCircumference()
     return circumference_;
 }
 
-void RotarySetup::testRotaryAxis()
+/**
+ * @brief Go through a rectangular path with its height aligned with rotary axis
+ * 
+ */
+void RotarySetup::testRotary()
 {
+  QRectF bbox;
+  bbox.setWidth(20); // fixed: 20 mm
+  bbox.setHeight(ui->mmPerRotationSpinBox->value());
+  emit actionTestRotary(bbox, rotary_axis_, 2400);
 }
