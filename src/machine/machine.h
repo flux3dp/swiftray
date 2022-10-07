@@ -44,6 +44,7 @@ public:
   void syncPosition();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   std::tuple<qreal, qreal, qreal> getCustomOrigin();
+  std::tuple<qreal, qreal, qreal> getCurrentPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }

@@ -416,6 +416,10 @@ std::tuple<qreal, qreal, qreal> Machine::getCustomOrigin() {
   return custom_origin_;
 }
 
+std::tuple<qreal, qreal, qreal> Machine::getCurrentPosition() {
+  return std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_);
+}
+
 void Machine::motionPortConnected() {
   qInfo() << "Machine::motionPortConnected()";
   // TODO: Use general Port class instead of SerialPort class

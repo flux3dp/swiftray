@@ -173,7 +173,6 @@ private:
   bool is_mirror_mode_ = false;
   char rotary_axis_ = 'Y';
   QSize machine_range_;
-  double current_x_ = 0, current_y_ = 0;//unit??
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
 #endif
