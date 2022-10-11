@@ -284,16 +284,16 @@
     </message>
     <message>
         <location filename="../src/windows/gcode-panel.ui" line="221"/>
-        <location filename="../src/windows/gcode-panel.cpp" line="45"/>
-        <location filename="../src/windows/gcode-panel.cpp" line="52"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="53"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="61"/>
         <source>Play</source>
         <translation type="unfinished">開始</translation>
     </message>
     <message>
         <location filename="../src/windows/gcode-panel.ui" line="237"/>
-        <location filename="../src/windows/gcode-panel.cpp" line="93"/>
-        <location filename="../src/windows/gcode-panel.cpp" line="105"/>
-        <location filename="../src/windows/gcode-panel.cpp" line="113"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="84"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="96"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="104"/>
         <source>Pause</source>
         <translation type="unfinished">一時停止</translation>
     </message>
@@ -303,7 +303,7 @@
         <translation type="unfinished">停止</translation>
     </message>
     <message>
-        <location filename="../src/windows/gcode-panel.cpp" line="100"/>
+        <location filename="../src/windows/gcode-panel.cpp" line="91"/>
         <source>Resume</source>
         <translation type="unfinished">停止</translation>
     </message>
@@ -382,32 +382,48 @@
         <translation>アラーム: </translation>
     </message>
     <message>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="205"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="197"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="199"/>
+        <source>NOTICE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="197"/>
+        <source>Machine is paused by drop or collision.</source>
+        <translation type="unfinished">落下や衝撃検知により一時停止になりました。</translation>
+    </message>
+    <message>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="199"/>
+        <source>Machine is paused by tilt.</source>
+        <translation type="unfinished">傾き検知により一時停止になりました。</translation>
+    </message>
+    <message>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="210"/>
         <source>Hard limit</source>
         <translation type="unfinished">ハードリミット</translation>
     </message>
     <message>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="207"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="212"/>
         <source>Soft limit</source>
         <translation type="unfinished">ソフトウェアリミット</translation>
     </message>
     <message>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="209"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="214"/>
         <source>Abort during cycle</source>
         <translation type="unfinished">動作中のリセット</translation>
     </message>
     <message>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="211"/>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="213"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="216"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="218"/>
         <source>Probe fail</source>
         <translation type="unfinished">プローブに失敗しました</translation>
     </message>
     <message>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="215"/>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="217"/>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="219"/>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="221"/>
-        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="223"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="220"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="222"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="224"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="226"/>
+        <location filename="../src/periph/motion_controller/grbl_motion_controller.cpp" line="228"/>
         <source>Homing fail</source>
         <translation type="unfinished">ホーミングに失敗しました</translation>
     </message>
@@ -627,6 +643,19 @@
     </message>
 </context>
 <context>
+    <name>JobExecutor</name>
+    <message>
+        <location filename="../src/executor/job_executor.cpp" line="69"/>
+        <source>Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/executor/job_executor.cpp" line="70"/>
+        <source>Serial port disconnected</source>
+        <translation type="unfinished">ポートが切断されました</translation>
+    </message>
+</context>
+<context>
     <name>JoggingPanel</name>
     <message>
         <location filename="../src/widgets/panels/jogging-panel.ui" line="26"/>
@@ -648,13 +677,13 @@
         <location filename="../src/widgets/panels/jogging-panel.ui" line="118"/>
         <location filename="../src/widgets/panels/jogging-panel.ui" line="169"/>
         <location filename="../src/widgets/panels/jogging-panel.ui" line="232"/>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="274"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="277"/>
         <source> mm</source>
         <translation type="unfinished"> mm</translation>
     </message>
     <message>
         <location filename="../src/widgets/panels/jogging-panel.ui" line="147"/>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="258"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="261"/>
         <source>Y</source>
         <translation type="unfinished">Y</translation>
     </message>
@@ -669,38 +698,38 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="286"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="292"/>
         <source>Go</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="295"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="301"/>
         <source>Set Origin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="302"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="308"/>
         <source>Clear Origin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="329"/>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="371"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="335"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="377"/>
         <source> %</source>
         <translation type="unfinished"> %</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="345"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="351"/>
         <source>Laser</source>
         <translation type="unfinished">レーザー</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="387"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="396"/>
         <source>Laser Pulse</source>
         <translation type="unfinished">レーザーパルス</translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/jogging-panel.ui" line="394"/>
+        <location filename="../src/widgets/panels/jogging-panel.ui" line="403"/>
         <source>Laser Power:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -728,17 +757,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/laser-panel.ui" line="163"/>
+        <location filename="../src/widgets/panels/laser-panel.cpp" line="14"/>
         <source>Absolute Coords</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/laser-panel.ui" line="168"/>
+        <location filename="../src/widgets/panels/laser-panel.cpp" line="15"/>
+        <source>User Origin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/widgets/panels/laser-panel.cpp" line="16"/>
         <source>Current Position</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/widgets/panels/laser-panel.ui" line="187"/>
+        <location filename="../src/widgets/panels/laser-panel.ui" line="176"/>
         <source>Job Origin:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1240,7 +1274,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="837"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1387"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1457"/>
         <source>Cut</source>
         <translation type="unfinished">カット</translation>
     </message>
@@ -1251,7 +1285,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="845"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1388"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1458"/>
         <source>Copy</source>
         <translation type="unfinished">コピー</translation>
     </message>
@@ -1262,7 +1296,7 @@
     </message>
     <message>
         <location filename="../src/windows/mainwindow.ui" line="853"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1389"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1459"/>
         <source>Paste</source>
         <translation type="unfinished">ペースト</translation>
     </message>
@@ -1657,8 +1691,8 @@
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="91"/>
         <location filename="../src/windows/mainwindow.cpp" line="92"/>
-        <location filename="../src/windows/mainwindow.cpp" line="495"/>
-        <location filename="../src/windows/mainwindow.cpp" line="496"/>
+        <location filename="../src/windows/mainwindow.cpp" line="553"/>
+        <location filename="../src/windows/mainwindow.cpp" line="554"/>
         <source>Untitled</source>
         <translation type="unfinished">Untitled</translation>
     </message>
@@ -1677,12 +1711,12 @@ Do you want to save your changes?</source>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="234"/>
         <location filename="../src/windows/mainwindow.cpp" line="303"/>
-        <location filename="../src/windows/mainwindow.cpp" line="736"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2019"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2058"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2080"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2114"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2128"/>
+        <location filename="../src/windows/mainwindow.cpp" line="794"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2097"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2136"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2158"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2192"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2206"/>
         <source>Cancel</source>
         <translation type="unfinished">キャンセル</translation>
     </message>
@@ -1700,157 +1734,157 @@ Do you want to save your changes?</source>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="302"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2079"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2113"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2127"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2157"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2191"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2205"/>
         <source>Estimating task time...</source>
         <translation type="unfinished">予想加工時間...</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="516"/>
+        <location filename="../src/windows/mainwindow.cpp" line="574"/>
         <source>Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)</source>
         <translation type="unfinished">Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="641"/>
+        <location filename="../src/windows/mainwindow.cpp" line="699"/>
         <source>Scene File (*.bb)</source>
         <translation type="unfinished">Scene File (*.bb)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="643"/>
+        <location filename="../src/windows/mainwindow.cpp" line="701"/>
         <source>Save Image</source>
         <translation type="unfinished">画像を保存</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="694"/>
+        <location filename="../src/windows/mainwindow.cpp" line="752"/>
         <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</source>
         <translation type="unfinished">Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="718"/>
+        <location filename="../src/windows/mainwindow.cpp" line="776"/>
         <source>Image Files (*.png *.jpg *.jpeg *.bmp)</source>
         <translation type="unfinished">Image Files (*.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="735"/>
-        <location filename="../src/windows/mainwindow.cpp" line="2018"/>
+        <location filename="../src/windows/mainwindow.cpp" line="793"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2096"/>
         <source>Generating GCode...</source>
         <translation type="unfinished">GCode作成中...</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="754"/>
+        <location filename="../src/windows/mainwindow.cpp" line="812"/>
         <source>GCode Files (*.gcode)</source>
         <translation type="unfinished">GCode Files (*.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="756"/>
+        <location filename="../src/windows/mainwindow.cpp" line="814"/>
         <source>Save GCode</source>
         <translation type="unfinished">GCodeを保存</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="780"/>
+        <location filename="../src/windows/mainwindow.cpp" line="838"/>
         <source>GCdoe Files (*.gc, *.gcode)</source>
         <translation type="unfinished">GCdoe Files (*.gc, *.gcode)</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="924"/>
+        <location filename="../src/windows/mainwindow.cpp" line="982"/>
         <source>Rotary Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="929"/>
+        <location filename="../src/windows/mainwindow.cpp" line="987"/>
         <source>XY Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1153"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1193"/>
         <source>Alarm</source>
         <translation type="unfinished">アラーム</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1154"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1194"/>
         <source>Please confirm that you are using the Lazervida machine.</source>
         <translation type="unfinished">Lazervidaを利用されていますか。</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1390"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1460"/>
         <source>Paste in Place</source>
         <translation type="unfinished">ペースト</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1391"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1461"/>
         <source>Duplicate</source>
         <translation type="unfinished">複製</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1393"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1463"/>
         <source>Delete</source>
         <translation type="unfinished">削除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1395"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1465"/>
         <source>group</source>
         <translation type="unfinished">グループ</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1396"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1466"/>
         <source>ungroup</source>
         <translation type="unfinished">グループ解除</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1512"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1590"/>
         <source>Size</source>
         <translation type="unfinished">サイズ</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1513"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1591"/>
         <source>Line Height</source>
         <translation type="unfinished">行高</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1514"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1592"/>
         <source>Letter Spacing</source>
         <translation type="unfinished">文字間</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1640"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1646"/>
-        <location filename="../src/windows/mainwindow.cpp" line="1667"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1718"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1724"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1745"/>
         <source> </source>
         <translation type="unfinished"> </translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1699"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1777"/>
         <source>Rotation</source>
         <translation type="unfinished">回転</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1700"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1778"/>
         <source>Width</source>
         <translation type="unfinished">幅</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1701"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1779"/>
         <source>Height</source>
         <translation type="unfinished">高さ</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="1919"/>
+        <location filename="../src/windows/mainwindow.cpp" line="1997"/>
         <source>Fit to Screen</source>
         <translation type="unfinished">画面に合わせる</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="2035"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2113"/>
         <source>Warning</source>
         <translation type="unfinished">警告</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="2036"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2114"/>
         <source>Some items aren&apos;t placed fully inside the working area.</source>
         <translation type="unfinished">いくつかのデータが加工エリアから出ています。</translation>
     </message>
     <message>
-        <location filename="../src/windows/mainwindow.cpp" line="2057"/>
+        <location filename="../src/windows/mainwindow.cpp" line="2135"/>
         <source>Exporting toolpath...</source>
         <translation type="unfinished">ツールパスをエクスポート中...</translation>
     </message>
@@ -2205,65 +2239,75 @@ to the development team when errors occur?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="80"/>
+        <location filename="../src/windows/rotary_setup.ui" line="93"/>
         <source>Axis:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="87"/>
+        <location filename="../src/windows/rotary_setup.ui" line="100"/>
         <source>Y</source>
         <translation type="unfinished">Y</translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="97"/>
+        <location filename="../src/windows/rotary_setup.ui" line="110"/>
         <source>Z</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="104"/>
+        <location filename="../src/windows/rotary_setup.ui" line="117"/>
         <source>A</source>
         <translation type="unfinished">A</translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="133"/>
+        <location filename="../src/windows/rotary_setup.ui" line="146"/>
         <source>Mirror</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="155"/>
+        <location filename="../src/windows/rotary_setup.ui" line="168"/>
         <source>Test</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="166"/>
-        <location filename="../src/windows/rotary_setup.ui" line="209"/>
-        <location filename="../src/windows/rotary_setup.ui" line="229"/>
-        <location filename="../src/windows/rotary_setup.ui" line="259"/>
+        <location filename="../src/windows/rotary_setup.ui" line="199"/>
+        <location filename="../src/windows/rotary_setup.ui" line="215"/>
+        <location filename="../src/windows/rotary_setup.ui" line="241"/>
+        <location filename="../src/windows/rotary_setup.ui" line="285"/>
         <source> mm</source>
         <translation type="unfinished"> mm</translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="179"/>
+        <location filename="../src/windows/rotary_setup.ui" line="266"/>
+        <source>Roller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/windows/rotary_setup.ui" line="276"/>
+        <source>Object</source>
+        <translation type="unfinished">オブジェクト</translation>
+    </message>
+    <message>
+        <location filename="../src/windows/rotary_setup.ui" line="308"/>
         <source>Object Diameter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="186"/>
+        <location filename="../src/windows/rotary_setup.ui" line="231"/>
         <source>Settings:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="222"/>
+        <location filename="../src/windows/rotary_setup.ui" line="179"/>
         <source>Circumference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="245"/>
+        <location filename="../src/windows/rotary_setup.ui" line="257"/>
         <source>mm per Rotation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/windows/rotary_setup.ui" line="252"/>
+        <location filename="../src/windows/rotary_setup.ui" line="301"/>
         <source>Roller Diameter</source>
         <translation type="unfinished"></translation>
     </message>

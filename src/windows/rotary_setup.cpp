@@ -9,9 +9,19 @@ RotarySetup::RotarySetup(QWidget *parent) :
     ui(new Ui::RotarySetup)
 {
     ui->setupUi(this);
+    axis_group_ = new QButtonGroup(this);
+    rotation_group_ = new QButtonGroup(this);
     ui->label->hide();
     ui->deviceComboBox->hide();
     ui->mirrorCheckBox->hide();
+    ui->label_2->hide();
+    ui->typeList->hide();
+    axis_group_->addButton(ui->YRadioButton);
+    axis_group_->addButton(ui->ZRadioButton);
+    axis_group_->addButton(ui->ARadioButton);
+    rotation_group_->addButton(ui->rollerRadioButton);
+    rotation_group_->addButton(ui->objectRadioButton);
+    ui->rollerRadioButton->setChecked(true);
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         ui->testBtn->setEnabled(true);
@@ -64,19 +74,44 @@ RotarySetup::RotarySetup(QWidget *parent) :
         rotary_axis_ = 'A';
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
+    connect(ui->rollerRadioButton, &QAbstractButton::clicked, [=](bool checked){
+        if(checked) {
+            ui->rollerDiameterSpinBox->setEnabled(true);
+        }
+        else {
+            ui->rollerDiameterSpinBox->setEnabled(false);
+        }
+    });
+    connect(ui->objectRadioButton, &QAbstractButton::clicked, [=](bool checked){
+        if(checked) {
+            ui->rollerDiameterSpinBox->setEnabled(false);
+        }
+        else {
+            ui->rollerDiameterSpinBox->setEnabled(true);
+        }
+    });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
         circumference_ = circumference;
-        object_diameter_ = circumference_ / M_PI;
+        double object_diameter = circumference_ / M_PI;
         ui->ObjectSpinBox->blockSignals(true);
-        ui->ObjectSpinBox->setValue(object_diameter_);
+        ui->ObjectSpinBox->setValue(object_diameter);
         ui->ObjectSpinBox->blockSignals(false);
+        updateRotaryScale();
+        updateCircumference(circumference_);
     });
     connect(ui->ObjectSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double diameter){
-        object_diameter_ = diameter;
-        circumference_ = object_diameter_ * M_PI;
+        circumference_ = diameter * M_PI;
         ui->CircumSpinBox->blockSignals(true);
         ui->CircumSpinBox->setValue(circumference_);
         ui->CircumSpinBox->blockSignals(false);
+        updateRotaryScale();
+        updateCircumference(circumference_);
+    });
+    connect(ui->mmPerRotationSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double move){
+        updateRotaryScale();
+    });
+    connect(ui->rollerDiameterSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double diameter) {
+        updateRotaryScale();
     });
 }
 
@@ -137,6 +172,11 @@ double RotarySetup::getCircumference()
     return circumference_;
 }
 
+double RotarySetup::getRotaryScale()
+{
+    return rotary_scale_;
+}
+
 /**
  * @brief Go through a rectangular path with its height aligned with rotary axis
  * 
@@ -147,4 +187,25 @@ void RotarySetup::testRotary()
   bbox.setWidth(20); // fixed: 20 mm
   bbox.setHeight(ui->mmPerRotationSpinBox->value());
   emit actionTestRotary(bbox, rotary_axis_, 2400);
+}
+
+void RotarySetup::updateRotaryScale()
+{
+    if(ui->rollerRadioButton->isChecked()) {
+        double circumference = ui->rollerDiameterSpinBox->value() * M_PI;
+        if(circumference > 0) {
+            rotary_scale_ = ui->mmPerRotationSpinBox->value() / circumference;
+        }
+        else {
+            rotary_scale_ = 0;
+        }
+    }
+    else {
+        if(circumference_ > 0) {
+            rotary_scale_ = ui->mmPerRotationSpinBox->value() / circumference_;
+        }
+        else {
+            rotary_scale_ = 0;
+        }
+    }
 }

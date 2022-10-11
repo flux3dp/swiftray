@@ -441,40 +441,40 @@ QTransform MainWindow::calculateTranslate() {
         int job_origin = laser_panel_->getJobOrigin();
         switch(job_origin) {
           case LaserPanel::JobOrigin::NW:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::N:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition())- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10- x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::NE:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::E:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           case LaserPanel::JobOrigin::SE:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::S:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::SW:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::W:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           case LaserPanel::JobOrigin::CENTER:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition())- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           default:
             break;
@@ -486,40 +486,40 @@ QTransform MainWindow::calculateTranslate() {
         int job_origin = laser_panel_->getJobOrigin();
         switch(job_origin) {
           case LaserPanel::JobOrigin::NW:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::N:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin())- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10- x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::NE:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
             break;
           case LaserPanel::JobOrigin::E:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           case LaserPanel::JobOrigin::SE:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::S:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::SW:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min));
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
             break;
           case LaserPanel::JobOrigin::W:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           case LaserPanel::JobOrigin::CENTER:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin())- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) - y_min - (y_max-y_min)/2.0);
+            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min)/2.0, 
+              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
             break;
           default:
             break;
@@ -528,6 +528,10 @@ QTransform MainWindow::calculateTranslate() {
       break;
     default:
       break;
+  }
+  if(is_rotary_mode_) {
+    QTransform scale_transform = QTransform::fromScale(1, rotary_setup_->getRotaryScale());
+    move_translate *= scale_transform;
   }
   return move_translate;
 }
@@ -1403,6 +1407,9 @@ void MainWindow::registerEvents() {
     rotary_axis_ = rotary_axis;
   });
   connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
+  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
+    updateScene();
+  });
 
   // TODO: Refactor it when supporting multi-port and multi-machine connection
   //       NOTE: The active_machine might be null at the beginning
