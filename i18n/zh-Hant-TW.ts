@@ -236,32 +236,32 @@
     <message>
         <location filename="../src/executor/executor.cpp" line="27"/>
         <source>Ready</source>
-        <translation type="unfinished">準備中</translation>
+        <translation>閒置中</translation>
     </message>
     <message>
         <location filename="../src/executor/executor.cpp" line="29"/>
         <source>Running</source>
-        <translation type="unfinished">工作中</translation>
+        <translation>工作中</translation>
     </message>
     <message>
         <location filename="../src/executor/executor.cpp" line="31"/>
         <source>Paused</source>
-        <translation type="unfinished">暫停</translation>
+        <translation>暫停</translation>
     </message>
     <message>
         <location filename="../src/executor/executor.cpp" line="33"/>
         <source>Finished</source>
-        <translation type="unfinished">完成</translation>
+        <translation>完成</translation>
     </message>
     <message>
         <location filename="../src/executor/executor.cpp" line="35"/>
         <source>Stopped</source>
-        <translation type="unfinished">停止</translation>
+        <translation>停止</translation>
     </message>
     <message>
         <location filename="../src/executor/executor.cpp" line="37"/>
         <source>Undefined State</source>
-        <translation type="unfinished"></translation>
+        <translation>未定義狀態</translation>
     </message>
 </context>
 <context>
@@ -2415,19 +2415,21 @@ Do you want to save your changes?</source>
     <message>
         <location filename="../src/windows/privacy_window.ui" line="14"/>
         <source>Privacy</source>
-        <translation type="unfinished"></translation>
+        <translation>隱私權</translation>
     </message>
     <message>
         <location filename="../src/windows/privacy_window.ui" line="22"/>
         <source>Let‘s make Swiftray better together</source>
-        <translation type="unfinished"></translation>
+        <translation>我們一起讓 Swiftray 變得更好</translation>
     </message>
     <message>
         <location filename="../src/windows/privacy_window.ui" line="36"/>
         <source>Do you agree to automatically upload relevant information 
 
 to the development team when errors occur?</source>
-        <translation type="unfinished"></translation>
+        <translation>請問您是否同意在遇到錯誤時
+
+將相關資訊自動上傳給開發團隊?</translation>
     </message>
 </context>
 <context>
