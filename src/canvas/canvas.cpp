@@ -178,6 +178,7 @@ void Canvas::loadDXF(QString file_name) {
 }
 
 void Canvas::paint(QPainter *painter) {
+  Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
   painter->fillRect(0, 0, width(), height(), backgroundColor());
@@ -195,7 +196,11 @@ void Canvas::paint(QPainter *painter) {
     }
   }
   double rect_width = width() / document().scale() / 100;
+  painter->fillRect(user_origin_.x() * 10 - rect_width/2, user_origin_.y() * 10 - rect_width/2, rect_width, rect_width, Qt::magenta);
   painter->fillRect(current_x_ * 10 - rect_width/2, current_y_ * 10 - rect_width/2, rect_width, rect_width, Qt::red);
+  if(use_job_origin_) {
+    painter->fillRect(job_origin_.x() - rect_width/2, job_origin_.y() - rect_width/2, rect_width, rect_width, Qt::green);
+  }
 
   painter->restore();
 
@@ -1276,6 +1281,61 @@ Canvas::Mode Canvas::mode() const { return mode_; }
 void Canvas::setMode(Mode mode) {
   mode_ = mode;
   emit modeChanged();
+}
+
+QRect Canvas::calculateShapeBoundary() {
+  double x_min = -1, x_max = -1, y_min = -1, y_max = -1;
+  for (auto &layer : document().layers()) {
+    double x, y;
+    if (!layer->isVisible()) {
+      continue;
+    }
+    for (auto &shape : layer->children()) {
+      x = shape->boundingRect().left();
+      y = shape->boundingRect().top();
+      if (x_min == -1 && x_max == -1) {
+        x_min = x;
+        x_max = x;
+      } else if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y_min == -1 && y_max == -1) {
+        y_min = y;
+        y_max = y;
+      } else if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+      x = shape->boundingRect().right();
+      y = shape->boundingRect().bottom();
+      if (x < x_min) {
+        x_min = x;
+      } else if (x > x_max) {
+        x_max = x;
+      }
+      if (y < y_min) {
+        y_min = y;
+      } else if (y > y_max) {
+        y_max = y;
+      }
+    }
+  }
+  return QRect(QPoint(x_min, y_min), QPoint(x_max, y_max));
+}
+
+void Canvas::setJobOrigin(bool use_job_origin) {
+  use_job_origin_ = use_job_origin;
+}
+
+void Canvas::setJobOrigin(QPointF job_origin) {
+  job_origin_ = job_origin;
+}
+
+void Canvas::setUserOrigin(QPointF user_origin) {
+  user_origin_ = user_origin;
 }
 
 void Canvas::emitAllChanges() {

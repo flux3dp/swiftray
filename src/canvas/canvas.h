@@ -100,6 +100,14 @@ public:
 
   void setMode(Mode mode);
 
+  QRect calculateShapeBoundary();
+
+  void setJobOrigin(bool use_job_origin);
+
+  void setJobOrigin(QPointF job_origin);
+
+  void setUserOrigin(QPointF user_origin);
+
 public slots:
 
   void editCut();
@@ -255,9 +263,12 @@ private:
   bool is_pop_menu_showing_;
   bool is_temp_scale_lock_;
   bool is_direction_lock_;
+  bool use_job_origin_ = false;
   double current_x_;
   double current_y_;
   QPointF right_click_;
+  QPointF job_origin_;
+  QPointF user_origin_;
 
   QQuickWidget *widget_;
 
@@ -295,4 +306,6 @@ signals:
   void transformChanged(qreal x, qreal y, qreal r, qreal w, qreal h);
 
   void cursorChanged(Qt::CursorShape cursor);
+
+  void syncJobOrigin();
 };

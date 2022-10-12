@@ -80,6 +80,7 @@ void LaserPanel::registerEvents() {
         } else {
             ui->widget->show();
         }
+        Q_EMIT switchStartFrom(start_from_);
     });
 }
 

@@ -389,142 +389,61 @@ void MainWindow::actionFrame() {
   }
 }
 
+QPoint MainWindow::calculateJobOrigin() {
+  //to get shape bounding
+  QRect rect = canvas_->calculateShapeBoundary();
+  int job_origin = laser_panel_->getJobOrigin();
+  QPoint target_point;
+  switch(job_origin) {
+    case LaserPanel::JobOrigin::NW:
+      target_point = QPoint(rect.left(), rect.top());
+      break;
+    case LaserPanel::JobOrigin::N:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
+      break;
+    case LaserPanel::JobOrigin::NE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top());
+      break;
+    case LaserPanel::JobOrigin::E:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
+      break;
+    case LaserPanel::JobOrigin::SE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::S:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::SW:
+      target_point = QPoint(rect.left(), rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::W:
+      target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
+      break;
+    case LaserPanel::JobOrigin::CENTER:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
+      break;
+    default:
+      break;
+  }
+  return target_point;
+}
+
 QTransform MainWindow::calculateTranslate() {
   int start_from = laser_panel_->getStartFrom();
   QTransform move_translate = QTransform();
   //to get shape bounding
-  double x_min = -1, x_max = -1, y_min = -1, y_max = -1;
-  for (auto &layer : canvas_->document().layers()) {
-    double x, y;
-    if (!layer->isVisible()) {
-      continue;
-    }
-    for (auto &shape : layer->children()) {
-      x = shape->boundingRect().left();
-      y = shape->boundingRect().top();
-      if (x_min == -1 && x_max == -1) {
-        x_min = x;
-        x_max = x;
-      } else if (x < x_min) {
-        x_min = x;
-      } else if (x > x_max) {
-        x_max = x;
-      }
-      if (y_min == -1 && y_max == -1) {
-        y_min = y;
-        y_max = y;
-      } else if (y < y_min) {
-        y_min = y;
-      } else if (y > y_max) {
-        y_max = y;
-      }
-      x = shape->boundingRect().right();
-      y = shape->boundingRect().bottom();
-      if (x < x_min) {
-        x_min = x;
-      } else if (x > x_max) {
-        x_max = x;
-      }
-      if (y < y_min) {
-        y_min = y;
-      } else if (y > y_max) {
-        y_max = y;
-      }
-    }
-  }
+  QPoint target_point = calculateJobOrigin();
   //unit??
   switch(start_from) {
     case LaserPanel::StartFrom::AbsoluteCoords:
       break;
     case LaserPanel::StartFrom::CurrentPosition:
-      {
-        int job_origin = laser_panel_->getJobOrigin();
-        switch(job_origin) {
-          case LaserPanel::JobOrigin::NW:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::N:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::NE:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::E:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          case LaserPanel::JobOrigin::SE:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::S:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::SW:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::W:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          case LaserPanel::JobOrigin::CENTER:
-            move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCurrentPosition()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          default:
-            break;
-        }
-      }
+      move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
       break;
     case LaserPanel::StartFrom::UserOrigin:
-      {
-        int job_origin = laser_panel_->getJobOrigin();
-        switch(job_origin) {
-          case LaserPanel::JobOrigin::NW:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::N:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10- x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::NE:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min);
-            break;
-          case LaserPanel::JobOrigin::E:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          case LaserPanel::JobOrigin::SE:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min), 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::S:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::SW:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min));
-            break;
-          case LaserPanel::JobOrigin::W:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          case LaserPanel::JobOrigin::CENTER:
-            move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - x_min - (x_max-x_min)/2.0, 
-              std::get<1>(active_machine.getCustomOrigin()) * 10 - y_min - (y_max-y_min)/2.0);
-            break;
-          default:
-            break;
-        }
-      }
+      move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
       break;
     default:
       break;
@@ -1151,6 +1070,9 @@ void MainWindow::registerEvents() {
       setCursor(cursor);
     }
   });
+  connect(canvas_, &Canvas::syncJobOrigin, [=]() {
+    canvas_->setJobOrigin(calculateJobOrigin());
+  });
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
@@ -1385,6 +1307,19 @@ void MainWindow::registerEvents() {
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
   connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
   connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
+  connect(laser_panel_, &LaserPanel::switchStartFrom, [=](LaserPanel::StartFrom start_from) {
+    switch(start_from) {
+      case LaserPanel::StartFrom::AbsoluteCoords:
+        canvas_->setJobOrigin(false);
+        break;
+      case LaserPanel::StartFrom::UserOrigin:
+      case LaserPanel::StartFrom::CurrentPosition:
+        canvas_->setJobOrigin(true);
+        break;
+      default:
+        break;
+    }
+  });
 
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
   connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
@@ -2376,6 +2311,7 @@ void MainWindow::moveToCorner(int corner_id, qreal feedrate) {
 }
 
 void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) {
+  canvas_->setUserOrigin(QPointF(std::get<0>(custom_origin), std::get<1>(custom_origin)));
   active_machine.setCustomOrigin(custom_origin);
 }
 

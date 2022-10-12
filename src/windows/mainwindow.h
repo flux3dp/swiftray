@@ -226,6 +226,7 @@ private:
   bool handleUnsavedChange();
   void actionStart();
   void actionFrame();
+  QPoint calculateJobOrigin();
   QTransform calculateTranslate();
 };
 
