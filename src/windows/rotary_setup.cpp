@@ -81,6 +81,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
         else {
             ui->rollerDiameterSpinBox->setEnabled(false);
         }
+        updateRotaryScale();
     });
     connect(ui->objectRadioButton, &QAbstractButton::clicked, [=](bool checked){
         if(checked) {
@@ -89,6 +90,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
         else {
             ui->rollerDiameterSpinBox->setEnabled(true);
         }
+        updateRotaryScale();
     });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
         circumference_ = circumference;

@@ -1549,8 +1549,10 @@ void MainWindow::setConnectionToolBar() {
       return;
     }
     active_machine.applyMachineParam(currentMachine());
-    connect(&active_machine, &Machine::positionCached,
-            this, &MainWindow::positionCached);
+    connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
+      emit MainWindow::positionCached(target_pos);
+      canvas()->updateCurrentPosition(target_pos);
+    });
     connect(&active_machine, &Machine::disconnected, [=]() {
       emit MainWindow::activeMachineDisconnected();
       ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
@@ -2167,9 +2169,12 @@ void MainWindow::genPreviewWindow() {
       last_gcode_timestamp = timestamp_list.last();
     }
 
+    double scale = 1;
+    if(is_rotary_mode_) scale = rotary_setup_->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
                                           canvas_->document().width() / 10,
-                                          canvas_->document().height() / 10);
+                                          canvas_->document().height() / 10,
+                                          scale);
     pw->setPreviewPath(preview_path_generator);
     pw->setRequiredTime(last_gcode_timestamp);
     pw->show();

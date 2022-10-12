@@ -212,6 +212,8 @@ public slots:
 
   void save(QDataStream &out);
 
+  void updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos);
+
 
 private:
   // Basic attributes
@@ -253,6 +255,8 @@ private:
   bool is_pop_menu_showing_;
   bool is_temp_scale_lock_;
   bool is_direction_lock_;
+  double current_x_;
+  double current_y_;
   QPointF right_click_;
 
   QQuickWidget *widget_;

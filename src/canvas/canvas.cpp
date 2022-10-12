@@ -194,6 +194,8 @@ void Canvas::paint(QPainter *painter) {
       control->paint(painter);
     }
   }
+  double rect_width = width() / document().scale() / 100;
+  painter->fillRect(current_x_ * 10 - rect_width/2, current_y_ * 10 - rect_width/2, rect_width, rect_width, Qt::red);
 
   painter->restore();
 
@@ -1384,4 +1386,9 @@ void Canvas::save(QDataStream &out) {
 const QColor Canvas::backgroundColor() {
   if (isDarkMode()) return QColor("#454545");
   return QColor("#F0F0F0");
+}
+
+void Canvas::updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos) {
+  current_x_ = std::get<0>(target_pos);
+  current_y_ = std::get<1>(target_pos);
 }
