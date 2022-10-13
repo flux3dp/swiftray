@@ -24,7 +24,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
     ui->rollerRadioButton->setChecked(true);
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
-        ui->testBtn->setEnabled(true);
+        if(control_enable_) ui->testBtn->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
@@ -51,7 +51,7 @@ RotarySetup::RotarySetup(QWidget *parent) :
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_rotary_mode_ = state;
         if(is_rotary_mode_) {
-            ui->testBtn->setEnabled(true);
+            if(control_enable_) ui->testBtn->setEnabled(true);
         }
         else {
             ui->testBtn->setEnabled(false);
@@ -142,7 +142,7 @@ void RotarySetup::setRotaryMode(bool is_rotary_mode)
     is_rotary_mode_ = is_rotary_mode;
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
-        ui->testBtn->setEnabled(true);
+        if(control_enable_) ui->testBtn->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
@@ -177,6 +177,17 @@ double RotarySetup::getCircumference()
 double RotarySetup::getRotaryScale()
 {
     return rotary_scale_;
+}
+
+void RotarySetup::setControlEnable(bool control_enable)
+{
+    control_enable_ = control_enable;
+    if(control_enable_ && is_rotary_mode_) {
+        ui->testBtn->setEnabled(true);
+    }
+    else {
+        ui->testBtn->setEnabled(false);
+    }
 }
 
 /**

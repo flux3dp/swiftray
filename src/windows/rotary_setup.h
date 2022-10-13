@@ -36,6 +36,8 @@ public:
 
     void setFramingPower(double framing_power) {framing_power_ = framing_power;}
 
+    void setControlEnable(bool control_enable);
+
 private:
     Ui::RotarySetup *ui;
     void testRotary();
@@ -48,6 +50,7 @@ private:
     double circumference_;
     double travel_speed_;
     double framing_power_;
+    bool control_enable_ = true;
     QButtonGroup *axis_group_;
     QButtonGroup *rotation_group_;
 
