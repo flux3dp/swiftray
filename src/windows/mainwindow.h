@@ -153,7 +153,7 @@ private slots:
 
   void updateScene();
 
-  void updateTravelSpeed(double travel_speed);
+  void updateTravelSpeed();
 
 private:
 

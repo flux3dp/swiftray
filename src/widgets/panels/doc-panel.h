@@ -29,12 +29,14 @@ public:
 
   double getTravelSpeed();
 
+  double getRotarySpeed();
+
 signals:
   void machineChanged(QString machine_name);
   void rotaryModeChange(bool is_rotary_mode);
   void panelShow(bool is_show);
   void updateMachineRange(QSize machine_range);
-  void updateTravelSpeed(double travel_speed);
+  void updateSpeed();
 
 private:
   void loadSettings() override;

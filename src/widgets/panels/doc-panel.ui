@@ -51,8 +51,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>261</width>
-        <height>312</height>
+        <width>276</width>
+        <height>345</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -188,6 +188,36 @@
            </property>
            <property name="value">
             <double>100.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Rotary Speed</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="rotarySpinBox">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string> mm/s</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="value">
+            <double>20.000000000000000</double>
            </property>
           </widget>
          </item>

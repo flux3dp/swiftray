@@ -90,7 +90,7 @@ void MainWindow::loadSettings() {
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
-  updateTravelSpeed(doc_panel_->getTravelSpeed());
+  updateTravelSpeed();
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
 
 #ifdef ENABLE_SENTRY
@@ -914,9 +914,14 @@ void MainWindow::updateScene() {
   }
 }
 
-void MainWindow::updateTravelSpeed(double travel_speed) {
-  travel_speed_ = travel_speed * 60;// mm/s to mm/min
-  rotary_setup_->setTravelSpeed(travel_speed_);
+void MainWindow::updateTravelSpeed() {
+  if(is_rotary_mode_) {
+    travel_speed_ = doc_panel_->getRotarySpeed() * 60;// mm/s to mm/min
+  }
+  else {
+    travel_speed_ = doc_panel_->getTravelSpeed() * 60;// mm/s to mm/min
+  }
+  rotary_setup_->setTravelSpeed(doc_panel_->getRotarySpeed() * 60);
   jogging_panel_->setTravelSpeed(travel_speed_);
 }
 
@@ -1135,12 +1140,13 @@ void MainWindow::registerEvents() {
     is_rotary_mode_ = is_rotary_mode;
     rotary_setup_->setRotaryMode(is_rotary_mode);
     updateScene();
+    updateTravelSpeed();
   });
   connect(doc_panel_, &DocPanel::updateMachineRange, [=](QSize machine_range) {
     machine_range_ = machine_range;
     updateScene();
   });
-  connect(doc_panel_, &DocPanel::updateTravelSpeed, this, &MainWindow::updateTravelSpeed);
+  connect(doc_panel_, &DocPanel::updateSpeed, this, &MainWindow::updateTravelSpeed);
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {

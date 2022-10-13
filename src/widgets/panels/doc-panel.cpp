@@ -93,6 +93,13 @@ void DocPanel::loadSettings() {
   // Load DPI setting (select appropriate dpi item index)
   syncDPISettingsUI();
   syncAdvancedSettingsUI();
+  if(ui->rotaryCheckBox->checkState()) {
+    ui->speedSpinBox->setEnabled(false);
+    ui->rotarySpinBox->setEnabled(true);
+  } else {
+    ui->speedSpinBox->setEnabled(true);
+    ui->rotarySpinBox->setEnabled(false);
+  }
 }
 
 void DocPanel::registerEvents() {
@@ -146,10 +153,20 @@ void DocPanel::registerEvents() {
     main_window_->canvas()->document().settings().use_open_bottom = state == Qt::Checked ? true : false;
   });
   connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state) {
+    if(state) {
+      ui->speedSpinBox->setEnabled(false);
+      ui->rotarySpinBox->setEnabled(true);
+    } else {
+      ui->speedSpinBox->setEnabled(true);
+      ui->rotarySpinBox->setEnabled(false);
+    }
     Q_EMIT rotaryModeChange(state);
   });
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
-    Q_EMIT updateTravelSpeed(value);
+    Q_EMIT updateSpeed();
+  });
+  connect(ui->rotarySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updateSpeed();
   });
 }
 
@@ -194,6 +211,10 @@ void DocPanel::setRotaryMode(bool is_rotary_mode) {
 
 double DocPanel::getTravelSpeed() {
   return ui->speedSpinBox->value();
+}
+
+double DocPanel::getRotarySpeed() {
+  return ui->rotarySpinBox->value();
 }
 
 void DocPanel::hideEvent(QHideEvent *event) {
