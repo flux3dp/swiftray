@@ -159,10 +159,10 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (bmp->boundingRect().top() < 0 || 
-      bmp->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
-      bmp->boundingRect().left() < 0 || 
-      bmp->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+      (bitmap_dirty_area_.top() < 0 || 
+      bitmap_dirty_area_.bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      bitmap_dirty_area_.left() < 0 || 
+      bitmap_dirty_area_.right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 }
@@ -174,10 +174,10 @@ void ToolpathExporter::convertPath(const PathShape *path) {
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (path->boundingRect().top() < 0 || 
-      path->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
-      path->boundingRect().left() < 0 || 
-      path->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+      (transformed_path.boundingRect().top() < 0 || 
+      transformed_path.boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      transformed_path.boundingRect().left() < 0 || 
+      transformed_path.boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 
