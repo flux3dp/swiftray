@@ -121,11 +121,11 @@ public:
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
     if (x_min_ == x_max_ && x_min_ == -1) {
-      str_stream_ << "G1S20" << std::endl;
+      str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
       str_stream_ << "G1S0" << std::endl;
     } else {
       str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-      str_stream_ << "G1S20" << std::endl;
+      str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
       str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
       str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
       str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
@@ -138,6 +138,8 @@ public:
 
   void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
 
+  void setLaserPower(double laser_power) {laser_power_ = laser_power;}
+
 private:
     int machine_width_;
     int machine_height_;
@@ -147,4 +149,5 @@ private:
     qreal y_max_ = -1;
     MachineSettings::MachineSet::OriginType machine_origin_;
     double travel_speed_ = 6000;
+    double laser_power_ = 2;
 };

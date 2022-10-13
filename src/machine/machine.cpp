@@ -174,13 +174,13 @@ bool Machine::createFramingJob(QStringList gcode_list) {
  * @return true 
  * @return false 
  */
-bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate) {
+bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power) {
   // Check state
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
   }
 
-  auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate);
+  auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate, framing_power);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;

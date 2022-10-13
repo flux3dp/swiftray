@@ -87,7 +87,7 @@ public slots:
   void moveToCorner(int corner_id, qreal feedrate);
   void moveToCustomOrigin();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
-  void testRotary(QRectF bbox, char rotary_axis, qreal feedrate);
+  void testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
 
 private slots:
 

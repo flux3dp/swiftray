@@ -17,6 +17,7 @@ Q_OBJECT
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
   void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
+  double getFramingPower();
 
   ~JoggingPanel();
 
@@ -32,6 +33,7 @@ signals:
   void actionMoveToEdge(int edge_id, qreal feedrate);
   void actionMoveToCorner(int corner_id, qreal feedrate);
   void actionSetOrigin(std::tuple<qreal, qreal, qreal> new_origin);
+  void updateFramingPower(double framing_power);
   
 public slots:
   // Accepting signals from QML action

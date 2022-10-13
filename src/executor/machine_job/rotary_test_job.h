@@ -11,7 +11,7 @@ class RotaryTestJob : public MachineJob
 {
   Q_OBJECT
 public:
-  explicit RotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, 
+  explicit RotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power,
                           QString job_name = "Rotary Test Job");
 
   void setMotionController(QPointer<MotionController>);

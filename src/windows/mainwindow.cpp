@@ -91,6 +91,7 @@ void MainWindow::loadSettings() {
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
   updateTravelSpeed(doc_panel_->getTravelSpeed());
+  rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
 
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
@@ -382,6 +383,7 @@ void MainWindow::actionFrame() {
   }
 
   gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
+  gen_outline_scanning_gcode->setLaserPower(jogging_panel_->getFramingPower());
   // Create Framing Job and start
   if (true == active_machine.createFramingJob(
         QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
@@ -1338,6 +1340,9 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
   connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
+  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
+    rotary_setup_->setFramingPower(framing_power);
+  });
 
   connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
     is_rotary_mode_ = is_rotary_mode;
@@ -2343,8 +2348,8 @@ void MainWindow::moveToCustomOrigin() {
   }
 }
 
-void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate) {
-  if (true == active_machine.createRotaryTestJob(bbox, rotary_axis, feedrate)) 
+void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power) {
+  if (true == active_machine.createRotaryTestJob(bbox, rotary_axis, feedrate, framing_power)) 
   {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();

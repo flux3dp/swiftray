@@ -34,6 +34,8 @@ public:
 
     void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
 
+    void setFramingPower(double framing_power) {framing_power_ = framing_power;}
+
 private:
     Ui::RotarySetup *ui;
     void testRotary();
@@ -45,6 +47,7 @@ private:
     double rotary_scale_ = 0;//to fit gcode unit to circumference
     double circumference_;
     double travel_speed_;
+    double framing_power_;
     QButtonGroup *axis_group_;
     QButtonGroup *rotation_group_;
 
@@ -52,7 +55,7 @@ signals:
   void rotaryModeChanged(bool is_rotary_mode);
   void mirrorModeChanged(bool is_mirror_mode);
   void rotaryAxisChanged(char axis);
-  void actionTestRotary(QRectF bbox, char rotary_axis, qreal feedrate);
+  void actionTestRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
   void updateCircumference(double circumference);
 };
 

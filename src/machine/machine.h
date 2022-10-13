@@ -35,7 +35,7 @@ public:
   bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
   bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
   bool createFramingJob(QStringList gcode_list);
-  bool createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate);
+  bool createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
   bool createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist, qreal feedrate);
   bool createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
   bool createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);

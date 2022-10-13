@@ -45,7 +45,14 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
 
   // Receive signals from mainwindow
   connect(main_window_, &MainWindow::positionCached, this, &JoggingPanel::updateCurrentPos);
+  connect(ui->laserSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updateFramingPower(value);
+  });
 } 
+
+double JoggingPanel::getFramingPower() {
+  return ui->laserSpinBox->value();
+}
 
 void JoggingPanel::home() {
   if(!control_enable_) {
