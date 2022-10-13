@@ -188,7 +188,7 @@ void RotarySetup::testRotary()
   QRectF bbox;
   bbox.setWidth(20); // fixed: 20 mm
   bbox.setHeight(ui->mmPerRotationSpinBox->value());
-  emit actionTestRotary(bbox, rotary_axis_, 2400);
+  emit actionTestRotary(bbox, rotary_axis_, travel_speed_);
 }
 
 void RotarySetup::updateRotaryScale()

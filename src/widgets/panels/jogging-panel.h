@@ -16,6 +16,7 @@ Q_OBJECT
 
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
+  void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
 
   ~JoggingPanel();
 
@@ -58,6 +59,8 @@ private:
   bool is_laser_on_ = false;
 
   bool control_enable_ = true;
+
+  double travel_speed_;
 };
 
 #endif // JOGGING_WIDGET_H

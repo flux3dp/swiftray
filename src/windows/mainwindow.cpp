@@ -90,6 +90,7 @@ void MainWindow::loadSettings() {
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
+  updateTravelSpeed(doc_panel_->getTravelSpeed());
 
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
@@ -380,6 +381,7 @@ void MainWindow::actionFrame() {
     return;
   }
 
+  gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
   // Create Framing Job and start
   if (true == active_machine.createFramingJob(
         QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
@@ -910,6 +912,12 @@ void MainWindow::updateScene() {
   }
 }
 
+void MainWindow::updateTravelSpeed(double travel_speed) {
+  travel_speed_ = travel_speed * 60;// mm/s to mm/min
+  rotary_setup_->setTravelSpeed(travel_speed_);
+  jogging_panel_->setTravelSpeed(travel_speed_);
+}
+
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
@@ -1130,6 +1138,7 @@ void MainWindow::registerEvents() {
     machine_range_ = machine_range;
     updateScene();
   });
+  connect(doc_panel_, &DocPanel::updateTravelSpeed, this, &MainWindow::updateTravelSpeed);
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {
@@ -2318,9 +2327,9 @@ void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) 
 void MainWindow::moveToCustomOrigin() {
   bool result = false;
   if (is_rotary_mode_) { // Only move X pos
-    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), 2400);
+    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
   } else {
-    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), 2400);
+    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
   }
   if (result == true)
   {

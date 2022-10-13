@@ -117,7 +117,7 @@ public:
     str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
 
     str_stream_ << "G90" << std::endl;
-    str_stream_ << "G1F6000" << std::endl;
+    str_stream_ << "G1F" << std::to_string(travel_speed_) << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
     if (x_min_ == x_max_ && x_min_ == -1) {
@@ -136,6 +136,8 @@ public:
     return str_stream_.str();
   };
 
+  void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
+
 private:
     int machine_width_;
     int machine_height_;
@@ -144,4 +146,5 @@ private:
     qreal y_min_ = -1;
     qreal y_max_ = -1;
     MachineSettings::MachineSet::OriginType machine_origin_;
+    double travel_speed_ = 6000;
 };

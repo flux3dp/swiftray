@@ -148,6 +148,9 @@ void DocPanel::registerEvents() {
   connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state) {
     Q_EMIT rotaryModeChange(state);
   });
+  connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updateTravelSpeed(value);
+  });
 }
 
 void DocPanel::updateScene() {
@@ -187,6 +190,10 @@ void DocPanel::setRotaryMode(bool is_rotary_mode) {
   else {
     ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
   }
+}
+
+double DocPanel::getTravelSpeed() {
+  return ui->speedSpinBox->value();
 }
 
 void DocPanel::hideEvent(QHideEvent *event) {

@@ -32,6 +32,8 @@ public:
 
     double getRotaryScale();
 
+    void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
+
 private:
     Ui::RotarySetup *ui;
     void testRotary();
@@ -42,6 +44,7 @@ private:
     char rotary_axis_ = 'Y';
     double rotary_scale_ = 0;//to fit gcode unit to circumference
     double circumference_;
+    double travel_speed_;
     QButtonGroup *axis_group_;
     QButtonGroup *rotation_group_;
 

@@ -153,6 +153,8 @@ private slots:
 
   void updateScene();
 
+  void updateTravelSpeed(double travel_speed);
+
 private:
 
   void loadWidgets() override;
@@ -173,6 +175,7 @@ private:
   bool is_mirror_mode_ = false;
   char rotary_axis_ = 'Y';
   QSize machine_range_;
+  double travel_speed_;
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
 #endif

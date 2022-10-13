@@ -126,7 +126,7 @@ void JoggingPanel::moveRelatively(int dir, int level) {
   }
 
   // TODO: Get feedrate from UI?
-  emit actionMoveRelatively(movement.x(), movement.y(), 2400);
+  emit actionMoveRelatively(movement.x(), movement.y(), travel_speed_);
 }
 
 void JoggingPanel::moveToEdge(int edge_id) {
@@ -134,7 +134,7 @@ void JoggingPanel::moveToEdge(int edge_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  emit actionMoveToEdge(edge_id, 3000);
+  emit actionMoveToEdge(edge_id, travel_speed_);
 }
 
 void JoggingPanel::moveToCorner(int corner_id) {
@@ -142,14 +142,14 @@ void JoggingPanel::moveToCorner(int corner_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  emit actionMoveToCorner(corner_id, 3000);
+  emit actionMoveToCorner(corner_id, travel_speed_);
 }
 
 void JoggingPanel::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos) {
   if(!control_enable_) {
     return;
   }
-  emit actionMoveAbsolutely(pos, 2400);
+  emit actionMoveAbsolutely(pos, travel_speed_);
 }
 
 void JoggingPanel::setOrigin() {
