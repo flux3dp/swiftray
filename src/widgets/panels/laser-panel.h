@@ -39,6 +39,7 @@ public:
     void setStartFrom(StartFrom start_from);
     int getJobOrigin();
     int getStartFrom();
+    void setControlEnable(bool control_enable);
 
 signals:
   void actionFrame();

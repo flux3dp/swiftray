@@ -138,6 +138,13 @@ int LaserPanel::getStartFrom()
     return start_from_;
 }
 
+void LaserPanel::setControlEnable(bool control_enable)
+{
+    ui->frameBtn->setEnabled(control_enable);
+    ui->homeBtn->setEnabled(control_enable);
+    ui->moveToOriginBtn->setEnabled(control_enable);
+}
+
 void LaserPanel::setLayout()
 {
     ui->previewBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-preview.png" : ":/resources/images/icon-preview.png"));

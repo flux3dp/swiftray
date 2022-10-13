@@ -18,9 +18,7 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   ui->maintenanceController->setSource(QUrl("qrc:/src/windows/qml/MaintenanceDialog.qml"));
   ui->maintenanceController->rootContext()->setContextProperty("is_dark_mode", isDarkMode());
   ui->maintenanceController->show();
-
-  //ui->clearOriginBtn->hide();
-  //ui->setOriginBtn->hide();
+  ui->laserBtn->setText(tr("Laser On"));
 
   // Handle event from QML UI
   QObject::connect(ui->maintenanceController->rootObject(), SIGNAL(moveRelatively(int, int)),
@@ -65,9 +63,11 @@ void JoggingPanel::laser() {
     return;
   }
   if (is_laser_on_) {
+    ui->laserBtn->setText(tr("Laser On"));
     is_laser_on_ = false;
     emit actionLaser(0); // turn off laser
   } else {
+    ui->laserBtn->setText(tr("Laser Off"));
     is_laser_on_ = true;
     emit actionLaser(ui->laserSpinBox->value()); // default: 2%
   }
@@ -165,14 +165,15 @@ void JoggingPanel::setOrigin() {
 }
 
 void JoggingPanel::clearOrigin() {
-  if(!control_enable_) {
-    return;
-  }
   emit actionSetOrigin(std::make_tuple<qreal, qreal, qreal>(0, 0, 0));
 }
 
 void JoggingPanel::setControlEnable(bool control_enable) {
   control_enable_ = control_enable;
+  ui->goBtn->setEnabled(control_enable);
+  ui->setOriginBtn->setEnabled(control_enable);
+  ui->laserBtn->setEnabled(control_enable);
+  ui->laserPulseBtn->setEnabled(control_enable);
 }
 
 void JoggingPanel::hideEvent(QHideEvent *event) {

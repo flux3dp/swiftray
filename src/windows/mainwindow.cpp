@@ -2183,22 +2183,27 @@ void MainWindow::syncJobState(Executor::State new_state) {
     case Executor::State::kIdle:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
       break;
     case Executor::State::kRunning:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
+      laser_panel_->setControlEnable(false);
       break;
     case Executor::State::kPaused:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
+      laser_panel_->setControlEnable(false);
       break;
     case Executor::State::kCompleted:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
       break;
     case Executor::State::kStopped:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
       break;
     default:
       break;
