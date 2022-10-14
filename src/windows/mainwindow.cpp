@@ -2191,6 +2191,7 @@ void MainWindow::onStartNewJob() {
 
 void MainWindow::onStopJob() {
   active_machine.stopJob();
+  active_machine.syncPosition();
 }
 
 void MainWindow::onPauseJob() {
