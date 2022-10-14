@@ -25,7 +25,7 @@ public:
       kDynamicPadding // Based on layer speed and acceleration
   };
 
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding, QTransform move_translate) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, PaddingType padding, QTransform move_translate) noexcept;
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
 
@@ -77,6 +77,7 @@ private:
   BaseGenerator *gen_;
   // === The followings depend on DPI settings of document ===
   qreal dpmm_ = 10;               // The DPMM settings of document
+  double travel_speed_ = 80;      // The speed form point to point(mm/s)
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
   QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path), expressed in unit of document dot

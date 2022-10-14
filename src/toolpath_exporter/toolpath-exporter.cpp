@@ -11,8 +11,8 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding_type, QTransform move_translate) noexcept :
- gen_(generator), dpmm_(dpmm), padding_type_(padding_type)
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, PaddingType padding_type, QTransform move_translate) noexcept :
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
@@ -246,7 +246,7 @@ void ToolpathExporter::outputLayerPathGcode() {
 
     QPointF next_point_mm = poly.first() / dpmm_;
     moveTo(next_point_mm,
-           MOVING_SPEED,
+           travel_speed_,
            0);
 
     for (QPointF &point : poly) {
@@ -317,7 +317,7 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // rapid move to the start position
   moveTo(QPointF{bbox.topLeft()} / dpmm_,
-         MOVING_SPEED,
+         travel_speed_,
          0);
 
   gen_->useRelativePositioning();
@@ -511,7 +511,7 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
   bool is_emitting = false;
   const qreal t_step = 1 / path.length();
   moveTo(path.p1() / dpmm_,
-         MOVING_SPEED,
+         travel_speed_,
          0);
 
   int idx = 0;
@@ -664,7 +664,7 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data) {
   // Generate moveTo cmd to the initial position of raster line
   moveTo(path.p1() / dpmm_,
-         MOVING_SPEED,
+         travel_speed_,
          0);
 
   // Generate D1PC, D2W, D3FE, D4PL cmd based on the parsed info

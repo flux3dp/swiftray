@@ -363,6 +363,7 @@ void MainWindow::actionFrame() {
   auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
+      travel_speed_ / 60,// mm/min to mm/s
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -723,6 +724,7 @@ void MainWindow::exportGCodeFile() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
+      travel_speed_ / 60,// mm/min to mm/s
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -2062,6 +2064,7 @@ bool MainWindow::generateGcode() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
+      travel_speed_ / 60,// mm/min to mm/s
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -2087,6 +2090,7 @@ void MainWindow::genPreviewWindow() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
+                                    travel_speed_ / 60,// mm/min to mm/s
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
 
