@@ -1348,6 +1348,7 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
   connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
+  connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);
   connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
     rotary_setup_->setFramingPower(framing_power);
   });

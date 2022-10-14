@@ -40,6 +40,9 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
       std::make_tuple<qreal, qreal, qreal>(ui->moveXSpinBox->value(), ui->moveYSpinBox->value(), 0)
     );
   });
+  connect(ui->stopBtn, &QAbstractButton::clicked, [=]() {
+    Q_EMIT stopBtnClicked();
+  });
   connect(ui->setOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::setOrigin);
   connect(ui->clearOriginBtn, &QAbstractButton::clicked, this, &JoggingPanel::clearOrigin);
 
