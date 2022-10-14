@@ -51,8 +51,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>314</width>
-        <height>676</height>
+        <width>299</width>
+        <height>705</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -323,6 +323,30 @@
           <widget class="QPushButton" name="clearOriginBtn">
            <property name="text">
             <string>Clear Origin</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QCheckBox" name="userOriginCheckBox">
+           <property name="text">
+            <string>Show User Origin</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="currentpositionCheckBox">
+           <property name="text">
+            <string>Show Current</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
            </property>
           </widget>
          </item>

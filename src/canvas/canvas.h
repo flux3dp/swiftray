@@ -108,6 +108,10 @@ public:
 
   void setUserOrigin(QPointF user_origin);
 
+  void setUserOrigin(bool user_origin) {show_user_origin_ = user_origin;}
+
+  void setCurrentPosition(bool current_position) {current_position_ = current_position;}
+
 public slots:
 
   void editCut();
@@ -264,6 +268,8 @@ private:
   bool is_temp_scale_lock_;
   bool is_direction_lock_;
   bool use_job_origin_ = false;
+  bool show_user_origin_ = true;
+  bool current_position_ = true;
   double current_x_;
   double current_y_;
   QPointF right_click_;

@@ -196,8 +196,12 @@ void Canvas::paint(QPainter *painter) {
     }
   }
   double rect_width = width() / document().scale() / 100;
-  painter->fillRect(user_origin_.x() * 10 - rect_width/2, user_origin_.y() * 10 - rect_width/2, rect_width, rect_width, Qt::magenta);
-  painter->fillRect(current_x_ * 10 - rect_width/2, current_y_ * 10 - rect_width/2, rect_width, rect_width, Qt::red);
+  if(show_user_origin_) {
+    painter->fillRect(user_origin_.x() * 10 - rect_width/2, user_origin_.y() * 10 - rect_width/2, rect_width, rect_width, Qt::magenta);
+  }
+  if(current_position_) {
+    painter->fillRect(current_x_ * 10 - rect_width/2, current_y_ * 10 - rect_width/2, rect_width, rect_width, Qt::red);
+  }
   if(use_job_origin_) {
     painter->fillRect(job_origin_.x() - rect_width/2, job_origin_.y() - rect_width/2, rect_width, rect_width, Qt::green);
   }

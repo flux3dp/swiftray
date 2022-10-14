@@ -92,6 +92,8 @@ void MainWindow::loadSettings() {
   current_filename_ = tr("Untitled");
   updateTravelSpeed();
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
+  canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
+  canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
 
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
@@ -1356,6 +1358,12 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);
   connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
     rotary_setup_->setFramingPower(framing_power);
+  });
+  connect(jogging_panel_, &JoggingPanel::showCurrentPosition, [=](bool show) {
+    canvas_->setCurrentPosition(show);
+  });
+  connect(jogging_panel_, &JoggingPanel::showUserOrigin, [=](bool show) {
+    canvas_->setUserOrigin(show);
   });
 
   connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
