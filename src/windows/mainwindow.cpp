@@ -364,6 +364,7 @@ void MainWindow::actionFrame() {
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
       travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -441,14 +442,17 @@ QTransform MainWindow::calculateTranslate() {
   //unit??
   switch(start_from) {
     case LaserPanel::StartFrom::AbsoluteCoords:
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
       break;
     case LaserPanel::StartFrom::CurrentPosition:
       move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
       break;
     case LaserPanel::StartFrom::UserOrigin:
       move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
       break;
     default:
       break;
@@ -725,6 +729,7 @@ void MainWindow::exportGCodeFile() {
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
       travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -2066,6 +2071,7 @@ bool MainWindow::generateGcode() {
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
       travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
@@ -2092,6 +2098,7 @@ void MainWindow::genPreviewWindow() {
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
                                     travel_speed_ / 60,// mm/min to mm/s
+                                    end_point_,
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
 

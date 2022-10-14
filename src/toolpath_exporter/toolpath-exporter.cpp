@@ -11,8 +11,8 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, PaddingType padding_type, QTransform move_translate) noexcept :
- gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed)
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate) noexcept :
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
@@ -32,7 +32,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   t.start();
   // Pre cmds
   gen_->turnOffLaser(); // M5
-  gen_->home();
+  // gen_->home();
   gen_->useAbsolutePositioning();
 
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
@@ -82,7 +82,8 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   }
 
   // Post cmds
-  gen_->home();
+  // gen_->home();
+  moveTo(end_point_, travel_speed_, 0);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }

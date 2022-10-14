@@ -176,6 +176,7 @@ private:
   char rotary_axis_ = 'Y';
   QSize machine_range_;
   double travel_speed_;
+  QPointF end_point_ = QPointF(0,0);
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
 #endif

@@ -25,7 +25,7 @@ public:
       kDynamicPadding // Based on layer speed and acceleration
   };
 
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, PaddingType padding, QTransform move_translate) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
 
@@ -95,6 +95,7 @@ private:
   QSizeF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
+  QPointF end_point_;
   // ==================================================
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
