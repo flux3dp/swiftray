@@ -83,7 +83,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 
   // Post cmds
   // gen_->home();
-  moveTo(end_point_, travel_speed_, 0);
+  moveTo(end_point_, travel_speed_, 0, 0);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -248,7 +248,7 @@ void ToolpathExporter::outputLayerPathGcode() {
     QPointF next_point_mm = poly.first() / dpmm_;
     moveTo(next_point_mm,
            travel_speed_,
-           0);
+           0, 0);
 
     for (QPointF &point : poly) {
       next_point_mm = point / dpmm_;
@@ -264,12 +264,14 @@ void ToolpathExporter::outputLayerPathGcode() {
         for (const QPointF &interpolate_point : interpolate_points) {
           moveTo(interpolate_point,
                  current_layer_->speed(),
-                 current_layer_->power());
+                 current_layer_->power(),
+                 0);
         }
       } else {
         moveTo(next_point_mm,
                current_layer_->speed(),
-               current_layer_->power());
+               current_layer_->power(),
+               0);
       }
 
     }
@@ -277,7 +279,7 @@ void ToolpathExporter::outputLayerPathGcode() {
     //gen_->turnOffLaser();
   }
   polygons_mutex_.unlock();
-  // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
+  // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0, 0);
   gen_->turnOffLaser();
 }
 
@@ -319,7 +321,7 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   // rapid move to the start position
   moveTo(QPointF{bbox.topLeft()} / dpmm_,
          travel_speed_,
-         0);
+         0, 0);
 
   gen_->useRelativePositioning();
 
@@ -513,32 +515,35 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
   const qreal t_step = 1 / path.length();
   moveTo(path.p1() / dpmm_,
          travel_speed_,
-         0);
+         0, 0);
 
   int idx = 0;
   while (true) {
     if (t_step * idx >= 1) {
       moveTo(path.p2() / dpmm_,
              current_layer_->speed(),
-             is_emitting ? current_layer_->power() : 0);
+             is_emitting ? current_layer_->power() : 0,
+             is_emitting ? current_layer_->xBacklash() : 0);
       break;
     }
     if (int(idx/32) >= data.size()) {
       if (is_emitting) {
         moveTo(path.pointAt(t_step * idx) / dpmm_,
                current_layer_->speed(),
-               current_layer_->power());
+               current_layer_->power(),
+               current_layer_->xBacklash());
       }
       moveTo(path.p2() / dpmm_,
              current_layer_->speed(),
-             0);
+             0, 0);
       break;
     }
 
     if (is_emitting != data[int(idx/32)][31 - (idx % 32)]) {
       moveTo(path.pointAt(t_step * idx) / dpmm_,
              current_layer_->speed(),
-             is_emitting ? current_layer_->power() : 0);
+             is_emitting ? current_layer_->power() : 0,
+             is_emitting ? current_layer_->xBacklash() : 0);
       is_emitting = !is_emitting;
     }
     idx++;
@@ -666,7 +671,7 @@ bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector
   // Generate moveTo cmd to the initial position of raster line
   moveTo(path.p1() / dpmm_,
          travel_speed_,
-         0);
+         0, 0);
 
   // Generate D1PC, D2W, D3FE, D4PL cmd based on the parsed info
   gen_->appendCustomCmd(std::string("D1PC") + std::to_string(32*data.size()) + std::string("\n"));
@@ -692,7 +697,8 @@ bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector
   // Generate moveTo cmd to the end position of raster line
   moveTo(path.p2() / dpmm_,
          current_layer_->speed(),
-         current_layer_->power());
+         current_layer_->power(),
+         current_layer_->xBacklash());
 
   return true;
 }
@@ -722,12 +728,12 @@ QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
   return result_img;
 }
 
-inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power);
+inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power, double x_backlash) {
+  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
   current_pos_mm_ = dest;
 }
 
-inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power);
+inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power, double x_backlash) {
+  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
   current_pos_mm_ = dest;
 }

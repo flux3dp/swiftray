@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>203</width>
-    <height>276</height>
+    <width>200</width>
+    <height>300</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>300</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Frame</string>
@@ -63,8 +69,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>201</width>
-        <height>274</height>
+        <width>198</width>
+        <height>298</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -224,6 +230,33 @@
            </property>
            <property name="suffix">
             <string> times</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Backlash</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="backlashSpinBox">
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>mm</string>
+           </property>
+           <property name="minimum">
+            <double>-99.989999999999995</double>
+           </property>
+           <property name="singleStep">
+            <double>0.010000000000000</double>
            </property>
           </widget>
          </item>

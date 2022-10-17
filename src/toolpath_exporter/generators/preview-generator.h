@@ -38,7 +38,7 @@ class PreviewGenerator : public BaseGenerator {
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     if (x_ == x && y_ == y && speed_ == speed && power_ == power)
       return;
 

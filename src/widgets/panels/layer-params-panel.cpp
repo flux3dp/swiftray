@@ -58,6 +58,9 @@ void LayerParamsPanel::registerEvents() {
     if (layer_ != nullptr) layer_->setSpeed(speed);
     setToCustom();
   });
+  connect(ui->backlashSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double backlash) {
+    if (layer_ != nullptr) layer_->setXBacklash(backlash);
+  });
   connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
     if (layer_ != nullptr) layer_->setRepeat(repeat);
     setToCustom();

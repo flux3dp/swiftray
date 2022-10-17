@@ -88,6 +88,10 @@ double Layer::power() const {
   return power_;
 }
 
+double Layer::xBacklash() const {
+  return x_backlash_;
+}
+
 int Layer::parameterIndex() const {
   return parameter_index_;
 }
@@ -161,6 +165,10 @@ void Layer::setSpeed(double speed) {
 
 void Layer::setStrength(double strength) {
   power_ = strength;
+}
+
+void Layer::setXBacklash(double x_backlash) {
+  x_backlash_ = x_backlash;
 }
 
 void Layer::setRepeat(int repeat) {

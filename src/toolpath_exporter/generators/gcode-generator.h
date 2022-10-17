@@ -39,7 +39,7 @@ public:
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
       case MachineSettings::MachineSet::OriginType::RearRight:
@@ -60,6 +60,13 @@ public:
         break;
       default:
         break;
+    }
+
+    // 1-2. Handle x direction backlash
+    if (x > x_) {
+      x += x_backlash;
+    } else {
+      x -= x_backlash;
     }
 
     // 2 Limit x,y position inside the work area

@@ -17,7 +17,7 @@ public:
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     if (power == 0) {
       return;
     }
