@@ -133,8 +133,8 @@ OperationCmd::ExecStatus GrblBuildInfoCmd::execute(QPointer<Executor> executor) 
   }
 
   MotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, "$I\n");
-  if (result == MotionController::CmdSendResult::kOk) {
-    status_ = ExecStatus::kProcessing;
+  if (result == MotionController::CmdSendResult::kOk) { // sent
+    status_ = ExecStatus::kProcessing; // waiting for ack ("ok")
   } else {
     fail();
   }

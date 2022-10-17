@@ -461,6 +461,7 @@ void Machine::motionPortConnected() {
 
 void Machine::motionPortActivated() {
   connect_state_ = ConnectionState::kConnected;
+  emit activated();
 
   rt_status_executor_->start();
 }

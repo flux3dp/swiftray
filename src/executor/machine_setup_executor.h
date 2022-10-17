@@ -9,6 +9,7 @@
 
 class MachineSetupExecutor : public Executor
 {
+  Q_OBJECT
 public:
   explicit MachineSetupExecutor(QObject *parent = nullptr);
   void handleCmdFinish(int result_code) override;
@@ -21,6 +22,11 @@ public slots:
   void pause() override;
   void resume() override;
   void stop() override;
+
+private slots:
+  void wakeUp();   // wake up this executor
+signals:
+  void trigger();  // wake up this executor
 
 private:
   QPointer<MotionController> motion_controller_;
