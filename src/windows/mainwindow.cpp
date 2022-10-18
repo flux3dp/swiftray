@@ -1520,7 +1520,10 @@ void MainWindow::setConnectionToolBar() {
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
     serial_port.open(port_name, baudrate.toInt());
     if (!serial_port.isOpen()) {
-      // Do something?
+      QMessageBox msgbox;
+      msgbox.setText(tr("Error"));
+      msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
+      msgbox.exec();
       return;
     }
     active_machine.applyMachineParam(currentMachine());
