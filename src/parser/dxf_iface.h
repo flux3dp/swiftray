@@ -73,9 +73,7 @@ public:
     virtual void addXline(const DRW_Xline& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addArc(const DRW_Arc& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addArc(const DRW_Arc& data);
     virtual void addCircle(const DRW_Circle& data);
     virtual void addEllipse(const DRW_Ellipse& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;

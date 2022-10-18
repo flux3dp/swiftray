@@ -71,6 +71,33 @@ void dxf_iface::addLine(const DRW_Line& data) {
     layer_ptr_->addShape(new_shape);
 }
 
+void dxf_iface::addArc(const DRW_Arc& data) {
+    if(layer_ptr_ == nullptr) {
+        return;
+    }
+    QPainterPath working_path;
+    working_path.moveTo(data.basePoint.x + data.radious * cos(data.staangle), data.basePoint.y + data.radious * sin(data.staangle));
+    for(int i = 0 ; (i+2)<= 71; i+= 3) {
+        if(data.staangle < data.endangle) {
+            working_path.cubicTo(data.basePoint.x + data.radious * cos((double)i/71 * (data.endangle-data.staangle) + data.staangle),  
+                                data.basePoint.y + data.radious * sin((double)i/71 * (data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.x + data.radious * cos((double)(i+1)/71 * (data.endangle-data.staangle) + data.staangle),  
+                                data.basePoint.y + data.radious * sin((double)(i+1)/71 * (data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.x + data.radious * cos((double)(i+2)/71 * (data.endangle-data.staangle) + data.staangle),  
+                                data.basePoint.y + data.radious * sin((double)(i+2)/71 * (data.endangle-data.staangle) + data.staangle));
+        } else {
+            working_path.cubicTo(data.basePoint.x + data.radious * cos((double)i/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.y + data.radious * sin((double)i/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.x + data.radious * cos((double)(i+1)/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.y + data.radious * sin((double)(i+1)/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.x + data.radious * cos((double)(i+2)/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle), 
+                                data.basePoint.y + data.radious * sin((double)(i+2)/71 * (2*M_PI+data.endangle-data.staangle) + data.staangle));
+        }
+    }
+    ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+    layer_ptr_->addShape(new_shape);
+}
+
 void dxf_iface::addCircle(const DRW_Circle& data) {
     if(layer_ptr_ == nullptr) {
         return;
