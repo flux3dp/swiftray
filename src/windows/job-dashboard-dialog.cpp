@@ -19,7 +19,7 @@ JobDashboardDialog::JobDashboardDialog(const QPixmap &preview, QWidget *parent) 
   ui->statusLabel->setText(Executor::stateToString(job_state_));
   ui->estTotalRequiredTime->setText(Timestamp{0, 0}.toString());
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
-  scene->addPixmap(preview_);
+  scene->addPixmap(preview_.scaledToWidth(ui->canvasView->width(), Qt::SmoothTransformation));
   ui->canvasView->setScene(scene);
   ui->stopBtn->setEnabled(false);
   ui->startBtn->setEnabled(true);
@@ -40,7 +40,7 @@ JobDashboardDialog::JobDashboardDialog(
   ui->statusLabel->setText(Executor::stateToString(job_state_));
   ui->estTotalRequiredTime->setText(total_required_time.toString());
   QGraphicsScene *scene = new QGraphicsScene(ui->canvasView);
-  scene->addPixmap(preview_);
+  scene->addPixmap(preview_.scaledToWidth(ui->canvasView->width(), Qt::SmoothTransformation));
   ui->canvasView->setScene(scene);
   ui->stopBtn->setEnabled(false);
   ui->startBtn->setEnabled(true);
