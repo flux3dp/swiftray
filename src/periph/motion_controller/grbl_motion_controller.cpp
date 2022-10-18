@@ -85,6 +85,8 @@ void GrblMotionController::respReceived(QString resp) {
   //    "<....>", 
   //    "[MSG:...]", "[DEBUG:...]", "[FLUX:...]", ...
   qInfo() << "RECV<" << resp;
+  emit MotionController::respRcvd(resp);
+  
   resp = resp.trimmed();
   if (resp.contains(QString{"ok"}) || resp.contains(QString{"error"})) {
     int result_code = 0; 
@@ -166,8 +168,11 @@ void GrblMotionController::respReceived(QString resp) {
       // TODO:
     } else if (resp.contains("Sleeping")) {
       // TODO:
+    } else if (resp.contains("Check Door")) {
+      emit MotionController::notif(tr("NOTICE"), tr("Please check machine door."));
+    } else if (resp.contains("Check Bottom")) {
+      emit MotionController::notif(tr("NOTICE"), tr("Please check machine bottom."));
     }
-
   } else if (resp.startsWith("ALARM:")) {
     MotionControllerState old_state = state_;
     qInfo() << "Alarm detected";

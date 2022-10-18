@@ -1321,6 +1321,21 @@ void MainWindow::registerEvents() {
     }
   });
 
+  connect(ui->actionConsole, &QAction::triggered, [=]() {
+    if (!console_dialog_.isNull()) {
+      console_dialog_.clear();
+    }
+    console_dialog_ = QSharedPointer<ConsoleDialog>::create(this);
+    if (active_machine.getConnectionState() != Machine::ConnectionState::kDisconnected) {
+      if (!console_dialog_.isNull()) {
+        connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+        connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+      }
+    }
+    // Port connected but hasn't responded any meaningful response
+    console_dialog_->show();
+  });
+
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
   connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
@@ -1392,6 +1407,10 @@ void MainWindow::registerEvents() {
   connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
   connect(&active_machine, &Machine::connected, [=]() {
     // Port connected but hasn't responded any meaningful response
+    if (!console_dialog_.isNull()) {
+      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+    }
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
   });
   connect(&active_machine, &Machine::activated, [=]() {
