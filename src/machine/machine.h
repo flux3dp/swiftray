@@ -63,6 +63,7 @@ public slots:
 
 signals:
   void connected();
+  void activated();
   void disconnected();
   void positionCached(std::tuple<qreal, qreal, qreal>);
 

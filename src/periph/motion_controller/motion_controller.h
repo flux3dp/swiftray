@@ -23,7 +23,7 @@ class MotionController : public QObject
   Q_OBJECT
 public:
   enum class CmdSendResult {
-    kOk,      // cmd sent
+    kOk,      // cmd sent (but hasn't been acked)
     kBusy,    // ask to try again later
     kInvalid, // rejected, invalid cmd format
     kFail     // Other error

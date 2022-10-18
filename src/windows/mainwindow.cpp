@@ -1386,6 +1386,10 @@ void MainWindow::registerEvents() {
   //       NOTE: The active_machine might be null at the beginning
   connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
   connect(&active_machine, &Machine::connected, [=]() {
+    // Port connected but hasn't responded any meaningful response
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
+  });
+  connect(&active_machine, &Machine::activated, [=]() {
     emit MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
