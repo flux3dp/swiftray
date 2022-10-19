@@ -39,7 +39,9 @@ public:
     void setStartFrom(StartFrom start_from);
     int getJobOrigin();
     int getStartFrom();
+    bool getStartWithHome();
     void setControlEnable(bool control_enable);
+    void setStartHomeEnable(bool control_enable);
 
 signals:
   void actionFrame();
@@ -50,6 +52,7 @@ signals:
   void selectJobOrigin(JobOrigin position);
   void switchStartFrom(StartFrom start_from);
   void panelShow(bool is_show);
+  void startWithHome(bool start_with_home);
 
 private:
     void loadStyles() override;
@@ -61,6 +64,7 @@ private:
     JobOrigin job_origin_ = NW;
     StartFrom start_from_ = AbsoluteCoords;
     MainWindow *main_window_;
+    bool start_with_home_ = true;
 };
 
 #endif // LASERPANEL_H

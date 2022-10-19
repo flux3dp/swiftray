@@ -27,7 +27,7 @@ public:
 
   ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
 
-  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
+  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog = nullptr);
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_mm_ = work_area_size; }
 

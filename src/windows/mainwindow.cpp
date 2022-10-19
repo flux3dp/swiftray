@@ -370,7 +370,7 @@ void MainWindow::actionFrame() {
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
 
 
   // Again, make sure active machine and job executor exist, 
@@ -735,7 +735,7 @@ void MainWindow::exportGCodeFile() {
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
 
@@ -915,11 +915,13 @@ void MainWindow::updateScene() {
     canvas()->document().setWidth(machine_range_.width() * 10);
     canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
     canvas()->resize();
+    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   } else {
     mode_block_->setText(tr("XY Mode"));
     canvas()->document().setWidth(machine_range_.width() * 10);
     canvas()->document().setHeight(machine_range_.height() * 10);
     canvas()->resize();
+    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   }
 }
 
@@ -1345,6 +1347,9 @@ void MainWindow::registerEvents() {
       default:
         break;
     }
+  });
+  connect(laser_panel_, &LaserPanel::startWithHome, [=](bool start_with_home) {
+    start_with_home_ = start_with_home;
   });
 
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
@@ -2090,7 +2095,7 @@ bool MainWindow::generateGcode() {
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return false; // canceled
   }
   if (exporter.isExceedingBoundary()) {
@@ -2126,7 +2131,7 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
   progress_dialog.setValue(progress_dialog.maximum());

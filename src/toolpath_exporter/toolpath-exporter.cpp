@@ -26,13 +26,15 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
  * @retval true if completed,
  *         false if canceled or error occurred
  */
-bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog) {
+bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog) {
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
   // Pre cmds
   gen_->turnOffLaser(); // M5
-  // gen_->home();
+  if(start_with_home) {
+    gen_->home();
+  }
   gen_->useAbsolutePositioning();
 
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");

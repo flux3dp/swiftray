@@ -1,6 +1,7 @@
 #include "laser-panel.h"
 #include "ui_laser-panel.h"
 #include <windows/osxwindow.h>
+#include <QDebug>
 
 LaserPanel::LaserPanel(QWidget *parent, MainWindow *main_window) :
     QFrame(parent),
@@ -12,6 +13,12 @@ LaserPanel::LaserPanel(QWidget *parent, MainWindow *main_window) :
     initializeContainer();
     qRegisterMetaType<StartFrom>();
     ui->startFromComboBox->addItem(tr("Absolute Coords"), StartFrom::AbsoluteCoords);
+    if(start_with_home_) {
+        ui->homeCheckBox->setCheckState(Qt::Checked);
+    }
+    else {
+        ui->homeCheckBox->setCheckState(Qt::Unchecked);
+    }
     ui->startFromComboBox->addItem(tr("User Origin"), StartFrom::UserOrigin);
     ui->startFromComboBox->addItem(tr("Current Position"), StartFrom::CurrentPosition);
     setLayout();
@@ -77,10 +84,19 @@ void LaserPanel::registerEvents() {
         start_from_ = start_from;
         if(start_from_ == AbsoluteCoords) {
             ui->widget->hide();
+            ui->widget_2->show();
+            start_with_home_ = ui->homeCheckBox->checkState() && ui->homeCheckBox->isEnabled();
         } else {
             ui->widget->show();
+            ui->widget_2->hide();
+            start_with_home_ = false;
         }
         Q_EMIT switchStartFrom(start_from_);
+        Q_EMIT startWithHome(start_with_home_);
+    });
+    connect(ui->homeCheckBox, &QAbstractButton::clicked, [=](bool checked) {
+        start_with_home_ = checked;
+        Q_EMIT startWithHome(start_with_home_);
     });
 }
 
@@ -138,11 +154,30 @@ int LaserPanel::getStartFrom()
     return start_from_;
 }
 
+bool LaserPanel::getStartWithHome()
+{
+    return start_with_home_;
+}
+
 void LaserPanel::setControlEnable(bool control_enable)
 {
     ui->frameBtn->setEnabled(control_enable);
     ui->homeBtn->setEnabled(control_enable);
     ui->moveToOriginBtn->setEnabled(control_enable);
+}
+
+void LaserPanel::setStartHomeEnable(bool control_enable)
+{
+    if(!control_enable)
+    {
+        start_with_home_ = false;
+    }
+    else
+    {
+        start_with_home_ = ui->homeCheckBox->checkState();
+    }
+    ui->homeCheckBox->setEnabled(control_enable);
+    Q_EMIT startWithHome(start_with_home_);
 }
 
 void LaserPanel::setLayout()
