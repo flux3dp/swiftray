@@ -29,22 +29,26 @@ void ConsoleDialog::appendLogSent(QString msg) {
   }
   if (msg.length() < 3 && !(msg[0].isPrint())) {
     // Handle special cmd (print in Hex value format)
-    msg = QString::number(msg[0].unicode(), 16);
+    msg = "0x" + QString::number(msg[0].unicode(), 16);
     msg.append('\n');
   }
   if (!msg.endsWith('\n')) {
     msg.append('\n');
   }
-
-  ui->consoleLog->append("SND>" + msg);
+  ui->consoleLog->moveCursor(QTextCursor::End);
+  ui->consoleLog->insertPlainText("SND>" + msg);
+  ui->consoleLog->moveCursor(QTextCursor::End);
 }
 
 void ConsoleDialog::appendLogRcvd(QString msg) {
   // Special handling:
-  if (!msg.isEmpty() && msg.startsWith('<') && ui->ignoreStatusCheckBox->isChecked()) {
+  if (msg.isEmpty()) {
+    return;
+  } else if (msg.startsWith('<') && ui->ignoreStatusCheckBox->isChecked()) {
     return;
   }
+  ui->consoleLog->moveCursor(QTextCursor::End);
   ui->consoleLog->insertPlainText(msg);
-
+  ui->consoleLog->moveCursor(QTextCursor::End);
   qInfo() << "block cnt:" << ui->consoleLog->document()->blockCount();
 }

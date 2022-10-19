@@ -1408,6 +1408,8 @@ void MainWindow::registerEvents() {
   connect(&active_machine, &Machine::connected, [=]() {
     // Port connected but hasn't responded any meaningful response
     if (!console_dialog_.isNull()) {
+      disconnect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+      disconnect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
       connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
       connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
     }
