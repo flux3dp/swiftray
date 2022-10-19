@@ -144,16 +144,16 @@ macx{
 #    INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
 #    INCLUDEPATH += /opt/homebrew/include/poppler/glib
 #    INCLUDEPATH += /opt/homebrew/include/glib-2.0
-#    INCLUDEPATH += /opt/homebrew/Cellar/glib/2.72.3_1/lib/glib-2.0/include
-#    INCLUDEPATH += /opt/homebrew/Cellar/cairo/1.16.0_5/include/cairo
+#    INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
+#    INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
 
     # Mac Intel
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
     INCLUDEPATH += /usr/local/include/poppler/glib
     INCLUDEPATH += /usr/local/include/glib-2.0
-    INCLUDEPATH += /usr/local/Cellar/glib/2.72.3/lib/glib-2.0/include
-    INCLUDEPATH += /usr/local/Cellar/cairo/1.16.0_5/include/cairo
+    INCLUDEPATH += /usr/local/opt/glib/lib/glib-2.0/include
+    INCLUDEPATH += /usr/local/opt/cairo/include/cairo
 }
 
 # Remove -Wall and -Wextra flag
