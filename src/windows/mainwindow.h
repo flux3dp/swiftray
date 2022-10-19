@@ -9,6 +9,7 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QToolButton>
+#include <QSharedPointer>
 #include <widgets/components/layer-list-item.h>
 #include <widgets/panels/transform-panel.h>
 #include <widgets/panels/doc-panel.h>
@@ -29,6 +30,7 @@
 #include <windows/privacy_window.h>
 #include <executor/executor.h>
 #include <windows/rotary_setup.h>
+#include <windows/consoledialog.h>
 
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
@@ -218,6 +220,7 @@ private:
   AboutWindow *about_window_;
   PrivacyWindow *privacy_window_;
   RotarySetup *rotary_setup_;
+  QSharedPointer<ConsoleDialog> console_dialog_;
 
 #ifndef Q_OS_IOS
 #endif

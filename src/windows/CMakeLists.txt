@@ -16,4 +16,5 @@ target_sources(Swiftray PRIVATE
   privacy_window.cpp
   welcome-dialog.cpp
   rotary_setup.cpp
+  consoledialog.cpp
 )

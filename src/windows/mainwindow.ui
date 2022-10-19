@@ -195,7 +195,7 @@
    <property name="minimumSize">
     <size>
      <width>229</width>
-     <height>0</height>
+     <height>38</height>
     </size>
    </property>
    <property name="maximumSize">
@@ -776,6 +776,7 @@
     <addaction name="actionDocumentPanel"/>
     <addaction name="actionImagePanel"/>
     <addaction name="actionLaser"/>
+    <addaction name="actionConsole"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -1558,6 +1559,11 @@
    </property>
    <property name="text">
     <string>Laser</string>
+   </property>
+  </action>
+  <action name="actionConsole">
+   <property name="text">
+    <string>Console</string>
    </property>
   </action>
  </widget>

@@ -438,6 +438,9 @@ void Machine::motionPortConnected() {
   motion_controller_ = MotionControllerFactory::createMotionController(machine_param_, this);
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
+  connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
+  connect(motion_controller_, &MotionController::respRcvd, this, &Machine::logRcvd);
+
   motion_controller_->attachPort(port);
   
   // Reset state variables

@@ -67,6 +67,9 @@ signals:
   void disconnected();
   void positionCached(std::tuple<qreal, qreal, qreal>);
 
+  void logSent(QString);
+  void logRcvd(QString);
+
 private:
   MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
