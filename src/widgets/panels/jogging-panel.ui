@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>316</width>
-    <height>678</height>
+    <width>322</width>
+    <height>686</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,7 +18,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>316</width>
+    <width>322</width>
     <height>0</height>
    </size>
   </property>
@@ -43,15 +43,30 @@
    </property>
    <item>
     <widget class="QScrollArea" name="scrollArea">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
      <widget class="QWidget" name="scrollAreaWidgetContents_2">
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
-        <width>299</width>
+        <y>-21</y>
+        <width>305</width>
         <height>705</height>
        </rect>
       </property>
@@ -66,13 +81,13 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>275</width>
+           <width>280</width>
            <height>320</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>275</width>
+           <width>280</width>
            <height>320</height>
           </size>
          </property>
