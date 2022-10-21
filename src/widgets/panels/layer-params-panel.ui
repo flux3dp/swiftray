@@ -69,7 +69,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>198</width>
+        <width>215</width>
         <height>298</height>
        </rect>
       </property>
@@ -240,7 +240,7 @@
          <item>
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Backlash</string>
+            <string>Scanning Offset</string>
            </property>
           </widget>
          </item>

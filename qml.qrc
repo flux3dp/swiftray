@@ -158,5 +158,9 @@
         <file>resources/images/dark/icon-vdist.png</file>
         <file>resources/images/dark/icon-vflip.png</file>
         <file>qtquickcontrols2.conf</file>
+        <file>resources/images/icon-rotary-2.png</file>
+        <file>resources/images/icon-rotary.png</file>
+        <file>resources/images/dark/icon-rotary-2.png</file>
+        <file>resources/images/dark/icon-rotary.png</file>
     </qresource>
 </RCC>

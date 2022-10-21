@@ -1,6 +1,7 @@
 #include "rotary_setup.h"
 #include "ui_rotary_setup.h"
 #include <math.h>
+#include <windows/osxwindow.h>
 
 #include <QDebug>
 
@@ -10,18 +11,17 @@ RotarySetup::RotarySetup(QWidget *parent) :
 {
     ui->setupUi(this);
     axis_group_ = new QButtonGroup(this);
-    rotation_group_ = new QButtonGroup(this);
     ui->label->hide();
     ui->deviceComboBox->hide();
     ui->mirrorCheckBox->hide();
-    ui->label_2->hide();
-    ui->typeList->hide();
     axis_group_->addButton(ui->YRadioButton);
     axis_group_->addButton(ui->ZRadioButton);
     axis_group_->addButton(ui->ARadioButton);
-    rotation_group_->addButton(ui->rollerRadioButton);
-    rotation_group_->addButton(ui->objectRadioButton);
-    ui->rollerRadioButton->setChecked(true);
+    QListWidgetItem *item = ui->typeList->item(0);
+    item->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary.png" : ":/resources/images/icon-rotary.png"));
+    item = ui->typeList->item(1);
+    item->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary-2.png" : ":/resources/images/icon-rotary-2.png"));
+    ui->typeList->setCurrentRow(0);
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         if(control_enable_) ui->testBtn->setEnabled(true);
@@ -74,21 +74,11 @@ RotarySetup::RotarySetup(QWidget *parent) :
         rotary_axis_ = 'A';
         Q_EMIT rotaryAxisChanged(rotary_axis_);
     });
-    connect(ui->rollerRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        if(checked) {
+    connect(ui->typeList, &QListWidget::currentRowChanged, [=](int currentRow) {
+        if(currentRow == 0) {
             ui->rollerDiameterSpinBox->setEnabled(true);
-        }
-        else {
+        } else {
             ui->rollerDiameterSpinBox->setEnabled(false);
-        }
-        updateRotaryScale();
-    });
-    connect(ui->objectRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        if(checked) {
-            ui->rollerDiameterSpinBox->setEnabled(false);
-        }
-        else {
-            ui->rollerDiameterSpinBox->setEnabled(true);
         }
         updateRotaryScale();
     });
@@ -204,7 +194,7 @@ void RotarySetup::testRotary()
 
 void RotarySetup::updateRotaryScale()
 {
-    if(ui->rollerRadioButton->isChecked()) {
+    if(ui->typeList->currentRow() == 0) {
         double circumference = ui->rollerDiameterSpinBox->value() * M_PI;
         if(circumference > 0) {
             rotary_scale_ = ui->mmPerRotationSpinBox->value() / circumference;

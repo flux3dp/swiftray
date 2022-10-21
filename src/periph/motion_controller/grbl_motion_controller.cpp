@@ -180,7 +180,7 @@ void GrblMotionController::respReceived(QString resp) {
     int code = subString.toInt();
     if (code >= static_cast<int>(AlarmCode::kMin) &&
         code <= static_cast<int>(AlarmCode::kMax) && 
-        code != static_cast<int>(AlarmCode::kAbortCycle &&
+        code != static_cast<int>(AlarmCode::kAbortCycle) &&
         code != static_cast<int>(AlarmCode::kHomingFailReset)) {
       // NOTE: No need to show message dialog when abort during cycle
       emit MotionController::notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));

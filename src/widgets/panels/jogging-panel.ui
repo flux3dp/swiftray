@@ -65,9 +65,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-21</y>
+        <y>0</y>
         <width>305</width>
-        <height>705</height>
+        <height>699</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -82,13 +82,13 @@
          <property name="minimumSize">
           <size>
            <width>280</width>
-           <height>320</height>
+           <height>314</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>280</width>
-           <height>320</height>
+           <height>314</height>
           </size>
          </property>
          <property name="resizeMode">

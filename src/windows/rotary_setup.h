@@ -52,7 +52,6 @@ private:
     double framing_power_;
     bool control_enable_ = true;
     QButtonGroup *axis_group_;
-    QButtonGroup *rotation_group_;
 
 signals:
   void rotaryModeChanged(bool is_rotary_mode);
