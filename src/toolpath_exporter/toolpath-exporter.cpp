@@ -426,7 +426,7 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
     raster_lines.push_back(QLine{bbox.left(), y,
                                  bbox.left() + bbox.width(), y});
   }
-  qInfo() << "bbox: " << bbox << bbox.left() << ", " << bbox.right();;
+  qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
   // 2-2. iterate
