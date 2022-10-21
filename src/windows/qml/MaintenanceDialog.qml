@@ -8,7 +8,7 @@ import QtGraphicalEffects 1.0
 Rectangle {
     id: root
     width: 280
-    height: 314
+    height: 280
     color: is_dark_mode ? "#333333" : "#F0F0F0"
     signal home()
     signal laser()
@@ -21,9 +21,9 @@ Rectangle {
         x: 10
         y: 10
         width: 538
-        height: 460
+        height: 538
         color: "transparent"
-        transform: Scale { origin.x: 0; origin.y: 0; xScale: 260/538; yScale: 260/460 }
+        transform: Scale { origin.x: 0; origin.y: 0; xScale: 260/538; yScale: 260/538 }
 
         Shape {
             id: pathSvg
