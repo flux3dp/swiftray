@@ -1,0 +1,159 @@
+{
+ "graph_lock": {
+  "nodes": {
+   "0": {
+    "options": "brotli:enable_debug=False\nbrotli:enable_log=False\nbrotli:enable_portable=False\nbrotli:enable_rbit=True\nbrotli:endianness=None\nbrotli:shared=False\nbrotli:target_bits=None\nbzip2:build_executable=True\nbzip2:shared=False\ncairo:shared=False\ncairo:tee=True\ncairo:with_fontconfig=True\ncairo:with_freetype=True\ncairo:with_glib=True\ncairo:with_lzo=True\ncairo:with_png=True\ncairo:with_zlib=True\nexpat:char_type=char\nexpat:shared=False\nfontconfig:shared=False\nfreetype:shared=False\nfreetype:subpixel=False\nfreetype:with_brotli=True\nfreetype:with_bzip2=True\nfreetype:with_png=True\nfreetype:with_zlib=True\nglib:shared=True\nglib:with_pcre=True\nlibffi:shared=False\nlibgettext:shared=False\nlibgettext:threads=windows\nlibiconv:shared=False\nlibpng:api_prefix=\nlibpng:shared=False\nlibpng:sse=True\nlzo:shared=False\npcre2:build_pcre2_16=True\npcre2:build_pcre2_32=True\npcre2:build_pcre2_8=True\npcre2:build_pcre2grep=True\npcre2:grep_support_callout_fork=True\npcre2:shared=False\npcre2:support_jit=False\npcre2:with_bzip2=True\npcre2:with_zlib=True\npixman:shared=False\nzlib:shared=False",
+    "requires": [
+     "1",
+     "8"
+    ],
+    "path": "conanfile.txt",
+    "context": "host"
+   },
+   "1": {
+    "ref": "glib/2.73.3",
+    "options": "shared=True\nwith_pcre=True\nbzip2:build_executable=True\nbzip2:shared=False\nlibffi:shared=False\nlibgettext:shared=False\nlibgettext:threads=windows\nlibiconv:shared=False\npcre2:build_pcre2_16=True\npcre2:build_pcre2_32=True\npcre2:build_pcre2_8=True\npcre2:build_pcre2grep=True\npcre2:grep_support_callout_fork=True\npcre2:shared=False\npcre2:support_jit=False\npcre2:with_bzip2=True\npcre2:with_zlib=True\nzlib:shared=False",
+    "package_id": "757166d61ec135e9cc7659487782f6ee43ab06e4",
+    "prev": "0",
+    "requires": [
+     "2",
+     "3",
+     "4",
+     "6"
+    ],
+    "context": "host"
+   },
+   "2": {
+    "ref": "zlib/1.2.12",
+    "options": "shared=False",
+    "package_id": "3fb49604f9c2f729b85ba3115852006824e72cab",
+    "prev": "0",
+    "context": "host"
+   },
+   "3": {
+    "ref": "libffi/3.4.3",
+    "options": "shared=False",
+    "package_id": "3fb49604f9c2f729b85ba3115852006824e72cab",
+    "prev": "0",
+    "context": "host"
+   },
+   "4": {
+    "ref": "pcre2/10.40",
+    "options": "build_pcre2_16=True\nbuild_pcre2_32=True\nbuild_pcre2_8=True\nbuild_pcre2grep=True\ngrep_support_callout_fork=True\nshared=False\nsupport_jit=False\nwith_bzip2=True\nwith_zlib=True\nbzip2:build_executable=True\nbzip2:shared=False\nzlib:shared=False",
+    "package_id": "4958b335ae23c49b138435b977645c6c321f9662",
+    "prev": "0",
+    "requires": [
+     "2",
+     "5"
+    ],
+    "context": "host"
+   },
+   "5": {
+    "ref": "bzip2/1.0.8",
+    "options": "build_executable=True\nshared=False",
+    "package_id": "d16a91eadaaf5829b928b12d2f836ff7680d3df5",
+    "prev": "0",
+    "context": "host"
+   },
+   "6": {
+    "ref": "libgettext/0.21",
+    "options": "shared=False\nthreads=windows\nlibiconv:shared=False",
+    "package_id": "b3e4dccd9a7572a5a29c77cc68475a955d494ef7",
+    "prev": "0",
+    "requires": [
+     "7"
+    ],
+    "context": "host"
+   },
+   "7": {
+    "ref": "libiconv/1.17",
+    "options": "shared=False",
+    "package_id": "3fb49604f9c2f729b85ba3115852006824e72cab",
+    "prev": "0",
+    "context": "host"
+   },
+   "8": {
+    "ref": "cairo/1.17.4",
+    "options": "shared=False\ntee=True\nwith_fontconfig=True\nwith_freetype=True\nwith_glib=True\nwith_lzo=True\nwith_png=True\nwith_zlib=True\nbrotli:enable_debug=False\nbrotli:enable_log=False\nbrotli:enable_portable=False\nbrotli:enable_rbit=True\nbrotli:endianness=None\nbrotli:shared=False\nbrotli:target_bits=None\nbzip2:build_executable=True\nbzip2:shared=False\nexpat:char_type=char\nexpat:shared=False\nfontconfig:shared=False\nfreetype:shared=False\nfreetype:subpixel=False\nfreetype:with_brotli=True\nfreetype:with_bzip2=True\nfreetype:with_png=True\nfreetype:with_zlib=True\nglib:shared=True\nglib:with_pcre=True\nlibffi:shared=False\nlibgettext:shared=False\nlibgettext:threads=windows\nlibiconv:shared=False\nlibpng:api_prefix=\nlibpng:shared=False\nlibpng:sse=True\nlzo:shared=False\npcre2:build_pcre2_16=True\npcre2:build_pcre2_32=True\npcre2:build_pcre2_8=True\npcre2:build_pcre2grep=True\npcre2:grep_support_callout_fork=True\npcre2:shared=False\npcre2:support_jit=False\npcre2:with_bzip2=True\npcre2:with_zlib=True\npixman:shared=False\nzlib:shared=False",
+    "package_id": "4734f292790887cbde7cd683db4b2680da608222",
+    "prev": "0",
+    "requires": [
+     "9",
+     "10",
+     "11",
+     "2",
+     "12",
+     "15",
+     "13",
+     "1"
+    ],
+    "context": "host"
+   },
+   "9": {
+    "ref": "pixman/0.40.0",
+    "options": "shared=False",
+    "package_id": "3fb49604f9c2f729b85ba3115852006824e72cab",
+    "prev": "0",
+    "context": "host"
+   },
+   "10": {
+    "ref": "expat/2.4.8",
+    "options": "char_type=char\nshared=False",
+    "package_id": "ce5788ba7e3bb7dc834e36b06df66c481f42c99a",
+    "prev": "0",
+    "context": "host"
+   },
+   "11": {
+    "ref": "lzo/2.10",
+    "options": "shared=False",
+    "package_id": "3fb49604f9c2f729b85ba3115852006824e72cab",
+    "prev": "0",
+    "context": "host"
+   },
+   "12": {
+    "ref": "freetype/2.12.1",
+    "options": "shared=False\nsubpixel=False\nwith_brotli=True\nwith_bzip2=True\nwith_png=True\nwith_zlib=True\nbrotli:enable_debug=False\nbrotli:enable_log=False\nbrotli:enable_portable=False\nbrotli:enable_rbit=True\nbrotli:endianness=None\nbrotli:shared=False\nbrotli:target_bits=None\nbzip2:build_executable=True\nbzip2:shared=False\nlibpng:api_prefix=\nlibpng:shared=False\nlibpng:sse=True\nzlib:shared=False",
+    "package_id": "27b2733304cef577b19f699fec3a5bdbefb36d16",
+    "prev": "0",
+    "requires": [
+     "13",
+     "2",
+     "5",
+     "14"
+    ],
+    "context": "host"
+   },
+   "13": {
+    "ref": "libpng/1.6.37",
+    "options": "api_prefix=\nshared=False\nsse=True\nzlib:shared=False",
+    "package_id": "ce650d9f1f1c1c0839cf0694a55c1351ddbed859",
+    "prev": "0",
+    "requires": [
+     "2"
+    ],
+    "context": "host"
+   },
+   "14": {
+    "ref": "brotli/1.0.9",
+    "options": "enable_debug=False\nenable_log=False\nenable_portable=False\nenable_rbit=True\nendianness=None\nshared=False\ntarget_bits=None",
+    "package_id": "7e52046413f1e13a5fa19e3d410c5b50df627c3f",
+    "prev": "0",
+    "context": "host"
+   },
+   "15": {
+    "ref": "fontconfig/2.13.93",
+    "options": "shared=False\nbrotli:enable_debug=False\nbrotli:enable_log=False\nbrotli:enable_portable=False\nbrotli:enable_rbit=True\nbrotli:endianness=None\nbrotli:shared=False\nbrotli:target_bits=None\nbzip2:build_executable=True\nbzip2:shared=False\nexpat:char_type=char\nexpat:shared=False\nfreetype:shared=False\nfreetype:subpixel=False\nfreetype:with_brotli=True\nfreetype:with_bzip2=True\nfreetype:with_png=True\nfreetype:with_zlib=True\nlibpng:api_prefix=\nlibpng:shared=False\nlibpng:sse=True\nzlib:shared=False",
+    "package_id": "7bdcd0ebc5985e64875ce195eb75728a18edbb87",
+    "prev": "0",
+    "requires": [
+     "12",
+     "10"
+    ],
+    "context": "host"
+   }
+  },
+  "revisions_enabled": false
+ },
+ "version": "0.4",
+ "profile_host": "[settings]\narch=x86_64\narch_build=x86_64\nbuild_type=Release\ncompiler=Visual Studio\ncompiler.runtime=MD\ncompiler.version=16\nos=Windows\nos_build=Windows\n[options]\n[build_requires]\n[env]\n"
+}
