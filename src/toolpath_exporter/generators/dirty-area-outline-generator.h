@@ -17,7 +17,7 @@ public:
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     if (power == 0) {
       return;
     }
@@ -98,6 +98,12 @@ public:
   void home() override {
   }
 
+  void syncProgramFlow() override { 
+  }
+
+  void finishProgramFlow() override {
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;
@@ -108,22 +114,31 @@ public:
   std::string toString() override {
     str_stream_.str(std::string()); // clear
 
-    str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
+    // str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
 
     str_stream_ << "G90" << std::endl;
-    str_stream_ << "G1F6000" << std::endl;
+    str_stream_ << "G1F" << std::to_string(travel_speed_) << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1S20" << std::endl;
-    str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-    str_stream_ << "G1S0" << std::endl;
-    str_stream_ << "M5" << std::endl;
+    if (x_min_ == x_max_ && x_min_ == -1) {
+      str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
+      str_stream_ << "G1S0" << std::endl;
+    } else {
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
+      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      str_stream_ << "G1S0" << std::endl;
+    }
+    str_stream_ << "M2" << std::endl; // // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
     return str_stream_.str();
   };
+
+  void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
+
+  void setLaserPower(double laser_power) {laser_power_ = laser_power;}
 
 private:
     int machine_width_;
@@ -133,4 +148,6 @@ private:
     qreal y_min_ = -1;
     qreal y_max_ = -1;
     MachineSettings::MachineSet::OriginType machine_origin_;
+    double travel_speed_ = 6000;
+    double laser_power_ = 2;
 };

@@ -1,6 +1,6 @@
 target_sources(Swiftray PRIVATE
   mainwindow.cpp
-  gcode-player.cpp
+  gcode-panel.cpp
   about-window.cpp
   image-crop-dialog.cpp
   image-sharpen-dialog.cpp
@@ -15,4 +15,6 @@ target_sources(Swiftray PRIVATE
   preview-window.cpp
   privacy_window.cpp
   welcome-dialog.cpp
+  rotary_setup.cpp
+  consoledialog.cpp
 )

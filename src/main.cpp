@@ -111,5 +111,6 @@ int main(int argc, char *argv[]) {
   // Load MainWindow
   MainWindow win;
   win.show();
+
   return app.exec();
 }

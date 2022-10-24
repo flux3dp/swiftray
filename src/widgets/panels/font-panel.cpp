@@ -231,3 +231,11 @@ void FontPanel::setLayout() {
 void FontPanel::setLineHeight(double line_height) {
   ui->lineHeightSpinBox->setValue(line_height);
 }
+
+void FontPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void FontPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
+}

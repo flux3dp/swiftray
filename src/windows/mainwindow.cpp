@@ -31,6 +31,8 @@
 #include <windows/job-dashboard-dialog.h>
 #include <globals.h>
 #include "widgets/components/canvas-widget.h"
+#include <executor/machine_job/gcode_job.h>
+#include <common/timestamp.h>
 
 #include "ui_mainwindow.h"
 
@@ -54,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
   updateSelections();
   showWelcomeDialog();
   setScaleBlock();
+  setModeBlock();
   setConnectionToolBar();
 }
 
@@ -69,6 +72,9 @@ void MainWindow::loadSettings() {
     QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
+  MachineSettings::MachineSet machine_info = doc_panel_->currentMachine();
+  machine_range_.setHeight(machine_info.height);
+  machine_range_.setWidth(machine_info.width);
   QString current_machine = doc_panel_->getMachineName();
   std::size_t found = current_machine.toStdString().find("Lazervida");
   if(found!=std::string::npos) {
@@ -84,6 +90,10 @@ void MainWindow::loadSettings() {
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
+  updateTravelSpeed();
+  rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
+  canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
+  canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
 
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
@@ -247,56 +257,213 @@ bool MainWindow::handleUnsavedChange() {
   return handle_result;
 }
 
+/**
+ * @brief When start button on the toolbar is pressed, 
+ *        try to open job dashboard
+ */
 void MainWindow::actionStart() {
   // NOTE: unselect all to show the correct shape colors. Otherwise, the selected shapes will be in blue color.
   canvas_->document().execute(Commands::Select(&canvas_->document(), {}));
 
-  if (!serial_port.isOpen()) {
+  // TODO: Restriction 1: Reject if active_machine not connected
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
     QMessageBox msgbox;
     msgbox.setText(tr("Serial Port Error"));
     msgbox.setInformativeText(tr("Please connect to serial port first"));
     msgbox.exec();
     return;
   }
-  // Prepare GCodes
-  if (generateGcode() == false) {
-    return;
-  }
-  // Prepare total required time
-  try {
-    auto gcode_list = gcode_player_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size() - 1, 
-      this);
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    QTime total_required_time = QTime{0, 0};
-    if (!timestamp_list.empty()) {
-      total_required_time = timestamp_list.last();
-    }
-    // Prepare canvas scene pixmap
-    QPixmap canvas_pixmap{static_cast<int>(canvas_->document().width()), static_cast<int>(canvas_->document().height())};
-    canvas_pixmap.fill(Qt::white);
-    auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-    canvas_->document().paint(painter.get());
 
-    job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
-    connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
-    connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
-    connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
-    connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
-    connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::setJobStatus);
-    connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
-    if (jobs_.length() > 0 && (jobs_.last()->isRunning() || jobs_.last()->isPaused())) {
-      job_dashboard_->attachJob(jobs_.last());
-    }
-    job_dashboard_->show();
-    job_dashboard_exist_ = true;
-  } catch (...) {
-    // Terminated
+  // Restriction 2: Reject if not job_executor exists in active_machine
+  if (active_machine.getJobExecutor().isNull()) {
     return;
   }
+  // Restriction 3: Reject if active job exists, but doesn't contain preview 
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    if (!active_machine.getJobExecutor()->getActiveJob()->withPreview()) {
+      return;
+    }
+    // Re-open job dashboard for existing job
+    //if (job_dashboard_) {
+    //  job_dashboard_->deleteLater();
+    //}
+    job_dashboard_ = new JobDashboardDialog(
+        active_machine.getJobExecutor()->getActiveJob()->getTotalRequiredTime(), 
+        active_machine.getJobExecutor()->getActiveJob()->getPreview(), 
+        this
+    );
+    // Attach to existing job
+    job_dashboard_->attachJob(active_machine.getJobExecutor());
+  } else {
+    // If active job doesn't exist, Prepare (Generate) GCodes before launching job dashboard
+    if (generateGcode() == false) {
+      return;
+    }
+    try {
+      auto gcode_list = gcode_panel_->getGCode().split('\n');
+      // Estimate total required time
+      auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size() - 1, 
+        this);
+      auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+      Timestamp total_required_time{0, 0};
+      if (!timestamp_list.empty()) {
+        total_required_time = timestamp_list.last();
+      }
+      // Prepare canvas scene pixmap
+      QPixmap canvas_pixmap{
+          static_cast<int>(canvas_->document().width()), 
+          static_cast<int>(canvas_->document().height())
+      };
+      canvas_pixmap.fill(Qt::white);
+      auto painter = std::make_unique<QPainter>(&canvas_pixmap);
+      canvas_->document().paint(painter.get());
+      //if (job_dashboard_) {
+      //  job_dashboard_->deleteLater();
+      //}
+      job_dashboard_ = new JobDashboardDialog(total_required_time, canvas_pixmap, this);
+    } catch (...) {
+      // Terminated in required time estimation
+      return;
+    }
+  }
+
+  connect(job_dashboard_, &JobDashboardDialog::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(job_dashboard_, &JobDashboardDialog::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(job_dashboard_, &JobDashboardDialog::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(job_dashboard_, &JobDashboardDialog::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(job_dashboard_, &JobDashboardDialog::jobStatusReport, this, &MainWindow::syncJobState);
+
+  connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
+  job_dashboard_->show();
+  job_dashboard_exist_ = true;
+}
+
+void MainWindow::actionFrame() {
+
+  // Make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Make sure port connected
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Serial Port Error"));
+    msgbox.setInformativeText(tr("Please connect to serial port first"));
+    msgbox.exec();
+    return;
+  }
+  // Make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  // Generate gcode for framing
+  QTransform move_translate = calculateTranslate();
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
+  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+      canvas_->document().settings().dpmm(),
+      travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
+      ToolpathExporter::PaddingType::kNoPadding,
+      move_translate);
+  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
+
+
+  // Again, make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Again, make sure port connected
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
+    return;
+  }
+  // Again, make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
+  gen_outline_scanning_gcode->setLaserPower(jogging_panel_->getFramingPower());
+  // Create Framing Job and start
+  if (true == active_machine.createFramingJob(
+        QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+QPoint MainWindow::calculateJobOrigin() {
+  //to get shape bounding
+  QRect rect = canvas_->calculateShapeBoundary();
+  int job_origin = laser_panel_->getJobOrigin();
+  QPoint target_point;
+  switch(job_origin) {
+    case LaserPanel::JobOrigin::NW:
+      target_point = QPoint(rect.left(), rect.top());
+      break;
+    case LaserPanel::JobOrigin::N:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
+      break;
+    case LaserPanel::JobOrigin::NE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top());
+      break;
+    case LaserPanel::JobOrigin::E:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
+      break;
+    case LaserPanel::JobOrigin::SE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::S:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::SW:
+      target_point = QPoint(rect.left(), rect.top() + rect.height());
+      break;
+    case LaserPanel::JobOrigin::W:
+      target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
+      break;
+    case LaserPanel::JobOrigin::CENTER:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
+      break;
+    default:
+      break;
+  }
+  return target_point;
+}
+
+QTransform MainWindow::calculateTranslate() {
+  int start_from = laser_panel_->getStartFrom();
+  QTransform move_translate = QTransform();
+  //to get shape bounding
+  QPoint target_point = calculateJobOrigin();
+  //unit??
+  switch(start_from) {
+    case LaserPanel::StartFrom::AbsoluteCoords:
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
+      break;
+    case LaserPanel::StartFrom::CurrentPosition:
+      move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
+      break;
+    case LaserPanel::StartFrom::UserOrigin:
+      move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
+      break;
+    default:
+      break;
+  }
+  if(is_rotary_mode_) {
+    QTransform scale_transform = QTransform::fromScale(1, rotary_setup_->getRotaryScale());
+    move_translate *= scale_transform;
+  }
+  return move_translate;
 }
 
 void MainWindow::newFile() {
@@ -552,7 +719,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -560,11 +727,15 @@ void MainWindow::exportGCodeFile() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
-      ToolpathExporter::PaddingType::kFixedPadding);
+      travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
 
@@ -611,7 +782,7 @@ void MainWindow::importGCodeFile() {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
     QTextStream stream(data);
-    gcode_player_->setGCode(stream.readAll());
+    gcode_panel_->setGCode(stream.readAll());
   }
 }
 
@@ -738,28 +909,58 @@ void MainWindow::updateToolbarTransform() {
   emit toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
+void MainWindow::updateScene() {
+  if(is_rotary_mode_) {
+    mode_block_->setText(tr("Rotary Mode"));
+    canvas()->document().setWidth(machine_range_.width() * 10);
+    canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
+    canvas()->resize();
+    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
+  } else {
+    mode_block_->setText(tr("XY Mode"));
+    canvas()->document().setWidth(machine_range_.width() * 10);
+    canvas()->document().setHeight(machine_range_.height() * 10);
+    canvas()->resize();
+    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
+  }
+}
+
+void MainWindow::updateTravelSpeed() {
+  if(is_rotary_mode_) {
+    travel_speed_ = doc_panel_->getRotarySpeed() * 60;// mm/s to mm/min
+  }
+  else {
+    travel_speed_ = doc_panel_->getTravelSpeed() * 60;// mm/s to mm/min
+  }
+  rotary_setup_->setTravelSpeed(doc_panel_->getRotarySpeed() * 60);
+  jogging_panel_->setTravelSpeed(travel_speed_);
+}
+
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
-  gcode_player_ = new GCodePlayer(ui->serialPortDock);
+  gcode_panel_ = new GCodePanel(ui->serialPortDock, this);
   font_panel_ = new FontPanel(ui->fontDock, this);
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
+  laser_panel_ = new LaserPanel(ui->laserDock, this);
   machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   privacy_window_ = new PrivacyWindow(this);
+  rotary_setup_ = new RotarySetup(this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
-  ui->serialPortDock->setWidget(gcode_player_);
+  ui->serialPortDock->setWidget(gcode_panel_);
   ui->fontDock->setWidget(font_panel_);
   ui->imageDock->setWidget(image_panel_);
   ui->layerDock->setWidget(layer_panel_);
   ui->documentDock->setWidget(doc_panel_);
+  ui->laserDock->setWidget(laser_panel_);
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
@@ -769,8 +970,9 @@ void MainWindow::loadWidgets() {
   ui->actionImagePanel->setChecked(!ui->imageDock->isHidden());
   ui->actionDocumentPanel->setChecked(!ui->documentDock->isHidden());
   ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
-  ui->actionGCodeViewerPanel->setChecked(!gcode_player_->isHidden());
+  ui->actionGCodeViewerPanel->setChecked(!gcode_panel_->isHidden());
   ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
+  ui->actionLaser->setChecked(!laser_panel_->isHidden());
   //toolbar
   ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
   ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
@@ -842,6 +1044,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
   connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
   connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
+  connect(ui->actionRotarySetup, &QAction::triggered, rotary_setup_, &RotarySetup::show);
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
@@ -851,35 +1054,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
-  connect(ui->actionFrame, &QAction::triggered, this, [=]() {
-    if (!serial_port.isOpen()) {
-      QMessageBox msgbox;
-      msgbox.setText(tr("Serial Port Error"));
-      msgbox.setInformativeText(tr("Please connect to serial port first"));
-      msgbox.exec();
-      return;
-    }
-    auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(doc_panel_->currentMachine());
-    ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
-        canvas_->document().settings().dpmm(),
-        ToolpathExporter::PaddingType::kNoPadding);
-    exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-    exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_);
-
-    // TODO: Directly execute without gcode player? (e.g. the same in Jogging panel)
-    // Approach 1: use gcode player
-    // gcode_player_->setGCode(QString::fromStdString(gen_outline_scanning_gcode->toString()));
-    // Approach 2: directy control serial port
-    if (!serial_port.isOpen()) {
-      return;
-    }
-    QStringList cmd_list = QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n");
-    for (auto cmd: cmd_list) {
-      serial_port.write(cmd + "\n");
-      // TODO: Wait for ok?
-    }
-
-  });
+  connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
   connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
@@ -921,21 +1096,10 @@ void MainWindow::registerEvents() {
       setCursor(cursor);
     }
   });
+  connect(canvas_, &Canvas::syncJobOrigin, [=]() {
+    canvas_->setJobOrigin(calculateJobOrigin());
+  });
 
-  connect(gcode_player_, &GCodePlayer::exportGcode, this, &MainWindow::exportGCodeFile);
-  connect(gcode_player_, &GCodePlayer::importGcode, this, &MainWindow::importGCodeFile);
-  connect(gcode_player_, &GCodePlayer::generateGcode, this, &MainWindow::generateGcode);
-  connect(gcode_player_, &GCodePlayer::startBtnClicked, this, &MainWindow::onStartNewJob);
-  connect(gcode_player_, &GCodePlayer::pauseBtnClicked, this, &MainWindow::onPauseJob);
-  connect(gcode_player_, &GCodePlayer::resumeBtnClicked, this, &MainWindow::onResumeJob);
-  connect(gcode_player_, &GCodePlayer::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(gcode_player_, &GCodePlayer::jobStatusReport, this, &MainWindow::setJobStatus);
-  connect(&serial_port, &SerialPort::connected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
-  });
-  connect(&serial_port, &SerialPort::disconnected, [=]() {
-    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
-  });
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
     is_high_speed_mode_ = is_high_speed;
   });
@@ -967,6 +1131,8 @@ void MainWindow::registerEvents() {
     settings.setValue("window/upload", is_upload_enable_);
   });
   connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
+    active_machine.applyMachineParam(currentMachine());
+
     std::size_t found = machine_name.toStdString().find("Lazervida");
     if(found!=std::string::npos) {
       is_high_speed_mode_ = true;
@@ -981,6 +1147,17 @@ void MainWindow::registerEvents() {
       preferences_window_->setSpeedMode(is_high_speed_mode_);
     }
   });
+  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    rotary_setup_->setRotaryMode(is_rotary_mode);
+    updateScene();
+    updateTravelSpeed();
+  });
+  connect(doc_panel_, &DocPanel::updateMachineRange, [=](QSize machine_range) {
+    machine_range_ = machine_range;
+    updateScene();
+  });
+  connect(doc_panel_, &DocPanel::updateSpeed, this, &MainWindow::updateTravelSpeed);
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {
@@ -1036,6 +1213,14 @@ void MainWindow::registerEvents() {
     }
     else {
       ui->joggingDock->hide();
+    }
+  });
+  connect(ui->actionLaser, &QAction::triggered, [=]() {
+    if(ui->laserDock->isHidden()) {
+      ui->laserDock->show();
+    }
+    else {
+      ui->laserDock->hide();
     }
   });
   //toolbar
@@ -1135,6 +1320,105 @@ void MainWindow::registerEvents() {
       ui->toolBarVector->hide();
     }
   });
+
+  connect(ui->actionConsole, &QAction::triggered, [=]() {
+    if (!console_dialog_.isNull()) {
+      console_dialog_.clear();
+    }
+    console_dialog_ = QSharedPointer<ConsoleDialog>::create(this);
+    if (active_machine.getConnectionState() != Machine::ConnectionState::kDisconnected) {
+      if (!console_dialog_.isNull()) {
+        connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+        connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+      }
+    }
+    // Port connected but hasn't responded any meaningful response
+    console_dialog_->show();
+  });
+
+  connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
+  connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
+  connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
+  connect(gcode_panel_, &GCodePanel::startBtnClicked, this, &MainWindow::onStartNewJob);
+  connect(gcode_panel_, &GCodePanel::pauseBtnClicked, this, &MainWindow::onPauseJob);
+  connect(gcode_panel_, &GCodePanel::resumeBtnClicked, this, &MainWindow::onResumeJob);
+  connect(gcode_panel_, &GCodePanel::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::syncJobState);
+
+  connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
+  connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
+  connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
+  connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
+  connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
+  connect(laser_panel_, &LaserPanel::switchStartFrom, [=](LaserPanel::StartFrom start_from) {
+    switch(start_from) {
+      case LaserPanel::StartFrom::AbsoluteCoords:
+        canvas_->setJobOrigin(false);
+        break;
+      case LaserPanel::StartFrom::UserOrigin:
+      case LaserPanel::StartFrom::CurrentPosition:
+        canvas_->setJobOrigin(true);
+        break;
+      default:
+        break;
+    }
+  });
+  connect(laser_panel_, &LaserPanel::startWithHome, [=](bool start_with_home) {
+    start_with_home_ = start_with_home;
+  });
+
+  connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
+  connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
+  connect(jogging_panel_, &JoggingPanel::actionHome, this, &MainWindow::home);
+  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, this, &MainWindow::moveRelatively);
+  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, this, &MainWindow::moveAbsolutely);
+  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
+  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
+  connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
+  connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);
+  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
+    rotary_setup_->setFramingPower(framing_power);
+  });
+  connect(jogging_panel_, &JoggingPanel::showCurrentPosition, [=](bool show) {
+    canvas_->setCurrentPosition(show);
+  });
+  connect(jogging_panel_, &JoggingPanel::showUserOrigin, [=](bool show) {
+    canvas_->setUserOrigin(show);
+  });
+
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    is_rotary_mode_ = is_rotary_mode;
+    doc_panel_->setRotaryMode(is_rotary_mode_);
+    updateScene();
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    is_mirror_mode_ = is_mirror_mode;
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
+    rotary_axis_ = rotary_axis;
+  });
+  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
+  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
+    updateScene();
+  });
+
+  // TODO: Refactor it when supporting multi-port and multi-machine connection
+  //       NOTE: The active_machine might be null at the beginning
+  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
+  connect(&active_machine, &Machine::connected, [=]() {
+    // Port connected but hasn't responded any meaningful response
+    if (!console_dialog_.isNull()) {
+      disconnect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+      disconnect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
+      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+    }
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
+  });
+  connect(&active_machine, &Machine::activated, [=]() {
+    emit MainWindow::activeMachineConnected();
+    ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
+  });
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -1221,7 +1505,10 @@ void MainWindow::setConnectionToolBar() {
   baudComboBox_->addItem("57600");
   baudComboBox_->addItem("115200");
   baudComboBox_->addItem("230400");
+  baudComboBox_->addItem("460800");
+  baudComboBox_->addItem("921600");
   baudComboBox_->setCurrentIndex(4); // default baudrate 115200
+  
   connect(timer, &QTimer::timeout, [=]() {
     const auto infos = QSerialPortInfo::availablePorts();
     int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
@@ -1242,6 +1529,7 @@ void MainWindow::setConnectionToolBar() {
               [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
       );
       if (matchIt == infos.end()) { // Unplugged -> close opened port
+        qInfo() << "Serial port unplugged";
         serial_port.close();
       }
     }
@@ -1258,9 +1546,22 @@ void MainWindow::setConnectionToolBar() {
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
     serial_port.open(port_name, baudrate.toInt());
     if (!serial_port.isOpen()) {
-      // Do something?
+      QMessageBox msgbox;
+      msgbox.setText(tr("Error"));
+      msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
+      msgbox.exec();
       return;
     }
+    active_machine.applyMachineParam(currentMachine());
+    connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
+      emit MainWindow::positionCached(target_pos);
+      canvas()->updateCurrentPosition(target_pos);
+    });
+    connect(&active_machine, &Machine::disconnected, [=]() {
+      emit MainWindow::activeMachineDisconnected();
+      ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+  });
+
   });
   timer->start(4000);
 }
@@ -1591,22 +1892,25 @@ void MainWindow::setToolbarTransform() {
   });
 
   //panel
-  connect(ui->objectParamDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionObjectPanel->setChecked(is_visible);
+  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
+    ui->actionObjectPanel->setChecked(is_show);
   });
-  connect(ui->fontDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionFontPanel->setChecked(is_visible);
+  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
+    ui->actionFontPanel->setChecked(is_show);
   });
-  connect(ui->imageDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionImagePanel->setChecked(is_visible);
+  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
+    ui->actionImagePanel->setChecked(is_show);
   });
-  connect(ui->documentDock, &QDockWidget::visibilityChanged, [=](bool is_visible) {
-    ui->actionDocumentPanel->setChecked(is_visible);
+  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
+    ui->actionDocumentPanel->setChecked(is_show);
+  });
+  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
+    ui->actionLaser->setChecked(is_show);
   });
   connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
     ui->actionLayerPanel->setChecked(is_show);
   });
-  connect(gcode_player_, &GCodePlayer::panelShow, [=](bool is_show) {
+  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
     ui->actionGCodeViewerPanel->setChecked(is_show);
   });
   connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
@@ -1676,6 +1980,13 @@ void MainWindow::setToolbarImage() {
 
 }
 */
+
+void MainWindow::setModeBlock() {
+  mode_block_ = new QPushButton(ui->quickWidget);
+  mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
+  mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
+  updateScene();
+}
 
 void MainWindow::setScaleBlock() {
   scale_block_ = new QPushButton("100%", ui->quickWidget);
@@ -1790,18 +2101,22 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(doc_panel_->currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
-      ToolpathExporter::PaddingType::kFixedPadding);
+      travel_speed_ / 60,// mm/min to mm/s
+      end_point_,
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return false; // canceled
   }
   if (exporter.isExceedingBoundary()) {
@@ -1811,7 +2126,7 @@ bool MainWindow::generateGcode() {
     msgbox.exec();
   }
   
-  gcode_player_->setGCode(QString::fromStdString(gen_gcode->toString()));
+  gcode_panel_->setGCode(QString::fromStdString(gen_gcode->toString()));
   progress_dialog.setValue(progress_dialog.maximum());
 
   return true;
@@ -1819,11 +2134,14 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(doc_panel_->currentMachine());
-
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine());
+  QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
-                                    ToolpathExporter::PaddingType::kFixedPadding);
+                                    travel_speed_ / 60,// mm/min to mm/s
+                                    end_point_,
+                                    ToolpathExporter::PaddingType::kFixedPadding,
+                                    move_translate);
 
   preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
 
@@ -1834,7 +2152,7 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
 
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, &progress_dialog)) {
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
   progress_dialog.setValue(progress_dialog.maximum());
@@ -1847,21 +2165,24 @@ void MainWindow::genPreviewWindow() {
 
   // Prepare total required time
   try {
-    auto gcode_list = gcode_player_->getGCode().split('\n');
+    auto gcode_list = gcode_panel_->getGCode().split('\n');
     auto progress_dialog = new QProgressDialog(
       tr("Estimating task time..."),  
       tr("Cancel"), 
       0, gcode_list.size()-1, 
       this);
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    QTime last_gcode_timestamp{0, 0};
+    auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+    Timestamp last_gcode_timestamp{0, 0};
     if (!timestamp_list.empty()) {
       last_gcode_timestamp = timestamp_list.last();
     }
 
+    double scale = 1;
+    if(is_rotary_mode_) scale = rotary_setup_->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
                                           canvas_->document().width() / 10,
-                                          canvas_->document().height() / 10);
+                                          canvas_->document().height() / 10,
+                                          scale);
     pw->setPreviewPath(preview_path_generator);
     pw->setRequiredTime(last_gcode_timestamp);
     pw->show();
@@ -1873,121 +2194,86 @@ void MainWindow::genPreviewWindow() {
 }
 
 /**
- * @brief Generate a new job from Gcodes in gcode editor (gcode player)
+ * @brief Create and launch a new Job,
+ *        Attach control panel (gcode panel & job dashboard) to the active job
+ *        Currently, support gcode job only
  */
-void MainWindow::generateJob() {
-  // Delete and pop all finished jobs
-  if (!jobs_.isEmpty()) {
-    qInfo() << "delete finished jobs";
-    if (jobs_.last()->thread() != nullptr && jobs_.last()->isFinished()) {
-      jobs_.last()->deleteLater();
-      jobs_.pop_back();
+void MainWindow::onStartNewJob() {
+  auto gcode_list = gcode_panel_->getGCode().split('\n');
+  JobDashboardDialog* job_dialog = qobject_cast<JobDashboardDialog*>(sender());
+  if (job_dialog != NULL) {
+    // Job launched from job dashboard -> with preview
+    auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size()-1, 
+        qobject_cast<QWidget*>(job_dialog));
+    if (true == active_machine.createGCodeJob(gcode_list, 
+                                              job_dialog->getPreview(),
+                                              progress_dialog)) {
+      gcode_panel_->attachJob(active_machine.getJobExecutor());
+      job_dashboard_->attachJob(active_machine.getJobExecutor());
+      active_machine.startJob();
+    }
+  } else {
+    // Job launched from other component, e.g. gcode panel -> no preview (i.e. no job dashboard)
+    auto progress_dialog = new QProgressDialog(
+        tr("Estimating task time..."),  
+        tr("Cancel"), 
+        0, gcode_list.size()-1, 
+        qobject_cast<QWidget*>(this));
+    if (true == active_machine.createGCodeJob(gcode_list, progress_dialog)) {
+      gcode_panel_->attachJob(active_machine.getJobExecutor());
+      active_machine.startJob();
     }
   }
 
-  // Check whether any job still running
-  if (!jobs_.isEmpty()) { // at least one job hasn't finist -> don't start execute
-    qInfo() << "Blocked: Some jobs are still running";
-    return;
-  }
-  try {
-    auto gcode_list = gcode_player_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size()-1, 
-      job_dashboard_exist_ ? qobject_cast<QWidget*>(job_dashboard_) : qobject_cast<QWidget*>(this));
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    auto timestamp_list = GrblJob::calcRequiredTime(gcode_list, progress_dialog);
-    auto job = new GrblJob(this, "", gcode_list);
-    job->setTimestampList(timestamp_list);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-
-    jobs_ << job;
-  } catch (...) {
-    // Terminated
-    return;
-  }
-}
-
-/**
- * @brief launch a new Serial Job (might be other job in the future)
- */
-void MainWindow::onStartNewJob() {
-  generateJob();
-  if (jobs_.empty()) {
-    return;
-  }
-
-  if (jobs_.count() != 1 && jobs_.last()->status() != BaseJob::Status::READY) {
-    qInfo() << "Blocked: No job is ready to run";
-    return;
-  }
-
-  gcode_player_->attachJob(jobs_.last());
-  if(job_dashboard_exist_) {
-    job_dashboard_->attachJob(jobs_.last());
-  }
-  jobs_.last()->start();
 }
 
 void MainWindow::onStopJob() {
-  // Delete finished jobs
-  for (auto job: jobs_) {
-    if (!jobs_.last()->isFinished()) {
-      jobs_.last()->stop();
-    }
-  }
+  active_machine.stopJob();
+  active_machine.syncPosition();
 }
 
 void MainWindow::onPauseJob() {
-  if (jobs_.isEmpty()) {
-    return;
-  }
-  auto job = jobs_.last();
-  job->pause();
+  active_machine.pauseJob();
 }
 
 void MainWindow::onResumeJob() {
-  if (jobs_.isEmpty()) {
-    return;
-  }
-  auto job = jobs_.last();
-  job->resume();
+  active_machine.resumeJob();
 }
 
-void MainWindow::setJobStatus(BaseJob::Status status) {
-  switch (status) {
-    case BaseJob::Status::READY:
+void MainWindow::syncJobState(Executor::State new_state) {
+  switch (new_state) {
+    case Executor::State::kIdle:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
+      rotary_setup_->setControlEnable(true);
       break;
-    case BaseJob::Status::STARTING:
+    case Executor::State::kRunning:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
+      laser_panel_->setControlEnable(false);
+      rotary_setup_->setControlEnable(false);
       break;
-    case BaseJob::Status::RUNNING:
+    case Executor::State::kPaused:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
+      laser_panel_->setControlEnable(false);
+      rotary_setup_->setControlEnable(false);
       break;
-    case BaseJob::Status::PAUSED:
-      ui->actionFrame->setEnabled(false);
-      jogging_panel_->setControlEnable(false);
-      break;
-    case BaseJob::Status::FINISHED:
+    case Executor::State::kCompleted:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
+      rotary_setup_->setControlEnable(true);
       break;
-    case BaseJob::Status::ALARM:
-      ui->actionFrame->setEnabled(false);
-      jogging_panel_->setControlEnable(false);
-      break;
-    case BaseJob::Status::STOPPED:
-    case BaseJob::Status::ALARM_STOPPED:
+    case Executor::State::kStopped:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
+      laser_panel_->setControlEnable(true);
+      rotary_setup_->setControlEnable(true);
       break;
     default:
       break;
@@ -2005,5 +2291,132 @@ void MainWindow::updateTitle(bool file_modified) {
   }
   else {
     setWindowTitle(current_filename_ + " - Swiftray");
+  }
+}
+
+/**
+ * @brief 
+ * 
+ * @param power 0: turn off laser
+ *              otherwise, represent percentage of laser emission (0-100%)
+ */
+void MainWindow::laser(qreal power_percent) {
+  QStringList gcode_list;
+  if (power_percent == 0) {
+    qInfo() << "laser off!";
+    gcode_list.push_back("G1S0");
+    gcode_list.push_back("M5");
+  } else {
+    qInfo() << "laser on!";
+    gcode_list.push_back("M3");
+    gcode_list.push_back("G1F1000");
+    // TODO: Convert percent to S value based on machine settings
+    //       We currently assume 100% = S1000 here
+    gcode_list.push_back(QString("G1S") + QString::number(qRound(10*power_percent)));
+  }
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+/**
+ * @brief Emit a short laser pulse
+ * 
+ * @param power_percentage 0-100 (%)
+ */
+void MainWindow::laserPulse(qreal power_percentage) {
+  qInfo() << "laser pulse!";
+  QStringList gcode_list;
+  if (power_percentage > 0) {
+    // TODO: Use G04Pxxx to dwell for a given time duration?
+    gcode_list.push_back("M5");
+    gcode_list.push_back("G91");
+    // TODO: Convert from percentage to S value based on machine settings
+    //       We currently assumet 100% = S1000 here
+    gcode_list.push_back(QString("M3S") + QString::number(qRound(power_percentage * 10)));
+    gcode_list.push_back(QString("G1F1200S") + QString::number(qRound(power_percentage * 10)));
+    gcode_list.push_back("G1X0Y0");
+    gcode_list.push_back("G1F1200S0");
+    gcode_list.push_back("G1X0Y0");
+    gcode_list.push_back("G90");
+  } else {
+    gcode_list.push_back("M5");
+  }
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::home() {
+  QStringList gcode_list;
+  // TODO: Determine Job based on motion controller
+  //       Send GrblHomeCmd() instead of gcode cmd for grbl controller
+  //       Send XXXHomeCmd() for other controller
+  gcode_list.push_back("$H");
+  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveRelatively(qreal x, qreal y, qreal feedrate) {
+  if (true == active_machine.createJoggingRelativeJob(x, y, 0, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos, 
+                                qreal feedrate) {
+  if (true == active_machine.createJoggingAbsoluteJob(pos, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveToEdge(int edge_id, qreal feedrate) {
+  if (true == active_machine.createJoggingEdgeJob(edge_id, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::moveToCorner(int corner_id, qreal feedrate) {
+  if (true == active_machine.createJoggingCornerJob(corner_id, feedrate)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) {
+  canvas_->setUserOrigin(QPointF(std::get<0>(custom_origin), std::get<1>(custom_origin)));
+  active_machine.setCustomOrigin(custom_origin);
+}
+
+void MainWindow::moveToCustomOrigin() {
+  bool result = false;
+  if (is_rotary_mode_) { // Only move X pos
+    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+  } else {
+    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+  }
+  if (result == true)
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power) {
+  if (true == active_machine.createRotaryTestJob(bbox, rotary_axis, feedrate, framing_power)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
   }
 }

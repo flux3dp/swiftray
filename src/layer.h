@@ -67,6 +67,8 @@ public:
 
   double power() const;
 
+  double xBacklash() const;
+
   int parameterIndex() const;
 
   double stepHeight() const;
@@ -91,6 +93,8 @@ public:
   void setSpeed(double speed);
 
   void setStrength(double strength);
+
+  void setXBacklash(double x_backlash);
 
   void setParameterIndex(int parameter_index);
 
@@ -124,6 +128,7 @@ private:
   int repeat_;
   double speed_;
   double power_;
+  double x_backlash_;
   int parameter_index_;
 
   /** Main properties **/

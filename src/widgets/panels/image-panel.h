@@ -20,10 +20,17 @@ public:
 
     void setLayout();
 
+signals:
+    void panelShow(bool is_show);
+
 private:
     void loadStyles() override;
 
     void registerEvents() override;
+
+    void hideEvent(QHideEvent *event) override;
+
+    void showEvent(QShowEvent *event) override;
 
     Ui::ImagePanel *ui;
     MainWindow *main_window_;

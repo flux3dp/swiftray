@@ -29,7 +29,7 @@ void MachineManager::loadSettings() {
   ui->machineList->blockSignals(true);
   ui->machineList->clear();
   ui->machineList->blockSignals(false);
-  for (auto &machine : settings.machines()) {
+  for (const auto &machine : settings.machines()) {
     QListWidgetItem *param_item = new QListWidgetItem;
     param_item->setData(Qt::UserRole, machine.toJson());
     param_item->setText(machine.name);
@@ -42,6 +42,10 @@ void MachineManager::loadSettings() {
   if(ui->machineList->count() == 1) {
     ui->removeBtn->setEnabled(false);
   }
+
+  // TODO: Create the machines based on settings
+  //       machine list push back ...
+  //       set one from machine list as active machine
 }
 
 void MachineManager::loadStyles() {
@@ -153,10 +157,10 @@ void MachineManager::originChanged(MachineSettings::MachineSet::OriginType origi
 
 void MachineManager::save() {
   MachineSettings settings;
-  settings.machines().clear();
+  settings.clearMachines();
   for (int i = 0; i < ui->machineList->count(); i++) {
     auto data = ui->machineList->item(i)->data(Qt::UserRole).toJsonObject();
-    settings.machines() << MachineSettings::MachineSet::fromJson(data);
+    settings.addMachine(MachineSettings::MachineSet::fromJson(data));
   }
   settings.save();
 }

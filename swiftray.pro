@@ -187,7 +187,6 @@ SOURCES += \
     $$files(src/connection/*.cpp) \
     $$files(src/connection/QAsyncSerial/*.cpp) \
     $$files(src/toolpath_exporter/*.cpp) \
-    $$files(src/motion_controller_job/*.cpp) \
     $$files(src/parser/*.cpp) \
     $$files(src/settings/*.cpp) \
     $$files(src/shape/*.cpp) \
@@ -195,6 +194,13 @@ SOURCES += \
     $$files(src/widgets/panels/*.cpp) \
     $$files(src/widgets/components/*.cpp) \
     $$files(src/windows/*.cpp) \
+    $$files(src/executor/*.cpp) \
+    $$files(src/executor/machine_job/*.cpp) \
+    $$files(src/executor/operation_cmd/*.cpp) \
+    $$files(src/machine/*.cpp) \
+    $$files(src/periph/*.cpp) \
+    $$files(src/periph/motion_controller/*.cpp) \
+    $$files(src/common/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
@@ -240,7 +246,6 @@ HEADERS += \
     $$files(src/connection/*.h) \
     $$files(src/connection/QAsyncSerial/*.h) \
     $$files(src/toolpath_exporter/*.h) \
-    $$files(src/motion_controller_job/*.h) \
     $$files(src/parser/*.h) \
     $$files(src/parser/generators/*.h) \
     $$files(src/settings/*.h) \
@@ -250,7 +255,16 @@ HEADERS += \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
+    $$files(src/executor/*.h) \
+    $$files(src/executor/machine_job/*.h) \
+    $$files(src/executor/operation_cmd/*.h) \
+    $$files(src/machine/*.h) \
+    $$files(src/periph/*.h) \
+    $$files(src/periph/motion_controller/*.h) \
+    $$files(src/common/*.h) \
     $$files(third_party/QxPotrace/include/qxpotrace.h) \
+    src/widgets/panels/laser-panel.h \
+    src/windows/rotary_setup.h \
     third_party/clipper/clipper.hpp \
     third_party/libdxfrw/drw_base.h \
     third_party/libdxfrw/drw_classes.h \
@@ -290,11 +304,13 @@ FORMS += \
     src/widgets/panels/doc-panel.ui \
     src/widgets/panels/font-panel.ui \
     src/widgets/panels/jogging-panel.ui \
+    src/widgets/panels/laser-panel.ui \
     src/widgets/panels/layer-panel.ui \
     src/widgets/panels/layer-params-panel.ui \
     src/widgets/panels/spooler-panel.ui \
     src/widgets/panels/transform-panel.ui \
     src/windows/about-window.ui \
+    src/windows/consoledialog.ui \
     src/windows/job-dashboard-dialog.ui \
     src/windows/machine-manager.ui \
     src/windows/machine-monitor.ui \
@@ -302,7 +318,7 @@ FORMS += \
     src/windows/preferences-window.ui \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \
-    src/windows/gcode-player.ui \
+    src/windows/gcode-panel.ui \
     src/windows/mainwindow.ui \
     src/windows/image-trace-dialog.ui \
     src/windows/path-offset-dialog.ui \
@@ -310,7 +326,8 @@ FORMS += \
     src/widgets/components/color-picker-button.ui \
     src/windows/image-crop-dialog.ui \
     src/windows/image-sharpen-dialog.ui \
-    src/windows/privacy_window.ui
+    src/windows/privacy_window.ui \
+    src/windows/rotary_setup.ui
 ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {

@@ -19,8 +19,8 @@ public:
     QImage getCropImage();
 
 protected:
-    void mousePressEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void pinchGestureHandler(QPinchGesture *pg) override;
 
 private:

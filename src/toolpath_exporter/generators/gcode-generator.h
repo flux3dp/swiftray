@@ -40,7 +40,7 @@ public:
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
       case MachineSettings::MachineSet::OriginType::RearRight:
@@ -61,6 +61,13 @@ public:
         break;
       default:
         break;
+    }
+
+    // 1-2. Handle x direction backlash
+    if (x > x_) {
+      x += x_backlash;
+    } else {
+      x -= x_backlash;
     }
 
     // 2 Limit x,y position inside the work area
@@ -163,6 +170,23 @@ public:
   void home() override {
     str_stream_ << "$H" << std::endl;
     x_ = y_ = 0;
+  }
+
+  /**
+   * @brief Wait until all motions in the buffer to finish
+   * 
+   */
+  void syncProgramFlow() override { 
+    str_stream_ << "M0" << std::endl;
+  }
+
+  /**
+   * @brief Wait until all motions in the buffer to finish 
+   *        and then clear state: turn off laser, turn off coolant, ...
+   * 
+   */
+  void finishProgramFlow() override {
+    str_stream_ << "M2" << std::endl;
   }
 
   void reset() override {

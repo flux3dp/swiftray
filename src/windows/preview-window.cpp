@@ -136,12 +136,14 @@ void PathGraphicsPreview::keyHandler(QKeyEvent *ke) {
  *              instead of virtual document size (e.g. 3000)
  * @param height The height of canvas (= machine working area) in the physical (real) unit (e.g. mm))
  *               instead of virtual document size (e.g. 2000)
+ * @param scale The scale of height in rotary mode (rescale for QPainterPath in preview window)
  */
-PreviewWindow::PreviewWindow(QWidget *parent, int width, int height) :
+PreviewWindow::PreviewWindow(QWidget *parent, int width, int height, double scale) :
      QDialog(parent),
      ui(new Ui::PreviewWindow),
      preview_path_(nullptr),
-     BaseContainer() {
+     BaseContainer(),
+     height_scale_(scale) {
   ui->setupUi(this);
   initializeContainer();
 
@@ -179,13 +181,13 @@ void PreviewWindow::registerEvents() {
       QPainterPath black_path;
       for (int i = 0; i < ui->progress->value(); i++) {
         if (paths[i].power_ > 0) {
-          red_path.moveTo(paths[i].target_);
-          black_path.lineTo(paths[i].target_);
+          red_path.moveTo(paths[i].target_.x(), paths[i].target_.y()/height_scale_);
+          black_path.lineTo(paths[i].target_.x(), paths[i].target_.y()/height_scale_);
         } else {
-          red_path.lineTo(paths[i].target_);
-          black_path.moveTo(paths[i].target_);
+          red_path.lineTo(paths[i].target_.x(), paths[i].target_.y()/height_scale_);
+          black_path.moveTo(paths[i].target_.x(), paths[i].target_.y()/height_scale_);
         }
-        current_pos = paths[i].target_;
+        current_pos = QPointF(paths[i].target_.x(), paths[i].target_.y()/height_scale_);
       }
       this->path_graphics_view_->scene()->addPath(black_path, pen_black);
       this->path_graphics_view_->scene()->addPath(red_path, pen_red);
@@ -219,6 +221,6 @@ void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_pa
   update();
 }
 
-void PreviewWindow::setRequiredTime(const QTime &required_time) {
-  ui->requiredTimeLabel->setText(required_time.toString("hh:mm:ss"));
+void PreviewWindow::setRequiredTime(const Timestamp &required_time) {
+  ui->requiredTimeLabel->setText(required_time.toString());
 }

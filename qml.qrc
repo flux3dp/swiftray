@@ -35,6 +35,7 @@
         <file>resources/images/icon-alignvtop.png</file>
         <file>resources/images/icon-analyze.png</file>
         <file>resources/images/icon-Bold.png</file>
+        <file>resources/images/icon-connecting.png</file>
         <file>resources/images/icon-crop.png</file>
         <file>resources/images/icon-diff.png</file>
         <file>resources/images/icon-export.png</file>
@@ -102,6 +103,7 @@
         <file>resources/images/dark/icon-alignvcenter.png</file>
         <file>resources/images/dark/icon-alignvtop.png</file>
         <file>resources/images/dark/icon-Bold.png</file>
+        <file>resources/images/dark/icon-connecting.png</file>
         <file>resources/images/dark/icon-crop.png</file>
         <file>resources/images/dark/icon-diff.png</file>
         <file>resources/images/dark/icon-export.png</file>
@@ -156,5 +158,9 @@
         <file>resources/images/dark/icon-vdist.png</file>
         <file>resources/images/dark/icon-vflip.png</file>
         <file>qtquickcontrols2.conf</file>
+        <file>resources/images/icon-rotary-2.png</file>
+        <file>resources/images/icon-rotary.png</file>
+        <file>resources/images/dark/icon-rotary-2.png</file>
+        <file>resources/images/dark/icon-rotary.png</file>
     </qresource>
 </RCC>

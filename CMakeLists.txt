@@ -143,6 +143,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif ()
 
 add_subdirectory(src/canvas)
+add_subdirectory(src/common)
 add_subdirectory(src/windows)
 add_subdirectory(src/widgets)
 add_subdirectory(src/settings)
@@ -150,7 +151,9 @@ add_subdirectory(src/shape)
 add_subdirectory(src/parser)
 add_subdirectory(src/toolpath_exporter)
 add_subdirectory(src/connection)
-add_subdirectory(src/motion_controller_job)
+add_subdirectory(src/machine)
+add_subdirectory(src/periph)
+add_subdirectory(src/executor)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)

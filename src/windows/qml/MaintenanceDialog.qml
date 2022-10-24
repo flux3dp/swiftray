@@ -8,7 +8,7 @@ import QtGraphicalEffects 1.0
 Rectangle {
     id: root
     width: 280
-    height: 314
+    height: 280
     color: is_dark_mode ? "#333333" : "#F0F0F0"
     signal home()
     signal laser()
@@ -894,39 +894,6 @@ Rectangle {
 
             TapHandler {
                 onTapped: moveToCorner(3)
-            }
-        }
-
-        Rectangle {
-            x: 0
-            y: 553
-            width: 260
-            height: 50
-            color: "transparent"
-
-            Button {
-                width: 260
-                height: 60
-                text: qsTr("Laser Pulse")
-                font.pointSize: 26
-                onClicked: laserPulse()
-            }
-        }
-
-        Rectangle {
-            x: 270
-            y: 553
-            width: 260
-            height: 50
-            color: "transparent"
-
-            Button {
-                width: 260
-                height: 60
-                checkable: true
-                text: qsTr("Laser")
-                font.pointSize: 26
-                onClicked: laser()
             }
         }
     }

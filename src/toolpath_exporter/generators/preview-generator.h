@@ -38,7 +38,7 @@ class PreviewGenerator : public BaseGenerator {
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     if (x_ == x && y_ == y && speed_ == speed && power_ == power)
       return;
 
@@ -167,6 +167,12 @@ class PreviewGenerator : public BaseGenerator {
     paths_mutex_.lock();
     paths_ << Path(QPointF(x_, y_), kHomingSpeed, 0);
     paths_mutex_.unlock();
+  }
+
+  void syncProgramFlow() override { 
+  }
+
+  void finishProgramFlow() override {
   }
 
   const QList<Path> &paths() const {

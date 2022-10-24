@@ -15,7 +15,7 @@ ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
     ui->setupUi(this);
     ui->gradientCheckBox->setCheckState(Qt::Checked);
     ui->brightnessThresholdSlider->setValue(128);
-    setEnabled(false);
+    ui->scrollAreaWidgetContents->setEnabled(false);
     initializeContainer();
     setLayout();
 }
@@ -41,7 +41,7 @@ void ImagePanel::registerEvents() {
     if (main_window_->canvas()->document().selections().size() == 1 &&
         main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
-      setEnabled(true);
+      ui->scrollAreaWidgetContents->setEnabled(true);
       // NOTE:
       //     For unknown reason, the group widget and slider inside it must be enabled manually
       //     From Qt documentation, all child widgets should be enabled when the parent is enabled
@@ -58,7 +58,7 @@ void ImagePanel::registerEvents() {
       }
     } else {
       // Disable the parent widget will disable all child widgets as well
-      setEnabled(false);
+      ui->scrollAreaWidgetContents->setEnabled(false);
     }
   });
 
@@ -94,4 +94,12 @@ void ImagePanel::setLayout() {
   ui->toolButtonInvert->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
   ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
   ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
+}
+
+void ImagePanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void ImagePanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
 }
