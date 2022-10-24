@@ -405,6 +405,7 @@ std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> ToolpathExporter::a
  *
  * @param layer_image the (scaled) bitmap of entire layer
  * @param bbox bounding box of dirty area
+ *             NOTE: the bbox has already been scaled by dpmm
  * @param diection_mode
  * @return
  */
@@ -419,9 +420,11 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
 
   // Prepare raster line paths
   QList<QLine> raster_lines;
+  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
+  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
   for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
     raster_lines.push_back(QLine{bbox.left(), y,
-                                 bbox.right(), y});
+                                 bbox.left() + bbox.width(), y});
   }
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
@@ -543,6 +546,7 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
  * @brief Export
  * @param layer_image  (scaled) image of an entire layer on canvas
  * @param bbox         the (scaled) bounding box for the raster motion (shouldn't be larger than layer_image)
+ *                     NOTE: the bbox has already been scaled by dpmm
  * @return
  */
 bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
@@ -565,9 +569,11 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 
   // 2-1. Prepare raster line paths
   QList<QLine> raster_lines;
+  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
+  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
   for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
     raster_lines.push_back(QLine{bbox.left(), y,
-                                  bbox.right(), y});
+                                  bbox.left() + bbox.width(), y});
   }
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
