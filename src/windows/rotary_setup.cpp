@@ -1,5 +1,6 @@
 #include "rotary_setup.h"
 #include "ui_rotary_setup.h"
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <windows/osxwindow.h>
 
