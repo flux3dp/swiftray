@@ -80,7 +80,6 @@ void MainWindow::loadSettings() {
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
   MachineSettings::MachineSet machine_info = doc_panel_->currentMachine();
-  qInfo() << "Debug 1";
   machine_range_.setHeight(machine_info.height);
   machine_range_.setWidth(machine_info.width);
   QString current_machine = doc_panel_->getMachineName();
@@ -93,7 +92,6 @@ void MainWindow::loadSettings() {
     is_high_speed_mode_ = false;
     preferences_window_->setSpeedMode(is_high_speed_mode_);
   }
-  qInfo() << "Debug 2";
   is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
   setWindowModified(false);
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
@@ -103,7 +101,6 @@ void MainWindow::loadSettings() {
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
-  qInfo() << "Debug 3";
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
