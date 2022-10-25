@@ -85,11 +85,14 @@
          <height>90</height>
         </size>
        </property>
-       <property name="textElideMode">
-        <enum>Qt::ElideLeft</enum>
+       <property name="movement">
+        <enum>QListView::Static</enum>
        </property>
        <property name="flow">
         <enum>QListView::LeftToRight</enum>
+       </property>
+       <property name="resizeMode">
+        <enum>QListView::Fixed</enum>
        </property>
        <property name="spacing">
         <number>0</number>
@@ -99,15 +102,6 @@
          <width>150</width>
          <height>100</height>
         </size>
-       </property>
-       <property name="viewMode">
-        <enum>QListView::ListMode</enum>
-       </property>
-       <property name="modelColumn">
-        <number>0</number>
-       </property>
-       <property name="uniformItemSizes">
-        <bool>true</bool>
        </property>
        <property name="selectionRectVisible">
         <bool>true</bool>

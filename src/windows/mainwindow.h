@@ -60,6 +60,8 @@ public:
 
   MachineSettings::MachineSet currentMachine();
 
+  void show();
+
 signals:
 
   void presetSettingsChanged();
