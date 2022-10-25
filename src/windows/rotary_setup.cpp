@@ -23,31 +23,10 @@ RotarySetup::RotarySetup(QWidget *parent) :
     item = ui->typeList->item(1);
     item->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary-2.png" : ":/resources/images/icon-rotary-2.png"));
     ui->typeList->setCurrentRow(0);
-    if(is_rotary_mode_) {
-        ui->rotaryCheckBox->setCheckState(Qt::Checked);
-        if(control_enable_) ui->testBtn->setEnabled(true);
-    }
-    else {
-        ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
-        ui->testBtn->setEnabled(false);
-    }
-    if(is_mirror_mode_) {
-        ui->mirrorCheckBox->setCheckState(Qt::Checked);
-    }
-    else {
-        ui->mirrorCheckBox->setCheckState(Qt::Unchecked);
-    }
-    switch (rotary_axis_) {
-        case 'Y':
-            ui->YRadioButton->setChecked(true);
-            break;
-        case 'Z':
-            ui->ZRadioButton->setChecked(true);
-            break;
-        case 'A':
-            ui->ARadioButton->setChecked(true);
-            break;
-    }
+    mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
+    roller_diameter_ = ui->rollerDiameterSpinBox->value();
+    type_index_ = 0;
+    resetUI();
     connect(ui->testBtn, &QAbstractButton::clicked, this, &RotarySetup::testRotary);
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_rotary_mode_ = state;
@@ -59,52 +38,44 @@ RotarySetup::RotarySetup(QWidget *parent) :
         }
         Q_EMIT rotaryModeChanged(is_rotary_mode_);
     });
-    connect(ui->mirrorCheckBox, &QCheckBox::stateChanged, [=](int state){
-        is_mirror_mode_ = state;
-        Q_EMIT mirrorModeChanged(is_mirror_mode_);
-    });
-    connect(ui->YRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = 'Y';
-        Q_EMIT rotaryAxisChanged(rotary_axis_);
-    });
-    connect(ui->ZRadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = 'Z';
-        Q_EMIT rotaryAxisChanged(rotary_axis_);
-    });
-    connect(ui->ARadioButton, &QAbstractButton::clicked, [=](bool checked){
-        rotary_axis_ = 'A';
-        Q_EMIT rotaryAxisChanged(rotary_axis_);
-    });
     connect(ui->typeList, &QListWidget::currentRowChanged, [=](int currentRow) {
         if(currentRow == 0) {
             ui->rollerDiameterSpinBox->setEnabled(true);
         } else {
             ui->rollerDiameterSpinBox->setEnabled(false);
         }
-        updateRotaryScale();
     });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
-        circumference_ = circumference;
-        double object_diameter = circumference_ / M_PI;
         ui->ObjectSpinBox->blockSignals(true);
-        ui->ObjectSpinBox->setValue(object_diameter);
+        ui->ObjectSpinBox->setValue(circumference / M_PI);
         ui->ObjectSpinBox->blockSignals(false);
-        updateRotaryScale();
-        updateCircumference(circumference_);
     });
     connect(ui->ObjectSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double diameter){
-        circumference_ = diameter * M_PI;
         ui->CircumSpinBox->blockSignals(true);
-        ui->CircumSpinBox->setValue(circumference_);
+        ui->CircumSpinBox->setValue(diameter * M_PI);
         ui->CircumSpinBox->blockSignals(false);
+    });
+    connect(ui->buttonBox, &QDialogButtonBox::accepted, [=](){
+        is_mirror_mode_ = ui->mirrorCheckBox->checkState();
+        if(ui->YRadioButton->isChecked()) {
+            rotary_axis_ = 'Y';
+        } else if(ui->ZRadioButton->isChecked()) {
+            rotary_axis_ = 'Z';
+        } else if(ui->ARadioButton->isChecked()) {
+            rotary_axis_ = 'A';
+        }
+        circumference_ = ui->CircumSpinBox->value();
+        type_index_ = ui->typeList->currentRow();
+        mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
+        roller_diameter_ = ui->rollerDiameterSpinBox->value();
+
+        Q_EMIT mirrorModeChanged(is_mirror_mode_);
+        Q_EMIT rotaryAxisChanged(rotary_axis_);
         updateRotaryScale();
         updateCircumference(circumference_);
     });
-    connect(ui->mmPerRotationSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double move){
-        updateRotaryScale();
-    });
-    connect(ui->rollerDiameterSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double diameter) {
-        updateRotaryScale();
+    connect(ui->buttonBox, &QDialogButtonBox::rejected, [=](){
+        resetUI();
     });
 }
 
@@ -212,4 +183,38 @@ void RotarySetup::updateRotaryScale()
             rotary_scale_ = 0;
         }
     }
+}
+
+void RotarySetup::resetUI()
+{
+    if(is_rotary_mode_) {
+        ui->rotaryCheckBox->setCheckState(Qt::Checked);
+        if(control_enable_) ui->testBtn->setEnabled(true);
+    }
+    else {
+        ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+        ui->testBtn->setEnabled(false);
+    }
+    if(is_mirror_mode_) {
+        ui->mirrorCheckBox->setCheckState(Qt::Checked);
+    }
+    else {
+        ui->mirrorCheckBox->setCheckState(Qt::Unchecked);
+    }
+    switch (rotary_axis_) {
+        case 'Y':
+            ui->YRadioButton->setChecked(true);
+            break;
+        case 'Z':
+            ui->ZRadioButton->setChecked(true);
+            break;
+        case 'A':
+            ui->ARadioButton->setChecked(true);
+            break;
+    }
+    ui->ObjectSpinBox->setValue(circumference_ / M_PI);
+    ui->CircumSpinBox->setValue(circumference_);
+    ui->typeList->setCurrentRow(type_index_);
+    ui->mmPerRotationSpinBox->setValue(mm_per_rotation_);
+    ui->rollerDiameterSpinBox->setValue(roller_diameter_);
 }

@@ -42,12 +42,16 @@ private:
     Ui::RotarySetup *ui;
     void testRotary();
     void updateRotaryScale();
+    void resetUI();
 
     bool is_rotary_mode_ = false;
     bool is_mirror_mode_ = false;
     char rotary_axis_ = 'Y';
     double rotary_scale_ = 0;//to fit gcode unit to circumference
-    double circumference_;
+    double circumference_ = 0;
+    double mm_per_rotation_;
+    double roller_diameter_;
+    int type_index_;
     double travel_speed_;
     double framing_power_;
     bool control_enable_ = true;
