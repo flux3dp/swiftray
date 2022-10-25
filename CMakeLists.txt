@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(Swiftray VERSION 1.0.3)
+project(Swiftray VERSION 1.1.0)
 message("System Name: ${CMAKE_SYSTEM_NAME}")
 
 set(VERSION_MAJOR 1)
