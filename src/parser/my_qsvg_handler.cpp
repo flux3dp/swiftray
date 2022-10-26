@@ -77,6 +77,7 @@ LayerPtr g_layer_ptr_ = nullptr;
 QList<LayerPtr> g_svgpp_layers_;
 QMap<QString, QTransform> g_transform_map_;
 QTransform g_transform_;
+QTransform g_svg_transform_;
 QColor g_color = Qt::black;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
 
@@ -1472,7 +1473,6 @@ static bool createSvgGlyph(QSvgFont *font, const QXmlStreamAttributes &attribute
 // and convert when type != MyQSvgHandler::defaultCoordinateSystem
 static qreal convertToPixels(qreal len, bool , MyQSvgHandler::LengthType type)
 {
-
     switch (type) {
     case MyQSvgHandler::LT_PERCENT:
         break;
@@ -1481,16 +1481,16 @@ static qreal convertToPixels(qreal len, bool , MyQSvgHandler::LengthType type)
     case MyQSvgHandler::LT_PC:
         break;
     case MyQSvgHandler::LT_PT:
-        return len * 1.25;
+        return len / 12.5;
         break;
     case MyQSvgHandler::LT_MM:
-        return len * 3.543307;
+        return len / 35.43307;
         break;
     case MyQSvgHandler::LT_CM:
-        return len * 35.43307;
+        return len / 354.3307;
         break;
     case MyQSvgHandler::LT_IN:
-        return len * 90;
+        return len / 900;
         break;
     case MyQSvgHandler::LT_OTHER:
         break;
@@ -3233,6 +3233,7 @@ static QSvgNode *createSvgNode(QSvgNode *parent,
                                const QXmlStreamAttributes &attributes,
                                MyQSvgHandler *handler)
 {
+    g_svg_transform_ = QTransform();
     Q_UNUSED(parent); Q_UNUSED(attributes);
 
     QSvgTinyDocument *node = new QSvgTinyDocument();
@@ -3241,12 +3242,14 @@ static QSvgNode *createSvgNode(QSvgNode *parent,
     QString viewBoxStr = attributes.value(QLatin1String("viewBox")).toString();
 
     MyQSvgHandler::LengthType type = MyQSvgHandler::LT_PX; // FIXME: is the default correct?
-    qreal width = 0;
+    qreal width = 0, old_width = 0;
     if (!widthStr.isEmpty()) {
         width = parseLength(widthStr, type, handler);
+        old_width = width;
         if (type != MyQSvgHandler::LT_PT)
             width = convertToPixels(width, true, type);
         node->setWidth(int(width), type == MyQSvgHandler::LT_PERCENT);
+        g_svg_transform_ *= width/old_width;
     }
     qreal height = 0;
     if (!heightStr.isEmpty()) {
@@ -3851,7 +3854,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
             QSvgPath *tmp_node = (QSvgPath*) node;
             QPainterPath *qpath = tmp_node->qpath();
             ShapePtr new_shape = std::make_shared<PathShape>(qpath[0]);
-            new_shape->applyTransform(g_transform_);
+            new_shape->applyTransform(g_transform_ * g_svg_transform_);
             g_layer_ptr_->addShape(new_shape);
             g_layer_ptr_->setColor(g_color);
             QString layer_name("Svg_");
@@ -3860,7 +3863,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
         }
         else if(node->type() == QSvgNode::IMAGE) {
             QList<ShapePtr> shape_list = g_layer_ptr_->children();
-            shape_list[shape_list.size()-1]->applyTransform(g_transform_);
+            shape_list[shape_list.size()-1]->applyTransform(g_transform_ * g_svg_transform_);
             g_layer_ptr_->setColor(g_color);
             QString layer_name("Svg_");
             layer_name += QString::number(g_svgpp_layers_.size());
