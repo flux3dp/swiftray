@@ -5,9 +5,9 @@ message("System Name: ${CMAKE_SYSTEM_NAME}")
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
 set(VERSION_BUILD 0)
-set(VERSION_BETA  1) #x
-set(VERSION_SUFFIX "-beta.1") #-beta.x
-set(VER_PRODUCTVERSION_STR "1.1.0-beta.1") #1.0.0-beta.x
+set(VERSION_BETA  2) #x (e.g. 0,1,2,...)
+set(VERSION_SUFFIX "-beta.2") # e.g. empty("") or "-beta.x"
+set(VER_PRODUCTVERSION_STR "1.1.0-beta.2") # e.g. 1.0.0 or 1.0.0-beta.x
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
