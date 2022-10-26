@@ -128,7 +128,7 @@ private:
   int repeat_;
   double speed_;
   double power_;
-  double x_backlash_;
+  double x_backlash_ = 0;
   int parameter_index_;
 
   /** Main properties **/
