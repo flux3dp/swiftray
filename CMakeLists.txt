@@ -6,8 +6,8 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
 set(VERSION_BUILD 0)
 set(VERSION_BETA  1) #x
-set(VERSION_SUFFIX "") #-beta.x
-set(VER_PRODUCTVERSION_STR "1.1.0") #1.0.0-beta.x
+set(VERSION_SUFFIX "-beta.1") #-beta.x
+set(VER_PRODUCTVERSION_STR "1.1.0-beta.1") #1.0.0-beta.x
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
