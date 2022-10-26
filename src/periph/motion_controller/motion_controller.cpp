@@ -7,13 +7,52 @@ MotionController::MotionController(QObject *parent)
 {
 
 }
-
+#ifdef CUSTOM_SERIAL_PORT_LIB
 void MotionController::attachPort(SerialPort *port) {
   qInfo() << "MotionController::attachPort()";
   port_ = port;
   connect(port_, &SerialPort::lineReceived, this, &MotionController::respReceived);
   connect(port_, &SerialPort::disconnected, this, &MotionController::disconnected);
 }
+#else
+void MotionController::attachPort(QSerialPort *port) {
+  qInfo() << "MotionController::attachPort()";
+  port_ = port;
+  port_->clear();
+  unprocssed_response_.clear();
+
+  // Handle response
+  connect(port_, &QSerialPort::readyRead, this, [=]() {
+    QByteArray new_data = port_->readAll();
+    QByteArray resp_data = unprocssed_response_ + new_data;
+    QString resp_str = QString::fromUtf8(resp_data);
+    int processed_chars = 0;
+    for (int i = 0; i < resp_str.length(); i++) {
+      if (resp_str[i] == "\n") {
+        respReceived(resp_str.right(resp_str.length() - processed_chars).left(i - processed_chars).trimmed());
+        processed_chars = i + 1;
+      }
+    }
+    unprocssed_response_ = resp_data.right(resp_data.length() - processed_chars);
+  });
+
+  // Handle disconnect
+  connect(port_, &QSerialPort::errorOccurred, this, [=](QSerialPort::SerialPortError error) {
+    if (error == QSerialPort::ResourceError) {
+      detachPort();
+    }
+  });
+}
+
+void MotionController::detachPort() {
+  if (port_ && port_->isOpen()) {
+    port_->close();
+    port_ = nullptr;
+    Q_EMIT disconnected();
+  }
+}
+#endif
+
 
 MotionControllerState MotionController::getState() const {
   std::scoped_lock<std::mutex> lk(state_mutex_);

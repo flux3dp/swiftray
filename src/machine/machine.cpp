@@ -420,11 +420,18 @@ std::tuple<qreal, qreal, qreal> Machine::getCurrentPosition() {
   return std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_);
 }
 
-void Machine::motionPortConnected() {
+#ifdef CUSTOM_SERIAL_PORT_LIB
+void Machine::motionPortConnected(SerialPort *port) {
+#else 
+void Machine::motionPortConnected(QSerialPort *port) {
+#endif
   qInfo() << "Machine::motionPortConnected()";
   // TODO: Use general Port class instead of SerialPort class
-  SerialPort* port = qobject_cast<SerialPort*>(sender());
-  if (port == nullptr) {
+  //SerialPort* port = qobject_cast<SerialPort*>(sender());
+  //if (port == nullptr) {
+  //  return;
+  //}
+  if (!port->isOpen()) {
     return;
   }
 

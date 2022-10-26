@@ -33,6 +33,7 @@
 #include "widgets/components/canvas-widget.h"
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
+#include <QSerialPort>
 
 #include "ui_mainwindow.h"
 
@@ -1410,14 +1411,13 @@ void MainWindow::registerEvents() {
 
   // TODO: Refactor it when supporting multi-port and multi-machine connection
   //       NOTE: The active_machine might be null at the beginning
-  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  #endif
   connect(&active_machine, &Machine::connected, [=]() {
     // Port connected but hasn't responded any meaningful response
     if (!console_dialog_.isNull()) {
-      disconnect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
-      disconnect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
-      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
-      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent, Qt::UniqueConnection);
+      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd, Qt::UniqueConnection);
     }
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
   });
@@ -1529,6 +1529,7 @@ void MainWindow::setConnectionToolBar() {
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
 
     // Check whether port is unplugged
+    #ifdef CUSTOM_SERIAL_PORT_LIB
     if (serial_port.isOpen()) {
       auto matchIt = std::find_if(
               infos.begin(), infos.end(),
@@ -1539,18 +1540,30 @@ void MainWindow::setConnectionToolBar() {
         serial_port.close();
       }
     }
+    #endif
 
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
     if (serial_port.isOpen()) {
-      qInfo() << "[SerialPort] Disconnect";
-      serial_port.close(); // disconnect
+      if (active_machine.getMotionController()) {
+        active_machine.getMotionController()->detachPort();
+        qInfo() << "[Port] Detached";
+      } else {
+        qInfo() << "[SerialPort] Disconnect";
+        serial_port.close(); // disconnect
+      }
       return;
     }
     QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
+    #ifdef CUSTOM_SERIAL_PORT_LIB
     serial_port.open(port_name, baudrate.toInt());
+    #else
+    serial_port.setPortName(port_name);
+    serial_port.setBaudRate(baudrate.toInt());
+    serial_port.open(QIODevice::ReadWrite);
+    #endif
     if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Error"));
@@ -1558,18 +1571,18 @@ void MainWindow::setConnectionToolBar() {
       msgbox.exec();
       return;
     }
+    #ifdef CUSTOM_SERIAL_PORT_LIB
+    #else
+    disconnect(&serial_port, nullptr, nullptr, nullptr);
+    serial_port.clearError();
+    #endif
+    active_machine.motionPortConnected(&serial_port);
     active_machine.applyMachineParam(currentMachine());
-    connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
-      emit MainWindow::positionCached(target_pos);
-      canvas()->updateCurrentPosition(target_pos);
-    });
-    connect(&active_machine, &Machine::disconnected, [=]() {
-      emit MainWindow::activeMachineDisconnected();
-      ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
-  });
 
+    connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
+    connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
   });
-  timer->start(4000);
+  timer->start(1500);
 }
 
 void MainWindow::setToolbarFont() {
@@ -2425,4 +2438,14 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
+}
+
+void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos) {
+  emit MainWindow::positionCached(target_pos);
+  canvas()->updateCurrentPosition(target_pos);
+}
+
+void MainWindow::machineDisconnected() {
+  emit MainWindow::activeMachineDisconnected();
+  ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }

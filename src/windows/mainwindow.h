@@ -159,6 +159,9 @@ private slots:
 
   void updateTravelSpeed();
 
+  void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
+  void machineDisconnected();
+
 private:
 
   void loadWidgets() override;

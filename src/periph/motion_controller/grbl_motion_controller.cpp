@@ -33,7 +33,13 @@ MotionController::CmdSendResult GrblMotionController::sendCmdPacket(QPointer<Exe
     //       Thus, no need to consider cmd_in_buf
     port_tx_mutex_.lock();
     try {
-      if (port_->write(cmd_packet) < 0) {
+      #ifdef CUSTOM_SERIAL_PORT_LIB
+      int result = port_->write(cmd_packet);
+      if (result < 0) {
+      #else
+      int result = port_->write(cmd_packet.toStdString().c_str());
+      if (result < 0) {
+      #endif
         port_tx_mutex_.unlock();
         qInfo() << "port_->write failed";
         return CmdSendResult::kFail;
@@ -59,7 +65,13 @@ MotionController::CmdSendResult GrblMotionController::sendCmdPacket(QPointer<Exe
   if (cbuf_space_ < cbuf_occupied_ + cmd_packet.size()) {
     return CmdSendResult::kBusy;
   }
-  if (port_->write(cmd_packet) < 0) {
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  int result = port_->write(cmd_packet);
+  if (result < 0) {
+  #else
+  int result = port_->write(cmd_packet.toStdString().c_str());
+  if (result < 0) {
+  #endif
     return CmdSendResult::kFail;
   }
   qInfo() << "SND: " << cmd_packet;
