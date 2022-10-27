@@ -218,9 +218,9 @@ double DocPanel::getRotarySpeed() {
 }
 
 void DocPanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void DocPanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }

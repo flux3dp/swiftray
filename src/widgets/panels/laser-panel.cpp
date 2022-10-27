@@ -189,9 +189,9 @@ void LaserPanel::setLayout()
 }
 
 void LaserPanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void LaserPanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }
