@@ -1,6 +1,5 @@
 [requires]
 glib/2.69.3
-cairo/1.17.4
 
 [generators]
 cmake
