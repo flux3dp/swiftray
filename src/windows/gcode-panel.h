@@ -31,7 +31,7 @@ public:
 
   void attachJob(QPointer<JobExecutor> job_executor);
 
-public SLOTS:
+public Q_SLOTS:
   void onJobStateChanged(Executor::State);
   void onJobProgressChanged(QVariant);
 
@@ -58,7 +58,7 @@ private:
   QPointer<JobExecutor> job_executor_;
   QPointer<MainWindow> main_window_;
 
-SIGNALS:
+Q_SIGNALS:
   void exportGcode();
 
   void importGcode();

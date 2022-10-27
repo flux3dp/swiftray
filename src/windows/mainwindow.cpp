@@ -1443,7 +1443,7 @@ void MainWindow::registerEvents() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
   });
   connect(&active_machine, &Machine::activated, [=]() {
-    emit MainWindow::activeMachineConnected();
+    Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
 }
@@ -2462,11 +2462,11 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
 }
 
 void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos) {
-  emit MainWindow::positionCached(target_pos);
+  Q_EMIT MainWindow::positionCached(target_pos);
   canvas()->updateCurrentPosition(target_pos);
 }
 
 void MainWindow::machineDisconnected() {
-  emit MainWindow::activeMachineDisconnected();
+  Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }

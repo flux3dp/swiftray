@@ -57,7 +57,7 @@ private:
     bool control_enable_ = true;
     QButtonGroup *axis_group_;
 
-signals:
+Q_SIGNALS:
   void rotaryModeChanged(bool is_rotary_mode);
   void mirrorModeChanged(bool is_mirror_mode);
   void rotaryAxisChanged(char axis);

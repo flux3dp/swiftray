@@ -75,7 +75,7 @@ void JoggingPanel::home() {
   if(!control_enable_) {
     return;
   }
-  emit actionHome();
+  Q_EMIT actionHome();
 }
 
 /**
@@ -89,11 +89,11 @@ void JoggingPanel::laser() {
   if (is_laser_on_) {
     ui->laserBtn->setText(tr("Laser On"));
     is_laser_on_ = false;
-    emit actionLaser(0); // turn off laser
+    Q_EMIT actionLaser(0); // turn off laser
   } else {
     ui->laserBtn->setText(tr("Laser Off"));
     is_laser_on_ = true;
-    emit actionLaser(ui->laserSpinBox->value()); // default: 2%
+    Q_EMIT actionLaser(ui->laserSpinBox->value()); // default: 2%
   }
 }
 
@@ -101,7 +101,7 @@ void JoggingPanel::laserPulse() {
   if(!control_enable_) {
     return;
   }
-  emit actionLaserPulse(ui->laserPulseSpinBox->value()); // default: 30%
+  Q_EMIT actionLaserPulse(ui->laserPulseSpinBox->value()); // default: 30%
 }
 
 /**
@@ -150,7 +150,7 @@ void JoggingPanel::moveRelatively(int dir, int level) {
   }
 
   // TODO: Get feedrate from UI?
-  emit actionMoveRelatively(movement.x(), movement.y(), travel_speed_);
+  Q_EMIT actionMoveRelatively(movement.x(), movement.y(), travel_speed_);
 }
 
 void JoggingPanel::moveToEdge(int edge_id) {
@@ -158,7 +158,7 @@ void JoggingPanel::moveToEdge(int edge_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  emit actionMoveToEdge(edge_id, travel_speed_);
+  Q_EMIT actionMoveToEdge(edge_id, travel_speed_);
 }
 
 void JoggingPanel::moveToCorner(int corner_id) {
@@ -166,21 +166,21 @@ void JoggingPanel::moveToCorner(int corner_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  emit actionMoveToCorner(corner_id, travel_speed_);
+  Q_EMIT actionMoveToCorner(corner_id, travel_speed_);
 }
 
 void JoggingPanel::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos) {
   if(!control_enable_) {
     return;
   }
-  emit actionMoveAbsolutely(pos, travel_speed_);
+  Q_EMIT actionMoveAbsolutely(pos, travel_speed_);
 }
 
 void JoggingPanel::setOrigin() {
   if(!control_enable_) {
     return;
   }
-  emit actionSetOrigin(
+  Q_EMIT actionSetOrigin(
     std::make_tuple<qreal, qreal, qreal>(
       ui->currentXSpinBox->value(), 
       ui->currentYSpinBox->value(), 
@@ -189,7 +189,7 @@ void JoggingPanel::setOrigin() {
 }
 
 void JoggingPanel::clearOrigin() {
-  emit actionSetOrigin(std::make_tuple<qreal, qreal, qreal>(0, 0, 0));
+  Q_EMIT actionSetOrigin(std::make_tuple<qreal, qreal, qreal>(0, 0, 0));
 }
 
 void JoggingPanel::setControlEnable(bool control_enable) {

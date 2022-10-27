@@ -16,7 +16,7 @@ public:
 
   void attachMotionController(QPointer<MotionController> motion_controller);
 
-public slots:
+public Q_SLOTS:
   void start() override;
   void exec() override;
   void pause() override;
@@ -25,7 +25,7 @@ public slots:
 
   void onReportRcvd();
 
-signals:
+Q_SIGNALS:
   void hanging();
 
 private:

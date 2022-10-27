@@ -13,7 +13,7 @@ size_t Executor::inProgressCmdCnt() {
 void Executor::changeState(State new_state) {
   if (state_ != new_state) {
     state_ = new_state;
-    emit stateChanged(state_);
+    Q_EMIT stateChanged(state_);
   }
 }
 

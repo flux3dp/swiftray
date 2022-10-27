@@ -56,7 +56,7 @@ void MachineSetupExecutor::exec() {
       auto reset_cmd = GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_);
       reset_cmd->execute(this);
       // finish
-      emit Executor::finished();
+      Q_EMIT Executor::finished();
       return;
     } else {
       exec_timer_->stop(); // sleep until next trigger
@@ -100,7 +100,7 @@ void MachineSetupExecutor::handleCmdFinish(int result_code) {
     }
     cmd_in_progress_.pop_front();
   }  
-  emit trigger();
+  Q_EMIT trigger();
   return ;
 }
 

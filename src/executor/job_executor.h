@@ -26,18 +26,18 @@ public:
   Timestamp getElapsedTime() const;
 
 
-public slots:
+public Q_SLOTS:
   void start() override;
   void exec() override;
   void pause() override;
   void resume() override;
   void stop() override;
 
-private slots:
+private Q_SLOTS:
   void wakeUp();   // wake up this job executor
 
   //void onCmdAcked();
-signals:
+Q_SIGNALS:
   void trigger();  // wake up this job executor
   void progressChanged(float prog);
   void elapsedTimeChanged(Timestamp);

@@ -48,7 +48,7 @@ public:
   void enqueueCmdExecutor(QPointer<Executor>);
   void dequeueCmdExecutor();
 
-signals:
+Q_SIGNALS:
   void cmdSent(QString cmd);
   void respRcvd(QString resp);
   void resetDetected();
@@ -57,10 +57,10 @@ signals:
       qreal x, qreal y, qreal z);
   void disconnected();
 
-public slots:
+public Q_SLOTS:
   virtual void respReceived(QString resp) = 0;
 
-private slots:
+private Q_SLOTS:
 
 protected:
 

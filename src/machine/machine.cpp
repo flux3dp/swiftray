@@ -402,7 +402,7 @@ void Machine::syncPosition() {
   cached_y_pos_ = std::get<1>(cached_pos);
   cached_z_pos_ = std::get<2>(cached_pos);
 
-  emit positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
+  Q_EMIT positionCached(std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_));
 }
 
 void Machine::setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin) {
@@ -464,14 +464,14 @@ void Machine::motionPortConnected(QSerialPort *port) {
   job_executor_->attachMotionController(motion_controller_);
   console_executor_->attachMotionController(motion_controller_);
 
-  emit connected();
+  Q_EMIT connected();
 
   machine_setup_executor_->start();
 }
 
 void Machine::motionPortActivated() {
   connect_state_ = ConnectionState::kConnected;
-  emit activated();
+  Q_EMIT activated();
 
   rt_status_executor_->start();
 }
@@ -485,7 +485,7 @@ void Machine::motionPortDisonnected() {
   // ...
   qInfo() << "Machine::motionPortDisonnected()";
 
-  emit disconnected();
+  Q_EMIT disconnected();
 }
 
 void Machine::startJob() {

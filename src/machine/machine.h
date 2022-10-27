@@ -55,7 +55,7 @@ public:
   void motionPortConnected(QSerialPort *);  // Opened but not check
   #endif
 
-public slots:
+public Q_SLOTS:
   void motionPortActivated();  // Motion controller working
   void motionPortDisonnected();// Closed
 
@@ -66,7 +66,7 @@ public slots:
   void resumeJob();
   void stopJob();
 
-signals:
+Q_SIGNALS:
   void connected();
   void activated();
   void disconnected();
