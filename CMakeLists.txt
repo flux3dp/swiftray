@@ -48,9 +48,11 @@ include_directories(
 )
 
 # Conan
+# NOTE: Currently only used by Windows build
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include(conanbuildinfo.cmake)
 conan_basic_setup()
-
+endif()
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -205,6 +207,34 @@ else()
   # TODO: Linux
 endif()
 
+# GLIB
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # Fulfill by Conan package manager
+  #target_include_directories(${PROJECT_NAME} PRIVATE
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/include/glib-2.0
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0/include
+  #)
+  #target_link_libraries(${PROJECT_NAME}
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0.lib
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/gobject-2.0.lib
+  #)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    /usr/local/opt/glib/include/glib-2.0
+    /usr/local/opt/glib/lib/glib-2.0/include
+    #/opt/homebrew/opt/glib/include/glib-2.0
+    #/opt/homebrew/opt/glib/lib/glib-2.0/include
+  )
+  target_link_libraries(${PROJECT_NAME} 
+    /usr/local/opt/glib/lib/libglib-2.0.dylib
+    /usr/local/opt/glib/lib/libgobject-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libglib-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libgobject-2.0.dylib
+  )
+else()
+  # TODO: Linux
+endif()
+
 # Poppler
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_include_directories(${PROJECT_NAME} PRIVATE
@@ -317,10 +347,13 @@ include_directories(
 )
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 
+# NOTE: Currently only used by Windows build
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CONAN_INCLUDE_DIRS}
 )
+endif()
 
 # ====================== tests =======================
 #add_subdirectory(tests)
