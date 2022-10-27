@@ -60,6 +60,13 @@ MainWindow::MainWindow(QWidget *parent) :
   setConnectionToolBar();
 }
 
+void MainWindow::show() {
+  QMainWindow::show();
+  if (layer_panel_) {
+    layer_panel_->resizeEvent(nullptr);
+  }
+}
+
 void MainWindow::loadSettings() {
   #ifdef Q_OS_MACOS
     QSettings settings;
@@ -94,7 +101,6 @@ void MainWindow::loadSettings() {
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
-
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();

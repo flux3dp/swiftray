@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>238</width>
+    <width>218</width>
     <height>398</height>
    </rect>
   </property>
@@ -42,7 +42,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>238</width>
+        <width>218</width>
         <height>398</height>
        </rect>
       </property>
@@ -52,7 +52,7 @@
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
-           <verstretch>2</verstretch>
+           <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="frameShadow">

@@ -96,6 +96,7 @@ public:
   }
 
   void home() override {
+    should_home_ = true;
   }
 
   void syncProgramFlow() override { 
@@ -114,7 +115,9 @@ public:
   std::string toString() override {
     str_stream_.str(std::string()); // clear
 
-    // str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
+    if (should_home_) {
+      str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
+    }
 
     str_stream_ << "G90" << std::endl;
     str_stream_ << "G1F" << std::to_string(travel_speed_) << std::endl;
@@ -150,4 +153,5 @@ private:
     MachineSettings::MachineSet::OriginType machine_origin_;
     double travel_speed_ = 6000;
     double laser_power_ = 2;
+    bool should_home_ = false;
 };

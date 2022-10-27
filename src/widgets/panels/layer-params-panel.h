@@ -7,6 +7,7 @@
 #include <settings/preset-settings.h>
 #include <widgets/base-container.h>
 #include <windows/preset-manager.h>
+#include <QToolButton>
 
 class MainWindow;
 
@@ -33,6 +34,8 @@ private:
 
   void registerEvents() override;
 
+  void resizeEvent(QResizeEvent *) override;
+
   void setToCustom();
 
   void updateMovingComboBox();
@@ -43,6 +46,7 @@ private:
   PresetManager *preset_manager_;
   PresetSettings *preset_settings_ = &PresetSettings::getInstance();
   int preset_previous_index_;
+  QToolButton *add_layer_btn_;
 };
 
 #endif // LAYER_PARAMS_PANEL_H
