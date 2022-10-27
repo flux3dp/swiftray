@@ -13,6 +13,7 @@
 #include <QToolButton>
 #include <QCheckBox>
 #include <QMessageBox>
+#include <QTemporaryDir>
 #include <constants.h>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -540,8 +541,9 @@ void MainWindow::openFile() {
     } else if (file_name.endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
     } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+      QTemporaryDir dir;
       Parser::PDF2SVG pdf_converter;
-      QString temp_file = "temp.svg";
+      QString temp_file = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
       pdf_converter.convertPDFFile(file_name, temp_file);
       QFile file2(temp_file);
       if (file2.open(QFile::ReadOnly)) {
@@ -710,8 +712,9 @@ void MainWindow::openImageFile() {
   } else if (file_name.endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
   } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+    QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
-    QString temp_file = "temp.svg";
+    QString temp_file = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
     pdf_converter.convertPDFFile(file_name, temp_file);
     QFile file2(temp_file);
     if (file2.open(QFile::ReadOnly)) {
