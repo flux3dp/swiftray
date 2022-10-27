@@ -25,9 +25,9 @@ void GCodePanel::registerEvents() {
   connect(ui->pauseBtn, &QAbstractButton::clicked, [=]() {
     // Pause / Resume
     if (job_state_ == Executor::State::kRunning) {
-      emit pauseBtnClicked();
+      Q_EMIT pauseBtnClicked();
     } else {
-      emit resumeBtnClicked();
+      Q_EMIT resumeBtnClicked();
     }
   });
   connect(ui->exportBtn, &QAbstractButton::clicked, this, &GCodePanel::exportGcode);
@@ -41,11 +41,11 @@ void GCodePanel::registerEvents() {
 }
 
 void GCodePanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void GCodePanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }
 
 void GCodePanel::onEnableJobCtrl() {
@@ -109,7 +109,7 @@ void GCodePanel::onJobStateChanged(Executor::State new_state) {
     default:
       break;
   }
-  emit jobStatusReport(job_state_);
+  Q_EMIT jobStatusReport(job_state_);
 }
 
 void GCodePanel::onJobProgressChanged(QVariant progress) {
