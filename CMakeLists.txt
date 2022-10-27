@@ -184,6 +184,26 @@ if (DEFINED ENABLE_SENTRY)
 endif()
 
 
+# Cairo
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/include
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/lib/x64/cairo.lib
+  )
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    /usr/local/opt/cairo/include/cairo
+    #/opt/homebrew/opt/cairo/include/cairo
+  )
+  target_link_libraries(${PROJECT_NAME} 
+    /usr/local/opt/cairo/lib/libcairo.dylib
+    #/opt/homebrew/opt/cairo/lib/libcairo.dylib
+  )
+else()
+  # TODO: Linux
+endif()
 
 # Poppler
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
