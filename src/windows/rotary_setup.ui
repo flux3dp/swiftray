@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>463</width>
-    <height>443</height>
+    <height>483</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -59,7 +59,7 @@
      <item>
       <widget class="QListWidget" name="typeList">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -67,13 +67,13 @@
        <property name="minimumSize">
         <size>
          <width>302</width>
-         <height>110</height>
+         <height>150</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
          <width>16777215</width>
-         <height>110</height>
+         <height>150</height>
         </size>
        </property>
        <property name="showDropIndicator" stdset="0">
@@ -81,8 +81,8 @@
        </property>
        <property name="iconSize">
         <size>
-         <width>80</width>
-         <height>80</height>
+         <width>200</width>
+         <height>140</height>
         </size>
        </property>
        <property name="movement">
@@ -99,8 +99,8 @@
        </property>
        <property name="gridSize">
         <size>
-         <width>150</width>
-         <height>100</height>
+         <width>216</width>
+         <height>140</height>
         </size>
        </property>
        <property name="selectionRectVisible">
@@ -128,19 +128,6 @@
         </property>
        </item>
       </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>
@@ -220,7 +207,7 @@
         <double>0.100000000000000</double>
        </property>
        <property name="value">
-        <double>55.399999999999999</double>
+        <double>55.000000000000000</double>
        </property>
       </widget>
      </item>
