@@ -96,6 +96,7 @@ macx{
     LIBS += -lglib-2.0
     LIBS += -lgobject-2.0
     LIBS += -lpoppler-glib
+    LIBS += -lpoppler
     LIBS += -lcairo
     LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
