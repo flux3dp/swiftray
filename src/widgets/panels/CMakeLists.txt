@@ -7,4 +7,5 @@ target_sources(Swiftray PRIVATE
   layer-params-panel.cpp
   spooler-panel.cpp
   transform-panel.cpp
+  laser-panel.cpp
 )

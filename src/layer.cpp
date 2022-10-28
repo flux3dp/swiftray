@@ -22,6 +22,7 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      speed_(20),
      power_(30),
      repeat_(1),
+     x_backlash_(0),
      parameter_index_(-1),
      is_locked_(false),
      is_visible_(true),
@@ -86,6 +87,10 @@ double Layer::speed() const {
 
 double Layer::power() const {
   return power_;
+}
+
+double Layer::xBacklash() const {
+  return x_backlash_;
 }
 
 int Layer::parameterIndex() const {
@@ -161,6 +166,10 @@ void Layer::setSpeed(double speed) {
 
 void Layer::setStrength(double strength) {
   power_ = strength;
+}
+
+void Layer::setXBacklash(double x_backlash) {
+  x_backlash_ = x_backlash;
 }
 
 void Layer::setRepeat(int repeat) {

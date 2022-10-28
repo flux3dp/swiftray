@@ -25,8 +25,18 @@ public:
 
   QString getMachineName();
 
+  void setRotaryMode(bool is_rotary_mode);
+
+  double getTravelSpeed();
+
+  double getRotarySpeed();
+
 signals:
   void machineChanged(QString machine_name);
+  void rotaryModeChange(bool is_rotary_mode);
+  void panelShow(bool is_show);
+  void updateMachineRange(QSize machine_range);
+  void updateSpeed();
 
 private:
   void loadSettings() override;
@@ -36,6 +46,10 @@ private:
   void syncDPISettingsUI();
 
   void syncAdvancedSettingsUI();
+
+  void hideEvent(QHideEvent *event) override;
+  
+  void showEvent(QShowEvent *event) override;
 
   Ui::DocPanel *ui;
   MainWindow *main_window_;

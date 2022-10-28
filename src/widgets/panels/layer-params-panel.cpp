@@ -5,6 +5,7 @@
 #include <settings/preset-settings.h>
 #include <document.h>
 #include <windows/mainwindow.h>
+#include <windows/osxwindow.h>
 
 LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -23,6 +24,16 @@ LayerParamsPanel::~LayerParamsPanel() {
 }
 
 void LayerParamsPanel::loadStyles() {
+  // Add floating buttons
+  QPointF button_pos = ui->parameterFrame->mapToGlobal(ui->parameterFrame->geometry().topRight()) - QPointF(24, 0);
+  add_layer_btn_ = new QToolButton(ui->parameterFrame);
+  add_layer_btn_->setObjectName("btnAddLayer");
+  add_layer_btn_->setCursor(Qt::PointingHandCursor);
+  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-plus.png" : ":/resources/images/icon-plus.png"));
+  add_layer_btn_->setIconSize(QSize(24, 24));
+  add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 24, 24));
+  add_layer_btn_->raise();
+  add_layer_btn_->show();
 }
 
 void LayerParamsPanel::loadSettings() {
@@ -57,6 +68,9 @@ void LayerParamsPanel::registerEvents() {
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double speed) {
     if (layer_ != nullptr) layer_->setSpeed(speed);
     setToCustom();
+  });
+  connect(ui->backlashSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double backlash) {
+    if (layer_ != nullptr) layer_->setXBacklash(backlash);
   });
   connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
     if (layer_ != nullptr) layer_->setRepeat(repeat);
@@ -125,6 +139,13 @@ void LayerParamsPanel::registerEvents() {
       main_window_->canvas()->setActiveLayer(new_layer);
     }
   });
+  connect(add_layer_btn_, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::addEmptyLayer);
+}
+
+void LayerParamsPanel::resizeEvent(QResizeEvent *e) {
+  if (add_layer_btn_ == nullptr) return;
+  QPointF button_pos = ui->parameterFrame->geometry().topRight() - QPointF(24, 0);
+  add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 24, 24));
 }
 
 void LayerParamsPanel::updateMovingComboBox() {

@@ -26,22 +26,11 @@ void LayerPanel::loadStyles() {
 
 void LayerPanel::loadWidgets() {
   layer_params_panel_ = new LayerParamsPanel(this, main_window_);
-  this->layout()->addWidget(layer_params_panel_);
-  // Add floating buttons
-  QPointF button_pos = ui->layerList->mapToGlobal(ui->layerList->geometry().bottomRight()) - QPointF(35, 35);
-  add_layer_btn_ = new QToolButton(ui->layerList);
-  add_layer_btn_->setObjectName("btnAddLayer");
-  add_layer_btn_->setCursor(Qt::PointingHandCursor);
-  add_layer_btn_->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-plus.png" : ":/resources/images/icon-plus.png"));
-  add_layer_btn_->setIconSize(QSize(24, 24));
-  add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
-  add_layer_btn_->raise();
-  add_layer_btn_->show();
+  ui->scrollAreaWidgetContents->layout()->addWidget(layer_params_panel_);
 }
 
 void LayerPanel::registerEvents() {
   connect(ui->layerList->model(), &QAbstractItemModel::rowsMoved, this, &LayerPanel::layerOrderChanged);
-  connect(add_layer_btn_, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::addEmptyLayer);
   connect(main_window_->canvas(), &Canvas::layerChanged, this, &LayerPanel::updateLayers);
   connect(ui->layerList, &QListWidget::itemClicked, [=](QListWidgetItem *item) {
     // TODO (Add more UI logic here to prevent redrawing all list widget)
@@ -58,9 +47,6 @@ void LayerPanel::showEvent(QShowEvent *event) {
 }
 
 void LayerPanel::resizeEvent(QResizeEvent *e) {
-  if (add_layer_btn_ == nullptr) return;
-  QPointF button_pos = ui->layerList->geometry().bottomRight() - QPointF(35, 35);
-  add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 35, 35));
 }
 
 

@@ -25,9 +25,9 @@ public:
       kDynamicPadding // Based on layer speed and acceleration
   };
 
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
 
-  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog = nullptr);
+  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog = nullptr);
 
   void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_mm_ = work_area_size; }
 
@@ -57,8 +57,8 @@ private:
 
   void outputLayerBitmapGcode();
 
-  inline void moveTo(QPointF&& dest, double speed, double power);
-  inline void moveTo(const QPointF& dest, double speed, double power);
+  inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
+  inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
 
   std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> adjustPrefixSuffixZero(
           const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt);
@@ -77,6 +77,7 @@ private:
   BaseGenerator *gen_;
   // === The followings depend on DPI settings of document ===
   qreal dpmm_ = 10;               // The DPMM settings of document
+  double travel_speed_ = 80;      // The speed form point to point(mm/s)
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
   QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path), expressed in unit of document dot
@@ -88,11 +89,13 @@ private:
   // == The followings depend on both canvas resolution and document DPI settings ==
   qreal resolution_scale_;                // = dots per unit_size_on_canvas
   QTransform resolution_scale_transform_; // scale matrix of (dpmm_ / canvas_mm_ratio_)
+  QTransform move_translate_;             // move matrix
   // === The followings are expressed in unit of mm ===
   QPointF current_pos_mm_; // in unit of mm
   QSizeF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
+  QPointF end_point_;
   // ==================================================
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area

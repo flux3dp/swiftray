@@ -5,6 +5,7 @@
 #include <windows/mainwindow.h>
 #include "doc-panel.h"
 #include "ui_doc-panel.h"
+#include <globals.h>
 
 DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
@@ -68,12 +69,14 @@ void DocPanel::loadSettings() {
   MachineSettings machine_settings;
   QString current_machine = settings.value("defaultMachine").toString();
   ui->machineComboBox->clear();
-  for (auto &mach : machine_settings.machines()) {
+  for (const auto &mach : machine_settings.machines()) {
     if (mach.name.isEmpty()) continue;
     ui->machineComboBox->blockSignals(true);
     ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
     ui->machineComboBox->blockSignals(false);
   }
+  // select the item in combobox with matching current_machine name
+  // NOTE: This works only when there is no duplicate name in machines_
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();
 
@@ -90,6 +93,13 @@ void DocPanel::loadSettings() {
   // Load DPI setting (select appropriate dpi item index)
   syncDPISettingsUI();
   syncAdvancedSettingsUI();
+  if(ui->rotaryCheckBox->checkState()) {
+    ui->speedSpinBox->setEnabled(false);
+    ui->rotarySpinBox->setEnabled(true);
+  } else {
+    ui->speedSpinBox->setEnabled(true);
+    ui->rotarySpinBox->setEnabled(false);
+  }
 }
 
 void DocPanel::registerEvents() {
@@ -142,6 +152,22 @@ void DocPanel::registerEvents() {
   connect(ui->useOpenBottom, QOverload<int>::of(&QCheckBox::stateChanged), [=](int state) {
     main_window_->canvas()->document().settings().use_open_bottom = state == Qt::Checked ? true : false;
   });
+  connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state) {
+    if(state) {
+      ui->speedSpinBox->setEnabled(false);
+      ui->rotarySpinBox->setEnabled(true);
+    } else {
+      ui->speedSpinBox->setEnabled(true);
+      ui->rotarySpinBox->setEnabled(false);
+    }
+    Q_EMIT rotaryModeChange(state);
+  });
+  connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updateSpeed();
+  });
+  connect(ui->rotarySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updateSpeed();
+  });
 }
 
 void DocPanel::updateScene() {
@@ -149,9 +175,10 @@ void DocPanel::updateScene() {
   auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
   auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
   // TODO (change width/height to QSize)
-  main_window_->canvas()->document().setWidth(machine.width * 10);
-  main_window_->canvas()->document().setHeight(machine.height * 10);
-  main_window_->canvas()->resize();
+  Q_EMIT updateMachineRange(QSize(machine.width, machine.height));
+  // main_window_->canvas()->document().setWidth(machine.width * 10);
+  // main_window_->canvas()->document().setHeight(machine.height * 10);
+  // main_window_->canvas()->resize();
 }
 
 MachineSettings::MachineSet DocPanel::currentMachine() {
@@ -159,6 +186,7 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
     // Return a default
     MachineSettings::MachineSet m;
     m.origin = MachineSettings::MachineSet::OriginType::RearLeft;
+    m.board_type = MachineSettings::MachineSet::BoardType::GRBL_2020;
     m.width = main_window_->canvas()->document().width() / 10;
     m.height = main_window_->canvas()->document().height() / 10;
     return m;
@@ -170,4 +198,29 @@ MachineSettings::MachineSet DocPanel::currentMachine() {
 
 QString DocPanel::getMachineName() {
   return ui->machineComboBox->currentText();
+}
+
+void DocPanel::setRotaryMode(bool is_rotary_mode) {
+  if(is_rotary_mode) {
+    ui->rotaryCheckBox->setCheckState(Qt::Checked);
+  }
+  else {
+    ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+  }
+}
+
+double DocPanel::getTravelSpeed() {
+  return ui->speedSpinBox->value();
+}
+
+double DocPanel::getRotarySpeed() {
+  return ui->rotarySpinBox->value();
+}
+
+void DocPanel::hideEvent(QHideEvent *event) {
+  emit panelShow(false);
+}
+
+void DocPanel::showEvent(QShowEvent *event) {
+  emit panelShow(true);
 }

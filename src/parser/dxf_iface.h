@@ -66,27 +66,19 @@ public:
     virtual void addPoint(const DRW_Point& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addLine(const DRW_Line& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addLine(const DRW_Line& data);
     virtual void addRay(const DRW_Ray& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
     virtual void addXline(const DRW_Xline& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addArc(const DRW_Arc& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
-    virtual void addCircle(const DRW_Circle& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addArc(const DRW_Arc& data);
+    virtual void addCircle(const DRW_Circle& data);
     virtual void addEllipse(const DRW_Ellipse& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addLWPolyline(const DRW_LWPolyline& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addLWPolyline(const DRW_LWPolyline& data);
     virtual void addPolyline(const DRW_Polyline& data);
     virtual void addSpline(const DRW_Spline* data);
     // ¿para que se usa?

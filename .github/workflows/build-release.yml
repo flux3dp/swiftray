@@ -59,7 +59,7 @@ jobs:
         #if: steps.cache-potrace.outputs.cache-hit != 'true'
         run: |
             cd $RUNNER_WORKSPACE/dev/
-            curl http://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+            curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
             tar -xvf potrace-1.16.tar.gz
             cd potrace-1.16
             ./configure --with-libpotrace

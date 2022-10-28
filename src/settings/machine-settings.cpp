@@ -11,6 +11,12 @@ MachineSettings::MachineSettings() {
   loadJson(obj);
 }
 
+/**
+ * @brief Load multiple machine sets from JSON format
+ *        Not used currently
+ * 
+ * @param obj 
+ */
 void MachineSettings::loadJson(const QJsonObject &obj) {
   if (obj["data"].isNull()) {
     qWarning() << "[MachineSettings] Cannot load machine settings";
@@ -26,6 +32,12 @@ void MachineSettings::loadJson(const QJsonObject &obj) {
   machines_mutex_.unlock();
 }
 
+/**
+ * @brief Convert the machine list into JSON object
+ *        Not used currently
+ * 
+ * @return QJsonObject 
+ */
 QJsonObject MachineSettings::toJson() {
   QJsonArray data;
   machines_mutex_.lock();
@@ -38,8 +50,16 @@ QJsonObject MachineSettings::toJson() {
   return obj;
 }
 
-QList<MachineSet> &MachineSettings::machines() {
+const QList<MachineSet> &MachineSettings::machines() {
   return machines_;
+}
+
+void MachineSettings::addMachine(MachineSet mach) {
+  machines_ << mach;
+}
+
+void MachineSettings::clearMachines() {
+  machines_.clear();
 }
 
 void MachineSettings::save() {
@@ -101,6 +121,15 @@ QJsonObject MachineSet::toJson() const {
   return obj;
 }
 
+/**
+ * @brief Lazy load and return preset (predefined) machines
+ *        Allow newbie user to select without knowing details of machine
+ * 
+ *        NOTE: The predefined machines aren't listed in machines_, 
+ *              they only help user to create and add machine to machines_
+ * 
+ * @return QList<MachineSet> 
+ */
 QList<MachineSet> MachineSettings::database() {
   if (machineDatabase_.empty()) {
     QFile file(":/resources/machines.json");
@@ -113,6 +142,13 @@ QList<MachineSet> MachineSettings::database() {
   return MachineSettings::machineDatabase_;
 }
 
+/**
+ * @brief Try to find specific brand and model from preset (predefined) machines
+ * 
+ * @param brand 
+ * @param model 
+ * @return MachineSet 
+ */
 MachineSet MachineSettings::findPreset(QString brand, QString model) {
   for (MachineSet m : MachineSettings::database()) {
     if (m.brand == brand && m.model == model) {
@@ -122,6 +158,11 @@ MachineSet MachineSettings::findPreset(QString brand, QString model) {
   return MachineSet();
 }
 
+/**
+ * @brief The brands in the preset (predefined) machines
+ * 
+ * @return QStringList 
+ */
 QStringList MachineSettings::brands() {
   QList<QString> result;
   for (MachineSet m : MachineSettings::database()) {
@@ -133,6 +174,11 @@ QStringList MachineSettings::brands() {
   return QStringList(result);
 }
 
+/**
+ * @brief The models in the preset (predefined) machines
+ * 
+ * @return QStringList 
+ */
 QStringList MachineSettings::models(QString brand) {
   QList<QString> result;
   for (MachineSet m : MachineSettings::database()) {

@@ -27,6 +27,13 @@ public:
   */
   struct MachineSet {
     enum class OriginType {
+      /**
+       *    RearLeft -------- RearRight
+       *       |                 |
+       *       |                 |
+       *       |                 |
+       *    FrontLeft ------ FrontRight
+       */
       RearLeft,  // Machine origin at the "top left" in canvas coordinate
       RearRight, // Machine origin at the "top right" in canvas coordinate
       FrontLeft, // Machine origin at the "bottom left" in canvas coordinate
@@ -47,8 +54,8 @@ public:
 
     BoardType board_type;
     OriginType origin;
-    int width;
-    int height;
+    int width = 0;
+    int height = 0;
     bool home_on_start;
     QPointF red_pointer_offset;
 
@@ -61,7 +68,11 @@ public:
 
   MachineSettings();
 
-  QList<MachineSet> &machines();
+  const QList<MachineSet> &machines();
+
+  void addMachine(MachineSet mach);
+
+  void clearMachines();
 
   void save();
 
@@ -74,7 +85,7 @@ public:
   Q_INVOKABLE static QStringList models(QString brand);
 
 private:
-  static QList<MachineSet> machineDatabase_;
+  static QList<MachineSet> machineDatabase_; // not important, just a cache for lazy loading
 
   void loadJson(const QJsonObject &obj);
 

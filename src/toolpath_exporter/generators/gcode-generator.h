@@ -3,6 +3,7 @@
 #include <sstream>
 #include <toolpath_exporter/generators/base-generator.h>
 #include <settings/machine-settings.h>
+#include <cmath>
 
 /*
 Basic GCode Generator for Grbl like machines.
@@ -39,7 +40,7 @@ public:
    * @param speed
    * @param power
    */
-  void moveTo(float x, float y, float speed, float power) override {
+  void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
       case MachineSettings::MachineSet::OriginType::RearRight:
@@ -62,59 +63,71 @@ public:
         break;
     }
 
-    // 2 Limit x,y position inside the work area
-    if (x > machine_width_) {
-      x = machine_width_;
-    } else if (x < 0) {
-      x = 0;
+    // 1-2. Handle x direction backlash
+    if (x > x_) {
+      x += x_backlash;
+    } else {
+      x -= x_backlash;
     }
-    if (y > machine_height_) {
-      y = machine_height_;
-    } else if (y < 0) {
-      y = 0;
+
+    // 2 Limit x,y position inside the work area
+    //   NOTE: Also need to consider the precision error of floating point number
+    //         so we add an epsilon here
+    if (x > machine_width_ - epsilon_) {
+      x = machine_width_ - epsilon_;
+    } else if (x < epsilon_) {
+      x = epsilon_;
+    }
+    if (y > machine_height_ - epsilon_) {
+      y = machine_height_ - epsilon_;
+    } else if (y < epsilon_) {
+      y = epsilon_;
     }
 
     // 3. Separate relative mode & absolute mode
     if (distance_modal_ == GCodeDistanceModal::kG91) { // G91: relative distance
-      if (x != x_ || y != y_) {
+      if (std::fabs(x - x_) >= epsilon_ || std::fabs(y - y_) >= epsilon_) {
         if ( motion_modal_ != GCodeMotionModal::kG01) {
           str_stream_ << "G1";
           motion_modal_ = GCodeMotionModal::kG01;
         }
       }
-      if (x != x_) {
-        str_stream_ << "X" << round((x - x_) * 1000) / 1000;
-        x_ = x;
+      if (std::fabs(x - x_) >= epsilon_) {
+        float dist_x = round((x - x_) * 1000) / 1000;
+        str_stream_ << "X" << dist_x;
+        x_ = x_ + dist_x;
       }
-      if (y != y_) {
-        str_stream_ << "Y" << round((y - y_) * 1000) / 1000;
-        y_ = y;
+      if (std::fabs(y - y_) >= epsilon_) {
+        float dist_y = std::round((y - y_) * 1000) / 1000;
+        str_stream_ << "Y" << dist_y;
+        y_ = y_ + dist_y;
       }
     } else { // G90: absolute distance
       // Coordinate transform for different origin type
-      if (x_ == x && y_ == y && speed_ == speed && power_ == power)
+      if (std::fabs(x - x_) < epsilon_ && std::fabs(y - y_) < epsilon_ 
+          && std::fabs(speed_ - speed) < epsilon_ && std::fabs(power_ - power) < epsilon_)
         return;
 
       if ( motion_modal_ != GCodeMotionModal::kG01) {
         str_stream_ << "G1";
         motion_modal_ = GCodeMotionModal::kG01;
       }
-      if (x_ != x) {
-        str_stream_ << "X" << round(x * 1000) / 1000;
+      if (std::fabs(x - x_) >= epsilon_) {
+        str_stream_ << "X" << std::round(x * 1000) / 1000;
         x_ = x;
       }
-      if (y_ != y) {
-        str_stream_ << "Y" << round(y * 1000) / 1000;
+      if (std::fabs(y - y_) >= epsilon_) {
+        str_stream_ << "Y" << std::round(y * 1000) / 1000;
         y_ = y;
       }
     }
 
-    if (speed_ != speed) {
+    if (std::fabs(speed_ - speed) >= epsilon_) {
       str_stream_ << "F" << speed * 60; // mm/s to mm/min
       speed_ = speed;
     }
 
-    if (power_ != power) {
+    if (std::fabs(power_ - power) >= epsilon_) {
       str_stream_ << "S" << power * 10; // mm/s to mm/min
       power_ = power;
     }
@@ -159,6 +172,23 @@ public:
     x_ = y_ = 0;
   }
 
+  /**
+   * @brief Wait until all motions in the buffer to finish
+   * 
+   */
+  void syncProgramFlow() override { 
+    str_stream_ << "M0" << std::endl;
+  }
+
+  /**
+   * @brief Wait until all motions in the buffer to finish 
+   *        and then clear state: turn off laser, turn off coolant, ...
+   * 
+   */
+  void finishProgramFlow() override {
+    str_stream_ << "M2" << std::endl;
+  }
+
   void reset() override {
     BaseGenerator::reset();
     machine_width_ = 0;
@@ -176,4 +206,5 @@ private:
   GCodeDistanceModal distance_modal_ = GCodeDistanceModal::kG90;
   MCodeSpindleModal spindle_modal_ = MCodeSpindleModal::kM05;
   MachineSettings::MachineSet::OriginType machine_origin_;
+  float epsilon_ = 0.001;
 };

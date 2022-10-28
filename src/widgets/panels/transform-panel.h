@@ -34,6 +34,10 @@ private:
 
   void registerEvents() override;
 
+  void hideEvent(QHideEvent *event) override;
+
+  void showEvent(QShowEvent *event) override;
+
   Ui::TransformPanel *ui;
   double x_;
   double y_;
@@ -47,6 +51,8 @@ signals:
   void transformPanelUpdated(double x, double y, double r, double w, double h);
 
   void scaleLockToggled(bool scale_locked);
+
+  void panelShow(bool is_show);
 };
 
 #endif // TRANSFORM_WIDGET_H

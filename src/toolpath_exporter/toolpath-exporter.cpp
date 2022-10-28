@@ -11,12 +11,13 @@
 #include <boost/range/irange.hpp>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, PaddingType padding_type) noexcept :
- gen_(generator), dpmm_(dpmm), padding_type_(padding_type)
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate) noexcept :
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  move_translate_ = move_translate;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
 }
 
 /**
@@ -25,13 +26,15 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, Padding
  * @retval true if completed,
  *         false if canceled or error occurred
  */
-bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, QProgressDialog* dialog) {
+bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog) {
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
   // Pre cmds
   gen_->turnOffLaser(); // M5
-  gen_->home();
+  if(start_with_home) {
+    gen_->home();
+  }
   gen_->useAbsolutePositioning();
 
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
@@ -74,8 +77,15 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     return false;
   }
 
+  gen_->finishProgramFlow();
+  
+  if (canceled) {
+    return false;
+  }
+
   // Post cmds
-  gen_->home();
+  // gen_->home();
+  moveTo(end_point_, travel_speed_, 0, 0);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -90,7 +100,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
   // TODO (Use layer_painter to manage transform over different sub objects)
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
   polygons_mutex_.lock();
   layer_polygons_.clear();
   polygons_mutex_.unlock();
@@ -127,11 +137,11 @@ void ToolpathExporter::convertShape(const ShapePtr &shape) {
 }
 
 void ToolpathExporter::convertGroup(const GroupShape *group) {
-  global_transform_ = group->globalTransform() * resolution_scale_transform_;
+  global_transform_ = group->globalTransform() * move_translate_ * resolution_scale_transform_;
   for (auto &shape : group->children()) {
     convertShape(shape);
   }
-  global_transform_ = QTransform() * resolution_scale_transform_;
+  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
 }
 
 /**
@@ -152,10 +162,10 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (bmp->boundingRect().top() < 0 || 
-      bmp->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
-      bmp->boundingRect().left() < 0 || 
-      bmp->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+      (bitmap_dirty_area_.top() < 0 || 
+      bitmap_dirty_area_.bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      bitmap_dirty_area_.left() < 0 || 
+      bitmap_dirty_area_.right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 }
@@ -167,10 +177,10 @@ void ToolpathExporter::convertPath(const PathShape *path) {
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (path->boundingRect().top() < 0 || 
-      path->boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
-      path->boundingRect().left() < 0 || 
-      path->boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
+      (transformed_path.boundingRect().top() < 0 || 
+      transformed_path.boundingRect().bottom() > machine_work_area_mm_.height() * canvas_mm_ratio_ ||
+      transformed_path.boundingRect().left() < 0 || 
+      transformed_path.boundingRect().right() > machine_work_area_mm_.width() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 
@@ -239,8 +249,8 @@ void ToolpathExporter::outputLayerPathGcode() {
 
     QPointF next_point_mm = poly.first() / dpmm_;
     moveTo(next_point_mm,
-           MOVING_SPEED,
-           0);
+           travel_speed_,
+           0, 0);
 
     for (QPointF &point : poly) {
       next_point_mm = point / dpmm_;
@@ -256,12 +266,14 @@ void ToolpathExporter::outputLayerPathGcode() {
         for (const QPointF &interpolate_point : interpolate_points) {
           moveTo(interpolate_point,
                  current_layer_->speed(),
-                 current_layer_->power());
+                 current_layer_->power(),
+                 0);
         }
       } else {
         moveTo(next_point_mm,
                current_layer_->speed(),
-               current_layer_->power());
+               current_layer_->power(),
+               0);
       }
 
     }
@@ -269,7 +281,7 @@ void ToolpathExporter::outputLayerPathGcode() {
     //gen_->turnOffLaser();
   }
   polygons_mutex_.unlock();
-  // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0);
+  // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0, 0);
   gen_->turnOffLaser();
 }
 
@@ -310,8 +322,8 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // rapid move to the start position
   moveTo(QPointF{bbox.topLeft()} / dpmm_,
-         MOVING_SPEED,
-         0);
+         travel_speed_,
+         0, 0);
 
   gen_->useRelativePositioning();
 
@@ -405,6 +417,7 @@ std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> ToolpathExporter::a
  *
  * @param layer_image the (scaled) bitmap of entire layer
  * @param bbox bounding box of dirty area
+ *             NOTE: the bbox has already been scaled by dpmm
  * @param diection_mode
  * @return
  */
@@ -419,9 +432,11 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
 
   // Prepare raster line paths
   QList<QLine> raster_lines;
+  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
+  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
   for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
     raster_lines.push_back(QLine{bbox.left(), y,
-                                 bbox.right(), y});
+                                 bbox.left() + bbox.width(), y});
   }
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
@@ -504,33 +519,36 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
   bool is_emitting = false;
   const qreal t_step = 1 / path.length();
   moveTo(path.p1() / dpmm_,
-         MOVING_SPEED,
-         0);
+         travel_speed_,
+         0, 0);
 
   int idx = 0;
   while (true) {
     if (t_step * idx >= 1) {
       moveTo(path.p2() / dpmm_,
              current_layer_->speed(),
-             is_emitting ? current_layer_->power() : 0);
+             is_emitting ? current_layer_->power() : 0,
+             is_emitting ? current_layer_->xBacklash() : 0);
       break;
     }
     if (int(idx/32) >= data.size()) {
       if (is_emitting) {
         moveTo(path.pointAt(t_step * idx) / dpmm_,
                current_layer_->speed(),
-               current_layer_->power());
+               current_layer_->power(),
+               current_layer_->xBacklash());
       }
       moveTo(path.p2() / dpmm_,
              current_layer_->speed(),
-             0);
+             0, 0);
       break;
     }
 
     if (is_emitting != data[int(idx/32)][31 - (idx % 32)]) {
       moveTo(path.pointAt(t_step * idx) / dpmm_,
              current_layer_->speed(),
-             is_emitting ? current_layer_->power() : 0);
+             is_emitting ? current_layer_->power() : 0,
+             is_emitting ? current_layer_->xBacklash() : 0);
       is_emitting = !is_emitting;
     }
     idx++;
@@ -543,6 +561,7 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
  * @brief Export
  * @param layer_image  (scaled) image of an entire layer on canvas
  * @param bbox         the (scaled) bounding box for the raster motion (shouldn't be larger than layer_image)
+ *                     NOTE: the bbox has already been scaled by dpmm
  * @return
  */
 bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
@@ -565,9 +584,11 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 
   // 2-1. Prepare raster line paths
   QList<QLine> raster_lines;
+  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
+  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
   for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
     raster_lines.push_back(QLine{bbox.left(), y,
-                                  bbox.right(), y});
+                                  bbox.left() + bbox.width(), y});
   }
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
@@ -657,8 +678,8 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data) {
   // Generate moveTo cmd to the initial position of raster line
   moveTo(path.p1() / dpmm_,
-         MOVING_SPEED,
-         0);
+         travel_speed_,
+         0, 0);
 
   // Generate D1PC, D2W, D3FE, D4PL cmd based on the parsed info
   gen_->appendCustomCmd(std::string("D1PC") + std::to_string(32*data.size()) + std::string("\n"));
@@ -684,7 +705,8 @@ bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector
   // Generate moveTo cmd to the end position of raster line
   moveTo(path.p2() / dpmm_,
          current_layer_->speed(),
-         current_layer_->power());
+         current_layer_->power(),
+         current_layer_->xBacklash());
 
   return true;
 }
@@ -714,12 +736,12 @@ QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
   return result_img;
 }
 
-inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power);
+inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power, double x_backlash) {
+  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
   current_pos_mm_ = dest;
 }
 
-inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power);
+inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power, double x_backlash) {
+  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
   current_pos_mm_ = dest;
 }
