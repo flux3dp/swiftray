@@ -135,6 +135,12 @@ jobs:
           cd build
           $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
 
+      - name: Workaround for libxcb dependencies
+        run: |
+          cd build/Swiftray.app/Contents/Frameworks
+          install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-shm.0.dylib
+          install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-render.0.dylib
+
       - name: Select XCode version (workaround for codesign fail)
         if: ${{matrix.cfg.build == 'qmake' }}
         uses: maxim-lobanov/setup-xcode@v1
