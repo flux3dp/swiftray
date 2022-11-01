@@ -100,7 +100,7 @@
               <string> mm</string>
              </property>
              <property name="minimum">
-              <double>0.000000000000000</double>
+              <double>-9999.000000000000000</double>
              </property>
              <property name="maximum">
               <double>9999.000000000000000</double>
@@ -273,7 +273,7 @@
               <string> mm</string>
              </property>
              <property name="minimum">
-              <double>0.000000000000000</double>
+              <double>-9999.000000000000000</double>
              </property>
              <property name="maximum">
               <double>9999.000000000000000</double>
