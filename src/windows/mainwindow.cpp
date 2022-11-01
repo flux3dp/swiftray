@@ -377,7 +377,12 @@ void MainWindow::actionFrame() {
       move_translate);
   exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
-
+  if (exporter.isExceedingBoundary()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
+    msgbox.exec();
+  }
 
   // Again, make sure active machine and job executor exist, 
   if (active_machine.getJobExecutor().isNull()) {
