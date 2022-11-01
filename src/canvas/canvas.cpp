@@ -573,7 +573,7 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        double new_scale = std::min(30.0, std::max(0.1, document().scale() + nge->value() / 8));
+        double new_scale = std::min(30.0, std::max(0.01, document().scale() + nge->value() / 8));
         document().setScale(new_scale);
 
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
