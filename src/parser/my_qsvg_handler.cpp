@@ -3852,7 +3852,8 @@ bool MyQSvgHandler::startElement(const QString &localName,
             QSvgPath *tmp_node = (QSvgPath*) node;
             QPainterPath *qpath = tmp_node->qpath();
             ShapePtr new_shape = std::make_shared<PathShape>(qpath[0]);
-            QTransform tmp_scale = QTransform().scale(g_scale,g_scale);
+            double scale = 30.0 / 8.5;//define by 3cm Ruler
+            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
             new_shape->applyTransform(g_transform_ * tmp_scale);
             g_layer_ptr_->addShape(new_shape);
             g_layer_ptr_->setColor(g_color);
@@ -3862,7 +3863,8 @@ bool MyQSvgHandler::startElement(const QString &localName,
         }
         else if(node->type() == QSvgNode::IMAGE) {
             QList<ShapePtr> shape_list = g_layer_ptr_->children();
-            QTransform tmp_scale = QTransform().scale(g_scale,g_scale);
+            double scale = 30.0 / 8.5;//define by 3cm Ruler
+            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
             shape_list[shape_list.size()-1]->applyTransform(g_transform_ * tmp_scale);
             g_layer_ptr_->setColor(g_color);
             QString layer_name("Svg_");
