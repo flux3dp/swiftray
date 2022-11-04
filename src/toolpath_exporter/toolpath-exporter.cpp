@@ -159,13 +159,14 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   }
   layer_painter_->restore();
   bitmap_dirty_area_ = bitmap_dirty_area_.united(global_transform_.mapRect(bmp->boundingRect()));
+  QRectF boundary_mm = resolution_scale_transform_.mapRect(machine_work_area_mm_);
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (bitmap_dirty_area_.top() < machine_work_area_mm_.top() * canvas_mm_ratio_ || 
-      bitmap_dirty_area_.bottom() > machine_work_area_mm_.bottom() * canvas_mm_ratio_ ||
-      bitmap_dirty_area_.left() < machine_work_area_mm_.left() * canvas_mm_ratio_ || 
-      bitmap_dirty_area_.right() > machine_work_area_mm_.right() * canvas_mm_ratio_)) {
+      (bitmap_dirty_area_.top() < boundary_mm.top() * canvas_mm_ratio_ || 
+      bitmap_dirty_area_.bottom() > boundary_mm.bottom() * canvas_mm_ratio_ ||
+      bitmap_dirty_area_.left() < boundary_mm.left() * canvas_mm_ratio_ || 
+      bitmap_dirty_area_.right() > boundary_mm.right() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 }
@@ -174,13 +175,14 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
   // transformed_path: Express path in unit of dots (depends on document resolution settings)
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());
+  QRectF boundary_mm = resolution_scale_transform_.mapRect(machine_work_area_mm_);
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (transformed_path.boundingRect().top() < machine_work_area_mm_.top() * canvas_mm_ratio_ || 
-      transformed_path.boundingRect().bottom() > machine_work_area_mm_.bottom() * canvas_mm_ratio_ ||
-      transformed_path.boundingRect().left() < machine_work_area_mm_.left() * canvas_mm_ratio_ || 
-      transformed_path.boundingRect().right() > machine_work_area_mm_.right() * canvas_mm_ratio_)) {
+      (transformed_path.boundingRect().top() < boundary_mm.top() * canvas_mm_ratio_ || 
+      transformed_path.boundingRect().bottom() > boundary_mm.bottom() * canvas_mm_ratio_ ||
+      transformed_path.boundingRect().left() < boundary_mm.left() * canvas_mm_ratio_ || 
+      transformed_path.boundingRect().right() > boundary_mm.right() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 
