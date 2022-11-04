@@ -318,29 +318,13 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
     return;
   }
 
-  QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
   if (is_holding_space_ || is_holding_middle_button_) {
-    emit cursorChanged(	Qt::ClosedHandCursor);
-    qreal movement_x = movement.x() * document().scale();
-    qreal movement_y = movement.y() * document().scale();
-    qreal new_scroll_x = (document().mousePressedCanvasScroll().x() + movement_x);
-    qreal new_scroll_y = (document().mousePressedCanvasScroll().y() + movement_y);
+    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
+    QPointF movement = (document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord()) 
+                        * document().scale();
+    QPointF new_scroll = document().mousePressedCanvasScroll() + movement;
 
-    // Restrict the range of scroll
-    QPointF top_left_bound = getTopLeftScrollBoundary();
-    QPointF bottom_right_bound = getBottomRightScrollBoundary();
-    if (movement_x > 0 && new_scroll_x > top_left_bound.x()) {
-      new_scroll_x = top_left_bound.x();
-    } else if (movement_x < 0 && new_scroll_x < bottom_right_bound.x()) {
-      new_scroll_x = bottom_right_bound.x();
-    }
-    if (movement_y > 0 && new_scroll_y > top_left_bound.y()) {
-      new_scroll_y = top_left_bound.y();
-    } else if (movement_y < 0 && new_scroll_y < bottom_right_bound.y()) {
-      new_scroll_y = bottom_right_bound.y();
-    }
-
-    document().setScroll({new_scroll_x, new_scroll_y});
+    updateScroll(new_scroll, movement);
     volatility_timer.restart();
     return; 
   }
@@ -447,6 +431,28 @@ QPointF Canvas::getBottomRightScrollBoundary() {
   return QPointF{scroll_x_min, scroll_y_min};
 }
 
+
+void Canvas::updateScroll(
+    QPointF new_scroll, QPointF ref_pos) 
+{
+  // Restrict the range of scroll
+  QPointF top_left_bound = getTopLeftScrollBoundary();
+  QPointF bottom_right_bound = getBottomRightScrollBoundary();
+  if (ref_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+    new_scroll.setX(top_left_bound.x());
+  } else if (ref_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
+    new_scroll.setX(bottom_right_bound.x());
+  }
+  if (ref_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+    new_scroll.setY(top_left_bound.y());
+  } else if (ref_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
+    new_scroll.setY(bottom_right_bound.y());
+  }
+  // Update
+  document().setScroll(new_scroll);
+}
+
+
 void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF new_scroll;
   QPointF mouse_pos;
@@ -463,21 +469,7 @@ void Canvas::wheelEvent(QWheelEvent *e) {
     mouse_pos = e->angleDelta();
   }
 
-  // Restrict the range of scroll
-  QPointF top_left_bound = getTopLeftScrollBoundary();
-  QPointF bottom_right_bound = getBottomRightScrollBoundary();
-  if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-    new_scroll.setX(top_left_bound.x());
-  } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-    new_scroll.setX(bottom_right_bound.x());
-  }
-  if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-    new_scroll.setY(top_left_bound.y());
-  } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-    new_scroll.setY(bottom_right_bound.y());
-  }
-
-  document().setScroll(new_scroll);
+  updateScroll(new_scroll, mouse_pos);
   volatility_timer.restart();
 }
 
@@ -488,21 +480,7 @@ void Canvas::setScaleWithCenter(qreal new_scale) {
 
   QPointF new_scroll = center_pos - (center_pos - document().scroll()) * document().scale() / orig_scale;
 
-  // Restrict the scroll range (might not be necessary)
-  QPointF top_left_bound = getTopLeftScrollBoundary();
-  QPointF bottom_right_bound = getBottomRightScrollBoundary();
-  if (center_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-    new_scroll.setX(top_left_bound.x());
-  } else if (center_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-    new_scroll.setX(bottom_right_bound.x());
-  }
-  if (center_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-    new_scroll.setY(top_left_bound.y());
-  } else if (center_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-    new_scroll.setY(bottom_right_bound.y());
-  }
-
-  document().setScroll(new_scroll);
+  updateScroll(new_scroll, center_pos);
   volatility_timer.restart();
 }
 
@@ -575,25 +553,9 @@ bool Canvas::event(QEvent *e) {
         double orig_scale = document().scale();
         double new_scale = std::min(30.0, std::max(0.01, document().scale() + nge->value() / 8));
         document().setScale(new_scale);
-
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
 
-        // Restrict the scroll range (might not be necessary)
-        QPointF top_left_bound = getTopLeftScrollBoundary();
-        QPointF bottom_right_bound = getBottomRightScrollBoundary();
-        if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-          new_scroll.setX(top_left_bound.x());
-        } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-          new_scroll.setX(bottom_right_bound.x());
-        }
-        if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-          new_scroll.setY(top_left_bound.y());
-        } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-          new_scroll.setY(bottom_right_bound.y());
-        }
-
-
-        document().setScroll(new_scroll);
+        updateScroll(new_scroll, mouse_pos);
         volatility_timer.restart();
       }
 

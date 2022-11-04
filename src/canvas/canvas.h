@@ -284,6 +284,8 @@ private:
 
   QPointF getBottomRightScrollBoundary();
 
+  void updateScroll(QPointF scroll, QPointF ref_pos);
+
   friend class MainWindow;
 
 protected:
