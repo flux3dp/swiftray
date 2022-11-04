@@ -16,6 +16,11 @@ bool Select::isActive() {
 bool Select::mouseMoveEvent(QMouseEvent *e) {
   QPointF start = document().mousePressedCanvasCoord();
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
+  if(start.x() >= canvas_coord.x()) {
+    check_inside_ = false;
+  } else {
+    check_inside_ = true;
+  }
   selection_box_ = QRectF(std::min(start.x(), canvas_coord.x()),
                           std::min(start.y(), canvas_coord.y()),
                           std::abs(start.x() - canvas_coord.x()),
@@ -32,7 +37,11 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       }
       for (auto &shape : layer->children()) {
         if (shape->hitTest(selection_box_)) {
-          selected << shape;
+          if(check_inside_) {
+            if(selection_box_.contains(shape->boundingRect())) selected << shape;
+          } else {
+            selected << shape;
+          }
         }
       }
     }
@@ -63,8 +72,8 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
 
 void Select::paint(QPainter *painter) {
   painter->setPen(
-       QPen(QColor::fromRgb(0x00, 0x99, 0xCC, 255), 0, Qt::DashLine));
+       QPen(check_inside_ ? QColor::fromRgb(0x00, 0xCC, 0x99, 255) : QColor::fromRgb(0x00, 0x99, 0xCC, 255), 0, Qt::DashLine));
   painter->fillRect(selection_box_,
-                    QBrush(QColor::fromRgb(0x00, 0x99, 0xCC, 30)));
+                    QBrush(check_inside_ ? QColor::fromRgb(0x00, 0xCC, 0x99, 30) : QColor::fromRgb(0x00, 0x99, 0xCC, 30)));
   painter->drawRect(selection_box_);
 }
