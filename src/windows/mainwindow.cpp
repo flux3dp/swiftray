@@ -1810,6 +1810,8 @@ void MainWindow::setToolbarTransform() {
   labelHeight->setText(tr("Height"));
   doubleSpinBoxX->setMaximum(9999);
   doubleSpinBoxY->setMaximum(9999);
+  doubleSpinBoxX->setMinimum(-9999);
+  doubleSpinBoxY->setMinimum(-9999);
   doubleSpinBoxRotation->setMaximum(360);
   doubleSpinBoxRotation->setMinimum(-360);
   doubleSpinBoxWidth->setMaximum(9999);
