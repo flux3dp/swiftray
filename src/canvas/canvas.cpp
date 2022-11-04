@@ -138,8 +138,6 @@ void Canvas::loadSVG(QString file_name) {
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
-    double scale = 30.0 / 8.5;//define by 3cm Ruler
-    transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
       emit layerChanged();
