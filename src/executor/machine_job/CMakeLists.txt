@@ -4,4 +4,5 @@ target_sources(Swiftray PRIVATE
   framing_job.cpp
   jogging_job.cpp
   rotary_test_job.cpp
+  console_job.cpp
 )
