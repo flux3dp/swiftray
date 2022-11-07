@@ -11,6 +11,7 @@
 #include <executor/machine_job/framing_job.h>
 #include <executor/machine_job/jogging_job.h>
 #include <executor/machine_job/rotary_test_job.h>
+#include <executor/machine_job/console_job.h>
 #include <executor/operation_cmd/grbl_cmd.h>
 
 Machine::Machine(QObject *parent)
@@ -181,6 +182,31 @@ bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate,
   }
 
   auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate, framing_power);
+  job->setMotionController(motion_controller_);
+  if (!job_executor_) {
+    return false;
+  }
+  if (!job_executor_->setNewJob(job)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief 
+ * 
+ * @param command 
+ * @return true 
+ * @return false 
+ */
+bool Machine::createConsoleJob(QString command) {
+  // Check state
+  if (connect_state_ != ConnectionState::kConnected) {
+    return false;
+  }
+
+  auto job = QSharedPointer<ConsoleJob>::create(command);
   job->setMotionController(motion_controller_);
   if (!job_executor_) {
     return false;

@@ -92,6 +92,7 @@ public slots:
   void moveToCustomOrigin();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
   void testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
+  void sendUserCommand(QString command);
 
 private slots:
 

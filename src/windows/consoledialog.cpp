@@ -10,6 +10,11 @@ ConsoleDialog::ConsoleDialog(QWidget *parent) :
   ui->setupUi(this);
   
   ui->consoleLog->document()->setMaximumBlockCount(100000);
+  connect(ui->lineEdit, &QLineEdit::returnPressed, [=]() {
+    QString cmd = ui->lineEdit->text();
+    emit activeUserCommand(cmd);
+    ui->lineEdit->clear();
+  });
 }
 
 ConsoleDialog::~ConsoleDialog()

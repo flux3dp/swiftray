@@ -1341,6 +1341,7 @@ void MainWindow::registerEvents() {
       if (!console_dialog_.isNull()) {
         connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
         connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+        connect(console_dialog_.data(), &ConsoleDialog::activeUserCommand, this, &MainWindow::sendUserCommand);
       }
     }
     // Port connected but hasn't responded any meaningful response
@@ -2426,6 +2427,14 @@ void MainWindow::moveToCustomOrigin() {
 
 void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power) {
   if (true == active_machine.createRotaryTestJob(bbox, rotary_axis, feedrate, framing_power)) 
+  {
+    gcode_panel_->attachJob(active_machine.getJobExecutor());
+    active_machine.startJob();
+  }
+}
+
+void MainWindow::sendUserCommand(QString command) {
+  if (true == active_machine.createConsoleJob(command)) 
   {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();

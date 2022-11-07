@@ -15,6 +15,9 @@ public:
   explicit ConsoleDialog(QWidget *parent = nullptr);
   ~ConsoleDialog();
 
+signals:
+  void activeUserCommand(QString command);
+
 public slots:
   void appendLogSent(QString msg);
   void appendLogRcvd(QString msg);
