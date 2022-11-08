@@ -344,6 +344,8 @@ void MainWindow::actionStart() {
 
   connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
   job_dashboard_->show();
+  job_dashboard_->activateWindow();
+  job_dashboard_->raise();
   job_dashboard_exist_ = true;
 }
 
@@ -737,6 +739,8 @@ void MainWindow::exportGCodeFile() {
                                    100, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
 
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
@@ -1052,10 +1056,26 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHLeft, &QAction::triggered, canvas_, &Canvas::editAlignHLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
-  connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
-  connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
-  connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
-  connect(ui->actionRotarySetup, &QAction::triggered, rotary_setup_, &RotarySetup::show);
+  connect(ui->actionPreferences, &QAction::triggered, [=]() {
+    preferences_window_->show();
+    preferences_window_->activateWindow();
+    preferences_window_->raise();
+  });
+  connect(ui->actionAbout, &QAction::triggered, [=]() {
+    about_window_->show();
+    about_window_->activateWindow();
+    about_window_->raise();
+  });
+  connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
+    machine_manager_->show();
+    machine_manager_->activateWindow();
+    machine_manager_->raise();
+  });
+  connect(ui->actionRotarySetup, &QAction::triggered, [=]() {
+    rotary_setup_->show();
+    rotary_setup_->activateWindow();
+    rotary_setup_->raise();
+  });
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
@@ -1345,6 +1365,8 @@ void MainWindow::registerEvents() {
     }
     // Port connected but hasn't responded any meaningful response
     console_dialog_->show();
+    console_dialog_->activateWindow();
+    console_dialog_->raise();
   });
 
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
@@ -2119,6 +2141,8 @@ bool MainWindow::generateGcode() {
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
@@ -2162,6 +2186,8 @@ void MainWindow::genPreviewWindow() {
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
 
   if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
@@ -2197,6 +2223,8 @@ void MainWindow::genPreviewWindow() {
     pw->setPreviewPath(preview_path_generator);
     pw->setRequiredTime(last_gcode_timestamp);
     pw->show();
+    pw->activateWindow();
+    pw->raise();
   } catch (...) {
     // Terminated
     return;
