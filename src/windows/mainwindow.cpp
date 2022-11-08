@@ -714,13 +714,17 @@ void MainWindow::openImageFile() {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
     QString temp_file = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
-    pdf_converter.convertPDFFile(file_name, temp_file);
+    QString temp_file2 = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+    QFile tmp_file(file_name);
+    tmp_file.copy(temp_file2);
+    pdf_converter.convertPDFFile(temp_file2, temp_file);
     QFile file2(temp_file);
     if (file2.open(QFile::ReadOnly)) {
       QByteArray data = file2.readAll();
       canvas_->loadSVG(data);
     }
     pdf_converter.removeSVGFile(temp_file);
+    QFile::remove(temp_file2);
   } else {
     importImage(file_name);
   }
