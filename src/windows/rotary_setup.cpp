@@ -2,6 +2,7 @@
 #include "ui_rotary_setup.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <QSettings>
 #include <windows/osxwindow.h>
 
 #include <QDebug>
@@ -68,6 +69,9 @@ RotarySetup::RotarySetup(QWidget *parent) :
         type_index_ = ui->typeList->currentRow();
         mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
         roller_diameter_ = ui->rollerDiameterSpinBox->value();
+
+        QSettings settings;
+        settings.setValue("rotary/circumference", circumference_);
 
         Q_EMIT mirrorModeChanged(is_mirror_mode_);
         Q_EMIT rotaryAxisChanged(rotary_axis_);
@@ -150,6 +154,22 @@ void RotarySetup::setControlEnable(bool control_enable)
     else {
         ui->testBtn->setEnabled(false);
     }
+}
+
+void RotarySetup::setDefaultCircumference(double default_value)
+{
+    //if the rotary/circumference is not update
+    QSettings settings;
+    QVariant circumference_data = settings.value("rotary/circumference", 0);
+    if(circumference_data.toDouble() > 0) {
+        ui->CircumSpinBox->setValue(circumference_data.toDouble());
+        circumference_ = circumference_data.toDouble();
+    } else {
+        ui->CircumSpinBox->setValue(default_value);
+        settings.setValue("rotary/circumference", default_value);
+        circumference_ = default_value;
+    }
+    resetUI();
 }
 
 /**

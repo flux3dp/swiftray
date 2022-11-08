@@ -38,6 +38,8 @@ public:
 
     void setControlEnable(bool control_enable);
 
+    void setDefaultCircumference(double default_value);
+
 private:
     Ui::RotarySetup *ui;
     void testRotary();
