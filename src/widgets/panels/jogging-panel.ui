@@ -358,10 +358,7 @@
          <item>
           <widget class="QCheckBox" name="currentpositionCheckBox">
            <property name="text">
-            <string>Show Current</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
+            <string>Show Last position</string>
            </property>
           </widget>
          </item>
