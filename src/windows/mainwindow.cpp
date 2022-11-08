@@ -542,14 +542,18 @@ void MainWindow::openFile() {
     } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
       QTemporaryDir dir;
       Parser::PDF2SVG pdf_converter;
-      QString temp_file = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
-      pdf_converter.convertPDFFile(file_name, temp_file);
-      QFile file2(temp_file);
-      if (file2.open(QFile::ReadOnly)) {
-        QByteArray data2 = file2.readAll();
-        canvas_->loadSVG(data2);
+      QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+      QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+      QFile src_file(file_name);
+      src_file.copy(sanitized_filepath);
+      pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+      QFile svg_file(temp_svg_filepath);
+      if (svg_file.open(QFile::ReadOnly)) {
+        QByteArray data = svg_file.readAll();
+        canvas_->loadSVG(data);
       }
-      pdf_converter.removeSVGFile(temp_file);
+      pdf_converter.removeSVGFile(temp_svg_filepath);
+      QFile::remove(sanitized_filepath);
     } else {
       importImage(file_name);
     }
@@ -713,18 +717,18 @@ void MainWindow::openImageFile() {
   } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
-    QString temp_file = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
-    QString temp_file2 = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
-    QFile tmp_file(file_name);
-    tmp_file.copy(temp_file2);
-    pdf_converter.convertPDFFile(temp_file2, temp_file);
-    QFile file2(temp_file);
-    if (file2.open(QFile::ReadOnly)) {
-      QByteArray data = file2.readAll();
+    QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+    QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+    QFile src_file(file_name);
+    src_file.copy(sanitized_filepath);
+    pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+    QFile svg_file(temp_svg_filepath);
+    if (svg_file.open(QFile::ReadOnly)) {
+      QByteArray data = svg_file.readAll();
       canvas_->loadSVG(data);
     }
-    pdf_converter.removeSVGFile(temp_file);
-    QFile::remove(temp_file2);
+    pdf_converter.removeSVGFile(temp_svg_filepath);
+    QFile::remove(sanitized_filepath);
   } else {
     importImage(file_name);
   }
@@ -1588,11 +1592,11 @@ void MainWindow::setConnectionToolBar() {
     }
     active_machine.applyMachineParam(currentMachine());
     connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
-      emit MainWindow::positionCached(target_pos);
+      Q_EMIT MainWindow::positionCached(target_pos);
       canvas()->updateCurrentPosition(target_pos);
     });
     connect(&active_machine, &Machine::disconnected, [=]() {
-      emit MainWindow::activeMachineDisconnected();
+      Q_EMIT MainWindow::activeMachineDisconnected();
       ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
 
@@ -2454,5 +2458,3 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
     active_machine.startJob();
   }
 }
-<<<<<<< HEAD
-=======
