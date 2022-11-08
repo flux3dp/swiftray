@@ -38,7 +38,9 @@ bool Select::mouseReleaseEvent(QMouseEvent *e) {
       for (auto &shape : layer->children()) {
         if (shape->hitTest(selection_box_)) {
           if(check_inside_) {
-            if(selection_box_.contains(shape->boundingRect())) selected << shape;
+            if(selection_box_.contains(shape->boundingRect()) ||
+              (selection_box_.contains(shape->boundingRect().topLeft()) && 
+                selection_box_.contains(shape->boundingRect().bottomRight()))) selected << shape;
           } else {
             selected << shape;
           }
