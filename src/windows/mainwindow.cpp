@@ -99,6 +99,7 @@ void MainWindow::loadSettings() {
   current_filename_ = tr("Untitled");
   updateTravelSpeed();
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
+  rotary_setup_->setDefaultCircumference(machine_info.height);
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
 #ifdef ENABLE_SENTRY
