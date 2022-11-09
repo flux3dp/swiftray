@@ -624,6 +624,7 @@ void Canvas::editRedo() {
 }
 
 void Canvas::editDrawRect() {
+  if(mode() != Mode::RectDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -633,6 +634,7 @@ void Canvas::editDrawRect() {
 }
 
 void Canvas::editDrawPolygon() {
+  if(mode() != Mode::PolygonDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -642,6 +644,7 @@ void Canvas::editDrawPolygon() {
 }
 
 void Canvas::editDrawOval() {
+  if(mode() != Mode::OvalDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -651,6 +654,7 @@ void Canvas::editDrawOval() {
 }
 
 void Canvas::editDrawLine() {
+  if(mode() != Mode::LineDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -660,6 +664,7 @@ void Canvas::editDrawLine() {
 }
 
 void Canvas::editDrawPath() {
+  if(mode() != Mode::PathDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -669,6 +674,7 @@ void Canvas::editDrawPath() {
 }
 
 void Canvas::editDrawText() {
+  if(mode() != Mode::TextDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
     emit modeChanged();
     return;
@@ -1204,7 +1210,7 @@ Clipboard &Canvas::clipboard() {
   return clipboard_;
 }
 
-void Canvas::backToSelectMode() {
+void Canvas::exitCurrentMode() {
   // TODO (Add exit function to all controls)
   switch (mode()) {
     case Mode::TextDrawing:
@@ -1218,6 +1224,15 @@ void Canvas::backToSelectMode() {
       break;
     case Mode::PolygonDrawing:
       ctrl_polygon_.exit();
+      break;
+    case Mode::LineDrawing:
+      ctrl_line_.exit();
+      break;
+    case Mode::PathDrawing:
+      ctrl_path_draw_.exit();
+      break;
+    case Mode::PathEditing:
+      ctrl_path_edit_.exit();
       break;
   }
 }

@@ -218,7 +218,7 @@ public slots:
 
   void setLineHeight(float line_height);
 
-  void backToSelectMode();
+  void exitCurrentMode();
 
   void setWidget(QQuickWidget *widget);
 
