@@ -622,6 +622,7 @@ void  MainWindow::saveFile() {
     return;
   }
 
+  canvas_->exitCurrentMode();
   canvas_->document().setSelection(nullptr);
   QFile file(canvas_->document().currentFile());
   if (file.open(QFile::ReadWrite)) {
@@ -648,6 +649,7 @@ bool MainWindow::saveAsFile() {
 
   //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
   QFile file(file_name);
+  canvas_->exitCurrentMode();
   canvas_->document().setSelection(nullptr);
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
@@ -676,6 +678,7 @@ void MainWindow::importImage(QString file_name) {
 }
 
 void MainWindow::openImageFile() {
+  canvas_->exitCurrentMode();
   if (canvas_->document().activeLayer()->isLocked()) {
     emit canvas_->modeChanged();
     return;
@@ -1033,7 +1036,7 @@ void MainWindow::registerEvents() {
   });
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
-  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
+  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::exitCurrentMode);
   connect(ui->actionRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
   connect(ui->actionPolygon, &QAction::triggered, canvas_, &Canvas::editDrawPolygon);
   connect(ui->actionOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
