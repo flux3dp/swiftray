@@ -1,5 +1,8 @@
 [requires]
 glib/2.69.3
+boost/1.70.0
+libxml2/2.9.14
+libpotrace/1.16@user/testing
 
 [generators]
 cmake

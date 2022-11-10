@@ -48,11 +48,8 @@ include_directories(
 )
 
 # Conan
-# NOTE: Currently only used by Windows build
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-include(conanbuildinfo.cmake)
+include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
 conan_basic_setup()
-endif()
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -268,66 +265,12 @@ target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
-# Boost
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  add_compile_definitions(WIN32_LEAN_AND_MEAN)
-  if(MSVC)
-    add_compile_options(/bigobj)
-    set(Boost_NO_WARN_NEW_VERSIONS 1)
-    set(BOOST_ROOT "C:/Dev/boost_1_78_0_msvc14_2")
-    set(BOOST_INCLUDEDIR "C:/Dev/boost_1_78_0_msvc14_2/boost")
-    set(BOOST_LIBRARYDIR "C:/Dev/boost_1_78_0_msvc14_2/lib64-msvc-14.2")
-  else()
-    set(BOOST_ROOT "C:/Dev/boost_1_78_0")
-    set(BOOST_INCLUDEDIR "C:/Dev/boost_1_78_0/include/boost-1_78/boost")
-    set(BOOST_LIBRARYDIR "C:/Dev/boost_1_78_0/lib")
-  endif()
-endif()
-find_package(Boost 1.70 REQUIRED COMPONENTS thread system)
-if(Boost_FOUND)
-  message(STATUS "Found Boost")
-  include_directories(${Boost_INCLUDE_DIRS})
-  target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
-  target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    if(MSVC)
-      # Fix incorrect linking for msvc with boost
-      target_link_libraries(${PROJECT_NAME} Boost::disable_autolinking)
-    endif()
-  endif()
-else()
-  message(FATAL_ERROR "Couldn't find boost")
-endif()
 
-# LibXml2
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(MSVC) 
-    set(ICONV_INCLUDE_DIR "C:/Dev/libraries/libconv/include")
-    set(LIBXML2_LIBRARY "C:/Dev/libraries/libxml2/lib/libxml2.dll.a")
-    set(LIBXML2_INCLUDE_DIR "C:/Dev/libraries/libxml2/include/libxml2")
-  else()
-    set(LIBXML2_INCLUDE_DIR "C:/Dev/LibXml2/include/libxml2")
-    set(LIBXML2_LIBRARY "C:/Dev/LibXml2/lib/libxml2.dll.a")
-  endif()
-endif()
-find_package(LibXml2 REQUIRED)
-if(LibXml2_FOUND)
-  message(STATUS "Found LibXml2")
-  include_directories(
-    ${LIBXML2_INCLUDE_DIR}
-    ${LIBXML2_INCLUDE_DIRS}
-    ${ICONV_INCLUDE_DIR}
-  )
-  target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
-  target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
-else()
-  message(FATAL_ERROR "Couldn't find LibXml2")
-endif()
 
 # OpenCV
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC) 
-    set(OpenCV_DIR "C:/Dev/opencv_454_msvc/build")
+    set(OpenCV_DIR "C:/Dev/OpenCV/4_5_5_msvc/build")
   else()
     set(OpenCV_DIR "C:/Dev/opencv_452_mingw")
   endif()
@@ -336,24 +279,22 @@ find_package(OpenCV REQUIRED)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
-#target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} opencv_core)
 target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 
-# Potrace
-find_package(Potrace REQUIRED)
-include_directories(
-  ${POTRACE_INCLUDE_DIRS}
+# Dependency Packages handled by Conan package manager
+# Boost, LibXml2, glib, zlib
+target_link_libraries(${PROJECT_NAME} 
+  ${CONAN_LIBS_GLIB}
+  ${CONAN_LIBS_BOOST}
+  ${CONAN_LIBS_LIBXML2}
+  ${CONAN_LIBS_ZLIB}
 )
-#target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
-
-# NOTE: Currently only used by Windows build
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
 target_include_directories(${PROJECT_NAME} PRIVATE
-  ${CONAN_INCLUDE_DIRS}
+  ${CONAN_INCLUDE_DIRES}
 )
-endif()
+
 
 # ====================== tests =======================
 #add_subdirectory(tests)
