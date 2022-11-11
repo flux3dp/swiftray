@@ -179,14 +179,17 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   ui->speedSpinBox->blockSignals(true);
   ui->repeatSpinBox->blockSignals(true);
   ui->presetComboBox->blockSignals(true);
+  ui->backlashSpinBox->blockSignals(true);
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
+  ui->backlashSpinBox->setValue(layer->xBacklash());
   ui->presetComboBox->setCurrentIndex(previous_index);
   ui->powerSpinBox->blockSignals(false);
   ui->speedSpinBox->blockSignals(false);
   ui->repeatSpinBox->blockSignals(false);
   ui->presetComboBox->blockSignals(false);
+  ui->backlashSpinBox->blockSignals(false);
   updateMovingComboBox();
 }
 

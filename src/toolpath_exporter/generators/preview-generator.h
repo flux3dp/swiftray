@@ -21,10 +21,26 @@ class PreviewGenerator : public BaseGenerator {
     QPointF target_;
   };
 
-  PreviewGenerator(const MachineSettings::MachineSet &machine) : BaseGenerator() {
-    machine_origin_ = machine.origin;
-    machine_width_ = machine.width;
+  PreviewGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+    rotary_mode_ = rotary_mode;
+    if(rotary_mode_) {
+      switch (machine.origin) {
+        case MachineSettings::MachineSet::OriginType::RearRight:
+        case MachineSettings::MachineSet::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+          break;
+        case MachineSettings::MachineSet::OriginType::RearLeft:
+        case MachineSettings::MachineSet::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+          break;
+        default:
+          break;
+      }
+    } else {
+      machine_origin_ = machine.origin;
+    }
     machine_height_ = machine.height;
+    machine_width_ = machine.width;
 
     // Initialize to home position (NOTE: Machines' home are NOT necessarily (0,0))
     // TBD: Home command appended by toolpath-exporter or by generator itself?
@@ -92,7 +108,7 @@ class PreviewGenerator : public BaseGenerator {
     } else if (x < 0) {
       x = 0;
     }
-    if (y > machine_height_) {
+    if (!rotary_mode_ && y > machine_height_) {
       y = machine_height_;
     } else if (y < 0) {
       y = 0;
@@ -274,6 +290,7 @@ class PreviewGenerator : public BaseGenerator {
   QList<uint32_t> high_speed_raster_array_;
   int machine_width_;
   int machine_height_;
+  bool rotary_mode_ = false;
   MachineSettings::MachineSet::OriginType machine_origin_;
   const qreal kHomingSpeed = 10000;
   qreal mm_per_dot_ = 0.1;

@@ -218,7 +218,7 @@ public Q_SLOTS:
 
   void setLineHeight(float line_height);
 
-  void backToSelectMode();
+  void exitCurrentMode();
 
   void setWidget(QQuickWidget *widget);
 
@@ -283,6 +283,8 @@ private:
   QPointF getTopLeftScrollBoundary();
 
   QPointF getBottomRightScrollBoundary();
+
+  void updateScroll(QPointF scroll, QPointF ref_pos);
 
   friend class MainWindow;
 

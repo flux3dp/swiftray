@@ -78,6 +78,7 @@ QList<LayerPtr> g_svgpp_layers_;
 QMap<QString, QTransform> g_transform_map_;
 QTransform g_transform_;
 QColor g_color = Qt::black;
+double g_scale = 1;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
 
 static QByteArray prefixMessage(const QByteArray &msg, const QXmlStreamReader *r)
@@ -3277,7 +3278,7 @@ static QSvgNode *createSvgNode(QSvgNode *parent,
         qreal h = parseLength(heightStr, lt, handler);
 
         node->setViewBox(QRectF(x, y, w, h));
-
+        if(height > 0) g_scale = height / h;
     } else if (width && height) {
         if (type == MyQSvgHandler::LT_PT) {
             width = convertToPixels(width, false, type);
@@ -3851,7 +3852,9 @@ bool MyQSvgHandler::startElement(const QString &localName,
             QSvgPath *tmp_node = (QSvgPath*) node;
             QPainterPath *qpath = tmp_node->qpath();
             ShapePtr new_shape = std::make_shared<PathShape>(qpath[0]);
-            new_shape->applyTransform(g_transform_);
+            double scale = 30.0 / 8.5;//define by 3cm Ruler
+            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
+            new_shape->applyTransform(g_transform_ * tmp_scale);
             g_layer_ptr_->addShape(new_shape);
             g_layer_ptr_->setColor(g_color);
             QString layer_name("Svg_");
@@ -3860,7 +3863,9 @@ bool MyQSvgHandler::startElement(const QString &localName,
         }
         else if(node->type() == QSvgNode::IMAGE) {
             QList<ShapePtr> shape_list = g_layer_ptr_->children();
-            shape_list[shape_list.size()-1]->applyTransform(g_transform_);
+            double scale = 30.0 / 8.5;//define by 3cm Ruler
+            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
+            shape_list[shape_list.size()-1]->applyTransform(g_transform_ * tmp_scale);
             g_layer_ptr_->setColor(g_color);
             QString layer_name("Svg_");
             layer_name += QString::number(g_svgpp_layers_.size());

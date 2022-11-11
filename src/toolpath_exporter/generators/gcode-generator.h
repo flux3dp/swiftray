@@ -27,10 +27,26 @@ public:
     kM05  // spindle off
   };
 
-  GCodeGenerator(const MachineSettings::MachineSet &machine) : BaseGenerator() {
-    machine_width_ = machine.width;
+  GCodeGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+    rotary_mode_ = rotary_mode;
+    if(rotary_mode_) {
+      switch (machine.origin) {
+        case MachineSettings::MachineSet::OriginType::RearRight:
+        case MachineSettings::MachineSet::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+          break;
+        case MachineSettings::MachineSet::OriginType::RearLeft:
+        case MachineSettings::MachineSet::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+          break;
+        default:
+          break;
+      }
+    } else {
+      machine_origin_ = machine.origin;
+    }
     machine_height_ = machine.height;
-    machine_origin_ = machine.origin;
+    machine_width_ = machine.width;
   }
 
   /**
@@ -78,7 +94,7 @@ public:
     } else if (x < epsilon_) {
       x = epsilon_;
     }
-    if (y > machine_height_ - epsilon_) {
+    if (!rotary_mode_ && y > machine_height_ - epsilon_) {
       y = machine_height_ - epsilon_;
     } else if (y < epsilon_) {
       y = epsilon_;
@@ -207,4 +223,5 @@ private:
   MCodeSpindleModal spindle_modal_ = MCodeSpindleModal::kM05;
   MachineSettings::MachineSet::OriginType machine_origin_;
   float epsilon_ = 0.001;
+  bool rotary_mode_;
 };

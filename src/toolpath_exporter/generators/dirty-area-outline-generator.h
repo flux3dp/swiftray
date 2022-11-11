@@ -4,10 +4,26 @@
 
 class DirtyAreaOutlineGenerator : public BaseGenerator {
 public:
-  DirtyAreaOutlineGenerator(const MachineSettings::MachineSet &machine) : BaseGenerator() {
-    machine_origin_ = machine.origin;
-    machine_width_ = machine.width;
+  DirtyAreaOutlineGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+    rotary_mode_ = rotary_mode;
+    if(rotary_mode_) {
+      switch (machine.origin) {
+        case MachineSettings::MachineSet::OriginType::RearRight:
+        case MachineSettings::MachineSet::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+          break;
+        case MachineSettings::MachineSet::OriginType::RearLeft:
+        case MachineSettings::MachineSet::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+          break;
+        default:
+          break;
+      }
+    } else {
+      machine_origin_ = machine.origin;
+    }
     machine_height_ = machine.height;
+    machine_width_ = machine.width;
   };
 
   /**
@@ -50,7 +66,7 @@ public:
     } else if (x < 0) {
       x = 0;
     }
-    if (y > machine_height_) {
+    if (!rotary_mode_ && y > machine_height_) {
       y = machine_height_;
     } else if (y < 0) {
       y = 0;
@@ -154,4 +170,5 @@ private:
     double travel_speed_ = 6000;
     double laser_power_ = 2;
     bool should_home_ = false;
+    bool rotary_mode_;
 };

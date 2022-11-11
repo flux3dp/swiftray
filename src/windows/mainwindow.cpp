@@ -101,6 +101,7 @@ void MainWindow::loadSettings() {
   current_filename_ = tr("Untitled");
   updateTravelSpeed();
   rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
+  rotary_setup_->setDefaultCircumference(machine_info.height);
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
 #ifdef ENABLE_SENTRY
@@ -346,6 +347,8 @@ void MainWindow::actionStart() {
 
   connect(job_dashboard_, &JobDashboardDialog::finished, this, &MainWindow::jobDashboardFinish);
   job_dashboard_->show();
+  job_dashboard_->activateWindow();
+  job_dashboard_->raise();
   job_dashboard_exist_ = true;
 }
 
@@ -370,16 +373,21 @@ void MainWindow::actionFrame() {
 
   // Generate gcode for framing
   QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine(), is_rotary_mode_);
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
       travel_speed_ / 60,// mm/min to mm/s
       end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
-
+  if (exporter.isExceedingBoundary()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
+    msgbox.exec();
+  }
 
   // Again, make sure active machine and job executor exist, 
   if (active_machine.getJobExecutor().isNull()) {
@@ -468,8 +476,19 @@ QTransform MainWindow::calculateTranslate() {
       break;
   }
   if(is_rotary_mode_) {
-    QTransform scale_transform = QTransform::fromScale(1, rotary_setup_->getRotaryScale());
-    move_translate *= scale_transform;
+    int direction = 1;
+    if(is_mirror_mode_) {
+      direction = -1;
+    }
+    move_translate *= QTransform::fromScale(1,direction);
+    //to move obj into canvas
+    QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    while(rect.top() < 0) {
+      move_translate.translate(0,rotary_setup_->getCircumference() * 10 * direction);
+      rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    }
+
+    move_translate *= QTransform::fromScale(1, rotary_setup_->getRotaryScale());
   }
   return move_translate;
 }
@@ -631,6 +650,7 @@ void  MainWindow::saveFile() {
     return;
   }
 
+  canvas_->exitCurrentMode();
   canvas_->document().setSelection(nullptr);
   QFile file(canvas_->document().currentFile());
   if (file.open(QFile::ReadWrite)) {
@@ -657,6 +677,7 @@ bool MainWindow::saveAsFile() {
 
   //QString file_name = QFileDialog::getSaveFileName(this, "Save Image", ".", tr("Scene File (*.bb)"));
   QFile file(file_name);
+  canvas_->exitCurrentMode();
   canvas_->document().setSelection(nullptr);
   if (file.open(QFile::ReadWrite)) {
     // Update default file path
@@ -685,6 +706,7 @@ void MainWindow::importImage(QString file_name) {
 }
 
 void MainWindow::openImageFile() {
+  canvas_->exitCurrentMode();
   if (canvas_->document().activeLayer()->isLocked()) {
     Q_EMIT canvas_->modeChanged();
     return;
@@ -757,13 +779,15 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
                                    100, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
 
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
@@ -772,7 +796,7 @@ void MainWindow::exportGCodeFile() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
@@ -1055,7 +1079,7 @@ void MainWindow::registerEvents() {
   });
   connect(ui->actionGroup, &QAction::triggered, canvas_, &Canvas::editGroup);
   connect(ui->actionUngroup, &QAction::triggered, canvas_, &Canvas::editUngroup);
-  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::backToSelectMode);
+  connect(ui->actionSelect, &QAction::triggered, canvas_, &Canvas::exitCurrentMode);
   connect(ui->actionRect, &QAction::triggered, canvas_, &Canvas::editDrawRect);
   connect(ui->actionPolygon, &QAction::triggered, canvas_, &Canvas::editDrawPolygon);
   connect(ui->actionOval, &QAction::triggered, canvas_, &Canvas::editDrawOval);
@@ -1079,10 +1103,26 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHLeft, &QAction::triggered, canvas_, &Canvas::editAlignHLeft);
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
-  connect(ui->actionPreferences, &QAction::triggered, preferences_window_, &PreferencesWindow::show);
-  connect(ui->actionAbout, &QAction::triggered, about_window_, &AboutWindow::show);
-  connect(ui->actionMachineSettings, &QAction::triggered, machine_manager_, &MachineManager::show);
-  connect(ui->actionRotarySetup, &QAction::triggered, rotary_setup_, &RotarySetup::show);
+  connect(ui->actionPreferences, &QAction::triggered, [=]() {
+    preferences_window_->show();
+    preferences_window_->activateWindow();
+    preferences_window_->raise();
+  });
+  connect(ui->actionAbout, &QAction::triggered, [=]() {
+    about_window_->show();
+    about_window_->activateWindow();
+    about_window_->raise();
+  });
+  connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
+    machine_manager_->show();
+    machine_manager_->activateWindow();
+    machine_manager_->raise();
+  });
+  connect(ui->actionRotarySetup, &QAction::triggered, [=]() {
+    rotary_setup_->show();
+    rotary_setup_->activateWindow();
+    rotary_setup_->raise();
+  });
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
   connect(ui->actionInvert, &QAction::triggered, canvas_, &Canvas::invertImage);
@@ -1372,6 +1412,8 @@ void MainWindow::registerEvents() {
     }
     // Port connected but hasn't responded any meaningful response
     console_dialog_->show();
+    console_dialog_->activateWindow();
+    console_dialog_->raise();
   });
 
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
@@ -1826,8 +1868,10 @@ void MainWindow::setToolbarTransform() {
   labelHeight->setText(tr("Height"));
   doubleSpinBoxX->setMaximum(9999);
   doubleSpinBoxY->setMaximum(9999);
+  doubleSpinBoxX->setMinimum(-9999);
+  doubleSpinBoxY->setMinimum(-9999);
   doubleSpinBoxRotation->setMaximum(360);
-  doubleSpinBoxRotation->setMinimum(0);
+  doubleSpinBoxRotation->setMinimum(-360);
   doubleSpinBoxWidth->setMaximum(9999);
   doubleSpinBoxHeight->setMaximum(9999);
   doubleSpinBoxX->setSuffix(" mm");
@@ -2139,13 +2183,15 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
@@ -2153,7 +2199,7 @@ bool MainWindow::generateGcode() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return false; // canceled
   }
@@ -2161,6 +2207,12 @@ bool MainWindow::generateGcode() {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
     msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
+    msgbox.exec();
+  }
+  if (is_rotary_mode_ && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Some items maybe overlap in rotary mode."));
     msgbox.exec();
   }
   
@@ -2172,7 +2224,7 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine());
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine(), is_rotary_mode_);
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
@@ -2181,7 +2233,7 @@ void MainWindow::genPreviewWindow() {
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
 
-  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
+  preview_exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
 
   QProgressDialog progress_dialog(tr("Exporting toolpath..."),
                                    tr("Cancel"),
@@ -2189,6 +2241,8 @@ void MainWindow::genPreviewWindow() {
                                    101, this);
   progress_dialog.setWindowModality(Qt::WindowModal);
   progress_dialog.show();
+  progress_dialog.activateWindow();
+  progress_dialog.raise();
 
   if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
@@ -2215,15 +2269,16 @@ void MainWindow::genPreviewWindow() {
       last_gcode_timestamp = timestamp_list.last();
     }
 
-    double scale = 1;
-    if(is_rotary_mode_) scale = rotary_setup_->getRotaryScale();
+    double height_scale = 1;
+    if(is_rotary_mode_) height_scale = rotary_setup_->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
-                                          canvas_->document().width() / 10,
-                                          canvas_->document().height() / 10,
-                                          scale);
+                                          QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
+                                          height_scale);
     pw->setPreviewPath(preview_path_generator);
     pw->setRequiredTime(last_gcode_timestamp);
     pw->show();
+    pw->activateWindow();
+    pw->raise();
   } catch (...) {
     // Terminated
     return;
