@@ -21,6 +21,55 @@
 dxf_iface::dxf_iface() {
 }
 
+/**
+ * Converts a DXF encoded string into a native Unicode string.
+ */
+QString toNativeString(const QString& data) {
+    QString res;
+
+    // Ignore font tags:
+    int j = 0;
+    for (int i=0; i<data.length(); ++i) {
+        if (data.at(i).unicode() == 0x7B){ //is '{' ?
+            if (data.at(i+1).unicode() == 0x5c){ //and is "{\" ?
+                //check known codes
+                if ( (data.at(i+2).unicode() == 0x66) || //is "\f" ?
+                     (data.at(i+2).unicode() == 0x48) || //is "\H" ?
+                     (data.at(i+2).unicode() == 0x43)    //is "\C" ?
+                   ) {
+                    //found tag, append parsed part
+                    res.append(data.mid(j,i-j));
+                    int pos = data.indexOf(0x7D, i+3);//find '}'
+                    if (pos <0) break; //'}' not found
+                    QString tmp = data.mid(i+1, pos-i-1);
+                    do {
+                        tmp = tmp.remove(0,tmp.indexOf(0x3B, 0)+1 );//remove to ';'
+                    } while(tmp.startsWith("\\f") || tmp.startsWith("\\H") || tmp.startsWith("\\C"));
+                    res.append(tmp);
+                    i = j = pos;
+                    ++j;
+                }
+            }
+        }
+    }
+    res.append(data.mid(j));
+
+    // Line feed:
+    res = res.replace(QRegExp("\\\\P"), "\n");
+    // Space:
+    res = res.replace(QRegExp("\\\\~"), " ");
+    // Tab:
+    res = res.replace(QRegExp("\\^I"), "    ");//RLZ: change 4 spaces for \t when mtext have support for tab
+    // diameter:
+    res = res.replace(QRegExp("%%[cC]"), QChar(0x2300));//RLZ: Empty_set is 0x2205, diameter is 0x2300 need to add in all fonts
+    // degree:
+    res = res.replace(QRegExp("%%[dD]"), QChar(0x00B0));
+    // plus/minus
+    res = res.replace(QRegExp("%%[pP]"), QChar(0x00B1));
+
+    return res;
+}
+
 bool dxf_iface::printText(Document *doc, const std::string& fileI, dxf_data *fData, QList<LayerPtr> *svg_layers) {
     unsigned int found = fileI.find_last_of(".");
     std::string fileExt = fileI.substr(found+1);
@@ -58,17 +107,25 @@ void dxf_iface::addLayer(const DRW_Layer& data) {
 }
 
 void dxf_iface::addLine(const DRW_Line& data) {
-    // std::cout << __func__ << " " << __LINE__ << std::endl;
-    if(layer_ptr_ == nullptr) {
-        return;
+    QString layName = toNativeString(QString::fromUtf8(data.layer.c_str()));
+    LayerPtr target_layer;
+    for(int i = 0;i < dxf_layers_.size(); ++i) {
+        target_layer = dxf_layers_[i];
+        if(target_layer->name() == layName) break;
     }
+    if(target_layer == NULL) {
+        target_layer = std::make_shared<Layer>();
+        target_layer->setName(layName);
+        dxf_layers_.push_back(target_layer);
+    }
+
     // std::cout << __func__ << " basePoint.x = " << data.basePoint.x << " basePoint.y = " << data.basePoint.y << std::endl;
     // std::cout << __func__ << " secPoint.x = " << data.secPoint.x << " secPoint.y = " << data.secPoint.y << std::endl;
     QPainterPath working_path;
     working_path.moveTo(data.basePoint.x, data.basePoint.y);
     working_path.lineTo(data.secPoint.x, data.secPoint.y);
     ShapePtr new_shape = std::make_shared<PathShape>(working_path);
-    layer_ptr_->addShape(new_shape);
+    target_layer->addShape(new_shape);
 }
 
 void dxf_iface::addArc(const DRW_Arc& data) {
