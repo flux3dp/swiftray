@@ -566,11 +566,12 @@ void MainWindow::openFile() {
       QFile src_file(file_name);
       src_file.copy(sanitized_filepath);
       pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
-      QFile svg_file(temp_svg_filepath);
-      if (svg_file.open(QFile::ReadOnly)) {
-        QByteArray data = svg_file.readAll();
-        canvas_->loadSVG(data);
-      }
+      canvas_->loadSVG(temp_svg_filepath);
+      //QFile svg_file(temp_svg_filepath);
+      //if (svg_file.open(QFile::ReadOnly)) {
+      //  QByteArray data = svg_file.readAll();
+      //  canvas_->loadSVG(data);
+      //}
       pdf_converter.removeSVGFile(temp_svg_filepath);
       QFile::remove(sanitized_filepath);
     } else {
@@ -744,11 +745,12 @@ void MainWindow::openImageFile() {
     QFile src_file(file_name);
     src_file.copy(sanitized_filepath);
     pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
-    QFile svg_file(temp_svg_filepath);
-    if (svg_file.open(QFile::ReadOnly)) {
-      QByteArray data = svg_file.readAll();
-      canvas_->loadSVG(data);
-    }
+    canvas_->loadSVG(temp_svg_filepath);
+    //QFile svg_file(temp_svg_filepath);
+    //if (svg_file.open(QFile::ReadOnly)) {
+    //  QByteArray data = svg_file.readAll();
+    //  canvas_->loadSVG(data);
+    //}
     pdf_converter.removeSVGFile(temp_svg_filepath);
     QFile::remove(sanitized_filepath);
   } else {
