@@ -1,7 +1,7 @@
 #include "rotary_test_job.h"
 
 #include "../operation_cmd/gcode_cmd.h"
-#include <string>S
+#include <string>
 
 RotaryTestJob::RotaryTestJob(QRectF bbox, 
                             char rotary_axis, 
