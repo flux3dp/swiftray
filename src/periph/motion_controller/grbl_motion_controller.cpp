@@ -39,7 +39,7 @@ MotionController::CmdSendResult GrblMotionController::sendCmdPacket(QPointer<Exe
         return CmdSendResult::kFail;
       }
       qInfo() << "SND>" << cmd_packet;
-      emit MotionController::cmdSent(cmd_packet);
+      Q_EMIT MotionController::cmdSent(cmd_packet);
     } catch(...) {
       port_tx_mutex_.unlock();
       return CmdSendResult::kFail;
@@ -66,7 +66,7 @@ MotionController::CmdSendResult GrblMotionController::sendCmdPacket(QPointer<Exe
   cbuf_occupied_ += cmd_packet.size();
   cmd_size_buf_.push_back(cmd_packet.size());
   enqueueCmdExecutor(executor);
-  emit MotionController::cmdSent(cmd_packet);
+  Q_EMIT MotionController::cmdSent(cmd_packet);
 
   return CmdSendResult::kOk;
 }
@@ -85,7 +85,7 @@ void GrblMotionController::respReceived(QString resp) {
   //    "<....>", 
   //    "[MSG:...]", "[DEBUG:...]", "[FLUX:...]", ...
   qInfo() << "RECV<" << resp;
-  emit MotionController::respRcvd(resp);
+  Q_EMIT MotionController::respRcvd(resp);
   
   resp = resp.trimmed();
   if (resp.contains(QString{"ok"}) || resp.contains(QString{"error"})) {
@@ -145,7 +145,7 @@ void GrblMotionController::respReceived(QString resp) {
       //qInfo() << match.captured("pos_type");
       //qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
       setState(new_state);
-      emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
+      Q_EMIT MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
     }
   } else if (resp.startsWith("Grbl")) {
     // A reset occurred
@@ -154,7 +154,7 @@ void GrblMotionController::respReceived(QString resp) {
     cbuf_occupied_ = 0;
     x_pos_ = y_pos_ = z_pos_ = 0;
 
-    emit MotionController::resetDetected();
+    Q_EMIT MotionController::resetDetected();
     // TODO: Parse Grbl version info
   } else if (resp.startsWith("[MSG:")) {
     // TODO: Handle Grbl msg immediately
@@ -169,9 +169,9 @@ void GrblMotionController::respReceived(QString resp) {
     } else if (resp.contains("Sleeping")) {
       // TODO:
     } else if (resp.contains("Check Door")) {
-      emit MotionController::notif(tr("NOTICE"), tr("Please check machine door."));
+      Q_EMIT MotionController::notif(tr("NOTICE"), tr("Please check machine door."));
     } else if (resp.contains("Check Bottom")) {
-      emit MotionController::notif(tr("NOTICE"), tr("Please check machine bottom."));
+      Q_EMIT MotionController::notif(tr("NOTICE"), tr("Please check machine bottom."));
     }
   } else if (resp.startsWith("ALARM:")) {
     MotionControllerState old_state = state_;
@@ -183,12 +183,12 @@ void GrblMotionController::respReceived(QString resp) {
         code != static_cast<int>(AlarmCode::kAbortCycle) &&
         code != static_cast<int>(AlarmCode::kHomingFailReset)) {
       // NOTE: No need to show message dialog when abort during cycle
-      emit MotionController::notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));
+      Q_EMIT MotionController::notif(tr("Alarm: ") + QString::number(code), getAlarmMsg(static_cast<AlarmCode>(code)));
     } else {
       // Unknown alarm code
     }
     setState(MotionControllerState::kAlarm);
-    emit MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
+    Q_EMIT MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
   } else if (resp.startsWith("[VER:]")) {
     // TODO: Parse grbl version
   } else if (resp.startsWith("[OPT:]")) {
@@ -202,9 +202,9 @@ void GrblMotionController::respReceived(QString resp) {
     // TODO: Handle [FLUX: ...]
     // Handle FLUX's dedicated responses:
     if (resp.contains("act")) {
-      emit MotionController::notif(tr("NOTICE"), tr("Machine is paused by drop or collision."));
+      Q_EMIT MotionController::notif(tr("NOTICE"), tr("Machine is paused by drop or collision."));
     } else if (resp.contains("tilt")) {
-      emit MotionController::notif(tr("NOTICE"), tr("Machine is paused by tilt."));
+      Q_EMIT MotionController::notif(tr("NOTICE"), tr("Machine is paused by tilt."));
     }
     // * [FLUX: act]
     // * [FLUX: tilt]

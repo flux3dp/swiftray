@@ -97,9 +97,9 @@ void ImagePanel::setLayout() {
 }
 
 void ImagePanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void ImagePanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }

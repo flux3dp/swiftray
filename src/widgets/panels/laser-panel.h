@@ -43,7 +43,7 @@ public:
     void setControlEnable(bool control_enable);
     void setStartHomeEnable(bool control_enable);
 
-signals:
+Q_SIGNALS:
   void actionFrame();
   void actionPreview();
   void actionStart();

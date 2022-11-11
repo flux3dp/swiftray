@@ -62,7 +62,7 @@ public:
 
   void show();
 
-signals:
+Q_SIGNALS:
 
   void presetSettingsChanged();
 
@@ -75,7 +75,7 @@ signals:
   void activeMachineConnected();
   void activeMachineDisconnected();
 
-public slots:
+public Q_SLOTS:
   void onStartNewJob();
   void onStopJob();
   void onPauseJob();
@@ -93,7 +93,7 @@ public slots:
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
   void testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
 
-private slots:
+private Q_SLOTS:
 
   void canvasLoaded(QQuickWidget::Status status);
 

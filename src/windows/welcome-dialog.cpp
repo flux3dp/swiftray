@@ -26,7 +26,7 @@ void WelcomeDialog::createStandardProfile(const QString brand, const QString mod
   m.name = model.contains(brand) ? model : (brand + " " + model);
   settings.addMachine(m);
   settings.save();
-  emit settingsChanged();
+  Q_EMIT settingsChanged();
 }
 
 void WelcomeDialog::createOtherProfile(const QString name, int width, int height, int origin) {
@@ -39,7 +39,7 @@ void WelcomeDialog::createOtherProfile(const QString name, int width, int height
   m.origin = (MachineSettings::MachineSet::OriginType) origin;
   settings.addMachine(m);
   settings.save();
-  emit settingsChanged();
+  Q_EMIT settingsChanged();
 }
 
 void WelcomeDialog::close() {

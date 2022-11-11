@@ -33,6 +33,7 @@ QMAKE_INFO_PLIST = Info.plist
 ICON=resources/images/icon.icns
 RC_ICONS = resources/images/icon.ico
 CONFIG += c++17
+CONFIG += no_keywords
 
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -72,10 +73,13 @@ macx{
     LIBS += -L"/usr/local/lib"
 
     # Mac M1
-    #_BOOST_PATH = "/opt/homebrew/opt/boost"
-    #LIBS += -L"/opt/homebrew/opt/boost/lib"
-    #LIBS += -L"/opt/homebrew/opt/libxml2/lib"
-    #LIBS += -L"/opt/homebrew/opt/opencv/lib"
+#    _BOOST_PATH = "/opt/homebrew/opt/boost"
+#    LIBS += -L"/opt/homebrew/opt/boost/lib"
+#    LIBS += -L"/opt/homebrew/opt/libxml2/lib"
+#    LIBS += -L"/opt/homebrew/opt/opencv/lib"
+#    LIBS += -L"/opt/homebrew/opt/glib/lib"
+#    LIBS += -L"/opt/homebrew/opt/poppler/lib"
+#    LIBS += -L"/opt/homebrew/opt/cairo/lib"
 
     # Mac Intel
     _BOOST_PATH = "/usr/local/opt/boost/"
@@ -89,6 +93,11 @@ macx{
     LIBS += -lopencv_imgproc
     LIBS += -lxml2
     LIBS += -lpotrace
+    LIBS += -lglib-2.0
+    LIBS += -lgobject-2.0
+    LIBS += -lpoppler-glib
+    LIBS += -lpoppler
+    LIBS += -lcairo
     LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
 unix:!macx{
@@ -132,12 +141,20 @@ macx{
     INCLUDEPATH += /usr/local/opt/icu4c/include
     INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
     # Mac M1
-    #INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
-    #INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+#    INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
+#    INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+#    INCLUDEPATH += /opt/homebrew/include/poppler/glib
+#    INCLUDEPATH += /opt/homebrew/include/glib-2.0
+#    INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
+#    INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
 
     # Mac Intel
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
     INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
+    INCLUDEPATH += /usr/local/include/poppler/glib
+    INCLUDEPATH += /usr/local/include/glib-2.0
+    INCLUDEPATH += /usr/local/opt/glib/lib/glib-2.0/include
+    INCLUDEPATH += /usr/local/opt/cairo/include/cairo
 }
 
 # Remove -Wall and -Wextra flag

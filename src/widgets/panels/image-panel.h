@@ -20,7 +20,7 @@ public:
 
     void setLayout();
 
-signals:
+Q_SIGNALS:
     void panelShow(bool is_show);
 
 private:

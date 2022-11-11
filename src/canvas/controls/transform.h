@@ -128,12 +128,12 @@ namespace Controls {
     bool scale_locked_;
     bool direction_locked_;
 
-  public slots:
+  public Q_SLOTS:
     void updateSelections();
 
     void updateBoundingRect();
 
-  signals:
+  Q_SIGNALS:
     void cursorChanged(Qt::CursorShape cursor);
   };
 }

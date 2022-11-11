@@ -13,6 +13,7 @@
 #include <QToolButton>
 #include <QCheckBox>
 #include <QMessageBox>
+#include <QTemporaryDir>
 #include <constants.h>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -33,6 +34,7 @@
 #include "widgets/components/canvas-widget.h"
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
+#include "parser/pdf2svg.h"
 
 #include "ui_mainwindow.h"
 
@@ -175,7 +177,7 @@ void MainWindow::loadCanvas() {
         canvas_->setDocument(ds.deserializeDocument());
         canvas_->document().setCurrentFile(filename);
         canvas_->emitAllChanges();
-        emit canvas_->selectionsChanged();
+        Q_EMIT canvas_->selectionsChanged();
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
@@ -503,7 +505,7 @@ void MainWindow::newFile() {
   canvas_->document().setWidth(width);
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
-  emit canvas_->selectionsChanged();
+  Q_EMIT canvas_->selectionsChanged();
   setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
@@ -526,7 +528,7 @@ void MainWindow::openFile() {
   }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open File", default_open_dir,
-                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)"));
+                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf *.pdf *.ai)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -547,7 +549,7 @@ void MainWindow::openFile() {
       canvas_->setDocument(ds.deserializeDocument());
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
-      emit canvas_->selectionsChanged();
+      Q_EMIT canvas_->selectionsChanged();
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
@@ -556,6 +558,21 @@ void MainWindow::openFile() {
       // canvas_->loadSVG(data);
     } else if (file_name.endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
+    } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+      QTemporaryDir dir;
+      Parser::PDF2SVG pdf_converter;
+      QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+      QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+      QFile src_file(file_name);
+      src_file.copy(sanitized_filepath);
+      pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+      QFile svg_file(temp_svg_filepath);
+      if (svg_file.open(QFile::ReadOnly)) {
+        QByteArray data = svg_file.readAll();
+        canvas_->loadSVG(data);
+      }
+      pdf_converter.removeSVGFile(temp_svg_filepath);
+      QFile::remove(sanitized_filepath);
     } else {
       importImage(file_name);
     }
@@ -578,7 +595,7 @@ void MainWindow::openExampleOfSwiftray() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -598,7 +615,7 @@ void MainWindow::openMaterialCuttingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -618,7 +635,7 @@ void MainWindow::openMaterialEngravingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -691,7 +708,7 @@ void MainWindow::importImage(QString file_name) {
 void MainWindow::openImageFile() {
   canvas_->exitCurrentMode();
   if (canvas_->document().activeLayer()->isLocked()) {
-    emit canvas_->modeChanged();
+    Q_EMIT canvas_->modeChanged();
     return;
   }
 
@@ -707,7 +724,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf *.pdf *.ai)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -719,6 +736,21 @@ void MainWindow::openImageFile() {
     canvas_->loadSVG(file_name);
   } else if (file_name.endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
+  } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+    QTemporaryDir dir;
+    Parser::PDF2SVG pdf_converter;
+    QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+    QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+    QFile src_file(file_name);
+    src_file.copy(sanitized_filepath);
+    pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+    QFile svg_file(temp_svg_filepath);
+    if (svg_file.open(QFile::ReadOnly)) {
+      QByteArray data = svg_file.readAll();
+      canvas_->loadSVG(data);
+    }
+    pdf_converter.removeSVGFile(temp_svg_filepath);
+    QFile::remove(sanitized_filepath);
   } else {
     importImage(file_name);
   }
@@ -936,7 +968,7 @@ void MainWindow::updateSelections() {
 
 void MainWindow::updateToolbarTransform() {
   canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
-  emit toolbarTransformChanged(x_, y_, r_, w_, h_);
+  Q_EMIT toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
 void MainWindow::updateScene() {
@@ -1121,7 +1153,7 @@ void MainWindow::registerEvents() {
   });
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
-    emit machineSettingsChanged();
+    Q_EMIT machineSettingsChanged();
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
     QSettings privacy_settings;
@@ -1464,7 +1496,7 @@ void MainWindow::registerEvents() {
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
   });
   connect(&active_machine, &Machine::activated, [=]() {
-    emit MainWindow::activeMachineConnected();
+    Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
 }
@@ -1602,11 +1634,11 @@ void MainWindow::setConnectionToolBar() {
     }
     active_machine.applyMachineParam(currentMachine());
     connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
-      emit MainWindow::positionCached(target_pos);
+      Q_EMIT MainWindow::positionCached(target_pos);
       canvas()->updateCurrentPosition(target_pos);
     });
     connect(&active_machine, &Machine::disconnected, [=]() {
-      emit MainWindow::activeMachineDisconnected();
+      Q_EMIT MainWindow::activeMachineDisconnected();
       ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
   });
 
