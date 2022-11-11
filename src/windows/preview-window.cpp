@@ -138,7 +138,7 @@ void PathGraphicsPreview::keyHandler(QKeyEvent *ke) {
  *               instead of virtual document size (e.g. 2000)
  * @param scale The scale of height in rotary mode (rescale for QPainterPath in preview window)
  */
-PreviewWindow::PreviewWindow(QWidget *parent, int width, int height, double scale) :
+PreviewWindow::PreviewWindow(QWidget *parent, QRectF work_area, double scale) :
      QDialog(parent),
      ui(new Ui::PreviewWindow),
      preview_path_(nullptr),
@@ -148,7 +148,9 @@ PreviewWindow::PreviewWindow(QWidget *parent, int width, int height, double scal
   initializeContainer();
 
   auto scene = new QGraphicsScene(this);
-  scene->setSceneRect(0, 0, width, height); // in unit of mm
+  scene->setSceneRect(0, 0, work_area.width(), work_area.height()); // in unit of mm
+  total_height_ = work_area.height();
+  work_area_ = work_area;
 
   path_graphics_view_ = new PathGraphicsPreview(scene, ui->frame);
 
@@ -168,7 +170,7 @@ void PreviewWindow::registerEvents() {
       this->path_graphics_view_->scene()->clear();
       // Add background
       this->path_graphics_view_->scene()->addRect(
-              this->path_graphics_view_->scene()->sceneRect(),
+              work_area_,
               QPen{Qt::white, 0, Qt::SolidLine},
               QBrush{Qt::white});
 
@@ -218,6 +220,11 @@ void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_pa
   preview_path_ = preview_path;
   ui->progress->setMaximum(preview_path_->paths().size());
   ui->progress->setValue(preview_path_->paths().size());
+  for(int i = 0; i < preview_path_->paths().size(); ++i) {
+    if(preview_path_->paths()[i].target_.y()/height_scale_ > total_height_)
+      total_height_ = preview_path_->paths()[i].target_.y()/height_scale_;
+  }
+  this->path_graphics_view_->scene()->setSceneRect(0, 0, work_area_.width(), total_height_); // in unit of mm
   update();
 }
 

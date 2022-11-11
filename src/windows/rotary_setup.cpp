@@ -15,7 +15,6 @@ RotarySetup::RotarySetup(QWidget *parent) :
     axis_group_ = new QButtonGroup(this);
     ui->label->hide();
     ui->deviceComboBox->hide();
-    ui->mirrorCheckBox->hide();
     axis_group_->addButton(ui->YRadioButton);
     axis_group_->addButton(ui->ZRadioButton);
     axis_group_->addButton(ui->ARadioButton);
@@ -32,9 +31,11 @@ RotarySetup::RotarySetup(QWidget *parent) :
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_rotary_mode_ = state;
         if(is_rotary_mode_) {
+            ui->mirrorCheckBox->setEnabled(true);
             if(control_enable_) ui->testBtn->setEnabled(true);
         }
         else {
+            ui->mirrorCheckBox->setEnabled(false);
             ui->testBtn->setEnabled(false);
         }
         Q_EMIT rotaryModeChanged(is_rotary_mode_);
@@ -108,10 +109,12 @@ void RotarySetup::setRotaryMode(bool is_rotary_mode)
     is_rotary_mode_ = is_rotary_mode;
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
+        ui->mirrorCheckBox->setEnabled(true);
         if(control_enable_) ui->testBtn->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+        ui->mirrorCheckBox->setEnabled(false);
         ui->testBtn->setEnabled(false);
     }
 }
@@ -150,9 +153,11 @@ void RotarySetup::setControlEnable(bool control_enable)
     control_enable_ = control_enable;
     if(control_enable_ && is_rotary_mode_) {
         ui->testBtn->setEnabled(true);
+        ui->mirrorCheckBox->setEnabled(true);
     }
     else {
         ui->testBtn->setEnabled(false);
+        ui->mirrorCheckBox->setEnabled(false);
     }
 }
 
@@ -210,10 +215,12 @@ void RotarySetup::resetUI()
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         if(control_enable_) ui->testBtn->setEnabled(true);
+        ui->mirrorCheckBox->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
         ui->testBtn->setEnabled(false);
+        ui->mirrorCheckBox->setEnabled(false);
     }
     if(is_mirror_mode_) {
         ui->mirrorCheckBox->setCheckState(Qt::Checked);

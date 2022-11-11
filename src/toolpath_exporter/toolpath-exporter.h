@@ -29,7 +29,7 @@ public:
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog = nullptr);
 
-  void setWorkAreaSize(QSizeF work_area_size) { machine_work_area_mm_ = work_area_size; }
+  void setWorkAreaSize(QRectF work_area) { machine_work_area_mm_ = work_area; }
 
   bool isExceedingBoundary() { return exceed_boundary_; }
 
@@ -92,7 +92,7 @@ private:
   QTransform move_translate_;             // move matrix
   // === The followings are expressed in unit of mm ===
   QPointF current_pos_mm_; // in unit of mm
-  QSizeF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)
+  QRectF machine_work_area_mm_; // Work area in real world coordinate (in unit of mm)
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
   QPointF end_point_;
