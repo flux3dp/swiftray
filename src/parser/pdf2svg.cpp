@@ -23,7 +23,7 @@ void PDF2SVG::convertPDFFile(QString target_pdf, QString svg_filename)
 	g_free(filename_uri);
 
     page = poppler_document_get_page(pdffile, 0);
-	convertPage(page, svg_filename.toLocal8Bit().data());
+	convertPage(page, svg_filename.toStdString().data());
 }
 
 void PDF2SVG::removeSVGFile(QString svg_filename)
