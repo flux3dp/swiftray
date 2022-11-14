@@ -17,7 +17,7 @@ void PDF2SVG::convertPDFFile(QString target_pdf, QString svg_filename)
 	PopplerDocument *pdffile;
 	PopplerPage *page;
     g_type_init ();
-    gchar *filename_uri = g_filename_to_uri(target_pdf.toLocal8Bit().data(), NULL, NULL);
+    gchar *filename_uri = g_filename_to_uri(target_pdf.toStdString().data(), NULL, NULL);
     // Open the PDF file
 	pdffile = poppler_document_new_from_file(filename_uri, NULL, NULL);
 	g_free(filename_uri);
