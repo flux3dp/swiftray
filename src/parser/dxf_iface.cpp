@@ -111,12 +111,13 @@ void dxf_iface::addLine(const DRW_Line& data) {
     LayerPtr target_layer;
     for(int i = 0;i < dxf_layers_.size(); ++i) {
         target_layer = dxf_layers_[i];
-        if(target_layer->name() == layName) break;
-    }
-    if(target_layer == NULL) {
-        target_layer = std::make_shared<Layer>();
-        target_layer->setName(layName);
-        dxf_layers_.push_back(target_layer);
+        if(target_layer->name() == layName) {
+            break;
+        } else if(i == dxf_layers_.size()-1) {
+            target_layer = std::make_shared<Layer>();
+            target_layer->setName(layName);
+            dxf_layers_.push_back(target_layer);
+        }
     }
 
     // std::cout << __func__ << " basePoint.x = " << data.basePoint.x << " basePoint.y = " << data.basePoint.y << std::endl;
