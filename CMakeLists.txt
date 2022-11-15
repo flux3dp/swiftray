@@ -50,7 +50,7 @@ include_directories(
 # Conan
 # NOTE: Currently only used by Windows build
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-include(conanbuildinfo.cmake)
+include(third_party/poppler/conanbuildinfo.cmake)
 conan_basic_setup()
 endif()
 
