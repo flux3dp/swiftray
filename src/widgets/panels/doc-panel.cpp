@@ -75,6 +75,21 @@ void DocPanel::loadSettings() {
     ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
     ui->machineComboBox->blockSignals(false);
   }
+  //these should add in machine
+  QVariant travel_speed = settings.value("travelSpeed", 0);
+  if(travel_speed.toDouble() > 0) {
+    ui->speedSpinBox->setValue(travel_speed.toDouble());
+  } else {
+    ui->speedSpinBox->setValue(100);
+    settings.setValue("travelSpeed", 100);
+  }
+  QVariant rotary_speed = settings.value("rotary/travelSpeed", 0);
+  if(rotary_speed.toDouble() > 0) {
+    ui->rotarySpinBox->setValue(rotary_speed.toDouble());
+  } else {
+    ui->rotarySpinBox->setValue(5);
+    settings.setValue("rotary/travelSpeed", 5);
+  }
   // select the item in combobox with matching current_machine name
   // NOTE: This works only when there is no duplicate name in machines_
   ui->machineComboBox->setCurrentText(current_machine);
@@ -112,7 +127,7 @@ void DocPanel::registerEvents() {
     updateScene();
     QSettings settings;
     settings.setValue("defaultMachine", ui->machineComboBox->currentText());
-    emit machineChanged(ui->machineComboBox->currentText());
+    Q_EMIT machineChanged(ui->machineComboBox->currentText());
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     PresetSettings* preset_settings = &PresetSettings::getInstance();
@@ -163,9 +178,13 @@ void DocPanel::registerEvents() {
     Q_EMIT rotaryModeChange(state);
   });
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    QSettings settings;
+    settings.setValue("travelSpeed", value);
     Q_EMIT updateSpeed();
   });
   connect(ui->rotarySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    QSettings settings;
+    settings.setValue("rotary/travelSpeed", value);
     Q_EMIT updateSpeed();
   });
 }
@@ -218,9 +237,9 @@ double DocPanel::getRotarySpeed() {
 }
 
 void DocPanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void DocPanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }

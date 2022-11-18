@@ -82,7 +82,7 @@ void ImageTraceGraphicsView::mousePressEvent(QMouseEvent *event) {
 void ImageTraceGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
   if (dragMode() == RubberBandDrag) {
     drawSelectionArea();
-    emit selectionAreaChanged();
+    Q_EMIT selectionAreaChanged();
   }
   BaseGraphicsView::mouseReleaseEvent(event);
 }

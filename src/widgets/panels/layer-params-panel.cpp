@@ -82,7 +82,7 @@ void LayerParamsPanel::registerEvents() {
       int index_to_recover = preset_previous_index_;
       if (preset_manager_->exec() == 1) {
         preset_manager_->save();
-        emit main_window_->presetSettingsChanged();
+        Q_EMIT main_window_->presetSettingsChanged();
         loadSettings();
         setToCustom();
         preset_previous_index_ = -1;
@@ -179,14 +179,17 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   ui->speedSpinBox->blockSignals(true);
   ui->repeatSpinBox->blockSignals(true);
   ui->presetComboBox->blockSignals(true);
+  ui->backlashSpinBox->blockSignals(true);
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
+  ui->backlashSpinBox->setValue(layer->xBacklash());
   ui->presetComboBox->setCurrentIndex(previous_index);
   ui->powerSpinBox->blockSignals(false);
   ui->speedSpinBox->blockSignals(false);
   ui->repeatSpinBox->blockSignals(false);
   ui->presetComboBox->blockSignals(false);
+  ui->backlashSpinBox->blockSignals(false);
   updateMovingComboBox();
 }
 

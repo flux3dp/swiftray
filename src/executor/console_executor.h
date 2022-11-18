@@ -17,7 +17,7 @@ public:
   void attachMotionController(QPointer<MotionController> motion_controller);
   void appendCmd(std::shared_ptr<OperationCmd> cmd);
 
-public slots:
+public Q_SLOTS:
   void start() override;
   void exec() override;
   void pause() override;

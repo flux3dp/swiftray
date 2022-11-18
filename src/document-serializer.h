@@ -23,7 +23,7 @@ public:
        in(stream) {}
 
   void serializeDocument(Document &doc) {
-    out << QString("NINJAV1.2");
+    out << QString("NINJAV1.3");
     out << QSize(doc.width(), doc.height());
     out << doc.layers().size();
     for (auto &layer : doc.layers()) {
@@ -54,6 +54,8 @@ public:
       version_index_ = NINJAV1_2;
     else if(doc_version == "NINJAV1.1")
       version_index_ = NINJAV1_1;
+    else if(doc_version == "NINJAV1.3")
+      version_index_ = NINJAV1_3;
     else
       return nullptr;
     Document *doc = new Document;
@@ -110,6 +112,7 @@ public:
     out << layer->repeat_;
     out << layer->power_;
     out << layer->speed_;
+    out << layer->x_backlash_;
 
     out << layer->children().size();
     for (auto &shape: layer->children()) {
@@ -142,6 +145,9 @@ public:
       layer->power_ = temp;
       in >> temp;
       layer->speed_ = temp;
+    }
+    if(version_index_ >= NINJAV1_3) {
+      in >> layer->x_backlash_;
     }
 
     int shape_size;
@@ -287,6 +293,7 @@ public:
   enum version_id
   {
     NINJAV1_1 = 0,
-    NINJAV1_2 //change layer->power, layer->speed to double
+    NINJAV1_2 ,//change layer->power, layer->speed to double
+    NINJAV1_3 //add layer->x_backlash
   };
 };

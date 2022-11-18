@@ -33,6 +33,9 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - libxml2
 - libiconv (Windows)
 - icu4c (MacOS)
+- poppler
+- glib
+- cairo
 
 NOTE: For Mac M1, you need to build Qt 5.15
 

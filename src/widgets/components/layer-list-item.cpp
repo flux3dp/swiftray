@@ -55,7 +55,7 @@ void LayerListItem::registerEvents() {
     layer_->document().execute(
             Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), new_color)
     );
-    emit canvas_->layerChanged();
+    Q_EMIT canvas_->layerChanged();
   });
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
@@ -143,7 +143,7 @@ void LayerListItem::onRenameLayer() {
     );
   }
   // TODO (Fix event flow?)
-  emit canvas_->layerChanged();
+  Q_EMIT canvas_->layerChanged();
 }
 
 void LayerListItem::onDuplicateLayer() {
@@ -172,7 +172,7 @@ void LayerListItem::onDeleteLayer() {
       canvas_->document().setSelection(nullptr);
     }
   }
-  emit canvas_->layerChanged();
+  Q_EMIT canvas_->layerChanged();
 }
 
 void LayerListItem::showPopMenu(const QPoint& ) // SLOT Function

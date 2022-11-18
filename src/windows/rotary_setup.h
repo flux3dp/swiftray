@@ -38,6 +38,8 @@ public:
 
     void setControlEnable(bool control_enable);
 
+    void setDefaultCircumference(double default_value);
+
 private:
     Ui::RotarySetup *ui;
     void testRotary();
@@ -57,7 +59,7 @@ private:
     bool control_enable_ = true;
     QButtonGroup *axis_group_;
 
-signals:
+Q_SIGNALS:
   void rotaryModeChanged(bool is_rotary_mode);
   void mirrorModeChanged(bool is_mirror_mode);
   void rotaryAxisChanged(char axis);

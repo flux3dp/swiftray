@@ -28,6 +28,8 @@ void MachineSetupExecutor::start() {
   stop();
   qInfo() << "MachineSetupExecutor::start()";
   pending_cmd_.clear();
+  // Force a sorft reset at the start of machine setup
+  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_));
   pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo, motion_controller_));
 
   exec_timer_->start(200);
@@ -52,11 +54,8 @@ void MachineSetupExecutor::exec() {
   if (pending_cmd_.isEmpty()) {
     if (cmd_in_progress_.isEmpty()) {
       exec_timer_->stop();
-      // Force a sorft reset at the end of machine setup
-      auto reset_cmd = GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_);
-      reset_cmd->execute(this);
       // finish
-      emit Executor::finished();
+      Q_EMIT Executor::finished();
       return;
     } else {
       exec_timer_->stop(); // sleep until next trigger
@@ -91,6 +90,11 @@ void MachineSetupExecutor::stop() {
   cmd_in_progress_.clear();
 }
 
+/**
+ * @brief Called by motion controller
+ * 
+ * @param result_code 
+ */
 void MachineSetupExecutor::handleCmdFinish(int result_code) {
   if (!cmd_in_progress_.isEmpty()) {
     if (result_code == 0) {
@@ -100,7 +104,7 @@ void MachineSetupExecutor::handleCmdFinish(int result_code) {
     }
     cmd_in_progress_.pop_front();
   }  
-  emit trigger();
+  Q_EMIT trigger();
   return ;
 }
 

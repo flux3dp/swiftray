@@ -55,7 +55,7 @@ private:
   QFont font_;
   double line_height_;
 
-signals:
+Q_SIGNALS:
   void lineHeightChanged(double line_height);
 
   void fontChanged(QFont font);

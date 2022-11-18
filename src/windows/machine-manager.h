@@ -21,11 +21,11 @@ public:
 
   void save();
 
-public slots:
+public Q_SLOTS:
 
   void show();
 
-private slots:
+private Q_SLOTS:
 
   void originChanged(MachineSettings::MachineSet::OriginType origin);
 

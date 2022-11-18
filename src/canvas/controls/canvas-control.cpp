@@ -31,7 +31,7 @@ void CanvasControl::paint(QPainter *painter) {}
 
 /* Exit will be called when we're exiting the active state */
 void CanvasControl::exit() {
-  // TODO (Reimplement exit as a slot being called by signals)
+  // TODO (Reimplement exit as a slot being called by Q_SIGNALS)
 }
 
 Canvas &CanvasControl::canvas() {

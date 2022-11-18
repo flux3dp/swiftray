@@ -117,7 +117,7 @@ bool SerialPort::open(QString port_name, unsigned int baudrate) {
   }
 #endif
   port_name_ = port_name;
-  emit connected();
+  Q_EMIT connected();
   return true;
 }
 
@@ -155,7 +155,7 @@ void SerialPort::close() {
   pimpl_->receivedData.clear();//Clear eventual data remaining in read buffer
 #endif
   if (should_emit_disconnect) {
-    emit disconnected();
+    Q_EMIT disconnected();
   }
 }
 
@@ -228,7 +228,7 @@ void SerialPort::onReceive(const boost::system::error_code& ec, size_t bytes_tra
   for (unsigned int i = 0; i < bytes_transferred; ++i) {
     char c = read_buf_raw_[i];
     if (c == '\n') {
-      emit lineReceived(QString::fromStdString(read_buf_str_));
+      Q_EMIT lineReceived(QString::fromStdString(read_buf_str_));
       read_buf_str_.clear();
     }
     else {
@@ -247,11 +247,11 @@ void SerialPort::readCallback(const char *data, size_t size){
     //If line ends with \n lineList will contain a trailing empty string
     //otherwise it will contain part of a line without the terminating \n
     //In both cases lineList.at(lineList.size()-1) should not be sent
-    //with emit.
+    //with Q_EMIT.
     int numLines = lineList.size()-1;
     pimpl_->receivedData = lineList.at(lineList.size()-1);
     for (int i=0; i < numLines; i++) {
-      emit lineReceived(lineList.at(i));
+      Q_EMIT lineReceived(lineList.at(i));
     }
   }
 }

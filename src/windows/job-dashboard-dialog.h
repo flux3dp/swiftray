@@ -27,12 +27,12 @@ public:
     void attachJob(QPointer<JobExecutor> job_executor);
     QPixmap getPreview();
 
-public slots:
+public Q_SLOTS:
     void onJobStateChanged(Executor::State);
     void onJobProgressChanged(QVariant);
     void onElapsedTimeChanged(Timestamp);
 
-signals:
+Q_SIGNALS:
     void startBtnClicked();
     void stopBtnClicked();
     void pauseBtnClicked();

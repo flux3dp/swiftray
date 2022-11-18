@@ -49,8 +49,13 @@ public:
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
 
-public slots:
-  void motionPortConnected();  // Opened but not check
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  void motionPortConnected(SerialPort *);   // Opened but not check
+  #else
+  void motionPortConnected(QSerialPort *);  // Opened but not check
+  #endif
+
+public Q_SLOTS:
   void motionPortActivated();  // Motion controller working
   void motionPortDisonnected();// Closed
 
@@ -61,7 +66,7 @@ public slots:
   void resumeJob();
   void stopJob();
 
-signals:
+Q_SIGNALS:
   void connected();
   void activated();
   void disconnected();

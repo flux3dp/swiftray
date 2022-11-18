@@ -45,7 +45,7 @@ void ColorPickerButton::registerEvents() {
     }
     if (color != this->color_) {
       this->updateIcon(color);
-      emit colorChanged(this->color_);
+      Q_EMIT colorChanged(this->color_);
     }
   });
 }

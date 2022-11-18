@@ -19,6 +19,7 @@ namespace Controls {
 
   private:
     QRectF selection_box_;
+    bool check_inside_;
   };
 
 }

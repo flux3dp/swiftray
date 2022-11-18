@@ -84,7 +84,7 @@ Canvas::Canvas(QQuickItem *parent)
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
 
   connect(&ctrl_transform_, &Controls::Transform::cursorChanged, [=](Qt::CursorShape cursor) {
-    emit cursorChanged(cursor);
+    Q_EMIT cursorChanged(cursor);
   });
 }
 
@@ -111,7 +111,7 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
-      emit layerChanged();
+      Q_EMIT layerChanged();
     }
 
     forceActiveFocus();
@@ -138,11 +138,9 @@ void Canvas::loadSVG(QString file_name) {
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
-    double scale = 30.0 / 8.5;//define by 3cm Ruler
-    transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
-      emit layerChanged();
+      Q_EMIT layerChanged();
     }
 
     forceActiveFocus();
@@ -168,7 +166,7 @@ void Canvas::loadDXF(QString file_name) {
     transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
-      emit layerChanged();
+      Q_EMIT layerChanged();
     }
 
     forceActiveFocus();
@@ -283,12 +281,12 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
           << canvas_coord;
 
   if (e->button()==Qt::MiddleButton) {
-    emit cursorChanged(	Qt::ClosedHandCursor);
+    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
     is_holding_middle_button_ = true;
     return;
   }
   if (is_holding_space_) {
-    emit cursorChanged(	Qt::ClosedHandCursor);
+    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
   }
 
   for (auto &control : ctrls_) {
@@ -300,11 +298,11 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     ShapePtr hit = document().hitTest(canvas_coord);
 
     if (hit != nullptr) {
-      emit cursorChanged(	Qt::ClosedHandCursor);
+      Q_EMIT cursorChanged(Qt::ClosedHandCursor);
       if (!hit->selected()) {
         document().setSelection(hit);
         document().setActiveLayer(hit->layer()->name());
-        emit layerChanged();
+        Q_EMIT layerChanged();
       }
     } else {
       document().setSelection(nullptr);
@@ -318,29 +316,13 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
     return;
   }
 
-  QPointF movement = document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord();
   if (is_holding_space_ || is_holding_middle_button_) {
-    emit cursorChanged(	Qt::ClosedHandCursor);
-    qreal movement_x = movement.x() * document().scale();
-    qreal movement_y = movement.y() * document().scale();
-    qreal new_scroll_x = (document().mousePressedCanvasScroll().x() + movement_x);
-    qreal new_scroll_y = (document().mousePressedCanvasScroll().y() + movement_y);
+    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
+    QPointF movement = (document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord()) 
+                        * document().scale();
+    QPointF new_scroll = document().mousePressedCanvasScroll() + movement;
 
-    // Restrict the range of scroll
-    QPointF top_left_bound = getTopLeftScrollBoundary();
-    QPointF bottom_right_bound = getBottomRightScrollBoundary();
-    if (movement_x > 0 && new_scroll_x > top_left_bound.x()) {
-      new_scroll_x = top_left_bound.x();
-    } else if (movement_x < 0 && new_scroll_x < bottom_right_bound.x()) {
-      new_scroll_x = bottom_right_bound.x();
-    }
-    if (movement_y > 0 && new_scroll_y > top_left_bound.y()) {
-      new_scroll_y = top_left_bound.y();
-    } else if (movement_y < 0 && new_scroll_y < bottom_right_bound.y()) {
-      new_scroll_y = bottom_right_bound.y();
-    }
-
-    document().setScroll({new_scroll_x, new_scroll_y});
+    updateScroll(new_scroll, movement);
     volatility_timer.restart();
     return; 
   }
@@ -354,7 +336,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
   if (e->button()==Qt::RightButton) {
     right_click_ = e->pos();
     is_pop_menu_showing_ = true;
-    emit canvasContextMenuOpened();
+    Q_EMIT canvasContextMenuOpened();
     return;
   }
   if (e->button()==Qt::RightButton && !is_pop_menu_showing_) {
@@ -390,7 +372,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
           qInfo() << "[Canvas] Double clicked text" << hit.get();
           document().setSelection(hit);
           document().setActiveLayer(hit->layer()->name());
-          emit layerChanged();
+          Q_EMIT layerChanged();
           if (document().activeLayer()->isLocked()) {
             break;
           }
@@ -447,6 +429,28 @@ QPointF Canvas::getBottomRightScrollBoundary() {
   return QPointF{scroll_x_min, scroll_y_min};
 }
 
+
+void Canvas::updateScroll(
+    QPointF new_scroll, QPointF ref_pos) 
+{
+  // Restrict the range of scroll
+  QPointF top_left_bound = getTopLeftScrollBoundary();
+  QPointF bottom_right_bound = getBottomRightScrollBoundary();
+  if (ref_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
+    new_scroll.setX(top_left_bound.x());
+  } else if (ref_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
+    new_scroll.setX(bottom_right_bound.x());
+  }
+  if (ref_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
+    new_scroll.setY(top_left_bound.y());
+  } else if (ref_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
+    new_scroll.setY(bottom_right_bound.y());
+  }
+  // Update
+  document().setScroll(new_scroll);
+}
+
+
 void Canvas::wheelEvent(QWheelEvent *e) {
   QPointF new_scroll;
   QPointF mouse_pos;
@@ -463,21 +467,7 @@ void Canvas::wheelEvent(QWheelEvent *e) {
     mouse_pos = e->angleDelta();
   }
 
-  // Restrict the range of scroll
-  QPointF top_left_bound = getTopLeftScrollBoundary();
-  QPointF bottom_right_bound = getBottomRightScrollBoundary();
-  if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-    new_scroll.setX(top_left_bound.x());
-  } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-    new_scroll.setX(bottom_right_bound.x());
-  }
-  if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-    new_scroll.setY(top_left_bound.y());
-  } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-    new_scroll.setY(bottom_right_bound.y());
-  }
-
-  document().setScroll(new_scroll);
+  updateScroll(new_scroll, mouse_pos);
   volatility_timer.restart();
 }
 
@@ -488,21 +478,7 @@ void Canvas::setScaleWithCenter(qreal new_scale) {
 
   QPointF new_scroll = center_pos - (center_pos - document().scroll()) * document().scale() / orig_scale;
 
-  // Restrict the scroll range (might not be necessary)
-  QPointF top_left_bound = getTopLeftScrollBoundary();
-  QPointF bottom_right_bound = getBottomRightScrollBoundary();
-  if (center_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-    new_scroll.setX(top_left_bound.x());
-  } else if (center_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-    new_scroll.setX(bottom_right_bound.x());
-  }
-  if (center_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-    new_scroll.setY(top_left_bound.y());
-  } else if (center_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-    new_scroll.setY(bottom_right_bound.y());
-  }
-
-  document().setScroll(new_scroll);
+  updateScroll(new_scroll, center_pos);
   volatility_timer.restart();
 }
 
@@ -553,16 +529,16 @@ bool Canvas::event(QEvent *e) {
         canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
         hit = document().hitTest(canvas_coord);
         if(hit != nullptr) {
-          emit cursorChanged(Qt::OpenHandCursor);
+          Q_EMIT cursorChanged(Qt::OpenHandCursor);
         }
         else if(is_holding_space_) {
-          emit cursorChanged(Qt::OpenHandCursor);
+          Q_EMIT cursorChanged(Qt::OpenHandCursor);
         } else {
-          emit cursorChanged(Qt::ArrowCursor);
+          Q_EMIT cursorChanged(Qt::ArrowCursor);
         }
       }
       else {
-        emit cursorChanged(cursor_shape);
+        Q_EMIT cursorChanged(cursor_shape);
       }
       break;
 
@@ -573,27 +549,11 @@ bool Canvas::event(QEvent *e) {
       if (nge->gestureType() == Qt::ZoomNativeGesture) {
         QPoint mouse_pos = nge->localPos().toPoint() - widget_offset_;
         double orig_scale = document().scale();
-        double new_scale = std::min(30.0, std::max(0.1, document().scale() + nge->value() / 8));
+        double new_scale = std::min(30.0, std::max(0.01, document().scale() + nge->value() / 8));
         document().setScale(new_scale);
-
         QPointF new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
 
-        // Restrict the scroll range (might not be necessary)
-        QPointF top_left_bound = getTopLeftScrollBoundary();
-        QPointF bottom_right_bound = getBottomRightScrollBoundary();
-        if (mouse_pos.x() > 0 && new_scroll.x() > top_left_bound.x()) {
-          new_scroll.setX(top_left_bound.x());
-        } else if (mouse_pos.x() < 0 && new_scroll.x() < bottom_right_bound.x()) {
-          new_scroll.setX(bottom_right_bound.x());
-        }
-        if (mouse_pos.y() > 0 && new_scroll.y() > top_left_bound.y()) {
-          new_scroll.setY(top_left_bound.y());
-        } else if (mouse_pos.y() < 0 && new_scroll.y() < bottom_right_bound.y()) {
-          new_scroll.setY(bottom_right_bound.y());
-        }
-
-
-        document().setScroll(new_scroll);
+        updateScroll(new_scroll, mouse_pos);
         volatility_timer.restart();
       }
 
@@ -650,22 +610,23 @@ void Canvas::editUndo() {
   QElapsedTimer t;
   t.start();
   document().undo();
-  emit layerChanged(); // TODO (Check if layers are really changed)
-  emit selectionsChanged(); // Force refresh all selection related components
-  emit undoCalled();
+  Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
+  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT undoCalled();
   qInfo() << "[Undo] Took" << t.elapsed() << "ms";
 }
 
 void Canvas::editRedo() {
   document().redo();
-  emit layerChanged(); // TODO (Check if layers are really changed)
-  emit selectionsChanged(); // Force refresh all selection related components
-  emit redoCalled();
+  Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
+  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT redoCalled();
 }
 
 void Canvas::editDrawRect() {
+  if(mode() != Mode::RectDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -673,8 +634,9 @@ void Canvas::editDrawRect() {
 }
 
 void Canvas::editDrawPolygon() {
+  if(mode() != Mode::PolygonDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -682,8 +644,9 @@ void Canvas::editDrawPolygon() {
 }
 
 void Canvas::editDrawOval() {
+  if(mode() != Mode::OvalDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -691,8 +654,9 @@ void Canvas::editDrawOval() {
 }
 
 void Canvas::editDrawLine() {
+  if(mode() != Mode::LineDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -700,8 +664,9 @@ void Canvas::editDrawLine() {
 }
 
 void Canvas::editDrawPath() {
+  if(mode() != Mode::PathDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -709,8 +674,9 @@ void Canvas::editDrawPath() {
 }
 
 void Canvas::editDrawText() {
+  if(mode() != Mode::TextDrawing) exitCurrentMode();
   if (document().activeLayer()->isLocked()) {
-    emit modeChanged();
+    Q_EMIT modeChanged();
     return;
   }
   document().setSelection(nullptr);
@@ -736,7 +702,7 @@ void Canvas::editSelectAll(bool with_hiden) {
   document().setSelections(all_shapes);
   if (all_shapes.size() == 1) {
     document().setActiveLayer(all_shapes.first()->layer()->name());
-    emit layerChanged();
+    Q_EMIT layerChanged();
   }
 }
 
@@ -838,7 +804,7 @@ void Canvas::addEmptyLayer() {
   document().execute(
        Commands::AddLayer(new_layer)
   );
-  emit layerChanged();
+  Q_EMIT layerChanged();
 }
 
 void Canvas::duplicateLayer(LayerPtr layer) {
@@ -853,7 +819,7 @@ void Canvas::duplicateLayer(LayerPtr layer) {
   document().execute(Commands::AddLayer(new_layer));
 
   setActiveLayer(new_layer);
-  emit layerChanged();
+  Q_EMIT layerChanged();
 }
 
 void Canvas::resize() {
@@ -1075,7 +1041,7 @@ void Canvas::cropImage() {
 
 void Canvas::setActiveLayer(LayerPtr &layer) {
   document().setActiveLayer(layer);
-  emit layerChanged();
+  Q_EMIT layerChanged();
 }
 
 void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
@@ -1099,7 +1065,7 @@ void Canvas::setFont(const QFont &font) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setFont(font_);
@@ -1120,7 +1086,7 @@ void Canvas::setPointSize(int point_size) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     target_font.setPointSize(point_size);
     if(!ctrl_text_.isEmpty()) {
@@ -1143,7 +1109,7 @@ void Canvas::setLetterSpacing(double spacing) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
     if(!ctrl_text_.isEmpty()) {
@@ -1166,7 +1132,7 @@ void Canvas::setBold(bool bold) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     target_font.setBold(bold);
     if(!ctrl_text_.isEmpty()) {
@@ -1189,7 +1155,7 @@ void Canvas::setItalic(bool italic) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     target_font.setItalic(italic);
     if(!ctrl_text_.isEmpty()) {
@@ -1212,7 +1178,7 @@ void Canvas::setUnderline(bool underline) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     target_font.setUnderline(underline);
     if(!ctrl_text_.isEmpty()) {
@@ -1232,7 +1198,7 @@ void Canvas::setLineHeight(float line_height) {
       }
     }
     document().execute(cmd);
-    emit selectionsChanged();
+    Q_EMIT selectionsChanged();
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setLineHeight(line_height);
@@ -1244,7 +1210,7 @@ Clipboard &Canvas::clipboard() {
   return clipboard_;
 }
 
-void Canvas::backToSelectMode() {
+void Canvas::exitCurrentMode() {
   // TODO (Add exit function to all controls)
   switch (mode()) {
     case Mode::TextDrawing:
@@ -1258,6 +1224,15 @@ void Canvas::backToSelectMode() {
       break;
     case Mode::PolygonDrawing:
       ctrl_polygon_.exit();
+      break;
+    case Mode::LineDrawing:
+      ctrl_line_.exit();
+      break;
+    case Mode::PathDrawing:
+      ctrl_path_draw_.exit();
+      break;
+    case Mode::PathEditing:
+      ctrl_path_edit_.exit();
       break;
   }
 }
@@ -1284,7 +1259,7 @@ Canvas::Mode Canvas::mode() const { return mode_; }
 
 void Canvas::setMode(Mode mode) {
   mode_ = mode;
-  emit modeChanged();
+  Q_EMIT modeChanged();
 }
 
 QRect Canvas::calculateShapeBoundary() {
@@ -1343,10 +1318,10 @@ void Canvas::setUserOrigin(QPointF user_origin) {
 }
 
 void Canvas::emitAllChanges() {
-  emit scaleChanged();
-  emit layerChanged();
-  emit modeChanged();
-  emit docSettingsChanged();
+  Q_EMIT scaleChanged();
+  Q_EMIT layerChanged();
+  Q_EMIT modeChanged();
+  Q_EMIT docSettingsChanged();
 }
 
 bool Canvas::isVolatile() const {
@@ -1360,12 +1335,12 @@ double Canvas::lineHeight() const { return line_height_;}
 
 void Canvas::editHFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editVFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), 1, -1, false);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignHLeft() {
@@ -1376,7 +1351,7 @@ void Canvas::editAlignHLeft() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignHCenter() {
@@ -1387,7 +1362,7 @@ void Canvas::editAlignHCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignHRight() {
@@ -1398,7 +1373,7 @@ void Canvas::editAlignHRight() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignVTop() {
@@ -1409,7 +1384,7 @@ void Canvas::editAlignVTop() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignVCenter() {
@@ -1420,7 +1395,7 @@ void Canvas::editAlignVCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::editAlignVBottom() {
@@ -1431,7 +1406,7 @@ void Canvas::editAlignVBottom() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  emit selectionsChanged();
+  Q_EMIT selectionsChanged();
 }
 
 void Canvas::setWidget(QQuickWidget *widget) {

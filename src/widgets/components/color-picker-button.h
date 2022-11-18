@@ -20,7 +20,7 @@ public:
     void setColor(QColor color);
     QColor color() { return color_; }
 
-signals:
+Q_SIGNALS:
   void colorChanged(QColor new_color);
 
 private:

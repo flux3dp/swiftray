@@ -124,12 +124,12 @@ void TransformPanel::setScaleLock(bool scaleLock) {
     ui->lockBtn->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));
   }
 
-  emit scaleLockToggled(scale_locked_);
+  Q_EMIT scaleLockToggled(scale_locked_);
 }
 
 void TransformPanel::updateControl() {
   main_window_->canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
-  emit transformPanelUpdated(x_, y_, r_, w_, h_);
+  Q_EMIT transformPanelUpdated(x_, y_, r_, w_, h_);
 }
 
 void TransformPanel::setLayout() {
@@ -137,9 +137,9 @@ void TransformPanel::setLayout() {
 }
 
 void TransformPanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void TransformPanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }

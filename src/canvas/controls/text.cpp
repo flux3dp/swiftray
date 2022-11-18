@@ -113,7 +113,7 @@ void Text::exit() {
   target_ = nullptr;
   canvas().textInput()->clear();
   canvas().textInput()->window()->setFocus();
-  emit canvas().selectionsChanged();
+  Q_EMIT canvas().selectionsChanged();
   canvas().setMode(Canvas::Mode::Selecting);
 }
 

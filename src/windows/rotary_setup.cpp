@@ -2,6 +2,7 @@
 #include "ui_rotary_setup.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <QSettings>
 #include <windows/osxwindow.h>
 
 #include <QDebug>
@@ -14,7 +15,6 @@ RotarySetup::RotarySetup(QWidget *parent) :
     axis_group_ = new QButtonGroup(this);
     ui->label->hide();
     ui->deviceComboBox->hide();
-    ui->mirrorCheckBox->hide();
     axis_group_->addButton(ui->YRadioButton);
     axis_group_->addButton(ui->ZRadioButton);
     axis_group_->addButton(ui->ARadioButton);
@@ -31,9 +31,11 @@ RotarySetup::RotarySetup(QWidget *parent) :
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
         is_rotary_mode_ = state;
         if(is_rotary_mode_) {
+            ui->mirrorCheckBox->setEnabled(true);
             if(control_enable_) ui->testBtn->setEnabled(true);
         }
         else {
+            ui->mirrorCheckBox->setEnabled(false);
             ui->testBtn->setEnabled(false);
         }
         Q_EMIT rotaryModeChanged(is_rotary_mode_);
@@ -68,6 +70,9 @@ RotarySetup::RotarySetup(QWidget *parent) :
         type_index_ = ui->typeList->currentRow();
         mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
         roller_diameter_ = ui->rollerDiameterSpinBox->value();
+
+        QSettings settings;
+        settings.setValue("rotary/circumference", circumference_);
 
         Q_EMIT mirrorModeChanged(is_mirror_mode_);
         Q_EMIT rotaryAxisChanged(rotary_axis_);
@@ -104,10 +109,12 @@ void RotarySetup::setRotaryMode(bool is_rotary_mode)
     is_rotary_mode_ = is_rotary_mode;
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
+        ui->mirrorCheckBox->setEnabled(true);
         if(control_enable_) ui->testBtn->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+        ui->mirrorCheckBox->setEnabled(false);
         ui->testBtn->setEnabled(false);
     }
 }
@@ -146,10 +153,28 @@ void RotarySetup::setControlEnable(bool control_enable)
     control_enable_ = control_enable;
     if(control_enable_ && is_rotary_mode_) {
         ui->testBtn->setEnabled(true);
+        ui->mirrorCheckBox->setEnabled(true);
     }
     else {
         ui->testBtn->setEnabled(false);
+        ui->mirrorCheckBox->setEnabled(false);
     }
+}
+
+void RotarySetup::setDefaultCircumference(double default_value)
+{
+    //if the rotary/circumference is not update
+    QSettings settings;
+    QVariant circumference_data = settings.value("rotary/circumference", 0);
+    if(circumference_data.toDouble() > 0) {
+        ui->CircumSpinBox->setValue(circumference_data.toDouble());
+        circumference_ = circumference_data.toDouble();
+    } else {
+        ui->CircumSpinBox->setValue(default_value);
+        settings.setValue("rotary/circumference", default_value);
+        circumference_ = default_value;
+    }
+    resetUI();
 }
 
 /**
@@ -161,7 +186,7 @@ void RotarySetup::testRotary()
   QRectF bbox;
   bbox.setWidth(20); // fixed: 20 mm
   bbox.setHeight(ui->mmPerRotationSpinBox->value());
-  emit actionTestRotary(bbox, rotary_axis_, travel_speed_, framing_power_);
+  Q_EMIT actionTestRotary(bbox, rotary_axis_, travel_speed_, framing_power_);
 }
 
 void RotarySetup::updateRotaryScale()
@@ -190,10 +215,12 @@ void RotarySetup::resetUI()
     if(is_rotary_mode_) {
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         if(control_enable_) ui->testBtn->setEnabled(true);
+        ui->mirrorCheckBox->setEnabled(true);
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
         ui->testBtn->setEnabled(false);
+        ui->mirrorCheckBox->setEnabled(false);
     }
     if(is_mirror_mode_) {
         ui->mirrorCheckBox->setCheckState(Qt::Checked);

@@ -2,7 +2,11 @@
 #define MOTIONCONTROLLER_H
 
 #include <QObject>
+#ifdef CUSTOM_SERIAL_PORT_LIB
 #include <connection/serial-port.h>
+#else
+#include <QSerialPort>
+#endif
 #include <executor/executor.h>
 #include <mutex>
 #include <tuple>
@@ -31,7 +35,12 @@ public:
 
   explicit MotionController(QObject *parent = nullptr);
 
+  #ifdef CUSTOM_SERIAL_PORT_LIB
   void attachPort(SerialPort *port);
+  #else
+  void attachPort(QSerialPort *port);
+  void detachPort();
+  #endif
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   MotionControllerState getState() const;
   void setState(MotionControllerState new_state);
@@ -39,7 +48,7 @@ public:
   void enqueueCmdExecutor(QPointer<Executor>);
   void dequeueCmdExecutor();
 
-signals:
+Q_SIGNALS:
   void cmdSent(QString cmd);
   void respRcvd(QString resp);
   void resetDetected();
@@ -48,14 +57,18 @@ signals:
       qreal x, qreal y, qreal z);
   void disconnected();
 
-public slots:
+public Q_SLOTS:
   virtual void respReceived(QString resp) = 0;
 
-private slots:
+private Q_SLOTS:
 
 protected:
 
-  SerialPort* port_;
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  SerialPort* port_ = nullptr;
+  #else
+  QSerialPort* port_ = nullptr;
+  #endif
   mutable std::mutex state_mutex_;
   QList<QPointer<Executor>> cmd_executor_queue_;
   
@@ -65,6 +78,11 @@ protected:
   qreal y_pos_ = 0;
   qreal z_pos_ = 0;
   //qreal a_pos_ = 0;
+
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  #else
+  QByteArray unprocssed_response_;
+  #endif
 };
 
 #endif // MOTIONCONTROLLER_H

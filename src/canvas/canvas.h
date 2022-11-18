@@ -112,7 +112,7 @@ public:
 
   void setCurrentPosition(bool current_position) {current_position_ = current_position;}
 
-public slots:
+public Q_SLOTS:
 
   void editCut();
 
@@ -218,7 +218,7 @@ public slots:
 
   void setLineHeight(float line_height);
 
-  void backToSelectMode();
+  void exitCurrentMode();
 
   void setWidget(QQuickWidget *widget);
 
@@ -284,12 +284,14 @@ private:
 
   QPointF getBottomRightScrollBoundary();
 
+  void updateScroll(QPointF scroll, QPointF ref_pos);
+
   friend class MainWindow;
 
 protected:
   CanvasTextEdit *text_input_;
 
-signals:
+Q_SIGNALS:
 
   void canvasContextMenuOpened();
 
