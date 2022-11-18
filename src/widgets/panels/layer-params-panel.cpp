@@ -36,11 +36,9 @@ void LayerParamsPanel::loadStyles() {
   add_layer_btn_->show();
   ui->parameterFrame->setStyleSheet("\
     QToolButton#btnAddLayer:hover {\
-      background-color: transparent;\
       border: 0px;\
     }\
     QToolButton#btnAddLayer{ \
-      background-color: transparent;\
       border: 0px;\
     } \
   ");
