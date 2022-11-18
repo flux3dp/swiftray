@@ -53,9 +53,7 @@ public:
     }
 
     //blocks
-    virtual void addBlock(const DRW_Block& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addBlock(const DRW_Block& data);
     virtual void endBlock(){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
@@ -159,6 +157,8 @@ public:
 private:
     LayerPtr layer_ptr_ = nullptr;
     QList<LayerPtr> dxf_layers_;
+    QString current_block_;
+    QMap<QString, QList<ShapePtr> > g_block2shape_map_;
 };
 
 #endif // DX_IFACE_H

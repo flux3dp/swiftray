@@ -106,6 +106,10 @@ void dxf_iface::addLayer(const DRW_Layer& data) {
     // std::cout << __func__ << " " << data.name << " " << data.color << std::endl;
 }
 
+void dxf_iface::addBlock(const DRW_Block& data) {
+    current_block_ = QString(data.name.c_str());
+}
+
 void dxf_iface::addLine(const DRW_Line& data) {
     QString layName = toNativeString(QString::fromUtf8(data.layer.c_str()));
     LayerPtr target_layer;
