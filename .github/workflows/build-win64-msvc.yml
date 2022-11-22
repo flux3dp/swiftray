@@ -41,11 +41,9 @@ jobs:
           cd third_party/libpotrace
           curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
           tar -xzvf potrace-1.16.tar.gz
-          mkdir build
-          cd build
-          conan install .. --build=missing
-          conan build ..
-          conan create .. user/testing
+          conan install . --build=missing
+          conan build .
+          conan create . user/testing
       #- name: Deploy
       #  shell: msys2 {0}
       #  run: |
