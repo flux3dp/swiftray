@@ -53,7 +53,7 @@ private:
     double circumference_ = 0;
     double mm_per_rotation_;
     double roller_diameter_;
-    int type_index_;
+    bool roller_type_;
     double travel_speed_;
     double framing_power_;
     bool control_enable_ = true;
