@@ -268,18 +268,19 @@ target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
 
 # OpenCV
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  if(MSVC) 
-    set(OpenCV_DIR "C:/Dev/OpenCV/4_5_5_msvc/build")
-  else()
-    set(OpenCV_DIR "C:/Dev/opencv_452_mingw")
-  endif()
-endif()
+#if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+#  if(MSVC) 
+#    set(OpenCV_DIR "C:/Dev/OpenCV/4_5_5_msvc/build")
+#  else()
+#    set(OpenCV_DIR "C:/Dev/opencv_452_mingw")
+#  endif()
+#endif()
 find_package(OpenCV REQUIRED)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} opencv_core)
 target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 

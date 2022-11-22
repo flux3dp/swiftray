@@ -44,10 +44,10 @@ jobs:
           conan build .
           conan create . user/testing
 
-      - name: Try OpenCV with conan
-        run: |
-          cd third_party/opencv
-          conan install . --build=missing
+      #- name: Try OpenCV with conan
+      #  run: |
+      #    cd third_party/opencv
+      #    conan install . --build=missing
 
       # vcpkg cache
       - name: Restore vcpkg and its artifacts.
@@ -79,6 +79,16 @@ jobs:
           cd ${{ github.workspace }}
           vcpkg install opencv:x64-windows
 
+      - name: Conan install
+        run: |
+          mkdir build
+          cd build
+          conan install .. --build=missing
+      
+      - name: CMake
+        run: |
+          mkdir build
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       #- name: Deploy
       #  shell: msys2 {0}
