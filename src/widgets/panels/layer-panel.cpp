@@ -17,11 +17,6 @@ LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
 }
 
 void LayerPanel::loadStyles() {
-  ui->layerList->setStyleSheet("\
-    QToolButton#btnAddLayer{ \
-      background-color: rgba(0, 0, 0, 0);\
-    } \
-  ");
 }
 
 void LayerPanel::loadWidgets() {
