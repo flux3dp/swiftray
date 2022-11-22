@@ -21,8 +21,13 @@ RotarySetup::RotarySetup(QWidget *parent) :
     ui->rollerButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary.png" : ":/resources/images/icon-rotary.png"));
     ui->chuckButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary-2.png" : ":/resources/images/icon-rotary-2.png"));
     ui->rollerButton->setChecked(true);
-    ui->rollerButton->setStyleSheet("background-color: gray;border-radius: 10px; border: 2px white;border-style: outset;");
-    ui->chuckButton->setStyleSheet("background-color: rgb(30,30,30);border-radius: 10px; border: 2px white;border-style: outset;");
+    if(isDarkMode()) {
+        ui->rollerButton->setStyleSheet(selected_dark_);
+        ui->chuckButton->setStyleSheet(unselect_dark_);
+    } else {
+        ui->rollerButton->setStyleSheet(selected_light_);
+        ui->chuckButton->setStyleSheet(unselect_light_);
+    }
     mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
     roller_diameter_ = ui->rollerDiameterSpinBox->value();
     roller_type_ = true;
@@ -51,15 +56,25 @@ RotarySetup::RotarySetup(QWidget *parent) :
     connect(ui->rollerButton, &QAbstractButton::toggled, [=](bool checked) {
         if(checked) {
             ui->rollerDiameterSpinBox->setEnabled(true);
-            ui->rollerButton->setStyleSheet("background-color: gray;border-radius: 10px; border: 2px white;border-style: outset;");
-            ui->chuckButton->setStyleSheet("background-color: rgb(30,30,30);border-radius: 10px; border: 2px white;border-style: outset;");
+            if(isDarkMode()) {
+                ui->rollerButton->setStyleSheet(selected_dark_);
+                ui->chuckButton->setStyleSheet(unselect_dark_);
+            } else {
+                ui->rollerButton->setStyleSheet(selected_light_);
+                ui->chuckButton->setStyleSheet(unselect_light_);
+            }
         }
     });
     connect(ui->chuckButton, &QAbstractButton::toggled, [=](bool checked) {
         if(checked) {
             ui->rollerDiameterSpinBox->setEnabled(false);
-            ui->rollerButton->setStyleSheet("background-color: rgb(30,30,30);border-radius: 10px; border: 2px white;border-style: outset;");
-            ui->chuckButton->setStyleSheet("background-color: gray;border-radius: 10px; border: 2px white;border-style: outset;");
+            if(isDarkMode()) {
+                ui->rollerButton->setStyleSheet(unselect_dark_);
+                ui->chuckButton->setStyleSheet(selected_dark_);
+            } else {
+                ui->rollerButton->setStyleSheet(unselect_light_);
+                ui->chuckButton->setStyleSheet(selected_light_);
+            }
         }
     });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){

@@ -58,6 +58,10 @@ private:
     double framing_power_;
     bool control_enable_ = true;
     QButtonGroup *axis_group_;
+    QString selected_dark_ = "background-color: rgb(80, 80, 80);border-radius: 10px; border: 3px rgb(49, 78, 119);border-style: outset;";
+    QString selected_light_ = "background-color: rgb(255, 255, 255);border-radius: 10px; border: 3px rgb(163, 205, 255);border-style: outset;";
+    QString unselect_dark_ = "background-color: rgb(34, 34, 34);border-radius: 10px;";
+    QString unselect_light_ = "background-color: rgb(245, 245, 245);border-radius: 10px;";
 
 Q_SIGNALS:
   void rotaryModeChanged(bool is_rotary_mode);

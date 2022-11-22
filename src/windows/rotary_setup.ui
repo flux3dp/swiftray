@@ -58,6 +58,11 @@
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
       <widget class="QPushButton" name="rollerButton">
+       <property name="font">
+        <font>
+         <kerning>false</kerning>
+        </font>
+       </property>
        <property name="text">
         <string>Roller</string>
        </property>
@@ -78,6 +83,11 @@
      </item>
      <item>
       <widget class="QPushButton" name="chuckButton">
+       <property name="font">
+        <font>
+         <kerning>false</kerning>
+        </font>
+       </property>
        <property name="styleSheet">
         <string notr="true"/>
        </property>
