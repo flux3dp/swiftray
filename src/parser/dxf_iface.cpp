@@ -87,6 +87,8 @@ bool dxf_iface::printText(Document *doc, const std::string& fileI, dxf_data *fDa
         success = dwg->read(this, false);
         delete dwg;
     }
+    //udpate (insert) after read
+    update();
 
     if (success) {
         qInfo() << "Total layers" << dxf_layers_.size();
@@ -108,9 +110,11 @@ void dxf_iface::addLayer(const DRW_Layer& data) {
 
 void dxf_iface::addBlock(const DRW_Block& data) {
     current_block_ = QString(data.name.c_str());
+    block2shape_map_.insert(current_block_,QList<ShapePtr>());
 }
 
 void dxf_iface::addLine(const DRW_Line& data) {
+    return;
     QString layName = toNativeString(QString::fromUtf8(data.layer.c_str()));
     LayerPtr target_layer;
     for(int i = 0;i < dxf_layers_.size(); ++i) {
@@ -123,6 +127,7 @@ void dxf_iface::addLine(const DRW_Line& data) {
             dxf_layers_.push_back(target_layer);
         }
     }
+    block2layer_map_.insert(current_block_, layName);
 
     // std::cout << __func__ << " basePoint.x = " << data.basePoint.x << " basePoint.y = " << data.basePoint.y << std::endl;
     // std::cout << __func__ << " secPoint.x = " << data.secPoint.x << " secPoint.y = " << data.secPoint.y << std::endl;
@@ -131,9 +136,12 @@ void dxf_iface::addLine(const DRW_Line& data) {
     working_path.lineTo(data.secPoint.x, data.secPoint.y);
     ShapePtr new_shape = std::make_shared<PathShape>(working_path);
     target_layer->addShape(new_shape);
+    QMap<QString,QList<ShapePtr> >::iterator tmp_list = block2shape_map_.find(current_block_);
+    tmp_list.value().push_back(new_shape);
 }
 
 void dxf_iface::addArc(const DRW_Arc& data) {
+    return;
     if(layer_ptr_ == nullptr) {
         return;
     }
@@ -161,6 +169,7 @@ void dxf_iface::addArc(const DRW_Arc& data) {
 }
 
 void dxf_iface::addCircle(const DRW_Circle& data) {
+    return;
     if(layer_ptr_ == nullptr) {
         return;
     }
@@ -186,6 +195,7 @@ void dxf_iface::addLWPolyline(const DRW_LWPolyline& data) {
 }
 
 void dxf_iface::addPolyline(const DRW_Polyline& data) {
+    return;
     if(layer_ptr_ == nullptr) {
         return;
     }
@@ -205,6 +215,7 @@ void dxf_iface::addPolyline(const DRW_Polyline& data) {
 }
 
 void dxf_iface::addSpline(const DRW_Spline* data) {
+    return;
     if(layer_ptr_ == nullptr) {
         return;
     }
@@ -240,4 +251,65 @@ void dxf_iface::addSpline(const DRW_Spline* data) {
     // {
     //     std::cout << data->controllist[i]->x << " " << data->controllist[i]->y << std::endl;
     // }
+}
+
+void dxf_iface::addInsert(const DRW_Insert& data) {
+    try {
+        InsertData insert_data;
+        insert_data.name = QString(data.name.c_str());
+        insert_data.move_pt = QPointF(data.basePoint.x, data.basePoint.y);
+        insert_data.colcount = data.colcount;
+        insert_data.rowcount = data.rowcount;
+        insert_data.colspace = data.colspace;
+        insert_data.rowspace = data.rowspace;
+        insert_data.scale_x = data.xscale;
+        insert_data.scale_y = data.yscale;
+        insert_list_.push_back(insert_data);
+    } catch(std::exception const &e) {
+        std::cout << "Error connection: " << e.what();
+    }
+}
+
+void dxf_iface::update() {
+    try {
+    for(unsigned int i = 0; i < insert_list_.size(); ++i) {
+        QString block_name = insert_list_[i].name;
+        if(block2layer_map_.find(block_name) == block2layer_map_.end())
+            continue;
+        LayerPtr target_layer;
+        //find layer to insert
+        for (int i = 0; i < dxf_layers_.size(); ++i) {
+            target_layer = dxf_layers_[i];
+            if(target_layer->name() == block2layer_map_.find(block_name).value()) {
+                break;
+            }
+        }
+        //update
+        for (int c=0; c<insert_list_[i].colcount; ++c) {
+            for (int r=0; r<insert_list_[i].rowcount; ++r) {
+                if (fabs(insert_list_[i].scale_x)>1.0e-6 &&
+                    fabs(insert_list_[i].scale_y)>1.0e-6) {
+                    for(auto shape : target_layer->children()) {
+                        QTransform move_trans = QTransform();
+                        double move_x = insert_list_[i].move_pt.x() + 
+                                        insert_list_[i].colspace / 
+                                        insert_list_[i].scale_x*c;
+                        double move_y = insert_list_[i].move_pt.y() + 
+                                        insert_list_[i].rowspace / 
+                                        insert_list_[i].scale_y*r;
+                        shape->applyTransform(move_trans.translate(move_x, move_y));
+                    }
+                } else {
+                    for(auto shape : target_layer->children()) {
+                        QTransform move_trans = QTransform();
+                        shape->applyTransform(move_trans.translate(insert_list_[i].move_pt.x(), 
+                                                                    insert_list_[i].move_pt.y()));
+                    }
+                }
+            }
+        }
+    }
+    } catch(std::exception const &e) {
+        std::cout << "Error connection: " << e.what();
+    }
 }

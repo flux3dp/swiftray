@@ -82,9 +82,7 @@ public:
     // ¿para que se usa?
     virtual void addKnot(const DRW_Entity& data){}
 
-    virtual void addInsert(const DRW_Insert& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addInsert(const DRW_Insert& data);
     virtual void addTrace(const DRW_Trace& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
@@ -155,10 +153,21 @@ public:
 	void writeAppId() {};
 
 private:
+    void update();
+    struct InsertData {
+        QPointF move_pt;
+        double scale_x, scale_y;
+        double colspace, rowspace;
+        int colcount, rowcount;
+        QString name;
+    };
+    
     LayerPtr layer_ptr_ = nullptr;
     QList<LayerPtr> dxf_layers_;
     QString current_block_;
-    QMap<QString, QList<ShapePtr> > g_block2shape_map_;
+    QMap<QString, QList<ShapePtr> > block2shape_map_;
+    QMap<QString, QString> block2layer_map_;
+    QList<InsertData> insert_list_;
 };
 
 #endif // DX_IFACE_H
