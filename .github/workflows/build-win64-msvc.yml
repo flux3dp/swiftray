@@ -46,7 +46,8 @@ jobs:
 
       - name: Try OpenCV with conan
         run: |
-          conan install opencv/4.5.5
+          cd third_party/opencv
+          conan install . --build=missing
 
       # vcpkg cache
       - name: Restore vcpkg and its artifacts.
