@@ -74,13 +74,13 @@ jobs:
           .\bootstrap-vcpkg.bat
       
       - name: install opencv (with vcpkg)
-        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           cd ${{ github.workspace }}
           vcpkg install opencv:x64-windows
 
       - name: Install Qt5
-        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           cd ${{ github.workspace }}
           vcpkg install qt5:x64-windows
@@ -91,7 +91,6 @@ jobs:
 
       - name: Conan install
         run: |
-          mkdir build
           cd build
           conan install .. --build=missing
             
