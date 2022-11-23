@@ -85,10 +85,18 @@ jobs:
           cd build
           conan install .. --build=missing
       
+      - name: Install Qt 5.15.2
+        run: |
+          brew install p7zip
+          python3 -m pip install setuptools wheel
+          python3 -m pip install py7zr
+          python3 -m pip install aqtinstall==2.1.0
+          python3 -m aqt install-qt windows desktop 5.15.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+      
       - name: CMake
         run: |
-          mkdir build
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/msvc2019_64/lib/cmake
 
       #- name: Deploy
       #  shell: msys2 {0}
