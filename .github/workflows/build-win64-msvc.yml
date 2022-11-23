@@ -95,7 +95,7 @@ jobs:
       - name: CMake
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake"
 
       #- name: Deploy
       #  shell: msys2 {0}
