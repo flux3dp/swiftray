@@ -99,6 +99,10 @@ jobs:
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
           cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+      
+      - name: Build
+        run: |
+          cmake --build build --config RelWithDebInfo --parallel
 
       #- name: Deploy
       #  shell: msys2 {0}
