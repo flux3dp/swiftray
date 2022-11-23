@@ -87,11 +87,10 @@ jobs:
       
       - name: Install Qt 5.15.2
         run: |
-          brew install p7zip
           python3 -m pip install setuptools wheel
           python3 -m pip install py7zr
           python3 -m pip install aqtinstall==2.1.0
-          python3 -m aqt install-qt windows desktop 5.15.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+          python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O $RUNNER_WORKSPACE/Qt
       
       - name: CMake
         run: |
