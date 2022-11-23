@@ -74,28 +74,31 @@ jobs:
           .\bootstrap-vcpkg.bat
       
       - name: install opencv (with vcpkg)
-        if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           cd ${{ github.workspace }}
           vcpkg install opencv:x64-windows
+
+      - name: Install Qt5
+        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        run: |
+          cd ${{ github.workspace }}
+          vcpkg install qt5:x64-windows
+          #python3 -m pip install setuptools wheel
+          #python3 -m pip install py7zr
+          #python3 -m pip install aqtinstall==2.1.0
+          #python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O ${{ github.workspace }}/Qt
 
       - name: Conan install
         run: |
           mkdir build
           cd build
           conan install .. --build=missing
-      
-      - name: Install Qt 5.15.2
-        run: |
-          python3 -m pip install setuptools wheel
-          python3 -m pip install py7zr
-          python3 -m pip install aqtinstall==2.1.0
-          python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O ${{ github.workspace }}/Qt
-      
+            
       - name: CMake
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH="${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake"
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
 
       #- name: Deploy
       #  shell: msys2 {0}
