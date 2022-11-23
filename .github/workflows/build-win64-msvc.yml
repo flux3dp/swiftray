@@ -90,12 +90,12 @@ jobs:
           python3 -m pip install setuptools wheel
           python3 -m pip install py7zr
           python3 -m pip install aqtinstall==2.1.0
-          python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O $RUNNER_WORKSPACE/Qt
+          python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O ${{ github.workspace }}/Qt
       
       - name: CMake
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
 
       #- name: Deploy
       #  shell: msys2 {0}
