@@ -91,6 +91,7 @@ jobs:
 
       - name: Conan install
         run: |
+          mkdir build
           cd build
           conan install .. --build=missing
             
