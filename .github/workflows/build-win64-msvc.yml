@@ -56,7 +56,6 @@ jobs:
         with:
           path: |
             ${{ env.VCPKG_ROOT }}
-            ${{ github.workspace }}/build/vcpkg_installed
             !${{ env.VCPKG_ROOT }}/.git
             !${{ env.VCPKG_ROOT }}/buildtrees
             !${{ env.VCPKG_ROOT }}/packages
@@ -68,13 +67,12 @@ jobs:
         if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           cd ${{ github.workspace }}
-          mkdir build -force
           git clone https://github.com/Microsoft/vcpkg.git
           cd vcpkg
           .\bootstrap-vcpkg.bat
       
       - name: install opencv (with vcpkg)
-        if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           cd ${{ github.workspace }}
           vcpkg install opencv:x64-windows
@@ -102,7 +100,7 @@ jobs:
       - name: CMake
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ github.workspace }}\vcpkg\packages\opencv_x64-windows\share\opencv" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ github.workspace }}\vcpkg\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
       
       - name: Build
         run: |
