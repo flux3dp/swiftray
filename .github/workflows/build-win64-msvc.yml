@@ -58,7 +58,6 @@ jobs:
             ${{ env.VCPKG_ROOT }}
             !${{ env.VCPKG_ROOT }}/.git
             !${{ env.VCPKG_ROOT }}/buildtrees
-            !${{ env.VCPKG_ROOT }}/packages
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
             ${{ hashFiles( 'vcpkg.json' ) }}-cache-key-v1
@@ -90,6 +89,14 @@ jobs:
       - name: Create build dir
         run: |
           mkdir build
+          cd ${{ github.workspace }}/vcpkg
+          ls 
+          cd packages
+          ls
+          cd opencv4_x64-windows
+          ls
+          cd share
+          ls
 
       - name: Conan install
         run: |
@@ -100,8 +107,9 @@ jobs:
       - name: CMake
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ github.workspace }}\vcpkg\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
-      
+          #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ github.workspace }}\vcpkg\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOpenCV_DIR="${{ github.workspace }}\vcpkg\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+
       - name: Build
         run: |
           cmake --build build --config RelWithDebInfo --parallel
