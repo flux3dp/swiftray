@@ -97,6 +97,7 @@ jobs:
         run: |
           cd build
           conan install .. --build=missing
+          ls
             
       - name: CMake
         run: |
