@@ -6,3 +6,9 @@ libpotrace/1.16@user/testing
 
 [generators]
 cmake
+
+[options]
+
+[imports]
+bin, *.dll -> . # Copies all dll files from packages bin folder to "." folder
+lib, *.dylib* -> . # Copies all dylib files from packages lib folder to "." folder
