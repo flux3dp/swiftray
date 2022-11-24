@@ -7,6 +7,9 @@ on:
 jobs:
   setup-win-mingw-build-environment:
     runs-on: windows-latest
+    env:
+      VCPKG_INSTALLATION_ROOT: 'C:\vcpkg'
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -14,33 +17,6 @@ jobs:
       - name: Install Conan
         id: conan
         uses: turtlebrowser/get-conan@main
-
-      - name: Setup msys2
-        uses: msys2/setup-msys2@v2
-        with:
-          install: >-
-            base-devel
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-autotools
-            mingw-w64-x86_64-make
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-python-conan
-      #- name: Set 3GB compile memory
-      #  shell: msys2 {0}
-      #  run: |
-      #    bcdedit /set IncreaseUserVa 3072
-
-      - name: Build libpotrace
-        shell: msys2 {0}
-        run: |
-          echo $PATH
-          pwd
-          cd third_party/libpotrace
-          curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
-          tar -xzvf potrace-1.16.tar.gz
-          conan install . --build=missing
-          conan build .
-          conan create . user/testing
 
       #- name: Try OpenCV with conan
       #  run: |
@@ -86,6 +62,33 @@ jobs:
           ls
           cd share
           ls
+
+      - name: Setup msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >-
+            base-devel
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-autotools
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-python-conan
+      #- name: Set 3GB compile memory
+      #  shell: msys2 {0}
+      #  run: |
+      #    bcdedit /set IncreaseUserVa 3072
+
+      - name: Build libpotrace
+        shell: msys2 {0}
+        run: |
+          echo $PATH
+          pwd
+          cd third_party/libpotrace
+          curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+          tar -xzvf potrace-1.16.tar.gz
+          conan install . --build=missing
+          conan build .
+          conan create . user/testing
 
       - name: Conan install
         run: |
