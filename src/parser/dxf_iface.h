@@ -42,9 +42,7 @@ public:
     virtual void addDimStyle(const DRW_Dimstyle& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
-    virtual void addVport(const DRW_Vport& data){
-        // std::cout << __func__ << " " << __LINE__ << std::endl;
-    }
+    virtual void addVport(const DRW_Vport& data);
     virtual void addTextStyle(const DRW_Textstyle& data){
         // std::cout << __func__ << " " << __LINE__ << std::endl;
     }
@@ -158,16 +156,21 @@ private:
         QPointF move_pt;
         double scale_x, scale_y;
         double colspace, rowspace;
+        double angle;
         int colcount, rowcount;
         QString name;
+    };
+    struct BlockData {
+        QPointF base_pt;
     };
     
     LayerPtr layer_ptr_ = nullptr;
     QList<LayerPtr> dxf_layers_;
     QString current_block_;
     QMap<QString, QList<ShapePtr> > block2shape_map_;
-    QMap<QString, QString> block2layer_map_;
+    QMap<QString, BlockData> block2data_map_;
     QList<InsertData> insert_list_;
+    double view_width_, view_height_;
 };
 
 #endif // DX_IFACE_H
