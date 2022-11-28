@@ -185,13 +185,26 @@ void MainWindow::loadCanvas() {
       } else if (filename.endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
-        double scale = 30.0 / 8.5 * 10;//define by 3cm Ruler
+        double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
       }  else if (filename.endsWith(".dxf")) {
         canvas_->loadDXF(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
+      } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
+        QTemporaryDir dir;
+        Parser::PDF2SVG pdf_converter;
+        QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+        QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+        QFile src_file(filename);
+        src_file.copy(sanitized_filepath);
+        pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+        canvas_->loadSVG(temp_svg_filepath);
+        pdf_converter.removeSVGFile(temp_svg_filepath);
+        QFile::remove(sanitized_filepath);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
