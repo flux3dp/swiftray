@@ -100,12 +100,22 @@ jobs:
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
 
       - name: Build
         run: |
           cmake --build build --config RelWithDebInfo --parallel
-
+          cd build
+          ls
+          cd bin
+          ls
+      - name: Deploy
+        run: |
+          ${{ github.workspace }}/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
+          cd build
+          ls
+          cd bin
+          ls
       #- name: Deploy
       #  shell: msys2 {0}
       #  run: |

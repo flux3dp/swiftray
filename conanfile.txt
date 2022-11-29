@@ -10,5 +10,5 @@ cmake
 [options]
 
 [imports]
-bin, *.dll -> . # Copies all dll files from packages bin folder to "." folder
-lib, *.dylib* -> . # Copies all dylib files from packages lib folder to "." folder
+bin, *.dll -> ./bin # Copies all dll files from packages bin folder to "./bin" folder
+lib, *.dylib* -> ./bin # Copies all dylib files from packages lib folder to "./bin" folder
