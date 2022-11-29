@@ -220,7 +220,7 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
   }
 
   if (is_holding_ctrl_) {
-    if (e->key() == Qt::Key_Equal) {
+    if (e->key() == Qt::Key_Equal || e->key() == Qt::Key_Plus) {
       setScaleWithCenter(qreal(qRound((document().scale() + 0.0051)*100))/100);
     } else if (e->key() == Qt::Key_Minus) {
       setScaleWithCenter(qreal(qRound((document().scale() - 0.0051)*100))/100);
