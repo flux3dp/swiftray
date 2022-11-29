@@ -219,6 +219,14 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
     is_holding_ctrl_ = e->modifiers() & Qt::ControlModifier;
   }
 
+  if (is_holding_ctrl_) {
+    if (e->key() == Qt::Key_Equal || e->key() == Qt::Key_Plus) {
+      setScaleWithCenter(qreal(qRound((document().scale() + 0.0051)*100))/100);
+    } else if (e->key() == Qt::Key_Minus) {
+      setScaleWithCenter(qreal(qRound((document().scale() - 0.0051)*100))/100);
+    }
+  }
+
   if (e->modifiers() & Qt::ShiftModifier) {
     is_temp_scale_lock_ = true;
     ctrl_transform_.setScaleLock(!ctrl_transform_.isScaleLock());
