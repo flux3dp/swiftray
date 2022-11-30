@@ -13,6 +13,7 @@
 #include <iostream>
 #include <algorithm>
 #include <QtMath>
+#include "rs_handle/rs_vector.h"
 #include "dxf_iface.h"
 #include "libdxfrw/libdwgr.h"
 #include "libdxfrw/libdxfrw.h"
@@ -107,9 +108,14 @@ bool dxf_iface::printText(Document *doc, const std::string& fileI, dxf_data *fDa
 }
 
 void dxf_iface::addLayer(const DRW_Layer& data) {
-    layer_ptr_ = std::make_shared<Layer>();
-    layer_ptr_->setName(QString::fromStdString(data.name));
-    dxf_layers_.push_back(layer_ptr_);
+    for(int i = 0;i < dxf_layers_.size(); ++i) {
+        if(dxf_layers_[i]->name() == QString::fromUtf8(data.name.c_str())) {
+            return;
+        }
+    }
+    LayerPtr new_layer = std::make_shared<Layer>();
+    new_layer->setName(QString::fromStdString(data.name));
+    dxf_layers_.push_back(new_layer);
 
     // std::cout << __func__ << " " << data.name << " " << data.color << std::endl;
 }
@@ -225,12 +231,42 @@ void dxf_iface::addLWPolyline(const DRW_LWPolyline& data) {
     }
     QPainterPath working_path;
     working_path.moveTo(data.vertlist[0]->x, data.vertlist[0]->y);
+    RS_Vector previous_pt(data.vertlist[0]->x, data.vertlist[0]->y);
     double next_bulge = data.vertlist[1]->bulge;
     for(unsigned int i = 1; i < data.vertlist.size(); ++i) {
         if(fabs(next_bulge) < 1.0e-10) {
             working_path.lineTo(data.vertlist[i]->x, data.vertlist[i]->y);
         } else { // create arc for the polyline:
-            std::cout << __func__ << " " << __LINE__ << std::endl;
+            RS_Vector last_pt(data.vertlist[i]->x, data.vertlist[i]->y);
+            double alpha = atan(next_bulge)*4;
+            RS_Vector middle_pt((last_pt + previous_pt)/2.0);
+            double dist = last_pt.distanceTo(previous_pt)/2.0;
+            double angle = last_pt.angleTo(previous_pt);
+            double radius = fabs(dist / sin(alpha/2));
+            double h = sqrt(fabs(radius*radius - dist*dist));
+            if(next_bulge >0) angle-=M_PI_2;
+            else angle+=M_PI_2;
+            if(fabs(alpha)>M_PI) h *= -1;
+            RS_Vector center = RS_Vector::polar(h, angle);
+            center += middle_pt;
+            double staangle, endangle;
+            if(next_bulge <0) {
+                staangle = center.angleTo(last_pt);
+                endangle = center.angleTo(previous_pt);
+            } else {
+                staangle = center.angleTo(previous_pt);
+                endangle = center.angleTo(last_pt);
+            }
+
+            DRW_Arc new_arc;
+            new_arc.layer = data.layer;
+            new_arc.basePoint.x = center.x;
+            new_arc.basePoint.y = center.y;
+            new_arc.radious = radius;
+            new_arc.staangle = staangle;
+            new_arc.endangle = endangle;
+            addArc(new_arc);
+            previous_pt = RS_Vector(data.vertlist[i]->x, data.vertlist[i]->y);
         }
         next_bulge = data.vertlist[i]->bulge;
     }
@@ -266,11 +302,9 @@ void dxf_iface::addPolyline(const DRW_Polyline& data) {
         // std::cout << data.vertlist[i]->basePoint.x << " " << data.vertlist[i]->basePoint.y << std::endl;
         working_path.lineTo(data.vertlist[i]->basePoint.x, data.vertlist[i]->basePoint.y);
     }
-    // bool closed = data.flags & (1 << 0);
-    // std::cout << "closed = " << closed << std::endl;
-    // if(closed) {
-    //     working_path.lineTo(data.vertlist[0]->basePoint.x, data.vertlist[0]->basePoint.y);
-    // }
+    if(data.flags&0x1) {
+        working_path.lineTo(data.vertlist[0]->basePoint.x, data.vertlist[0]->basePoint.y);
+    }
     ShapePtr new_shape = std::make_shared<PathShape>(working_path);
     target_layer->addShape(new_shape);
     QMap<QString,QList<ShapePtr> >::iterator block_shape = block2shape_map_.find(current_block_);

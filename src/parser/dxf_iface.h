@@ -164,7 +164,6 @@ private:
         QPointF base_pt;
     };
     
-    LayerPtr layer_ptr_ = nullptr;
     QList<LayerPtr> dxf_layers_;
     QString current_block_;
     QMap<QString, QList<ShapePtr> > block2shape_map_;
