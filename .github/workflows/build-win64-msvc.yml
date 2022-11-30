@@ -6,7 +6,15 @@ on:
       - "w*.*.*"
 jobs:
   setup-win-mingw-build-environment:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+          #- { runner: windows-latest, build: 'cmake', dist: false }
+          - { runner: localhost-win10, build: 'cmake', dist: false}
+
+    name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
+
     env:
       VCPKG_INSTALLATION_ROOT: 'C:\vcpkg'
 
@@ -15,6 +23,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Conan
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
         id: conan
         uses: turtlebrowser/get-conan@main
 
@@ -25,7 +34,8 @@ jobs:
 
       # vcpkg cache
       - name: Restore vcpkg and its artifacts.
-        uses: actions/cache@v2
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        uses: actions/cache@v3
         id: vcpkg-cache
         with:
           path: |
@@ -37,11 +47,12 @@ jobs:
             ${{ hashFiles( 'vcpkg.json' ) }}-cache-key-v1
       
       - name: install opencv (with vcpkg)
-        if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           vcpkg install opencv:x64-windows
 
       - name: Install Qt5
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
         #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           #cd ${{ github.workspace }}
@@ -56,14 +67,12 @@ jobs:
           mkdir build
           cd ${{ env.VCPKG_INSTALLATION_ROOT }}
           ls 
-          cd packages
-          ls
-          cd opencv4_x64-windows
-          ls
-          cd share
-          ls
+          cd installed
+          ls include
+          ls bin
 
       - name: Setup msys2
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
         uses: msys2/setup-msys2@v2
         with:
           install: >-
@@ -95,27 +104,40 @@ jobs:
           cd build
           conan install .. --build=missing
           ls
-            
+          
       - name: CMake
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\installed\x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+      - name: CMake
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        run: |
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
 
       - name: Build
         run: |
           cmake --build build --config RelWithDebInfo --parallel
           cd build
           ls
-          cd bin
-          ls
+          ls bin
+          ls lib
+          
       - name: Deploy
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
         run: |
           ${{ github.workspace }}/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
           cd build
           ls
-          cd bin
+          ls bin
+      - name: Deploy
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        run: |
+          C:/Dev/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
+          cd build
           ls
+          ls bin
       #- name: Deploy
       #  shell: msys2 {0}
       #  run: |

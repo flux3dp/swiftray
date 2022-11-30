@@ -1,0 +1,11 @@
+{
+  "name": "swiftray-dependencies",
+  "version-string": "1.0.0",
+  "dependencies": [
+    {
+      "name": "opencv",
+      "platform": "windows",
+      "version>=": "4.3.0"
+    }
+  ]
+}
