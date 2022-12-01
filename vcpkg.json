@@ -4,8 +4,15 @@
   "dependencies": [
     {
       "name": "opencv",
+      "platform": "windows"
+    },
+    "python3",
+    "cairo",
+    "glib",
+    {
+      "name": "poppler",
       "platform": "windows",
-      "version>=": "4.3.0"
+      "features": [ "cairo", "curl", "glib", "zlib" ]
     }
   ]
 }

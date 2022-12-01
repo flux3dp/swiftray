@@ -188,13 +188,39 @@ if (DEFINED ENABLE_SENTRY)
 endif()
 
 
+# ====================== External libraries =======================
+# Qt
+target_link_libraries(${PROJECT_NAME} Qt::Core)
+target_link_libraries(${PROJECT_NAME} Qt::Quick)
+target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
+target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
+target_link_libraries(${PROJECT_NAME} Qt::Gui)
+target_link_libraries(${PROJECT_NAME} Qt::Svg)
+target_link_libraries(${PROJECT_NAME} Qt::Widgets)
+target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
+
+
+
+# OpenCV
+find_package(OpenCV REQUIRED)
+include_directories(
+  ${OpenCV_INCLUDE_DIRS}
+)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} opencv_core)
+target_link_libraries(${PROJECT_NAME} opencv_imgproc)
+
 # Cairo
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/include
-  )
+  find_path(CAIRO_INCLUDE_DIR 
+    NAMES cairo.h 
+    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/cairo
+    REQUIRED)
+  find_library(CAIRO_LIBRARY cairo REQUIRED)
+  include_directories(${CAIRO_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME}
-    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/lib/x64/cairo.lib
+    ${CAIRO_LIBRARY}
   )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
@@ -211,15 +237,17 @@ endif()
 
 # GLIB
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  # Fulfill by Conan package manager
-  #target_include_directories(${PROJECT_NAME} PRIVATE
-  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/include/glib-2.0
-  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0/include
-  #)
-  #target_link_libraries(${PROJECT_NAME}
-  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0.lib
-  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/gobject-2.0.lib
-  #)
+  find_path(GLIB_INCLUDE_DIR 
+    NAMES glib.h 
+    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/glib-2.0
+    REQUIRED)
+  find_library(GLIB_LIBRARY glib-2.0 REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${GLIB_INCLUDE_DIR}
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${GLIB_LIBRARY}
+  )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
     /usr/local/opt/glib/include/glib-2.0
@@ -239,16 +267,21 @@ endif()
 
 # Poppler
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  find_path(POPPLER_INCLUDE_DIR 
+    NAMES glib/poppler.h
+    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/poppler
+    REQUIRED)
+  find_library(POPPLER_LIBRARY poppler-glib REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_SOURCE_DIR}/third_party/poppler/poppler-22.04.0/Library/include/poppler/glib
+    ${POPPLER_INCLUDE_DIR}
   )
   target_link_libraries(${PROJECT_NAME}
-    ${CMAKE_SOURCE_DIR}/third_party/poppler/poppler-22.04.0/Library/lib/poppler-glib.lib
+    ${POPPLER_LIBRARY}
   )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
-    /usr/local/opt/poppler/include/poppler/glib
-    #/opt/homebrew/opt/poppler/include/poppler/glib
+    /usr/local/opt/poppler/include/poppler
+    #/opt/homebrew/opt/poppler/include/poppler
   )
   target_link_libraries(${PROJECT_NAME} 
     /usr/local/opt/poppler/lib/libpoppler-glib.dylib
@@ -258,36 +291,6 @@ else()
   # TODO: Linux
 endif()
 
-
-# ====================== External libraries =======================
-# Qt
-target_link_libraries(${PROJECT_NAME} Qt::Core)
-target_link_libraries(${PROJECT_NAME} Qt::Quick)
-target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
-target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
-target_link_libraries(${PROJECT_NAME} Qt::Gui)
-target_link_libraries(${PROJECT_NAME} Qt::Svg)
-target_link_libraries(${PROJECT_NAME} Qt::Widgets)
-target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
-
-
-
-# OpenCV
-#if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-#  if(MSVC) 
-#    set(OpenCV_DIR "C:/Dev/OpenCV/4_5_5_msvc/build")
-#  else()
-#    set(OpenCV_DIR "C:/Dev/opencv_452_mingw")
-#  endif()
-#endif()
-find_package(OpenCV REQUIRED)
-include_directories(
-  ${OpenCV_INCLUDE_DIRS}
-)
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
-target_link_libraries(${PROJECT_NAME} opencv_core)
-target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 
 # Dependency Packages handled by Conan package manager
 # Boost, LibXml2, glib, zlib
