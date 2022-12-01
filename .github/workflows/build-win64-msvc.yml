@@ -76,7 +76,7 @@ jobs:
           dir bin
 
       - name: Setup msys2
-        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        #if: ${{matrix.cfg.runner != 'localhost-win10' }}
         uses: msys2/setup-msys2@v2
         with:
           install: >-
