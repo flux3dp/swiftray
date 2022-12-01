@@ -13,7 +13,6 @@
 #include <iostream>
 #include <algorithm>
 #include <QtMath>
-#include "rs_handle/rs_vector.h"
 #include "dxf_iface.h"
 #include "libdxfrw/libdwgr.h"
 #include "libdxfrw/libdxfrw.h"
@@ -214,7 +213,6 @@ void dxf_iface::addCircle(const DRW_Circle& data) {
 }
 
 void dxf_iface::addLWPolyline(const DRW_LWPolyline& data) {
-    // std::cout << __func__ << " " << __LINE__ << std::endl;
     if (data.vertlist.empty())
         return;
     QString layName = toNativeString(QString::fromUtf8(data.layer.c_str()));
@@ -231,42 +229,46 @@ void dxf_iface::addLWPolyline(const DRW_LWPolyline& data) {
     }
     QPainterPath working_path;
     working_path.moveTo(data.vertlist[0]->x, data.vertlist[0]->y);
-    RS_Vector previous_pt(data.vertlist[0]->x, data.vertlist[0]->y);
+    QPointF previous_pt(data.vertlist[0]->x, data.vertlist[0]->y);
     double next_bulge = data.vertlist[1]->bulge;
     for(unsigned int i = 1; i < data.vertlist.size(); ++i) {
         if(fabs(next_bulge) < 1.0e-10) {
             working_path.lineTo(data.vertlist[i]->x, data.vertlist[i]->y);
         } else { // create arc for the polyline:
-            RS_Vector last_pt(data.vertlist[i]->x, data.vertlist[i]->y);
+            QPointF last_pt(data.vertlist[i]->x, data.vertlist[i]->y);
             double alpha = atan(next_bulge)*4;
-            RS_Vector middle_pt((last_pt + previous_pt)/2.0);
-            double dist = last_pt.distanceTo(previous_pt)/2.0;
-            double angle = last_pt.angleTo(previous_pt);
+            QPointF middle_pt((last_pt + previous_pt)/2.0);
+            double dist = sqrt(pow(last_pt.x()-previous_pt.x(),2) + 
+                                pow(last_pt.y()-previous_pt.y(),2))/2;
+            double angle = atan2((previous_pt-last_pt).y(), (previous_pt-last_pt).x());
+            angle = fmod(M_PI + remainder(angle - M_PI, 2*M_PI), 2*M_PI);
             double radius = fabs(dist / sin(alpha/2));
             double h = sqrt(fabs(radius*radius - dist*dist));
             if(next_bulge >0) angle-=M_PI_2;
             else angle+=M_PI_2;
             if(fabs(alpha)>M_PI) h *= -1;
-            RS_Vector center = RS_Vector::polar(h, angle);
+            QPointF center = QPointF(h*cos(angle), h*sin(angle));
             center += middle_pt;
             double staangle, endangle;
             if(next_bulge <0) {
-                staangle = center.angleTo(last_pt);
-                endangle = center.angleTo(previous_pt);
+                staangle = atan2((last_pt-center).y(), (last_pt-center).x());
+                endangle = atan2((previous_pt-center).y(), (previous_pt-center).x());
             } else {
-                staangle = center.angleTo(previous_pt);
-                endangle = center.angleTo(last_pt);
+                staangle = atan2((previous_pt-center).y(), (previous_pt-center).x());
+                endangle = atan2((last_pt-center).y(), (last_pt-center).x());
             }
+            staangle = fmod(M_PI + remainder(staangle - M_PI, 2*M_PI), 2*M_PI);
+            endangle = fmod(M_PI + remainder(endangle - M_PI, 2*M_PI), 2*M_PI);
 
             DRW_Arc new_arc;
             new_arc.layer = data.layer;
-            new_arc.basePoint.x = center.x;
-            new_arc.basePoint.y = center.y;
+            new_arc.basePoint.x = center.x();
+            new_arc.basePoint.y = center.y();
             new_arc.radious = radius;
             new_arc.staangle = staangle;
             new_arc.endangle = endangle;
             addArc(new_arc);
-            previous_pt = RS_Vector(data.vertlist[i]->x, data.vertlist[i]->y);
+            previous_pt = QPointF(data.vertlist[i]->x, data.vertlist[i]->y);
         }
         next_bulge = data.vertlist[i]->bulge;
     }
