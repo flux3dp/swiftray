@@ -70,7 +70,9 @@ jobs:
           cd ${{ env.VCPKG_INSTALLATION_ROOT }}
           dir 
           cd installed
+          cd x64-windows
           dir include
+          dir lib
           dir bin
 
       - name: Setup msys2
