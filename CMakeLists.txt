@@ -235,18 +235,28 @@ else()
   # TODO: Linux
 endif()
 
-# GLIB
+# GLIB and GOBJECT
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   find_path(GLIB_INCLUDE_DIR 
     NAMES glib.h 
     PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/glib-2.0
     REQUIRED)
+  find_path(GLIBCONFIG_INCLUDE_DIR
+    NAMES glibconfig.h
+    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/glib-2.0/include
+    REQUIRED
+  )
   find_library(GLIB_LIBRARY glib-2.0 REQUIRED)
+  find_library(GOBJECT_LIBRARY gobject-2.0 REQUIRED)
   target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLIB_INCLUDE_DIR}
   )
+  include_directories(${GLIBCONFIG_INCLUDE_DIR})
   target_link_libraries(${PROJECT_NAME}
     ${GLIB_LIBRARY}
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${GOBJECT_LIBRARY}
   )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_include_directories(${PROJECT_NAME} PRIVATE
@@ -295,8 +305,8 @@ endif()
 # Dependency Packages handled by Conan package manager
 # Boost, LibXml2, glib, zlib
 target_link_libraries(${PROJECT_NAME} 
-  ${CONAN_LIBS_GLIB}
   ${CONAN_LIBS_BOOST}
+  ${CONAN_LIBS_LIBICONV}
   ${CONAN_LIBS_LIBXML2}
   ${CONAN_LIBS_ZLIB}
 )
