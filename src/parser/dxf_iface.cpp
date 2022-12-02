@@ -25,11 +25,7 @@ bool dxf_iface::printText(Document *doc, QString fileI, dxf_data *fData, QList<L
     bool success = false;
     if (fileI.toLower().endsWith(".dxf")){
         //loads dxf
-#ifdef Q_OS_WIN
-        dxfRW* dxf = new dxfRW(fileI.toStdWString());
-#else
-        dxfRW* dxf = new dxfRW(fileI.toStdString());
-#endif
+        dxfRW* dxf = new dxfRW(fileI.toStdString().c_str(), fileI.length());
         success = dxf->read(this, false);
         delete dxf;
     } else if (fileI.toLower().endsWith(".dwg")){

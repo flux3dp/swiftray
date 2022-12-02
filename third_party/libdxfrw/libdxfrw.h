@@ -27,8 +27,7 @@ class dxfWriter;
 
 class dxfRW {
 public:
-    dxfRW(std::wstring name);
-    dxfRW(std::string name);
+    dxfRW(const char* name, size_t size);
     ~dxfRW();
     void setDebug(DRW::DebugLevel lvl);
     /// reads the file specified in constructor
@@ -135,8 +134,7 @@ private:
 private:
     DRW::Version version;
     DRW::error error {DRW::BAD_NONE};
-    std::wstring wfileName;
-    std::string fileName;
+    char* fileName;
     std::string codePage;
     bool binFile;
     dxfReader *reader;
