@@ -303,7 +303,7 @@ endif()
 
 
 # Dependency Packages handled by Conan package manager
-# Boost, LibXml2, glib, zlib
+# Boost, LibXml2, libiconv
 target_link_libraries(${PROJECT_NAME} 
   ${CONAN_LIBS_BOOST}
   ${CONAN_LIBS_LIBICONV}

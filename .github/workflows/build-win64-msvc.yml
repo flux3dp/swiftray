@@ -76,7 +76,6 @@ jobs:
           dir bin
 
       - name: Setup msys2
-        #if: ${{matrix.cfg.runner != 'localhost-win10' }}
         uses: msys2/setup-msys2@v2
         with:
           install: >-
@@ -115,12 +114,12 @@ jobs:
         run: |
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
           #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}}  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
       - name: CMake
         if: ${{matrix.cfg.runner == 'localhost-win10' }}
         shell: cmd
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
 
       - name: Build
         shell: cmd
@@ -141,8 +140,7 @@ jobs:
         run: |
           C:/Dev/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
           cd build
-          ls
-          ls bin
+          dir bin
       #- name: Deploy
       #  shell: msys2 {0}
       #  run: |
