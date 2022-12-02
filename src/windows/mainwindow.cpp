@@ -557,7 +557,7 @@ void MainWindow::openFile() {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
-    if (file_name.endsWith(".bb")) {
+    if (file_name.toLower().endsWith(".bb")) {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
@@ -567,12 +567,12 @@ void MainWindow::openFile() {
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
-    } else if (file_name.endsWith(".svg")) {
+    } else if (file_name.toLower().endsWith(".svg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
-    } else if (file_name.endsWith(".dxf")) {
+    } else if (file_name.toLower().endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
-    } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+    } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
       QTemporaryDir dir;
       Parser::PDF2SVG pdf_converter;
       QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
@@ -747,11 +747,11 @@ void MainWindow::openImageFile() {
   QFileInfo file_info{file_name};
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
-  if (file_name.endsWith(".svg")) {
+  if (file_name.toLower().endsWith(".svg")) {
     canvas_->loadSVG(file_name);
-  } else if (file_name.endsWith(".dxf")) {
+  } else if (file_name.toLower().endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
-  } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+  } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
     QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
