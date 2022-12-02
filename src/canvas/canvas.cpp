@@ -155,7 +155,7 @@ void Canvas::loadDXF(QString file_name) {
   dxf_data dxf_data;
   dxf_iface dxf_interface;
   QList<LayerPtr> dxf_layers;
-  bool success = dxf_interface.printText(&document(), file_name.toStdString(), &dxf_data, &dxf_layers);
+  bool success = dxf_interface.printText(&document(), file_name, &dxf_data, &dxf_layers);
   if (success) {
     QList<ShapePtr> all_shapes;
     for (auto &layer : dxf_layers) {

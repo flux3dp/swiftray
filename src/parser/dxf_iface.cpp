@@ -21,20 +21,16 @@
 dxf_iface::dxf_iface() {
 }
 
-bool dxf_iface::printText(Document *doc, const std::string& fileI, dxf_data *fData, QList<LayerPtr> *svg_layers) {
-    unsigned int found = fileI.find_last_of(".");
-    std::string fileExt = fileI.substr(found+1);
-    std::transform(fileExt.begin(), fileExt.end(),fileExt.begin(), ::toupper);
-
+bool dxf_iface::printText(Document *doc, QString fileI, dxf_data *fData, QList<LayerPtr> *svg_layers) {
     bool success = false;
-    if (fileExt == "DXF"){
+    if (fileI.toLower().endsWith(".dxf")){
         //loads dxf
-        dxfRW* dxf = new dxfRW(fileI.c_str());
+        dxfRW* dxf = new dxfRW(fileI.toStdString().c_str());
         success = dxf->read(this, false);
         delete dxf;
-    } else if (fileExt == "DWG"){
+    } else if (fileI.toLower().endsWith(".dwg")){
         //loads dwg
-        dwgR* dwg = new dwgR(fileI.c_str());
+        dwgR* dwg = new dwgR(fileI.toStdString().c_str());
         success = dwg->read(this, false);
         delete dwg;
     }

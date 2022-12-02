@@ -26,7 +26,7 @@ class dxf_iface : public DRW_Interface {
 public:
     dxf_iface();
     ~dxf_iface(){}
-    bool printText(Document *doc, const std::string& fileI, dxf_data *fData, QList<LayerPtr> *svg_layers);
+    bool printText(Document *doc, QString fileI, dxf_data *fData, QList<LayerPtr> *svg_layers);
 
 //reimplement virtual DRW_Interface functions
 
