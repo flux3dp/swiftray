@@ -11,7 +11,7 @@ jobs:
       matrix:
         cfg:
           #- { runner: windows-latest, build: 'cmake', dist: false }
-          - { runner: localhost-win10, build: 'cmake', dist: false}
+          - { runner: localhost-win10, build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
 
@@ -141,6 +141,27 @@ jobs:
           C:/Dev/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
           cd build
           dir bin
+
+      - name: Setup Sentry CLI
+        #if: ${{ matrix.cfg.dist }}
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        shell: cmd
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        with:
+          version: latest # optional if 'latest'
+          token: ${{ SECRETS.SENTRY_TOKEN }} # from GitHub secrets
+          organization: flux3dp
+          project: swiftray
+
+      - name: Upload debug symbol to sentry
+        #if: ${{ matrix.cfg.dist }}
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        shell: cmd
+        run: |
+          cd build
+          cd bin
+          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.pdb
+
       #- name: Deploy
       #  shell: msys2 {0}
       #  run: |
