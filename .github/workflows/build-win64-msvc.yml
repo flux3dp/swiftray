@@ -145,7 +145,6 @@ jobs:
       - name: Setup Sentry CLI
         #if: ${{ matrix.cfg.dist }}
         if: ${{matrix.cfg.runner == 'localhost-win10' }}
-        shell: cmd
         uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
           version: latest # optional if 'latest'
