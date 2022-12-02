@@ -13,6 +13,7 @@
       "name": "poppler",
       "platform": "windows",
       "features": [ "cairo", "curl", "glib", "zlib" ]
-    }
+    },
+    "sentry-native"
   ]
 }

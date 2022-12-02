@@ -36,9 +36,6 @@ get_filename_component(SRC_DIR "src" REALPATH)
 if (DEFINED ENABLE_SENTRY)
   message(STATUS "Sentry enabled")
   add_definitions(-DENABLE_SENTRY=${ENABLE_SENTRY})
-  include_directories(
-    third_party/sentry-native/install/include
-  )
 endif()
 
 
@@ -175,10 +172,19 @@ target_link_libraries(${PROJECT_NAME} libdxfrw)
 # Sentry
 if (DEFINED ENABLE_SENTRY)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_link_libraries(${PROJECT_NAME}
-      ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/sentry.lib
+    find_package(sentry CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME} 
+      sentry::sentry
     )
+    add_custom_command(
+        TARGET ${PROJECT_NAME}  POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools//sentry-native/crashpad_handler.exe
+                ${CMAKE_BINARY_DIR}/bin/crashpad_handler.exe)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    include_directories(
+      third_party/sentry-native/install/include
+    )
     target_link_libraries(${PROJECT_NAME} 
       ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
     )
