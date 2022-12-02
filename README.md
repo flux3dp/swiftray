@@ -71,6 +71,16 @@ See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
 
 ### Build libpotrace from source and handle it with Conan (for Windows)
 in msys2
+install the following packages first
+```
+pacman -S base-devel
+pacman -S mingw-w64-x86_64-gcc
+pacman -S mingw-w64-x86_64-autotools
+pacman -S mingw-w64-x86_64-make
+pacman -S mingw-w64-x86_64-zlib
+pacman -S mingw-w64-x86_64-python-conan
+```
+then
 ```
 $ cd third_party/libpotrace
 $ curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
