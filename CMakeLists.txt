@@ -50,8 +50,10 @@ include_directories(
 )
 
 # Conan
-include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-conan_basic_setup()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+  conan_basic_setup()
+endif()
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -308,17 +310,44 @@ else()
 endif()
 
 
-# Dependency Packages handled by Conan package manager
 # Boost, LibXml2, libiconv
-target_link_libraries(${PROJECT_NAME} 
-  ${CONAN_LIBS_BOOST}
-  ${CONAN_LIBS_LIBICONV}
-  ${CONAN_LIBS_LIBXML2}
-  ${CONAN_LIBS_ZLIB}
-)
-target_include_directories(${PROJECT_NAME} PRIVATE
-  ${CONAN_INCLUDE_DIRES}
-)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # Dependency Packages handled by Conan package manager
+  target_link_libraries(${PROJECT_NAME} 
+    ${CONAN_LIBS_BOOST}
+    ${CONAN_LIBS_LIBICONV}
+    ${CONAN_LIBS_LIBXML2}
+    ${CONAN_LIBS_ZLIB}
+  )
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CONAN_INCLUDE_DIRES}
+  )
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Boost
+  find_package(Boost REQUIRED COMPONENTS thread system)
+  if(Boost_FOUND)
+    message(STATUS "Found Boost")
+    include_directories(${Boost_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
+    target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
+  else()
+    message(FATAL_ERROR "Couldn't find boost")
+  endif()
+  # LibXml2 & LibIconv
+  find_package(LibXml2 REQUIRED)
+  if(LibXml2_FOUND)
+    message(STATUS "Found LibXml2")
+    include_directories(
+      ${LIBXML2_INCLUDE_DIR}
+      ${LIBXML2_INCLUDE_DIRS}
+      ${ICONV_INCLUDE_DIR}
+    )
+    target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
+  else()
+    message(FATAL_ERROR "Couldn't find LibXml2")
+  endif()
+endif()
 
 
 # ====================== tests =======================
