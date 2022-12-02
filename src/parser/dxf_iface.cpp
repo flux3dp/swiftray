@@ -25,7 +25,11 @@ bool dxf_iface::printText(Document *doc, QString fileI, dxf_data *fData, QList<L
     bool success = false;
     if (fileI.toLower().endsWith(".dxf")){
         //loads dxf
-        dxfRW* dxf = new dxfRW(fileI.toStdString().c_str());
+#ifdef UNICODE
+        dxfRW* dxf = new dxfRW(fileI.toStdWString());
+#else
+        dxfRW* dxf = new dxfRW(fileI.toStdString());
+#endif
         success = dxf->read(this, false);
         delete dxf;
     } else if (fileI.toLower().endsWith(".dwg")){

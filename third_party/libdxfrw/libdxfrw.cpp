@@ -33,7 +33,15 @@
     secObjects
 };*/
 
-dxfRW::dxfRW(const char* name){
+dxfRW::dxfRW(std::wstring name){
+    DRW_DBGSL(DRW_dbg::Level::None);
+    wfileName = name;
+    reader = NULL;
+    writer = NULL;
+    applyExt = false;
+    elParts = 128; //parts number when convert ellipse to polyline
+}
+dxfRW::dxfRW(std::string name){
     DRW_DBGSL(DRW_dbg::Level::None);
     fileName = name;
     reader = NULL;
@@ -70,7 +78,13 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
         return setError(DRW::BAD_UNKNOWN);
     }
     DRW_DBG("dxfRW::read 1def\n");
+#ifdef UNICODE
+    filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
+    std::cout << __func__ << " " << __LINE__ << " with name = " << wfileName << std::endl;
+#else
     filestr.open (fileName.c_str(), std::ios_base::in | std::ios::binary);
+    std::cout << __func__ << " " << __LINE__ << " with name = " << fileName << std::endl;
+#endif
     if (!filestr.is_open()
         || !filestr.good()) {
         return setError(DRW::BAD_OPEN);
@@ -85,7 +99,11 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
     iface = interface_;
     DRW_DBG("dxfRW::read 2\n");
     if (strcmp(line, line2) == 0) {
+#ifdef UNICODE
+        filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
+#else
         filestr.open (fileName.c_str(), std::ios_base::in | std::ios::binary);
+#endif
         binFile = true;
         //skip sentinel
         filestr.seekg (22, std::ios::beg);
@@ -93,7 +111,11 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
         DRW_DBG("dxfRW::read binary file\n");
     } else {
         binFile = false;
+#ifdef UNICODE
+        filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
+#else
         filestr.open (fileName.c_str(), std::ios_base::in);
+#endif
         reader = new dxfReaderAscii(&filestr);
     }
 
