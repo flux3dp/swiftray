@@ -36,14 +36,16 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - poppler
 - glib
 - cairo
+
+NOTE: For Mac M1, you need to build Qt 5.15
+
+See process [here](https://github.com/bobwolff68/fritzing-app/wiki/Building-Qt-5.15-for-Mac-M1)
+
 ### Tools
 - [msys2 (for Windows)](https://www.msys2.org/)
 - [vcpkg dependency manager (for Windows)](https://vcpkg.io/en/getting-started.html)
 - [Conan package manager (for Windows)](https://conan.io/downloads.html)
 
-NOTE: For Mac M1, you need to build Qt 5.15
-
-See process [here](https://github.com/bobwolff68/fritzing-app/wiki/Building-Qt-5.15-for-Mac-M1)
 
 ## Setup
 ### Clone the repo and checkout submodules
