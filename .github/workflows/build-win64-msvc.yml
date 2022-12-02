@@ -1,9 +1,16 @@
-name: build-swiftray-win64-installer
+name: build-swiftray-win64-msvc
 on: 
-  #workflow_dispatch
-  push:
-    tags:
-      - "w*.*.*"
+  workflow_dispatch:
+  inputs:
+    name:
+      Description: 'Build message'
+      default: 'Hello'
+      required: false
+  #push:
+  #  tags:
+  #    - "v*.*.*"
+
+
 jobs:
   setup-win-mingw-build-environment:
     strategy:
@@ -143,8 +150,7 @@ jobs:
           dir bin
 
       - name: Setup Sentry CLI
-        #if: ${{ matrix.cfg.dist }}
-        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        if: ${{ matrix.cfg.dist }}
         uses: mathieu-bour/setup-sentry-cli@1.2.0
         with:
           version: latest # optional if 'latest'
@@ -153,8 +159,7 @@ jobs:
           project: swiftray
 
       - name: Upload debug symbol to sentry
-        #if: ${{ matrix.cfg.dist }}
-        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        if: ${{ matrix.cfg.dist }}
         shell: cmd
         run: |
           cd build
