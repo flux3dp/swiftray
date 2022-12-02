@@ -78,12 +78,10 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
         return setError(DRW::BAD_UNKNOWN);
     }
     DRW_DBG("dxfRW::read 1def\n");
-#ifdef UNICODE
+#ifdef Q_OS_WIN
     filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
-    std::cout << __func__ << " " << __LINE__ << " with name = " << wfileName << std::endl;
 #else
     filestr.open (fileName.c_str(), std::ios_base::in | std::ios::binary);
-    std::cout << __func__ << " " << __LINE__ << " with name = " << fileName << std::endl;
 #endif
     if (!filestr.is_open()
         || !filestr.good()) {
@@ -99,7 +97,7 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
     iface = interface_;
     DRW_DBG("dxfRW::read 2\n");
     if (strcmp(line, line2) == 0) {
-#ifdef UNICODE
+#ifdef Q_OS_WIN
         filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
 #else
         filestr.open (fileName.c_str(), std::ios_base::in | std::ios::binary);
@@ -111,7 +109,7 @@ bool dxfRW::read(DRW_Interface *interface_, bool ext){
         DRW_DBG("dxfRW::read binary file\n");
     } else {
         binFile = false;
-#ifdef UNICODE
+#ifdef Q_OS_WIN
         filestr.open (wfileName.c_str(), std::ios_base::in | std::ios::binary);
 #else
         filestr.open (fileName.c_str(), std::ios_base::in);

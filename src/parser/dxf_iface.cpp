@@ -25,7 +25,7 @@ bool dxf_iface::printText(Document *doc, QString fileI, dxf_data *fData, QList<L
     bool success = false;
     if (fileI.toLower().endsWith(".dxf")){
         //loads dxf
-#ifdef UNICODE
+#ifdef Q_OS_WIN
         dxfRW* dxf = new dxfRW(fileI.toStdWString());
 #else
         dxfRW* dxf = new dxfRW(fileI.toStdString());
