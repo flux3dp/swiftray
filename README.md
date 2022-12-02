@@ -24,7 +24,7 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 ## Requirements
 
 - Compilers must support C++17 standards.
-- Boost 1.7.0
+- Boost
 - Qt Framework 5.15
 - Qt Creator
 - Qt Framework and Creator can be installed via [online installer](https://www.qt.io/download-open-source)
@@ -36,6 +36,10 @@ Swiftray is a free and open-sourced software for grbl-based laser cutters and en
 - poppler
 - glib
 - cairo
+### Tools
+- msys2 (for Windows)
+- vcpkg dependency manager (for Windows)
+- Conan package manager (for Windows)
 
 NOTE: For Mac M1, you need to build Qt 5.15
 
@@ -49,7 +53,7 @@ cd swiftray
 git submodule update --init --recursive
 ```
 
-### Build sentry-native
+### Build sentry-native from source
 ```
 cd third_party/sentry-native
 cmake -B build -S . \
@@ -61,21 +65,42 @@ cmake --build build --config RelWithDebInfo --parallel
 cmake --install build --prefix install
 ```
 NOTE: For Windows MSVC(2019), you need to resolve the source code encoding issue of crashpad first.
+      Alternatively, you can simply install sentry-native with vcpkg
 
 See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
 
-
+### Build libpotrace from source and handle it with Conan (for Windows)
+in msys2
+```
+$ cd third_party/libpotrace
+$ curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+$ tar -xzvf potrace-1.16.tar.gz
+$ conan install . --build=missing
+$ conan build .
+$ conan create . user/testing
+```
 ## Building
 
 ### CMake
 
 This project uses CMake to build.
-
+For macOS
 ```bash
 $ mkdir build
 $ cd build
 $ cmake ..
 $ make -j12
+```
+
+For Windows
+```
+$ mkdir build
+$ cd build
+$ conan install .. --build=missing
+$ cd ..
+$ cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/msvc2019_64/lib/cmake
+$ cmake --build build --config RelWithDebInfo --parallel
+$ C:/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
 ```
 
 ### Qt Creator (QMake)
