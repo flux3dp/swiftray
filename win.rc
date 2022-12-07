@@ -1,9 +1,18 @@
 IDI_ICON1 ICON DISCARDABLE "resources/images/icon.ico"
 
+// Get updates from this appcast feed:
+FeedURL     APPCAST     {"https://swiftray.s3.ap-northeast-1.amazonaws.com/appcast.xml"}
+
+// And verify signature using DSA public key:
+DSAPub      DSAPEM      "resources/pem/dsa_pub.pem"
 
 1 VERSIONINFO
-    FILEVERSION    0,0,0,0
+    FILEVERSION    VERSION_MAJOR,VERSION_MINOR,VERSION_BUILD,0
     PRODUCTVERSION VERSION_MAJOR,VERSION_MINOR,VERSION_BUILD,VERSION_BETA
+    FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+    FILEFLAGS       0
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
 {
     BLOCK "StringFileInfo"
     {
@@ -11,7 +20,7 @@ IDI_ICON1 ICON DISCARDABLE "resources/images/icon.ico"
         {
             VALUE "CompanyName",        "FLUX Inc.\0"
             VALUE "FileDescription",    "Swiftray\0"
-            VALUE "FileVersion",        "0.0.0.0\0"
+            VALUE "FileVersion",        "1.0.0.0\0"
             VALUE "OriginalFilename",   "Swiftray.exe\0"
             VALUE "ProductName",        "Swiftray\0"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR

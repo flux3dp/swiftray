@@ -62,7 +62,11 @@ public:
 
   void show();
 
+  virtual void showEvent(QShowEvent *event);
+
 Q_SIGNALS:
+
+  void windowWasShown();
 
   void presetSettingsChanged();
 
@@ -92,6 +96,9 @@ public Q_SLOTS:
   void moveToCustomOrigin();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
   void testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
+
+  void initWinSparkle();
+  void checkForUpdates();
 
 private Q_SLOTS:
 

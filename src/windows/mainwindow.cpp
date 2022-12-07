@@ -37,6 +37,11 @@
 #include <QSerialPort>
 #include "parser/pdf2svg.h"
 
+#include <QResource>
+#ifdef Q_OS_WIN
+#include <winsparkle.h>
+#endif
+
 #include "ui_mainwindow.h"
 
 #define xstr(s) str(s)
@@ -68,6 +73,22 @@ void MainWindow::show() {
   if (layer_panel_) {
     layer_panel_->resizeEvent(nullptr);
   }
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    // showEvent() is called right *before* the window is shown, but WinSparkle
+    // requires that the main UI of the application is already shown when
+    // calling win_sparkle_init() (otherwise it could show its updates UI
+    // behind the app instead of at top). By using a helper signal, we delay
+    // calling initWinSparkle() until after the window was shown.
+    //
+    // Alternatively, one could achieve the same effect in arguably a simpler
+    // way, by initializing WinSparkle in main(), right after showing the main
+    // window. See https://github.com/vslavik/winsparkle/issues/41#issuecomment-70367197
+    // for a discussion of this.
+    emit windowWasShown();
 }
 
 void MainWindow::loadSettings() {
@@ -230,6 +251,34 @@ void MainWindow::loadStyles() {
     }
   }
   ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png")));
+}
+
+void MainWindow::initWinSparkle()
+{
+#ifdef Q_OS_WIN
+    // Setup updates feed. This must be done before win_sparkle_init(), but
+    // could be also, often more conveniently, done using a VERSIONINFO Windows
+    // resource. See the "psdk" example and its .rc file for an example of that
+    // (these calls wouldn't be needed then).
+    win_sparkle_set_appcast_url("https://swiftray.s3.ap-northeast-1.amazonaws.com/win/sparkle_cast.xml");
+    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", VER_PRODUCTVERSION_STR);
+
+    // Set DSA public key used to verify update's signature.
+    // This is na example how to provide it from external source (i.e. from Qt
+    // resource). See the "psdk" example and its .rc file for an example how to
+    // provide the key using Windows resource.
+    win_sparkle_set_dsa_pub_pem(reinterpret_cast<const char *>(QResource(":/pem/dsa_pub.pem").data()));
+
+    // Initialize the updater and possibly show some UI
+    win_sparkle_init();
+#endif
+}
+
+void MainWindow::checkForUpdates()
+{
+#ifdef Q_OS_WIN
+    win_sparkle_check_update_with_ui();
+#endif
 }
 
 /**
@@ -893,6 +942,9 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 }
 
 MainWindow::~MainWindow() {
+#ifdef Q_OS_WIN
+  win_sparkle_cleanup();
+#endif
   serial_port.close();
   delete ui;
 }
@@ -1054,6 +1106,9 @@ void MainWindow::loadWidgets() {
 }
 
 void MainWindow::registerEvents() {
+  connect(this, &MainWindow::windowWasShown, this, &MainWindow::initWinSparkle,
+          Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
+
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);

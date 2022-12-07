@@ -243,6 +243,7 @@ SOURCES += \
     third_party/libdxfrw/libdxfrw.cpp
 
 RESOURCES += qml.qrc
+RESOURCES += sparkle.qrc
 TRANSLATIONS += \
     i18n/zh-Hant-TW.ts \
     i18n/ja-JP.ts
