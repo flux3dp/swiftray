@@ -1172,7 +1172,7 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
-  connect(ui->actionCheck_Update, &QAction::triggered, this, &MainWindow::checkForUpdates);
+  connect(ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::checkForUpdates);
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
     machine_manager_->activateWindow();
