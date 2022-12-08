@@ -88,7 +88,7 @@ void MainWindow::showEvent(QShowEvent *event)
     // way, by initializing WinSparkle in main(), right after showing the main
     // window. See https://github.com/vslavik/winsparkle/issues/41#issuecomment-70367197
     // for a discussion of this.
-    emit windowWasShown();
+    Q_EMIT windowWasShown();
 }
 
 void MainWindow::loadSettings() {
@@ -261,13 +261,14 @@ void MainWindow::initWinSparkle()
     // resource. See the "psdk" example and its .rc file for an example of that
     // (these calls wouldn't be needed then).
     win_sparkle_set_appcast_url("https://swiftray.s3.ap-northeast-1.amazonaws.com/win/sparkle_cast.xml");
-    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", VER_PRODUCTVERSION_STR);
+    // NOTE: Use (L"" XXX) to convert XXX from char string to w_char string
+    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", L"" VER_PRODUCTVERSION_STR);
 
     // Set DSA public key used to verify update's signature.
     // This is na example how to provide it from external source (i.e. from Qt
     // resource). See the "psdk" example and its .rc file for an example how to
     // provide the key using Windows resource.
-    win_sparkle_set_dsa_pub_pem(reinterpret_cast<const char *>(QResource(":/pem/dsa_pub.pem").data()));
+    win_sparkle_set_dsa_pub_pem(reinterpret_cast<const char *>(QResource(":/resources/pem/dsa_pub.pem").data()));
 
     // Initialize the updater and possibly show some UI
     win_sparkle_init();
@@ -1171,6 +1172,7 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
+  connect(ui->actionCheck_Update, &QAction::triggered, this, &MainWindow::checkForUpdates);
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
     machine_manager_->activateWindow();

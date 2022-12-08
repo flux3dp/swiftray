@@ -352,6 +352,25 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   endif()
 endif()
 
+# Sparkle
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  find_path(SPARKLE_INCLUDE_DIR 
+    NAMES winsparkle.h
+    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/winsparkle
+    REQUIRED)
+  find_library(SPARKLE_LIBRARY WinSparkle REQUIRED)
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${SPARKLE_INCLUDE_DIR}
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${SPARKLE_LIBRARY}
+  )
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+else()
+  # TODO: Linux
+endif()
+
 
 # ====================== tests =======================
 #add_subdirectory(tests)

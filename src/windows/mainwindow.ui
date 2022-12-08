@@ -659,7 +659,7 @@
      <x>0</x>
      <y>0</y>
      <width>1250</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -741,6 +741,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="actionCheck_Update"/>
    </widget>
    <widget class="QMenu" name="menu_Window">
     <property name="title">
@@ -1564,6 +1565,11 @@
   <action name="actionConsole">
    <property name="text">
     <string>Console</string>
+   </property>
+  </action>
+  <action name="actionCheck_Update">
+   <property name="text">
+    <string>Check Update</string>
    </property>
   </action>
  </widget>

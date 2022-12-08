@@ -1,5 +1,7 @@
 IDI_ICON1 ICON DISCARDABLE "resources/images/icon.ico"
 
+#include <winver.h>
+
 // Get updates from this appcast feed:
 FeedURL     APPCAST     {"https://swiftray.s3.ap-northeast-1.amazonaws.com/appcast.xml"}
 
