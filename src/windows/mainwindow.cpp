@@ -260,9 +260,10 @@ void MainWindow::initWinSparkle()
     // could be also, often more conveniently, done using a VERSIONINFO Windows
     // resource. See the "psdk" example and its .rc file for an example of that
     // (these calls wouldn't be needed then).
-    win_sparkle_set_appcast_url("https://swiftray.s3.ap-northeast-1.amazonaws.com/win/sparkle_cast.xml");
-    // NOTE: Use (L"" XXX) to convert XXX from char string to w_char string
-    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", L"" VER_PRODUCTVERSION_STR);
+    win_sparkle_set_appcast_url("https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_sparkle_update_cast_windows.xml");
+    wchar_t version_string[15] = {0};
+    QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD).toWCharArray(version_string);
+    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", version_string);
 
     // Set DSA public key used to verify update's signature.
     // This is na example how to provide it from external source (i.e. from Qt
