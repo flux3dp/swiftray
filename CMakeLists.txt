@@ -7,22 +7,47 @@ set(VERSION_MINOR 1)
 set(VERSION_BUILD 1)
 set(VERSION_BETA  0) #x (e.g. 0,1,2,...)
 set(VERSION_SUFFIX "") # e.g. empty("") or "-beta.x"
-set(VER_PRODUCTVERSION_STR "1.1.1") # e.g. 1.x.x or 1.x.x-beta.x
+#set(VER_PRODUCTVERSION_STR "1.1.1") # e.g. 1.x.x or 1.x.x-beta.x
+set(VER_PRODUCTVERSION_STR "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}${VERSION_SUFFIX}")
+# Used in .rc files and manifests
+set(RC_VERSION ${VERSION_MAJOR},${VERSION_MINOR},${VERSION_BUILD},${VERSION_BETA})
+
+message(STATUS "Swiftray Ver: ${VER_PRODUCTVERSION_STR}, MaV: ${VERSION_MAJOR}, MiV: ${VERSION_MINOR}, BuildV: ${VERSION_BUILD}, EV: ${VERSION_SUFFIX}")
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
 #set(CMAKE_CXX_FLAGS "-O2")
 
-add_definitions(-DQT_NO_KEYWORDS)
+# Set a default build type if none was specified
+set(_default_build_type "RelWithDebInfo")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+	set(CMAKE_BUILD_TYPE "${_default_build_type}" CACHE STRING "Choose the type of build." FORCE)
+	# Set the possible values of build type for cmake-gui
+	set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+# Build type is ignored by multi-config generators.
+if (NOT CMAKE_CONFIGURATION_TYPES)
+	message(STATUS "Using \"${CMAKE_GENERATOR}\" generator and build type \"${CMAKE_BUILD_TYPE}\"")
+else()
+	message(STATUS "Using \"${CMAKE_GENERATOR}\" generator (multi-config)")
+endif()
+
 # Add additional FindXXX.cmake for the project
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
+
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   add_compile_definitions(WIN32_LEAN_AND_MEAN)
   if (MSVC)
+    add_compile_definitions(NTDDI_VERSION=NTDDI_WIN7)
+    add_compile_definitions(_WIN32_WINNT=_WIN32_WINNT_WIN7)
     add_compile_options(/bigobj)
   endif()
 endif()
@@ -31,29 +56,58 @@ if (MINGW)
   message(STATUS "Link ws2_32 for resolving __imp_WSAStartup and __imp_WSACleanup undefined issue")
 endif()
 
-get_filename_component(SRC_DIR "src" REALPATH)
+# Compiler specific
+if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  # MSVC 14.28 + C11 enables C5105, but older Windows SDKs aren't completely compatible.
+	# Windows SDK 10.0.17763.0 generates syntax errors with C11 enabled.
+	if (CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION VERSION_LESS 10.0.18362.0)
+		message(FATAL_ERROR "Windows SDK ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION} doesn't support C17. Please make sure you're using 10.0.20348.0 or later.")
+	endif()
+	# Windows SDK 10.0.18362.0 to 10.0.19041.685 generate warning C5105 with C11 enabled.
+	if(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION VERSION_LESS 10.0.20348.0)
+		message(WARNING "Windows SDK ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION} doesn't support C17. Please make sure you're using 10.0.20348.0 or later.")
+	endif()
+else() # ! MSVC
+endif()
+
+add_definitions(-DQT_NO_KEYWORDS)
 
 if (DEFINED ENABLE_SENTRY)
   message(STATUS "Sentry enabled")
   add_definitions(-DENABLE_SENTRY=${ENABLE_SENTRY})
 endif()
 
+get_filename_component(SRC_DIR "src" REALPATH)
+include_directories(
+  third_party
+  ${SRC_DIR}
+	${CMAKE_BINARY_DIR} # For cmake generated files, e.g. config.h
+)
 
+# ================= Package managers ====================
 message(STATUS
   "CMAKE_TOOLCHAIN_FILE:"
   ${CMAKE_TOOLCHAIN_FILE}
 )
 
-include_directories(
-  third_party
-  ${SRC_DIR}
-)
-
-# Conan
+# Conan Package Manager
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
   conan_basic_setup()
 endif()
+# ======================================================
+
+# ================= Generate source files with contents filled by cmake ====================
+set(ICON_PATH "${CMAKE_SOURCE_DIR}/resources/images/")
+configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
+set(CFG_OUT_FILES
+	resources/win.rc
+	packaging/macOS/MacOSXBundleInfo.plist
+)
+foreach( _cfg_file ${CFG_OUT_FILES} )
+	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
+endforeach()
+# ============================================================================================
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -76,26 +130,31 @@ include_directories(
 
 # Set Bundle properties and add executable target
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(APP_ICON_WINDOWS "${CMAKE_CURRENT_SOURCE_DIR}/win.rc")
+  set(WINDOWS_RC_FILES ${CMAKE_BINARY_DIR}/resources/win.rc)
   add_executable(${PROJECT_NAME} 
     WIN32 # Make it a GUI app instead of console app
     ${SRC_DIR}/main.cpp 
-    ${APP_ICON_WINDOWS})
+    ${WINDOWS_RC_FILES})
   #set_target_properties(${PROJECT_NAME} PROPERTIES
   #  WIN32 TRUE # Make it a GUI app instead of console app
   #)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_MACOSX_RPATH 1)
+  set(CMAKE_SKIP_RPATH TRUE)
+  #set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  #set(CMAKE_SKIP_INSTALL_RPATH TRUE)
+  #set(CMAKE_MACOSX_RPATH 1)
   #set(APP_HELPER_FILES
   #  ${CMAKE_CURRENT_SOURCE_DIR}/xxxxx/<helper tools>
   #)
   if (DEFINED ENABLE_SENTRY)
   set(APP_FRAMEWORK_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
+    ${SPARKLE_LIBRARIES}
     )
   endif()
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/pem/dsa_pub.pem
   )
   if (DEFINED ENABLE_SENTRY)
   set(APP_ADDITIONAL_EXEC_FILES
@@ -114,7 +173,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${APP_RESOURCE_FILES})
   set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE # Create macOS app bundle
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/MacOSXBundleInfo.plist.in
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/packaging/macOS/MacOSXBundleInfo.plist
     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_EXECUTABLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_ICON_FILE icon.icns
@@ -124,27 +183,40 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MACOSX_BUNDLE_BUNDLE_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}
     MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2022, FLUX Inc."
   )
+  #add_custom_command(
+  #  TARGET ${PROJECT_NAME} POST_BUILD 
+  #  COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
+  #          $<TARGET_FILE:${PROJECT_NAME}>
+  #)
 else()
     # Linux and others
     message(STATUS "Platform: Unknown")
 endif()
 # ====================== MACRO definition ======================
-target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MAJOR=${VERSION_MAJOR})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_MINOR=${VERSION_MINOR})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BUILD=${VERSION_BUILD})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_BETA=${VERSION_BETA})
-target_compile_definitions(${PROJECT_NAME} PUBLIC VERSION_SUFFIX=\"${VERSION_SUFFIX}\")
-target_compile_definitions(${PROJECT_NAME} PUBLIC VER_PRODUCTVERSION_STR=\"${VER_PRODUCTVERSION_STR}\\0\")
+
+if (ENABLE_SPARKLE)
+target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_SOFTWARE_UPDATE=1)
+endif ()
 
 # ====================== Subdirectory sources =======================
-target_sources(Swiftray PRIVATE
+set(SWIFTRAY_SRC
   ${SRC_DIR}/globals.cpp
   ${SRC_DIR}/layer.cpp
   ${SRC_DIR}/document.cpp
   ${SRC_DIR}/command.cpp
   ${SRC_DIR}/clipboard.cpp
+	)
+SET(SWIFTRAY_QRC
   "qml.qrc" # replaced qt5_add_resources() when CMAKE_AUTORCC is ON
   "sparkle.qrc" # 
+)
+set(swiftray_FILES
+  ${SWIFTRAY_SRC}
+  ${SWIFTRAY_QRC}
+)
+
+target_sources(Swiftray PRIVATE
+  ${swiftray_FILES}
 )
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_libraries(Swiftray "-framework AppKit")
@@ -154,6 +226,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif ()
 
 add_subdirectory(src/canvas)
+add_subdirectory(src/utils)
 add_subdirectory(src/common)
 add_subdirectory(src/windows)
 add_subdirectory(src/widgets)
@@ -217,8 +290,8 @@ find_package(OpenCV REQUIRED)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
+#target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBRARIES})
+#target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} opencv_core)
 target_link_libraries(${PROJECT_NAME} opencv_imgproc)
 
@@ -353,6 +426,8 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 # Sparkle
+if (ENABLE_SPARKLE)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   find_path(SPARKLE_INCLUDE_DIR 
     NAMES winsparkle.h
@@ -366,10 +441,29 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     ${SPARKLE_LIBRARY}
   )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
+  find_package(Sparkle)
+  if (SPARKLE_FOUND)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+      ${SPARKLE_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME} 
+      ${SPARKLE_LIBRARIES}
+    )
+    #message("SPARKLE_LIB: " ${SPARKLE_LIBRARY})
+    #add_custom_command(
+    #    TARGET ${PROJECT_NAME}  POST_BUILD
+    #    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    #            ${SPARKLE_LIBRARY}
+    #            ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks/Sparkle.framework
+    #)
+  else ()
+    message("Unable to find Sparkle")
+  endif ()
 else()
   # TODO: Linux
 endif()
+
+endif() # ENABLE_SPARKLE
 
 
 # ====================== tests =======================
@@ -391,4 +485,5 @@ endif()
 
 # ====================== bundle =======================
 # TODO: BundleUtilities and CPack
+
 

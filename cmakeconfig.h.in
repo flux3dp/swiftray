@@ -1,0 +1,21 @@
+/* cmakeconfig.h.in */
+
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+/* Note: You cannot use earlier #defines in later #cmakedefines (cmake 2.6.2). */
+
+/* Name of package */
+#define PACKAGE "Swiftray"
+
+/* Version number of Wireshark and associated utilities */
+#define VER_PRODUCTVERSION_STR "${VER_PRODUCTVERSION_STR}"
+#define VERSION_MAJOR ${VERSION_MAJOR}
+#define VERSION_MINOR ${VERSION_MINOR}
+#define VERSION_BUILD ${VERSION_BUILD}
+#define VERSION_BETA  ${VERSION_BETA}
+#define VERSION_SUFFIX "${VERSION_SUFFIX}"
+
+
+
+#endif /* __CONFIG_H__ */

@@ -38,9 +38,8 @@
 #include "parser/pdf2svg.h"
 
 #include <QResource>
-#ifdef Q_OS_WIN
-#include <winsparkle.h>
-#endif
+#include <utils/software_update.h>
+#include "config.h"
 
 #include "ui_mainwindow.h"
 
@@ -82,7 +81,7 @@ void MainWindow::showEvent(QShowEvent *event)
     // requires that the main UI of the application is already shown when
     // calling win_sparkle_init() (otherwise it could show its updates UI
     // behind the app instead of at top). By using a helper signal, we delay
-    // calling initWinSparkle() until after the window was shown.
+    // calling initWinSparkle() / initSparkle() until after the window was shown.
     //
     // Alternatively, one could achieve the same effect in arguably a simpler
     // way, by initializing WinSparkle in main(), right after showing the main
@@ -253,34 +252,14 @@ void MainWindow::loadStyles() {
   ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png")));
 }
 
-void MainWindow::initWinSparkle()
+
+void MainWindow::initSparkle()
 {
-#ifdef Q_OS_WIN
-    // Setup updates feed. This must be done before win_sparkle_init(), but
-    // could be also, often more conveniently, done using a VERSIONINFO Windows
-    // resource. See the "psdk" example and its .rc file for an example of that
-    // (these calls wouldn't be needed then).
-    win_sparkle_set_appcast_url("https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_sparkle_update_cast_windows.xml");
-    wchar_t version_string[15] = {0};
-    QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD).toWCharArray(version_string);
-    win_sparkle_set_app_details(L"flux3dp.com", L"Swiftray", version_string);
-
-    // Set DSA public key used to verify update's signature.
-    // This is na example how to provide it from external source (i.e. from Qt
-    // resource). See the "psdk" example and its .rc file for an example how to
-    // provide the key using Windows resource.
-    win_sparkle_set_dsa_pub_pem(reinterpret_cast<const char *>(QResource(":/resources/pem/dsa_pub.pem").data()));
-
-    // Initialize the updater and possibly show some UI
-    win_sparkle_init();
-#endif
+  software_update_init();
 }
-
 void MainWindow::checkForUpdates()
 {
-#ifdef Q_OS_WIN
-    win_sparkle_check_update_with_ui();
-#endif
+  software_update_check();
 }
 
 /**
@@ -944,9 +923,7 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 }
 
 MainWindow::~MainWindow() {
-#ifdef Q_OS_WIN
-  win_sparkle_cleanup();
-#endif
+  software_update_cleanup();
   serial_port.close();
   delete ui;
 }
@@ -1108,7 +1085,7 @@ void MainWindow::loadWidgets() {
 }
 
 void MainWindow::registerEvents() {
-  connect(this, &MainWindow::windowWasShown, this, &MainWindow::initWinSparkle,
+  connect(this, &MainWindow::windowWasShown, this, &MainWindow::initSparkle,
           Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
 
   // Monitor canvas events
@@ -1173,7 +1150,10 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
+#ifdef HAVE_SOFTWARE_UPDATE
   connect(ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::checkForUpdates);
+#endif
+
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
     machine_manager_->activateWindow();

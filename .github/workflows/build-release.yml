@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          - { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: true }
-          - { os: macos-12,    xcode_version: '13.2.1', build: 'cmake', dist: false}
+          #- { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: false }
+          - { os: macos-12,    xcode_version: '13.2.1', build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.os}} ${{matrix.cfg.build}}
 
@@ -37,6 +37,7 @@ jobs:
           brew install glib
           brew install cairo
           brew install poppler
+          brew install sparkle
       # Install Qt 5.15.2
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
       - name: Install Qt 5.15.2
@@ -109,7 +110,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=1 -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
 
       - name: Compile (Build) project
         if: ${{matrix.cfg.build == 'qmake' }}
@@ -176,7 +177,7 @@ jobs:
           dsymutil Swiftray.app/Contents/MacOS/Swiftray
           sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
 
-      - name: Codesign executable
+      - name: Codesign Executable and Frameworks
         if: ${{ matrix.cfg.dist }}
         env: 
           MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
@@ -191,8 +192,23 @@ jobs:
           security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
           cd build
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app/Contents/MacOS/crashpad_handler"
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
+          /usr/bin/codesign --force \ 
+                            --verify \
+                            --verbose \
+                            --timestamp \
+                            --options runtime \
+                            --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" \
+                            "Swiftray.app/Contents/MacOS/crashpad_handler"
+          /usr/bin/codesign --force \
+                            --deep \
+                            --verify \
+                            --verbose \
+                            --timestamp \
+                            --options runtime \
+                            --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" \
+                            --entitlements ${{ github.workspace }}/packaging/macOS/entitlements.plist \
+                            --generate-entitlement-der \
+                            "Swiftray.app"
 
       - name: Notarize Release Build
         if: ${{ matrix.cfg.dist }}
