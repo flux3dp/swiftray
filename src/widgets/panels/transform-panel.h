@@ -47,7 +47,7 @@ private:
   bool scale_locked_;
   MainWindow *main_window_;
 
-signals:
+Q_SIGNALS:
   void transformPanelUpdated(double x, double y, double r, double w, double h);
 
   void scaleLockToggled(bool scale_locked);

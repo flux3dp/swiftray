@@ -13,6 +13,7 @@
 #include <QToolButton>
 #include <QCheckBox>
 #include <QMessageBox>
+#include <QTemporaryDir>
 #include <constants.h>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -33,6 +34,8 @@
 #include "widgets/components/canvas-widget.h"
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
+#include <QSerialPort>
+#include "parser/pdf2svg.h"
 
 #include "ui_mainwindow.h"
 
@@ -175,20 +178,33 @@ void MainWindow::loadCanvas() {
         canvas_->setDocument(ds.deserializeDocument());
         canvas_->document().setCurrentFile(filename);
         canvas_->emitAllChanges();
-        emit canvas_->selectionsChanged();
+        Q_EMIT canvas_->selectionsChanged();
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
       } else if (filename.endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
-        double scale = 30.0 / 8.5 * 10;//define by 3cm Ruler
+        double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
       }  else if (filename.endsWith(".dxf")) {
         canvas_->loadDXF(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
+      } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
+        QTemporaryDir dir;
+        Parser::PDF2SVG pdf_converter;
+        QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+        QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+        QFile src_file(filename);
+        src_file.copy(sanitized_filepath);
+        pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+        canvas_->loadSVG(temp_svg_filepath);
+        pdf_converter.removeSVGFile(temp_svg_filepath);
+        QFile::remove(sanitized_filepath);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
@@ -371,14 +387,14 @@ void MainWindow::actionFrame() {
 
   // Generate gcode for framing
   QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine());
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine(), is_rotary_mode_);
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
       travel_speed_ / 60,// mm/min to mm/s
       end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
   if (exporter.isExceedingBoundary()) {
     QMessageBox msgbox;
@@ -474,8 +490,19 @@ QTransform MainWindow::calculateTranslate() {
       break;
   }
   if(is_rotary_mode_) {
-    QTransform scale_transform = QTransform::fromScale(1, rotary_setup_->getRotaryScale());
-    move_translate *= scale_transform;
+    int direction = 1;
+    if(is_mirror_mode_) {
+      direction = -1;
+    }
+    move_translate *= QTransform::fromScale(1,direction);
+    //to move obj into canvas
+    QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    while(rect.top() < 0) {
+      move_translate.translate(0,rotary_setup_->getCircumference() * 10 * direction);
+      rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    }
+
+    move_translate *= QTransform::fromScale(1, rotary_setup_->getRotaryScale());
   }
   return move_translate;
 }
@@ -492,7 +519,7 @@ void MainWindow::newFile() {
   canvas_->document().setWidth(width);
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
-  emit canvas_->selectionsChanged();
+  Q_EMIT canvas_->selectionsChanged();
   setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
@@ -515,7 +542,7 @@ void MainWindow::openFile() {
   }
   QString default_open_dir = FilePathSettings::getDefaultFilePath();
   QString file_name = QFileDialog::getOpenFileName(this, "Open File", default_open_dir,
-                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)"));
+                                                   tr("Files (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf *.pdf *.ai)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -530,21 +557,37 @@ void MainWindow::openFile() {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
-    if (file_name.endsWith(".bb")) {
+    if (file_name.toLower().endsWith(".bb")) {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
-      emit canvas_->selectionsChanged();
+      Q_EMIT canvas_->selectionsChanged();
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
-    } else if (file_name.endsWith(".svg")) {
+    } else if (file_name.toLower().endsWith(".svg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
-    } else if (file_name.endsWith(".dxf")) {
+    } else if (file_name.toLower().endsWith(".dxf")) {
       canvas_->loadDXF(file_name);
+    } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
+      QTemporaryDir dir;
+      Parser::PDF2SVG pdf_converter;
+      QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+      QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+      QFile src_file(file_name);
+      src_file.copy(sanitized_filepath);
+      pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+      canvas_->loadSVG(temp_svg_filepath);
+      //QFile svg_file(temp_svg_filepath);
+      //if (svg_file.open(QFile::ReadOnly)) {
+      //  QByteArray data = svg_file.readAll();
+      //  canvas_->loadSVG(data);
+      //}
+      pdf_converter.removeSVGFile(temp_svg_filepath);
+      QFile::remove(sanitized_filepath);
     } else {
       importImage(file_name);
     }
@@ -567,7 +610,7 @@ void MainWindow::openExampleOfSwiftray() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -587,7 +630,7 @@ void MainWindow::openMaterialCuttingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -607,7 +650,7 @@ void MainWindow::openMaterialEngravingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    emit canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged();
   }
 }
 
@@ -680,7 +723,7 @@ void MainWindow::importImage(QString file_name) {
 void MainWindow::openImageFile() {
   canvas_->exitCurrentMode();
   if (canvas_->document().activeLayer()->isLocked()) {
-    emit canvas_->modeChanged();
+    Q_EMIT canvas_->modeChanged();
     return;
   }
 
@@ -696,7 +739,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf *.pdf *.ai)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -704,10 +747,26 @@ void MainWindow::openImageFile() {
   QFileInfo file_info{file_name};
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
-  if (file_name.endsWith(".svg")) {
+  if (file_name.toLower().endsWith(".svg")) {
     canvas_->loadSVG(file_name);
-  } else if (file_name.endsWith(".dxf")) {
+  } else if (file_name.toLower().endsWith(".dxf")) {
     canvas_->loadDXF(file_name);
+  } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
+    QTemporaryDir dir;
+    Parser::PDF2SVG pdf_converter;
+    QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+    QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+    QFile src_file(file_name);
+    src_file.copy(sanitized_filepath);
+    pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+    canvas_->loadSVG(temp_svg_filepath);
+    //QFile svg_file(temp_svg_filepath);
+    //if (svg_file.open(QFile::ReadOnly)) {
+    //  QByteArray data = svg_file.readAll();
+    //  canvas_->loadSVG(data);
+    //}
+    pdf_converter.removeSVGFile(temp_svg_filepath);
+    QFile::remove(sanitized_filepath);
   } else {
     importImage(file_name);
   }
@@ -736,7 +795,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -753,7 +812,7 @@ void MainWindow::exportGCodeFile() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return; // canceled
   }
@@ -925,7 +984,7 @@ void MainWindow::updateSelections() {
 
 void MainWindow::updateToolbarTransform() {
   canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
-  emit toolbarTransformChanged(x_, y_, r_, w_, h_);
+  Q_EMIT toolbarTransformChanged(x_, y_, r_, w_, h_);
 }
 
 void MainWindow::updateScene() {
@@ -1110,7 +1169,7 @@ void MainWindow::registerEvents() {
   });
   // Complex callbacks
   connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
-    emit machineSettingsChanged();
+    Q_EMIT machineSettingsChanged();
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
     QSettings privacy_settings;
@@ -1441,19 +1500,18 @@ void MainWindow::registerEvents() {
 
   // TODO: Refactor it when supporting multi-port and multi-machine connection
   //       NOTE: The active_machine might be null at the beginning
-  connect(&serial_port, &SerialPort::connected, &active_machine, &Machine::motionPortConnected);
+  #ifdef CUSTOM_SERIAL_PORT_LIB
+  #endif
   connect(&active_machine, &Machine::connected, [=]() {
     // Port connected but hasn't responded any meaningful response
     if (!console_dialog_.isNull()) {
-      disconnect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
-      disconnect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
-      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent);
-      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd);
+      connect(&active_machine, &Machine::logSent, console_dialog_.data(), &ConsoleDialog::appendLogSent, Qt::UniqueConnection);
+      connect(&active_machine, &Machine::logRcvd, console_dialog_.data(), &ConsoleDialog::appendLogRcvd, Qt::UniqueConnection);
     }
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-connecting.png" : ":/resources/images/icon-connecting.png"));
   });
   connect(&active_machine, &Machine::activated, [=]() {
-    emit MainWindow::activeMachineConnected();
+    Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
 }
@@ -1560,6 +1618,7 @@ void MainWindow::setConnectionToolBar() {
     portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
 
     // Check whether port is unplugged
+    #ifdef CUSTOM_SERIAL_PORT_LIB
     if (serial_port.isOpen()) {
       auto matchIt = std::find_if(
               infos.begin(), infos.end(),
@@ -1570,18 +1629,30 @@ void MainWindow::setConnectionToolBar() {
         serial_port.close();
       }
     }
+    #endif
 
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
     if (serial_port.isOpen()) {
-      qInfo() << "[SerialPort] Disconnect";
-      serial_port.close(); // disconnect
+      if (active_machine.getMotionController()) {
+        active_machine.getMotionController()->detachPort();
+        qInfo() << "[Port] Detached";
+      } else {
+        qInfo() << "[SerialPort] Disconnect";
+        serial_port.close(); // disconnect
+      }
       return;
     }
     QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
+    #ifdef CUSTOM_SERIAL_PORT_LIB
     serial_port.open(port_name, baudrate.toInt());
+    #else
+    serial_port.setPortName(port_name);
+    serial_port.setBaudRate(baudrate.toInt());
+    serial_port.open(QIODevice::ReadWrite);
+    #endif
     if (!serial_port.isOpen()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Error"));
@@ -1589,18 +1660,17 @@ void MainWindow::setConnectionToolBar() {
       msgbox.exec();
       return;
     }
+    #ifdef CUSTOM_SERIAL_PORT_LIB
+    #else
+    disconnect(&serial_port, nullptr, nullptr, nullptr);
+    serial_port.clearError();
+    #endif
+    active_machine.motionPortConnected(&serial_port);
     active_machine.applyMachineParam(currentMachine());
-    connect(&active_machine, &Machine::positionCached, [=](std::tuple<qreal, qreal, qreal> target_pos) {
-      emit MainWindow::positionCached(target_pos);
-      canvas()->updateCurrentPosition(target_pos);
-    });
-    connect(&active_machine, &Machine::disconnected, [=]() {
-      emit MainWindow::activeMachineDisconnected();
-      ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+    connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
+    connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
   });
-
-  });
-  timer->start(4000);
+  timer->start(1500);
 }
 
 void MainWindow::setToolbarFont() {
@@ -1825,8 +1895,10 @@ void MainWindow::setToolbarTransform() {
   labelHeight->setText(tr("Height"));
   doubleSpinBoxX->setMaximum(9999);
   doubleSpinBoxY->setMaximum(9999);
+  doubleSpinBoxX->setMinimum(-9999);
+  doubleSpinBoxY->setMinimum(-9999);
   doubleSpinBoxRotation->setMaximum(360);
-  doubleSpinBoxRotation->setMinimum(0);
+  doubleSpinBoxRotation->setMinimum(-360);
   doubleSpinBoxWidth->setMaximum(9999);
   doubleSpinBoxHeight->setMaximum(9999);
   doubleSpinBoxX->setSuffix(" mm");
@@ -2138,7 +2210,7 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine());
+  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -2154,7 +2226,7 @@ bool MainWindow::generateGcode() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
-  exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10}); // TODO: Set machine work area in unit of mm
+  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
   if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
     return false; // canceled
   }
@@ -2162,6 +2234,12 @@ bool MainWindow::generateGcode() {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
     msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
+    msgbox.exec();
+  }
+  if (is_rotary_mode_ && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Some items maybe overlap in rotary mode."));
     msgbox.exec();
   }
   
@@ -2173,7 +2251,7 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine());
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine(), is_rotary_mode_);
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
@@ -2182,7 +2260,7 @@ void MainWindow::genPreviewWindow() {
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
 
-  preview_exporter.setWorkAreaSize(QSizeF{canvas_->document().width() / 10, canvas_->document().height() / 10});
+  preview_exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
 
   QProgressDialog progress_dialog(tr("Exporting toolpath..."),
                                    tr("Cancel"),
@@ -2218,12 +2296,11 @@ void MainWindow::genPreviewWindow() {
       last_gcode_timestamp = timestamp_list.last();
     }
 
-    double scale = 1;
-    if(is_rotary_mode_) scale = rotary_setup_->getRotaryScale();
+    double height_scale = 1;
+    if(is_rotary_mode_) height_scale = rotary_setup_->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
-                                          canvas_->document().width() / 10,
-                                          canvas_->document().height() / 10,
-                                          scale);
+                                          QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
+                                          height_scale);
     pw->setPreviewPath(preview_path_generator);
     pw->setRequiredTime(last_gcode_timestamp);
     pw->show();
@@ -2462,4 +2539,14 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
+}
+
+void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos) {
+  Q_EMIT MainWindow::positionCached(target_pos);
+  canvas()->updateCurrentPosition(target_pos);
+}
+
+void MainWindow::machineDisconnected() {
+  Q_EMIT MainWindow::activeMachineDisconnected();
+  ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }

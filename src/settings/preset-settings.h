@@ -96,7 +96,7 @@ public:
   QList<Preset> presets_;
   int current_index_ = 0;
 
-signals:
+Q_SIGNALS:
   void currentIndexChanged();
 
 private:
@@ -118,7 +118,7 @@ private:
       qInfo() << file.fileName();
       preset.name = file_json.take("name").toString();
       presets_ << preset;
-      if (preset.name.indexOf("5W") > -1) {
+      if (preset.name.indexOf("10W") > -1) {
         setCurrentIndex(i);
       }
     }

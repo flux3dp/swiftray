@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
-project(Swiftray VERSION 1.1.0)
+project(Swiftray VERSION 1.1.1)
 message("System Name: ${CMAKE_SYSTEM_NAME}")
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
-set(VERSION_BUILD 0)
-set(VERSION_BETA  1) #x
-set(VERSION_SUFFIX "") #-beta.x
-set(VER_PRODUCTVERSION_STR "1.1.0") #1.0.0-beta.x
+set(VERSION_BUILD 1)
+set(VERSION_BETA  0) #x (e.g. 0,1,2,...)
+set(VERSION_SUFFIX "") # e.g. empty("") or "-beta.x"
+set(VER_PRODUCTVERSION_STR "1.1.1") # e.g. 1.x.x or 1.x.x-beta.x
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
@@ -16,6 +16,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
 #set(CMAKE_CXX_FLAGS "-O2")
 
+add_definitions(-DQT_NO_KEYWORDS)
 # Add additional FindXXX.cmake for the project
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 #set(CMAKE_FIND_DEBUG_MODE 1)
@@ -46,6 +47,12 @@ include_directories(
   ${SRC_DIR}
 )
 
+# Conan
+# NOTE: Currently only used by Windows build
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+include(conanbuildinfo.cmake)
+conan_basic_setup()
+endif()
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -179,6 +186,77 @@ if (DEFINED ENABLE_SENTRY)
 endif()
 
 
+# Cairo
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/include
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/third_party/cairo/win/lib/x64/cairo.lib
+  )
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    /usr/local/opt/cairo/include/cairo
+    #/opt/homebrew/opt/cairo/include/cairo
+  )
+  target_link_libraries(${PROJECT_NAME} 
+    /usr/local/opt/cairo/lib/libcairo.dylib
+    #/opt/homebrew/opt/cairo/lib/libcairo.dylib
+  )
+else()
+  # TODO: Linux
+endif()
+
+# GLIB
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # Fulfill by Conan package manager
+  #target_include_directories(${PROJECT_NAME} PRIVATE
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/include/glib-2.0
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0/include
+  #)
+  #target_link_libraries(${PROJECT_NAME}
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/glib-2.0.lib
+  #  ${CMAKE_SOURCE_DIR}/third_party/glib/Library/lib/gobject-2.0.lib
+  #)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    /usr/local/opt/glib/include/glib-2.0
+    /usr/local/opt/glib/lib/glib-2.0/include
+    #/opt/homebrew/opt/glib/include/glib-2.0
+    #/opt/homebrew/opt/glib/lib/glib-2.0/include
+  )
+  target_link_libraries(${PROJECT_NAME} 
+    /usr/local/opt/glib/lib/libglib-2.0.dylib
+    /usr/local/opt/glib/lib/libgobject-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libglib-2.0.dylib
+    #/opt/homebrew/opt/glib/lib/libgobject-2.0.dylib
+  )
+else()
+  # TODO: Linux
+endif()
+
+# Poppler
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/third_party/poppler/poppler-22.04.0/Library/include/poppler/glib
+  )
+  target_link_libraries(${PROJECT_NAME}
+    ${CMAKE_SOURCE_DIR}/third_party/poppler/poppler-22.04.0/Library/lib/poppler-glib.lib
+  )
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    /usr/local/opt/poppler/include/poppler/glib
+    #/opt/homebrew/opt/poppler/include/poppler/glib
+  )
+  target_link_libraries(${PROJECT_NAME} 
+    /usr/local/opt/poppler/lib/libpoppler-glib.dylib
+    #/opt/homebrew/opt/poppler/lib/libpoppler-glib.dylib
+  )
+else()
+  # TODO: Linux
+endif()
+
+
 # ====================== External libraries =======================
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt::Core)
@@ -269,7 +347,13 @@ include_directories(
 )
 #target_link_libraries(${PROJECT_NAME} ${POTRACE_LIBRARIES} ${POTRACE_LIBRARY})
 
-
+# NOTE: Currently only used by Windows build
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${CONAN_INCLUDE_DIRS}
+)
+endif()
 
 # ====================== tests =======================
 #add_subdirectory(tests)

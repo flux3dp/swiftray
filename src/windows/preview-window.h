@@ -18,7 +18,7 @@ Q_OBJECT
 
 public:
 
-  explicit PreviewWindow(QWidget *parent, int width, int height, double scale);
+  explicit PreviewWindow(QWidget *parent, QRectF work_area, double scale);
 
   ~PreviewWindow();
 
@@ -38,4 +38,6 @@ private:
   std::shared_ptr<PreviewGenerator> preview_path_;
   QGraphicsView* path_graphics_view_;
   double height_scale_;
+  double total_height_;
+  QRectF work_area_;
 };

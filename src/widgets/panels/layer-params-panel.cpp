@@ -34,6 +34,14 @@ void LayerParamsPanel::loadStyles() {
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 24, 24));
   add_layer_btn_->raise();
   add_layer_btn_->show();
+  ui->parameterFrame->setStyleSheet("\
+    QToolButton#btnAddLayer:hover {\
+      border: 0px;\
+    }\
+    QToolButton#btnAddLayer{ \
+      border: 0px;\
+    } \
+  ");
 }
 
 void LayerParamsPanel::loadSettings() {
@@ -82,7 +90,7 @@ void LayerParamsPanel::registerEvents() {
       int index_to_recover = preset_previous_index_;
       if (preset_manager_->exec() == 1) {
         preset_manager_->save();
-        emit main_window_->presetSettingsChanged();
+        Q_EMIT main_window_->presetSettingsChanged();
         loadSettings();
         setToCustom();
         preset_previous_index_ = -1;

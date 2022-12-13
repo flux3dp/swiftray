@@ -27,7 +27,7 @@ public:
     QPainterPath getTrace() { return contours_; }
     bool shouldDeleteImg();
 
-public slots:
+public Q_SLOTS:
     void onSelectPartialStateChanged(int state);
     void onCutoffChanged(int new_cutoff_val);
     void onThresholdChanged(int new_thres_val);
@@ -47,7 +47,7 @@ private:
     std::shared_ptr<QxPotrace> potrace_;
     QPainterPath contours_;
 
-    // used to prevent duplicate signals
+    // used to prevent duplicate Q_SIGNALS
     void setCutoffSpinboxWithoutEmit(int cutoff);
     void setCutoffSliderWithoutEmit(int cutoff);
     void setThresholdSpinboxWithoutEmit(int thres);

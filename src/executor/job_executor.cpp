@@ -98,7 +98,7 @@ void JobExecutor::start() {
 
   // Start running
   completed_cmd_cnt_ = 0;
-  emit progressChanged(0);
+  Q_EMIT progressChanged(0);
   changeState(State::kRunning);
   wakeUp();
 }
@@ -157,7 +157,7 @@ void JobExecutor::exec() {
         // Complete
         qInfo() << "Job complete";
         complete();
-        emit Executor::finished();
+        Q_EMIT Executor::finished();
         return;
       }
     }
@@ -184,8 +184,8 @@ void JobExecutor::exec() {
   } else { // Finish immediately: ok or error
     completed_cmd_cnt_ += 1;
     //if (completed_cmd_cnt_ % 25) {
-      emit progressChanged(active_job_->getProgressPercent());
-      emit elapsedTimeChanged(active_job_->getElapsedTime());
+      Q_EMIT progressChanged(active_job_->getProgressPercent());
+      Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
     //}
     pending_cmd_.reset();
   }
@@ -233,17 +233,17 @@ void JobExecutor::handleCmdFinish(int code) {
   }
   completed_cmd_cnt_ += 1;
   //if (completed_cmd_cnt_ % 25) {
-    emit progressChanged(active_job_->getProgressPercent());
-    emit elapsedTimeChanged(active_job_->getElapsedTime());
+    Q_EMIT progressChanged(active_job_->getProgressPercent());
+    Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   //}
-  emit trigger(); // ~ wakeUp() (might be triggered from different thread)
+  Q_EMIT trigger(); // ~ wakeUp() (might be triggered from different thread)
 }
 
 void JobExecutor::complete() {  
   if (!motion_controller_.isNull()) {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
-  emit progressChanged(100);
+  Q_EMIT progressChanged(100);
   // Take out the active job to last job
   last_job_ = active_job_;
   if (!last_job_.isNull()) {
@@ -266,7 +266,7 @@ void JobExecutor::stopImpl() {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
   // Take out the active job to last job
-  emit progressChanged(0);
+  Q_EMIT progressChanged(0);
   last_job_ = active_job_;
   if (!last_job_.isNull()) {
     last_job_->reload();

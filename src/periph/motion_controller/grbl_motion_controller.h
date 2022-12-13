@@ -14,7 +14,7 @@ public:
 
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
 
-public slots:
+public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:

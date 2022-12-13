@@ -16,16 +16,16 @@ public:
 
   void attachMotionController(QPointer<MotionController> motion_controller);
 
-public slots:
+public Q_SLOTS:
   void start() override;
   void exec() override;
   void pause() override;
   void resume() override;
   void stop() override;
 
-private slots:
+private Q_SLOTS:
   void wakeUp();   // wake up this executor
-signals:
+Q_SIGNALS:
   void trigger();  // wake up this executor
 
 private:

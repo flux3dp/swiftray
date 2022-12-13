@@ -35,7 +35,7 @@ void Transform::updateSelections() {
   reset();
   selections_ = document().selections();
   bbox_need_recalc_ = true;
-  emit canvas().transformChanged(x(), y(), rotation(), width(), height());
+  Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
 }
 
 void Transform::updateBoundingRect() {
@@ -268,7 +268,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
     applyScale(action_center_, scale_x_to_apply_, scale_y_to_apply_);
   }
   if (transform_changed) {
-    emit canvas().transformChanged(x(), y(), rotation(), width(), height());
+    Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
   }
   reset();
   canvas().setMode(Canvas::Mode::Selecting);
@@ -331,7 +331,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   double current_angle;
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
-      emit cursorChanged(	Qt::ClosedHandCursor);
+      Q_EMIT cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       if(direction_locked_) {
         current_angle = atan2 (translate_to_apply_.y(),translate_to_apply_.x()) * 180 / M_PI;
@@ -483,7 +483,7 @@ bool Transform::keyPressEvent(QKeyEvent *e) {
       return false;
   }
   applyMove();
-  emit canvas().transformChanged(x(), y(), rotation(), width(), height());
+  Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
   return true;
 }
 

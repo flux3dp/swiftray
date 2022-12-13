@@ -17,11 +17,6 @@ LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
 }
 
 void LayerPanel::loadStyles() {
-  ui->layerList->setStyleSheet("\
-    QToolButton#btnAddLayer{ \
-      background-color: rgba(0, 0, 0, 0);\
-    } \
-  ");
 }
 
 void LayerPanel::loadWidgets() {
@@ -39,11 +34,11 @@ void LayerPanel::registerEvents() {
 }
 
 void LayerPanel::hideEvent(QHideEvent *event) {
-  emit panelShow(false);
+  Q_EMIT panelShow(false);
 }
 
 void LayerPanel::showEvent(QShowEvent *event) {
-  emit panelShow(true);
+  Q_EMIT panelShow(true);
 }
 
 void LayerPanel::resizeEvent(QResizeEvent *e) {
