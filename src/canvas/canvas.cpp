@@ -20,8 +20,7 @@
 #include <windows/image-crop-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
-#include "parser/dxf_iface.h"
-#include "parser/dxf_data.h"
+#include "parser/dxf_reader.h"
 
 #include <private/qsvgtinydocument_p.h>
 #include "parser/my_qsvg_handler.h"
@@ -152,25 +151,44 @@ void Canvas::loadSVG(QString file_name) {
 }
 
 void Canvas::loadDXF(QString file_name) {
-  dxf_data dxf_data;
-  dxf_iface dxf_interface;
+  DXFReader dxf_reader;
   QList<LayerPtr> dxf_layers;
-  bool success = dxf_interface.printText(&document(), file_name.toStdString(), &dxf_data, &dxf_layers);
-  if (success) {
-    QList<ShapePtr> all_shapes;
-    for (auto &layer : dxf_layers) {
-      all_shapes.append(layer->children());
-    }
-    document().setSelections(all_shapes);
-    if (all_shapes.size() == 1) {
-      document().setActiveLayer(all_shapes.first()->layer()->name());
-      emit layerChanged();
-    }
-
-    forceActiveFocus();
-    emitAllChanges();
-    update();
+  DXFReader::ReadType read_type;
+  QMessageBox msgBox;
+  msgBox.setText(tr("Select layering style:"));
+  msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole);
+  msgBox.addButton(tr("Color"), QMessageBox::YesRole);
+  msgBox.addButton(tr("Single Layer"), QMessageBox::NoRole);
+  int ret = msgBox.exec();
+  switch (ret) {
+    case QMessageBox::AcceptRole:
+      read_type = DXFReader::ByLayers;
+      break;
+    case QMessageBox::RejectRole:
+      read_type = DXFReader::ByColors;
+      break;
+    case QMessageBox::DestructiveRole:
+      read_type = DXFReader::InSignleLayer;
+      break;
+    default:
+      read_type = DXFReader::ByLayers;
+      break;
   }
+  dxf_reader.openFile(file_name, dxf_layers, read_type);
+  QList<ShapePtr> all_shapes;
+  for (auto &layer : dxf_layers) {
+    all_shapes.append(layer->children());
+    document().addLayer(layer);
+  }
+  document().setSelections(all_shapes);
+  if (all_shapes.size() == 1) {
+    document().setActiveLayer(all_shapes.first()->layer()->name());
+    emit layerChanged();
+  }
+
+  forceActiveFocus();
+  emitAllChanges();
+  update();
 }
 
 void Canvas::paint(QPainter *painter) {
