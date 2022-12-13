@@ -183,7 +183,7 @@ void Canvas::loadDXF(QString file_name) {
   document().setSelections(all_shapes);
   if (all_shapes.size() == 1) {
     document().setActiveLayer(all_shapes.first()->layer()->name());
-    emit layerChanged();
+    Q_EMIT layerChanged();
   }
 
   forceActiveFocus();
