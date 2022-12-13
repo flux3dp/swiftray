@@ -26,6 +26,7 @@
 #include<iostream>
 #include<cmath>
 #include<cassert>
+#include "libdxfrw/drw_base.h"
 #include "rs_polyline.h"
 
 #include "parser/dxf_rs/debug/rs_debug.h"

@@ -27,6 +27,7 @@
 
 #include<iostream>
 #include<cmath>
+#include "libdxfrw/drw_base.h"
 #include "rs_dimangular.h"
 #include "parser/dxf_rs/math/rs_math.h"
 

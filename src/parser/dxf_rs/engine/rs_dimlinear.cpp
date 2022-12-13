@@ -26,6 +26,7 @@
 
 #include<iostream>
 #include<cmath>
+#include "libdxfrw/drw_base.h"
 #include "rs_dimlinear.h"
 #include "rs_line.h"
 #include "rs_constructionline.h"

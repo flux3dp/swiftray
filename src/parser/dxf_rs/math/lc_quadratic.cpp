@@ -26,6 +26,7 @@
 
 #include <cfloat>
 #include <QDebug>
+#include "libdxfrw/drw_base.h"
 #include "rs_math.h"
 #include "parser/dxf_rs/information/rs_information.h"
 #include "lc_quadratic.h"

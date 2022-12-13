@@ -29,6 +29,7 @@
 #include <QPainterPath>
 #include <QBrush>
 #include <QString>
+#include "libdxfrw/drw_base.h"
 #include "rs_hatch.h"
 
 #include "rs_arc.h"

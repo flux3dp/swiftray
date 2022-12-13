@@ -26,6 +26,7 @@
 
 #include<iostream>
 #include<cmath>
+#include "libdxfrw/drw_base.h"
 #include "rs_insert.h"
 
 #include "rs_arc.h"

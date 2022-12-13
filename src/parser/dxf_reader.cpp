@@ -3,6 +3,7 @@
 #include "parser/dxf_rs/engine/rs_line.h"
 #include "parser/dxf_rs/engine/rs_arc.h"
 #include "parser/dxf_rs/engine/rs_circle.h"
+#include "libdxfrw/drw_base.h"
 
 #include <QDebug>
 #include <iostream>

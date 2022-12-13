@@ -28,6 +28,7 @@
 
 #include <cfloat>
 #include <QPolygonF>
+#include "libdxfrw/drw_base.h"
 #include "rs_circle.h"
 
 #include "rs_arc.h"

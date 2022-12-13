@@ -25,6 +25,7 @@
 **********************************************************************/
 
 #include <cmath>
+#include "libdxfrw/drw_base.h"
 #include "rs_arc.h"
 
 #include "rs_line.h"

@@ -24,7 +24,7 @@
 ** This copyright notice MUST APPEAR in all copies of the script!
 **
 **********************************************************************/
-
+#include "libdxfrw/drw_base.h"
 #include "rs_ellipse.h"
 
 #include "rs_circle.h"

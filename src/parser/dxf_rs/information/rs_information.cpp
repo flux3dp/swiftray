@@ -26,6 +26,7 @@
 **********************************************************************/
 
 #include <vector>
+#include "libdxfrw/drw_base.h"
 #include "rs_information.h"
 #include "parser/dxf_rs/engine/rs_entitycontainer.h"
 #include "parser/dxf_rs/engine/rs_vector.h"

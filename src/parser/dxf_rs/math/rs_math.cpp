@@ -32,6 +32,7 @@
 #include <QString>
 #include <QDebug>
 
+#include "libdxfrw/drw_base.h"
 #include "rs_math.h"
 #include "parser/dxf_rs/engine/rs_vector.h"
 #include "parser/dxf_rs/muparser/muParser.h"
