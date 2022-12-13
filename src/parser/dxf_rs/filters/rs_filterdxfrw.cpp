@@ -183,7 +183,7 @@ bool RS_FilterDXFRW::fileImport(RS_Graphic& g, const QString& file, RS2::FormatT
         }
     } else {
 #endif
-        dxfRW dxfR(QFile::encodeName(file));
+        dxfRW dxfR(QFile::encodeName(file), file.size());
 
         RS_DEBUG->print("RS_FilterDXFRW::fileImport: reading file");
         if (RS_Debug::D_DEBUGGING == RS_DEBUG->getLevel()) {
@@ -1437,7 +1437,7 @@ bool RS_FilterDXFRW::fileExport(RS_Graphic& g, const QString& file, RS2::FormatT
         exactColor = true;
     }
 
-    dxfW = new dxfRW(QFile::encodeName(file));
+    dxfW = new dxfRW(QFile::encodeName(file), file.size());
     bool success = dxfW->write(this, exportVersion, false); //ascii
 //    bool success = dxf->write(this, exportVersion, true); //binary
     delete dxfW;

@@ -984,7 +984,7 @@ int RS_Graphic::clean()
 
     int how_many = 0;
 
-    foreach (RS_Entity* e, entities)
+    for (RS_Entity* e: entities)
     {
         if    (e->getMin().x > e->getMax().x
             || e->getMin().y > e->getMax().y
