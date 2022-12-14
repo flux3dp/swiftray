@@ -1,8 +1,5 @@
 #include "dxf_reader.h"
 #include "parser/dxf_rs/engine/rs_graphic.h"
-#include "parser/dxf_rs/engine/rs_line.h"
-#include "parser/dxf_rs/engine/rs_arc.h"
-#include "parser/dxf_rs/engine/rs_circle.h"
 #include "libdxfrw/drw_base.h"
 
 #include <QDebug>
@@ -84,23 +81,30 @@ void DXFReader::handleEntityArc(RS_Arc* entity) {
 
   RS_ArcData data = entity->getData();
   QPainterPath working_path;
-  working_path.moveTo(data.center.x + data.radius * cos(data.angle1), 
-                      data.center.y + data.radius * sin(data.angle1));
+  double angle1 = data.angle1;
+  double angle2 = data.angle2;
+  if(data.reversed) {
+    double tmp = angle1;
+    angle1 = angle2;
+    angle2 = tmp;
+  }
+  working_path.moveTo(data.center.x + data.radius * cos(angle1), 
+                      data.center.y + data.radius * sin(angle1));
   for(int i = 0 ; (i+2)<= 71; i+= 3) {
-    if(data.angle1 < data.angle2) {
-      working_path.cubicTo(data.center.x + data.radius * cos((double)i/71 * (data.angle2-data.angle1) + data.angle1),  
-                           data.center.y + data.radius * sin((double)i/71 * (data.angle2-data.angle1) + data.angle1), 
-                           data.center.x + data.radius * cos((double)(i+1)/71 * (data.angle2-data.angle1) + data.angle1),  
-                           data.center.y + data.radius * sin((double)(i+1)/71 * (data.angle2-data.angle1) + data.angle1), 
-                           data.center.x + data.radius * cos((double)(i+2)/71 * (data.angle2-data.angle1) + data.angle1),  
-                           data.center.y + data.radius * sin((double)(i+2)/71 * (data.angle2-data.angle1) + data.angle1));
-      } else {
-      working_path.cubicTo(data.center.x + data.radius * cos((double)i/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1), 
-                           data.center.y + data.radius * sin((double)i/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1), 
-                           data.center.x + data.radius * cos((double)(i+1)/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1), 
-                           data.center.y + data.radius * sin((double)(i+1)/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1), 
-                           data.center.x + data.radius * cos((double)(i+2)/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1), 
-                           data.center.y + data.radius * sin((double)(i+2)/71 * (2*M_PI+data.angle2-data.angle1) + data.angle1));
+    if(angle1 < angle2) {
+      working_path.cubicTo(data.center.x + data.radius * cos((double)i/71 * (angle2-angle1) + angle1),  
+                           data.center.y + data.radius * sin((double)i/71 * (angle2-angle1) + angle1), 
+                           data.center.x + data.radius * cos((double)(i+1)/71 * (angle2-angle1) + angle1),  
+                           data.center.y + data.radius * sin((double)(i+1)/71 * (angle2-angle1) + angle1), 
+                           data.center.x + data.radius * cos((double)(i+2)/71 * (angle2-angle1) + angle1),  
+                           data.center.y + data.radius * sin((double)(i+2)/71 * (angle2-angle1) + angle1));
+    } else {
+      working_path.cubicTo(data.center.x + data.radius * cos((double)i/71 * (2*M_PI+angle2-angle1) + angle1), 
+                           data.center.y + data.radius * sin((double)i/71 * (2*M_PI+angle2-angle1) + angle1), 
+                           data.center.x + data.radius * cos((double)(i+1)/71 * (2*M_PI+angle2-angle1) + angle1), 
+                           data.center.y + data.radius * sin((double)(i+1)/71 * (2*M_PI+angle2-angle1) + angle1), 
+                           data.center.x + data.radius * cos((double)(i+2)/71 * (2*M_PI+angle2-angle1) + angle1), 
+                           data.center.y + data.radius * sin((double)(i+2)/71 * (2*M_PI+angle2-angle1) + angle1));
     }
   }
   ShapePtr new_shape = std::make_shared<PathShape>(working_path);
@@ -116,6 +120,29 @@ void DXFReader::handleEntityCircle(RS_Circle* entity) {
   QPainterPath working_path;
   QPointF center(data.center.x, data.center.y);
   working_path.addEllipse(center, data.radius, data.radius);
+  ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+  target_layer->addShape(new_shape);
+}
+
+void DXFReader::handleEntitySpline(RS_Spline* entity) {
+  QString layer_name = entity->getLayer()->getName();
+  QColor color = entity->getPen().getColor().toQColor();
+  LayerPtr target_layer = findLayer(layer_name, color);
+
+  RS_SplineData data = entity->getData();
+  QPainterPath working_path;
+  working_path.moveTo(data.controlPoints[0].x, data.controlPoints[0].y);
+  unsigned int index = 1;
+  for(; (index+2) < data.controlPoints.size(); index+=3) {
+    working_path.cubicTo(data.controlPoints[index].x, data.controlPoints[index].y, 
+                         data.controlPoints[index+1].x, data.controlPoints[index+1].y,
+                         data.controlPoints[index+2].x, data.controlPoints[index+2].y);
+  }
+  if(index != data.controlPoints.size()) {
+    working_path.cubicTo(data.controlPoints[data.controlPoints.size()-3].x, data.controlPoints[data.controlPoints.size()-3].y, 
+                              data.controlPoints[data.controlPoints.size()-2].x, data.controlPoints[data.controlPoints.size()-2].y,
+                              data.controlPoints[data.controlPoints.size()-1].x, data.controlPoints[data.controlPoints.size()-1].y);
+  }
   ShapePtr new_shape = std::make_shared<PathShape>(working_path);
   target_layer->addShape(new_shape);
 }
@@ -140,9 +167,12 @@ void DXFReader::handleEntityContainer(RS_EntityContainer* container) {
         case RS2::EntityInsert:
           handleEntityContainer((RS_EntityContainer*)container->entityAt(i));
           break;
+        case RS2::EntitySpline:
+          handleEntitySpline((RS_Spline*)container->entityAt(i));
+          break;
         default:
           qInfo() << "the entity type = " << entity_type << " need to handle";
-          std::cout << "the entity = " << container->entityAt(i) << std::endl;
+          // std::cout << "the entity = " << container->entityAt(i) << std::endl;
           break;
       } 
   }
