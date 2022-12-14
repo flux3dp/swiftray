@@ -124,6 +124,24 @@ void DXFReader::handleEntityCircle(RS_Circle* entity) {
   target_layer->addShape(new_shape);
 }
 
+void DXFReader::handleEntityEllipse(RS_Ellipse* entity) {
+  QString layer_name = entity->getLayer()->getName();
+  QColor color = entity->getPen().getColor().toQColor();
+  LayerPtr target_layer = findLayer(layer_name, color);
+  RS_Vector vect = entity->getMajorP();
+
+  RS_EllipseData data = entity->getData();
+  QPainterPath working_path;
+  QPointF center(data.center.x, data.center.y);
+  if(vect.x > vect.y) {
+    working_path.addEllipse(center, entity->getMajorRadius(), entity->getMinorRadius());
+  } else {
+    working_path.addEllipse(center, entity->getMinorRadius(), entity->getMajorRadius());
+  }
+  ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+  target_layer->addShape(new_shape);
+}
+
 void DXFReader::handleEntitySpline(RS_Spline* entity) {
   QString layer_name = entity->getLayer()->getName();
   QColor color = entity->getPen().getColor().toQColor();
@@ -169,6 +187,9 @@ void DXFReader::handleEntityContainer(RS_EntityContainer* container) {
           break;
         case RS2::EntitySpline:
           handleEntitySpline((RS_Spline*)container->entityAt(i));
+          break;
+        case RS2::EntityEllipse:
+          handleEntityEllipse((RS_Ellipse*)container->entityAt(i));
           break;
         default:
           qInfo() << "the entity type = " << entity_type << " need to handle";
