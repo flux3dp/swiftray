@@ -1,6 +1,7 @@
 #include "dxf_reader.h"
 #include "parser/dxf_rs/engine/rs_graphic.h"
 #include "libdxfrw/drw_base.h"
+#include <shape/bitmap-shape.h>
 
 #include <QDebug>
 #include <iostream>
@@ -129,16 +130,17 @@ void DXFReader::handleEntityEllipse(RS_Ellipse* entity) {
   QColor color = entity->getPen().getColor().toQColor();
   LayerPtr target_layer = findLayer(layer_name, color);
   RS_Vector vect = entity->getMajorP();
-
   RS_EllipseData data = entity->getData();
+  std::cout << "data.center.x = " << data.center.x << ", data.center.y = " << data.center.y << std::endl;
   QPainterPath working_path;
-  QPointF center(data.center.x, data.center.y);
-  if(vect.x > vect.y) {
-    working_path.addEllipse(center, entity->getMajorRadius(), entity->getMinorRadius());
-  } else {
-    working_path.addEllipse(center, entity->getMinorRadius(), entity->getMajorRadius());
-  }
+  working_path.addEllipse(-1*entity->getMajorRadius(), -1*entity->getMinorRadius(), 2*entity->getMajorRadius(), 2*entity->getMinorRadius());
   ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+  QTransform temp_trans = QTransform();
+  temp_trans = temp_trans.rotateRadians(entity->getAngle());
+  new_shape->applyTransform(temp_trans);
+  temp_trans = QTransform();
+  temp_trans = temp_trans.translate(data.center.x, data.center.y);
+  new_shape->applyTransform(temp_trans);
   target_layer->addShape(new_shape);
 }
 
@@ -162,6 +164,31 @@ void DXFReader::handleEntitySpline(RS_Spline* entity) {
                               data.controlPoints[data.controlPoints.size()-1].x, data.controlPoints[data.controlPoints.size()-1].y);
   }
   ShapePtr new_shape = std::make_shared<PathShape>(working_path);
+  target_layer->addShape(new_shape);
+}
+
+void DXFReader::handleEntityMText(RS_MText* entity) {
+  std::cout << "getText = " << entity->getText().toStdString() << std::endl;
+}
+
+void DXFReader::handleEntityImage(RS_Image* entity) {
+  QString layer_name = entity->getLayer()->getName();
+  QColor color = entity->getPen().getColor().toQColor();
+  LayerPtr target_layer = findLayer(layer_name, color);
+  RS_ImageData data = entity->getData();
+  QImage image;
+  image = QImage(data.file);
+  if (image.isNull()) {
+    return;
+  }
+  std::shared_ptr<Shape> new_shape = std::make_shared<BitmapShape>(image);
+  QSize org_size = image.size();
+  QTransform temp_trans = QTransform();
+  temp_trans = temp_trans.scale(data.uVector.magnitude(), 
+                                data.vVector.magnitude());
+  temp_trans.translate(data.insertionPoint.x, 
+                       data.insertionPoint.y);
+  new_shape->applyTransform(temp_trans);
   target_layer->addShape(new_shape);
 }
 
@@ -191,6 +218,12 @@ void DXFReader::handleEntityContainer(RS_EntityContainer* container) {
         case RS2::EntityEllipse:
           handleEntityEllipse((RS_Ellipse*)container->entityAt(i));
           break;
+        // case RS2::EntityMText:
+        //   handleEntityMText((RS_MText*)container->entityAt(i));
+        //   break;
+        // case RS2::EntityImage:
+        //   handleEntityImage((RS_Image*)container->entityAt(i));
+        //   break;
         default:
           qInfo() << "the entity type = " << entity_type << " need to handle";
           // std::cout << "the entity = " << container->entityAt(i) << std::endl;
@@ -208,6 +241,9 @@ void DXFReader::openFile(const QString &file_name, QList<LayerPtr> &dxf_layers, 
   QRectF rect = QRectF();
   for (auto &layer : dxf_layers_) {
     for (auto shape : layer->children()) {
+      QTransform temp_trans = QTransform();
+      temp_trans = temp_trans.scale(10, -10);
+      shape->applyTransform(temp_trans);
       rect |= shape->boundingRect();
     }
     dxf_layers.push_back(layer);
@@ -215,8 +251,7 @@ void DXFReader::openFile(const QString &file_name, QList<LayerPtr> &dxf_layers, 
   for (auto &layer : dxf_layers_) {
     for (auto shape : layer->children()) {
       QTransform temp_trans = QTransform();
-      temp_trans = temp_trans.scale(10, -10);
-      temp_trans.translate(0, -1*rect.height());
+      temp_trans.translate(-1*rect.topLeft().x(), -1*rect.topLeft().y());
       shape->applyTransform(temp_trans);
     }
   }

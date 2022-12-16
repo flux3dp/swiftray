@@ -11,6 +11,8 @@
 #include "parser/dxf_rs/engine/rs_circle.h"
 #include "parser/dxf_rs/engine/rs_ellipse.h"
 #include "parser/dxf_rs/engine/rs_spline.h"
+#include "parser/dxf_rs/engine/rs_mtext.h"
+#include "parser/dxf_rs/engine/rs_image.h"
 
 class DXFReader
 {
@@ -34,6 +36,8 @@ private:
     void handleEntityLine(RS_Line* entity);
     void handleEntityEllipse(RS_Ellipse* entity);
     void handleEntitySpline(RS_Spline* entity);
+    void handleEntityMText(RS_MText* entity);
+    void handleEntityImage(RS_Image* entity);
 };
 
 #endif // DXFREADER_H
