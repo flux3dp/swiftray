@@ -131,9 +131,9 @@ void DXFReader::handleEntityEllipse(RS_Ellipse* entity) {
   LayerPtr target_layer = findLayer(layer_name, color);
   RS_Vector vect = entity->getMajorP();
   RS_EllipseData data = entity->getData();
-  std::cout << "data.center.x = " << data.center.x << ", data.center.y = " << data.center.y << std::endl;
   QPainterPath working_path;
-  working_path.addEllipse(-1*entity->getMajorRadius(), -1*entity->getMinorRadius(), 2*entity->getMajorRadius(), 2*entity->getMinorRadius());
+  working_path.addEllipse(-1*entity->getMajorRadius(), -1*entity->getMinorRadius(), 
+                          2*entity->getMajorRadius(), 2*entity->getMinorRadius());
   ShapePtr new_shape = std::make_shared<PathShape>(working_path);
   QTransform temp_trans = QTransform();
   temp_trans = temp_trans.rotateRadians(entity->getAngle());
