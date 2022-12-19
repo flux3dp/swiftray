@@ -54,7 +54,7 @@ public:
 
     BoardType board_type;
     OriginType origin;
-    int width = 0;
+    int width = 5;
     int height = 0;
     bool home_on_start;
     QPointF red_pointer_offset;

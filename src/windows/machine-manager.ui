@@ -214,6 +214,9 @@
             <property name="suffix">
              <string> mm</string>
             </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
             <property name="maximum">
              <number>3000</number>
             </property>
@@ -238,8 +241,14 @@
             <property name="suffix">
              <string> mm</string>
             </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
             <property name="maximum">
              <number>3000</number>
+            </property>
+            <property name="value">
+             <number>0</number>
             </property>
            </widget>
           </item>
