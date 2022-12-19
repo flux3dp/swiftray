@@ -45,6 +45,7 @@ find_package_handle_standard_args(Sparkle
 if(SPARKLE_FOUND)
   set(SPARKLE_LIBRARIES ${SPARKLE_LIBRARY} )
   set(SPARKLE_INCLUDE_DIRS ${SPARKLE_INCLUDE_DIR} )
+  message(STATUS "Found Sparkle")
 else(SPARKLE_FOUND)
   set(SPARKLE_LIBRARIES )
   set(SPARKLE_INCLUDE_DIRS )

@@ -96,8 +96,30 @@ message(STATUS
 
 # Conan Package Manager
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-  conan_basic_setup()
+  # Recommended way
+  if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
+                  "${CMAKE_BINARY_DIR}/conan.cmake"
+                  TLS_VERIFY ON)
+  endif()
+  include(${CMAKE_BINARY_DIR}/conan.cmake)
+  conan_cmake_configure(REQUIRES boost/1.70.0
+                                  libxml2/2.9.14
+                                  libiconv/1.17
+                                  libpotrace/1.16@user/testing
+                        GENERATORS cmake_find_package
+                        IMPORTS "bin, *.dll -> ./bin"
+                                "lib, *.dylib* -> ./bin")
+  conan_cmake_autodetect(settings)
+  conan_cmake_install(PATH_OR_REFERENCE .
+                      BUILD missing
+                      REMOTE conancenter
+                      SETTINGS ${settings})
+  
+  # Old way, using cmake generator
+  #include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+  #conan_basic_setup()
 endif()
 # ======================================================
 
@@ -112,6 +134,54 @@ foreach( _cfg_file ${CFG_OUT_FILES} )
 	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
 endforeach()
 # ============================================================================================
+
+# ======================================= Helper Macros ======================================
+# Resets cache variables if the <PackageName>_LIBRARY has become invalid.
+# Call it before a find_package(<PackageName> ...) invocation that uses
+# find_library(<PackageName>_LIBRARY ...).
+#
+# Usage: reset_find_package(<PackageName> [<extra variables to clear>])
+function(reset_find_package _package_name)
+	set(variables
+		# find_library / find_package
+		${_package_name}_LIBRARY
+		${_package_name}_INCLUDE_DIR
+		# mark_as_advanced
+		${_package_name}_LIBRARIES
+		${_package_name}_INCLUDE_DIRS
+		# Others
+		${_package_name}_DLL_DIR
+		${_package_name}_DLLS
+		${_package_name}_DLL
+		${_package_name}_PDB
+		${ARGN}
+	)
+	if(NOT ${_package_name}_LIBRARY OR EXISTS ${${_package_name}_LIBRARY})
+		# Cache variable is already missing or cache entry is valid.
+		return()
+	endif()
+	message(STATUS "Package ${_package_name} has changed, clearing cache.")
+	foreach(_var IN LISTS variables)
+		unset(${_var} CACHE)
+	endforeach()
+endfunction()
+
+# ws_find_package(<PackageName>
+#             <CMakeOptions.txt boolean variable>
+#             <cmakeconfig.h.in macro definition>
+#             [remaining find_package() arguments])
+macro(ws_find_package _package_name _enable_package _package_cmakedefine)
+	if(${_enable_package})
+		# Clear outdated cache variables if not already.
+		reset_find_package(${_package_name})
+		find_package(${_package_name} ${ARGN})
+		if(${_package_name}_FOUND)
+			set(${_package_cmakedefine} 1)
+		endif()
+	endif()
+endmacro()
+# ============================================================================================
+
 
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
@@ -196,11 +266,6 @@ else()
     # Linux and others
     message(STATUS "Platform: Unknown")
 endif()
-# ====================== MACRO definition ======================
-
-if (ENABLE_SPARKLE)
-target_compile_definitions(${PROJECT_NAME} PUBLIC HAVE_SOFTWARE_UPDATE=1)
-endif ()
 
 # ====================== Subdirectory sources =======================
 set(SWIFTRAY_SRC
@@ -277,6 +342,8 @@ endif()
 
 
 # ====================== External libraries =======================
+# Collect all linked Libraries into a list
+
 # Qt
 target_link_libraries(${PROJECT_NAME} Qt::Core)
 target_link_libraries(${PROJECT_NAME} Qt::Quick)
@@ -393,23 +460,39 @@ endif()
 # Boost, LibXml2, libiconv
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Dependency Packages handled by Conan package manager
-  target_link_libraries(${PROJECT_NAME} 
-    ${CONAN_LIBS_BOOST}
-    ${CONAN_LIBS_LIBICONV}
-    ${CONAN_LIBS_LIBXML2}
-    ${CONAN_LIBS_ZLIB}
+  find_package(boost)
+  find_package(libxml2)
+  find_package(libiconv)
+  find_package(zlib)
+  list(APPEND swiftray_EXT_LIBS 
+      boost::boost
+      libxml2::libxml2
+      libiconv::libiconv
+      zlib::zlib
   )
-  target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CONAN_INCLUDE_DIRES}
+  list(APPEND swiftray_EXT_INCLUDE_DIRS 
+      ${BOOST_INCLUDE_DIRS}
+      ${LIBXML2_INCLUDE_DIRS}
+      ${LIBICONV_INCLUDE_DIRS}
+      ${ZLIB_INCLUDE_DIRS}
   )
+  #list(APPEND swiftray_EXT_LIBS 
+  #    ${CONAN_LIBS_BOOST}
+  #    ${CONAN_LIBS_LIBICONV}
+  #    ${CONAN_LIBS_LIBXML2}
+  #    ${CONAN_LIBS_ZLIB}
+  #)
+  #list(APPEND swiftray_EXT_INCLUDE_DIRS 
+  #    ${CONAN_INCLUDE_DIRES}
+  #)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Boost
   find_package(Boost REQUIRED COMPONENTS thread system)
   if(Boost_FOUND)
     message(STATUS "Found Boost")
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
-    target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
+    #include_directories(${Boost_INCLUDE_DIRS})
+    #target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
+    #target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
   else()
     message(FATAL_ERROR "Couldn't find boost")
   endif()
@@ -417,58 +500,61 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   find_package(LibXml2 REQUIRED)
   if(LibXml2_FOUND)
     message(STATUS "Found LibXml2")
-    include_directories(
-      ${LIBXML2_INCLUDE_DIR}
-      ${LIBXML2_INCLUDE_DIRS}
-      ${ICONV_INCLUDE_DIR}
-    )
-    target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
-    target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
+    #include_directories(
+    #  ${LIBXML2_INCLUDE_DIR}
+    #  ${LIBXML2_INCLUDE_DIRS}
+    #  ${ICONV_INCLUDE_DIR}
+    #)
+    #target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
+    #target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
   else()
     message(FATAL_ERROR "Couldn't find LibXml2")
   endif()
+  
+  list(APPEND swiftray_EXT_LIBS 
+    ${BOOST_LIBRARIES}
+    Boost::thread Boost::system
+    ${LIBXML2_LIBRARIES}
+    LibXml2::LibXml2
+  )
+  list(APPEND swiftray_EXT_INCLUDE_DIRS 
+    ${Boost_INCLUDE_DIRS}
+    ${LIBXML2_INCLUDE_DIR}
+    ${LIBXML2_INCLUDE_DIRS}
+    ${ICONV_INCLUDE_DIR}
+  )
 endif()
 
 # Sparkle
-if (ENABLE_SPARKLE)
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  find_path(SPARKLE_INCLUDE_DIR 
-    NAMES winsparkle.h
-    PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/winsparkle
-    REQUIRED)
-  find_library(SPARKLE_LIBRARY WinSparkle REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE
-    ${SPARKLE_INCLUDE_DIR}
-  )
-  target_link_libraries(${PROJECT_NAME}
-    ${SPARKLE_LIBRARY}
-  )
+  ws_find_package(WinSparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
+  list(APPEND swiftray_EXT_LIBS WINSPARKLE_LIBRARIES)
+  list(APPEND swiftray_EXT_INCLUDE_DIRS WINSPARKLE_INCLUDE_DIRS)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  find_package(Sparkle)
-  if (SPARKLE_FOUND)
-    target_include_directories(${PROJECT_NAME} PRIVATE
-      ${SPARKLE_INCLUDE_DIRS}
-    )
-    target_link_libraries(${PROJECT_NAME} 
-      ${SPARKLE_LIBRARIES}
-    )
-    #message("SPARKLE_LIB: " ${SPARKLE_LIBRARY})
-    #add_custom_command(
-    #    TARGET ${PROJECT_NAME}  POST_BUILD
-    #    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    #            ${SPARKLE_LIBRARY}
-    #            ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks/Sparkle.framework
-    #)
-  else ()
-    message("Unable to find Sparkle")
-  endif ()
+  ws_find_package(Sparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
+  list(APPEND swiftray_EXT_LIBS SPARKLE_LIBRARIES)
+  list(APPEND swiftray_EXT_INCLUDE_DIRS SPARKLE_INCLUDE_DIRS)
+  #message("SPARKLE_LIB: " ${SPARKLE_LIBRARY})
+  #add_custom_command(
+  #    TARGET ${PROJECT_NAME}  POST_BUILD
+  #    COMMAND ${CMAKE_COMMAND} -E copy_directory
+  #            ${SPARKLE_LIBRARY}
+  #            ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks/Sparkle.framework
+  #)
 else()
   # TODO: Linux
 endif()
 
-endif() # ENABLE_SPARKLE
 
+# ===============================================================
+# Link exec target to  all linked libraries
+target_link_libraries(${PROJECT_NAME} 
+  ${swiftray_EXT_LIBS}
+)
+# Add include headers of libraries to exec target
+target_include_directories(${PROJECT_NAME} PRIVATE 
+  ${swiftray_EXT_INCLUDE_DIRS}
+)
 
 # ====================== tests =======================
 #add_subdirectory(tests)

@@ -16,6 +16,7 @@
 #define VERSION_BETA  ${VERSION_BETA}
 #define VERSION_SUFFIX "${VERSION_SUFFIX}"
 
-
+/* Define to 1 if you have the Sparkle or WinSparkle library */
+#cmakedefine HAVE_SOFTWARE_UPDATE 1
 
 #endif /* __CONFIG_H__ */

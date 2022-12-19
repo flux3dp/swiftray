@@ -8,9 +8,12 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-//#include "config.h"
+#include "config.h"
 
 #include "software_update.h"
+#include <QSettings>
+#include <QLocal>
+#include <string>
 //#include "language.h"
 //#include "../epan/prefs.h"
 //#include "../wsutil/filesystem.h"
@@ -124,9 +127,27 @@ software_update_init(void) {
     
     //win_sparkle_set_can_shutdown_callback(software_update_can_shutdown_callback);
     //win_sparkle_set_shutdown_request_callback(software_update_shutdown_request_callback);
-    
+    QString language;
+    QVariant language_code = settings.value("window/language", 0);
+    switch(language_code.toInt()) {
+      case 0:
+        language = "en-US";
+        break;
+      case 1:
+        language = "zh-Hant-TW";
+        break;
+      case 2:
+        language = "ja-JP";
+        break;
+      default:
+        language = "en-US";
+        break;
+    }
+    //std::string utf8_lang = language.toUtf8().constData();
+    // or this if you're on Windows :-)
+    std::string utf8_lang = language.toLocal8Bit().constData();
     //if ((language != NULL) && (strcmp(language, "system") != 0)) {
-    //    win_sparkle_set_lang(language);
+        win_sparkle_set_lang(utf8_lang.c_str());
     //}
     win_sparkle_init();
 }
