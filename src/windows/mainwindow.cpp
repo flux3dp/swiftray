@@ -750,7 +750,12 @@ void MainWindow::openImageFile() {
   if (file_name.toLower().endsWith(".svg")) {
     canvas_->loadSVG(file_name);
   } else if (file_name.toLower().endsWith(".dxf")) {
-    canvas_->loadDXF(file_name);
+    QTemporaryDir dir;
+    QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+    QFile src_file(file_name);
+    src_file.copy(temp_dxf_filepath);
+    canvas_->loadDXF(temp_dxf_filepath);
+    QFile::remove(temp_dxf_filepath);
   } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
