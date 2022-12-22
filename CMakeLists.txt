@@ -97,29 +97,29 @@ message(STATUS
 # Conan Package Manager
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # Recommended way
-  if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
-                  "${CMAKE_BINARY_DIR}/conan.cmake"
-                  TLS_VERIFY ON)
-  endif()
-  include(${CMAKE_BINARY_DIR}/conan.cmake)
-  conan_cmake_configure(REQUIRES boost/1.70.0
-                                  libxml2/2.9.14
-                                  libiconv/1.17
-                                  libpotrace/1.16@user/testing
-                        GENERATORS cmake_find_package
-                        IMPORTS "bin, *.dll -> ./bin"
-                                "lib, *.dylib* -> ./bin")
-  conan_cmake_autodetect(settings)
-  conan_cmake_install(PATH_OR_REFERENCE .
-                      BUILD missing
-                      REMOTE conancenter
-                      SETTINGS ${settings})
+  #if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+  #  message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+  #  file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/0.18.1/conan.cmake"
+  #                "${CMAKE_BINARY_DIR}/conan.cmake"
+  #                TLS_VERIFY ON)
+  #endif()
+  #include(${CMAKE_BINARY_DIR}/conan.cmake)
+  #conan_cmake_configure(REQUIRES boost/1.70.0
+  #                                libxml2/2.9.14
+  #                                libiconv/1.17
+  #                                libpotrace/1.16@user/testing
+  #                      GENERATORS cmake_find_package
+  #                      IMPORTS "bin, *.dll -> ./bin"
+  #                              "lib, *.dylib* -> ./bin")
+  #conan_cmake_autodetect(settings)
+  #conan_cmake_install(PATH_OR_REFERENCE .
+  #                    BUILD missing
+  #                    REMOTE conancenter
+  #                    SETTINGS ${settings})
   
   # Old way, using cmake generator
-  #include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-  #conan_basic_setup()
+  include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+  conan_basic_setup()
 endif()
 # ======================================================
 
@@ -459,32 +459,16 @@ endif()
 
 # Boost, LibXml2, libiconv
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  # Dependency Packages handled by Conan package manager
-  find_package(boost)
-  find_package(libxml2)
-  find_package(libiconv)
-  find_package(zlib)
+  # Dependency Packages handled by Conan package manager  
   list(APPEND swiftray_EXT_LIBS 
-      boost::boost
-      libxml2::libxml2
-      libiconv::libiconv
-      zlib::zlib
+      ${CONAN_LIBS_BOOST}
+      ${CONAN_LIBS_LIBICONV}
+      ${CONAN_LIBS_LIBXML2}
+      ${CONAN_LIBS_ZLIB}
   )
   list(APPEND swiftray_EXT_INCLUDE_DIRS 
-      ${BOOST_INCLUDE_DIRS}
-      ${LIBXML2_INCLUDE_DIRS}
-      ${LIBICONV_INCLUDE_DIRS}
-      ${ZLIB_INCLUDE_DIRS}
+      ${CONAN_INCLUDE_DIRES}
   )
-  #list(APPEND swiftray_EXT_LIBS 
-  #    ${CONAN_LIBS_BOOST}
-  #    ${CONAN_LIBS_LIBICONV}
-  #    ${CONAN_LIBS_LIBXML2}
-  #    ${CONAN_LIBS_ZLIB}
-  #)
-  #list(APPEND swiftray_EXT_INCLUDE_DIRS 
-  #    ${CONAN_INCLUDE_DIRES}
-  #)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Boost
   find_package(Boost REQUIRED COMPONENTS thread system)
