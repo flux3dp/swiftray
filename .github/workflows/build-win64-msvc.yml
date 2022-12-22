@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          - { runner: windows-latest, build: 'cmake', dist: true }
-          - { runner: localhost-win10, build: 'cmake', dist: false}
+          - { runner: windows-latest, build: 'cmake', dist: false }
+          #- { runner: localhost-win10, build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
 
@@ -54,10 +54,10 @@ jobs:
           key: |
             ${{ hashFiles( 'vcpkg.json' ) }}-cache-key-v1
       
-      - name: install opencv (with vcpkg)
+      - name: Install packages with vcpkg manifest mode
         if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
-          vcpkg install opencv:x64-windows
+          vcpkg install .
 
       - name: Install Qt5
         if: ${{matrix.cfg.runner != 'localhost-win10' }}
