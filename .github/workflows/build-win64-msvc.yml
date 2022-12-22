@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          - { runner: windows-latest, build: 'cmake', dist: false }
-          - { runner: localhost-win10, build: 'cmake', dist: true}
+          - { runner: windows-latest, build: 'cmake', dist: true }
+          - { runner: localhost-win10, build: 'cmake', dist: false}
 
     name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
 
