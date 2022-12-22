@@ -57,7 +57,7 @@ jobs:
       - name: Install packages with vcpkg manifest mode
         if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
-          vcpkg install .
+          vcpkg install
 
       - name: Install Qt5
         if: ${{matrix.cfg.runner != 'localhost-win10' }}
