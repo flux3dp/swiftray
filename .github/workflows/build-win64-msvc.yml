@@ -1,14 +1,14 @@
 name: build-swiftray-win64-msvc
 on: 
-  workflow_dispatch:
-  inputs:
-    name:
-      Description: 'Build message'
-      default: 'Hello'
-      required: false
-  #push:
-  #  tags:
-  #    - "v*.*.*"
+  #workflow_dispatch:
+  #inputs:
+  #  name:
+  #    Description: 'Build message'
+  #    default: 'Hello'
+  #    required: false
+  push:
+    tags:
+      - "b*.*.*"
 
 
 jobs:
