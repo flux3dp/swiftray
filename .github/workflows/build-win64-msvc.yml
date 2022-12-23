@@ -35,11 +35,6 @@ jobs:
         id: conan
         uses: turtlebrowser/get-conan@main
 
-      #- name: Try OpenCV with conan
-      #  run: |
-      #    cd third_party/opencv
-      #    conan install . --build=missing
-
       # vcpkg cache
       - name: Restore vcpkg and its artifacts.
         if: ${{matrix.cfg.runner != 'localhost-win10' }}
@@ -47,21 +42,27 @@ jobs:
         id: vcpkg-cache
         with:
           path: |
-            ${{ env.VCPKG_INSTALLATION_ROOT }}
-            !${{ env.VCPKG_INSTALLATION_ROOT }}/.git
-            !${{ env.VCPKG_INSTALLATION_ROOT }}/buildtrees
-            !${{ env.VCPKG_INSTALLATION_ROOT }}/downloads
+            vcpkg_installed
           key: |
             ${{ hashFiles( 'vcpkg.json' ) }}-cache-key-v1
       
       - name: Install packages with vcpkg manifest mode
-        if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        #if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
         run: |
           vcpkg install
 
-      - name: Install Qt5
+      - name: Restore Qt cache
         if: ${{matrix.cfg.runner != 'localhost-win10' }}
-        #if: ${{ steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache@v3
+        id: qt5-cache
+        with:
+          path: |
+            ${{ github.workspace }}/Qt
+          key: |
+            qt5-cache-key-v1
+
+      - name: Install Qt5
+        if: ${{matrix.cfg.runner != 'localhost-win10' && steps.qt5-cache.outputs.cache-hit != 'true'}}
         run: |
           #cd ${{ github.workspace }}
           #vcpkg install qt5:x64-windows
@@ -71,6 +72,7 @@ jobs:
           python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O ${{ github.workspace }}/Qt
 
       - name: Create build dir
+        if: ${{matrix.cfg.runner == 'localhost-win10'}}
         shell: cmd
         run: |
           mkdir build
@@ -81,6 +83,20 @@ jobs:
           dir include
           dir lib
           dir bin
+      - name: Create build dir
+        if: ${{matrix.cfg.runner != 'localhost-win10'}}
+        shell: pwsh
+        run: |
+          mkdir build
+          dir ${{ env.VCPKG_INSTALLATION_ROOT }}
+          if (Test-Path -Path 'vcpkg_installed') {
+              cd vcpkg_installed
+              dir
+              if (Test-Path -Path 'x64_windows') {
+                cd x64_windows
+                dir
+              }
+          }
 
       - name: Setup msys2
         uses: msys2/setup-msys2@v2
