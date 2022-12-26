@@ -189,9 +189,14 @@ void MainWindow::loadCanvas() {
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
       }  else if (filename.endsWith(".dxf")) {
-        canvas_->loadDXF(filename);
+        QTemporaryDir dir;
+        QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+        QFile src_file(filename);
+        src_file.copy(temp_dxf_filepath);
+        canvas_->loadDXF(temp_dxf_filepath);
+        QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
       } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
         QTemporaryDir dir;
         Parser::PDF2SVG pdf_converter;
@@ -571,7 +576,12 @@ void MainWindow::openFile() {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
     } else if (file_name.toLower().endsWith(".dxf")) {
-      canvas_->loadDXF(file_name);
+      QTemporaryDir dir;
+      QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+      QFile src_file(file_name);
+      src_file.copy(temp_dxf_filepath);
+      canvas_->loadDXF(temp_dxf_filepath);
+      QFile::remove(temp_dxf_filepath);
     } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
       QTemporaryDir dir;
       Parser::PDF2SVG pdf_converter;
@@ -750,7 +760,12 @@ void MainWindow::openImageFile() {
   if (file_name.toLower().endsWith(".svg")) {
     canvas_->loadSVG(file_name);
   } else if (file_name.toLower().endsWith(".dxf")) {
-    canvas_->loadDXF(file_name);
+    QTemporaryDir dir;
+    QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+    QFile src_file(file_name);
+    src_file.copy(temp_dxf_filepath);
+    canvas_->loadDXF(temp_dxf_filepath);
+    QFile::remove(temp_dxf_filepath);
   } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;

@@ -121,40 +121,40 @@ void DRW_dbg::printPT(double x, double y, double z){
 }
 
 void print_debug::printS(const std::string &s){
-    std::cerr << s;
+    // std::cerr << s;
 }
 
 void print_debug::printI(long long int i){
-    std::cerr << i;
+    // std::cerr << i;
 }
 
 void print_debug::printUI(long long unsigned int i){
-    std::cerr << i;
+    // std::cerr << i;
 }
 
 void print_debug::printD(double d){
-    std::cerr << std::fixed << d;
+    // std::cerr << std::fixed << d;
 }
 
 void print_debug::printH(long long  i){
-    std::cerr << "0x" << std::setw(2) << std::setfill('0');
-    std::cerr << std::hex << i;
-    std::cerr.flags(flags);
+    // std::cerr << "0x" << std::setw(2) << std::setfill('0');
+    // std::cerr << std::hex << i;
+    // std::cerr.flags(flags);
 }
 
 void print_debug::printB(int i){
-    std::cerr << std::setw(8) << std::setfill('0');
-    std::cerr << std::setbase(2) << i;
-    std::cerr.flags(flags);
+    // std::cerr << std::setw(8) << std::setfill('0');
+    // std::cerr << std::setbase(2) << i;
+    // std::cerr.flags(flags);
 }
 
 void print_debug::printHL(int c, int s, int h){
-    std::cerr << c << '.' << s << '.';
-    std::cerr << "0x" << std::setw(2) << std::setfill('0');
-    std::cerr << std::hex << h;
-    std::cerr.flags(flags);
+    // std::cerr << c << '.' << s << '.';
+    // std::cerr << "0x" << std::setw(2) << std::setfill('0');
+    // std::cerr << std::hex << h;
+    // std::cerr.flags(flags);
 }
 
 void print_debug::printPT(double x, double y, double z){
-    std::cerr << std::fixed << "x: " << x << ", y: " << y << ", z: "<< z;
+    // std::cerr << std::fixed << "x: " << x << ", y: " << y << ", z: "<< z;
 }
