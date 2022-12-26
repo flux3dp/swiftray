@@ -128,6 +128,7 @@ software_update_init(void) {
     //win_sparkle_set_can_shutdown_callback(software_update_can_shutdown_callback);
     //win_sparkle_set_shutdown_request_callback(software_update_shutdown_request_callback);
     QString language;
+    QSettings settings;
     QVariant language_code = settings.value("window/language", 0);
     switch(language_code.toInt()) {
       case 0:
