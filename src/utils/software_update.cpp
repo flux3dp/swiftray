@@ -12,7 +12,7 @@
 
 #include "software_update.h"
 #include <QSettings>
-#include <QLocal>
+#include <QLocale>
 #include <string>
 //#include "language.h"
 //#include "../epan/prefs.h"

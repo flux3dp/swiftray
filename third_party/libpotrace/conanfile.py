@@ -9,6 +9,9 @@ class libpotrace(ConanFile):
     src_dir = "potrace-1.16"
     src_src_dir = src_dir + "/src"
     exports_sources = src_dir + "/*"
+    
+    #def requirements(self):
+    #    self.requires("zlib/1.2.13") # Failed to use for unknown reason, directly install pacman package (mingw-w64-x86_64-zlib) instead
 
     def build(self):
         with tools.chdir(self.src_dir):
