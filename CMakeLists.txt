@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
-project(Swiftray VERSION 1.1.1)
+project(Swiftray VERSION 1.1.2)
 message("System Name: ${CMAKE_SYSTEM_NAME}")
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 1)
-set(VERSION_BUILD 1)
+set(VERSION_BUILD 2)
 set(VERSION_BETA  0) #x (e.g. 0,1,2,...)
 set(VERSION_SUFFIX "") # e.g. empty("") or "-beta.x"
-set(VER_PRODUCTVERSION_STR "1.1.1") # e.g. 1.x.x or 1.x.x-beta.x
+set(VER_PRODUCTVERSION_STR "1.1.2") # e.g. 1.x.x or 1.x.x-beta.x
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
