@@ -142,7 +142,7 @@ jobs:
         if: ${{matrix.cfg.runner == 'localhost-win10' }}
         shell: cmd
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SPARKLE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
 
       - name: Build
         shell: cmd
