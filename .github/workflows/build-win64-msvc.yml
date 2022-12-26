@@ -148,7 +148,7 @@ jobs:
         shell: cmd
         run: |
           dir
-          cmake --build build --config RelWithDebInfo --parallel
+          cmake --build ./build --config RelWithDebInfo --parallel
           cd build
           dir
           dir bin
