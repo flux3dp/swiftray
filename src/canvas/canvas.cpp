@@ -174,21 +174,6 @@ void Canvas::loadDXF(QString file_name) {
       read_type = DXFReader::ByLayers;
       break;
   }
-  // QAbstractButton *byLayerButton = msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole);
-  // QAbstractButton *byColorButton = msgBox.addButton(tr("Color"), QMessageBox::AcceptRole);
-  // QAbstractButton *singleLayerButton = msgBox.addButton(tr("Single Layer"), QMessageBox::AcceptRole);
-  // int ret = msgBox.exec();
-  // if (ret == QMessageBox::AcceptRole) {
-  //   if (msgBox.clickedButton() == byColorButton) {
-  //    read_type = DXFReader::ByColors;
-  //   } else if (msgBox.clickedButton() == singleLayerButton) {
-  //    read_type = DXFReader::InSingleLayer;
-  //   } else {
-  //    read_type = DXFReader::ByLayers;
-  //   }
-  // } else {
-  //   read_type = DXFReader::ByLayers;
-  // }
   dxf_reader.openFile(file_name, dxf_layers, read_type);
   QList<ShapePtr> all_shapes;
   for (auto &layer : dxf_layers) {
