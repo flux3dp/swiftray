@@ -21,16 +21,38 @@ find_path(WINSPARKLE_INCLUDE_DIR
 )
 find_library(WINSPARKLE_LIBRARY 
   WinSparkle
-  HINTS ${USR_LOCAL_HINT}
+  HINTS ${VCPKG_HINT}/lib
+  REQUIRED
 )
+
+# handle the QUIETLY and REQUIRED arguments and set WINSPARKLE_FOUND to TRUE if
+# all listed variables are TRUE
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(WinSparkle DEFAULT_MSG WINSPARKLE_LIBRARY WINSPARKLE_INCLUDE_DIR)
 
 if(WINSPARKLE_FOUND)
   set(WINSPARKLE_LIBRARIES ${WINSPARKLE_LIBRARY} )
   set(WINSPARKLE_INCLUDE_DIRS ${WINSPARKLE_INCLUDE_DIR} )
+  if (WIN32)
+    set (WINSPARKLE_DLL_DIR "${VCPKG_HINT}/bin"
+      CACHE PATH "Path to the WinSparkle DLL"
+    )
+    file(GLOB _winsparkle_dll RELATIVE "${WINSPARKLE_DLL_DIR}"
+      "${WINSPARKLE_DLL_DIR}/WinSparkle.dll"
+    )
+    set ( WINSPARKLE_DLL ${_winsparkle_dll}
+      # We're storing filenames only. Should we use STRING instead?
+      CACHE FILEPATH "WinSparkle DLL file name"
+    )
+    mark_as_advanced( WINSPARKLE_DLL_DIR WINSPARKLE_DLL )
+  endif()
+
   message(STATUS "Found WinSparkle")
 else(WINSPARKLE_FOUND)
   set(WINSPARKLE_LIBRARIES )
   set(WINSPARKLE_INCLUDE_DIRS )
+  set(WINSPARKLE_DLL_DIR )
+  set(WINSPARKLE_DLL )
 endif(WINSPARKLE_FOUND)
 
-mark_as_advanced(WINSPARKLE_INCLUDE_DIR WINSPARKLE_LIBRARY)
+mark_as_advanced(WINSPARKLE_LIBRARIES WINSPARKLE_INCLUDE_DIRS)

@@ -127,19 +127,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   endif()
   conan_basic_setup()
 endif()
-# ======================================================
-
-# ================= Generate source files with contents filled by cmake ====================
-set(ICON_PATH "${CMAKE_SOURCE_DIR}/resources/images/")
-configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
-set(CFG_OUT_FILES
-	resources/win.rc
-	packaging/macOS/MacOSXBundleInfo.plist
-)
-foreach( _cfg_file ${CFG_OUT_FILES} )
-	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
-endforeach()
-# ============================================================================================
 
 # ======================================= Helper Macros ======================================
 # Resets cache variables if the <PackageName>_LIBRARY has become invalid.
@@ -186,9 +173,9 @@ macro(ws_find_package _package_name _enable_package _package_cmakedefine)
 		endif()
 	endif()
 endmacro()
-# ============================================================================================
 
 
+# ================================= Find dependency packages =================================
 # Qt
 find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
@@ -201,14 +188,49 @@ find_package(Qt5 COMPONENTS SerialPort REQUIRED)
 find_package(Qt5Gui COMPONENTS Private REQUIRED)
 find_package(Qt5Widgets COMPONENTS Private REQUIRED)
 find_package(Qt5Svg COMPONENTS Private REQUIRED)
+
+find_package(OpenCV REQUIRED)
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  find_package(Boost REQUIRED COMPONENTS thread system)
+  find_package(LibXml2 REQUIRED)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  ws_find_package(WinSparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  ws_find_package(Sparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
+else()
+  # TODO: Linux
+endif()
+
+if (DEFINED ENABLE_SENTRY)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    find_package(sentry CONFIG REQUIRED)
+  endif()
+endif()
+
+
+# ================= Generate source files with contents filled by cmake ====================
+# NOTE: This should be after all ws_find_package() function calls
+set(ICON_PATH "${CMAKE_SOURCE_DIR}/resources/images/")
+configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
+set(CFG_OUT_FILES
+	resources/win.rc
+	packaging/macOS/MacOSXBundleInfo.plist
+)
+foreach( _cfg_file ${CFG_OUT_FILES} )
+	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
+endforeach()
+
+# ================ General included headers ===================    
 include_directories(
   ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
   ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
   ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
 )
 
-
-# Set Bundle properties and add executable target
+# ===================== Set Bundle properties and add executable target ======================
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(WINDOWS_RC_FILES ${CMAKE_BINARY_DIR}/resources/win.rc)
   add_executable(${PROJECT_NAME} 
@@ -325,15 +347,13 @@ target_link_libraries(${PROJECT_NAME} libdxfrw)
 # Sentry
 if (DEFINED ENABLE_SENTRY)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    find_package(sentry CONFIG REQUIRED)
+    #find_package(sentry CONFIG REQUIRED)
     target_link_libraries(${PROJECT_NAME} 
       sentry::sentry
     )
-    add_custom_command(
-        TARGET ${PROJECT_NAME}  POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools//sentry-native/crashpad_handler.exe
-                ${CMAKE_BINARY_DIR}/bin/crashpad_handler.exe)
+    list (APPEND THIRD_PARTY_EXECS 
+      ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools//sentry-native/crashpad_handler.exe
+    )
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     include_directories(
       third_party/sentry-native/install/include
@@ -363,7 +383,6 @@ target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
 
 # OpenCV
-find_package(OpenCV REQUIRED)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
@@ -398,6 +417,7 @@ endif()
 
 # GLIB and GOBJECT
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # TODO: Pack into a FindGLIB.cmake and FindGObject.cmake
   find_path(GLIB_INCLUDE_DIR 
     NAMES glib.h 
     PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/glib-2.0
@@ -438,6 +458,7 @@ endif()
 
 # Poppler
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # TODO: Pack into a FindPoppler.cmakes
   find_path(POPPLER_INCLUDE_DIR 
     NAMES glib/poppler.h
     PATHS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/poppler
@@ -477,26 +498,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Boost
-  find_package(Boost REQUIRED COMPONENTS thread system)
   if(Boost_FOUND)
     message(STATUS "Found Boost")
-    #include_directories(${Boost_INCLUDE_DIRS})
-    #target_link_libraries(${PROJECT_NAME} ${BOOST_LIBRARIES}) # link the boost component libraries
-    #target_link_libraries(${PROJECT_NAME} Boost::thread Boost::system) # link the boost component libraries
   else()
     message(FATAL_ERROR "Couldn't find boost")
   endif()
   # LibXml2 & LibIconv
-  find_package(LibXml2 REQUIRED)
   if(LibXml2_FOUND)
     message(STATUS "Found LibXml2")
-    #include_directories(
-    #  ${LIBXML2_INCLUDE_DIR}
-    #  ${LIBXML2_INCLUDE_DIRS}
-    #  ${ICONV_INCLUDE_DIR}
-    #)
-    #target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES})
-    #target_link_libraries(${PROJECT_NAME} LibXml2::LibXml2)
   else()
     message(FATAL_ERROR "Couldn't find LibXml2")
   endif()
@@ -517,11 +526,12 @@ endif()
 
 # Sparkle
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  ws_find_package(WinSparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
   list(APPEND swiftray_EXT_LIBS ${WINSPARKLE_LIBRARIES})
   list(APPEND swiftray_EXT_INCLUDE_DIRS ${WINSPARKLE_INCLUDE_DIRS})
+  if (WINSPARKLE_FOUND)
+    list (APPEND THIRD_PARTY_DLLS "${WINSPARKLE_DLL_DIR}/${WINSPARKLE_DLL}")
+  endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  ws_find_package(Sparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
   list(APPEND swiftray_EXT_LIBS ${SPARKLE_LIBRARIES})
   list(APPEND swiftray_EXT_INCLUDE_DIRS ${SPARKLE_INCLUDE_DIRS})
   #message("SPARKLE_LIB: " ${SPARKLE_LIBRARY})
@@ -536,6 +546,7 @@ else()
 endif()
 
 
+
 # ===============================================================
 # Link exec target to  all linked libraries
 target_link_libraries(${PROJECT_NAME} 
@@ -545,6 +556,30 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${swiftray_EXT_INCLUDE_DIRS}
 )
+
+
+# ======== Copy external third_party dll/exec manually (some are auto copied by vcpkg) =======
+if (THIRD_PARTY_DLLS)
+  add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+      ${THIRD_PARTY_DLLS}
+      ${CMAKE_BINARY_DIR}/bin
+  )
+  #install(FILES ${THIRD_PARTY_DLLS} DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif(THIRD_PARTY_DLLS)
+
+if (THIRD_PARTY_EXECS)
+  add_custom_command(
+    TARGET ${PROJECT_NAME}  POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+      ${THIRD_PARTY_EXECS}
+      ${CMAKE_BINARY_DIR}/bin
+  )
+  #install(FILES ${THIRD_PARTY_EXECS} DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif(THIRD_PARTY_EXECS)
+
+
 
 # ====================== tests =======================
 #add_subdirectory(tests)
