@@ -18,7 +18,7 @@ class DXFReader
 {
 public:
     enum ReadType {
-        InSignleLayer,
+        InSingleLayer,
         ByLayers,
         ByColors
     };
