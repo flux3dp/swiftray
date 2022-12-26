@@ -156,23 +156,20 @@ void Canvas::loadDXF(QString file_name) {
   DXFReader::ReadType read_type;
   QMessageBox msgBox;
   msgBox.setText(tr("Select layering style:"));
-  msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole);
-  msgBox.addButton(tr("Color"), QMessageBox::YesRole);
-  msgBox.addButton(tr("Single Layer"), QMessageBox::NoRole);
+  QAbstractButton *byLayerButton = msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole);
+  QAbstractButton *byColorButton = msgBox.addButton(tr("Color"), QMessageBox::AcceptRole);
+  QAbstractButton *singleLayerButton = msgBox.addButton(tr("Single Layer"), QMessageBox::AcceptRole);
   int ret = msgBox.exec();
-  switch (ret) {
-    case QMessageBox::AcceptRole:
-      read_type = DXFReader::ByLayers;
-      break;
-    case QMessageBox::RejectRole:
-      read_type = DXFReader::ByColors;
-      break;
-    case QMessageBox::DestructiveRole:
-      read_type = DXFReader::InSignleLayer;
-      break;
-    default:
-      read_type = DXFReader::ByLayers;
-      break;
+  if (ret == QMessageBox::AcceptRole) {
+    if (msgBox.clickedButton() == byColorButton) {
+     read_type = DXFReader::ByColors;
+    } else if (msgBox.clickedButton() == singleLayerButton) {
+     read_type = DXFReader::InSignleLayer;
+    } else {
+     read_type = DXFReader::ByLayers;
+    }
+  } else {
+    read_type = DXFReader::ByLayers;
   }
   dxf_reader.openFile(file_name, dxf_layers, read_type);
   QList<ShapePtr> all_shapes;
