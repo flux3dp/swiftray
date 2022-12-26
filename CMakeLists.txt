@@ -312,12 +312,12 @@ set(swiftray_FILES
   ${SWIFTRAY_QRC}
 )
 
-target_sources(Swiftray PRIVATE
+target_sources(${PROJECT_NAME} PRIVATE
   ${swiftray_FILES}
 )
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_libraries(Swiftray "-framework AppKit")
-  target_sources(Swiftray PRIVATE
+  target_link_libraries(${PROJECT_NAME} "-framework AppKit")
+  target_sources(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/windows/osxwindow.mm
   )
 endif ()
