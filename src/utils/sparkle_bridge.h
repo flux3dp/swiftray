@@ -18,8 +18,13 @@
 
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void sparkle_software_update_init(const char *url, bool enabled, int interval);
-
 void sparkle_software_update_check(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SPARKLE_BRIDGE_H
