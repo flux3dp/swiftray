@@ -164,7 +164,7 @@ void Canvas::loadDXF(QString file_name) {
     if (msgBox.clickedButton() == byColorButton) {
      read_type = DXFReader::ByColors;
     } else if (msgBox.clickedButton() == singleLayerButton) {
-     read_type = DXFReader::InSignleLayer;
+     read_type = DXFReader::InSingleLayer;
     } else {
      read_type = DXFReader::ByLayers;
     }
