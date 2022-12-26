@@ -12,7 +12,7 @@ DXFReader::DXFReader() {
 LayerPtr DXFReader::findLayer(QString layer_name, QColor color) {
   LayerPtr target_layer;
   switch(read_type_) {
-    case InSignleLayer:
+    case InSingleLayer:
       if(dxf_layers_.empty()) {
         dxf_layers_.push_back(std::make_shared<Layer>());
       }
