@@ -162,5 +162,7 @@
         <file>resources/images/icon-rotary.png</file>
         <file>resources/images/dark/icon-rotary-2.png</file>
         <file>resources/images/dark/icon-rotary.png</file>
+        <file>resources/images/icon-market.png</file>
+        <file>resources/images/dark/icon-market.png</file>
     </qresource>
 </RCC>

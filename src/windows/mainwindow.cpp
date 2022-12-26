@@ -1103,6 +1103,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
   connect(ui->actionText, &QAction::triggered, canvas_, &Canvas::editDrawText);
   connect(ui->actionPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
+  connect(ui->actionMarket, &QAction::triggered, [=]() {
+    QDesktopServices::openUrl(QUrl("https://dmkt.io/"));
+  });
   connect(ui->actionUnion, &QAction::triggered, canvas_, &Canvas::editUnion);
   connect(ui->actionSubtract, &QAction::triggered, canvas_, &Canvas::editSubtract);
   connect(ui->actionIntersect, &QAction::triggered, canvas_, &Canvas::editIntersect);
