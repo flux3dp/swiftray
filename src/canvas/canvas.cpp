@@ -160,16 +160,13 @@ void Canvas::loadDXF(QString file_name) {
   msgBox.setText(tr("Select layering style:"));
   QAbstractButton *byLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole));
   QAbstractButton *byColorButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Color"), QMessageBox::AcceptRole));
-  QAbstractButton *singleLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Single Layer"), QMessageBox::AcceptRole));
+  //QMessageBox need one RejectRole
+  QAbstractButton *singleLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Single Layer"), QMessageBox::RejectRole));
   int ret = msgBox.exec();
-  if (ret == QMessageBox::AcceptRole) {
-    if (msgBox.clickedButton() == byColorButton) {
-     read_type = DXFReader::ByColors;
-    } else if (msgBox.clickedButton() == singleLayerButton) {
-     read_type = DXFReader::InSingleLayer;
-    } else {
-     read_type = DXFReader::ByLayers;
-    }
+  if (msgBox.clickedButton() == byColorButton) {
+    read_type = DXFReader::ByColors;
+  } else if (msgBox.clickedButton() == singleLayerButton) {
+    read_type = DXFReader::InSingleLayer;
   } else {
     read_type = DXFReader::ByLayers;
   }
