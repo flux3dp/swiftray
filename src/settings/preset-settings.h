@@ -118,7 +118,7 @@ private:
       qInfo() << file.fileName();
       preset.name = file_json.take("name").toString();
       presets_ << preset;
-      if (preset.name.indexOf("5W") > -1) {
+      if (preset.name.indexOf("10W") > -1) {
         setCurrentIndex(i);
       }
     }

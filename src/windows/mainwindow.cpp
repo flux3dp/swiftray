@@ -185,13 +185,31 @@ void MainWindow::loadCanvas() {
       } else if (filename.endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
-        double scale = 30.0 / 8.5 * 10;//define by 3cm Ruler
+        double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
       }  else if (filename.endsWith(".dxf")) {
-        canvas_->loadDXF(filename);
+        QTemporaryDir dir;
+        QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+        QFile src_file(filename);
+        src_file.copy(temp_dxf_filepath);
+        canvas_->loadDXF(temp_dxf_filepath);
+        QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 100, h_ * 100);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+      } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
+        QTemporaryDir dir;
+        Parser::PDF2SVG pdf_converter;
+        QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
+        QString temp_svg_filepath = dir.isValid() ? dir.filePath("temp.svg") : "temp.svg";
+        QFile src_file(filename);
+        src_file.copy(sanitized_filepath);
+        pdf_converter.convertPDFFile(sanitized_filepath, temp_svg_filepath);
+        canvas_->loadSVG(temp_svg_filepath);
+        pdf_converter.removeSVGFile(temp_svg_filepath);
+        QFile::remove(sanitized_filepath);
+        QPointF paste_shift(canvas_->document().getCanvasCoord(point));
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
@@ -544,7 +562,7 @@ void MainWindow::openFile() {
     QByteArray data = file.readAll();
     qInfo() << "File size:" << data.size();
 
-    if (file_name.endsWith(".bb")) {
+    if (file_name.toLower().endsWith(".bb")) {
       QDataStream stream(data);
       DocumentSerializer ds(stream);
       canvas_->setDocument(ds.deserializeDocument());
@@ -554,12 +572,17 @@ void MainWindow::openFile() {
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
-    } else if (file_name.endsWith(".svg")) {
+    } else if (file_name.toLower().endsWith(".svg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
-    } else if (file_name.endsWith(".dxf")) {
-      canvas_->loadDXF(file_name);
-    } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+    } else if (file_name.toLower().endsWith(".dxf")) {
+      QTemporaryDir dir;
+      QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+      QFile src_file(file_name);
+      src_file.copy(temp_dxf_filepath);
+      canvas_->loadDXF(temp_dxf_filepath);
+      QFile::remove(temp_dxf_filepath);
+    } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
       QTemporaryDir dir;
       Parser::PDF2SVG pdf_converter;
       QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
@@ -734,11 +757,16 @@ void MainWindow::openImageFile() {
   QFileInfo file_info{file_name};
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
-  if (file_name.endsWith(".svg")) {
+  if (file_name.toLower().endsWith(".svg")) {
     canvas_->loadSVG(file_name);
-  } else if (file_name.endsWith(".dxf")) {
-    canvas_->loadDXF(file_name);
-  } else if (file_name.endsWith(".pdf") || file_name.endsWith(".ai")) {
+  } else if (file_name.toLower().endsWith(".dxf")) {
+    QTemporaryDir dir;
+    QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
+    QFile src_file(file_name);
+    src_file.copy(temp_dxf_filepath);
+    canvas_->loadDXF(temp_dxf_filepath);
+    QFile::remove(temp_dxf_filepath);
+  } else if (file_name.toLower().endsWith(".pdf") || file_name.toLower().endsWith(".ai")) {
     QTemporaryDir dir;
     Parser::PDF2SVG pdf_converter;
     QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
@@ -1090,6 +1118,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
   connect(ui->actionText, &QAction::triggered, canvas_, &Canvas::editDrawText);
   connect(ui->actionPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
+  connect(ui->actionMarket, &QAction::triggered, [=]() {
+    QDesktopServices::openUrl(QUrl("https://dmkt.io/"));
+  });
   connect(ui->actionUnion, &QAction::triggered, canvas_, &Canvas::editUnion);
   connect(ui->actionSubtract, &QAction::triggered, canvas_, &Canvas::editSubtract);
   connect(ui->actionIntersect, &QAction::triggered, canvas_, &Canvas::editIntersect);

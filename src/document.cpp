@@ -149,8 +149,13 @@ qreal Document::width() const { return width_; }
 qreal Document::height() const { return height_; }
 
 void Document::setWidth(qreal width) {
-  width_ = width;
-  settings_.width = width;
+  if(width <= 0) {
+    width_ = 5;
+    settings_.width = 5;
+  } else {
+    width_ = width;
+    settings_.width = width;
+  }
 }
 
 void Document::setHeight(qreal height) {

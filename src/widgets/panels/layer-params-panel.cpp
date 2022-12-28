@@ -34,6 +34,14 @@ void LayerParamsPanel::loadStyles() {
   add_layer_btn_->setGeometry(QRect(button_pos.x(), button_pos.y(), 24, 24));
   add_layer_btn_->raise();
   add_layer_btn_->show();
+  ui->parameterFrame->setStyleSheet("\
+    QToolButton#btnAddLayer:hover {\
+      border: 0px;\
+    }\
+    QToolButton#btnAddLayer{ \
+      border: 0px;\
+    } \
+  ");
 }
 
 void LayerParamsPanel::loadSettings() {

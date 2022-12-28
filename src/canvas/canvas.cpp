@@ -20,8 +20,9 @@
 #include <windows/image-crop-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
-#include "parser/dxf_iface.h"
-#include "parser/dxf_data.h"
+#include <QAbstractButton>
+#include <QPushButton>
+#include "parser/dxf_reader.h"
 
 #include <private/qsvgtinydocument_p.h>
 #include "parser/my_qsvg_handler.h"
@@ -152,27 +153,38 @@ void Canvas::loadSVG(QString file_name) {
 }
 
 void Canvas::loadDXF(QString file_name) {
-  dxf_data dxf_data;
-  dxf_iface dxf_interface;
+  DXFReader dxf_reader;
   QList<LayerPtr> dxf_layers;
-  bool success = dxf_interface.printText(&document(), file_name.toStdString(), &dxf_data, &dxf_layers);
-  if (success) {
-    QList<ShapePtr> all_shapes;
-    for (auto &layer : dxf_layers) {
-      all_shapes.append(layer->children());
-    }
-    document().setSelections(all_shapes);
-    double scale = 10;
-    transformControl().applyScale(QPointF(0,0), scale, scale, false);
-    if (all_shapes.size() == 1) {
-      document().setActiveLayer(all_shapes.first()->layer()->name());
-      Q_EMIT layerChanged();
-    }
-
-    forceActiveFocus();
-    emitAllChanges();
-    update();
+  DXFReader::ReadType read_type;
+  QMessageBox msgBox;
+  msgBox.setText(tr("Select layering style:"));
+  QAbstractButton *byLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole));
+  QAbstractButton *byColorButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Color"), QMessageBox::AcceptRole));
+  //QMessageBox need one RejectRole
+  QAbstractButton *singleLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Single Layer"), QMessageBox::RejectRole));
+  int ret = msgBox.exec();
+  if (msgBox.clickedButton() == byColorButton) {
+    read_type = DXFReader::ByColors;
+  } else if (msgBox.clickedButton() == singleLayerButton) {
+    read_type = DXFReader::InSingleLayer;
+  } else {
+    read_type = DXFReader::ByLayers;
   }
+  dxf_reader.openFile(file_name, dxf_layers, read_type);
+  QList<ShapePtr> all_shapes;
+  for (auto &layer : dxf_layers) {
+    all_shapes.append(layer->children());
+    document().addLayer(layer);
+  }
+  document().setSelections(all_shapes);
+  if (all_shapes.size() == 1) {
+    document().setActiveLayer(all_shapes.first()->layer()->name());
+    Q_EMIT layerChanged();
+  }
+
+  forceActiveFocus();
+  emitAllChanges();
+  update();
 }
 
 void Canvas::paint(QPainter *painter) {
@@ -217,6 +229,14 @@ void Canvas::keyPressEvent(QKeyEvent *e) {
   if (e->modifiers() & Qt::ControlModifier) {
     qInfo() << (e->modifiers() & Qt::ControlModifier);
     is_holding_ctrl_ = e->modifiers() & Qt::ControlModifier;
+  }
+
+  if (is_holding_ctrl_) {
+    if (e->key() == Qt::Key_Equal || e->key() == Qt::Key_Plus) {
+      setScaleWithCenter(qreal(qRound((document().scale() + 0.0051)*100))/100);
+    } else if (e->key() == Qt::Key_Minus) {
+      setScaleWithCenter(qreal(qRound((document().scale() - 0.0051)*100))/100);
+    }
   }
 
   if (e->modifiers() & Qt::ShiftModifier) {

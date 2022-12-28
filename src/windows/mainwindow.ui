@@ -88,6 +88,7 @@
    <addaction name="actionPolygon"/>
    <addaction name="actionLine"/>
    <addaction name="actionPath"/>
+   <addaction name="actionMarket"/>
   </widget>
   <widget class="QDockWidget" name="fontDock">
    <property name="sizePolicy">
@@ -1564,6 +1565,15 @@
   <action name="actionConsole">
    <property name="text">
     <string>Console</string>
+   </property>
+  </action>
+  <action name="actionMarket">
+   <property name="icon">
+    <iconset resource="../../qml.qrc">
+     <normaloff>:/resources/images/icon-market.png</normaloff>:/resources/images/icon-market.png</iconset>
+   </property>
+   <property name="text">
+    <string>Market</string>
    </property>
   </action>
  </widget>

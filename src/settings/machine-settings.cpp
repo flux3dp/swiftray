@@ -92,6 +92,7 @@ MachineSet MachineSet::fromJson(const QJsonObject &obj) {
   m.icon_url = obj["icon"].toString();
 
   m.width = obj["width"].toInt();
+  if(m.width <= 0) m.width = 5;
   m.height = obj["height"].toInt();
 
   m.origin = (MachineSet::OriginType) obj["origin"].toInt();
