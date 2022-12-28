@@ -112,6 +112,25 @@ jobs:
           cd build
           cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
 
+      - name: Install Certificate
+        if: ${{ matrix.cfg.dist }}
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          #SIGN_IDENTITY_ID: 
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          # it's necessary to extend the unlock time for keychain (default: 300s), 
+          # otherwise it will get stuck in codesign stage when it's locked again
+          security set-keychain-settings -lut 1800 build.keychain
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security show-keychain-info build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
+
       - name: Compile (Build) project
         if: ${{matrix.cfg.build == 'qmake' }}
         run: |
@@ -120,22 +139,18 @@ jobs:
           make -j10
       
       - name: Compile (Build) project
-        if: ${{matrix.cfg.build == 'cmake' && matrix.cfg.dist }}
+        if: ${{matrix.cfg.build == 'cmake'}}
         env: 
           MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
           MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
-          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          
           cd build
-          #cmake --build . --target Swiftray -- -j 6
-          cmake --build . --target swiftray_app_bundle -- -j 6
+          if [ ${{ matrix.cfg.dist }} = true ] ; then
+            cmake --build . --target swiftray_app_bundle -- -j 6
+          else
+            cmake --build . --target Swiftray -- -j 6
+          fi
 
       #- name: Deploy (Copy necessary shared libraries)
       #  run: |
@@ -180,6 +195,7 @@ jobs:
           sentry-cli upload-dif -o flux3dp -p swiftray *.dSYM
           cd ${{ github.workspace }}
           cd build
+          dsymutil --minimize --out Swiftray.dSYM Swiftray.app/Contents/MacOS/Swiftray
           #dsymutil Swiftray.app/Contents/MacOS/Swiftray
           #sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
           sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.dSYM

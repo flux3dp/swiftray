@@ -456,12 +456,12 @@ for framework in "$pkglib"/*.framework/Versions/*/* ; do
 	fi
 done
 
-echo "Dsymifying binaries to $bundle_dsym:"
+#echo "Dsymifying binaries to $bundle_dsym:"
 # shellcheck disable=SC2086
-dsymutil --minimize --out "$bundle_dsym" \
-	$bundle_binary_list \
-	"${frameworks[@]}" \
-	"$pkglib"/*.dylib
+#dsymutil --minimize --out "$bundle_dsym" \
+#	$bundle_binary_list \
+#	"${frameworks[@]}" \
+#	"$pkglib"/*.dylib
 
 # echo "Stripping binaries:"
 # # shellcheck disable=SC2086
@@ -559,13 +559,12 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 	# https://sparkle-project.org/documentation/#4-distributing-your-app
 	# https://sparkle-project.org/documentation/sandboxing/#code-signing
 
-	if [ "$sparkle_version" == "2" ] ; then
+  if [ "$sparkle_version" == "2" ] ; then
 		echo "Signing Sparkle's assets"
 		codesign \
 			--sign "Developer ID Application: $CODE_SIGN_IDENTITY" \
 			--force \
 			--options runtime \
-			--verbose \
 			"$pkglib/Sparkle.framework/Versions/B/AutoUpdate" \
 			"$pkglib/Sparkle.framework/Versions/B/Updater.app" \
 			"$pkglib/Sparkle.framework" \
@@ -587,7 +586,6 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 			--force \
 			--timestamp \
 			--options runtime \
-			--verbose \
 			"$pkglib/Sparkle.framework/Versions/A/Resources/AutoUpdate.app" \
 			|| exit 1
 	fi
@@ -631,7 +629,7 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 
 	echo "Signing primary executable"
 	codesign_file "$pkgexec/$app_name"
-
+  
 	echo "Signing $bundle"
 	codesign_file "$bundle"
 
