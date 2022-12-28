@@ -177,17 +177,22 @@ endmacro()
 
 # ================================= Find dependency packages =================================
 # Qt
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS Quick REQUIRED)
-find_package(Qt5 COMPONENTS QuickWidgets REQUIRED)
-find_package(Qt5 COMPONENTS OpenGL REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
-find_package(Qt5 COMPONENTS Svg REQUIRED)
-find_package(Qt5 COMPONENTS SerialPort REQUIRED)
-find_package(Qt5Gui COMPONENTS Private REQUIRED)
-find_package(Qt5Widgets COMPONENTS Private REQUIRED)
-find_package(Qt5Svg COMPONENTS Private REQUIRED)
+if(USE_qt6)
+  set(qtver "6")
+else()
+  set(qtver "5")
+endif()
+find_package(Qt${qtver} COMPONENTS Core REQUIRED)
+find_package(Qt${qtver} COMPONENTS Widgets REQUIRED)
+find_package(Qt${qtver} COMPONENTS Quick REQUIRED)
+find_package(Qt${qtver} COMPONENTS QuickWidgets REQUIRED)
+find_package(Qt${qtver} COMPONENTS OpenGL REQUIRED)
+find_package(Qt${qtver} COMPONENTS Gui REQUIRED)
+find_package(Qt${qtver} COMPONENTS Svg REQUIRED)
+find_package(Qt${qtver} COMPONENTS SerialPort REQUIRED)
+find_package(Qt${qtver}Gui COMPONENTS Private REQUIRED)
+find_package(Qt${qtver}Widgets COMPONENTS Private REQUIRED)
+find_package(Qt${qtver}Svg COMPONENTS Private REQUIRED)
 
 find_package(OpenCV REQUIRED)
 
@@ -211,6 +216,73 @@ if (DEFINED ENABLE_SENTRY)
 endif()
 
 
+# ========================= Set variables or configs after find_package() ====================================
+if (Qt${qtver}Widgets_VERSION VERSION_LESS 5.10)
+  message(FATAL_ERROR "Qt 5.12 or later is required.")
+endif()
+if (Qt${qtver}Widgets_VERSION VERSION_LESS 5.12)
+  message(WARNING "Wireshark can be build with this version of Qt, though 5.12 or higher is recommended.")
+endif()
+#if(NOT DEFINED MOC_OPTIONS)
+#  # Squelch moc verbose "nothing to do" output
+#  set(MOC_OPTIONS -nn)
+#endif()
+
+# CMake uses qmake to find Qt4. It relies on Qt's CMake modules
+# to find Qt5. This means that we can't assume that the qmake
+# in our PATH is the correct one. We can fetch qmake's location
+# from Qt5::qmake, which is defined in Qt5CoreConfigExtras.cmake.
+get_target_property(QT_QMAKE_EXECUTABLE Qt${qtver}::qmake IMPORTED_LOCATION)
+get_filename_component(_qt_bin_path "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
+set(QT_BIN_PATH "${_qt_bin_path}" CACHE INTERNAL
+  "Path to qmake, macdeployqt, windeployqt, and other Qt utilities."
+)
+# Use qmake to find windeployqt and macdeployqt. Ideally one of
+# the modules in ${QTDIR}/lib/cmake would do this for us.
+if(WIN32)
+  if (USE_qt6 AND USE_MSYSTEM)
+    set(_windeployqt_name "windeployqt-qt6")
+  else()
+    set(_windeployqt_name "windeployqt")
+  endif()
+  find_program(QT_WINDEPLOYQT_EXECUTABLE ${_windeployqt_name}
+    HINTS "${QT_BIN_PATH}"
+    DOC "Path to the windeployqt utility."
+  )
+elseif(APPLE)
+  find_program(QT_MACDEPLOYQT_EXECUTABLE macdeployqt
+    HINTS "${QT_BIN_PATH}"
+    DOC "Path to the macdeployqt utility."
+  )
+  find_program(DMGBUILD_EXECUTABLE dmgbuild
+    DOC "Path to the dmgbuild utility"
+  )
+  # https://doc.qt.io/qt-5/supported-platforms.html
+  # https://doc.qt.io/qt-5.11/supported-platforms-and-configurations.html
+  # https://doc.qt.io/qt-5.15/supported-platforms.html
+  # https://doc-snapshots.qt.io/qt6-dev/supported-platforms.html
+  if(Qt${qtver}Widgets_VERSION VERSION_GREATER_EQUAL "6.0.0")
+    set(MIN_MACOS_VERSION 10.14)
+  elseif(Qt5Widgets_VERSION VERSION_GREATER_EQUAL "5.14.0")
+    set(MIN_MACOS_VERSION 10.13)
+  elseif(Qt5Widgets_VERSION VERSION_GREATER_EQUAL "5.12.0")
+    set(MIN_MACOS_VERSION 10.12)
+  elseif(Qt5Widgets_VERSION VERSION_GREATER_EQUAL "5.10.0")
+    set(MIN_MACOS_VERSION 10.11)
+  endif()
+  if(CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS MIN_MACOS_VERSION)
+    message(FATAL_ERROR "Qt version ${Qt${qtver}Widgets_VERSION} requires CMAKE_OSX_DEPLOYMENT_TARGET (${CMAKE_OSX_DEPLOYMENT_TARGET}) >= ${MIN_MACOS_VERSION}")
+  endif()
+endif()
+
+# Qt requires MSVC /permissive- option since 6.3 release
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND Qt${qtver}Widgets_VERSION VERSION_GREATER_EQUAL "6.3.0")
+  add_compile_options("/permissive-")
+endif()
+
+
+
+
 # ================= Generate source files with contents filled by cmake ====================
 # NOTE: This should be after all ws_find_package() function calls
 set(ICON_PATH "${CMAKE_SOURCE_DIR}/resources/images/")
@@ -218,6 +290,7 @@ configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h
 set(CFG_OUT_FILES
 	resources/win.rc
 	packaging/macOS/MacOSXBundleInfo.plist
+  packaging/macOS/osx-app.sh
 )
 foreach( _cfg_file ${CFG_OUT_FILES} )
 	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
@@ -225,9 +298,9 @@ endforeach()
 
 # ================ General included headers ===================    
 include_directories(
-  ${Qt5Gui_PRIVATE_INCLUDE_DIRS}
-  ${Qt5Svg_PRIVATE_INCLUDE_DIRS}
-  ${Qt5Widgets_PRIVATE_INCLUDE_DIRS}
+  ${Qt${qtver}Gui_PRIVATE_INCLUDE_DIRS}
+  ${Qt${qtver}Svg_PRIVATE_INCLUDE_DIRS}
+  ${Qt${qtver}Widgets_PRIVATE_INCLUDE_DIRS}
 )
 
 # ===================== Set Bundle properties and add executable target ======================
@@ -241,7 +314,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   #  WIN32 TRUE # Make it a GUI app instead of console app
   #)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_SKIP_RPATH TRUE)
+  #set(CMAKE_SKIP_RPATH TRUE)
   #set(CMAKE_SKIP_BUILD_RPATH TRUE)
   #set(CMAKE_SKIP_INSTALL_RPATH TRUE)
   #set(CMAKE_MACOSX_RPATH 1)
@@ -599,6 +672,15 @@ endif(THIRD_PARTY_EXECS)
 
 
 # ====================== bundle =======================
-# TODO: BundleUtilities and CPack
+# TODO: Use BundleUtilities and CPack?
 
-
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  add_custom_target(swiftray_app_bundle)
+  set_target_properties(swiftray_app_bundle PROPERTIES FOLDER "Copy Tasks")
+  add_custom_command(TARGET swiftray_app_bundle
+    POST_BUILD
+    COMMAND "${CMAKE_BINARY_DIR}/packaging/macOS/osx-app.sh"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  add_dependencies(swiftray_app_bundle ${PROJECT_NAME})
+endif()
