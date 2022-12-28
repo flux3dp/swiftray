@@ -20,6 +20,8 @@
 #include <windows/image-crop-dialog.h>
 #include <settings/file-path-settings.h>
 #include <QFileDialog>
+#include <QAbstractButton>
+#include <QPushButton>
 #include "parser/dxf_reader.h"
 
 #include <private/qsvgtinydocument_p.h>
@@ -156,18 +158,15 @@ void Canvas::loadDXF(QString file_name) {
   DXFReader::ReadType read_type;
   QMessageBox msgBox;
   msgBox.setText(tr("Select layering style:"));
-  QAbstractButton *byLayerButton = msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole);
-  QAbstractButton *byColorButton = msgBox.addButton(tr("Color"), QMessageBox::AcceptRole);
-  QAbstractButton *singleLayerButton = msgBox.addButton(tr("Single Layer"), QMessageBox::AcceptRole);
+  QAbstractButton *byLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole));
+  QAbstractButton *byColorButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Color"), QMessageBox::AcceptRole));
+  //QMessageBox need one RejectRole
+  QAbstractButton *singleLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Single Layer"), QMessageBox::RejectRole));
   int ret = msgBox.exec();
-  if (ret == QMessageBox::AcceptRole) {
-    if (msgBox.clickedButton() == byColorButton) {
-     read_type = DXFReader::ByColors;
-    } else if (msgBox.clickedButton() == singleLayerButton) {
-     read_type = DXFReader::InSingleLayer;
-    } else {
-     read_type = DXFReader::ByLayers;
-    }
+  if (msgBox.clickedButton() == byColorButton) {
+    read_type = DXFReader::ByColors;
+  } else if (msgBox.clickedButton() == singleLayerButton) {
+    read_type = DXFReader::InSingleLayer;
   } else {
     read_type = DXFReader::ByLayers;
   }
