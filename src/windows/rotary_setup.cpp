@@ -18,14 +18,19 @@ RotarySetup::RotarySetup(QWidget *parent) :
     axis_group_->addButton(ui->YRadioButton);
     axis_group_->addButton(ui->ZRadioButton);
     axis_group_->addButton(ui->ARadioButton);
-    QListWidgetItem *item = ui->typeList->item(0);
-    item->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary.png" : ":/resources/images/icon-rotary.png"));
-    item = ui->typeList->item(1);
-    item->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary-2.png" : ":/resources/images/icon-rotary-2.png"));
-    ui->typeList->setCurrentRow(0);
+    ui->rollerButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary.png" : ":/resources/images/icon-rotary.png"));
+    ui->chuckButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-rotary-2.png" : ":/resources/images/icon-rotary-2.png"));
+    ui->rollerButton->setChecked(true);
+    if(isDarkMode()) {
+        ui->rollerButton->setStyleSheet(selected_dark_);
+        ui->chuckButton->setStyleSheet(unselect_dark_);
+    } else {
+        ui->rollerButton->setStyleSheet(selected_light_);
+        ui->chuckButton->setStyleSheet(unselect_light_);
+    }
     mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
     roller_diameter_ = ui->rollerDiameterSpinBox->value();
-    type_index_ = 0;
+    roller_type_ = true;
     resetUI();
     connect(ui->testBtn, &QAbstractButton::clicked, this, &RotarySetup::testRotary);
     connect(ui->rotaryCheckBox, &QCheckBox::stateChanged, [=](int state){
@@ -40,11 +45,36 @@ RotarySetup::RotarySetup(QWidget *parent) :
         }
         Q_EMIT rotaryModeChanged(is_rotary_mode_);
     });
-    connect(ui->typeList, &QListWidget::currentRowChanged, [=](int currentRow) {
-        if(currentRow == 0) {
+    connect(ui->rollerButton, &QAbstractButton::clicked, [=](bool checked) {
+        ui->rollerButton->setChecked(true);
+        ui->chuckButton->setChecked(false);
+    });
+    connect(ui->chuckButton, &QAbstractButton::clicked, [=](bool checked) {
+        ui->chuckButton->setChecked(true);
+        ui->rollerButton->setChecked(false);
+    });
+    connect(ui->rollerButton, &QAbstractButton::toggled, [=](bool checked) {
+        if(checked) {
             ui->rollerDiameterSpinBox->setEnabled(true);
-        } else {
+            if(isDarkMode()) {
+                ui->rollerButton->setStyleSheet(selected_dark_);
+                ui->chuckButton->setStyleSheet(unselect_dark_);
+            } else {
+                ui->rollerButton->setStyleSheet(selected_light_);
+                ui->chuckButton->setStyleSheet(unselect_light_);
+            }
+        }
+    });
+    connect(ui->chuckButton, &QAbstractButton::toggled, [=](bool checked) {
+        if(checked) {
             ui->rollerDiameterSpinBox->setEnabled(false);
+            if(isDarkMode()) {
+                ui->rollerButton->setStyleSheet(unselect_dark_);
+                ui->chuckButton->setStyleSheet(selected_dark_);
+            } else {
+                ui->rollerButton->setStyleSheet(unselect_light_);
+                ui->chuckButton->setStyleSheet(selected_light_);
+            }
         }
     });
     connect(ui->CircumSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), [=](double circumference){
@@ -67,7 +97,8 @@ RotarySetup::RotarySetup(QWidget *parent) :
             rotary_axis_ = 'A';
         }
         circumference_ = ui->CircumSpinBox->value();
-        type_index_ = ui->typeList->currentRow();
+        if(ui->rollerButton->isChecked()) roller_type_ = true;
+        else roller_type_ = false;
         mm_per_rotation_ = ui->mmPerRotationSpinBox->value();
         roller_diameter_ = ui->rollerDiameterSpinBox->value();
 
@@ -191,7 +222,7 @@ void RotarySetup::testRotary()
 
 void RotarySetup::updateRotaryScale()
 {
-    if(ui->typeList->currentRow() == 0) {
+    if(ui->rollerButton->isChecked()) {
         double circumference = ui->rollerDiameterSpinBox->value() * M_PI;
         if(circumference > 0) {
             rotary_scale_ = ui->mmPerRotationSpinBox->value() / circumference;
@@ -241,7 +272,13 @@ void RotarySetup::resetUI()
     }
     ui->ObjectSpinBox->setValue(circumference_ / M_PI);
     ui->CircumSpinBox->setValue(circumference_);
-    ui->typeList->setCurrentRow(type_index_);
+    if(roller_type_) {
+        ui->rollerButton->setChecked(true);
+        ui->chuckButton->setChecked(false);
+    } else {
+        ui->rollerButton->setChecked(false);
+        ui->chuckButton->setChecked(true);
+    }
     ui->mmPerRotationSpinBox->setValue(mm_per_rotation_);
     ui->rollerDiameterSpinBox->setValue(roller_diameter_);
 }

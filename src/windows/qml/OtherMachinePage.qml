@@ -93,7 +93,7 @@ Item {
                     id: spinBoxHeight
                     value: 100
                     Layout.preferredWidth: 150
-                    from: 5
+                    from: 0
                     to: 10000
                     enabled: true
                     editable: true

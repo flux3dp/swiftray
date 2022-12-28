@@ -16,7 +16,7 @@ TARGET = Swiftray
 #Application version
 VERSION_MAJOR = 1
 VERSION_MINOR = 1
-VERSION_BUILD = 1
+VERSION_BUILD = 2
 VERSION_SUFFIX = "" # empty string or "-beta.X"
 DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
        "VERSION_MINOR=$$VERSION_MINOR"\
@@ -219,6 +219,14 @@ SOURCES += \
     $$files(src/periph/motion_controller/*.cpp) \
     $$files(src/common/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
+    $$files(src/parser/dxf_rs/debug/*.cpp) \
+    $$files(src/parser/dxf_rs/engine/*.cpp) \
+    $$files(src/parser/dxf_rs/math/*.cpp) \
+    $$files(src/parser/dxf_rs/information/*.cpp) \
+    $$files(src/parser/dxf_rs/filters/*.cpp) \
+    $$files(src/parser/dxf_rs/fileio/*.cpp) \
+    $$files(src/parser/dxf_rs/muparser/*.cpp) \
+    $$files(src/parser/dxf_rs/jwwlib/*.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
     third_party/libdxfrw/drw_base.cpp \
@@ -272,6 +280,13 @@ HEADERS += \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
+    $$files(src/parser/dxf_rs/debug/*.h) \
+    $$files(src/parser/dxf_rs/math/*.h) \
+    $$files(src/parser/dxf_rs/information/*.h) \
+    $$files(src/parser/dxf_rs/engine/*.h) \
+    $$files(src/parser/dxf_rs/fileio/*.h) \
+    $$files(src/parser/dxf_rs/muparser/*.h) \
+    $$files(src/parser/dxf_rs/jwwlib/*.h) \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
     $$files(src/executor/*.h) \
     $$files(src/executor/machine_job/*.h) \
