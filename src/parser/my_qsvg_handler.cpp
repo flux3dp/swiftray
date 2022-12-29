@@ -3692,6 +3692,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
                 break;
         }
     }
+    QRectF rect = QRectF();
     for(int i = 0; i < data_list_.size(); ++i) {
         ShapePtr new_shape;
         if(data_list_[i].type == QSvgNode::PATH) {
@@ -3704,10 +3705,16 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         new_shape->applyTransform(data_list_[i].trans);
         LayerPtr target_layer = findLayer(data_list_[i].layer_name, data_list_[i].color);
         target_layer->addShape(new_shape);
+        rect |= new_shape->boundingRect();
     }
-    for(int i = 0; i < svg_layers_.size(); ++i) {
-        doc->addLayer(svg_layers_[i]);
-        svg_layers->push_back(svg_layers_[i]);
+    for (auto &layer : svg_layers_) {
+        for (auto shape : layer->children()) {
+            QTransform temp_trans = QTransform();
+            temp_trans.translate(-1*rect.topLeft().x(), -1*rect.topLeft().y());
+            shape->applyTransform(temp_trans);
+        }
+        doc->addLayer(layer);
+        svg_layers->push_back(layer);
     }
 }
 
