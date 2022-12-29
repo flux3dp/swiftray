@@ -73,7 +73,6 @@ QT_BEGIN_NAMESPACE
 Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 
 static const char *qt_inherit_text = "inherit";
-QTransform g_transform;
 QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
@@ -1935,12 +1934,11 @@ static void parseTransform(QSvgNode *node,
                            MyQSvgHandler *)
 {
     if (attributes.transform.isEmpty()) {
-        g_transform = QTransform();
+        node->appendStyleProperty(new QSvgTransformStyle(QTransform()), attributes.id);
         return;
     }
     
     QTransform matrix = parseTransformationMatrix(trimRef(attributes.transform));
-    g_transform = matrix;
 
     if (!matrix.isIdentity()) {
         node->appendStyleProperty(new QSvgTransformStyle(QTransform(matrix)), attributes.id);
@@ -3603,6 +3601,17 @@ QString getNodeLayerName(QSvgNode* current_node) {
     return layer_name;
 }
 
+QTransform getNodeTransform(QSvgNode* current_node) {
+    QTransform trans = QTransform();
+    while(1) {
+        if(current_node->type() == QSvgNode::DOC) 
+            break;
+        trans *= ((QSvgTransformStyle*)current_node->styleProperty(QSvgStyleProperty::TRANSFORM))->qtransform();
+        current_node = current_node->parent();
+    }
+    return trans;
+}
+
 void MyQSvgHandler::transformUse(QString node_name, QTransform transform) {
     for(int i = 0; i < data_list_.size(); ++i) {
         if(data_list_[i].node_name == node_name) {
@@ -3925,14 +3934,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
     }
 
     if (node) {
-        if (!m_nodes.isEmpty()) {
-            //to iterate current transform
-            QMap<QString, QTransform>::iterator iter = transform_map_.find(m_nodes.top()->nodeId());
-            if(iter != transform_map_.end()) {
-                g_transform *= iter.value();
-            }
-            transform_map_.insert(someId(attributes), g_transform);
-        }
+        QTransform trans = getNodeTransform(node);
         if(node->type() == QSvgNode::PATH) {
             QSvgPath *tmp_node = (QSvgPath*) node;
             double scale = 30.0 / 8.5;//define by 3cm Ruler
@@ -3943,7 +3945,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
             node_data.qpath = *tmp_node->qpath();
             node_data.node_name = node->nodeId();
             node_data.layer_name = getNodeLayerName(node);
-            node_data.trans = g_transform * tmp_scale;
+            node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::IMAGE) {
@@ -3955,7 +3957,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
             node_data.image = g_image;
             node_data.node_name = node->nodeId();
             node_data.layer_name = getNodeLayerName(node);
-            node_data.trans = g_transform * tmp_scale;
+            node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::USE) {
@@ -3963,7 +3965,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
             NodeData node_data;
             node_data.type = QSvgNode::USE;
             node_data.node_name = use_node->linkId();
-            node_data.trans = g_transform;
+            node_data.trans = trans;
             data_list_.push_back(node_data);
         }
         m_nodes.push(node);

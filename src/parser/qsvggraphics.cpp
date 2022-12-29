@@ -464,7 +464,8 @@ void QSvgText::addText(const QString &text)
 QSvgUse::QSvgUse(const QPointF &start, QSvgNode *parent, QSvgNode *node)
     : QSvgNode(parent), m_link(node), m_start(start), m_recursing(false)
 {
-    m_linkId = node->nodeId();
+    if(node != nullptr)
+        m_linkId = node->nodeId();
 }
 
 void QSvgUse::draw(QPainter *p, QSvgExtraStates &states)
