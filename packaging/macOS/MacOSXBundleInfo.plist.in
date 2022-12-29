@@ -13,7 +13,7 @@
     <key>SUPublicDSAKeyFile</key>
     <string>dsa_pub.pem</string>
     <key>SUPublicEDKey</key>
-    <string>2r0lDzysrx74lZFY9h5p+JTgMuEJR3wY8dqv42XH0yI=</string>
+    <string>f3Gyswrnt1E1LBM+TUmLP8QN58HsLC4QSmYqjIeCjbQ=</string>
     <!-- Unused, set URL in program with Sparkle API
     <key>SUFeedURL</key>
     <string>https://swiftray.s3.ap-northeast-1.amazonaws.com/swiftray_update_appcast_macOS.xml</string>
