@@ -169,6 +169,10 @@ private Q_SLOTS:
   void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
   void machineDisconnected();
 
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+  void softwareUpdateRequested();
+#endif
+
 private:
 
   void loadWidgets() override;

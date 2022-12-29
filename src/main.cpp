@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QTranslator>
 #include <QDebug>
+#include <main_application.h>
 #include <canvas/canvas.h>
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
@@ -33,7 +34,7 @@ int mainCLI(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-  QApplication app(argc, argv);
+  MainApplication app(argc, argv);
   QCoreApplication::setOrganizationName("FLUX");
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("Swiftray");

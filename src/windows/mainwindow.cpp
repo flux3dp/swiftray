@@ -35,6 +35,7 @@
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
 #include <QSerialPort>
+#include <main_application.h>
 #include "parser/pdf2svg.h"
 
 #include <QResource>
@@ -1570,6 +1571,13 @@ void MainWindow::registerEvents() {
     Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
+
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+  connect(mainApp, &MainApplication::softwareUpdateRequested, this, &MainWindow::softwareUpdateRequested,
+      Qt::BlockingQueuedConnection);
+  connect(mainApp, &MainApplication::softwareUpdateClose, this, &QMainWindow::close,
+      Qt::BlockingQueuedConnection);
+#endif
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -2606,3 +2614,14 @@ void MainWindow::machineDisconnected() {
   Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }
+
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+void MainWindow::softwareUpdateRequested() {
+  // Check if we can close the app and update
+  // 1. Require user to save unsaved changes
+  // 2. TODO: check if task is still running
+  if ( ! handleUnsavedChange()) {
+    mainApp->rejectSoftwareUpdate();
+  }
+}
+#endif

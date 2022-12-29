@@ -375,6 +375,7 @@ set(SWIFTRAY_SRC
   ${SRC_DIR}/document.cpp
   ${SRC_DIR}/command.cpp
   ${SRC_DIR}/clipboard.cpp
+  ${SRC_DIR}/main_application.cpp
 	)
 SET(SWIFTRAY_QRC
   "qml.qrc" # replaced qt5_add_resources() when CMAKE_AUTORCC is ON
