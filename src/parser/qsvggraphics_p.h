@@ -195,6 +195,7 @@ public:
     void addText(const QString &text);
     void addLineBreak() {m_tspans.append(LINEBREAK);}
     void setWhitespaceMode(WhitespaceMode mode) {m_mode = mode;}
+    QPointF getCoord() {return m_coord;}
 
     //QRectF bounds(QPainter *p, QSvgExtraStates &states) const override;
 private:

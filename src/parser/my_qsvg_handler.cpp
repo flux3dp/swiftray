@@ -3701,6 +3701,8 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
         } else if(data_list_[i].type == QSvgNode::USE) {
             continue;
+        } else if(data_list_[i].type == QSvgNode::TEXT) {
+            new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 0);
         }
         new_shape->applyTransform(data_list_[i].trans);
         LayerPtr target_layer = findLayer(data_list_[i].layer_name, data_list_[i].color);
@@ -3974,6 +3976,20 @@ bool MyQSvgHandler::startElement(const QString &localName,
             node_data.node_name = use_node->linkId();
             node_data.trans = trans;
             data_list_.push_back(node_data);
+        } else if(node->type() == QSvgNode::TEXT) {
+            QSvgText *tmp_node = (QSvgText*) node;
+            double scale = 30.0 / 8.5;//define by 3cm Ruler
+            QTransform tmp_scale = QTransform();
+            tmp_scale = tmp_scale.translate(tmp_node->getCoord().x(), tmp_node->getCoord().y());
+            tmp_scale = tmp_scale.scale(g_scale * scale, g_scale * scale);
+
+            QFont font = ((QSvgFontStyle*)node->styleProperty(QSvgStyleProperty::FONT))->qfont();
+            NodeData node_data;
+            node_data.type = QSvgNode::TEXT;
+            node_data.trans = trans * tmp_scale;
+            node_data.color = g_color;
+            node_data.font = font;
+            data_list_.push_back(node_data);
         }
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
@@ -4093,6 +4109,7 @@ bool MyQSvgHandler::characters(const QStringRef &str)
         return true;
 
     if (m_nodes.top()->type() == QSvgNode::TEXT || m_nodes.top()->type() == QSvgNode::TEXTAREA) {
+        data_list_[data_list_.size()-1].text = str.toString();
         static_cast<QSvgText*>(m_nodes.top())->addText(str.toString());
     } else if (m_nodes.top()->type() == QSvgNode::TSPAN) {
         static_cast<QSvgTspan*>(m_nodes.top())->addText(str.toString());

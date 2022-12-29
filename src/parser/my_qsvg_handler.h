@@ -198,9 +198,11 @@ private:
         QString layer_name;
         int type;
         QTransform trans;
+        QColor color;
         QPainterPath qpath;
         QImage image;
-        QColor color;
+        QFont font;
+        QString text;
     };
     QList<NodeData> data_list_;
     int read_type_;
