@@ -32,6 +32,8 @@
 #include <windows/rotary_setup.h>
 #include <windows/consoledialog.h>
 
+#include <config.h>
+
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
 #endif

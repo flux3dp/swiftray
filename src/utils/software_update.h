@@ -49,19 +49,19 @@ extern void software_update_cleanup(void);
 extern const char *software_update_info(void);
 
 #if (_WIN32 || _WIN64)
-/** Check to see if Wireshark can shut down safely (e.g. offer to save the
+/** Check to see if Swiftray can shut down safely (e.g. offer to save the
  *  current capture). Called from a separate thread.
  *
  * Does nothing on platforms that don't support software updates.
  */
-//extern int software_update_can_shutdown_callback(void);
+extern int software_update_can_shutdown_callback(void);
 
-/** Shut down Wireshark in preparation for an upgrade. Called from a separate
+/** Shut down Swiftray in preparation for an upgrade. Called from a separate
  *  thread.
  *
  * Does nothing on platforms that don't support software updates.
  */
-//extern void software_update_shutdown_request_callback(void);
+extern void software_update_shutdown_request_callback(void);
 #endif
 
 #ifdef __cplusplus
