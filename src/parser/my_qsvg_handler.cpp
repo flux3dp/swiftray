@@ -73,10 +73,8 @@ QT_BEGIN_NAMESPACE
 Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 
 static const char *qt_inherit_text = "inherit";
-LayerPtr g_layer_ptr_ = nullptr;
-QList<LayerPtr> g_svgpp_layers_;
-QMap<QString, QTransform> g_transform_map_;
-QTransform g_transform_;
+QTransform g_transform;
+QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
@@ -1937,12 +1935,12 @@ static void parseTransform(QSvgNode *node,
                            MyQSvgHandler *)
 {
     if (attributes.transform.isEmpty()) {
-        g_transform_ = QTransform();
+        g_transform = QTransform();
         return;
     }
     
     QTransform matrix = parseTransformationMatrix(trimRef(attributes.transform));
-    g_transform_ = matrix;
+    g_transform = matrix;
 
     if (!matrix.isIdentity()) {
         node->appendStyleProperty(new QSvgTransformStyle(QTransform(matrix)), attributes.id);
@@ -2770,8 +2768,7 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     if (image.format() == QImage::Format_ARGB32)
         image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
-    std::shared_ptr<Shape> new_shape = std::make_shared<BitmapShape>(image);
-    g_layer_ptr_->addShape(new_shape);
+    g_image = image;
     // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *img = new QSvgImage(parent,
                                   image,
@@ -3473,8 +3470,7 @@ static FactoryMethod findGraphicsFactory(const QString &name)
         if (ref == QLatin1String("span")) return createTspanNode;
         break;
     case 'u':
-        qInfo() << Q_FUNC_INFO << __LINE__;
-        // if (ref == QLatin1String("se")) return createUseNode;
+        if (ref == QLatin1String("se")) return createUseNode;
         break;
     case 'v':
         if (ref == QLatin1String("ideo")) return createVideoNode;
@@ -3596,20 +3592,113 @@ static StyleParseMethod findStyleUtilFactoryMethod(const QString &name)
     return 0;
 }
 
-MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers) : xml(new QXmlStreamReader(device))
+QString getNodeLayerName(QSvgNode* current_node) {
+    QString layer_name;
+    while(1) {
+        if(current_node->type() == QSvgNode::DOC) 
+            break;
+        layer_name = current_node->nodeId();
+        current_node = current_node->parent();
+    }
+    return layer_name;
+}
+
+void MyQSvgHandler::transformUse(QString node_name, QTransform transform) {
+    for(int i = 0; i < data_list_.size(); ++i) {
+        if(data_list_[i].node_name == node_name) {
+            data_list_[i].trans *= transform;
+        }
+    }
+}
+
+LayerPtr MyQSvgHandler::findLayer(QString layer_name, QColor color) {
+  LayerPtr target_layer;
+  switch(read_type_) {
+    case InSingleLayer:
+      if(svg_layers_.empty()) {
+        svg_layers_.push_back(std::make_shared<Layer>());
+      }
+      target_layer = svg_layers_[0];
+      break;
+    case ByLayers:
+      if(svg_layers_.empty()) {
+        svg_layers_.push_back(std::make_shared<Layer>());
+        svg_layers_[0]->setName(layer_name);
+        target_layer = svg_layers_[0];
+        target_layer->setColor(color);
+      } else {
+        for(int i = 0;i < svg_layers_.size(); ++i) {
+          target_layer = svg_layers_[i];
+          if(target_layer->name() == layer_name) {
+            break;
+          } else if(i == svg_layers_.size()-1) {
+            target_layer = std::make_shared<Layer>();
+            target_layer->setName(layer_name);
+            target_layer->setColor(color);
+            svg_layers_.push_back(target_layer);
+          }
+        }
+      }
+      break;
+    case ByColors:
+      layer_name = color.name();
+      if(svg_layers_.empty()) {
+        svg_layers_.push_back(std::make_shared<Layer>());
+        svg_layers_[0]->setName(layer_name);
+        target_layer = svg_layers_[0];
+        target_layer->setColor(color);
+      } else {
+        for(int i = 0;i < svg_layers_.size(); ++i) {
+          target_layer = svg_layers_[i];
+          if(target_layer->name() == layer_name) {
+            break;
+          } else if(i == svg_layers_.size()-1) {
+            target_layer = std::make_shared<Layer>();
+            target_layer->setName(layer_name);
+            target_layer->setColor(color);
+            svg_layers_.push_back(target_layer);
+          }
+        }
+      }
+      break;
+  }
+  return target_layer;
+}
+
+
+MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, ReadType read_type) : xml(new QXmlStreamReader(device))
                                              , m_ownsReader(true)
 {
     g_color = Qt::black;
-    g_svgpp_layers_.clear();
-    g_layer_ptr_ = std::make_shared<Layer>();
     init();
-    if(!g_layer_ptr_->children().empty()) {
-        g_svgpp_layers_.push_back(g_layer_ptr_);
+
+    read_type_ = read_type;
+    for(int i = 0; i < data_list_.size(); ++i) {
+        switch(data_list_[i].type) {
+            case QSvgNode::USE: {
+                transformUse(data_list_[i].node_name, data_list_[i].trans);
+                break;
+                }
+            default :
+                break;
+        }
     }
-    for(unsigned int i = 0; i < g_svgpp_layers_.size(); ++i)
-    {
-        doc->addLayer(g_svgpp_layers_[i]);
-        svg_layers->push_back(g_svgpp_layers_[i]);
+    for(int i = 0; i < data_list_.size(); ++i) {
+        ShapePtr new_shape;
+        if(data_list_[i].type == QSvgNode::PATH) {
+            new_shape = std::make_shared<PathShape>(data_list_[i].qpath);
+        } else if(data_list_[i].type == QSvgNode::IMAGE) {
+            new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
+        } else if(data_list_[i].type == QSvgNode::USE) {
+            continue;
+        }
+        new_shape->applyTransform(data_list_[i].trans);
+        LayerPtr target_layer = findLayer(data_list_[i].layer_name, data_list_[i].color);
+        target_layer->addShape(new_shape);
+    }
+    for(int i = 0; i < svg_layers_.size(); ++i) {
+        doc->addLayer(svg_layers_[i]);
+        svg_layers->push_back(svg_layers_[i]);
     }
 }
 
@@ -3733,11 +3822,6 @@ bool MyQSvgHandler::startElement(const QString &localName,
             case QSvgNode::DEFS:
             case QSvgNode::SWITCH:
             {
-                // qInfo() << Q_FUNC_INFO << __LINE__;
-                if(!g_layer_ptr_->children().empty()) {
-                    g_svgpp_layers_.push_back(g_layer_ptr_);
-                    g_layer_ptr_ = std::make_shared<Layer>();
-                }
                 QSvgStructureNode *group =
                     static_cast<QSvgStructureNode*>(m_nodes.top());
                 group->addChild(node, someId(attributes));
@@ -3842,34 +3926,45 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
         if (!m_nodes.isEmpty()) {
-            QMap<QString, QTransform>::iterator iter = g_transform_map_.find(m_nodes.top()->nodeId());
-            if(iter != g_transform_map_.end()) {
-                g_transform_ *= iter.value();
+            //to iterate current transform
+            QMap<QString, QTransform>::iterator iter = transform_map_.find(m_nodes.top()->nodeId());
+            if(iter != transform_map_.end()) {
+                g_transform *= iter.value();
             }
-            g_transform_map_.insert(someId(attributes), g_transform_);
+            transform_map_.insert(someId(attributes), g_transform);
         }
         if(node->type() == QSvgNode::PATH) {
             QSvgPath *tmp_node = (QSvgPath*) node;
-            QPainterPath *qpath = tmp_node->qpath();
-            ShapePtr new_shape = std::make_shared<PathShape>(qpath[0]);
             double scale = 30.0 / 8.5;//define by 3cm Ruler
-            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
-            new_shape->applyTransform(g_transform_ * tmp_scale);
-            g_layer_ptr_->addShape(new_shape);
-            g_layer_ptr_->setColor(g_color);
-            QString layer_name("Svg_");
-            layer_name += QString::number(g_svgpp_layers_.size());
-            g_layer_ptr_->setName(layer_name);
-        }
-        else if(node->type() == QSvgNode::IMAGE) {
-            QList<ShapePtr> shape_list = g_layer_ptr_->children();
+            QTransform tmp_scale = QTransform().scale(g_scale * scale, g_scale * scale);
+
+            NodeData node_data;
+            node_data.type = QSvgNode::PATH;
+            node_data.qpath = *tmp_node->qpath();
+            node_data.node_name = node->nodeId();
+            node_data.layer_name = getNodeLayerName(node);
+            node_data.trans = g_transform * tmp_scale;
+            node_data.color = g_color;
+            data_list_.push_back(node_data);
+        } else if(node->type() == QSvgNode::IMAGE) {
             double scale = 30.0 / 8.5;//define by 3cm Ruler
-            QTransform tmp_scale = QTransform().scale(g_scale * scale,g_scale * scale);
-            shape_list[shape_list.size()-1]->applyTransform(g_transform_ * tmp_scale);
-            g_layer_ptr_->setColor(g_color);
-            QString layer_name("Svg_");
-            layer_name += QString::number(g_svgpp_layers_.size());
-            g_layer_ptr_->setName(layer_name);
+            QTransform tmp_scale = QTransform().scale(g_scale * scale, g_scale * scale);
+
+            NodeData node_data;
+            node_data.type = QSvgNode::IMAGE;
+            node_data.image = g_image;
+            node_data.node_name = node->nodeId();
+            node_data.layer_name = getNodeLayerName(node);
+            node_data.trans = g_transform * tmp_scale;
+            node_data.color = g_color;
+            data_list_.push_back(node_data);
+        } else if(node->type() == QSvgNode::USE) {
+            QSvgUse* use_node = (QSvgUse*)node;
+            NodeData node_data;
+            node_data.type = QSvgNode::USE;
+            node_data.node_name = use_node->linkId();
+            node_data.trans = g_transform;
+            data_list_.push_back(node_data);
         }
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
