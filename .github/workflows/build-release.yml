@@ -247,7 +247,7 @@ jobs:
                             --options runtime \
                             --timestamp \
                             --verbose \
-                            build/swiftray_installer.dmg
+                            swiftray_installer.dmg
 
       - name: Create Github Release
         if: ${{ matrix.cfg.dist }} && startsWith(github.ref, 'refs/tags/')
