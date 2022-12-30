@@ -238,8 +238,8 @@ jobs:
             swiftray_installer.dmg \
             "Swiftray.app/"
           
-          tag_version = ${{  github.ref_name }}
-          tag_version = ${tag_version:1}} # strip the first char 'v'
+          tag_version=${{  github.ref_name }}
+          tag_version=${tag_version:1} # strip the first char 'v'
           echo ${tag_version}
           
           security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
