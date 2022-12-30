@@ -24,12 +24,12 @@ IDI_ICON1 ICON DISCARDABLE "@ICON_PATH@icon.ico"
         {
             VALUE "CompanyName",        "FLUX Inc.\0"
             VALUE "FileDescription",    "Swiftray\0"
-            VALUE "FileVersion",        "@VER_PRODUCTVERSION_STR@\0"
-            VALUE "InternalName",       "Swiftray @VER_PRODUCTVERSION_STR@\0"
+            VALUE "FileVersion",        "@PROJECT_VERSION_STR@\0"
+            VALUE "InternalName",       "Swiftray @PROJECT_VERSION_STR@\0"
             VALUE "LegalCopyright",     "Copyright (c) 2022 FLUX Inc.\0"
             VALUE "OriginalFilename",   "Swiftray.exe\0"
             VALUE "ProductName",        "Swiftray\0"
-            VALUE "ProductVersion",     "@VER_PRODUCTVERSION_STR@\0"
+            VALUE "ProductVersion",     "@PROJECT_VERSION_STR@\0"
         }
     }
     BLOCK "VarFileInfo"
