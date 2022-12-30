@@ -1332,7 +1332,6 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
                 if (ok)
                     color.setRgb(rgb);
                 g_color = color;
-                // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                 return ok;
             }
             break;
@@ -1358,7 +1357,6 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
                                        int(compo[1]),
                                        int(compo[2]));
                         g_color = color;
-                        // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                         return true;
                     }
                     return false;
@@ -1370,7 +1368,6 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
             if (colorStrTr == QLatin1String("currentColor")) {
                 color = handler->currentColor();
                 g_color = color;
-                // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
                 return true;
             }
             break;
@@ -1384,7 +1381,6 @@ static bool resolveColor(const QStringRef &colorStr, QColor &color, MyQSvgHandle
 
     color = QColor(colorStrTr.toString());
     g_color = color;
-    // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
     return color.isValid();
 }
 
@@ -1505,7 +1501,6 @@ static void parseColor(QSvgNode *,
     QColor color;
     if (constructColor(attributes.color, attributes.colorOpacity, color, handler)) {
         g_color = color;
-        // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
         handler->popColor();
         handler->pushColor(color);
     }
@@ -2515,7 +2510,6 @@ static QSvgNode *createCircleNode(QSvgNode *parent,
     QRectF rect(ncx-nr, ncy-nr, nr*2, nr*2);
     QPainterPath qpath;
     qpath.addEllipse(rect);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *circle = new QSvgPath(parent, qpath);
     // QSvgNode *circle = new QSvgCircle(parent, rect);
     return circle;
@@ -2562,7 +2556,6 @@ static QSvgNode *createEllipseNode(QSvgNode *parent,
     QRectF rect(ncx-nrx, ncy-nry, nrx*2, nry*2);
     QPainterPath qpath;
     qpath.addEllipse(rect);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *ellipse = new QSvgPath(parent, qpath);
     // QSvgNode *ellipse = new QSvgEllipse(parent, rect);
     return ellipse;
@@ -2767,7 +2760,6 @@ static QSvgNode *createImageNode(QSvgNode *parent,
         image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
     g_image = image;
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *img = new QSvgImage(parent,
                                   image,
                                   QRectF(nx,
@@ -2794,7 +2786,6 @@ static QSvgNode *createLineNode(QSvgNode *parent,
     QPainterPath qpath;
     qpath.moveTo(nx1, ny1);
     qpath.lineTo(nx2, ny2);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *line = new QSvgPath(parent, qpath);
     // QSvgNode *line = new QSvgLine(parent, lineBounds);
     return line;
@@ -2938,7 +2929,6 @@ static QSvgNode *createPathNode(QSvgNode *parent,
     qpath.setFillRule(Qt::WindingFill);
     //XXX do error handling
     parsePathDataFast(data, qpath);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *path = new QSvgPath(parent, qpath);
     return path;
 }
@@ -2959,7 +2949,6 @@ static QSvgNode *createPolygonNode(QSvgNode *parent,
     poly[poly.size()-1] = QPointF(points.at(0), points.at(1));
     QPainterPath qpath;
     qpath.addPolygon(poly);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *polygon = new QSvgPath(parent, qpath);
     // QSvgNode *polygon = new QSvgPolygon(parent, poly);
     return polygon;
@@ -2982,7 +2971,6 @@ static QSvgNode *createPolylineNode(QSvgNode *parent,
         qpath.lineTo(points.at(2 * i), points.at(2 * i + 1));
         poly[i] = QPointF(points.at(2 * i), points.at(2 * i + 1));
     }
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *line = new QSvgPath(parent, qpath);
     // QSvgNode *line = new QSvgPolyline(parent, poly);
     return line;
@@ -3081,7 +3069,6 @@ static QSvgNode *createRectNode(QSvgNode *parent,
 
     QPainterPath qpath;
     qpath.addRoundedRect(bounds, nrx, nry);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *rect = new QSvgPath(parent, qpath);
     // QSvgNode *rect = new QSvgRect(parent, bounds,
     //                               int(nrx),
@@ -3315,7 +3302,6 @@ static QSvgNode *createTextNode(QSvgNode *parent,
     MyQSvgHandler::LengthType type;
     qreal nx = parseLength(x, type, handler);
     qreal ny = parseLength(y, type, handler);
-    // qInfo() << Q_FUNC_INFO << __LINE__;
     QSvgNode *text = new QSvgText(parent, QPointF(nx, ny));
     return text;
 }
@@ -3702,7 +3688,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         } else if(data_list_[i].type == QSvgNode::USE) {
             continue;
         } else if(data_list_[i].type == QSvgNode::TEXT) {
-            new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 0);
+            new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 1);
         }
         new_shape->applyTransform(data_list_[i].trans);
         LayerPtr target_layer = findLayer(data_list_[i].layer_name, data_list_[i].color);
@@ -3982,14 +3968,22 @@ bool MyQSvgHandler::startElement(const QString &localName,
             QTransform tmp_scale = QTransform();
             tmp_scale = tmp_scale.translate(tmp_node->getCoord().x(), tmp_node->getCoord().y());
             tmp_scale = tmp_scale.scale(g_scale * scale, g_scale * scale);
-
-            QFont font = ((QSvgFontStyle*)node->styleProperty(QSvgStyleProperty::FONT))->qfont();
+            QFont font;
+            if(node->styleProperty(QSvgStyleProperty::FONT) != 0) {
+                font = ((QSvgFontStyle*)node->styleProperty(QSvgStyleProperty::FONT))->qfont();
+            } else {
+                font = QFont();
+                font.setPointSize(10);
+            }
             NodeData node_data;
             node_data.type = QSvgNode::TEXT;
             node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
             node_data.font = font;
+            node_data.text = QString();
             data_list_.push_back(node_data);
+        } else if(node->type() == QSvgNode::TSPAN) {
+            // QSvgTspan *tmp_node = (QSvgTspan*) node;
         }
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
@@ -4109,9 +4103,10 @@ bool MyQSvgHandler::characters(const QStringRef &str)
         return true;
 
     if (m_nodes.top()->type() == QSvgNode::TEXT || m_nodes.top()->type() == QSvgNode::TEXTAREA) {
-        data_list_[data_list_.size()-1].text = str.toString();
+        data_list_[data_list_.size()-1].text += str.toString();
         static_cast<QSvgText*>(m_nodes.top())->addText(str.toString());
     } else if (m_nodes.top()->type() == QSvgNode::TSPAN) {
+        data_list_[data_list_.size()-1].text += str.toString();
         static_cast<QSvgTspan*>(m_nodes.top())->addText(str.toString());
     }
 
@@ -4145,7 +4140,6 @@ void MyQSvgHandler::setDefaultCoordinateSystem(LengthType type)
 
 void MyQSvgHandler::pushColor(const QColor &color)
 {
-    // qInfo() << Q_FUNC_INFO << __LINE__ << " " << color;
     m_colorStack.push(color);
     m_colorTagCount.push(1);
 }
