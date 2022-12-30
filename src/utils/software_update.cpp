@@ -69,9 +69,9 @@
 static char *get_appcast_update_url() {
   // TODO: Allow selection of Dev/Stable ver as below
   #if (_WIN32 || _WIN64)
-  static char appcast_url[] = "https://swiftray.s3.ap-northeast-1.amazonaws.com/swiftray_update_appcast_Windows.xml";
+  static char appcast_url[] = "https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_update_appcast_Windows.xml";
   #elif (__APPLE__ || __MACH__)
-  static char appcast_url[] = "https://swiftray.s3.ap-northeast-1.amazonaws.com/swiftray_update_appcast_macOS.xml";
+  static char appcast_url[] = "https://swiftray.s3.ap-northeast-1.amazonaws.com/mac/swiftray_update_appcast_macOS.xml";
   #else
   static char appcast_url[] = "https://localhost/xxx.xml";
   #endif
