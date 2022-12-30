@@ -619,7 +619,7 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 	echo "Signing secondary executables"
 	if [ -z "$secondary_binary_list" ] ; then
 		echo "No executables specified for code signing."
-		exit 1
+		#exit 1
 	fi
 	for binary in $secondary_binary_list ; do
 		if [ -e "$binary" ];then
