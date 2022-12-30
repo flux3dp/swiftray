@@ -1,18 +1,18 @@
 name: build-swiftray-win64-msvc
 on: 
-  workflow_dispatch:
-  inputs:
-    name:
-      Description: 'Build message'
-      default: 'Hello'
-      required: false
-  #push:
-  #  tags:
-  #    - "b*.*.*"
+  #workflow_dispatch:
+  #inputs:
+  #  name:
+  #    Description: 'Build message'
+  #    default: 'Hello'
+  #    required: false
+  push:
+    tags:
+      - "w*.*.*"
 
 
 jobs:
-  setup-win-mingw-build-environment:
+  setup-win-msvc-build-environment:
     strategy:
       fail-fast: false
       matrix:
