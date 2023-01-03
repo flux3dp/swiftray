@@ -18,10 +18,10 @@ VERSION_MAJOR = 1
 VERSION_MINOR = 1
 VERSION_BUILD = 2
 VERSION_SUFFIX = "" # empty string or "-beta.X"
-DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
-       "VERSION_MINOR=$$VERSION_MINOR"\
-       "VERSION_BUILD=$$VERSION_BUILD"
-DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
+#DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
+#       "VERSION_MINOR=$$VERSION_MINOR"\
+#       "VERSION_BUILD=$$VERSION_BUILD"
+#DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
 #Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
 win32-msvc {
@@ -115,6 +115,11 @@ ios {
     LIBS += -framework Foundation -framework UIKit
 }
 
+message($$OUT_PWD)
+versionconfig.input = $$PWD/qmake/qmakeconfig.h.in
+versionconfig.output = $$OUT_PWD/config.h
+QMAKE_SUBSTITUTES += versionconfig
+INCLUDEPATH += $$OUT_PWD/config.h
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
@@ -147,6 +152,7 @@ macx{
 #    INCLUDEPATH += /opt/homebrew/include/glib-2.0
 #    INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
 #    INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
+#    INCLUDEPATH += /usr/homebrew/opt/poppler/include/poppler
 
     # Mac Intel
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
@@ -155,6 +161,8 @@ macx{
     INCLUDEPATH += /usr/local/include/glib-2.0
     INCLUDEPATH += /usr/local/opt/glib/lib/glib-2.0/include
     INCLUDEPATH += /usr/local/opt/cairo/include/cairo
+    INCLUDEPATH += /usr/local/opt/poppler/include/poppler
+
 }
 
 # Remove -Wall and -Wextra flag
@@ -227,6 +235,7 @@ SOURCES += \
     $$files(src/parser/dxf_rs/fileio/*.cpp) \
     $$files(src/parser/dxf_rs/muparser/*.cpp) \
     $$files(src/parser/dxf_rs/jwwlib/*.cpp) \
+    $$files(src/utils/*.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
     third_party/libdxfrw/drw_base.cpp \
