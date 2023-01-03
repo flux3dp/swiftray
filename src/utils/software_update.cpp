@@ -131,12 +131,13 @@ software_update_init(void) {
     QString language;
     QSettings settings;
     QVariant language_code = settings.value("window/language", 0);
+    // NOTE: Only allow (ISO639 language code) + (ISO3116 country code) here
     switch(language_code.toInt()) {
       case 0:
         language = "en-US";
         break;
       case 1:
-        language = "zh-Hant-TW";
+        language = "zh-TW"; // NOTE: zh-Hant-TW doesn't work here
         break;
       case 2:
         language = "ja-JP";
