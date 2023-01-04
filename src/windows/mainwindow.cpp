@@ -169,7 +169,7 @@ void MainWindow::loadCanvas() {
       QByteArray data = file.readAll();
       qInfo() << "File size:" << data.size();
 
-      if (filename.endsWith(".bb")) {
+      if (filename.toLower().endsWith(".bb")) {
         if ( ! handleUnsavedChange()) {
           return;
         }
@@ -182,13 +182,13 @@ void MainWindow::loadCanvas() {
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
-      } else if (filename.endsWith(".svg")) {
+      } else if (filename.toLower().endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
         double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
-      }  else if (filename.endsWith(".dxf")) {
+      }  else if (filename.toLower().endsWith(".dxf")) {
         QTemporaryDir dir;
         QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
         QFile src_file(filename);
@@ -197,7 +197,7 @@ void MainWindow::loadCanvas() {
         QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
-      } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
+      } else if (filename.toLower().endsWith(".pdf") || filename.toLower().endsWith(".ai")) {
         QTemporaryDir dir;
         Parser::PDF2SVG pdf_converter;
         QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";

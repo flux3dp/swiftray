@@ -57,7 +57,7 @@
 #include <QLoggingCategory>
 #include <private/qsvgstyle_p.h>
 #include <private/qcssparser_p.h>
-#include <private/qsvggraphics_p.h>
+#include "qsvggraphics_p.h"
 #include <private/qtsvgglobal_p.h>
 
 #include "layer.h"
@@ -97,7 +97,12 @@ public:
     };
 
 public:
-    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers);
+    enum ReadType {
+        InSingleLayer,
+        ByLayers,
+        ByColors
+    };
+    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, ReadType read_type);
     MyQSvgHandler(const QByteArray &data);
     MyQSvgHandler(QXmlStreamReader *const data);
     ~MyQSvgHandler();
@@ -188,6 +193,23 @@ private:
      * we need to delete it.
      */
     const bool m_ownsReader;
+    struct NodeData {
+        QString node_name;
+        QString layer_name;
+        int type;
+        QTransform trans;
+        QColor color;
+        QPainterPath qpath;
+        QImage image;
+        QFont font;
+        QString text;
+    };
+    QList<NodeData> data_list_;
+    int read_type_;
+    QList<LayerPtr> svg_layers_;
+    QMap<QString, QTransform> transform_map_;
+    void transformUse(QString node_name, QTransform transform);
+    LayerPtr findLayer(QString layer_name, QColor color);
 };
 
 Q_DECLARE_LOGGING_CATEGORY(lcSvgHandler)
