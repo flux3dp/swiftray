@@ -32,6 +32,8 @@
 #include <windows/rotary_setup.h>
 #include <windows/consoledialog.h>
 
+#include <config.h>
+
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
 #endif
@@ -62,7 +64,11 @@ public:
 
   void show();
 
+  virtual void showEvent(QShowEvent *event) override;
+
 Q_SIGNALS:
+
+  void windowWasShown();
 
   void presetSettingsChanged();
 
@@ -92,6 +98,9 @@ public Q_SLOTS:
   void moveToCustomOrigin();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin);
   void testRotary(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
+
+  void initSparkle();
+  void checkForUpdates();
 
 private Q_SLOTS:
 
@@ -161,6 +170,10 @@ private Q_SLOTS:
 
   void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
   void machineDisconnected();
+
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+  void softwareUpdateRequested();
+#endif
 
 private:
 

@@ -1,0 +1,201 @@
+name: build-swiftray-win64-msvc
+on: 
+  #workflow_dispatch:
+  #inputs:
+  #  name:
+  #    Description: 'Build message'
+  #    default: 'Hello'
+  #    required: false
+  push:
+    tags:
+      - "w*.*.*"
+
+
+jobs:
+  setup-win-msvc-build-environment:
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+          - { runner: windows-latest, build: 'cmake', dist: false }
+          - { runner: localhost-win10, build: 'cmake', dist: false}
+
+    name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
+
+    env:
+      VCPKG_INSTALLATION_ROOT: 'C:\vcpkg'
+      VCPKG_DEFAULT_TRIPLET: 'x64-windows'
+
+    runs-on: ${{matrix.cfg.runner}}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install Conan
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        id: conan
+        uses: turtlebrowser/get-conan@main
+
+      # vcpkg cache
+      - name: Restore vcpkg and its artifacts.
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        uses: actions/cache@v3
+        id: vcpkg-cache
+        with:
+          path: |
+            vcpkg_installed
+          key: |
+            ${{ hashFiles( 'vcpkg.json' ) }}-cache-key-v1
+      
+      - name: Install packages with vcpkg manifest mode
+        #if: ${{ matrix.cfg.runner != 'localhost-win10' && steps.vcpkg-cache.outputs.cache-hit != 'true' }}
+        run: |
+          vcpkg install
+
+      - name: Restore Qt cache
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        uses: actions/cache@v3
+        id: qt5-cache
+        with:
+          path: |
+            ${{ github.workspace }}/Qt
+          key: |
+            qt5-cache-key-v1
+
+      - name: Install Qt5
+        if: ${{matrix.cfg.runner != 'localhost-win10' && steps.qt5-cache.outputs.cache-hit != 'true'}}
+        run: |
+          #cd ${{ github.workspace }}
+          #vcpkg install qt5:x64-windows
+          python3 -m pip install setuptools wheel
+          python3 -m pip install py7zr
+          python3 -m pip install aqtinstall==2.1.0
+          python3 -m aqt install-qt windows desktop 5.15.2 win64_msvc2019_64 -m debug_info -O ${{ github.workspace }}/Qt
+
+      - name: Create build dir
+        if: ${{matrix.cfg.runner == 'localhost-win10'}}
+        shell: cmd
+        run: |
+          mkdir build
+          cd ${{ env.VCPKG_INSTALLATION_ROOT }}
+          dir 
+          cd installed
+          cd x64-windows
+          dir include
+          dir lib
+          dir bin
+      - name: Create build dir
+        if: ${{matrix.cfg.runner != 'localhost-win10'}}
+        shell: pwsh
+        run: |
+          mkdir build
+          dir ${{ env.VCPKG_INSTALLATION_ROOT }}
+          if (Test-Path -Path 'vcpkg_installed') {
+              cd vcpkg_installed
+              dir
+              if (Test-Path -Path 'x64_windows') {
+                cd x64_windows
+                dir
+              }
+          }
+
+      - name: Setup msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >-
+            base-devel
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-autotools
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-zlib
+            mingw-w64-x86_64-python-conan
+      #- name: Set 3GB compile memory
+      #  shell: msys2 {0}
+      #  run: |
+      #    bcdedit /set IncreaseUserVa 3072
+
+      - name: Build libpotrace
+        shell: msys2 {0}
+        run: |
+          echo $PATH
+          pwd
+          cd third_party/libpotrace
+          curl https://potrace.sourceforge.net/download/1.16/potrace-1.16.tar.gz -o potrace-1.16.tar.gz
+          tar -xzvf potrace-1.16.tar.gz
+          conan install . --build=missing
+          conan build .
+          conan create . user/testing
+
+      - name: Conan install
+        shell: cmd
+        run: |
+          cd build
+          conan install .. --build=missing
+          dir
+          
+      - name: CMake
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        run: |
+          #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          #cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DOpenCV_DIR="${{ env.VCPKG_INSTALLATION_ROOT }}\packages\opencv4_x64-windows\share\opencv4" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}}  -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=${{ github.workspace }}/Qt/5.15.2/msvc2019_64/lib/cmake
+      - name: CMake
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        shell: cmd
+        run: |
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}\scripts\buildsystems\vcpkg.cmake" -DCMAKE_PREFIX_PATH=C:/Dev/Qt/5.15.2/msvc2019_64/lib/cmake
+
+      - name: Build
+        shell: cmd
+        run: |
+          dir
+          cmake --build ./build --config RelWithDebInfo --parallel
+          cd build
+          dir
+          dir bin
+          
+      - name: Deploy
+        if: ${{matrix.cfg.runner != 'localhost-win10' }}
+        run: |
+          ${{ github.workspace }}/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
+          cd build
+          ls bin
+      - name: Deploy
+        if: ${{matrix.cfg.runner == 'localhost-win10' }}
+        shell: cmd
+        run: |
+          C:/Dev/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
+          cd build
+          dir bin
+
+      - name: Setup Sentry CLI
+        if: ${{ matrix.cfg.dist }}
+        uses: mathieu-bour/setup-sentry-cli@1.2.0
+        with:
+          version: latest # optional if 'latest'
+          token: ${{ SECRETS.SENTRY_TOKEN }} # from GitHub secrets
+          organization: flux3dp
+          project: swiftray
+
+      - name: Upload debug symbol to sentry
+        if: ${{ matrix.cfg.dist }}
+        shell: cmd
+        run: |
+          cd build
+          cd bin
+          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.pdb
+
+      #- name: Sign the executable
+      #  run: |
+      #
+
+      #- name: Create installer
+      #  run: |
+      #
+
+      #- name: Sign the installer
+      #  run: |
+      #
+
+      #- name: Upload artifact
+      #

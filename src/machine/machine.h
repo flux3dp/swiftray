@@ -8,7 +8,9 @@
 #include <QStringList>
 #include <QProgressDialog>
 #include <QPixmap>
+#ifdef CUSTOM_SERIAL_PORT_LIB
 #include <connection/serial-port.h>
+#endif
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
 #include <executor/machine_job/machine_job.h>

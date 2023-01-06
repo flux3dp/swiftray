@@ -1,0 +1,120 @@
+name: Generate update appcast for release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of swiftray to be release'
+        required: true
+        default: '1.0.0'
+        type: string
+
+jobs:
+  generate_appcast:
+    strategy:
+      fail-fast: false
+      matrix:
+        cfg:
+          #- { os: windows-latest, default_shell: 'msys2 {0}' }
+          - { os: macos-12      , default_shell: bash        }
+    defaults:
+      run:
+        shell: ${{ matrix.cfg.default_shell }}
+
+    name: ${{matrix.cfg.os}}
+
+    runs-on: ${{matrix.cfg.os}}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup msys2 for Windows
+        if: contains( matrix.cfg.os, 'windows' )
+        uses: msys2/setup-msys2@v2
+        with:
+          install: >-
+            unzip
+            openssl
+            
+      - name: Download installer file
+        run: |
+          curl https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_${{ inputs.version }}.exe -o swiftray_${{ inputs.version }}.exe
+          curl https://swiftray.s3.ap-northeast-1.amazonaws.com/mac/swiftray_${{ inputs.version }}.dmg -o swiftray_${{ inputs.version }}.dmg
+
+      - name: Download source appcast.xml
+        run: |
+          curl https://swiftray.s3.ap-northeast-1.amazonaws.com/mac/swiftray_update_appcast_macOS.xml -o swiftray_update_appcast_macOS.xml
+          curl https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_update_appcast_Windows.xml -o swiftray_update_appcast_Windows.xml
+      
+      # NOTE: The newline char is stripped (converted) by Github secret,
+      #       we workaround this by adding header and footer of DSA key manually 
+      - name: Get signing key
+        env: 
+          SPARKLE_ED25519_SIGNING_KEY: ${{ secrets.SPARKLE_ED25519_SIGNING_KEY }}
+          SPARKLE_EDDSA_SIGNING_KEY: ${{ secrets.SPARKLE_EDDSA_SIGNING_KEY }}
+        run: |
+          echo $SPARKLE_ED25519_SIGNING_KEY > sparkle_key.pem
+          echo "-----BEGIN DSA PRIVATE KEY-----" > dsa_priv.pem
+          echo $SPARKLE_EDDSA_SIGNING_KEY >> dsa_priv.pem
+          echo "-----END DSA PRIVATE KEY-----" >> dsa_priv.pem
+
+      - name: Generate Signature (for both Sparkle ED25519 and WinSparkle EDDSA)
+        if: contains( matrix.cfg.os, 'macos' )
+        run: |
+          packaging/macOS/sign_update -f sparkle_key.pem swiftray_${{ inputs.version }}.dmg > dmg_sign_result
+          cat dmg_sign_result
+          openssl dgst -sha1 -binary < swiftray_${{ inputs.version }}.exe | openssl dgst -sha1 -sign dsa_priv.pem | openssl enc -base64 > exe_sign_result
+          cat exe_sign_result
+
+      # TODO: Sign with ed25519 for Sparkle on Windows
+      - name: Generate Signature (for WinSparkle EDDSA only)
+        if: contains( matrix.cfg.os, 'windows' )
+        shell: cmd
+        run: |
+          packaging/Windows/sign_update.bat swiftray_${{ inputs.version }}.exe dsa_priv.pem > exe_sign_result
+          cat exe_sign_result
+     
+      - name: Install lxml python package
+        run: |
+          pip3 install lxml
+
+      - name: Generate new appcast (for both macOS and Windows)
+        if: contains( matrix.cfg.os, 'macos' )
+        run: |
+          echo "------ Generate ed25519 sign for macOS Sparkle -----"
+          python3 packaging/macOS/gen_appcast.py \
+              --ed25519 \
+              --signature dmg_sign_result \
+              --release_ver "${{ inputs.version }}" \
+              --src_appcast swiftray_update_appcast_macOS.xml
+          echo "------ Generate eddsa sign for Windows WinSparkle -----"
+          python3 packaging/macOS/gen_appcast.py \
+              --dsa \
+              --signature exe_sign_result \
+              --release_ver "${{ inputs.version }}" \
+              --src_appcast swiftray_update_appcast_Windows.xml
+      
+      - name: Generate new appcast (windows only)
+        if: contains( matrix.cfg.os, 'windows' )
+        run: |
+          echo "------ Generate eddsa sign for Windows WinSparkle -----"
+          python3 packaging/macOS/gen_appcast.py \
+              --dsa \
+              --signature exe_sign_result \
+              --release_ver "${{ inputs.version }}" \
+              --src_appcast swiftray_update_appcast_Windows.xml
+      
+      - uses: actions/upload-artifact@v3
+        if: contains( matrix.cfg.os, 'macos' )
+        with:
+          name: my-artifact
+          path: |
+            swiftray_update_appcast_Windows.xml
+            swiftray_update_appcast_macOS.xml
+      
+      - uses: actions/upload-artifact@v3
+        if: contains( matrix.cfg.os, 'windows' )
+        with:
+          name: my-artifact
+          path: |
+            swiftray_update_appcast_Windows.xml
+
