@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          - { runner: windows-latest, build: 'cmake', dist: false }
-          - { runner: localhost-win10, build: 'cmake', dist: false}
+          #- { runner: windows-latest, build: 'cmake', dist: false }
+          - { runner: localhost-win10, build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.runner}} ${{matrix.cfg.build}}
 
@@ -197,5 +197,9 @@ jobs:
       #  run: |
       #
 
-      #- name: Upload artifact
-      #
+      - uses: actions/upload-artifact@v3
+        if: ${{ matrix.cfg.dist }}
+        with:
+          name: msvc-build-exec
+          path: |
+            build/bin/
