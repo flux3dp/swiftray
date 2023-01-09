@@ -1,0 +1,39 @@
+IDI_ICON1 ICON DISCARDABLE "@ICON_PATH@icon.ico"
+
+#include <winver.h>
+
+// Get updates from this appcast feed:
+// Could be set with win_sparkle_set_appcast_url() API, not necessary to set here
+//FeedURL     APPCAST     {"https://swiftray.s3.ap-northeast-1.amazonaws.com/win/swiftray_sparkle_update_cast_windows.xml"}
+
+// And verify signature using DSA public key:
+// Could be set with win_sparkle_set_dsa_pub_pem() API, not necessary to set here
+//DSAPub      DSAPEM      "resources/pem/dsa_pub.pem"
+
+1 VERSIONINFO
+    FILEVERSION     @RC_VERSION@
+    PRODUCTVERSION  @RC_VERSION@
+    FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+    FILEFLAGS       0
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "000004B0"
+        {
+            VALUE "CompanyName",        "FLUX Inc.\0"
+            VALUE "FileDescription",    "Swiftray\0"
+            VALUE "FileVersion",        "@PROJECT_VERSION_STR@\0"
+            VALUE "InternalName",       "Swiftray @PROJECT_VERSION_STR@\0"
+            VALUE "LegalCopyright",     "Copyright (c) 2022 FLUX Inc.\0"
+            VALUE "OriginalFilename",   "Swiftray.exe\0"
+            VALUE "ProductName",        "Swiftray\0"
+            VALUE "ProductVersion",     "@PROJECT_VERSION_STR@\0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0000, 0x04B0
+    }
+}

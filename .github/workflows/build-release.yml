@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          - { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: true }
-          - { os: macos-12,    xcode_version: '13.2.1', build: 'cmake', dist: false}
+          #- { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: false }
+          - { os: macos-12,    xcode_version: '13.2.1', build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.os}} ${{matrix.cfg.build}}
 
@@ -37,6 +37,7 @@ jobs:
           brew install glib
           brew install cairo
           brew install poppler
+          brew install sparkle
       # Install Qt 5.15.2
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
       - name: Install Qt 5.15.2
@@ -109,7 +110,26 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
+          cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DENABLE_SPARKLE=TRUE -DENABLE_SENTRY=${{secrets.SENTRY_DSN}} -DCMAKE_PREFIX_PATH=$RUNNER_WORKSPACE/Qt/5.15.2/clang_64/lib/cmake ${{ github.workspace }}
+
+      - name: Install Certificate
+        if: ${{ matrix.cfg.dist }}
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          #SIGN_IDENTITY_ID: 
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security default-keychain -s build.keychain
+          # it's necessary to extend the unlock time for keychain (default: 300s), 
+          # otherwise it will get stuck in codesign stage when it's locked again
+          security set-keychain-settings -lut 1800 build.keychain
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          security show-keychain-info build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
 
       - name: Compile (Build) project
         if: ${{matrix.cfg.build == 'qmake' }}
@@ -119,27 +139,29 @@ jobs:
           make -j10
       
       - name: Compile (Build) project
-        if: ${{matrix.cfg.build == 'cmake' }}
+        if: ${{matrix.cfg.build == 'cmake'}}
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           cd build
-          cmake --build . --target Swiftray -- -j 6
+          if [ ${{ matrix.cfg.dist }} = true ] ; then
+            cmake --build . --target swiftray_app_bundle -- -j 6
+          else
+            cmake --build . --target Swiftray -- -j 6
+          fi
 
-      #- name: If install is needed
-      #  if: ${{matrix.cfg.build == 'cmake' }}
+      #- name: Deploy (Copy necessary shared libraries)
       #  run: |
       #    cd build
-      #    cmake --install .
+      #    $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
 
-      - name: Deploy (Copy necessary shared libraries)
-        run: |
-          cd build
-          $RUNNER_WORKSPACE/Qt/5.15.2/clang_64/bin/macdeployqt Swiftray.app -qmldir=${{ github.workspace }}/src/windows/qml -verbose=2
-
-      - name: Workaround for libxcb dependencies
-        run: |
-          cd build/Swiftray.app/Contents/Frameworks
-          install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-shm.0.dylib
-          install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-render.0.dylib
+      #- name: Workaround for libxcb dependencies
+      #  run: |
+      #    cd build/Swiftray.app/Contents/Frameworks
+      #    install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-shm.0.dylib
+      #    install_name_tool -change /usr/local/Cellar/libxcb/1.15/lib/libxcb.1.dylib @executable_path/../Frameworks/libxcb.1.dylib libxcb-render.0.dylib
 
       - name: Select XCode version (workaround for codesign fail)
         if: ${{matrix.cfg.build == 'qmake' }}
@@ -173,26 +195,10 @@ jobs:
           sentry-cli upload-dif -o flux3dp -p swiftray *.dSYM
           cd ${{ github.workspace }}
           cd build
-          dsymutil Swiftray.app/Contents/MacOS/Swiftray
-          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
-
-      - name: Codesign executable
-        if: ${{ matrix.cfg.dist }}
-        env: 
-          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
-          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
-          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-          #SIGN_IDENTITY_ID: 
-        run: |
-          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-          security create-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
-          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
-          cd build
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app/Contents/MacOS/crashpad_handler"
-          /usr/bin/codesign --force --deep --verify --verbose --timestamp --options runtime --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" "Swiftray.app"
+          dsymutil --minimize --out Swiftray.dSYM Swiftray.app/Contents/MacOS/Swiftray
+          #dsymutil Swiftray.app/Contents/MacOS/Swiftray
+          #sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.app/Contents/MacOS/Swiftray.dSYM
+          sentry-cli upload-dif -o flux3dp -p swiftray Swiftray.dSYM
 
       - name: Notarize Release Build
         if: ${{ matrix.cfg.dist }}
@@ -212,8 +218,12 @@ jobs:
         with:
           product-path: "build/Swiftray.app"
 
-      - name: Create dmg
+      - name: Create dmg and Sign the dmg
         if: ${{ matrix.cfg.dist }}
+        env: 
+          MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
           brew install create-dmg
           cd build
@@ -225,11 +235,22 @@ jobs:
             --icon "Swiftray.app" 200 190 \
             --hide-extension "Swiftray.app" \
             --app-drop-link 600 190 \
-            "Swiftray-Installer.dmg" \
+            swiftray_installer.dmg \
             "Swiftray.app/"
-                
+          
+          tag_version=${{  github.ref_name }}
+          tag_version=${tag_version:1} # strip the first char 'v'
+          echo ${tag_version}
+          
+          security unlock-keychain -p $MACOS_KEYCHAIN_PASSWORD build.keychain
+          /usr/bin/codesign --sign "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)" \
+                            --options runtime \
+                            --timestamp \
+                            --verbose \
+                            swiftray_installer.dmg
+
       - name: Create Github Release
         if: ${{ matrix.cfg.dist }} && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: build/Swiftray-Installer.dmg
+          files: build/swiftray_installer.dmg

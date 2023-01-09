@@ -1,0 +1,20 @@
+{
+  "name": "swiftray-dependencies",
+  "version-string": "1.0.0",
+  "dependencies": [
+    {
+      "name": "opencv",
+      "platform": "windows"
+    },
+    "python3",
+    "cairo",
+    "glib",
+    {
+      "name": "poppler",
+      "platform": "(windows & x64)",
+      "features": [ "cairo", "curl", "glib", "zlib" ]
+    },
+    "sentry-native",
+    "winsparkle"
+  ]
+}

@@ -1,0 +1,5 @@
+[requires]
+libpotrace/1.16@user/testing
+
+[generators]
+cmake

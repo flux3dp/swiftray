@@ -1,9 +1,9 @@
 #pragma once
 
 #include <glib.h>
-#include <poppler.h>
-#include <poppler-document.h>
-#include <poppler-page.h>
+#include <glib/poppler.h>
+#include <glib/poppler-document.h>
+#include <glib/poppler-page.h>
 #include <cairo.h>
 #include <cairo-svg.h>
 #include <QString>

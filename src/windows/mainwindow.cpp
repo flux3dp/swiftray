@@ -35,7 +35,12 @@
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
 #include <QSerialPort>
+#include <main_application.h>
 #include "parser/pdf2svg.h"
+
+#include <QResource>
+#include <utils/software_update.h>
+#include "config.h"
 
 #include "ui_mainwindow.h"
 
@@ -68,6 +73,22 @@ void MainWindow::show() {
   if (layer_panel_) {
     layer_panel_->resizeEvent(nullptr);
   }
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QMainWindow::showEvent(event);
+    // showEvent() is called right *before* the window is shown, but WinSparkle
+    // requires that the main UI of the application is already shown when
+    // calling win_sparkle_init() (otherwise it could show its updates UI
+    // behind the app instead of at top). By using a helper signal, we delay
+    // calling initWinSparkle() / initSparkle() until after the window was shown.
+    //
+    // Alternatively, one could achieve the same effect in arguably a simpler
+    // way, by initializing WinSparkle in main(), right after showing the main
+    // window. See https://github.com/vslavik/winsparkle/issues/41#issuecomment-70367197
+    // for a discussion of this.
+    Q_EMIT windowWasShown();
 }
 
 void MainWindow::loadSettings() {
@@ -169,7 +190,7 @@ void MainWindow::loadCanvas() {
       QByteArray data = file.readAll();
       qInfo() << "File size:" << data.size();
 
-      if (filename.endsWith(".bb")) {
+      if (filename.toLower().endsWith(".bb")) {
         if ( ! handleUnsavedChange()) {
           return;
         }
@@ -182,13 +203,13 @@ void MainWindow::loadCanvas() {
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
-      } else if (filename.endsWith(".svg")) {
+      } else if (filename.toLower().endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
         double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
-      }  else if (filename.endsWith(".dxf")) {
+      }  else if (filename.toLower().endsWith(".dxf")) {
         QTemporaryDir dir;
         QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
         QFile src_file(filename);
@@ -197,7 +218,7 @@ void MainWindow::loadCanvas() {
         QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
         canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
-      } else if (filename.endsWith(".pdf") || filename.endsWith(".ai")) {
+      } else if (filename.toLower().endsWith(".pdf") || filename.toLower().endsWith(".ai")) {
         QTemporaryDir dir;
         Parser::PDF2SVG pdf_converter;
         QString sanitized_filepath = dir.isValid() ? dir.filePath("temp.pdf") : "temp.pdf";
@@ -248,6 +269,16 @@ void MainWindow::loadStyles() {
     }
   }
   ui->actionStart_2->setIcon(QIcon((isDarkMode() ? ":/resources/images/dark/icon-start.png" : ":/resources/images/icon-start.png")));
+}
+
+
+void MainWindow::initSparkle()
+{
+  software_update_init();
+}
+void MainWindow::checkForUpdates()
+{
+  software_update_check();
 }
 
 /**
@@ -921,6 +952,7 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 }
 
 MainWindow::~MainWindow() {
+  software_update_cleanup();
   serial_port.close();
   delete ui;
 }
@@ -1082,6 +1114,9 @@ void MainWindow::loadWidgets() {
 }
 
 void MainWindow::registerEvents() {
+  connect(this, &MainWindow::windowWasShown, this, &MainWindow::initSparkle,
+          Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
+
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
   connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
@@ -1147,6 +1182,10 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
+#ifdef HAVE_SOFTWARE_UPDATE
+  connect(ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::checkForUpdates);
+#endif
+
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
     machine_manager_->show();
     machine_manager_->activateWindow();
@@ -1532,6 +1571,13 @@ void MainWindow::registerEvents() {
     Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
   });
+
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+  connect(mainApp, &MainApplication::softwareUpdateRequested, this, &MainWindow::softwareUpdateRequested,
+      Qt::BlockingQueuedConnection);
+  connect(mainApp, &MainApplication::softwareUpdateClose, this, &QMainWindow::close,
+      Qt::BlockingQueuedConnection);
+#endif
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -2568,3 +2614,14 @@ void MainWindow::machineDisconnected() {
   Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }
+
+#if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
+void MainWindow::softwareUpdateRequested() {
+  // Check if we can close the app and update
+  // 1. Require user to save unsaved changes
+  // 2. TODO: check if task is still running
+  if ( ! handleUnsavedChange()) {
+    mainApp->rejectSoftwareUpdate();
+  }
+}
+#endif

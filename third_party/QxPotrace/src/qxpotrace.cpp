@@ -1,3 +1,15 @@
+/**
+ * @file qxpotrace.cpp
+ * @author Cristian Pallarés (cristian@pallares.io)
+ * @brief origin repo: https://github.com/skyrpex/QxPotrace
+ *        this file is modified by FLUX Inc. to meet our needs
+ * @version 0.1
+ * @date 2022-11-09
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include <QxPotrace/include/qxpotrace.h>
 #include <potracelib.h>
 #include <QDebug>
@@ -44,14 +56,33 @@ void imageToBinarizedBitmap(const QImage &image, potrace_bitmap_t* bitmap, int c
   return;
 }
 
+class QxPotraceImpl
+{
+public:
+  QxPotraceImpl() = default;
+
+  bool trace(const QImage &image, int low_thres, int high_thres,
+             int turd_size, qreal smooth, qreal curve_tolerance);
+  QPainterPath getContours();
+
+private:
+  QPainterPath contours_;
+  void convert_paths_recursively(potrace_path_s* current_contour_p);
+  void convert_potrace_path_to_QPainterPath(const potrace_path_t * const contour);
+};
+
+QPainterPath QxPotraceImpl::getContours() {
+  return contours_;
+}
+
 /**
  * @brief Append a closed contour to QPainterPath
  * @param contour
  */
-void QxPotrace::convert_potrace_path_to_QPainterPath(potrace_path_t *contour) {
+void QxPotraceImpl::convert_potrace_path_to_QPainterPath(const potrace_path_t * const contour) {
   int num_points = contour->curve.n;
-  int *tags = contour->curve.tag;
-  potrace_dpoint_t (*points)[3] = contour->curve.c;
+  const int * const tags = contour->curve.tag;
+  const potrace_dpoint_t (*points)[3] = contour->curve.c;
   if (num_points > 0) {
     // Move to initial pos of a new contour
     contours_.moveTo(points[num_points-1][2].x, points[num_points-1][2].y);
@@ -77,7 +108,7 @@ void QxPotrace::convert_potrace_path_to_QPainterPath(potrace_path_t *contour) {
   }
 }
 
-void QxPotrace::convert_paths_recursively(potrace_path_s* current_contour_p) {
+void QxPotraceImpl::convert_paths_recursively(potrace_path_s* current_contour_p) {
   try {
     convert_potrace_path_to_QPainterPath(current_contour_p);
 
@@ -105,7 +136,7 @@ void QxPotrace::convert_paths_recursively(potrace_path_s* current_contour_p) {
  * @param curve_tolerance equals to optimize in lightburn (higher -> less bezier curve -> simplified path)
  * @return
  */
-bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
+bool QxPotraceImpl::trace(const QImage &image, int low_thres, int high_thres,
                       int turd_size, qreal smooth, qreal curve_tolerance)
 {
   // Allocate and fill bitmap
@@ -145,3 +176,18 @@ bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
 
   return true;
 }
+
+
+QxPotrace::QxPotrace() {
+  impl_ = std::make_shared<QxPotraceImpl>();
+}
+
+bool QxPotrace::trace(const QImage &image, int low_thres, int high_thres,
+             int turd_size, qreal smooth, qreal curve_tolerance) {
+  return impl_->trace(image, low_thres, high_thres, turd_size, smooth, curve_tolerance);
+}
+
+QPainterPath QxPotrace::getContours() {
+  return impl_->getContours();
+}
+

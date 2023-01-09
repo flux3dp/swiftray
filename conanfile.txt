@@ -1,5 +1,15 @@
 [requires]
-glib/2.69.3
+boost/1.70.0
+libxml2/2.9.14
+libiconv/1.17
+zlib/1.2.13
+libpotrace/1.16@user/testing
 
 [generators]
 cmake
+
+[options]
+
+[imports]
+bin, *.dll -> ./bin # Copies all dll files from packages bin folder to "./bin" folder
+lib, *.dylib* -> ./bin # Copies all dylib files from packages lib folder to "./bin" folder

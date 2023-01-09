@@ -5,6 +5,7 @@
 #include "ui_about-window.h"
 #include <QGraphicsItem>
 #include <windows/osxwindow.h>
+#include "config.h"
 
 AboutWindow::AboutWindow(QWidget *parent) :
      QDialog(parent),
