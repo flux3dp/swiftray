@@ -142,6 +142,7 @@ void RotarySetup::setRotaryMode(bool is_rotary_mode)
         ui->rotaryCheckBox->setCheckState(Qt::Checked);
         ui->mirrorCheckBox->setEnabled(true);
         if(control_enable_) ui->testBtn->setEnabled(true);
+        updateRotaryScale();
     }
     else {
         ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
