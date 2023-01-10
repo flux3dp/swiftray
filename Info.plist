@@ -21,7 +21,7 @@
         <key>NSSupportsAutomaticGraphicsSwitching</key>
         <true/>
         <key>NSHumanReadableCopyright</key>
-        <string>Copyright (c) 2022, FLUX Inc.</string>
+        <string>Copyright (c) 2023, FLUX Inc.</string>
         <key>CFBundleShortVersionString</key>
         <string>${QMAKE_SHORT_VERSION}</string>
         <key>CFBundleVersion</key>

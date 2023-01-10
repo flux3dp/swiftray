@@ -15,8 +15,8 @@
     </message>
     <message>
         <location filename="../src/windows/about-window.ui" line="121"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/windows/about-window.ui" line="143"/>
@@ -71,37 +71,41 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="160"/>
+        <location filename="../src/canvas/canvas.cpp" line="135"/>
+        <location filename="../src/canvas/canvas.cpp" line="175"/>
         <source>Select layering style:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="161"/>
+        <location filename="../src/canvas/canvas.cpp" line="136"/>
+        <location filename="../src/canvas/canvas.cpp" line="176"/>
         <source>Layer</source>
         <translation type="unfinished">レイヤー</translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="162"/>
+        <location filename="../src/canvas/canvas.cpp" line="137"/>
+        <location filename="../src/canvas/canvas.cpp" line="177"/>
         <source>Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="164"/>
+        <location filename="../src/canvas/canvas.cpp" line="139"/>
+        <location filename="../src/canvas/canvas.cpp" line="179"/>
         <source>Single Layer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="822"/>
+        <location filename="../src/canvas/canvas.cpp" line="837"/>
         <source>Layer </source>
         <translation>レイヤー </translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="1265"/>
+        <location filename="../src/canvas/canvas.cpp" line="1280"/>
         <source>File Open Error</source>
         <translation>ファイルオープンエラー</translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="1266"/>
+        <location filename="../src/canvas/canvas.cpp" line="1281"/>
         <source>Please update the Swiftray version</source>
         <translation>Swiftrayをアップデートしてください</translation>
     </message>
