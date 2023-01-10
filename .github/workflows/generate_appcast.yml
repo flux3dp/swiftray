@@ -106,7 +106,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: contains( matrix.cfg.os, 'macos' )
         with:
-          name: my-artifact
+          name: my-update-appcast
           path: |
             swiftray_update_appcast_Windows.xml
             swiftray_update_appcast_macOS.xml
@@ -114,7 +114,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: contains( matrix.cfg.os, 'windows' )
         with:
-          name: my-artifact
+          name: my-update-appcast
           path: |
             swiftray_update_appcast_Windows.xml
 
