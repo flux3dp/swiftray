@@ -3598,10 +3598,22 @@ QTransform getNodeTransform(QSvgNode* current_node) {
     return trans;
 }
 
+bool getNodeVisible(QSvgNode* current_node) {
+    while(current_node != nullptr) {
+        if(current_node->displayMode() == QSvgNode::NoneMode)
+            return false;
+        current_node = current_node->parent();
+    }
+    return true;
+}
+
 void MyQSvgHandler::transformUse(QString node_name, QTransform transform) {
     for(int i = 0; i < data_list_.size(); ++i) {
-        if(data_list_[i].node_name == node_name) {
-            data_list_[i].trans *= transform;
+        for (auto name : data_list_[i].node_names) {
+            if(name == node_name) {
+                data_list_[i].trans *= transform;
+                break;
+            }
         }
     }
 }
@@ -3671,7 +3683,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     for(int i = 0; i < data_list_.size(); ++i) {
         switch(data_list_[i].type) {
             case QSvgNode::USE: {
-                transformUse(data_list_[i].node_name, data_list_[i].trans);
+                transformUse(data_list_[i].node_names[0], data_list_[i].trans);
                 break;
                 }
             default :
@@ -3692,8 +3704,20 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         }
         new_shape->applyTransform(data_list_[i].trans);
         LayerPtr target_layer = findLayer(data_list_[i].layer_name, data_list_[i].color);
-        target_layer->addShape(new_shape);
-        rect |= new_shape->boundingRect();
+        if(data_list_[i].visible) {
+            if(!target_layer->isVisible()) {
+                for (auto shape : target_layer->children())
+                    target_layer->removeShape(shape);
+                target_layer->setVisible(true);
+            }
+            target_layer->addShape(new_shape);
+            rect |= new_shape->boundingRect();
+        } else if(read_type_ != InSingleLayer) {
+            if(target_layer->children().empty() || !target_layer->isVisible()) {
+                target_layer->addShape(new_shape);
+                target_layer->setVisible(false);
+            }
+        }
     }
     for (auto &layer : svg_layers_) {
         for (auto shape : layer->children()) {
@@ -3702,7 +3726,8 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             shape->applyTransform(temp_trans);
         }
         doc->addLayer(layer);
-        svg_layers->push_back(layer);
+        if(layer->isVisible())
+            svg_layers->push_back(layer);
     }
 }
 
@@ -3931,17 +3956,22 @@ bool MyQSvgHandler::startElement(const QString &localName,
     if (node) {
         QTransform trans = getNodeTransform(node);
         if(node->type() == QSvgNode::PATH) {
-            QSvgPath *tmp_node = (QSvgPath*) node;
+            QSvgPath *path_node = (QSvgPath*) node;
             double scale = 30.0 / 8.5;//define by 3cm Ruler
             QTransform tmp_scale = QTransform().scale(g_scale * scale, g_scale * scale);
 
             NodeData node_data;
             node_data.type = QSvgNode::PATH;
-            node_data.qpath = *tmp_node->qpath();
-            node_data.node_name = node->nodeId();
+            node_data.qpath = *path_node->qpath();
+            QSvgNode* tmp_node = node;
+            while(tmp_node != nullptr) {
+                node_data.node_names.push_back(tmp_node->nodeId());
+                tmp_node = tmp_node->parent();
+            }
             node_data.layer_name = getNodeLayerName(node);
             node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
+            node_data.visible = getNodeVisible(node);
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::IMAGE) {
             double scale = 30.0 / 8.5;//define by 3cm Ruler
@@ -3950,23 +3980,28 @@ bool MyQSvgHandler::startElement(const QString &localName,
             NodeData node_data;
             node_data.type = QSvgNode::IMAGE;
             node_data.image = g_image;
-            node_data.node_name = node->nodeId();
+            QSvgNode* tmp_node = node;
+            while(tmp_node != nullptr) {
+                node_data.node_names.push_back(tmp_node->nodeId());
+                tmp_node = tmp_node->parent();
+            }
             node_data.layer_name = getNodeLayerName(node);
             node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
+            node_data.visible = getNodeVisible(node);
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::USE) {
             QSvgUse* use_node = (QSvgUse*)node;
             NodeData node_data;
             node_data.type = QSvgNode::USE;
-            node_data.node_name = use_node->linkId();
+            node_data.node_names.push_back(use_node->linkId());
             node_data.trans = trans;
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::TEXT) {
-            QSvgText *tmp_node = (QSvgText*) node;
+            QSvgText *text_node = (QSvgText*) node;
             double scale = 30.0 / 8.5;//define by 3cm Ruler
             QTransform tmp_scale = QTransform();
-            tmp_scale = tmp_scale.translate(tmp_node->getCoord().x(), tmp_node->getCoord().y());
+            tmp_scale = tmp_scale.translate(text_node->getCoord().x(), text_node->getCoord().y());
             tmp_scale = tmp_scale.scale(g_scale * scale, g_scale * scale);
             QFont font;
             if(node->styleProperty(QSvgStyleProperty::FONT) != 0) {
@@ -3979,6 +4014,12 @@ bool MyQSvgHandler::startElement(const QString &localName,
             node_data.type = QSvgNode::TEXT;
             node_data.trans = trans * tmp_scale;
             node_data.color = g_color;
+            QSvgNode* tmp_node = node;
+            while(tmp_node != nullptr) {
+                node_data.node_names.push_back(tmp_node->nodeId());
+                tmp_node = tmp_node->parent();
+            }
+            node_data.visible = getNodeVisible(node);
             node_data.font = font;
             node_data.text = QString();
             data_list_.push_back(node_data);
