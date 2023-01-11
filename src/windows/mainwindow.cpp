@@ -147,7 +147,9 @@ void MainWindow::loadSettings() {
   sentry_options_set_release(options_,
       std::string("Swiftray@")
       .append(std::to_string(VERSION_MAJOR))
+      .append(".")
       .append(std::to_string(VERSION_MINOR))
+      .append(".")
       .append(std::to_string(VERSION_BUILD))
       .append(VERSION_SUFFIX)
       .c_str()
