@@ -129,7 +129,7 @@ namespace Controls {
     bool direction_locked_;
 
   public Q_SLOTS:
-    void updateSelections();
+    void updateSelections(QList<ShapePtr> selections);
 
     void updateBoundingRect();
 

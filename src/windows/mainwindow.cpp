@@ -61,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarFont();
   setToolbarTransform();
   //setToolbarImage();
-  updateSelections();
+  updateSelections(QList<ShapePtr>());
   showWelcomeDialog();
   setScaleBlock();
   setModeBlock();
@@ -201,7 +201,7 @@ void MainWindow::loadCanvas() {
         canvas_->setDocument(ds.deserializeDocument());
         canvas_->document().setCurrentFile(filename);
         canvas_->emitAllChanges();
-        Q_EMIT canvas_->selectionsChanged();
+        Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
@@ -557,7 +557,7 @@ void MainWindow::newFile() {
   canvas_->document().setWidth(width);
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
-  Q_EMIT canvas_->selectionsChanged();
+  Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
@@ -601,7 +601,7 @@ void MainWindow::openFile() {
       canvas_->setDocument(ds.deserializeDocument());
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
-      Q_EMIT canvas_->selectionsChanged();
+      Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
@@ -653,7 +653,7 @@ void MainWindow::openExampleOfSwiftray() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -673,7 +673,7 @@ void MainWindow::openMaterialCuttingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -693,7 +693,7 @@ void MainWindow::openMaterialEngravingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -983,15 +983,14 @@ void MainWindow::updateScale() {
   scale_block_->setText(QString::number(canvas_->document().scale() * 100, 'f', 1)+"%");
 }
 
-void MainWindow::updateSelections() {
-  QList<ShapePtr> &items = canvas_->document().selections();
-  bool all_group = !items.empty();
-  bool all_path = !items.empty();
-  bool all_image = !items.empty();
-  bool all_geometry = !items.empty();
-  bool all_text = !items.empty();
+void MainWindow::updateSelections(QList<ShapePtr> shape_list) {
+  bool all_group = !shape_list.empty();
+  bool all_path = !shape_list.empty();
+  bool all_image = !shape_list.empty();
+  bool all_geometry = !shape_list.empty();
+  bool all_text = !shape_list.empty();
 
-  for (auto &shape : canvas_->document().selections()) {
+  for (auto &shape : shape_list) {
     if (shape->type() != Shape::Type::Group) all_group = false;
 
     if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
@@ -1000,35 +999,35 @@ void MainWindow::updateSelections() {
     if (shape->type() != Shape::Type::Text) all_text = false;
   }
 
-  cutAction_->setEnabled(items.size() > 0);
-  copyAction_->setEnabled(items.size() > 0);
-  duplicateAction_->setEnabled(items.size() > 0);
-  deleteAction_->setEnabled(items.size() > 0);
-  groupAction_->setEnabled(items.size() > 1);
+  cutAction_->setEnabled(shape_list.size() > 0);
+  copyAction_->setEnabled(shape_list.size() > 0);
+  duplicateAction_->setEnabled(shape_list.size() > 0);
+  deleteAction_->setEnabled(shape_list.size() > 0);
+  groupAction_->setEnabled(shape_list.size() > 1);
   ungroupAction_->setEnabled(all_group);
 
-  ui->actionGroup->setEnabled(items.size() > 1);
-  ui->actionGroupMenu->setEnabled(items.size() > 1);
+  ui->actionGroup->setEnabled(shape_list.size() > 1);
+  ui->actionGroupMenu->setEnabled(shape_list.size() > 1);
   ui->actionUngroup->setEnabled(all_group);
   ui->actionUngroupMenu->setEnabled(all_group);
-  ui->actionUnion->setEnabled(items.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
-  ui->actionSubtract->setEnabled(items.size() == 2 && all_path);
-  ui->actionDiff->setEnabled(items.size() == 2 && all_path);
-  ui->actionIntersect->setEnabled(items.size() == 2 && all_path);
-  ui->actionHFlip->setEnabled(!items.empty());
-  ui->actionVFlip->setEnabled(!items.empty());
-  ui->actionAlignVTop->setEnabled(items.size() > 1);
-  ui->actionAlignVCenter->setEnabled(items.size() > 1);
-  ui->actionAlignVBottom->setEnabled(items.size() > 1);
-  ui->actionAlignHLeft->setEnabled(items.size() > 1);
-  ui->actionAlignHCenter->setEnabled(items.size() > 1);
-  ui->actionAlignHRight->setEnabled(items.size() > 1);
-  ui->actionTrace->setEnabled(items.size() == 1 && all_image);
-  ui->actionInvert->setEnabled(items.size() == 1 && all_image);
-  ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
-  ui->actionCrop->setEnabled(items.size() == 1 && all_image);
+  ui->actionUnion->setEnabled(shape_list.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
+  ui->actionSubtract->setEnabled(shape_list.size() == 2 && all_path);
+  ui->actionDiff->setEnabled(shape_list.size() == 2 && all_path);
+  ui->actionIntersect->setEnabled(shape_list.size() == 2 && all_path);
+  ui->actionHFlip->setEnabled(!shape_list.empty());
+  ui->actionVFlip->setEnabled(!shape_list.empty());
+  ui->actionAlignVTop->setEnabled(shape_list.size() > 1);
+  ui->actionAlignVCenter->setEnabled(shape_list.size() > 1);
+  ui->actionAlignVBottom->setEnabled(shape_list.size() > 1);
+  ui->actionAlignHLeft->setEnabled(shape_list.size() > 1);
+  ui->actionAlignHCenter->setEnabled(shape_list.size() > 1);
+  ui->actionAlignHRight->setEnabled(shape_list.size() > 1);
+  ui->actionTrace->setEnabled(shape_list.size() == 1 && all_image);
+  ui->actionInvert->setEnabled(shape_list.size() == 1 && all_image);
+  ui->actionReplace_with->setEnabled(shape_list.size() == 1 && all_image);
+  ui->actionCrop->setEnabled(shape_list.size() == 1 && all_image);
   ui->actionPathOffset->setEnabled(all_geometry);
-  ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
+  ui->actionSharpen->setEnabled(shape_list.size() == 1 && all_image);
 }
 
 void MainWindow::updateToolbarTransform() {
@@ -1069,7 +1068,7 @@ void MainWindow::loadWidgets() {
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_panel_ = new GCodePanel(ui->serialPortDock, this);
-  font_panel_ = new FontPanel(ui->fontDock, this);
+  font_panel_ = new FontPanel(ui->fontDock, isDarkMode());
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
@@ -1113,6 +1112,15 @@ void MainWindow::loadWidgets() {
   ui->actionTask->setChecked(!ui->toolBarTask->isHidden());
   ui->actionTransform->setChecked(!ui->toolBarTransform->isHidden());
   ui->actionVector->setChecked(!ui->toolBarVector->isHidden());
+
+  //Initial panel setting by MainApplication
+  font_panel_->setFontFamily(mainApp->getFont().family());
+  font_panel_->setPointSize(mainApp->getFont().pointSize());
+  font_panel_->setLetterSpacing(mainApp->getFont().letterSpacing());
+  font_panel_->setBold(mainApp->getFont().bold());
+  font_panel_->setItalic(mainApp->getFont().italic());
+  font_panel_->setUnderline(mainApp->getFont().underline());
+  font_panel_->setLineHeight(mainApp->getFontLineHeight());
 }
 
 void MainWindow::registerEvents() {
@@ -1785,13 +1793,14 @@ void MainWindow::setToolbarFont() {
   doubleSpinBoxLineHeight->setSingleStep(0.1);
   spinBoxSize->setMaximum(1000);
 
-  QFont initialFont = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
-
-  fontComboBox->setCurrentFont(initialFont);
-  doubleSpinBoxLetterSpacing->setValue(initialFont.letterSpacing());
-  doubleSpinBoxLineHeight->setValue(1.2);
-  spinBoxSize->setValue(initialFont.pointSize());
-  boldToolButton->setChecked(initialFont.bold());
+  //Initial panel setting by MainApplication
+  fontComboBox->setCurrentFont(mainApp->getFont());
+  spinBoxSize->setValue(mainApp->getFont().pointSize());
+  doubleSpinBoxLetterSpacing->setValue(mainApp->getFont().letterSpacing());
+  boldToolButton->setChecked(mainApp->getFont().bold());
+  italicToolButton->setChecked(mainApp->getFont().italic());
+  underlineToolButton->setChecked(mainApp->getFont().underline());
+  doubleSpinBoxLineHeight->setValue(mainApp->getFontLineHeight());
 
   ui->toolBarFont->addWidget(labelSize);
   ui->toolBarFont->addWidget(spinBoxSize);
@@ -1800,135 +1809,158 @@ void MainWindow::setToolbarFont() {
   ui->toolBarFont->addWidget(labelLetterSpacing);
   ui->toolBarFont->addWidget(doubleSpinBoxLetterSpacing);
 
-  connect(fontComboBox, &QFontComboBox::currentFontChanged, canvas(), &Canvas::setFont);
-
-  connect(fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont selected_font) {
-    QFont font = font_panel_->font();
-    font.setFamily(selected_font.family());
-    font_panel_->setFont(font);
+  connect(mainApp, &MainApplication::editShapeFontFamily, [=](QString font_family) {
+    canvas()->setFontFamily(font_family);
+    font_panel_->setFontFamily(font_family);
+    fontComboBox->setCurrentFont(QFont(font_family));
   });
 
-  connect(spinBoxSize, spin_int_event, canvas(), &Canvas::setPointSize);
-
-  connect(spinBoxSize, spin_int_event, font_panel_, &FontPanel::setPointSize);
-
-  connect(doubleSpinBoxLetterSpacing, spin_event, canvas(), &Canvas::setLetterSpacing);
-
-  connect(doubleSpinBoxLetterSpacing, spin_event, font_panel_, &FontPanel::setLetterSpacing);
-
-  connect(doubleSpinBoxLineHeight, spin_event, canvas(), &Canvas::setLineHeight);
-
-  connect(doubleSpinBoxLineHeight, spin_event, font_panel_, &FontPanel::setLineHeight);
-
-  connect(boldToolButton, &QToolButton::toggled, canvas(), &Canvas::setBold);
-
-  connect(boldToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setBold);
-
-  connect(italicToolButton, &QToolButton::toggled, canvas(), &Canvas::setItalic);
-
-  connect(italicToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setItalic);
-
-  connect(underlineToolButton, &QToolButton::toggled, canvas(), &Canvas::setUnderline);
-
-  connect(underlineToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setUnderline);
-
-  connect(font_panel_, &FontPanel::fontChanged, [=](QFont new_font) {
-    fontComboBox->setCurrentFont(new_font);
+  connect(mainApp, &MainApplication::editShapeFontPointSize, [=](int point_size) {
+    canvas()->setPointSize(point_size);
+    font_panel_->setPointSize(point_size);
+    spinBoxSize->setValue(point_size);
   });
 
-  connect(font_panel_, &FontPanel::fontPointSizeChanged, [=](int value){
-    spinBoxSize->setValue(value);
+  connect(mainApp, &MainApplication::editShapeLetterSpacing, [=](qreal letter_spacing) {
+    canvas()->setLetterSpacing(letter_spacing);
+    font_panel_->setLetterSpacing(letter_spacing);
+    doubleSpinBoxLetterSpacing->setValue(letter_spacing);
   });
 
-  connect(font_panel_, &FontPanel::fontLetterSpacingChanged, [=](double value){
-    doubleSpinBoxLetterSpacing->setValue(value);
-  });
-
-  connect(font_panel_, &FontPanel::fontBoldChanged, [=](bool checked){
-    boldToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::fontItalicChanged, [=](bool checked){
-    italicToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::fontUnderlineChanged, [=](bool checked){
-    underlineToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::lineHeightChanged, [=](double line_height) {
+  connect(mainApp, &MainApplication::editShapeLineHeight, [=](double line_height) {
+    canvas()->setLineHeight(line_height);
+    font_panel_->setLineHeight(line_height);
     doubleSpinBoxLineHeight->setValue(line_height);
   });
 
-// the ui status is the same to the font panel
-  connect(canvas(), &Canvas::selectionsChanged, this, [=]() {
-    QFont first_qfont;
-    double first_linehight;
-    bool has_txt = false;
-    bool is_font_changed = false, is_pt_changed = false, is_ls_changed = false, is_linehight_changed = false;
-    bool is_bold_changed = false, is_italic_changed = false, is_underline_changed = false;
-    for (auto &shape : canvas_->document().selections()) {
-      if (shape->type() == ::Shape::Type::Text) {
-        auto *t = (TextShape *) shape.get();
-        if(!has_txt) {
-          first_linehight = t->lineHeight();
-          first_qfont = t->font();
-          has_txt = true;
-        }
-        if(has_txt && first_qfont.family() != t->font().family())                is_font_changed = true;
-        if(has_txt && first_qfont.pointSize() != t->font().pointSize())          is_pt_changed = true;
-        if(has_txt && first_qfont.letterSpacing() != t->font().letterSpacing())  is_ls_changed = true;
-        if(has_txt && first_qfont.bold() != t->font().bold())                    is_bold_changed = true;
-        if(has_txt && first_qfont.italic() != t->font().italic())                is_italic_changed = true;
-        if(has_txt && first_qfont.underline() != t->font().underline())          is_underline_changed = true;
-        if(has_txt && first_linehight != t->lineHeight())                        is_linehight_changed = true;
-      }
-    }
-    if(is_font_changed) {
-      fontComboBox->blockSignals(true);
-      fontComboBox->setCurrentText("");
-      fontComboBox->blockSignals(false);
-    }
-    else if(has_txt) {
-      fontComboBox->setCurrentText(first_qfont.family());
-    }
-    else {
-      fontComboBox->setCurrentText(fontComboBox->currentFont().family());
-    }
-    if(is_pt_changed) {
-      spinBoxSize->blockSignals(true);
-      spinBoxSize->setSpecialValueText(tr(" "));
-      spinBoxSize->setValue(0);
-      spinBoxSize->blockSignals(false);
-    }
-    if(is_ls_changed) {
-      doubleSpinBoxLetterSpacing->blockSignals(true);
-      doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
-      doubleSpinBoxLetterSpacing->setValue(-0.1);
-      doubleSpinBoxLetterSpacing->blockSignals(false);
-    }
-    if(is_bold_changed) {
-      boldToolButton->blockSignals(true);
-      boldToolButton->setChecked(false);
-      boldToolButton->blockSignals(false);
-    }
-    if(is_italic_changed) {
-      italicToolButton->blockSignals(true);
-      italicToolButton->setChecked(false);
-      italicToolButton->blockSignals(false);
-    }
-    if(is_underline_changed) {
-      underlineToolButton->blockSignals(true);
-      underlineToolButton->setChecked(false);
-      underlineToolButton->blockSignals(false);
-    }
-    if(is_linehight_changed) {
-      doubleSpinBoxLineHeight->blockSignals(true);
-      doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
-      doubleSpinBoxLineHeight->setValue(0);
-      doubleSpinBoxLineHeight->blockSignals(false);
-    }
+  connect(mainApp, &MainApplication::editShapeBold, [=](bool bold) {
+    canvas()->setBold(bold);
+    font_panel_->setBold(bold);
+    boldToolButton->setChecked(bold);
   });
+
+  connect(mainApp, &MainApplication::editShapeItalic, [=](bool italic) {
+    canvas()->setItalic(italic);
+    font_panel_->setItalic(italic);
+    italicToolButton->setChecked(italic);
+  });
+
+  connect(mainApp, &MainApplication::editShapeUnderline, [=](bool underline) {
+    canvas()->setUnderline(underline);
+    font_panel_->setUnderline(underline);
+    underlineToolButton->setChecked(underline);
+  });
+
+  connect(fontComboBox, &QFontComboBox::currentFontChanged, 
+          mainApp, &MainApplication::updateShapeFontFamily);
+
+  connect(spinBoxSize, spin_int_event, 
+          mainApp, &MainApplication::updateShapeFontPointSize);
+
+  connect(doubleSpinBoxLetterSpacing, spin_event, 
+          mainApp, &MainApplication::updateShapeLetterSpacing);
+  
+  connect(doubleSpinBoxLineHeight, spin_event, 
+          mainApp, &MainApplication::updateShapeLineHeight);
+  
+  connect(boldToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeBold);
+  
+  connect(italicToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeItalic);
+  
+  connect(underlineToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeUnderline);
+
+  connect(font_panel_, &FontPanel::editShapeFontFamily, 
+          mainApp, &MainApplication::updateShapeFontFamily);
+
+  connect(font_panel_, &FontPanel::editShapeFontPointSize, 
+          mainApp, &MainApplication::editShapeFontPointSize);
+
+  connect(font_panel_, &FontPanel::editShapeLetterSpacing, 
+          mainApp, &MainApplication::editShapeLetterSpacing);
+
+  connect(font_panel_, &FontPanel::editShapeBold, 
+          mainApp, &MainApplication::editShapeBold);
+
+  connect(font_panel_, &FontPanel::editShapeItalic, 
+          mainApp, &MainApplication::editShapeItalic);
+
+  connect(font_panel_, &FontPanel::editShapeUnderline, 
+          mainApp, &MainApplication::editShapeUnderline);
+
+  connect(font_panel_, &FontPanel::editShapeLineHeight, 
+          mainApp, &MainApplication::editShapeLineHeight);
+
+  connect(canvas(), &Canvas::selectionsChanged, 
+          mainApp, &MainApplication::getSelectShapeChange);
+
+  connect(mainApp, &MainApplication::updateFontView, 
+          font_panel_, &FontPanel::updateFontView);
+
+  //this part must follow font panel
+  connect(mainApp, &MainApplication::updateFontView, [=](
+          QSet<QString> font_familys, 
+          QSet<int> point_sizes, 
+          QSet<qreal> letter_spacings, 
+          QSet<bool> bolds, 
+          QSet<bool> italics, 
+          QSet<bool> underlines, 
+          QSet<double> line_heights) {
+            if(font_familys.size() == 1) {
+              fontComboBox->setCurrentFont(QFont(*font_familys.begin()));
+            } else if(!font_familys.empty()) {
+              fontComboBox->blockSignals(true);
+              fontComboBox->setCurrentText("");
+              fontComboBox->blockSignals(false);
+            }
+            if(point_sizes.size() == 1) {
+              spinBoxSize->setValue(*point_sizes.begin());
+            } else if(!point_sizes.empty()) {
+              spinBoxSize->blockSignals(true);
+              spinBoxSize->setSpecialValueText(tr(" "));
+              spinBoxSize->setValue(0);
+              spinBoxSize->blockSignals(false);
+            }
+            if(letter_spacings.size() == 1) {
+              doubleSpinBoxLetterSpacing->setValue(*letter_spacings.begin());
+            } else if(!letter_spacings.empty()) {
+              doubleSpinBoxLetterSpacing->blockSignals(true);
+              doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
+              doubleSpinBoxLetterSpacing->setValue(-0.1);
+              doubleSpinBoxLetterSpacing->blockSignals(false);
+            }
+            if(bolds.size() == 1) {
+              boldToolButton->setChecked(*bolds.begin());
+            } else if(!bolds.empty()) {
+              boldToolButton->blockSignals(true);
+              boldToolButton->setChecked(false);
+              boldToolButton->blockSignals(false);
+            }
+            if(italics.size() == 1) {
+              italicToolButton->setChecked(*italics.begin());
+            } else if(!italics.empty()) {
+              italicToolButton->blockSignals(true);
+              italicToolButton->setChecked(false);
+              italicToolButton->blockSignals(false);
+            }
+            if(underlines.size() == 1) {
+              underlineToolButton->setChecked(*underlines.begin());
+            } else if(!underlines.empty()) {
+              underlineToolButton->blockSignals(true);
+              underlineToolButton->setChecked(false);
+              underlineToolButton->blockSignals(false);
+            }
+            if(line_heights.size() == 1) {
+              doubleSpinBoxLineHeight->setValue(*line_heights.begin());
+            } else if(!line_heights.empty()) {
+              doubleSpinBoxLineHeight->blockSignals(true);
+              doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
+              doubleSpinBoxLineHeight->setValue(0);
+              doubleSpinBoxLineHeight->blockSignals(false);
+            }
+          });
 }
 
 void MainWindow::setToolbarTransform() {

@@ -137,7 +137,7 @@ public:
 
 Q_SIGNALS:
 
-  void selectionsChanged();
+  void selectionsChanged(QList<ShapePtr> shape_list);
 
   void scaleChanged();
 

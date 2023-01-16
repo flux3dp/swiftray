@@ -31,9 +31,9 @@ bool Transform::isActive() {
 
 QList<ShapePtr> &Transform::selections() { return selections_; }
 
-void Transform::updateSelections() {
+void Transform::updateSelections(QList<ShapePtr> selections) {
   reset();
-  selections_ = document().selections();
+  selections_ = selections;
   bbox_need_recalc_ = true;
   Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
 }

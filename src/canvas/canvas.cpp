@@ -74,7 +74,7 @@ Canvas::Canvas(QQuickItem *parent)
   fps_timer.start();
 
   // Register events
-  connect(this, &Canvas::selectionsChanged, [=]() {
+  connect(this, &Canvas::selectionsChanged, [=](QList<ShapePtr> shape_list) {
     for (auto &layer : document().layers()) {
       layer->flushCache();
     }
@@ -646,7 +646,7 @@ void Canvas::editUndo() {
   t.start();
   document().undo();
   Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
-  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT selectionsChanged(document().selections()); // Force refresh all selection related components
   Q_EMIT undoCalled();
   qInfo() << "[Undo] Took" << t.elapsed() << "ms";
 }
@@ -654,7 +654,7 @@ void Canvas::editUndo() {
 void Canvas::editRedo() {
   document().redo();
   Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
-  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT selectionsChanged(document().selections()); // Force refresh all selection related components
   Q_EMIT redoCalled();
 }
 
@@ -1087,20 +1087,20 @@ void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
   );
 }
 
-void Canvas::setFont(const QFont &font) {
-  font_.setFamily(font.family());
+void Canvas::setFontFamily(QString font_family) {
+  font_.setFamily(font_family);
   if (!document().selections().isEmpty()) {
     auto cmd = Commands::Joined();
     for (auto &shape: document().selections()) {
       if (shape->type() == Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
         QFont target_font = t->font();
-        target_font.setFamily(font.family());
+        target_font.setFamily(font_family);
         cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setFont(font_);
@@ -1121,7 +1121,7 @@ void Canvas::setPointSize(int point_size) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     target_font.setPointSize(point_size);
     if(!ctrl_text_.isEmpty()) {
@@ -1144,7 +1144,7 @@ void Canvas::setLetterSpacing(double spacing) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
     if(!ctrl_text_.isEmpty()) {
@@ -1167,7 +1167,7 @@ void Canvas::setBold(bool bold) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     target_font.setBold(bold);
     if(!ctrl_text_.isEmpty()) {
@@ -1190,7 +1190,7 @@ void Canvas::setItalic(bool italic) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     target_font.setItalic(italic);
     if(!ctrl_text_.isEmpty()) {
@@ -1213,7 +1213,7 @@ void Canvas::setUnderline(bool underline) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     target_font.setUnderline(underline);
     if(!ctrl_text_.isEmpty()) {
@@ -1233,7 +1233,7 @@ void Canvas::setLineHeight(float line_height) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setLineHeight(line_height);
@@ -1370,12 +1370,12 @@ double Canvas::lineHeight() const { return line_height_;}
 
 void Canvas::editHFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editVFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), 1, -1, false);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHLeft() {
@@ -1386,7 +1386,7 @@ void Canvas::editAlignHLeft() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHCenter() {
@@ -1397,7 +1397,7 @@ void Canvas::editAlignHCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHRight() {
@@ -1408,7 +1408,7 @@ void Canvas::editAlignHRight() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVTop() {
@@ -1419,7 +1419,7 @@ void Canvas::editAlignVTop() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVCenter() {
@@ -1430,7 +1430,7 @@ void Canvas::editAlignVCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVBottom() {
@@ -1441,7 +1441,7 @@ void Canvas::editAlignVBottom() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::setWidget(QQuickWidget *widget) {

@@ -40,7 +40,7 @@ void Document::setSelections(const QList<ShapePtr> &new_selections) {
   }
 
   selections_ = selection_list;
-  Q_EMIT selectionsChanged();
+  Q_EMIT selectionsChanged(selections_);
 }
 
 QList<ShapePtr> &Document::selections() { return selections_; }

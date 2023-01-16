@@ -37,10 +37,10 @@ void ImagePanel::loadStyles() {
 }
 
 void ImagePanel::registerEvents() {
-  connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {
-    if (main_window_->canvas()->document().selections().size() == 1 &&
-        main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
-      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
+  connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=](QList<ShapePtr> shape_list) {
+    if (shape_list.size() == 1 &&
+        shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
       ui->scrollAreaWidgetContents->setEnabled(true);
       // NOTE:
       //     For unknown reason, the group widget and slider inside it must be enabled manually

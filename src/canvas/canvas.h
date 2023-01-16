@@ -202,7 +202,7 @@ public Q_SLOTS:
 
   void resize();
 
-  void setFont(const QFont &font);
+  void setFontFamily(QString font_family);
 
   void setPointSize(int point_size);
 
@@ -297,7 +297,7 @@ Q_SIGNALS:
 
   void scaleChanged();
 
-  void selectionsChanged();
+  void selectionsChanged(QList<ShapePtr> shape_list);
 
   void fileModifiedChange(bool file_modified);
 

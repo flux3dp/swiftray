@@ -31,6 +31,7 @@
 #include <executor/executor.h>
 #include <windows/rotary_setup.h>
 #include <windows/consoledialog.h>
+#include <main_application.h>
 
 #include <config.h>
 
@@ -110,7 +111,7 @@ private Q_SLOTS:
 
   void updateMode();
 
-  void updateSelections();
+  void updateSelections(QList<ShapePtr> shape_list);
 
   void updateScale();
 
@@ -254,6 +255,8 @@ private:
   void actionFrame();
   QPoint calculateJobOrigin();
   QTransform calculateTranslate();
+
+  friend class MainApplication;
 };
 
 #endif // MAINWINDOW_H
