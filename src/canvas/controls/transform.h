@@ -75,11 +75,11 @@ namespace Controls {
     }
 
     double x() {
-      return boundingRect().center().x();
+      return boundingRect().topLeft().x();
     }
 
     double y() {
-      return boundingRect().center().y();
+      return boundingRect().topLeft().y();
     }
 
     double width() {
