@@ -126,6 +126,7 @@ void MainWindow::loadSettings() {
   rotary_setup_->setDefaultCircumference(machine_info.height);
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
+  canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
@@ -1030,23 +1031,18 @@ void MainWindow::updateSelections(QList<ShapePtr> shape_list) {
   ui->actionSharpen->setEnabled(shape_list.size() == 1 && all_image);
 }
 
-void MainWindow::updateToolbarTransform() {
-  canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
-  Q_EMIT toolbarTransformChanged(x_, y_, r_, w_, h_);
-}
-
 void MainWindow::updateScene() {
   if(is_rotary_mode_) {
     mode_block_->setText(tr("Rotary Mode"));
-    canvas()->document().setWidth(machine_range_.width() * 10);
-    canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
-    canvas()->resize();
+    canvas_->document().setWidth(machine_range_.width() * 10);
+    canvas_->document().setHeight(rotary_setup_->getCircumference() * 10);
+    canvas_->resize();
     laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   } else {
     mode_block_->setText(tr("XY Mode"));
-    canvas()->document().setWidth(machine_range_.width() * 10);
-    canvas()->document().setHeight(machine_range_.height() * 10);
-    canvas()->resize();
+    canvas_->document().setWidth(machine_range_.width() * 10);
+    canvas_->document().setHeight(machine_range_.height() * 10);
+    canvas_->resize();
     laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   }
 }
@@ -1121,6 +1117,7 @@ void MainWindow::loadWidgets() {
   font_panel_->setItalic(mainApp->getFont().italic());
   font_panel_->setUnderline(mainApp->getFont().underline());
   font_panel_->setLineHeight(mainApp->getFontLineHeight());
+  transform_panel_->setScaleLock(mainApp->isShapeScaleLocked());
 }
 
 void MainWindow::registerEvents() {
@@ -1133,6 +1130,8 @@ void MainWindow::registerEvents() {
   connect(canvas_, &Canvas::scaleChanged, this, &MainWindow::updateScale);
   connect(canvas_, &Canvas::fileModifiedChange, this, &MainWindow::updateTitle);
   connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
+  connect(canvas_, &Canvas::transformChanged, mainApp, &MainApplication::getSelectShapeTransform);
+  connect(canvas_, &Canvas::selectionsChanged, mainApp, &MainApplication::getSelectShapeChange);
   // Monitor UI events
   connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
@@ -1499,6 +1498,24 @@ void MainWindow::registerEvents() {
     console_dialog_->raise();
   });
 
+  //about transform
+  connect(transform_panel_, &TransformPanel::editShapeTransformX, mainApp, &MainApplication::updateShapeTransformX);
+  connect(transform_panel_, &TransformPanel::editShapeTransformY, mainApp, &MainApplication::updateShapeTransformY);
+  connect(transform_panel_, &TransformPanel::editShapeTransformR, mainApp, &MainApplication::updateShapeTransformR);
+  connect(transform_panel_, &TransformPanel::editShapeTransformW, mainApp, &MainApplication::updateShapeTransformW);
+  connect(transform_panel_, &TransformPanel::editShapeTransformH, mainApp, &MainApplication::updateShapeTransformH);
+  connect(transform_panel_, &TransformPanel::scaleLockToggled, mainApp, &MainApplication::updateShapeScaleLock);
+
+  //about font
+  connect(font_panel_, &FontPanel::editShapeFontFamily, mainApp, &MainApplication::updateShapeFontFamily);
+  connect(font_panel_, &FontPanel::editShapeFontPointSize, mainApp, &MainApplication::editShapeFontPointSize);
+  connect(font_panel_, &FontPanel::editShapeLetterSpacing, mainApp, &MainApplication::editShapeLetterSpacing);
+  connect(font_panel_, &FontPanel::editShapeBold, mainApp, &MainApplication::editShapeBold);
+  connect(font_panel_, &FontPanel::editShapeItalic, mainApp, &MainApplication::editShapeItalic);
+  connect(font_panel_, &FontPanel::editShapeUnderline, mainApp, &MainApplication::editShapeUnderline);
+  connect(font_panel_, &FontPanel::editShapeLineHeight, mainApp, &MainApplication::editShapeLineHeight);
+  connect(mainApp, &MainApplication::updateFontView, font_panel_, &FontPanel::updateFontView);
+
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
   connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
@@ -1810,43 +1827,43 @@ void MainWindow::setToolbarFont() {
   ui->toolBarFont->addWidget(doubleSpinBoxLetterSpacing);
 
   connect(mainApp, &MainApplication::editShapeFontFamily, [=](QString font_family) {
-    canvas()->setFontFamily(font_family);
+    canvas_->setFontFamily(font_family);
     font_panel_->setFontFamily(font_family);
     fontComboBox->setCurrentFont(QFont(font_family));
   });
 
   connect(mainApp, &MainApplication::editShapeFontPointSize, [=](int point_size) {
-    canvas()->setPointSize(point_size);
+    canvas_->setPointSize(point_size);
     font_panel_->setPointSize(point_size);
     spinBoxSize->setValue(point_size);
   });
 
   connect(mainApp, &MainApplication::editShapeLetterSpacing, [=](qreal letter_spacing) {
-    canvas()->setLetterSpacing(letter_spacing);
+    canvas_->setLetterSpacing(letter_spacing);
     font_panel_->setLetterSpacing(letter_spacing);
     doubleSpinBoxLetterSpacing->setValue(letter_spacing);
   });
 
   connect(mainApp, &MainApplication::editShapeLineHeight, [=](double line_height) {
-    canvas()->setLineHeight(line_height);
+    canvas_->setLineHeight(line_height);
     font_panel_->setLineHeight(line_height);
     doubleSpinBoxLineHeight->setValue(line_height);
   });
 
   connect(mainApp, &MainApplication::editShapeBold, [=](bool bold) {
-    canvas()->setBold(bold);
+    canvas_->setBold(bold);
     font_panel_->setBold(bold);
     boldToolButton->setChecked(bold);
   });
 
   connect(mainApp, &MainApplication::editShapeItalic, [=](bool italic) {
-    canvas()->setItalic(italic);
+    canvas_->setItalic(italic);
     font_panel_->setItalic(italic);
     italicToolButton->setChecked(italic);
   });
 
   connect(mainApp, &MainApplication::editShapeUnderline, [=](bool underline) {
-    canvas()->setUnderline(underline);
+    canvas_->setUnderline(underline);
     font_panel_->setUnderline(underline);
     underlineToolButton->setChecked(underline);
   });
@@ -1871,33 +1888,6 @@ void MainWindow::setToolbarFont() {
   
   connect(underlineToolButton, &QToolButton::toggled, 
           mainApp, &MainApplication::updateShapeUnderline);
-
-  connect(font_panel_, &FontPanel::editShapeFontFamily, 
-          mainApp, &MainApplication::updateShapeFontFamily);
-
-  connect(font_panel_, &FontPanel::editShapeFontPointSize, 
-          mainApp, &MainApplication::editShapeFontPointSize);
-
-  connect(font_panel_, &FontPanel::editShapeLetterSpacing, 
-          mainApp, &MainApplication::editShapeLetterSpacing);
-
-  connect(font_panel_, &FontPanel::editShapeBold, 
-          mainApp, &MainApplication::editShapeBold);
-
-  connect(font_panel_, &FontPanel::editShapeItalic, 
-          mainApp, &MainApplication::editShapeItalic);
-
-  connect(font_panel_, &FontPanel::editShapeUnderline, 
-          mainApp, &MainApplication::editShapeUnderline);
-
-  connect(font_panel_, &FontPanel::editShapeLineHeight, 
-          mainApp, &MainApplication::editShapeLineHeight);
-
-  connect(canvas(), &Canvas::selectionsChanged, 
-          mainApp, &MainApplication::getSelectShapeChange);
-
-  connect(mainApp, &MainApplication::updateFontView, 
-          font_panel_, &FontPanel::updateFontView);
 
   //this part must follow font panel
   connect(mainApp, &MainApplication::updateFontView, [=](
@@ -2014,25 +2004,27 @@ void MainWindow::setToolbarTransform() {
   ui->toolBarTransform->addWidget(doubleSpinBoxHeight);
   ui->toolBarTransform->addWidget(labelRotation);
   ui->toolBarTransform->addWidget(doubleSpinBoxRotation);
+  buttonLock->setChecked(mainApp->isShapeScaleLocked());
 
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
 
-  connect(canvas(), &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
-    x_ = x/10;
-    y_ = y/10;
-    r_ = r;
-    w_ = w/10;
-    h_ = h/10;
+  connect(mainApp, &MainApplication::editShapeTransform, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
+    canvas_->transformControl().updateTransform(x * 10, y * 10, r, w * 10, h * 10);
+    transform_panel_->setTransformX(x);
+    transform_panel_->setTransformY(y);
+    transform_panel_->setTransformR(r);
+    transform_panel_->setTransformW(w);
+    transform_panel_->setTransformH(h);
     doubleSpinBoxX->blockSignals(true);
     doubleSpinBoxY->blockSignals(true);
     doubleSpinBoxRotation->blockSignals(true);
     doubleSpinBoxWidth->blockSignals(true);
     doubleSpinBoxHeight->blockSignals(true);
-    doubleSpinBoxX->setValue(x/10);
-    doubleSpinBoxY->setValue(y/10);
+    doubleSpinBoxX->setValue(x);
+    doubleSpinBoxY->setValue(y);
     doubleSpinBoxRotation->setValue(r);
-    doubleSpinBoxWidth->setValue(w/10);
-    doubleSpinBoxHeight->setValue(h/10);
+    doubleSpinBoxWidth->setValue(w);
+    doubleSpinBoxHeight->setValue(h);
     doubleSpinBoxX->blockSignals(false);
     doubleSpinBoxY->blockSignals(false);
     doubleSpinBoxRotation->blockSignals(false);
@@ -2040,52 +2032,12 @@ void MainWindow::setToolbarTransform() {
     doubleSpinBoxHeight->blockSignals(false);
   });
 
-  connect(transform_panel_, &TransformPanel::transformPanelUpdated, [=](double x, double y, double r, double w, double h) {
-    x_ = x;
-    y_ = y;
-    r_ = r;
-    w_ = w;
-    h_ = h;
-    doubleSpinBoxX->setValue(x);
-    doubleSpinBoxY->setValue(y);
-    doubleSpinBoxRotation->setValue(r);
-    doubleSpinBoxWidth->setValue(w);
-    doubleSpinBoxHeight->setValue(h);
-  });
-
-  connect(doubleSpinBoxX, spin_event, [=]() {
-    x_ = doubleSpinBoxX->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxY, spin_event, [=]() {
-    y_ = doubleSpinBoxY->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxRotation, spin_event, [=]() {
-    r_ = doubleSpinBoxRotation->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxWidth, spin_event, [=]() {
-    if (transform_panel_->isScaleLock()) {
-      h_ = w_ == 0 ? 0 : h_ * doubleSpinBoxWidth->value() / w_;
-    }
-    w_ = doubleSpinBoxWidth->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxHeight, spin_event, [=]() {
-    if (transform_panel_->isScaleLock()) {
-      w_ = h_ == 0 ? 0 : w_ * doubleSpinBoxHeight->value() / h_;
-    }
-    h_ = doubleSpinBoxHeight->value();
-    updateToolbarTransform();
-  });
-
-  connect(transform_panel_, &TransformPanel::scaleLockToggled, [=](bool scale_locked) {
+  connect(mainApp, &MainApplication::editShapeScaleLock, [=](bool scale_locked) {
+    canvas_->transformControl().setScaleLock(scale_locked);
+    transform_panel_->setScaleLock(scale_locked);
+    buttonLock->blockSignals(true);
     buttonLock->setChecked(scale_locked);
+    buttonLock->blockSignals(false);
 
     if (scale_locked) {
       buttonLock->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-lock.png" : ":/resources/images/icon-lock.png"));
@@ -2094,9 +2046,22 @@ void MainWindow::setToolbarTransform() {
     }
   });
 
-  connect(buttonLock, &QToolButton::toggled, [=](bool checked) {
-    transform_panel_->setScaleLock(checked);
-  });
+  connect(doubleSpinBoxX, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformX);
+
+  connect(doubleSpinBoxY, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformY);
+
+  connect(doubleSpinBoxRotation, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformR);
+
+  connect(doubleSpinBoxWidth, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformW);
+
+  connect(doubleSpinBoxHeight, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformH);
+
+  connect(buttonLock, &QToolButton::toggled, mainApp, &MainApplication::updateShapeScaleLock);
 
   //panel
   connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
@@ -2641,7 +2606,7 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
 
 void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos) {
   Q_EMIT MainWindow::positionCached(target_pos);
-  canvas()->updateCurrentPosition(target_pos);
+  canvas_->updateCurrentPosition(target_pos);
 }
 
 void MainWindow::machineDisconnected() {

@@ -19,6 +19,7 @@ MainApplication::MainApplication(int &argc,  char **argv) :
 
   font_ = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
   line_height_ = LINE_HEIGHT;
+  scale_locked_ = false;
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -186,4 +187,72 @@ void MainApplication::updateShapeUnderline(bool underline) {
 void MainApplication::updateShapeLineHeight(double line_height) {
   line_height_ = line_height;
   Q_EMIT editShapeLineHeight(line_height);
+}
+
+//about transform
+bool MainApplication::isShapeScaleLocked() {
+  return scale_locked_;
+}
+
+void MainApplication::getSelectShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h) {
+  x_ = x / 10;
+  y_ = y / 10;
+  r_ = r;
+  w_ = w / 10;
+  h_ = h / 10;
+  Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+}
+
+void MainApplication::updateShapeTransformX(double x) {
+  if(x_ != x) {
+    x_ = x;
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+  }
+}
+
+void MainApplication::updateShapeTransformY(double y) {
+  if(y_ != y) {
+    y_ = y;
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+  }
+}
+
+void MainApplication::updateShapeTransformR(double r) {
+  if(r_ != r) {
+    r_ = r;
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+  }
+}
+
+void MainApplication::updateShapeTransformW(double w) {
+  if(w == 0) {
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+    return;
+  }
+  if(w_ != w) {
+    if (scale_locked_) {
+      h_ = w_ == 0 ? 0 : h_ * w / w_;
+    }
+    w_ = w;
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+  }
+}
+
+void MainApplication::updateShapeTransformH(double h) {
+  if(h == 0) {
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+    return;
+  }
+  if(h_ != h) {
+    if (scale_locked_) {
+      w_ = h_ == 0 ? 0 : w_ * h / h_;
+    }
+    h_ = h;
+    Q_EMIT editShapeTransform(x_, y_, r_, w_, h_);
+  }
+}
+
+void MainApplication::updateShapeScaleLock(bool locked) {
+  scale_locked_ = locked;
+  Q_EMIT editShapeScaleLock(scale_locked_);
 }

@@ -115,8 +115,6 @@ private Q_SLOTS:
 
   void updateScale();
 
-  void updateToolbarTransform();
-
   void onScaleMinusClicked();
 
   void onScalePlusClicked();

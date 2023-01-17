@@ -24,10 +24,12 @@ public:
   //about font
   QFont getFont();
   double getFontLineHeight();
+  //about transform
+  bool isShapeScaleLocked();
 
 public Q_SLOTS:
-  //about font
   void getSelectShapeChange(QList<ShapePtr> shape_list);
+  //about font
   void updateShapeFontFamily(QFont font);
   void updateShapeFontPointSize(int point_size);
   void updateShapeLetterSpacing(qreal letter_spacing);
@@ -35,6 +37,14 @@ public Q_SLOTS:
   void updateShapeItalic(bool italic);
   void updateShapeUnderline(bool underline);
   void updateShapeLineHeight(double line_height);
+  //about transform
+  void getSelectShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h);//maybe this should calculate when getSelectShapeChange?(calculate by transform & canvas now)
+  void updateShapeTransformX(double x);
+  void updateShapeTransformY(double y);
+  void updateShapeTransformR(double r);
+  void updateShapeTransformW(double w);
+  void updateShapeTransformH(double h);
+  void updateShapeScaleLock(bool locked);
 
 private:
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -44,6 +54,13 @@ private:
   //setting of current font
   QFont font_;
   double line_height_;
+  //setting of current transform
+  double x_;
+  double y_;
+  double r_;
+  double w_;
+  double h_;
+  bool scale_locked_;
 
 private Q_SLOTS:
   void cleanup();
@@ -71,6 +88,9 @@ Q_SIGNALS:
   void editShapeItalic(bool italic);
   void editShapeUnderline(bool underline);
   void editShapeLineHeight(double line_height);
+  //about transform
+  void editShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h);
+  void editShapeScaleLock(bool locked);
 
 };
 

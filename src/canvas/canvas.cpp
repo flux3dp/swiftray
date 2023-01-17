@@ -1233,7 +1233,7 @@ void Canvas::setLineHeight(float line_height) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged(document().selections());
+    Q_EMIT selectionsChanged(document().selections());//to update the boundingRect maybe use different Q_SIGNALS?
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setLineHeight(line_height);
