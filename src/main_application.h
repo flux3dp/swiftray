@@ -25,7 +25,15 @@ public:
   QFont getFont();
   double getFontLineHeight();
   //about transform
+  double getTransformX();
+  double getTransformY();
+  double getTransformR();
+  double getTransformW();
+  double getTransformH();
   bool isShapeScaleLocked();
+  //about image
+  bool isImageGradient();
+  int getImageThreshold();
 
 public Q_SLOTS:
   void getSelectShapeChange(QList<ShapePtr> shape_list);
@@ -45,6 +53,9 @@ public Q_SLOTS:
   void updateShapeTransformW(double w);
   void updateShapeTransformH(double h);
   void updateShapeScaleLock(bool locked);
+  //about image
+  void updateImageGradient(bool state);
+  void updateImageThreshold(int value);
 
 private:
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -61,6 +72,9 @@ private:
   double w_;
   double h_;
   bool scale_locked_;
+  //setting of current image
+  bool gradient_;
+  int thrsh_brightness_;
 
 private Q_SLOTS:
   void cleanup();
@@ -93,6 +107,15 @@ Q_SIGNALS:
   void editShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h);
   void editShapeScaleLock(bool locked);
   void changeTransformEnable(bool enable);
+  void selectAllGeometry(bool is_geometry);
+  void selectAllGroup(bool is_group);
+  void changeUnionEnable(bool enable);
+  void selectPairPath(bool is_pair);
+  void selectGroupEnable(bool enable);
+  //about image
+  void editImageGradient(bool state);
+  void editImageThreshold(int value);
+  void changeImageEnable(bool enable);
 };
 
 extern MainApplication *mainApp;

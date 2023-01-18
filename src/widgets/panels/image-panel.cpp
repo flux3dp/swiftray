@@ -1,23 +1,15 @@
 #include "image-panel.h"
 #include "ui_image-panel.h"
 
-#include <canvas/canvas.h>
-#include <shape/shape.h>
-#include <shape/bitmap-shape.h>
-#include <windows/mainwindow.h>
-#include <windows/osxwindow.h>
+#include <QDebug>
 
-ImagePanel::ImagePanel(QWidget *parent, MainWindow *main_window) :
+ImagePanel::ImagePanel(QWidget *parent, bool is_dark_mode) :
     QFrame(parent),
-    ui(new Ui::ImagePanel),
-    main_window_(main_window)
+    ui(new Ui::ImagePanel)
 {
     ui->setupUi(this);
-    ui->gradientCheckBox->setCheckState(Qt::Checked);
-    ui->brightnessThresholdSlider->setValue(128);
-    ui->scrollAreaWidgetContents->setEnabled(false);
     initializeContainer();
-    setLayout();
+    setLayout(is_dark_mode);
 }
 
 ImagePanel::~ImagePanel()
@@ -37,63 +29,55 @@ void ImagePanel::loadStyles() {
 }
 
 void ImagePanel::registerEvents() {
-  connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=](QList<ShapePtr> shape_list) {
-    if (shape_list.size() == 1 &&
-        shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
-      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
-      ui->scrollAreaWidgetContents->setEnabled(true);
-      // NOTE:
-      //     For unknown reason, the group widget and slider inside it must be enabled manually
-      //     From Qt documentation, all child widgets should be enabled when the parent is enabled
-      //     (if not individually specified)
-      ui->brightnessThresholdGroup->setEnabled(true);
-      ui->brightnessThresholdSlider->setEnabled(true);
-
-      ui->gradientCheckBox->setCheckState(selected_img->gradient() ? Qt::Checked : Qt::Unchecked);
-      ui->brightnessThresholdSlider->setValue(selected_img->thrsh_brightness());
-      if (selected_img->gradient()) {
-        ui->brightnessThresholdGroup->setEnabled(false);
-      } else {
-        ui->brightnessThresholdGroup->setEnabled(true);
-      }
-    } else {
-      // Disable the parent widget will disable all child widgets as well
-      ui->scrollAreaWidgetContents->setEnabled(false);
-    }
-  });
-
   connect(ui->gradientCheckBox, QOverload<int>::of(&QCheckBox::stateChanged), [=](int state) {
-    if (main_window_->canvas()->document().selections().size() == 1 &&
-        main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
-      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
-      selected_img->setGradient(state);
-      if (state) {
-        ui->brightnessThresholdGroup->setEnabled(false);
-      } else {
-        ui->brightnessThresholdGroup->setEnabled(true);
-      }
-    }
+    Q_EMIT editImageGradient(state);
   });
 
   connect(ui->brightnessThresholdSlider, QOverload<int>::of(&QSlider::valueChanged), [=](int value) {
-      if (main_window_->canvas()->document().selections().size() == 1 &&
-          main_window_->canvas()->document().selections().at(0)->type() == ::Shape::Type::Bitmap) {
-        BitmapShape* selected_img = dynamic_cast<BitmapShape *>(main_window_->canvas()->document().selections().at(0).get());
-        selected_img->setThrshBrightness(value);
-      }
+    Q_EMIT editImageThreshold(value);
   });
 
-  connect(ui->toolButtonCrop, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::cropImage);
-  connect(ui->toolButtonInvert, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::invertImage);
-  connect(ui->toolButtonSharpen, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::sharpenImage);
-  connect(ui->toolButtonTrace, &QAbstractButton::clicked, main_window_->canvas(), &Canvas::genImageTrace);
+  connect(ui->toolButtonCrop, &QAbstractButton::clicked, [=]() {
+    Q_EMIT actionCropImage();
+  });
+  connect(ui->toolButtonInvert, &QAbstractButton::clicked, [=]() {
+    Q_EMIT actionInvertImage();
+  });
+  connect(ui->toolButtonSharpen, &QAbstractButton::clicked, [=]() {
+    Q_EMIT actionSharpenImage();
+  });
+  connect(ui->toolButtonTrace, &QAbstractButton::clicked, [=]() {
+    Q_EMIT actionGenImageTrace();
+  });
 }
 
-void ImagePanel::setLayout() {
-  ui->toolButtonCrop->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
-  ui->toolButtonInvert->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
-  ui->toolButtonSharpen->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
-  ui->toolButtonTrace->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
+void ImagePanel::setLayout(bool is_dark_mode) {
+  ui->toolButtonCrop->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
+  ui->toolButtonInvert->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
+  ui->toolButtonSharpen->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
+  ui->toolButtonTrace->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
+}
+
+void ImagePanel::setImageGradient(bool state) {
+  ui->gradientCheckBox->blockSignals(true);
+  if(state) {
+    ui->gradientCheckBox->setCheckState(Qt::Checked);
+  } else {
+    ui->gradientCheckBox->setCheckState(Qt::Unchecked);
+  }
+  ui->brightnessThresholdGroup->setEnabled(!state);
+  ui->brightnessThresholdSlider->setEnabled(!state);
+  ui->gradientCheckBox->blockSignals(false);
+}
+
+void ImagePanel::setImageThreshold(int value) {
+  ui->brightnessThresholdSlider->blockSignals(true);
+  ui->brightnessThresholdSlider->setSliderPosition(value);
+  ui->brightnessThresholdSlider->blockSignals(false);
+}
+
+void ImagePanel::changeImageEnable(bool enable) {
+  ui->scrollAreaWidgetContents->setEnabled(enable);
 }
 
 void ImagePanel::hideEvent(QHideEvent *event) {

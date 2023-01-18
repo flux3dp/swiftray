@@ -61,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarFont();
   setToolbarTransform();
   //setToolbarImage();
-  updateSelections(QList<ShapePtr>());
+  Q_EMIT canvas_->selectionsChanged(QList<ShapePtr>());
   showWelcomeDialog();
   setScaleBlock();
   setModeBlock();
@@ -984,53 +984,6 @@ void MainWindow::updateScale() {
   scale_block_->setText(QString::number(canvas_->document().scale() * 100, 'f', 1)+"%");
 }
 
-void MainWindow::updateSelections(QList<ShapePtr> shape_list) {
-  bool all_group = !shape_list.empty();
-  bool all_path = !shape_list.empty();
-  bool all_image = !shape_list.empty();
-  bool all_geometry = !shape_list.empty();
-  bool all_text = !shape_list.empty();
-
-  for (auto &shape : shape_list) {
-    if (shape->type() != Shape::Type::Group) all_group = false;
-
-    if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
-    if (shape->type() != Shape::Type::Path) all_geometry = false;
-    if (shape->type() != Shape::Type::Bitmap) all_image = false;
-    if (shape->type() != Shape::Type::Text) all_text = false;
-  }
-
-  cutAction_->setEnabled(shape_list.size() > 0);
-  copyAction_->setEnabled(shape_list.size() > 0);
-  duplicateAction_->setEnabled(shape_list.size() > 0);
-  deleteAction_->setEnabled(shape_list.size() > 0);
-  groupAction_->setEnabled(shape_list.size() > 1);
-  ungroupAction_->setEnabled(all_group);
-
-  ui->actionGroup->setEnabled(shape_list.size() > 1);
-  ui->actionGroupMenu->setEnabled(shape_list.size() > 1);
-  ui->actionUngroup->setEnabled(all_group);
-  ui->actionUngroupMenu->setEnabled(all_group);
-  ui->actionUnion->setEnabled(shape_list.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
-  ui->actionSubtract->setEnabled(shape_list.size() == 2 && all_path);
-  ui->actionDiff->setEnabled(shape_list.size() == 2 && all_path);
-  ui->actionIntersect->setEnabled(shape_list.size() == 2 && all_path);
-  ui->actionHFlip->setEnabled(!shape_list.empty());
-  ui->actionVFlip->setEnabled(!shape_list.empty());
-  ui->actionAlignVTop->setEnabled(shape_list.size() > 1);
-  ui->actionAlignVCenter->setEnabled(shape_list.size() > 1);
-  ui->actionAlignVBottom->setEnabled(shape_list.size() > 1);
-  ui->actionAlignHLeft->setEnabled(shape_list.size() > 1);
-  ui->actionAlignHCenter->setEnabled(shape_list.size() > 1);
-  ui->actionAlignHRight->setEnabled(shape_list.size() > 1);
-  ui->actionTrace->setEnabled(shape_list.size() == 1 && all_image);
-  ui->actionInvert->setEnabled(shape_list.size() == 1 && all_image);
-  ui->actionReplace_with->setEnabled(shape_list.size() == 1 && all_image);
-  ui->actionCrop->setEnabled(shape_list.size() == 1 && all_image);
-  ui->actionPathOffset->setEnabled(all_geometry);
-  ui->actionSharpen->setEnabled(shape_list.size() == 1 && all_image);
-}
-
 void MainWindow::updateScene() {
   if(is_rotary_mode_) {
     mode_block_->setText(tr("Rotary Mode"));
@@ -1118,6 +1071,9 @@ void MainWindow::loadWidgets() {
   font_panel_->setUnderline(mainApp->getFont().underline());
   font_panel_->setLineHeight(mainApp->getFontLineHeight());
   transform_panel_->setScaleLock(mainApp->isShapeScaleLocked());
+  image_panel_->setImageGradient(mainApp->isImageGradient());
+  image_panel_->setImageThreshold(mainApp->getImageThreshold());
+  image_panel_->changeImageEnable(false);
 }
 
 void MainWindow::registerEvents() {
@@ -1126,7 +1082,6 @@ void MainWindow::registerEvents() {
 
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
-  connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   connect(canvas_, &Canvas::scaleChanged, this, &MainWindow::updateScale);
   connect(canvas_, &Canvas::fileModifiedChange, this, &MainWindow::updateTitle);
   connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
@@ -1508,6 +1463,33 @@ void MainWindow::registerEvents() {
   connect(transform_panel_, &TransformPanel::editShapeTransformW, mainApp, &MainApplication::updateShapeTransformW);
   connect(transform_panel_, &TransformPanel::editShapeTransformH, mainApp, &MainApplication::updateShapeTransformH);
   connect(transform_panel_, &TransformPanel::scaleLockToggled, mainApp, &MainApplication::updateShapeScaleLock);
+  connect(mainApp, &MainApplication::selectAllGeometry, [=](bool state) {
+    ui->actionPathOffset->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::selectAllGroup, [=](bool state) {
+    ungroupAction_->setEnabled(state);
+    ui->actionUngroup->setEnabled(state);
+    ui->actionUngroupMenu->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::changeUnionEnable, [=](bool state) {
+    ui->actionUnion->setEnabled(state); // Union can be done with the shape itself if it contains sub polygons
+  });
+  connect(mainApp, &MainApplication::selectPairPath, [=](bool state) {
+    ui->actionSubtract->setEnabled(state);
+    ui->actionDiff->setEnabled(state);
+    ui->actionIntersect->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::selectGroupEnable, [=](bool state) {
+    groupAction_->setEnabled(state);
+    ui->actionGroup->setEnabled(state);
+    ui->actionGroupMenu->setEnabled(state);
+    ui->actionAlignVTop->setEnabled(state);
+    ui->actionAlignVCenter->setEnabled(state);
+    ui->actionAlignVBottom->setEnabled(state);
+    ui->actionAlignHLeft->setEnabled(state);
+    ui->actionAlignHCenter->setEnabled(state);
+    ui->actionAlignHRight->setEnabled(state);
+  });
 
   //about font
   connect(font_panel_, &FontPanel::editShapeFontFamily, mainApp, &MainApplication::updateShapeFontFamily);
@@ -1518,6 +1500,39 @@ void MainWindow::registerEvents() {
   connect(font_panel_, &FontPanel::editShapeUnderline, mainApp, &MainApplication::editShapeUnderline);
   connect(font_panel_, &FontPanel::editShapeLineHeight, mainApp, &MainApplication::editShapeLineHeight);
   connect(mainApp, &MainApplication::updateFontView, font_panel_, &FontPanel::updateFontView);
+
+  //about image
+  connect(image_panel_, &ImagePanel::editImageGradient, mainApp, &MainApplication::updateImageGradient);
+  connect(image_panel_, &ImagePanel::editImageThreshold, mainApp, &MainApplication::updateImageThreshold);
+  connect(image_panel_, &ImagePanel::actionCropImage, canvas_, &Canvas::cropImage);
+  connect(image_panel_, &ImagePanel::actionInvertImage, canvas_, &Canvas::invertImage);
+  connect(image_panel_, &ImagePanel::actionSharpenImage, canvas_, &Canvas::sharpenImage);
+  connect(image_panel_, &ImagePanel::actionGenImageTrace, canvas_, &Canvas::genImageTrace);
+  connect(mainApp, &MainApplication::editImageGradient, [=](bool state) {
+    image_panel_->setImageGradient(state);
+    QList<ShapePtr> shape_list = canvas_->document().selections();
+    if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
+      selected_img->setGradient(state);
+    }
+  });
+  //fail to update image panel qslider
+  connect(mainApp, &MainApplication::editImageThreshold, [=](int value) {
+    image_panel_->setImageThreshold(value);
+    QList<ShapePtr> shape_list = canvas_->document().selections();
+    if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
+      selected_img->setThrshBrightness(value);
+    }
+  });
+  connect(mainApp, &MainApplication::changeImageEnable, [=](bool state) {
+    image_panel_->changeImageEnable(state);
+    ui->actionTrace->setEnabled(state);
+    ui->actionInvert->setEnabled(state);
+    ui->actionReplace_with->setEnabled(state);
+    ui->actionCrop->setEnabled(state);
+    ui->actionSharpen->setEnabled(state);
+  });
 
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
@@ -2148,6 +2163,12 @@ void MainWindow::setToolbarTransform() {
   connect(buttonLock, &QToolButton::toggled, mainApp, &MainApplication::updateShapeScaleLock);
 
   connect(mainApp, &MainApplication::changeTransformEnable, [=](bool enable) {
+    ui->actionHFlip->setEnabled(enable);
+    ui->actionVFlip->setEnabled(enable);
+    cutAction_->setEnabled(enable);
+    copyAction_->setEnabled(enable);
+    duplicateAction_->setEnabled(enable);
+    deleteAction_->setEnabled(enable);
     transform_panel_->changeTransformEnable(enable);
     doubleSpinBoxX->setEnabled(enable);
     doubleSpinBoxY->setEnabled(enable);
@@ -2156,13 +2177,7 @@ void MainWindow::setToolbarTransform() {
     doubleSpinBoxHeight->setEnabled(enable);
     buttonLock->setEnabled(enable);
   });
-  transform_panel_->changeTransformEnable(false);
-  doubleSpinBoxX->setEnabled(false);
-  doubleSpinBoxY->setEnabled(false);
-  doubleSpinBoxRotation->setEnabled(false);
-  doubleSpinBoxWidth->setEnabled(false);
-  doubleSpinBoxHeight->setEnabled(false);
-  buttonLock->setEnabled(false);
+  buttonLock->setChecked(mainApp->isShapeScaleLocked());
 }
 
 /*

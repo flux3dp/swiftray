@@ -111,8 +111,6 @@ private Q_SLOTS:
 
   void updateMode();
 
-  void updateSelections(QList<ShapePtr> shape_list);
-
   void updateScale();
 
   void onScaleMinusClicked();

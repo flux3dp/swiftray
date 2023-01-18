@@ -1,9 +1,11 @@
 #include "main_application.h"
 #include <utils/software_update.h>
 #include <constants.h>
+#include <shape/bitmap-shape.h>
 #include <shape/text-shape.h>
 
 #include <QApplication>
+#include <QDebug>
 
 
 MainApplication *mainApp = NULL;
@@ -19,7 +21,10 @@ MainApplication::MainApplication(int &argc,  char **argv) :
 
   font_ = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
   line_height_ = LINE_HEIGHT;
+  x_ = y_ = r_ = w_ = h_ = 0;
   scale_locked_ = false;
+  gradient_ = Qt::Checked;
+  thrsh_brightness_ = 128;
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -87,12 +92,27 @@ extern "C" void software_update_shutdown_request_callback(void) {
 #endif // HAVE_SOFTWARE_UPDATE && Q_OS_WIN
 
 void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
+  bool all_path = !shape_list.empty();
+  bool all_group = !shape_list.empty();
+  bool all_geometry = !shape_list.empty();
+  bool has_txt = false;
+  //image enable
+  if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+    BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
+    gradient_ = selected_img->gradient();
+    thrsh_brightness_ = selected_img->thrsh_brightness();
+    Q_EMIT editImageGradient(gradient_);
+    Q_EMIT editImageThreshold(thrsh_brightness_);
+    Q_EMIT changeImageEnable(true);
+  } else {
+    Q_EMIT changeImageEnable(false);
+  }
+  //transform enable
   if(shape_list.empty()) {
     Q_EMIT changeTransformEnable(false);
   } else {
     Q_EMIT changeTransformEnable(true);
   }
-  bool has_txt = false;
   QSet<QString> font_family;
   QSet<int> point_size;
   QSet<qreal> letter_spacing;
@@ -101,6 +121,9 @@ void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
   QSet<bool> underline;
   QSet<double> line_height;
   for(auto &shape : shape_list) {
+    if(shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
+    if(shape->type() != Shape::Type::Group) all_group = false;
+    if(shape->type() != Shape::Type::Path) all_geometry = false;
     if(shape->type() == ::Shape::Type::Text) {
       TextShape *txt_shape = (TextShape*)shape.get();
       has_txt = true;
@@ -150,6 +173,11 @@ void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
     Q_EMIT updateFontView(font_family, point_size, letter_spacing, bold, 
                           italic, underline, line_height);
   }
+  Q_EMIT selectAllGeometry(all_geometry);
+  Q_EMIT selectAllGroup(all_group);
+  Q_EMIT changeUnionEnable(shape_list.size() > 1 && all_path);
+  Q_EMIT selectPairPath(shape_list.size() == 2 && all_path);
+  Q_EMIT selectGroupEnable(shape_list.size() > 1);
 }
 
 //about font
@@ -262,4 +290,23 @@ void MainApplication::updateShapeTransformH(double h) {
 void MainApplication::updateShapeScaleLock(bool locked) {
   scale_locked_ = locked;
   Q_EMIT editShapeScaleLock(scale_locked_);
+}
+
+//about image
+bool MainApplication::isImageGradient() {
+  return gradient_;
+}
+
+int MainApplication::getImageThreshold() {
+  return thrsh_brightness_;
+}
+
+void MainApplication::updateImageGradient(bool state) {
+  gradient_ = state;
+  Q_EMIT editImageGradient(gradient_);
+}
+
+void MainApplication::updateImageThreshold(int value) {
+  thrsh_brightness_ = value;
+  Q_EMIT editImageThreshold(thrsh_brightness_);
 }
