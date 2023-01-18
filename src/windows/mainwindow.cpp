@@ -1161,6 +1161,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
   connect(ui->actionText, &QAction::triggered, canvas_, &Canvas::editDrawText);
+  connect(ui->actionText, &QAction::triggered, [=]() {
+    Q_EMIT mainApp->changeFontEnable(true);
+  });
   connect(ui->actionPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
   connect(ui->actionMarket, &QAction::triggered, [=]() {
     QDesktopServices::openUrl(QUrl("https://dmkt.io/"));
@@ -1582,6 +1585,69 @@ void MainWindow::registerEvents() {
     updateScene();
   });
 
+  //panel
+  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
+    ui->actionObjectPanel->setChecked(is_show);
+  });
+  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
+    ui->actionFontPanel->setChecked(is_show);
+  });
+  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
+    ui->actionImagePanel->setChecked(is_show);
+  });
+  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
+    ui->actionDocumentPanel->setChecked(is_show);
+  });
+  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
+    ui->actionLaser->setChecked(is_show);
+  });
+  connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
+    ui->actionLayerPanel->setChecked(is_show);
+  });
+  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
+    ui->actionGCodeViewerPanel->setChecked(is_show);
+  });
+  connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
+    ui->actionJoggingPanel->setChecked(is_show);
+  });
+  //toolbar
+  connect(ui->toolBarAlign, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionAlign->setChecked(is_visible);
+  });
+  connect(ui->toolBarBool, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionBoolean->setChecked(is_visible);
+  });
+  connect(ui->toolBarConnection, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionConnection->setChecked(is_visible);
+  });
+  connect(ui->toolBarFlip, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFlip->setChecked(is_visible);
+  });
+  connect(ui->toolBarFont, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFont->setChecked(is_visible);
+  });
+  connect(ui->toolBar, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFunctional->setChecked(is_visible);
+  });
+  connect(ui->toolBarGroup, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionGroup_2->setChecked(is_visible);
+  });
+  connect(ui->toolBarImage, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionImage->setChecked(is_visible);
+  });
+  connect(ui->toolBarFile, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionProject->setChecked(is_visible);
+  });
+  connect(ui->toolBarTask, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTask->setChecked(is_visible);
+  });
+  connect(ui->toolBarTransform, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTransform->setChecked(is_visible);
+  });
+  connect(ui->toolBarVector, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionVector->setChecked(is_visible);
+  });
+
   // TODO: Refactor it when supporting multi-port and multi-machine connection
   //       NOTE: The active_machine might be null at the beginning
   #ifdef CUSTOM_SERIAL_PORT_LIB
@@ -1951,6 +2017,24 @@ void MainWindow::setToolbarFont() {
               doubleSpinBoxLineHeight->blockSignals(false);
             }
           });
+  connect(mainApp, &MainApplication::changeFontEnable, [=](bool enable) {
+    font_panel_->changeFontEnable(enable);
+    fontComboBox->setEnabled(enable);
+    spinBoxSize->setEnabled(enable);
+    doubleSpinBoxLetterSpacing->setEnabled(enable);
+    boldToolButton->setEnabled(enable);
+    italicToolButton->setEnabled(enable);
+    underlineToolButton->setEnabled(enable);
+    doubleSpinBoxLineHeight->setEnabled(enable);
+  });
+  font_panel_->changeFontEnable(false);
+  fontComboBox->setEnabled(false);
+  spinBoxSize->setEnabled(false);
+  doubleSpinBoxLetterSpacing->setEnabled(false);
+  boldToolButton->setEnabled(false);
+  italicToolButton->setEnabled(false);
+  underlineToolButton->setEnabled(false);
+  doubleSpinBoxLineHeight->setEnabled(false);
 }
 
 void MainWindow::setToolbarTransform() {
@@ -2063,68 +2147,22 @@ void MainWindow::setToolbarTransform() {
 
   connect(buttonLock, &QToolButton::toggled, mainApp, &MainApplication::updateShapeScaleLock);
 
-  //panel
-  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
-    ui->actionObjectPanel->setChecked(is_show);
+  connect(mainApp, &MainApplication::changeTransformEnable, [=](bool enable) {
+    transform_panel_->changeTransformEnable(enable);
+    doubleSpinBoxX->setEnabled(enable);
+    doubleSpinBoxY->setEnabled(enable);
+    doubleSpinBoxRotation->setEnabled(enable);
+    doubleSpinBoxWidth->setEnabled(enable);
+    doubleSpinBoxHeight->setEnabled(enable);
+    buttonLock->setEnabled(enable);
   });
-  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
-    ui->actionFontPanel->setChecked(is_show);
-  });
-  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
-    ui->actionImagePanel->setChecked(is_show);
-  });
-  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
-    ui->actionDocumentPanel->setChecked(is_show);
-  });
-  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
-    ui->actionLaser->setChecked(is_show);
-  });
-  connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
-    ui->actionLayerPanel->setChecked(is_show);
-  });
-  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
-    ui->actionGCodeViewerPanel->setChecked(is_show);
-  });
-  connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
-    ui->actionJoggingPanel->setChecked(is_show);
-  });
-  //toolbar
-  connect(ui->toolBarAlign, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionAlign->setChecked(is_visible);
-  });
-  connect(ui->toolBarBool, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionBoolean->setChecked(is_visible);
-  });
-  connect(ui->toolBarConnection, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionConnection->setChecked(is_visible);
-  });
-  connect(ui->toolBarFlip, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFlip->setChecked(is_visible);
-  });
-  connect(ui->toolBarFont, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFont->setChecked(is_visible);
-  });
-  connect(ui->toolBar, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFunctional->setChecked(is_visible);
-  });
-  connect(ui->toolBarGroup, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionGroup_2->setChecked(is_visible);
-  });
-  connect(ui->toolBarImage, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionImage->setChecked(is_visible);
-  });
-  connect(ui->toolBarFile, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionProject->setChecked(is_visible);
-  });
-  connect(ui->toolBarTask, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionTask->setChecked(is_visible);
-  });
-  connect(ui->toolBarTransform, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionTransform->setChecked(is_visible);
-  });
-  connect(ui->toolBarVector, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionVector->setChecked(is_visible);
-  });
+  transform_panel_->changeTransformEnable(false);
+  doubleSpinBoxX->setEnabled(false);
+  doubleSpinBoxY->setEnabled(false);
+  doubleSpinBoxRotation->setEnabled(false);
+  doubleSpinBoxWidth->setEnabled(false);
+  doubleSpinBoxHeight->setEnabled(false);
+  buttonLock->setEnabled(false);
 }
 
 /*

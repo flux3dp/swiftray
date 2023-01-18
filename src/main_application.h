@@ -88,10 +88,11 @@ Q_SIGNALS:
   void editShapeItalic(bool italic);
   void editShapeUnderline(bool underline);
   void editShapeLineHeight(double line_height);
+  void changeFontEnable(bool enable);
   //about transform
   void editShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h);
   void editShapeScaleLock(bool locked);
-
+  void changeTransformEnable(bool enable);
 };
 
 extern MainApplication *mainApp;

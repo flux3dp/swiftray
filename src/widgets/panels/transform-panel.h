@@ -24,6 +24,7 @@ public:
   void setTransformW(double w);
   void setTransformH(double h);
   void setScaleLock(bool scaleLock);
+  void changeTransformEnable(bool enable);
 
 private:
   void loadStyles() override;

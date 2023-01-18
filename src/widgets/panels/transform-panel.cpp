@@ -88,6 +88,10 @@ void TransformPanel::setScaleLock(bool scaleLock) {
   }
 }
 
+void TransformPanel::changeTransformEnable(bool enable) {
+  ui->scrollAreaWidgetContents->setEnabled(enable);
+}
+
 void TransformPanel::setLayout(bool is_dark_mode) {
   is_dark_mode_ = is_dark_mode;
   ui->lockBtn->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-unlock.png" : ":/resources/images/icon-unlock.png"));

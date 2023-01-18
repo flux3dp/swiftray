@@ -25,6 +25,7 @@ public:
   void setItalic(bool italic);
   void setUnderline(bool underline);
   void setLineHeight(double line_height);
+  void changeFontEnable(bool enable);
 
 public Q_SLOTS:
   void updateFontView(QSet<QString> font_familys, 

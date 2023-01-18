@@ -113,6 +113,10 @@ void FontPanel::setLineHeight(double line_height) {
   ui->lineHeightSpinBox->blockSignals(false);
 }
 
+void FontPanel::changeFontEnable(bool enable) {
+  ui->scrollAreaWidgetContents->setEnabled(enable);
+}
+
 //this part must follow mainwindow
 void FontPanel::updateFontView(QSet<QString> font_familys, 
                     QSet<int> point_sizes, 

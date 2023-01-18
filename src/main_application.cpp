@@ -86,16 +86,12 @@ extern "C" void software_update_shutdown_request_callback(void) {
 }
 #endif // HAVE_SOFTWARE_UPDATE && Q_OS_WIN
 
-//about font
-QFont MainApplication::getFont() {
-  return font_;
-}
-
-double MainApplication::getFontLineHeight() {
-  return line_height_;
-}
-
 void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
+  if(shape_list.empty()) {
+    Q_EMIT changeTransformEnable(false);
+  } else {
+    Q_EMIT changeTransformEnable(true);
+  }
   bool has_txt = false;
   QSet<QString> font_family;
   QSet<int> point_size;
@@ -139,6 +135,7 @@ void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
     if(line_height.size() == 1) {
       line_height_ = *line_height.begin();
     }
+    Q_EMIT changeFontEnable(true);
     Q_EMIT updateFontView(font_family, point_size, letter_spacing, bold, 
                           italic, underline, line_height);
   } else {
@@ -149,9 +146,19 @@ void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
     italic.insert(font_.italic());
     underline.insert(font_.underline());
     line_height.insert(line_height_);
+    Q_EMIT changeFontEnable(false);
     Q_EMIT updateFontView(font_family, point_size, letter_spacing, bold, 
                           italic, underline, line_height);
   }
+}
+
+//about font
+QFont MainApplication::getFont() {
+  return font_;
+}
+
+double MainApplication::getFontLineHeight() {
+  return line_height_;
 }
 
 void MainApplication::updateShapeFontFamily(QFont font) {
