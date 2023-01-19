@@ -1,6 +1,5 @@
 #include "main_application.h"
 #include <utils/software_update.h>
-#include <constants.h>
 #include <shape/bitmap-shape.h>
 #include <shape/text-shape.h>
 
@@ -25,6 +24,9 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   scale_locked_ = false;
   gradient_ = Qt::Checked;
   thrsh_brightness_ = 128;
+  job_origin_ = NW;
+  start_from_ = AbsoluteCoords;
+  start_with_home_ = true;
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -225,6 +227,26 @@ void MainApplication::updateShapeLineHeight(double line_height) {
 }
 
 //about transform
+double MainApplication::getTransformX() {
+  return x_;
+}
+
+double MainApplication::getTransformY() {
+  return y_;
+}
+
+double MainApplication::getTransformR() {
+  return r_;
+}
+
+double MainApplication::getTransformW() {
+  return w_;
+}
+
+double MainApplication::getTransformH() {
+  return h_;
+}
+
 bool MainApplication::isShapeScaleLocked() {
   return scale_locked_;
 }
@@ -309,4 +331,34 @@ void MainApplication::updateImageGradient(bool state) {
 void MainApplication::updateImageThreshold(int value) {
   thrsh_brightness_ = value;
   Q_EMIT editImageThreshold(thrsh_brightness_);
+}
+
+//about reference coordinates
+int MainApplication::getJobOrigin() {
+  return job_origin_;
+}
+
+int MainApplication::getStartFrom() {
+  return start_from_;
+}
+
+bool MainApplication::getStartWithHome() {
+  return start_with_home_;
+}
+
+void MainApplication::updateReferenceJobOrigin(int job_origin) {
+  if(job_origin >= TotalJobOrigin) return;
+  job_origin_ = (JobOrigin)job_origin;
+  Q_EMIT editReferenceJobOrigin(job_origin_);
+}
+
+void MainApplication::updateReferenceStartFrom(int start_from) {
+  if(start_from >= TotalStartFrom) return;
+  start_from_ = (StartFrom)start_from;
+  Q_EMIT editReferenceStartFrom(start_from_);
+}
+
+void MainApplication::updateReferenceStartWithHome(bool find_home) {
+  start_with_home_ = find_home;
+  Q_EMIT editReferenceStartWithHome(start_with_home_);
 }

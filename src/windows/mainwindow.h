@@ -184,13 +184,11 @@ private:
 
   Ui::MainWindow *ui;
   Canvas *canvas_;
-  double x_, y_, r_, w_, h_;
   bool job_dashboard_exist_;
   bool is_high_speed_mode_ = false;
   bool is_upload_enable_ = false;
   bool is_rotary_mode_ = false;
   bool is_mirror_mode_ = false;
-  bool start_with_home_ = true;
   char rotary_axis_ = 'Y';
   QSize machine_range_;
   double travel_speed_;

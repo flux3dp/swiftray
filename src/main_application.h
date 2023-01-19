@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <config.h>
+#include <constants.h>
 #include <QFont>
 #include <QList>
 #include <QSet>
@@ -12,7 +13,7 @@ class MainApplication : public QApplication
 {
   Q_OBJECT
 public:
-  explicit MainApplication(int &argc,  char **argv);
+  explicit MainApplication(int &argc, char **argv);
   ~MainApplication();
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -34,6 +35,10 @@ public:
   //about image
   bool isImageGradient();
   int getImageThreshold();
+  //about reference coordinates
+  int getJobOrigin();
+  int getStartFrom();
+  bool getStartWithHome();
 
 public Q_SLOTS:
   void getSelectShapeChange(QList<ShapePtr> shape_list);
@@ -56,6 +61,10 @@ public Q_SLOTS:
   //about image
   void updateImageGradient(bool state);
   void updateImageThreshold(int value);
+  //about reference coordinates
+  void updateReferenceJobOrigin(int job_origin);
+  void updateReferenceStartFrom(int start_from);
+  void updateReferenceStartWithHome(bool find_home);
 
 private:
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -75,6 +84,10 @@ private:
   //setting of current image
   bool gradient_;
   int thrsh_brightness_;
+  //setting of current reference coordinates
+  JobOrigin job_origin_;
+  StartFrom start_from_;
+  bool start_with_home_;
 
 private Q_SLOTS:
   void cleanup();
@@ -116,6 +129,10 @@ Q_SIGNALS:
   void editImageGradient(bool state);
   void editImageThreshold(int value);
   void changeImageEnable(bool enable);
+  //about reference coordinates
+  void editReferenceJobOrigin(int job_origin);
+  void editReferenceStartFrom(int start_from);
+  void editReferenceStartWithHome(bool find_home);
 };
 
 extern MainApplication *mainApp;

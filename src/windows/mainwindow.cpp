@@ -127,6 +127,9 @@ void MainWindow::loadSettings() {
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
   canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
+  laser_panel_->setJobOrigin(mainApp->getJobOrigin());
+  laser_panel_->setStartFrom(mainApp->getStartFrom());
+  laser_panel_->setStartHome(mainApp->getStartWithHome());
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
@@ -211,7 +214,9 @@ void MainWindow::loadCanvas() {
         // canvas_->loadSVG(data);
         double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * scale, mainApp->getTransformH() * scale);
       }  else if (filename.toLower().endsWith(".dxf")) {
         QTemporaryDir dir;
         QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
@@ -220,7 +225,9 @@ void MainWindow::loadCanvas() {
         canvas_->loadDXF(temp_dxf_filepath);
         QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       } else if (filename.toLower().endsWith(".pdf") || filename.toLower().endsWith(".ai")) {
         QTemporaryDir dir;
         Parser::PDF2SVG pdf_converter;
@@ -233,11 +240,15 @@ void MainWindow::loadCanvas() {
         pdf_converter.removeSVGFile(temp_svg_filepath);
         QFile::remove(sanitized_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       }
     }
   });
@@ -434,7 +445,7 @@ void MainWindow::actionFrame() {
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
+  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, mainApp->getStartWithHome());
   if (exporter.isExceedingBoundary()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
@@ -469,34 +480,34 @@ void MainWindow::actionFrame() {
 QPoint MainWindow::calculateJobOrigin() {
   //to get shape bounding
   QRect rect = canvas_->calculateShapeBoundary();
-  int job_origin = laser_panel_->getJobOrigin();
+  int job_origin = mainApp->getJobOrigin();
   QPoint target_point;
   switch(job_origin) {
-    case LaserPanel::JobOrigin::NW:
+    case JobOrigin::NW:
       target_point = QPoint(rect.left(), rect.top());
       break;
-    case LaserPanel::JobOrigin::N:
+    case JobOrigin::N:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
       break;
-    case LaserPanel::JobOrigin::NE:
+    case JobOrigin::NE:
       target_point = QPoint(rect.left() + rect.width(), rect.top());
       break;
-    case LaserPanel::JobOrigin::E:
+    case JobOrigin::E:
       target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
       break;
-    case LaserPanel::JobOrigin::SE:
+    case JobOrigin::SE:
       target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::S:
+    case JobOrigin::S:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::SW:
+    case JobOrigin::SW:
       target_point = QPoint(rect.left(), rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::W:
+    case JobOrigin::W:
       target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
       break;
-    case LaserPanel::JobOrigin::CENTER:
+    case JobOrigin::CENTER:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
       break;
     default:
@@ -506,21 +517,21 @@ QPoint MainWindow::calculateJobOrigin() {
 }
 
 QTransform MainWindow::calculateTranslate() {
-  int start_from = laser_panel_->getStartFrom();
+  int start_from = mainApp->getStartFrom();
   QTransform move_translate = QTransform();
   //to get shape bounding
   QPoint target_point = calculateJobOrigin();
   //unit??
   switch(start_from) {
-    case LaserPanel::StartFrom::AbsoluteCoords:
+    case StartFrom::AbsoluteCoords:
       end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
       break;
-    case LaserPanel::StartFrom::CurrentPosition:
+    case StartFrom::CurrentPosition:
       move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
       end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
       break;
-    case LaserPanel::StartFrom::UserOrigin:
+    case StartFrom::UserOrigin:
       move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
       end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
@@ -862,7 +873,8 @@ void MainWindow::exportGCodeFile() {
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+                                    mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
 
@@ -990,12 +1002,14 @@ void MainWindow::updateScene() {
     canvas_->document().setWidth(machine_range_.width() * 10);
     canvas_->document().setHeight(rotary_setup_->getCircumference() * 10);
     canvas_->resize();
+    mainApp->updateReferenceStartWithHome(false);
     laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   } else {
     mode_block_->setText(tr("XY Mode"));
     canvas_->document().setWidth(machine_range_.width() * 10);
     canvas_->document().setHeight(machine_range_.height() * 10);
     canvas_->resize();
+    mainApp->updateReferenceStartWithHome(laser_panel_->getStartHome());
     laser_panel_->setStartHomeEnable(!is_rotary_mode_);
   }
 }
@@ -1021,7 +1035,7 @@ void MainWindow::loadWidgets() {
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
-  laser_panel_ = new LaserPanel(ui->laserDock, this);
+  laser_panel_ = new LaserPanel(ui->laserDock, isDarkMode());
   machine_manager_ = new MachineManager(this, this);
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
@@ -1548,21 +1562,28 @@ void MainWindow::registerEvents() {
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
   connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
   connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
-  connect(laser_panel_, &LaserPanel::switchStartFrom, [=](LaserPanel::StartFrom start_from) {
+  connect(laser_panel_, &LaserPanel::selectJobOrigin, mainApp, &MainApplication::updateReferenceJobOrigin);
+  connect(laser_panel_, &LaserPanel::switchStartFrom, mainApp, &MainApplication::updateReferenceStartFrom);
+  connect(laser_panel_, &LaserPanel::startWithHome, mainApp, &MainApplication::updateReferenceStartWithHome);
+  connect(mainApp, &MainApplication::editReferenceJobOrigin, [=](int job_origin) {
+    laser_panel_->setJobOrigin(job_origin);
+  });
+  connect(mainApp, &MainApplication::editReferenceStartFrom, [=](int start_from) {
     switch(start_from) {
-      case LaserPanel::StartFrom::AbsoluteCoords:
+      case StartFrom::AbsoluteCoords:
         canvas_->setJobOrigin(false);
         break;
-      case LaserPanel::StartFrom::UserOrigin:
-      case LaserPanel::StartFrom::CurrentPosition:
+      case StartFrom::UserOrigin:
+      case StartFrom::CurrentPosition:
         canvas_->setJobOrigin(true);
         break;
       default:
         break;
     }
+    laser_panel_->setStartFrom(start_from);
   });
-  connect(laser_panel_, &LaserPanel::startWithHome, [=](bool start_with_home) {
-    start_with_home_ = start_with_home;
+  //keep the start with home at laser panel
+  connect(mainApp, &MainApplication::editReferenceStartWithHome, [=](bool find_home) {
   });
 
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
@@ -2343,7 +2364,8 @@ bool MainWindow::generateGcode() {
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+                                    mainApp->getStartWithHome(), &progress_dialog)) {
     return false; // canceled
   }
   if (exporter.isExceedingBoundary()) {
@@ -2387,7 +2409,8 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.activateWindow();
   progress_dialog.raise();
 
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+                                            mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
   progress_dialog.setValue(progress_dialog.maximum());
