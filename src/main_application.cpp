@@ -2,9 +2,13 @@
 #include <utils/software_update.h>
 #include <shape/bitmap-shape.h>
 #include <shape/text-shape.h>
+#include <settings/preset-settings.h>
 
 #include <QApplication>
 #include <QDebug>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 
 MainApplication *mainApp = NULL;
@@ -27,6 +31,7 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   job_origin_ = NW;
   start_from_ = AbsoluteCoords;
   start_with_home_ = true;
+  initialPreset();
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -361,4 +366,116 @@ void MainApplication::updateReferenceStartFrom(int start_from) {
 void MainApplication::updateReferenceStartWithHome(bool find_home) {
   start_with_home_ = find_home;
   Q_EMIT editReferenceStartWithHome(start_with_home_);
+}
+
+//about preset
+void MainApplication::initialPreset() {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  QList<PresetSettings::Preset> origin_preset;
+  QList<QString> file_list;
+  file_list.append("1.6W.json");
+  file_list.append("5W.json");
+  file_list.append("10W.json");
+  for (int i = 0; i < file_list.size(); ++i) {
+    QFile file(":/resources/parameters/"+file_list[i]);
+    file.open(QFile::ReadOnly);
+    // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
+    auto file_json = QJsonDocument::fromJson(file.readAll()).object();
+    auto preset = PresetSettings::Preset::fromJson(file_json);
+    origin_preset << preset;
+    if (preset.name.indexOf("10W") > -1) {
+      preset_index_ = i;
+    }
+  }
+  preset_settings->setOriginPresets(origin_preset);
+
+  
+  QJsonObject obj = settings_.value("preset/user").toJsonObject();
+  if (obj["data"].isNull()) {
+    preset_settings->setPresets(origin_preset);
+    savePreset();
+  } else {
+    preset_settings->loadPreset(obj);
+    QVariant old_index = settings_.value("preset/index", 0);
+    if(!old_index.isNull() && old_index.toInt() < preset_settings->presets().size()) {
+      preset_index_ = old_index.toInt();
+    } else {
+      settings_.setValue("preset/index", preset_index_);
+    }
+  }
+  connect(preset_settings, &PresetSettings::savePreset, [=](QJsonObject save_obj) {
+    savePreset();
+  });
+  connect(preset_settings, &PresetSettings::resetPreset, [=]() {
+    savePreset();
+    param_index_ = -1;
+  });
+  param_index_ = -1;
+}
+
+int MainApplication::getPresetIndex() {
+  return preset_index_;
+}
+
+int MainApplication::getParamIndex() {
+  return param_index_;
+}
+
+double MainApplication::getFramingPower() {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
+  return current_preset.framing_power;
+}
+
+double MainApplication::getPulsePower() {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
+  return current_preset.pulse_power;
+}
+
+void MainApplication::updatePresetIndex(int preset_index) {
+  updatePresetIndex(preset_index, param_index_);
+}
+
+void MainApplication::updatePresetIndex(int preset_index, int param_index) {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  if(preset_index < preset_settings->presets().size()) {
+    preset_index_ = preset_index;
+    settings_.setValue("preset/index", preset_index_);
+    PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
+    Q_EMIT editFramingPower(current_preset.framing_power);
+    Q_EMIT editPulsePower(current_preset.pulse_power);
+    if(param_index < preset_settings->getTargetPreset(preset_index_).params.size()) {
+      param_index_ = param_index;
+      Q_EMIT editPresetIndex(preset_index_, param_index_);
+    } else {
+      param_index_ = -1;
+      Q_EMIT editPresetIndex(preset_index_, param_index_);
+    }
+  }
+}
+
+void MainApplication::updateParamIndex(int param_index) {
+  updatePresetIndex(preset_index_, param_index);
+}
+
+void MainApplication::updateFramingPower(double framing_power) {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
+  preset_settings->setPresetPower(preset_index_, framing_power, current_preset.pulse_power);
+  savePreset();
+  Q_EMIT editFramingPower(framing_power);
+}
+
+void MainApplication::updatePulsePower(double pulse_power) {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
+  preset_settings->setPresetPower(preset_index_, current_preset.framing_power, pulse_power);
+  savePreset();
+  Q_EMIT editPulsePower(pulse_power);
+}
+
+void MainApplication::savePreset() {
+  PresetSettings* preset_settings = &PresetSettings::getInstance();
+  settings_.setValue("preset/user", preset_settings->toJson());
 }

@@ -1,18 +1,17 @@
-#include <QDebug>
 #include "layer-params-panel.h"
 #include "ui_layer-params-panel.h"
-#include <windows/preset-manager.h>
-#include <settings/preset-settings.h>
 #include <document.h>
+#include <settings/preset-settings.h>
 #include <windows/mainwindow.h>
 #include <windows/osxwindow.h>
+
+#include <QDebug>
 
 LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
      QFrame(parent),
      ui(new Ui::LayerParamsPanel),
      main_window_(main_window),
      layer_(nullptr),
-     preset_previous_index_(-1),
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
@@ -45,80 +44,31 @@ void LayerParamsPanel::loadStyles() {
 }
 
 void LayerParamsPanel::loadSettings() {
-  QString machine_model = main_window_->canvas()->document().settings().machine_model;
-  qInfo() << "Loading model" << machine_model;
-  if (preset_settings_->presets().size() > 0) {
-    ui->presetComboBox->clear();
-    for (auto &param: preset_settings_->currentPreset().params) {
-      ui->presetComboBox->addItem(param.name, param.toJson());
-    }
-  }
-  ui->presetComboBox->addItem(tr("Custom"));
-  ui->presetComboBox->addItem(tr("More..."));
-  preset_previous_index_ = -1;
+  // QString machine_model = main_window_->canvas()->document().settings().machine_model;
+  // qInfo() << "Loading model" << machine_model;
 }
 
 void LayerParamsPanel::registerEvents() {
-  connect(preset_settings_, &PresetSettings::currentIndexChanged, [=]() {
-    int index_to_recover = preset_previous_index_;
-    loadSettings();
-    if (index_to_recover > ui->presetComboBox->count() - 3 || index_to_recover < 0) {
-      setToCustom();
-    } else {
-      ui->presetComboBox->setCurrentIndex(index_to_recover);
-      ui->presetComboBox->currentIndexChanged(index_to_recover);
-    }
-  });
   connect(ui->powerSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double strength) {
-    if (layer_ != nullptr) layer_->setStrength(strength);
+    Q_EMIT editLayerParam(strength, ui->speedSpinBox->value(), ui->repeatSpinBox->value());
     setToCustom();
   });
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double speed) {
-    if (layer_ != nullptr) layer_->setSpeed(speed);
+    Q_EMIT editLayerParam(ui->powerSpinBox->value(), speed, ui->repeatSpinBox->value());
     setToCustom();
   });
   connect(ui->backlashSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double backlash) {
-    if (layer_ != nullptr) layer_->setXBacklash(backlash);
+    Q_EMIT editLayerBacklash(backlash);
   });
   connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
-    if (layer_ != nullptr) layer_->setRepeat(repeat);
+    Q_EMIT editLayerParam(ui->powerSpinBox->value(), ui->speedSpinBox->value(), repeat);
     setToCustom();
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    if (index == ui->presetComboBox->count() - 1 && index > 0) {
-      preset_manager_ = new PresetManager(this);
-      int index_to_recover = preset_previous_index_;
-      if (preset_manager_->exec() == 1) {
-        preset_manager_->save();
-        Q_EMIT main_window_->presetSettingsChanged();
-        loadSettings();
-        setToCustom();
-        preset_previous_index_ = -1;
-        if (layer_ != nullptr) layer_->setParameterIndex(-1);
-      }
-      else {
-        if (layer_ != nullptr) layer_->setParameterIndex(index_to_recover);
-        ui->presetComboBox->setCurrentIndex(index_to_recover);
-      }
-    } else if (index >= 0 && index < ui->presetComboBox->count() - 2) {
-      auto p = PresetSettings::Param::fromJson(ui->presetComboBox->itemData(index).toJsonObject());
-      ui->powerSpinBox->blockSignals(true);
-      ui->speedSpinBox->blockSignals(true);
-      ui->repeatSpinBox->blockSignals(true);
-      ui->powerSpinBox->setValue(p.power);
-      ui->speedSpinBox->setValue(p.speed);
-      ui->repeatSpinBox->setValue(p.repeat);
-      ui->powerSpinBox->blockSignals(false);
-      ui->speedSpinBox->blockSignals(false);
-      ui->repeatSpinBox->blockSignals(false);
-      layer_->setStrength(p.power);
-      layer_->setSpeed(p.speed);
-      layer_->setRepeat(p.repeat);
-      preset_previous_index_ = index;
-      layer_->setParameterIndex(index);
-    } else if(index == ui->presetComboBox->count() - 2) {
-      preset_previous_index_ = -1;
-      layer_->setParameterIndex(-1);
+    if (index == ui->presetComboBox->count() - 1) {
+      Q_EMIT wakeupPresetManager();
+    } else {
+      Q_EMIT editParamIndex(index);
     }
   });
   connect(ui->movingComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
@@ -206,7 +156,60 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   we change the preset combobox to `custom` whenever user changes the parameters.
 */
 void LayerParamsPanel::setToCustom() {
-  ui->presetComboBox->blockSignals(true);
   ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 2);
+}
+
+void LayerParamsPanel::setPresetIndex(int preset_index, int param_index) {
+  PresetSettings* settings = &PresetSettings::getInstance();
+  PresetSettings::Preset preset = settings->getTargetPreset(preset_index);
+  if(param_index >= preset.params.size()) {
+    qInfo() << Q_FUNC_INFO << " is wrong !!!";
+    return;
+  }
+  ui->presetComboBox->blockSignals(true);
+  ui->presetComboBox->clear();
+  for (auto &param: preset.params) {
+    ui->presetComboBox->addItem(param.name, param.toJson());
+  }
+  ui->presetComboBox->addItem(tr("Custom"));
+  ui->presetComboBox->addItem(tr("More..."));
   ui->presetComboBox->blockSignals(false);
+  if(param_index == -1) {
+    ui->presetComboBox->blockSignals(true);
+    ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 2);
+    ui->presetComboBox->blockSignals(false);
+  } else {
+    PresetSettings::Param param = settings->getTargetParam(preset_index, param_index);
+    ui->powerSpinBox->blockSignals(true);
+    ui->speedSpinBox->blockSignals(true);
+    ui->repeatSpinBox->blockSignals(true);
+    ui->powerSpinBox->setValue(param.power);
+    ui->speedSpinBox->setValue(param.speed);
+    ui->repeatSpinBox->setValue(param.repeat);
+    ui->powerSpinBox->blockSignals(false);
+    ui->speedSpinBox->blockSignals(false);
+    ui->repeatSpinBox->blockSignals(false);
+    ui->presetComboBox->blockSignals(true);
+    ui->presetComboBox->setCurrentIndex(param_index);
+    ui->presetComboBox->blockSignals(false);
+    Q_EMIT editLayerParam(param.power, param.speed, param.repeat);
+  }
+}
+
+void LayerParamsPanel::setLayerParam(double strength, double speed, int repeat) {
+  ui->powerSpinBox->blockSignals(true);
+  ui->speedSpinBox->blockSignals(true);
+  ui->repeatSpinBox->blockSignals(true);
+  ui->powerSpinBox->setValue(strength);
+  ui->speedSpinBox->setValue(speed);
+  ui->repeatSpinBox->setValue(repeat);
+  ui->powerSpinBox->blockSignals(false);
+  ui->speedSpinBox->blockSignals(false);
+  ui->repeatSpinBox->blockSignals(false);
+}
+
+void LayerParamsPanel::setLayerBacklash(double backlash) {
+  ui->backlashSpinBox->blockSignals(true);
+  ui->backlashSpinBox->setValue(backlash);
+  ui->backlashSpinBox->blockSignals(false);
 }

@@ -51,16 +51,27 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   connect(ui->laserSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
     Q_EMIT updateFramingPower(value);
   });
+  connect(ui->laserPulseSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    Q_EMIT updatePulsePower(value);
+  });
   connect(ui->currentpositionCheckBox, &QCheckBox::stateChanged, [=](int state) {
     Q_EMIT showCurrentPosition(state);
   });
   connect(ui->userOriginCheckBox, &QCheckBox::stateChanged, [=](int state) {
     Q_EMIT showUserOrigin(state);
   });
-} 
+}
 
-double JoggingPanel::getFramingPower() {
-  return ui->laserSpinBox->value();
+void JoggingPanel::setFramingPower(double power) {
+  ui->laserSpinBox->blockSignals(true);
+  ui->laserSpinBox->setValue(power);
+  ui->laserSpinBox->blockSignals(false);
+}
+
+void JoggingPanel::setPulsePower(double power) {
+  ui->laserPulseSpinBox->blockSignals(true);
+  ui->laserPulseSpinBox->setValue(power);
+  ui->laserPulseSpinBox->blockSignals(false);
 }
 
 bool JoggingPanel::getShowCurrent() {

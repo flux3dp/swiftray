@@ -16,20 +16,14 @@ Q_OBJECT
 
 public:
   explicit DocPanel(QWidget *parent, MainWindow *main_window);
-
   ~DocPanel();
-
   void updateScene();
-
   MachineSettings::MachineSet currentMachine();
-
   QString getMachineName();
-
   void setRotaryMode(bool is_rotary_mode);
-
   double getTravelSpeed();
-
   double getRotarySpeed();
+  void setPresetIndex(int preset_index);
 
 Q_SIGNALS:
   void machineChanged(QString machine_name);
@@ -37,18 +31,14 @@ Q_SIGNALS:
   void panelShow(bool is_show);
   void updateMachineRange(QSize machine_range);
   void updateSpeed();
+  void updatePresetIndex(int index);
 
 private:
   void loadSettings() override;
-
   void registerEvents() override;
-
   void syncDPISettingsUI();
-
   void syncAdvancedSettingsUI();
-
   void hideEvent(QHideEvent *event) override;
-  
   void showEvent(QShowEvent *event) override;
 
   Ui::DocPanel *ui;

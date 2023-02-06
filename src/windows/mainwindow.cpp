@@ -37,6 +37,8 @@
 #include <QSerialPort>
 #include <main_application.h>
 #include "parser/pdf2svg.h"
+#include <windows/preset-manager.h>
+#include <settings/preset-settings.h>
 
 #include <QResource>
 #include <utils/software_update.h>
@@ -122,7 +124,7 @@ void MainWindow::loadSettings() {
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
   updateTravelSpeed();
-  rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
+  rotary_setup_->setFramingPower(mainApp->getFramingPower());
   rotary_setup_->setDefaultCircumference(machine_info.height);
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
@@ -130,6 +132,14 @@ void MainWindow::loadSettings() {
   laser_panel_->setJobOrigin(mainApp->getJobOrigin());
   laser_panel_->setStartFrom(mainApp->getStartFrom());
   laser_panel_->setStartHome(mainApp->getStartWithHome());
+  layer_panel_->setPresetIndex(mainApp->getPresetIndex(), mainApp->getParamIndex());
+  //should update by layer!!!
+  PresetSettings::Param initial_param;
+  layer_panel_->setLayerParam(initial_param.power, initial_param.speed, initial_param.repeat);
+  layer_panel_->setLayerBacklash(0);
+  doc_panel_->setPresetIndex(mainApp->getPresetIndex());
+  jogging_panel_->setFramingPower(mainApp->getFramingPower());
+  jogging_panel_->setPulsePower(mainApp->getPulsePower());
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
@@ -467,7 +477,7 @@ void MainWindow::actionFrame() {
   }
 
   gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
-  gen_outline_scanning_gcode->setLaserPower(jogging_panel_->getFramingPower());
+  gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
   // Create Framing Job and start
   if (true == active_machine.createFramingJob(
         QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
@@ -1529,6 +1539,54 @@ void MainWindow::registerEvents() {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
       selected_img->setGradient(state);
     }
+  });
+
+  //about preset
+  connect(mainApp, &MainApplication::editPresetIndex, [=](int preset_index, int param_index) {
+    doc_panel_->setPresetIndex(preset_index);
+    layer_panel_->setPresetIndex(preset_index, param_index);
+    canvas_->document().activeLayer()->setParameterIndex(param_index);
+  });
+  connect(mainApp, &MainApplication::editFramingPower, [=](double power) {
+    jogging_panel_->setFramingPower(power);
+  });
+  connect(mainApp, &MainApplication::editPulsePower, [=](double power) {
+    jogging_panel_->setPulsePower(power);
+  });
+  connect(doc_panel_, &DocPanel::updatePresetIndex, [=](int index) {
+    mainApp->updatePresetIndex(index);
+  });
+  connect(layer_panel_, &LayerPanel::editParamIndex, [=](int index) {
+    mainApp->updateParamIndex(index);
+  });
+  connect(layer_panel_, &LayerPanel::wakeupPresetManager, [=]() {
+    PresetManager *preset_manager = new PresetManager(this, mainApp->getPresetIndex());
+    connect(preset_manager, &PresetManager::updateCurrentPresetIndex, [=](int index) {
+      mainApp->updatePresetIndex(index);
+    });
+    connect(preset_manager, &PresetManager::updateCurrentIndex, [=](int preset_index, int param_index) {
+      mainApp->updatePresetIndex(preset_index, param_index);
+    });
+    preset_manager->show();
+    preset_manager->activateWindow();
+    preset_manager->raise();
+    if(preset_manager->exec() != 1) {
+      Q_EMIT mainApp->editPresetIndex(mainApp->getPresetIndex(), mainApp->getParamIndex());
+    }
+  });
+  connect(layer_panel_, &LayerPanel::editLayerParam, [=](double strength, double speed, int repeat) {
+    canvas_->document().activeLayer()->setStrength(strength);
+    canvas_->document().activeLayer()->setSpeed(speed);
+    canvas_->document().activeLayer()->setRepeat(repeat);
+  });
+  connect(layer_panel_, &LayerPanel::editLayerBacklash, [=](double backlash) {
+    canvas_->document().activeLayer()->setXBacklash(backlash);
+  });
+  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
+    mainApp->updateFramingPower(framing_power);
+  });
+  connect(jogging_panel_, &JoggingPanel::updatePulsePower, [=](double pulse_power) {
+    mainApp->updatePulsePower(pulse_power);
   });
   //fail to update image panel qslider
   connect(mainApp, &MainApplication::editImageThreshold, [=](int value) {

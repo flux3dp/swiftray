@@ -7,6 +7,7 @@
 #include <QFont>
 #include <QList>
 #include <QSet>
+#include <QSettings>
 #include <shape/shape.h>
 
 class MainApplication : public QApplication
@@ -39,6 +40,11 @@ public:
   int getJobOrigin();
   int getStartFrom();
   bool getStartWithHome();
+  //about preset
+  int getPresetIndex();
+  int getParamIndex();
+  double getFramingPower();
+  double getPulsePower();
 
 public Q_SLOTS:
   void getSelectShapeChange(QList<ShapePtr> shape_list);
@@ -65,11 +71,21 @@ public Q_SLOTS:
   void updateReferenceJobOrigin(int job_origin);
   void updateReferenceStartFrom(int start_from);
   void updateReferenceStartWithHome(bool find_home);
+  //about preset
+  void updatePresetIndex(int preset_index);
+  void updatePresetIndex(int preset_index, int param_index);
+  void updateParamIndex(int param_index);
+  void updateFramingPower(double framing_power);
+  void updatePulsePower(double pulse_power);
 
 private:
+  //about preset
+  void initialPreset();
+  void savePreset();
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   bool software_update_ok_ = false;
 #endif
+  QSettings settings_;
 
   //setting of current font
   QFont font_;
@@ -88,6 +104,9 @@ private:
   JobOrigin job_origin_;
   StartFrom start_from_;
   bool start_with_home_;
+  //setting of current preset
+  int preset_index_;
+  int param_index_;//-1 is custom
 
 private Q_SLOTS:
   void cleanup();
@@ -133,6 +152,10 @@ Q_SIGNALS:
   void editReferenceJobOrigin(int job_origin);
   void editReferenceStartFrom(int start_from);
   void editReferenceStartWithHome(bool find_home);
+  //about preset
+  void editPresetIndex(int preset_index, int param_index);
+  void editFramingPower(double power);
+  void editPulsePower(double power);
 };
 
 extern MainApplication *mainApp;

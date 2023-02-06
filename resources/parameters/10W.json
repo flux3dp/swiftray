@@ -1,5 +1,7 @@
 {
   "name": "10W (Diode Laser)",
+  "framing_power": 2,
+  "pulse_power": 30,
   "data": [
     {
       "name": "Wood 3mm Cutting",

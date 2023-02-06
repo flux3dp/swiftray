@@ -95,16 +95,6 @@ void DocPanel::loadSettings() {
   ui->machineComboBox->setCurrentText(current_machine);
   updateScene();
 
-  PresetSettings* preset_settings = &PresetSettings::getInstance();
-  QString current_preset_name = preset_settings->currentPreset().name;
-  ui->presetComboBox->clear();
-  for (auto &preset : preset_settings->presets()) {
-    ui->presetComboBox->addItem(preset.name);
-    if (preset.name == current_preset_name) {
-      ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 1);
-    }
-  }
-
   // Load DPI setting (select appropriate dpi item index)
   syncDPISettingsUI();
   syncAdvancedSettingsUI();
@@ -130,10 +120,7 @@ void DocPanel::registerEvents() {
     Q_EMIT machineChanged(ui->machineComboBox->currentText());
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    PresetSettings* preset_settings = &PresetSettings::getInstance();
-    if (index > -1) {
-        preset_settings->setCurrentIndex(index);
-    }
+    Q_EMIT updatePresetIndex(index);
   });
   connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
     loadSettings();
@@ -242,4 +229,15 @@ void DocPanel::hideEvent(QHideEvent *event) {
 
 void DocPanel::showEvent(QShowEvent *event) {
   Q_EMIT panelShow(true);
+}
+
+void DocPanel::setPresetIndex(int preset_index) {
+  PresetSettings* settings = &PresetSettings::getInstance();
+  ui->presetComboBox->blockSignals(true);
+  ui->presetComboBox->clear();
+  for (auto &preset : settings->presets()) {
+    ui->presetComboBox->addItem(preset.name);
+  }
+  ui->presetComboBox->setCurrentIndex(preset_index);
+  ui->presetComboBox->blockSignals(false);
 }
