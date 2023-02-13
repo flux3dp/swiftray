@@ -21,17 +21,17 @@ class PreviewGenerator : public BaseGenerator {
     QPointF target_;
   };
 
-  PreviewGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+  PreviewGenerator(const MachineSettings::MachineParam &machine, bool rotary_mode) : BaseGenerator() {
     rotary_mode_ = rotary_mode;
     if(rotary_mode_) {
       switch (machine.origin) {
-        case MachineSettings::MachineSet::OriginType::RearRight:
-        case MachineSettings::MachineSet::OriginType::FrontRight:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+        case MachineSettings::MachineParam::OriginType::RearRight:
+        case MachineSettings::MachineParam::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearRight;
           break;
-        case MachineSettings::MachineSet::OriginType::RearLeft:
-        case MachineSettings::MachineSet::OriginType::FrontLeft:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+        case MachineSettings::MachineParam::OriginType::RearLeft:
+        case MachineSettings::MachineParam::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
           break;
         default:
           break;
@@ -157,21 +157,21 @@ class PreviewGenerator : public BaseGenerator {
     // NOTE: Not guaranteed ->
     //       We presume homing position is always at the "top left" corner here
     switch (machine_origin_) {
-      case MachineSettings::MachineSet::OriginType::RearRight:
+      case MachineSettings::MachineParam::OriginType::RearRight:
         // Canvas x axis direction is opposite to machine coordinate
         x_ = machine_width_;
         y_ = 0;
         break;
-      case MachineSettings::MachineSet::OriginType::FrontRight:
+      case MachineSettings::MachineParam::OriginType::FrontRight:
         // Canvas x, y axis directions are opposite to machine coordinate
         x_ = machine_width_;
         y_ = machine_height_;
         break;
-      case MachineSettings::MachineSet::OriginType::RearLeft:
+      case MachineSettings::MachineParam::OriginType::RearLeft:
         // NORMAL canvas x, y axis directions are the same as machine coordinate
         x_ = y_ = 0;
         break;
-      case MachineSettings::MachineSet::OriginType::FrontLeft:
+      case MachineSettings::MachineParam::OriginType::FrontLeft:
         // Canvas y axis direction is opposite to machine coordinate
         x_ = 0;
         y_ = machine_height_;
@@ -200,7 +200,7 @@ class PreviewGenerator : public BaseGenerator {
     relative_mode_ = false;
     machine_width_ = 0;
     machine_height_ = 0;
-    machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+    machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
     paths_mutex_.lock();
     paths_.clear();
     paths_mutex_.unlock();
@@ -291,7 +291,7 @@ class PreviewGenerator : public BaseGenerator {
   int machine_width_;
   int machine_height_;
   bool rotary_mode_ = false;
-  MachineSettings::MachineSet::OriginType machine_origin_;
+  MachineSettings::MachineParam::OriginType machine_origin_;
   const qreal kHomingSpeed = 10000;
   qreal mm_per_dot_ = 0.1;
 

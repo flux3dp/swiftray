@@ -29,11 +29,11 @@ public:
     kConnected     // Port open and has receive some response from machine
   };
 
-  explicit Machine(QObject *parent = nullptr);
+  explicit Machine(MachineSettings::MachineParam mach, QObject *parent = nullptr);
 
   ConnectionState getConnectionState();
-  bool applyMachineParam(MachineSettings::MachineSet mach);
-  //MachineSettings::MachineSet getMachineParam() const;
+  bool applyMachineParam(MachineSettings::MachineParam mach);
+  MachineSettings::MachineParam getMachineParam() const;
   bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
   bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
   bool createFramingJob(QStringList gcode_list);
@@ -78,7 +78,7 @@ Q_SIGNALS:
   void logRcvd(QString);
 
 private:
-  MachineSettings::MachineSet machine_param_; // Settings for software, NOT the grbl settings
+  MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
 
   // Hardware equipment controllers

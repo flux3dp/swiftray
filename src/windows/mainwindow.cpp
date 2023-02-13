@@ -38,6 +38,7 @@
 #include <main_application.h>
 #include "parser/pdf2svg.h"
 #include <windows/preset-manager.h>
+#include <settings/machine-settings.h>
 #include <settings/preset-settings.h>
 
 #include <QResource>
@@ -64,10 +65,11 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarTransform();
   //setToolbarImage();
   Q_EMIT canvas_->selectionsChanged(QList<ShapePtr>());
-  showWelcomeDialog();
+  showWelcomeDialog();//to show welcom window
   setScaleBlock();
   setModeBlock();
   setConnectionToolBar();
+  showHighSpeedWarning();//to show warning window
 }
 
 void MainWindow::show() {
@@ -105,27 +107,12 @@ void MainWindow::loadSettings() {
     QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
-  MachineSettings::MachineSet machine_info = doc_panel_->currentMachine();
-  machine_range_.setHeight(machine_info.height);
-  machine_range_.setWidth(machine_info.width);
-  QString current_machine = doc_panel_->getMachineName();
-  std::size_t found = current_machine.toStdString().find("Lazervida");
-  if(found!=std::string::npos) {
-    is_high_speed_mode_ = true;
-    preferences_window_->setSpeedMode(is_high_speed_mode_);
-  }
-  else {
-    is_high_speed_mode_ = false;
-    preferences_window_->setSpeedMode(is_high_speed_mode_);
-  }
-  is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
+  preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
   setWindowModified(false);
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
-  updateTravelSpeed();
-  rotary_setup_->setFramingPower(mainApp->getFramingPower());
-  rotary_setup_->setDefaultCircumference(machine_info.height);
+  MachineSettings::MachineParam machine_param = mainApp->getMachineParam();
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
   canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
@@ -140,6 +127,14 @@ void MainWindow::loadSettings() {
   doc_panel_->setPresetIndex(mainApp->getPresetIndex());
   jogging_panel_->setFramingPower(mainApp->getFramingPower());
   jogging_panel_->setPulsePower(mainApp->getPulsePower());
+  doc_panel_->setMachineIndex(mainApp->getMachineIndex());
+  doc_panel_->setTravelSpeed(machine_param.travel_speed);
+  RotarySettings::RotaryParam rotary_param = mainApp->getRotaryParam();
+  doc_panel_->setRotarySpeed(rotary_param.travel_speed);
+  updateCanvasSize(mainApp->getWorkingRange());
+  //should check when machine(which is connected?) change
+  jogging_panel_->setControlEnable(false);
+  laser_panel_->setControlEnable(false);
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
@@ -447,15 +442,15 @@ void MainWindow::actionFrame() {
 
   // Generate gcode for framing
   QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, mainApp->getStartWithHome());
+  exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), mainApp->getStartWithHome());
   if (exporter.isExceedingBoundary()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
@@ -476,7 +471,7 @@ void MainWindow::actionFrame() {
     return;
   }
 
-  gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
+  gen_outline_scanning_gcode->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
   gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
   // Create Framing Job and start
   if (true == active_machine.createFramingJob(
@@ -558,13 +553,22 @@ QTransform MainWindow::calculateTranslate() {
     //to move obj into canvas
     QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
     while(rect.top() < 0) {
-      move_translate.translate(0,rotary_setup_->getCircumference() * 10 * direction);
+      move_translate.translate(0,mainApp->getRotaryCircumference() * 10 * direction);
       rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
     }
 
-    move_translate *= QTransform::fromScale(1, rotary_setup_->getRotaryScale());
+    move_translate *= QTransform::fromScale(1, mainApp->getRotaryScale());
   }
   return move_translate;
+}
+
+void MainWindow::showHighSpeedWarning() {
+  if(mainApp->isHighSpeedMode()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Please confirm that you are using the Lazervida machine."));
+    msgbox.exec();
+  }
 }
 
 void MainWindow::newFile() {
@@ -865,7 +869,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -878,12 +882,12 @@ void MainWindow::exportGCodeFile() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
                                     mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
@@ -1006,35 +1010,6 @@ void MainWindow::updateScale() {
   scale_block_->setText(QString::number(canvas_->document().scale() * 100, 'f', 1)+"%");
 }
 
-void MainWindow::updateScene() {
-  if(is_rotary_mode_) {
-    mode_block_->setText(tr("Rotary Mode"));
-    canvas_->document().setWidth(machine_range_.width() * 10);
-    canvas_->document().setHeight(rotary_setup_->getCircumference() * 10);
-    canvas_->resize();
-    mainApp->updateReferenceStartWithHome(false);
-    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
-  } else {
-    mode_block_->setText(tr("XY Mode"));
-    canvas_->document().setWidth(machine_range_.width() * 10);
-    canvas_->document().setHeight(machine_range_.height() * 10);
-    canvas_->resize();
-    mainApp->updateReferenceStartWithHome(laser_panel_->getStartHome());
-    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
-  }
-}
-
-void MainWindow::updateTravelSpeed() {
-  if(is_rotary_mode_) {
-    travel_speed_ = doc_panel_->getRotarySpeed() * 60;// mm/s to mm/min
-  }
-  else {
-    travel_speed_ = doc_panel_->getTravelSpeed() * 60;// mm/s to mm/min
-  }
-  rotary_setup_->setTravelSpeed(doc_panel_->getRotarySpeed() * 60);
-  jogging_panel_->setTravelSpeed(travel_speed_);
-}
-
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
@@ -1046,12 +1021,18 @@ void MainWindow::loadWidgets() {
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
   laser_panel_ = new LaserPanel(ui->laserDock, isDarkMode());
-  machine_manager_ = new MachineManager(this, this);
+  machine_manager_ = new MachineManager(this, mainApp->getMachineIndex());
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   privacy_window_ = new PrivacyWindow(this);
-  rotary_setup_ = new RotarySetup(this);
+  RotarySetup::RotarySetting rotary_setting;
+  rotary_setting.rotary_mode = mainApp->isRotaryMode();
+  rotary_setting.mirror_mode = mainApp->isMirrorMode();
+  rotary_setting.circumference = mainApp->getRotaryCircumference();
+  rotary_setting.rotary_axis = mainApp->getRotaryAxis();
+  rotary_setting.rotary_index = mainApp->getRotaryIndex();
+  rotary_setup_ = new RotarySetup(rotary_setting, this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_panel_);
@@ -1178,14 +1159,23 @@ void MainWindow::registerEvents() {
 #endif
 
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
+    doc_panel_->setMachineSelectLock(false);
+    machine_manager_->setMachineIndex(mainApp->getMachineIndex());
     machine_manager_->show();
     machine_manager_->activateWindow();
     machine_manager_->raise();
+    if(machine_manager_->exec() != 1) {
+      Q_EMIT mainApp->editMachineIndex(mainApp->getMachineIndex());
+    }
+    doc_panel_->setMachineSelectLock(true);
   });
   connect(ui->actionRotarySetup, &QAction::triggered, [=]() {
+    rotary_setup_->setRotaryIndex(mainApp->getRotaryIndex());
     rotary_setup_->show();
     rotary_setup_->activateWindow();
     rotary_setup_->raise();
+    if(rotary_setup_->exec() != 1) {
+    }
   });
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
@@ -1197,7 +1187,6 @@ void MainWindow::registerEvents() {
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
-  connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
       QSettings settings(QDir::currentPath() + "/classicUI.ini", QSettings::IniFormat);
@@ -1216,8 +1205,8 @@ void MainWindow::registerEvents() {
       restoreState(settings.value("window/windowState").toByteArray());
   });
   // Complex callbacks
-  connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
-    Q_EMIT machineSettingsChanged();
+  connect(welcome_dialog_, &WelcomeDialog::updateCurrentMachineIndex, [=](int machine_index) {
+    mainApp->updateMachineIndex(machine_index);
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
     QSettings privacy_settings;
@@ -1243,7 +1232,7 @@ void MainWindow::registerEvents() {
   });
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
-    is_high_speed_mode_ = is_high_speed;
+    mainApp->updateMachineHighSpeedMode(is_high_speed);
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
     is_upload_enable_ = enable_upload;
@@ -1272,34 +1261,6 @@ void MainWindow::registerEvents() {
     QSettings settings;
     settings.setValue("window/upload", is_upload_enable_);
   });
-  connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
-    active_machine.applyMachineParam(currentMachine());
-
-    std::size_t found = machine_name.toStdString().find("Lazervida");
-    if(found!=std::string::npos) {
-      is_high_speed_mode_ = true;
-      preferences_window_->setSpeedMode(is_high_speed_mode_);
-      QMessageBox msgbox;
-      msgbox.setText(tr("Alarm"));
-      msgbox.setInformativeText(tr("Please confirm that you are using the Lazervida machine."));
-      msgbox.exec();
-    }
-    else {
-      is_high_speed_mode_ = false;
-      preferences_window_->setSpeedMode(is_high_speed_mode_);
-    }
-  });
-  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
-    is_rotary_mode_ = is_rotary_mode;
-    rotary_setup_->setRotaryMode(is_rotary_mode);
-    updateScene();
-    updateTravelSpeed();
-  });
-  connect(doc_panel_, &DocPanel::updateMachineRange, [=](QSize machine_range) {
-    machine_range_ = machine_range;
-    updateScene();
-  });
-  connect(doc_panel_, &DocPanel::updateSpeed, this, &MainWindow::updateTravelSpeed);
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {
@@ -1567,12 +1528,16 @@ void MainWindow::registerEvents() {
     connect(preset_manager, &PresetManager::updateCurrentIndex, [=](int preset_index, int param_index) {
       mainApp->updatePresetIndex(preset_index, param_index);
     });
+    doc_panel_->setPresetSelectLock(false);
+    layer_panel_->setLayerParamLock(false);
     preset_manager->show();
     preset_manager->activateWindow();
     preset_manager->raise();
     if(preset_manager->exec() != 1) {
       Q_EMIT mainApp->editPresetIndex(mainApp->getPresetIndex(), mainApp->getParamIndex());
     }
+    doc_panel_->setPresetSelectLock(true);
+    layer_panel_->setLayerParamLock(true);
   });
   connect(layer_panel_, &LayerPanel::editLayerParam, [=](double strength, double speed, int repeat) {
     canvas_->document().activeLayer()->setStrength(strength);
@@ -1588,6 +1553,79 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::updatePulsePower, [=](double pulse_power) {
     mainApp->updatePulsePower(pulse_power);
   });
+  //about machine
+  connect(doc_panel_, &DocPanel::updateMachineIndex, [=](int machine_index) {
+    mainApp->updateMachineIndex(machine_index);
+  });
+  connect(doc_panel_, &DocPanel::updateTravelSpeed, [=](double travel_speed) {
+    mainApp->updateMachineTravelSpeed(travel_speed);
+  });
+  connect(machine_manager_, &MachineManager::updateCurrentMachineIndex, [=](int index) {
+    mainApp->updateMachineIndex(index);
+  });
+  connect(mainApp, &MainApplication::editMachineIndex, [=](int machine_index) {
+    doc_panel_->setMachineIndex(machine_index);
+  });
+  connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](int travel_speed) {
+    doc_panel_->setTravelSpeed(travel_speed);
+  });
+  connect(mainApp, &MainApplication::editWorkingRange, this, &MainWindow::updateCanvasSize);
+  connect(mainApp, &MainApplication::editMachineRotaryAxis, [=](char axis) {
+    machine_manager_->setRotaryAxis(axis);
+    rotary_setup_->setRotaryAxis(axis);
+  });
+  connect(mainApp, &MainApplication::editMachineHighSpeedMode, [=](bool is_high_speed) {
+    preferences_window_->setSpeedMode(is_high_speed);
+    showHighSpeedWarning();
+  });
+  //about rotary
+  connect(doc_panel_, &DocPanel::updateRotarySpeed, [=](double travel_speed) {
+    mainApp->updateRotarySpeed(travel_speed);
+  });
+  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool rotary_mode) {
+    mainApp->updateRotaryMode(rotary_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::updateRotaryIndex, [=](int rotary_index) {
+    mainApp->updateRotaryIndex(rotary_index);
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    mainApp->updateRotaryMode(is_rotary_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    mainApp->updateMirrorMode(is_mirror_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char axis) {
+    mainApp->updateMachineRotaryAxis(axis);
+  });
+  connect(rotary_setup_, &RotarySetup::actionTestRotary, [=](double test_distance) {
+    QRectF test_rect(0, 0, 20, test_distance);
+    testRotary(test_rect, mainApp->getRotaryAxis(), mainApp->getTravelSpeed(), mainApp->getFramingPower());
+  });
+  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
+    mainApp->updateCircumference(circumference);
+  });
+  connect(rotary_setup_, &RotarySetup::updateRotarySpeed, [=](double travel_speed) {
+    mainApp->updateRotarySpeed(travel_speed);
+  });
+  connect(mainApp, &MainApplication::editRotaryMode, [=](bool rotary_mode) {
+    doc_panel_->setRotaryMode(rotary_mode);
+    rotary_setup_->setRotaryMode(rotary_mode);
+    if(rotary_mode) {
+      mode_block_->setText(tr("Rotary Mode"));
+      mainApp->updateReferenceStartWithHome(false);
+      laser_panel_->setStartHomeEnable(!rotary_mode);
+    } else {
+      mode_block_->setText(tr("XY Mode"));
+      mainApp->updateReferenceStartWithHome(laser_panel_->getStartHome());
+      laser_panel_->setStartHomeEnable(!rotary_mode);
+    }
+  });
+  connect(mainApp, &MainApplication::editRotaryIndex, [=](int rotary_index) {
+  });
+  connect(mainApp, &MainApplication::editRotaryTravelSpeed, [=](double speed) {
+    doc_panel_->setRotarySpeed(speed);
+  });
+  connect(mainApp, &MainApplication::editCircumference, [=](double circumference) {});
   //fail to update image panel qslider
   connect(mainApp, &MainApplication::editImageThreshold, [=](int value) {
     image_panel_->setImageThreshold(value);
@@ -1647,36 +1685,25 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
   connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
   connect(jogging_panel_, &JoggingPanel::actionHome, this, &MainWindow::home);
-  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, this, &MainWindow::moveRelatively);
-  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, this, &MainWindow::moveAbsolutely);
-  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
-  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
+  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, [=](qreal x, qreal y) {
+    moveRelatively(x, y, mainApp->getTravelSpeed());
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, [=](std::tuple<qreal, qreal, qreal>pos) {
+    moveAbsolutely(pos, mainApp->getTravelSpeed());
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, [=](int edge_id) {
+    moveToEdge(edge_id, mainApp->getTravelSpeed());
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, [=](int corner_id) {
+    moveToCorner(corner_id, mainApp->getTravelSpeed());
+  });
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
   connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
-    rotary_setup_->setFramingPower(framing_power);
-  });
   connect(jogging_panel_, &JoggingPanel::showCurrentPosition, [=](bool show) {
     canvas_->setCurrentPosition(show);
   });
   connect(jogging_panel_, &JoggingPanel::showUserOrigin, [=](bool show) {
     canvas_->setUserOrigin(show);
-  });
-
-  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
-    is_rotary_mode_ = is_rotary_mode;
-    doc_panel_->setRotaryMode(is_rotary_mode_);
-    updateScene();
-  });
-  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
-    is_mirror_mode_ = is_mirror_mode;
-  });
-  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
-    rotary_axis_ = rotary_axis;
-  });
-  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
-  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
-    updateScene();
   });
 
   //panel
@@ -1787,11 +1814,6 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
 
 Canvas *MainWindow::canvas() const {
   return canvas_;
-}
-
-
-MachineSettings::MachineSet MainWindow::currentMachine() {
-  return doc_panel_->currentMachine();
 }
 
 bool isDarkMode() {
@@ -1917,7 +1939,7 @@ void MainWindow::setConnectionToolBar() {
     serial_port.clearError();
     #endif
     active_machine.motionPortConnected(&serial_port);
-    active_machine.applyMachineParam(currentMachine());
+    active_machine.applyMachineParam(mainApp->getMachineParam());
     connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
     connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
   });
@@ -2289,7 +2311,6 @@ void MainWindow::setModeBlock() {
   mode_block_ = new QPushButton(ui->quickWidget);
   mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
   mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  updateScene();
 }
 
 void MainWindow::setScaleBlock() {
@@ -2405,7 +2426,7 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -2417,12 +2438,12 @@ bool MainWindow::generateGcode() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
                                     mainApp->getStartWithHome(), &progress_dialog)) {
     return false; // canceled
   }
@@ -2447,11 +2468,11 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine(), is_rotary_mode_);
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
-                                    travel_speed_ / 60,// mm/min to mm/s
+                                    mainApp->getTravelSpeed(),
                                     end_point_,
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
@@ -2467,7 +2488,7 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.activateWindow();
   progress_dialog.raise();
 
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, 
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
                                             mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
@@ -2494,7 +2515,7 @@ void MainWindow::genPreviewWindow() {
     }
 
     double height_scale = 1;
-    if(is_rotary_mode_) height_scale = rotary_setup_->getRotaryScale();
+    if(is_rotary_mode_) height_scale = mainApp->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
                                           QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
                                           height_scale);
@@ -2566,31 +2587,26 @@ void MainWindow::syncJobState(Executor::State new_state) {
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     case Executor::State::kRunning:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       laser_panel_->setControlEnable(false);
-      rotary_setup_->setControlEnable(false);
       break;
     case Executor::State::kPaused:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       laser_panel_->setControlEnable(false);
-      rotary_setup_->setControlEnable(false);
       break;
     case Executor::State::kCompleted:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     case Executor::State::kStopped:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     default:
       break;
@@ -2719,9 +2735,9 @@ void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) 
 void MainWindow::moveToCustomOrigin() {
   bool result = false;
   if (is_rotary_mode_) { // Only move X pos
-    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min
   } else {
-    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min
   }
   if (result == true)
   {
@@ -2746,6 +2762,12 @@ void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_po
 void MainWindow::machineDisconnected() {
   Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+}
+
+void MainWindow::updateCanvasSize(QSize new_size) {
+  canvas_->document().setWidth(new_size.width() * 10);
+  canvas_->document().setHeight(new_size.height() * 10);
+  canvas_->resize();
 }
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)

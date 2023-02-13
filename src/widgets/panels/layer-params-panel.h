@@ -22,6 +22,7 @@ public:
   void setPresetIndex(int preset_index, int param_index);
   void setLayerParam(double strength, double speed, int repeat);
   void setLayerBacklash(double backlash);
+  void setLayerParamLock(bool enable);
 
 public Q_SLOTS:
   void updateLayer(Layer *layer);

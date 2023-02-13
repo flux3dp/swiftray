@@ -110,3 +110,7 @@ void LayerPanel::setLayerParam(double strength, double speed, int repeat) {
 void LayerPanel::setLayerBacklash(double backlash) {
   layer_params_panel_->setLayerBacklash(backlash);
 }
+
+void LayerPanel::setLayerParamLock(bool enable) {
+  layer_params_panel_->setLayerParamLock(enable);
+}

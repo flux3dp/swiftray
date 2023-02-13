@@ -17,29 +17,36 @@ WelcomeDialog::WelcomeDialog(QWidget *parent) :
                    this, SLOT(createOtherProfile(QString, int, int, int)));
 }
 
-
 void WelcomeDialog::createStandardProfile(const QString brand, const QString model) {
   qInfo() << "Standard Profile" << brand << model;
   auto m = MachineSettings::findPreset(brand, model);
   assert(!m.brand.isEmpty());
-  MachineSettings settings;
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
   m.name = model.contains(brand) ? model : (brand + " " + model);
-  settings.addMachine(m);
-  settings.save();
-  Q_EMIT settingsChanged();
+  std::size_t found = m.name.toStdString().find("Lazervida");
+  if(found!=std::string::npos) {
+    m.is_high_speed_mode = true;
+  }
+  machine_settings->addMachine(m);
+  machine_settings->save();
+  Q_EMIT updateCurrentMachineIndex(machine_settings->getMachines().size()-1);
 }
 
 void WelcomeDialog::createOtherProfile(const QString name, int width, int height, int origin) {
   qInfo() << "Other Profile" << name << width << height << origin;
-  MachineSettings settings;
-  MachineSettings::MachineSet m;
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  MachineSettings::MachineParam m;
   m.name = name;
   m.width = width;
   m.height = height;
-  m.origin = (MachineSettings::MachineSet::OriginType) origin;
-  settings.addMachine(m);
-  settings.save();
-  Q_EMIT settingsChanged();
+  m.origin = (MachineSettings::MachineParam::OriginType) origin;
+  std::size_t found = m.name.toStdString().find("Lazervida");
+  if(found!=std::string::npos) {
+    m.is_high_speed_mode = true;
+  }
+  machine_settings->addMachine(m);
+  machine_settings->save();
+  Q_EMIT updateCurrentMachineIndex(machine_settings->getMachines().size()-1);
 }
 
 void WelcomeDialog::close() {

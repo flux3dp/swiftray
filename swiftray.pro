@@ -356,7 +356,6 @@ FORMS += \
     src/windows/job-dashboard-dialog.ui \
     src/windows/machine-manager.ui \
     src/windows/machine-monitor.ui \
-    src/windows/new-machine-dialog.ui \
     src/windows/preferences-window.ui \
     src/windows/preset-manager.ui \
     src/windows/preview-window.ui \

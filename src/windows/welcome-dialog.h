@@ -11,19 +11,14 @@ class WelcomeDialog : public QDialog {
 Q_OBJECT
 public:
   explicit WelcomeDialog(QWidget *parent);
-
   ~WelcomeDialog() = default;
 
 Q_SIGNALS:
-
-  void settingsChanged();
+  void updateCurrentMachineIndex(int machine_index);
 
 public Q_SLOTS:
-
   void createStandardProfile(const QString brand, const QString model);
-
   void createOtherProfile(const QString name, int width, int height, int origin);
-
   void close();
 
 private:

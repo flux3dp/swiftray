@@ -61,8 +61,6 @@ public:
 
   Canvas *canvas() const;
 
-  MachineSettings::MachineSet currentMachine();
-
   void show();
 
   virtual void showEvent(QShowEvent *event) override;
@@ -161,12 +159,9 @@ private Q_SLOTS:
 
   void updateTitle(bool file_modified);
 
-  void updateScene();
-
-  void updateTravelSpeed();
-
   void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
   void machineDisconnected();
+  void updateCanvasSize(QSize new_size);
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   void softwareUpdateRequested();
@@ -185,13 +180,9 @@ private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
   bool job_dashboard_exist_;
-  bool is_high_speed_mode_ = false;
   bool is_upload_enable_ = false;
   bool is_rotary_mode_ = false;
   bool is_mirror_mode_ = false;
-  char rotary_axis_ = 'Y';
-  QSize machine_range_;
-  double travel_speed_;
   QPointF end_point_ = QPointF(0,0);
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
@@ -249,6 +240,7 @@ private:
   void actionFrame();
   QPoint calculateJobOrigin();
   QTransform calculateTranslate();
+  void showHighSpeedWarning();
 
   friend class MainApplication;
 };

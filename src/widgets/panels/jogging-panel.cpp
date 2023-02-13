@@ -49,6 +49,9 @@ JoggingPanel::JoggingPanel(QWidget *parent, MainWindow *main_window) :
   // Receive signals from mainwindow
   connect(main_window_, &MainWindow::positionCached, this, &JoggingPanel::updateCurrentPos);
   connect(ui->laserSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
+    if(is_laser_on_ && control_enable_) {
+      Q_EMIT actionLaser(value);//change when laser is working??
+    }
     Q_EMIT updateFramingPower(value);
   });
   connect(ui->laserPulseSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
@@ -66,6 +69,9 @@ void JoggingPanel::setFramingPower(double power) {
   ui->laserSpinBox->blockSignals(true);
   ui->laserSpinBox->setValue(power);
   ui->laserSpinBox->blockSignals(false);
+  if(is_laser_on_ && control_enable_) {
+    Q_EMIT actionLaser(power);//change when laser is working??
+  }
 }
 
 void JoggingPanel::setPulsePower(double power) {
@@ -161,7 +167,7 @@ void JoggingPanel::moveRelatively(int dir, int level) {
   }
 
   // TODO: Get feedrate from UI?
-  Q_EMIT actionMoveRelatively(movement.x(), movement.y(), travel_speed_);
+  Q_EMIT actionMoveRelatively(movement.x(), movement.y());
 }
 
 void JoggingPanel::moveToEdge(int edge_id) {
@@ -169,7 +175,7 @@ void JoggingPanel::moveToEdge(int edge_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  Q_EMIT actionMoveToEdge(edge_id, travel_speed_);
+  Q_EMIT actionMoveToEdge(edge_id);
 }
 
 void JoggingPanel::moveToCorner(int corner_id) {
@@ -177,14 +183,14 @@ void JoggingPanel::moveToCorner(int corner_id) {
     return;
   }
   // TODO: Get feedrate from UI?
-  Q_EMIT actionMoveToCorner(corner_id, travel_speed_);
+  Q_EMIT actionMoveToCorner(corner_id);
 }
 
 void JoggingPanel::moveAbsolutely(std::tuple<qreal, qreal, qreal> pos) {
   if(!control_enable_) {
     return;
   }
-  Q_EMIT actionMoveAbsolutely(pos, travel_speed_);
+  Q_EMIT actionMoveAbsolutely(pos);
 }
 
 void JoggingPanel::setOrigin() {

@@ -2,7 +2,6 @@
 #define DOCSETTINGSPANEL_H
 
 #include <QFrame>
-#include <settings/machine-settings.h>
 #include <widgets/base-container.h>
 
 class MainWindow;
@@ -17,21 +16,21 @@ Q_OBJECT
 public:
   explicit DocPanel(QWidget *parent, MainWindow *main_window);
   ~DocPanel();
-  void updateScene();
-  MachineSettings::MachineSet currentMachine();
-  QString getMachineName();
+  void setMachineIndex(int machine_index);
   void setRotaryMode(bool is_rotary_mode);
-  double getTravelSpeed();
-  double getRotarySpeed();
   void setPresetIndex(int preset_index);
+  void setTravelSpeed(double travel_speed);
+  void setRotarySpeed(double rotary_speed);
+  void setMachineSelectLock(bool enable);
+  void setPresetSelectLock(bool enable);
 
 Q_SIGNALS:
-  void machineChanged(QString machine_name);
+  void updatePresetIndex(int index);
+  void updateMachineIndex(int index);
+  void updateTravelSpeed(double travel_speed);
+  void updateRotarySpeed(double rotary_speed);
   void rotaryModeChange(bool is_rotary_mode);
   void panelShow(bool is_show);
-  void updateMachineRange(QSize machine_range);
-  void updateSpeed();
-  void updatePresetIndex(int index);
 
 private:
   void loadSettings() override;

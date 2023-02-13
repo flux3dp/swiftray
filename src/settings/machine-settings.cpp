@@ -1,14 +1,11 @@
 #include <windows/osxwindow.h>
 #include "machine-settings.h"
 
-typedef MachineSettings::MachineSet MachineSet;
+typedef MachineSettings::MachineParam MachineParam;
 
-QList<MachineSet> MachineSettings::machineDatabase_;
+QList<MachineParam> MachineSettings::machineDatabase_;
 
 MachineSettings::MachineSettings() {
-  QSettings settings;
-  QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
-  loadJson(obj);
 }
 
 /**
@@ -18,15 +15,11 @@ MachineSettings::MachineSettings() {
  * @param obj 
  */
 void MachineSettings::loadJson(const QJsonObject &obj) {
-  if (obj["data"].isNull()) {
-    qWarning() << "[MachineSettings] Cannot load machine settings";
-    return;
-  }
   QJsonArray data = obj["data"].toArray();
   machines_mutex_.lock();
   machines_.clear();
   for (QJsonValue item : data) {
-    MachineSet machine = MachineSet::fromJson(item.toObject());
+    MachineParam machine = MachineParam::fromJson(item.toObject());
     machines_ << machine;
   }
   machines_mutex_.unlock();
@@ -50,12 +43,23 @@ QJsonObject MachineSettings::toJson() {
   return obj;
 }
 
-const QList<MachineSet> &MachineSettings::machines() {
+const QList<MachineParam> &MachineSettings::getMachines() {
   return machines_;
 }
 
-void MachineSettings::addMachine(MachineSet mach) {
+void MachineSettings::setMachines(const QList<MachineParam> &new_machines) {
+  machines_mutex_.lock();
+  machines_.clear();
+  for (auto &mach : new_machines) {
+    machines_ << mach;
+  }
+  machines_mutex_.unlock();
+}
+
+void MachineSettings::addMachine(MachineParam mach) {
+  machines_mutex_.lock();
   machines_ << mach;
+  machines_mutex_.unlock();
 }
 
 void MachineSettings::clearMachines() {
@@ -63,11 +67,10 @@ void MachineSettings::clearMachines() {
 }
 
 void MachineSettings::save() {
-  QSettings settings;
-  settings.setValue("machines/machines", QJsonDocument(toJson()));
+  Q_EMIT saveMachines(toJson());
 }
 
-QIcon MachineSet::icon() const {
+QIcon MachineParam::icon() const {
   if (!isDarkMode()) return QIcon(icon_url);
   auto img = QImage(icon_url).convertToFormat(QImage::Format::Format_ARGB32);
   for (int y = 0; y < img.height(); ++y) {
@@ -81,8 +84,8 @@ QIcon MachineSet::icon() const {
   return QIcon(QPixmap::fromImage(img));
 }
 
-MachineSet MachineSet::fromJson(const QJsonObject &obj) {
-  MachineSet m;
+MachineParam MachineParam::fromJson(const QJsonObject &obj) {
+  MachineParam m;
 
   m.id = obj["id"].toString();
   m.name = obj["name"].toString();
@@ -95,18 +98,27 @@ MachineSet MachineSet::fromJson(const QJsonObject &obj) {
   if(m.width <= 0) m.width = 5;
   m.height = obj["height"].toInt();
 
-  m.origin = (MachineSet::OriginType) obj["origin"].toInt();
+  m.origin = (MachineParam::OriginType) obj["origin"].toInt();
   m.home_on_start = obj["homeOnStart"].toBool();
 
-  m.board_type = (MachineSet::BoardType) obj["boardType"].toInt();
+  m.board_type = (MachineParam::BoardType) obj["boardType"].toInt();
   m.red_pointer_offset = QPointF(
        obj["redPointerOffsetX"].toInt(),
        obj["redPointerOffsetY"].toInt()
   );
+  if(!obj["travel_speed"].isNull()) m.travel_speed = obj["travel_speed"].toDouble();
+  if(!obj["rotary_axis"].isNull()) m.rotary_axis = *obj["rotary_axis"].toString().toStdString().c_str();
+  if(!obj["is_high_speed_mode"].isNull()) m.is_high_speed_mode = obj["is_high_speed_mode"].toBool();
+  else {
+    std::size_t found = m.name.toStdString().find("Lazervida");
+    if(found!=std::string::npos) {
+      m.is_high_speed_mode = true;
+    }
+  }
   return m;
 }
 
-QJsonObject MachineSet::toJson() const {
+QJsonObject MachineParam::toJson() const {
   QJsonObject obj;
   obj["id"] = id;
   obj["name"] = name;
@@ -115,10 +127,13 @@ QJsonObject MachineSet::toJson() const {
   obj["height"] = height;
   obj["origin"] = (int) origin;
   obj["icon"] = icon_url;
+  obj["travel_speed"] = travel_speed;
+  obj["rotary_axis"] = (QString) rotary_axis;
   obj["homeOnStart"] = home_on_start;
   obj["boardType"] = (int) board_type;
   obj["redPointerOffsetX"] = red_pointer_offset.x();
   obj["redPointerOffsetY"] = red_pointer_offset.y();
+  obj["is_high_speed_mode"] = is_high_speed_mode;
   return obj;
 }
 
@@ -131,13 +146,13 @@ QJsonObject MachineSet::toJson() const {
  * 
  * @return QList<MachineSet> 
  */
-QList<MachineSet> MachineSettings::database() {
+QList<MachineParam> MachineSettings::database() {
   if (machineDatabase_.empty()) {
     QFile file(":/resources/machines.json");
     file.open(QFile::ReadOnly);
     auto data = QJsonDocument::fromJson(file.readAll()).object()["data"].toArray();
     for (QJsonValue item : data) {
-      MachineSettings::machineDatabase_ << MachineSet::fromJson(item.toObject());
+      MachineSettings::machineDatabase_ << MachineParam::fromJson(item.toObject());
     }
   }
   return MachineSettings::machineDatabase_;
@@ -148,15 +163,23 @@ QList<MachineSet> MachineSettings::database() {
  * 
  * @param brand 
  * @param model 
- * @return MachineSet 
+ * @return MachineParam 
  */
-MachineSet MachineSettings::findPreset(QString brand, QString model) {
-  for (MachineSet m : MachineSettings::database()) {
+MachineParam MachineSettings::findPreset(QString brand, QString model) {
+  for (MachineParam m : MachineSettings::database()) {
     if (m.brand == brand && m.model == model) {
       return m;
     }
   }
-  return MachineSet();
+  return MachineParam();
+}
+
+MachineParam MachineSettings::getTargetMachine(int machine_index) {
+  if(machine_index < machines_.size()) {
+    return machines_[machine_index];
+  } else {
+    return MachineParam();
+  }
 }
 
 /**
@@ -166,7 +189,7 @@ MachineSet MachineSettings::findPreset(QString brand, QString model) {
  */
 QStringList MachineSettings::brands() {
   QList<QString> result;
-  for (MachineSet m : MachineSettings::database()) {
+  for (MachineParam m : MachineSettings::database()) {
     if (!result.contains(m.brand)) {
       result << m.brand;
     }
@@ -182,11 +205,32 @@ QStringList MachineSettings::brands() {
  */
 QStringList MachineSettings::models(QString brand) {
   QList<QString> result;
-  for (MachineSet m : MachineSettings::database()) {
+  for (MachineParam m : MachineSettings::database()) {
     if (m.brand == brand) {
       result << m.model;
     }
   }
   result << tr("Other");
   return QStringList(result);
+}
+
+void MachineSettings::setMachineRange(int machine_index, int width, int height) {
+  if(width > 0) machines_[machine_index].width = width;
+  machines_[machine_index].height = height;
+}
+
+void MachineSettings::setMachineTravelSpeed(int machine_index, double speed) {
+  if(speed > 0) machines_[machine_index].travel_speed = speed;
+}
+
+void MachineSettings::setMachineRotaryAxis(int machine_index, char axis) {
+  machines_[machine_index].rotary_axis = axis;
+}
+
+void MachineSettings::setMachineHightSpeedMode(int machine_index, bool is_hight_mode) {
+  machines_[machine_index].is_high_speed_mode = is_hight_mode;
+}
+
+void MachineSettings::setMachineStartWithHome(int machine_index, bool start_with_home) {
+  machines_[machine_index].home_on_start = start_with_home;
 }

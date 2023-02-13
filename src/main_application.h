@@ -9,6 +9,8 @@
 #include <QSet>
 #include <QSettings>
 #include <shape/shape.h>
+#include <settings/machine-settings.h>
+#include <settings/rotary-settings.h>
 
 class MainApplication : public QApplication
 {
@@ -45,6 +47,20 @@ public:
   int getParamIndex();
   double getFramingPower();
   double getPulsePower();
+  //about machine
+  int getMachineIndex();
+  bool isHighSpeedMode();
+  QSize getWorkingRange();
+  char getRotaryAxis();
+  double getTravelSpeed();
+  MachineSettings::MachineParam getMachineParam();
+  //about rotary
+  int getRotaryIndex();
+  bool isRotaryMode();
+  bool isMirrorMode();
+  double getRotaryScale();
+  double getRotaryCircumference();
+  RotarySettings::RotaryParam getRotaryParam();
 
 public Q_SLOTS:
   void getSelectShapeChange(QList<ShapePtr> shape_list);
@@ -77,11 +93,30 @@ public Q_SLOTS:
   void updateParamIndex(int param_index);
   void updateFramingPower(double framing_power);
   void updatePulsePower(double pulse_power);
+  //about machine
+  void updateMachineIndex(int machine_index);
+  void updateMachineRange(QSize machine_size);
+  void updateMachineTravelSpeed(double speed);
+  void updateMachineRotaryAxis(char axis);
+  void updateMachineHighSpeedMode(bool is_high_speed_mode);
+  //about rotary
+  void updateRotaryIndex(int rotary_index);
+  void updateRotaryMode(bool is_rotary_mode);
+  void updateMirrorMode(bool is_mirror_mode);
+  void updateRotarySpeed(double speed);
+  void updateCircumference(double circumference);
 
 private:
   //about preset
   void initialPreset();
   void savePreset();
+  //about machine
+  void initialMachine();
+  void saveMachine();
+  //about rotary
+  void initialRotary();
+  void calculateRotaryScale();
+  void saveRotary();
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   bool software_update_ok_ = false;
 #endif
@@ -103,10 +138,21 @@ private:
   //setting of current reference coordinates
   JobOrigin job_origin_;
   StartFrom start_from_;
-  bool start_with_home_;
   //setting of current preset
   int preset_index_;
   int param_index_;//-1 is custom
+  //setting of current machine
+  int machine_index_;
+  double travel_speed_;
+  QSize working_range_;
+  bool is_high_speed_mode_;
+  bool start_with_home_;
+  //setting of rotary
+  int rotary_index_;
+  bool rotary_mode_;
+  bool mirror_mode_;
+  double rotary_circumference_;
+  double rotary_scale_;
 
 private Q_SLOTS:
   void cleanup();
@@ -156,6 +202,17 @@ Q_SIGNALS:
   void editPresetIndex(int preset_index, int param_index);
   void editFramingPower(double power);
   void editPulsePower(double power);
+  //about machine
+  void editMachineIndex(int machine_index);
+  void editWorkingRange(QSize machine_size);
+  void editMachineTravelSpeed(double speed);
+  void editMachineRotaryAxis(char axis);
+  void editMachineHighSpeedMode(bool is_high_speed_mode);
+  //about rotary
+  void editRotaryIndex(int rotary_index);
+  void editRotaryMode(bool is_rotary_mode);
+  void editRotaryTravelSpeed(double speed);
+  void editCircumference(double circumference);
 };
 
 extern MainApplication *mainApp;

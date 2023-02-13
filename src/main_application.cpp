@@ -32,6 +32,10 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   start_from_ = AbsoluteCoords;
   start_with_home_ = true;
   initialPreset();
+  rotary_mode_ = false;
+  initialMachine();
+  rotary_scale_ = 1;
+  initialRotary();
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -365,6 +369,9 @@ void MainApplication::updateReferenceStartFrom(int start_from) {
 
 void MainApplication::updateReferenceStartWithHome(bool find_home) {
   start_with_home_ = find_home;
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  machine_settings->setMachineStartWithHome(machine_index_, start_with_home_);
+  saveMachine();
   Q_EMIT editReferenceStartWithHome(start_with_home_);
 }
 
@@ -388,7 +395,6 @@ void MainApplication::initialPreset() {
     }
   }
   preset_settings->setOriginPresets(origin_preset);
-
   
   QJsonObject obj = settings_.value("preset/user").toJsonObject();
   if (obj["data"].isNull()) {
@@ -447,12 +453,11 @@ void MainApplication::updatePresetIndex(int preset_index, int param_index) {
     Q_EMIT editPulsePower(current_preset.pulse_power);
     if(param_index < preset_settings->getTargetPreset(preset_index_).params.size()) {
       param_index_ = param_index;
-      Q_EMIT editPresetIndex(preset_index_, param_index_);
     } else {
       param_index_ = -1;
-      Q_EMIT editPresetIndex(preset_index_, param_index_);
     }
   }
+  Q_EMIT editPresetIndex(preset_index_, param_index_);
 }
 
 void MainApplication::updateParamIndex(int param_index) {
@@ -478,4 +483,295 @@ void MainApplication::updatePulsePower(double pulse_power) {
 void MainApplication::savePreset() {
   PresetSettings* preset_settings = &PresetSettings::getInstance();
   settings_.setValue("preset/user", preset_settings->toJson());
+}
+
+//about machine
+void MainApplication::initialMachine() {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  QJsonObject obj = settings_.value("machines/machines").toJsonObject();
+  if (obj["data"].isNull()) {
+    MachineSettings::MachineParam machine = MachineSettings::findPreset("Lazervida", "Lazervida");
+    machine_settings->addMachine(machine);
+    saveMachine();
+    machine_index_ = 0;
+    settings_.setValue("machines/index", machine_index_);
+  } else {
+    machine_settings->loadJson(obj);
+    QVariant old_index = settings_.value("machines/index", 0);
+    if(!old_index.isNull() && old_index.toInt() < machine_settings->getMachines().size()) {
+      machine_index_ = old_index.toInt();
+    } else {
+      machine_index_ = 0;
+      settings_.setValue("machines/index", machine_index_);
+    }
+  }
+  connect(machine_settings, &MachineSettings::saveMachines, [=](QJsonObject save_obj) {
+    saveMachine();
+  });
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  travel_speed_ = current_machine.travel_speed;
+  working_range_ = QSize(current_machine.width, current_machine.height);
+  is_high_speed_mode_ = current_machine.is_high_speed_mode;
+  start_with_home_ = current_machine.home_on_start;
+}
+
+int MainApplication::getMachineIndex() {
+  return machine_index_;
+}
+
+bool MainApplication::isHighSpeedMode() {
+  return is_high_speed_mode_;
+}
+
+QSize MainApplication::getWorkingRange() {
+  return working_range_;
+}
+
+char MainApplication::getRotaryAxis() {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  return current_machine.rotary_axis;
+}
+
+double MainApplication::getTravelSpeed() {
+  return travel_speed_;
+}
+
+MachineSettings::MachineParam MainApplication::getMachineParam() {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  return machine_settings->getTargetMachine(machine_index_);
+}
+
+void MainApplication::updateMachineIndex(int machine_index) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  if(machine_index < machine_settings->getMachines().size()) {
+    machine_index_ = machine_index;
+    settings_.setValue("machines/index", machine_index_);
+    MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+    if(!rotary_mode_) {
+      travel_speed_ = current_machine.travel_speed;
+      working_range_ = QSize(current_machine.width, current_machine.height);
+    } else {
+      working_range_ = QSize(current_machine.width, rotary_circumference_);
+    }
+    if(is_high_speed_mode_ != current_machine.is_high_speed_mode) {
+      is_high_speed_mode_ = current_machine.is_high_speed_mode;
+      Q_EMIT editMachineHighSpeedMode(is_high_speed_mode_);
+    }
+    Q_EMIT editWorkingRange(working_range_);
+    Q_EMIT editMachineTravelSpeed(current_machine.travel_speed);
+    Q_EMIT editMachineRotaryAxis(current_machine.rotary_axis);
+    Q_EMIT editReferenceStartWithHome(current_machine.home_on_start);
+  }
+  Q_EMIT editMachineIndex(machine_index_);
+}
+
+void MainApplication::updateMachineRange(QSize machine_size) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  if(machine_size.width() > 0) {
+    machine_settings->setMachineRange(machine_index_, machine_size.width(), machine_size.height());
+    saveMachine();
+  }
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  if(!rotary_mode_) {
+    working_range_ = QSize(current_machine.width, current_machine.height);
+  } else {
+    working_range_ = QSize(current_machine.width, rotary_circumference_);
+  }
+  Q_EMIT editWorkingRange(working_range_);
+}
+
+void MainApplication::updateMachineTravelSpeed(double speed) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  if(speed > 0) {
+    if(!rotary_mode_) {
+      travel_speed_ = speed;
+    }
+    machine_settings->setMachineTravelSpeed(machine_index_, speed);
+    saveMachine();
+  }
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  Q_EMIT editMachineTravelSpeed(current_machine.travel_speed);
+}
+
+void MainApplication::updateMachineRotaryAxis(char axis) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  switch (axis) {
+    case 'Y':
+    case 'Z':
+    case 'A':
+      machine_settings->setMachineRotaryAxis(machine_index_, axis);
+      saveMachine();
+      break;
+    default:
+      qInfo() << Q_FUNC_INFO << " get axis: " << axis << " over range";
+      break;
+  }
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  Q_EMIT editMachineRotaryAxis(current_machine.rotary_axis);
+}
+
+void MainApplication::updateMachineHighSpeedMode(bool is_high_speed_mode) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  machine_settings->setMachineHightSpeedMode(machine_index_, is_high_speed_mode);
+  saveMachine();
+  is_high_speed_mode_ = is_high_speed_mode;
+  Q_EMIT editMachineHighSpeedMode(is_high_speed_mode_);
+}
+
+void MainApplication::saveMachine() {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  settings_.setValue("machines/machines", machine_settings->toJson());
+}
+
+//about rotary
+void MainApplication::initialRotary() {
+  mirror_mode_ = false;
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  QJsonObject obj = settings_.value("rotarys/rotarys").toJsonObject();
+  if (obj["data"].isNull()) {
+    RotarySettings::RotaryParam rotary;
+    rotary.name = "Lazervida Rotary";
+    rotary_settings->addRotary(rotary);
+    saveRotary();
+    rotary_index_ = 0;
+    settings_.setValue("rotarys/index", rotary_index_);
+    rotary_circumference_ = working_range_.height();
+    settings_.setValue("rotarys/circumference", rotary_circumference_);
+  } else {
+    rotary_settings->loadRotary(obj);
+    QVariant old_index = settings_.value("rotarys/index", 0);
+    if(!old_index.isNull() && old_index.toInt() < rotary_settings->rotarys().size()) {
+      rotary_index_ = old_index.toInt();
+    } else {
+      rotary_index_ = 0;
+      settings_.setValue("rotarys/index", rotary_index_);
+    }
+    QVariant old_circumference = settings_.value("rotarys/circumference", 0);
+    if(!old_circumference.isNull()) {
+      rotary_circumference_ = old_circumference.toDouble();
+    } else {
+      rotary_circumference_ = working_range_.height();
+      settings_.setValue("rotarys/circumference", rotary_circumference_);
+    }
+  }
+  connect(rotary_settings, &RotarySettings::saveRotary, [=](QJsonObject save_obj) {
+    saveRotary();
+  });
+}
+
+int MainApplication::getRotaryIndex() {
+  return rotary_index_;
+}
+
+bool MainApplication::isRotaryMode() {
+  return rotary_mode_;
+}
+
+bool MainApplication::isMirrorMode() {
+  if(!rotary_mode_) return false;
+  return mirror_mode_;
+}
+
+double MainApplication::getRotaryScale() {
+  return rotary_scale_;
+}
+
+double MainApplication::getRotaryCircumference() {
+  return rotary_circumference_;
+}
+
+RotarySettings::RotaryParam MainApplication::getRotaryParam() {
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  return rotary_settings->getTargetRotary(rotary_index_);
+}
+
+void MainApplication::updateRotaryIndex(int rotary_index) {
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  if(rotary_index < rotary_settings->rotarys().size()) {
+    rotary_index_ = rotary_index;
+    RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
+    settings_.setValue("rotarys/index", rotary_index_);
+    travel_speed_ = current_rotary.travel_speed;
+    Q_EMIT editRotaryTravelSpeed(current_rotary.travel_speed);
+  }
+  calculateRotaryScale();
+}
+
+void MainApplication::updateRotaryMode(bool is_rotary_mode) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
+  rotary_mode_ = is_rotary_mode;
+  if(rotary_mode_) {
+    working_range_ = QSize(current_machine.width, rotary_circumference_);
+    travel_speed_ = current_rotary.travel_speed;
+    Q_EMIT editRotaryTravelSpeed(current_rotary.travel_speed);
+    calculateRotaryScale();
+  } else {
+    working_range_ = QSize(current_machine.width, current_machine.height);
+    travel_speed_ = current_machine.travel_speed;
+    Q_EMIT editMachineTravelSpeed(current_machine.travel_speed);
+  }
+  Q_EMIT editWorkingRange(working_range_);
+  Q_EMIT editRotaryMode(rotary_mode_);
+}
+
+void MainApplication::updateMirrorMode(bool is_mirror_mode) {
+  mirror_mode_ = is_mirror_mode;
+}
+
+void MainApplication::updateRotarySpeed(double speed) {
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  if(speed > 0) {
+    if(rotary_mode_) {
+      travel_speed_ = speed;
+    }
+    rotary_settings->setRotarySpeed(rotary_index_, speed);
+    saveRotary();
+  }
+  RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
+  Q_EMIT editRotaryTravelSpeed(current_rotary.travel_speed);
+}
+
+void MainApplication::updateCircumference(double circumference) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
+  if(circumference > 0) {
+    rotary_circumference_ = circumference;
+    settings_.setValue("rotarys/circumference", rotary_circumference_);
+    if(rotary_mode_) {
+      working_range_ = QSize(current_machine.width, rotary_circumference_);
+      Q_EMIT editWorkingRange(working_range_);
+    }
+  }
+  calculateRotaryScale();
+  Q_EMIT editCircumference(rotary_circumference_);
+}
+
+void MainApplication::calculateRotaryScale() {
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
+  if(current_rotary.rotary_type == RotarySettings::RotaryType::Roller) {
+    double circumference = current_rotary.roller_diameter * M_PI;
+    if(circumference > 0) {
+      rotary_scale_ = current_rotary.mm_per_rotation / circumference;
+    }
+    else {
+      rotary_scale_ = 0;
+    }
+  } else {
+    if(rotary_circumference_ > 0) {
+      rotary_scale_ = current_rotary.mm_per_rotation / rotary_circumference_;
+    }
+    else {
+      rotary_scale_ = 0;
+    }
+  }
+}
+
+void MainApplication::saveRotary() {
+  RotarySettings* rotary_settings = &RotarySettings::getInstance();
+  settings_.setValue("rotarys/rotarys", rotary_settings->toJson());
 }

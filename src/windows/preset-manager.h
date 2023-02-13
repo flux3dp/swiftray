@@ -18,7 +18,6 @@ public:
 Q_SIGNALS:
   void updateCurrentPresetIndex(int index);
   void updateCurrentIndex(int preset_index, int param_index);
-  void savePresets();
 
 private:
   void loadStyles() override;

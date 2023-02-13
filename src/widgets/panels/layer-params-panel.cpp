@@ -213,3 +213,7 @@ void LayerParamsPanel::setLayerBacklash(double backlash) {
   ui->backlashSpinBox->setValue(backlash);
   ui->backlashSpinBox->blockSignals(false);
 }
+
+void LayerParamsPanel::setLayerParamLock(bool enable) {
+  ui->presetComboBox->setEnabled(enable);
+}
