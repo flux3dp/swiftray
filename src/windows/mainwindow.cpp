@@ -1552,6 +1552,7 @@ void MainWindow::registerEvents() {
   });
   connect(mainApp, &MainApplication::editMachineIndex, [=](int machine_index) {
     doc_panel_->setMachineIndex(machine_index);
+    active_machine.applyMachineParam(mainApp->getMachineParam());
   });
   connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](int travel_speed) {
     doc_panel_->setTravelSpeed(travel_speed);

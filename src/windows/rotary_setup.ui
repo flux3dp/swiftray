@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Rotary Manager</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -378,7 +378,7 @@
      <item row="4" column="0">
       <widget class="QLabel" name="label_9">
        <property name="text">
-        <string>Rotary Speed</string>
+        <string>Travel Speed</string>
        </property>
       </widget>
      </item>
