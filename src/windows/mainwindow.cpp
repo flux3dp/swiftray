@@ -1587,7 +1587,7 @@ void MainWindow::registerEvents() {
   });
   connect(rotary_setup_, &RotarySetup::actionTestRotary, [=](double test_distance) {
     QRectF test_rect(0, 0, 20, test_distance);
-    testRotary(test_rect, mainApp->getRotaryAxis(), mainApp->getTravelSpeed(), mainApp->getFramingPower());
+    testRotary(test_rect, mainApp->getRotaryAxis(), mainApp->getTravelSpeed() * 60, mainApp->getFramingPower());// mm/s to mm/min
   });
   connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
     mainApp->updateCircumference(circumference);
@@ -1674,16 +1674,16 @@ void MainWindow::registerEvents() {
   connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
   connect(jogging_panel_, &JoggingPanel::actionHome, this, &MainWindow::home);
   connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, [=](qreal x, qreal y) {
-    moveRelatively(x, y, mainApp->getTravelSpeed());
+    moveRelatively(x, y, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
   });
   connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, [=](std::tuple<qreal, qreal, qreal>pos) {
-    moveAbsolutely(pos, mainApp->getTravelSpeed());
+    moveAbsolutely(pos, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
   });
   connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, [=](int edge_id) {
-    moveToEdge(edge_id, mainApp->getTravelSpeed());
+    moveToEdge(edge_id, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
   });
   connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, [=](int corner_id) {
-    moveToCorner(corner_id, mainApp->getTravelSpeed());
+    moveToCorner(corner_id, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
   });
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
   connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);

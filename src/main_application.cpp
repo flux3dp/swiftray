@@ -704,7 +704,7 @@ void MainApplication::updateRotaryIndex(int rotary_index) {
     rotary_index_ = rotary_index;
     RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
     settings_.setValue("rotarys/index", rotary_index_);
-    travel_speed_ = current_rotary.travel_speed;
+    if(rotary_mode_) travel_speed_ = current_rotary.travel_speed;
     Q_EMIT editRotaryTravelSpeed(current_rotary.travel_speed);
   }
   calculateRotaryScale();

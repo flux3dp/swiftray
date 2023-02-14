@@ -6,6 +6,9 @@ typedef MachineSettings::MachineParam MachineParam;
 QList<MachineParam> MachineSettings::machineDatabase_;
 
 MachineSettings::MachineSettings() {
+  QSettings settings;
+  QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
+  loadJson(obj);
 }
 
 /**
