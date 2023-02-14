@@ -7,8 +7,7 @@
 PreferencesWindow::PreferencesWindow(QWidget *parent) :
      QDialog(parent),
      ui(new Ui::PreferencesWindow),
-     BaseContainer(),
-     is_high_speed_(false) {
+     BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
   setTabWidget();
@@ -49,21 +48,15 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
 }
 
 void PreferencesWindow::setSpeedMode(bool is_high_speed) {
-  is_high_speed_ = is_high_speed;
-  ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
+  ui->comboBoxSpeedOptimization->blockSignals(true);
+  ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed);
+  ui->comboBoxSpeedOptimization->blockSignals(false);
 }
 
 void PreferencesWindow::setUpload(bool enable_upload) {
-  is_upload_enable_ = enable_upload;
-  ui->comboBoxShare->setCurrentIndex(is_upload_enable_);
-}
-
-bool PreferencesWindow::isHighSpeedMode() {
-  return ui->comboBoxSpeedOptimization->currentIndex();
-}
-
-bool PreferencesWindow::isUploadEnable() {
-  return ui->comboBoxShare->currentIndex();
+  ui->comboBoxShare->blockSignals(true);
+  ui->comboBoxShare->setCurrentIndex(enable_upload);
+  ui->comboBoxShare->blockSignals(false);
 }
 
 void PreferencesWindow::setLanguageComboBox() {
@@ -80,13 +73,11 @@ void PreferencesWindow::setLanguageComboBox() {
 void PreferencesWindow::setSpeedOptimizationComboBox() {
   ui->comboBoxSpeedOptimization->addItem("Off");
   ui->comboBoxSpeedOptimization->addItem("On");
-  ui->comboBoxSpeedOptimization->setCurrentIndex(is_high_speed_);
 }
 
 void PreferencesWindow::setShareComboBox() {
   ui->comboBoxShare->addItem("Off");
   ui->comboBoxShare->addItem("On");
-  ui->comboBoxShare->setCurrentIndex(is_upload_enable_);
 }
 
 void PreferencesWindow::setTabWidget() {

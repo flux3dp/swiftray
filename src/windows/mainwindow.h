@@ -180,9 +180,6 @@ private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
   bool job_dashboard_exist_;
-  bool is_upload_enable_ = false;
-  bool is_rotary_mode_ = false;
-  bool is_mirror_mode_ = false;
   QPointF end_point_ = QPointF(0,0);
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;

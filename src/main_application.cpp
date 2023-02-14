@@ -17,6 +17,8 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     QApplication(argc, argv)
 {
   mainApp = this;
+  QVariant upload_code = settings_.value("window/upload", 0);
+  is_upload_enable_ = upload_code.toBool();
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   connect(this, &MainApplication::softwareUpdateQuit, this, &QApplication::quit, Qt::QueuedConnection);
@@ -60,6 +62,10 @@ MainApplication::~MainApplication()
     mainApp = NULL;
 }
 
+bool MainApplication::isUploadEnable() {
+  return is_upload_enable_;
+}
+
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
 bool MainApplication::softwareUpdateCanShutdown() {
   software_update_ok_ = true;
@@ -101,6 +107,12 @@ extern "C" void software_update_shutdown_request_callback(void) {
   mainApp->softwareUpdateShutdownRequest();
 }
 #endif // HAVE_SOFTWARE_UPDATE && Q_OS_WIN
+
+void MainApplication::updateUploadEnable(bool enable_upload) {
+  is_upload_enable_ = enable_upload;
+  settings_.setValue("window/upload", is_upload_enable_);
+  Q_EMIT editUploadEnable(is_upload_enable_);
+}
 
 void MainApplication::getSelectShapeChange(QList<ShapePtr> shape_list) {
   bool all_path = !shape_list.empty();

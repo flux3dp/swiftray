@@ -165,17 +165,14 @@ void MainWindow::loadSettings() {
   );
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
-  QSettings privacy_settings;
-  QVariant upload_code = privacy_settings.value("window/upload", 0);
-  is_upload_enable_ = upload_code.toBool();
-  if(is_upload_enable_) {
+  if(mainApp->isUploadEnable()) {
     sentry_user_consent_give();
   }
   else {
     sentry_user_consent_revoke();
   }
 #endif
-  preferences_window_->setUpload(is_upload_enable_);
+  preferences_window_->setUpload(mainApp->isUploadEnable());
 }
 
 void MainWindow::loadCanvas() {
@@ -442,7 +439,7 @@ void MainWindow::actionFrame() {
 
   // Generate gcode for framing
   QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
       mainApp->getTravelSpeed(),
@@ -544,9 +541,9 @@ QTransform MainWindow::calculateTranslate() {
     default:
       break;
   }
-  if(is_rotary_mode_) {
+  if(mainApp->isRotaryMode()) {
     int direction = 1;
-    if(is_mirror_mode_) {
+    if(mainApp->isMirrorMode()) {
       direction = -1;
     }
     move_translate *= QTransform::fromScale(1,direction);
@@ -556,7 +553,6 @@ QTransform MainWindow::calculateTranslate() {
       move_translate.translate(0,mainApp->getRotaryCircumference() * 10 * direction);
       rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
     }
-
     move_translate *= QTransform::fromScale(1, mainApp->getRotaryScale());
   }
   return move_translate;
@@ -869,7 +865,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -1145,6 +1141,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, [=]() {
+    preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
     preferences_window_->show();
     preferences_window_->activateWindow();
     preferences_window_->raise();
@@ -1235,31 +1232,21 @@ void MainWindow::registerEvents() {
     mainApp->updateMachineHighSpeedMode(is_high_speed);
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
-    is_upload_enable_ = enable_upload;
-#ifdef ENABLE_SENTRY
-    if(is_upload_enable_) {
-      sentry_user_consent_give();
-    }
-    else {
-      sentry_user_consent_revoke();
-    }
-#endif
-    QSettings settings;
-    settings.setValue("window/upload", is_upload_enable_);
+    mainApp->updateUploadEnable(enable_upload);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
-    is_upload_enable_ = enable_upload;
+    mainApp->updateUploadEnable(enable_upload);
+  });
+  connect(mainApp, &MainApplication::editUploadEnable, [=](bool is_enable) {
 #ifdef ENABLE_SENTRY
-    if(is_upload_enable_) {
+    if(is_enable) {
       sentry_user_consent_give();
     }
     else {
       sentry_user_consent_revoke();
     }
 #endif
-    preferences_window_->setUpload(is_upload_enable_);
-    QSettings settings;
-    settings.setValue("window/upload", is_upload_enable_);
+    preferences_window_->setUpload(is_enable);
   });
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
@@ -2426,7 +2413,7 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -2453,7 +2440,7 @@ bool MainWindow::generateGcode() {
     msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
     msgbox.exec();
   }
-  if (is_rotary_mode_ && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
+  if (mainApp->isRotaryMode() && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
     msgbox.setInformativeText(tr("Some items maybe overlap in rotary mode."));
@@ -2468,7 +2455,7 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(mainApp->getMachineParam(), is_rotary_mode_);
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
@@ -2515,7 +2502,7 @@ void MainWindow::genPreviewWindow() {
     }
 
     double height_scale = 1;
-    if(is_rotary_mode_) height_scale = mainApp->getRotaryScale();
+    if(mainApp->isRotaryMode()) height_scale = mainApp->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
                                           QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
                                           height_scale);
@@ -2734,7 +2721,7 @@ void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) 
 
 void MainWindow::moveToCustomOrigin() {
   bool result = false;
-  if (is_rotary_mode_) { // Only move X pos
+  if (mainApp->isRotaryMode()) { // Only move X pos
     result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min
   } else {
     result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min

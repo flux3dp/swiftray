@@ -19,6 +19,7 @@ public:
   explicit MainApplication(int &argc, char **argv);
   ~MainApplication();
 
+  bool isUploadEnable();
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   void rejectSoftwareUpdate() { software_update_ok_ = false; }
   bool softwareUpdateCanShutdown();
@@ -63,6 +64,7 @@ public:
   RotarySettings::RotaryParam getRotaryParam();
 
 public Q_SLOTS:
+  void updateUploadEnable(bool enable_upload);
   void getSelectShapeChange(QList<ShapePtr> shape_list);
   //about font
   void updateShapeFontFamily(QFont font);
@@ -121,7 +123,7 @@ private:
   bool software_update_ok_ = false;
 #endif
   QSettings settings_;
-
+  bool is_upload_enable_;
   //setting of current font
   QFont font_;
   double line_height_;
@@ -164,7 +166,7 @@ Q_SIGNALS:
   void softwareUpdateClose();
   void softwareUpdateQuit();
 #endif
-
+  void editUploadEnable(bool enable_upload);
   //about font
   void updateFontView(QSet<QString> font_familys, 
                       QSet<int> point_sizes, 
