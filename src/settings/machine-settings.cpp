@@ -6,9 +6,6 @@ typedef MachineSettings::MachineParam MachineParam;
 QList<MachineParam> MachineSettings::machineDatabase_;
 
 MachineSettings::MachineSettings() {
-  QSettings settings;
-  QJsonObject obj = settings.value("machines/machines").value<QJsonDocument>().object();
-  loadJson(obj);
 }
 
 /**
@@ -174,6 +171,7 @@ MachineParam MachineSettings::findPreset(QString brand, QString model) {
       return m;
     }
   }
+  qInfo() << Q_FUNC_INFO << __LINE__;
   return MachineParam();
 }
 

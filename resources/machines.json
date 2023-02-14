@@ -7,8 +7,8 @@
       "height": 406,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -18,8 +18,8 @@
       "height": 180,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -29,8 +29,8 @@
       "height": 390,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -40,8 +40,8 @@
       "height": 430,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -51,8 +51,8 @@
       "height": 400,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -62,8 +62,8 @@
       "height": 120,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -73,8 +73,8 @@
       "height": 170,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     },
     {
@@ -84,8 +84,8 @@
       "height": 420,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
-      "travel_speed": 100
+      "boardType": 0,
+      "travel_speed": 100,
       "rotary_axis": "Y"
     }
   ]

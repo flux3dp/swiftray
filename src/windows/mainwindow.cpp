@@ -69,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setScaleBlock();
   setModeBlock();
   setConnectionToolBar();
-  showHighSpeedWarning();//to show warning window
+  // showHighSpeedWarning();//to show warning window
 }
 
 void MainWindow::show() {

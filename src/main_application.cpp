@@ -412,6 +412,7 @@ void MainApplication::initialPreset() {
   if (obj["data"].isNull()) {
     preset_settings->setPresets(origin_preset);
     savePreset();
+    settings_.setValue("preset/index", preset_index_);
   } else {
     preset_settings->loadPreset(obj);
     QVariant old_index = settings_.value("preset/index", 0);
@@ -503,6 +504,8 @@ void MainApplication::initialMachine() {
   QJsonObject obj = settings_.value("machines/machines").toJsonObject();
   if (obj["data"].isNull()) {
     MachineSettings::MachineParam machine = MachineSettings::findPreset("Lazervida", "Lazervida");
+    machine.name = "Lazervida";
+    machine.is_high_speed_mode = true;
     machine_settings->addMachine(machine);
     saveMachine();
     machine_index_ = 0;
