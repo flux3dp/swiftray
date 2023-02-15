@@ -557,6 +557,14 @@ MachineSettings::MachineParam MainApplication::getMachineParam() {
   return machine_settings->getTargetMachine(machine_index_);
 }
 
+void MainApplication::addMachine(MachineSettings::MachineParam new_machine) {
+  MachineSettings* machine_settings = &MachineSettings::getInstance();
+  machine_settings->addMachine(new_machine);
+  machine_index_ = machine_settings->getMachines().size()-1;
+  saveMachine();
+  Q_EMIT editMachineIndex(machine_index_);
+}
+
 void MainApplication::updateMachineIndex(int machine_index) {
   MachineSettings* machine_settings = &MachineSettings::getInstance();
   if(machine_index < machine_settings->getMachines().size()) {

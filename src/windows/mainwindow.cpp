@@ -1202,8 +1202,8 @@ void MainWindow::registerEvents() {
       restoreState(settings.value("window/windowState").toByteArray());
   });
   // Complex callbacks
-  connect(welcome_dialog_, &WelcomeDialog::updateCurrentMachineIndex, [=](int machine_index) {
-    mainApp->updateMachineIndex(machine_index);
+  connect(welcome_dialog_, &WelcomeDialog::addNewMachine, [=](MachineSettings::MachineParam new_param) {
+    mainApp->addMachine(new_param);
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
     QSettings privacy_settings;

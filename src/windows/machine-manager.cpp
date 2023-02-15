@@ -5,6 +5,7 @@
 #include <settings/machine-settings.h>
 #include "machine-manager.h"
 #include "ui_machine-manager.h"
+#include <windows/welcome-dialog.h>
 
 MachineManager::MachineManager(QWidget *parent, int machine_index) :
      QDialog(parent),
@@ -57,14 +58,20 @@ void MachineManager::registerEvents() {
   connect(this, &QDialog::accepted, this, &MachineManager::save);
 
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
-    MachineSettings::MachineParam new_machine;
-    auto item = new QListWidgetItem(new_machine.name);
-    item->setFlags(item->flags() | Qt::ItemIsEditable);
-    item->setData(Qt::UserRole, new_machine.toJson());
-    ui->machineList->addItem(item);
-    ui->machineList->scrollToBottom();
-    ui->machineList->setCurrentRow(ui->machineList->count() - 1);
-    ui->removeBtn->setEnabled(true);
+    WelcomeDialog* machine_setup = new WelcomeDialog(this);
+    machine_setup->setupMachine();
+    connect(machine_setup, &WelcomeDialog::addNewMachine, [=](MachineSettings::MachineParam new_param) {
+      auto item = new QListWidgetItem(new_param.name);
+      item->setFlags(item->flags() | Qt::ItemIsEditable);
+      item->setData(Qt::UserRole, new_param.toJson());
+      ui->machineList->addItem(item);
+      ui->machineList->scrollToBottom();
+      ui->machineList->setCurrentRow(ui->machineList->count() - 1);
+      ui->removeBtn->setEnabled(true);
+    });
+    machine_setup->show();
+    machine_setup->activateWindow();
+    machine_setup->raise();
   });
 
   connect(ui->removeBtn, &QAbstractButton::clicked, [=]() {
@@ -203,6 +210,7 @@ void MachineManager::registerEvents() {
 };
 
 void MachineManager::setMachineIndex(int index) {
+  loadSettings();
   ui->machineList->setCurrentRow(index);
 }
 

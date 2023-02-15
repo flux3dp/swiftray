@@ -12,9 +12,10 @@ Q_OBJECT
 public:
   explicit WelcomeDialog(QWidget *parent);
   ~WelcomeDialog() = default;
+  void setupMachine();
 
 Q_SIGNALS:
-  void updateCurrentMachineIndex(int machine_index);
+  void addNewMachine(MachineSettings::MachineParam new_param);
 
 public Q_SLOTS:
   void createStandardProfile(const QString brand, const QString model);

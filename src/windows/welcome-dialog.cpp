@@ -17,6 +17,13 @@ WelcomeDialog::WelcomeDialog(QWidget *parent) :
                    this, SLOT(createOtherProfile(QString, int, int, int)));
 }
 
+void WelcomeDialog::setupMachine() {
+  QObject *item = widget_->rootObject();
+  QVariant returnedValue;
+  QMetaObject::invokeMethod(item, "setupMachine",
+        Q_RETURN_ARG(QVariant, returnedValue));
+}
+
 void WelcomeDialog::createStandardProfile(const QString brand, const QString model) {
   qInfo() << "Standard Profile" << brand << model;
   auto m = MachineSettings::findPreset(brand, model);
@@ -27,9 +34,7 @@ void WelcomeDialog::createStandardProfile(const QString brand, const QString mod
   if(found!=std::string::npos) {
     m.is_high_speed_mode = true;
   }
-  machine_settings->addMachine(m);
-  machine_settings->save();
-  Q_EMIT updateCurrentMachineIndex(machine_settings->getMachines().size()-1);
+  Q_EMIT addNewMachine(m);
 }
 
 void WelcomeDialog::createOtherProfile(const QString name, int width, int height, int origin) {
@@ -44,9 +49,7 @@ void WelcomeDialog::createOtherProfile(const QString name, int width, int height
   if(found!=std::string::npos) {
     m.is_high_speed_mode = true;
   }
-  machine_settings->addMachine(m);
-  machine_settings->save();
-  Q_EMIT updateCurrentMachineIndex(machine_settings->getMachines().size()-1);
+  Q_EMIT addNewMachine(m);
 }
 
 void WelcomeDialog::close() {

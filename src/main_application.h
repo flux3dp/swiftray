@@ -55,6 +55,7 @@ public:
   char getRotaryAxis();
   double getTravelSpeed();
   MachineSettings::MachineParam getMachineParam();
+  void addMachine(MachineSettings::MachineParam new_machine);
   //about rotary
   int getRotaryIndex();
   bool isRotaryMode();
