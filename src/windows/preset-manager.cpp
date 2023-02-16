@@ -74,7 +74,7 @@ void PresetManager::registerEvents() {
       auto item = ui->presetList->currentItem();
       ui->presetList->takeItem(ui->presetList->row(item));
     }
-    if(ui->presetList->count() == 1) {
+    if(ui->presetList->count() <= 3) {
       ui->removePresetBtn->setEnabled(false);
     }
   });
@@ -82,15 +82,8 @@ void PresetManager::registerEvents() {
   connect(ui->paramList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
     current_param_ = item;
     if (item == nullptr) {
-      ui->speedSpinBox->setEnabled(false);
-      ui->powerSpinBox->setEnabled(false);
-      ui->repeatSpinBox->setEnabled(false);
-      ui->removeParamBtn->setEnabled(false);
       return;
     }
-    ui->speedSpinBox->setEnabled(true);
-    ui->powerSpinBox->setEnabled(true);
-    ui->repeatSpinBox->setEnabled(true);
     auto obj = item->data(Qt::UserRole).toJsonObject();
     auto param = PresetSettings::Param::fromJson(obj);
     ui->paramTitle->setText(param.name);
@@ -98,6 +91,12 @@ void PresetManager::registerEvents() {
     ui->powerSpinBox->setValue(param.power);
     ui->repeatSpinBox->setValue(param.repeat);
     ui->stepHeightSpinBox->setValue(param.step_height);
+    if (item->text() != param.name) {
+      param.name = item->text();
+      item->setData(Qt::UserRole, param.toJson());
+      ui->paramTitle->setText(param.name);
+    }
+    updatePresetData();
   });
 
   connect(ui->presetList, &QListWidget::currentItemChanged, [=](QListWidgetItem *item, QListWidgetItem *previous) {
@@ -120,19 +119,6 @@ void PresetManager::registerEvents() {
       preset.name = item->text();
       item->setData(Qt::UserRole, preset.toJson());
       ui->presetTitle->setText(preset.name);
-    }
-  });
-
-  connect(ui->paramList, &QListWidget::itemChanged, [=](QListWidgetItem *item) {
-    current_param_ = item;
-    if (item == nullptr) return;
-    auto obj = item->data(Qt::UserRole).toJsonObject();
-    auto param = PresetSettings::Param::fromJson(obj);
-    if (item->text() != param.name) {
-      param.name = item->text();
-      item->setData(Qt::UserRole, param.toJson());
-      ui->paramTitle->setText(param.name);
-      updatePresetData();
     }
   });
 
@@ -232,8 +218,47 @@ void PresetManager::updatePresetData() {
     auto data = ui->paramList->item(i)->data(Qt::UserRole).toJsonObject();
     p.params << PresetSettings::Param::fromJson(data);
   }
-  if(ui->paramList->count() == 0) {
-    ui->removeParamBtn->setEnabled(false);
+  switch(ui->presetList->currentRow()) {
+    case 0:
+      if(ui->paramList->currentRow() < 5) {
+        ui->removeParamBtn->setEnabled(false);
+        ui->speedSpinBox->setEnabled(false);
+        ui->powerSpinBox->setEnabled(false);
+        ui->repeatSpinBox->setEnabled(false);
+      } else {
+        ui->removeParamBtn->setEnabled(true);
+        ui->speedSpinBox->setEnabled(true);
+        ui->powerSpinBox->setEnabled(true);
+        ui->repeatSpinBox->setEnabled(true);
+      }
+      break;
+    case 1:
+    case 2:
+      if(ui->paramList->currentRow() < 15) {
+        ui->removeParamBtn->setEnabled(false);
+        ui->speedSpinBox->setEnabled(false);
+        ui->powerSpinBox->setEnabled(false);
+        ui->repeatSpinBox->setEnabled(false);
+      } else {
+        ui->removeParamBtn->setEnabled(true);
+        ui->speedSpinBox->setEnabled(true);
+        ui->powerSpinBox->setEnabled(true);
+        ui->repeatSpinBox->setEnabled(true);
+      }
+      break;
+    default:
+      if(ui->paramList->count() == 0) {
+        ui->removeParamBtn->setEnabled(false);
+        ui->speedSpinBox->setEnabled(false);
+        ui->powerSpinBox->setEnabled(false);
+        ui->repeatSpinBox->setEnabled(false);
+      } else {
+        ui->removeParamBtn->setEnabled(true);
+        ui->speedSpinBox->setEnabled(true);
+        ui->powerSpinBox->setEnabled(true);
+        ui->repeatSpinBox->setEnabled(true);
+      }
+      break;
   }
   ui->presetList->currentItem()->setData(Qt::UserRole, p.toJson());
 }
@@ -259,6 +284,11 @@ void PresetManager::showPreset() {
     item->setData(Qt::UserRole, param.toJson());
     item->setFlags(item->flags() | Qt::ItemIsEditable);
     ui->paramList->addItem(item);
+  }
+  if(ui->presetList->currentRow() < 3) {
+    ui->removePresetBtn->setEnabled(false);
+  } else {
+    ui->removePresetBtn->setEnabled(true);
   }
   if(ui->paramList->count() == 0 || current_param_ == nullptr) {
     ui->removeParamBtn->setEnabled(false);
