@@ -147,8 +147,6 @@ private Q_SLOTS:
 
   void showCanvasPopMenu();
 
-  void showWelcomeDialog();
-
   void showJoggingPanel();
 
   void genPreviewWindow();

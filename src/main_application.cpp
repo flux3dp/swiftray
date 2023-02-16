@@ -19,6 +19,12 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   mainApp = this;
   QVariant upload_code = settings_.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
+  QVariant newstart_code = settings_.value("window/newstart", 0);
+  is_first_time_ = false;
+  if(!newstart_code.toInt()) {
+    is_first_time_ = true;
+    settings_.setValue("window/newstart", 1);
+  }
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   connect(this, &MainApplication::softwareUpdateQuit, this, &QApplication::quit, Qt::QueuedConnection);
@@ -64,6 +70,14 @@ MainApplication::~MainApplication()
 
 bool MainApplication::isUploadEnable() {
   return is_upload_enable_;
+}
+
+bool MainApplication::isFirstTime() {
+  if(is_first_time_) {
+    is_first_time_ = false;
+    return true;
+  }
+  return false;
 }
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)

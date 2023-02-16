@@ -19,6 +19,7 @@ public:
   explicit MainApplication(int &argc, char **argv);
   ~MainApplication();
 
+  bool isFirstTime();
   bool isUploadEnable();
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   void rejectSoftwareUpdate() { software_update_ok_ = false; }
@@ -124,6 +125,7 @@ private:
   bool software_update_ok_ = false;
 #endif
   QSettings settings_;
+  bool is_first_time_;
   bool is_upload_enable_;
   //setting of current font
   QFont font_;

@@ -65,11 +65,9 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarTransform();
   //setToolbarImage();
   Q_EMIT canvas_->selectionsChanged(QList<ShapePtr>());
-  showWelcomeDialog();//to show welcom window
   setScaleBlock();
   setModeBlock();
   setConnectionToolBar();
-  // showHighSpeedWarning();//to show warning window
 }
 
 void MainWindow::show() {
@@ -172,6 +170,12 @@ void MainWindow::loadSettings() {
     sentry_user_consent_revoke();
   }
 #endif
+  if(mainApp->isFirstTime()) {
+    welcome_dialog_->setWindowModality(Qt::ApplicationModal);
+    welcome_dialog_->show();
+    welcome_dialog_->activateWindow();
+    welcome_dialog_->raise();
+  }
   preferences_window_->setUpload(mainApp->isUploadEnable());
 }
 
@@ -1206,14 +1210,12 @@ void MainWindow::registerEvents() {
     mainApp->addMachine(new_param);
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
-    QSettings privacy_settings;
-    QVariant newstart_code = privacy_settings.value("window/newstart", 0);
-    if(!newstart_code.toInt()) {
-      privacy_window_->show();
-      privacy_window_->activateWindow();
-      privacy_window_->raise();
-      privacy_settings.setValue("window/newstart", 1);
-    }
+    privacy_window_->show();
+    privacy_window_->activateWindow();
+    privacy_window_->raise();
+  });
+  connect(privacy_window_, &PrivacyWindow::finished, [=](int result) {
+    showHighSpeedWarning();//to show warning window
   });
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
   connect(ui->actionPreview, &QAction::triggered, this, &MainWindow::genPreviewWindow);
@@ -2389,15 +2391,6 @@ void MainWindow::showCanvasPopMenu() {
   if(popMenu_){
       popMenu_->exec(QCursor::pos());
   }
-}
-
-void MainWindow::showWelcomeDialog() {
-  //if (!MachineSettings().machines().empty()) return;
-  QTimer::singleShot(0, [=]() {
-    welcome_dialog_->show();
-    welcome_dialog_->activateWindow();
-    welcome_dialog_->raise();
-  });
 }
 
 void MainWindow::showJoggingPanel() {
