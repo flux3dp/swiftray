@@ -2,6 +2,7 @@
 #include "ui_rotary_setup.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <QMessageBox>
 #include <QSettings>
 #include <windows/osxwindow.h>
 
@@ -96,6 +97,31 @@ RotarySetup::RotarySetup(RotarySetting setting, QWidget *parent) :
     ui->deviceComboBox->blockSignals(true);
     ui->deviceComboBox->setCurrentIndex(current_index);
     ui->deviceComboBox->blockSignals(false);
+    ui->deleteButton->setEnabled(true);
+  });
+  connect(ui->deleteButton, &QAbstractButton::clicked, [=]() {
+    int current_index = ui->deviceComboBox->currentIndex();
+    QMessageBox msgBox;
+    msgBox.setText(tr("Do you want to delete current rotary?"));
+    msgBox.addButton(tr("Yes"), QMessageBox::AcceptRole);
+    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    int ret = msgBox.exec();
+    switch (ret) {
+      case QMessageBox::AcceptRole:
+        rotary_list_.removeAt(current_index);
+        if(current_index > 0) current_index--;
+        resetDeviceList(rotary_list_);
+        ui->deviceComboBox->blockSignals(true);
+        ui->deviceComboBox->setCurrentIndex(current_index);
+        ui->deviceComboBox->blockSignals(false);
+        updateRotarySelect(current_index);
+        break;
+      case QMessageBox::DestructiveRole:
+          // Cancel was clicked
+      default:
+          // should never be reached
+          break;
+    }
   });
 
   connect(ui->buttonBox, &QDialogButtonBox::accepted, [=]() {
@@ -198,6 +224,11 @@ void RotarySetup::resetDeviceList(const QList<RotarySettings::RotaryParam> &rota
   }
   ui->deviceComboBox->addItem("Add New Rotary");
   ui->deviceComboBox->blockSignals(false);
+  if(ui->deviceComboBox->count() > 2) {
+    ui->deleteButton->setEnabled(true);
+  } else {
+    ui->deleteButton->setEnabled(false);
+  }
 }
 
 void RotarySetup::setRotaryIndex(int rotary_index) {
