@@ -293,14 +293,8 @@
            </property>
            <item>
             <widget class="QListWidget" name="paramList">
-             <property name="dragEnabled">
-              <bool>true</bool>
-             </property>
              <property name="dragDropOverwriteMode">
               <bool>false</bool>
-             </property>
-             <property name="dragDropMode">
-              <enum>QAbstractItemView::DragDrop</enum>
              </property>
              <property name="defaultDropAction">
               <enum>Qt::MoveAction</enum>

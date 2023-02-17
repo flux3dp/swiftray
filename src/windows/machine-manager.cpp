@@ -58,6 +58,7 @@ void MachineManager::registerEvents() {
   connect(this, &QDialog::accepted, this, &MachineManager::save);
 
   connect(ui->addBtn, &QAbstractButton::clicked, [=]() {
+    ui->addBtn->setEnabled(false);
     WelcomeDialog* machine_setup = new WelcomeDialog(this);
     machine_setup->setupMachine();
     connect(machine_setup, &WelcomeDialog::addNewMachine, [=](MachineSettings::MachineParam new_param) {
@@ -68,6 +69,9 @@ void MachineManager::registerEvents() {
       ui->machineList->scrollToBottom();
       ui->machineList->setCurrentRow(ui->machineList->count() - 1);
       ui->removeBtn->setEnabled(true);
+    });
+    connect(machine_setup, &WelcomeDialog::finished, [=](int result) {
+      ui->addBtn->setEnabled(true);
     });
     machine_setup->show();
     machine_setup->activateWindow();
