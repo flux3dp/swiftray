@@ -38,6 +38,8 @@ void MachineManager::loadSettings() {
   }
   if(ui->machineList->count() == 1) {
     ui->removeBtn->setEnabled(false);
+  } else {
+    ui->removeBtn->setEnabled(true);
   }
   ui->machineList->blockSignals(false);
 
