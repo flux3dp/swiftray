@@ -124,7 +124,6 @@ private:
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   bool software_update_ok_ = false;
 #endif
-  QSettings settings_;
   bool is_first_time_;
   bool is_upload_enable_;
   //setting of current font

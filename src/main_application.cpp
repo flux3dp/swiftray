@@ -19,14 +19,15 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     QApplication(argc, argv)
 {
   mainApp = this;
-  QVariant upload_code = settings_.value("window/upload", 0);
+  QSettings settings("flux", "swiftray");
+  QVariant upload_code = settings.value("window/upload", 0);
   is_upload_enable_ = upload_code.toBool();
-  QVariant newstart_code = settings_.value("window/newstart", 0);
+  QVariant newstart_code = settings.value("window/newstart");
   is_first_time_ = false;
   if(!newstart_code.toInt()) {
     is_first_time_ = true;
-    settings_.setValue("window/newstart", 1);
   }
+  settings.setValue("window/newstart", 1);
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   connect(this, &MainApplication::softwareUpdateQuit, this, &QApplication::quit, Qt::QueuedConnection);
@@ -126,7 +127,8 @@ extern "C" void software_update_shutdown_request_callback(void) {
 
 void MainApplication::updateUploadEnable(bool enable_upload) {
   is_upload_enable_ = enable_upload;
-  settings_.setValue("window/upload", is_upload_enable_);
+  QSettings settings("flux", "swiftray");
+  settings.setValue("window/upload", is_upload_enable_);
   Q_EMIT editUploadEnable(is_upload_enable_);
 }
 
@@ -424,18 +426,19 @@ void MainApplication::initialPreset() {
   }
   preset_settings->setOriginPresets(origin_preset);
   
-  QJsonObject obj = settings_.value("preset/user").toJsonObject();
+  QSettings settings("flux", "swiftray");
+  QJsonObject obj = settings.value("preset/user").toJsonObject();
   if (obj["data"].isNull()) {
     preset_settings->setPresets(origin_preset);
     savePreset();
-    settings_.setValue("preset/index", preset_index_);
+    settings.setValue("preset/index", preset_index_);
   } else {
     preset_settings->loadPreset(obj);
-    QVariant old_index = settings_.value("preset/index", 0);
+    QVariant old_index = settings.value("preset/index", 0);
     if(!old_index.isNull() && old_index.toInt() < preset_settings->presets().size()) {
       preset_index_ = old_index.toInt();
     } else {
-      settings_.setValue("preset/index", preset_index_);
+      settings.setValue("preset/index", preset_index_);
     }
   }
   connect(preset_settings, &PresetSettings::savePreset, [=](QJsonObject save_obj) {
@@ -476,7 +479,8 @@ void MainApplication::updatePresetIndex(int preset_index, int param_index) {
   PresetSettings* preset_settings = &PresetSettings::getInstance();
   if(preset_index < preset_settings->presets().size()) {
     preset_index_ = preset_index;
-    settings_.setValue("preset/index", preset_index_);
+    QSettings settings("flux", "swiftray");
+    settings.setValue("preset/index", preset_index_);
     PresetSettings::Preset current_preset = preset_settings->getTargetPreset(preset_index_);
     Q_EMIT editFramingPower(current_preset.framing_power);
     Q_EMIT editPulsePower(current_preset.pulse_power);
@@ -511,13 +515,15 @@ void MainApplication::updatePulsePower(double pulse_power) {
 
 void MainApplication::savePreset() {
   PresetSettings* preset_settings = &PresetSettings::getInstance();
-  settings_.setValue("preset/user", preset_settings->toJson());
+  QSettings settings("flux", "swiftray");
+  settings.setValue("preset/user", preset_settings->toJson());
 }
 
 //about machine
 void MainApplication::initialMachine() {
   MachineSettings* machine_settings = &MachineSettings::getInstance();
-  QJsonObject obj = settings_.value("machines/machines").toJsonObject();
+  QSettings settings("flux", "swiftray");
+  QJsonObject obj = settings.value("machines/machines").toJsonObject();
   if (obj["data"].isNull()) {
     MachineSettings::MachineParam machine = MachineSettings::findPreset("Lazervida", "Lazervida");
     machine.name = "Lazervida";
@@ -525,15 +531,15 @@ void MainApplication::initialMachine() {
     machine_settings->addMachine(machine);
     saveMachine();
     machine_index_ = 0;
-    settings_.setValue("machines/index", machine_index_);
+    settings.setValue("machines/index", machine_index_);
   } else {
     machine_settings->loadJson(obj);
-    QVariant old_index = settings_.value("machines/index", 0);
+    QVariant old_index = settings.value("machines/index", 0);
     if(!old_index.isNull() && old_index.toInt() < machine_settings->getMachines().size()) {
       machine_index_ = old_index.toInt();
     } else {
       machine_index_ = 0;
-      settings_.setValue("machines/index", machine_index_);
+      settings.setValue("machines/index", machine_index_);
     }
   }
   connect(machine_settings, &MachineSettings::saveMachines, [=](QJsonObject save_obj) {
@@ -585,7 +591,8 @@ void MainApplication::updateMachineIndex(int machine_index) {
   MachineSettings* machine_settings = &MachineSettings::getInstance();
   if(machine_index < machine_settings->getMachines().size()) {
     machine_index_ = machine_index;
-    settings_.setValue("machines/index", machine_index_);
+    QSettings settings("flux", "swiftray");
+    settings.setValue("machines/index", machine_index_);
     MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
     if(!rotary_mode_) {
       travel_speed_ = current_machine.travel_speed;
@@ -660,38 +667,40 @@ void MainApplication::updateMachineHighSpeedMode(bool is_high_speed_mode) {
 
 void MainApplication::saveMachine() {
   MachineSettings* machine_settings = &MachineSettings::getInstance();
-  settings_.setValue("machines/machines", machine_settings->toJson());
+  QSettings settings("flux", "swiftray");
+  settings.setValue("machines/machines", machine_settings->toJson());
 }
 
 //about rotary
 void MainApplication::initialRotary() {
   mirror_mode_ = false;
   RotarySettings* rotary_settings = &RotarySettings::getInstance();
-  QJsonObject obj = settings_.value("rotarys/rotarys").toJsonObject();
+  QSettings settings("flux", "swiftray");
+  QJsonObject obj = settings.value("rotarys/rotarys").toJsonObject();
   if (obj["data"].isNull()) {
     RotarySettings::RotaryParam rotary;
     rotary.name = "Lazervida Rotary";
     rotary_settings->addRotary(rotary);
     saveRotary();
     rotary_index_ = 0;
-    settings_.setValue("rotarys/index", rotary_index_);
+    settings.setValue("rotarys/index", rotary_index_);
     rotary_circumference_ = working_range_.height();
-    settings_.setValue("rotarys/circumference", rotary_circumference_);
+    settings.setValue("rotarys/circumference", rotary_circumference_);
   } else {
     rotary_settings->loadRotary(obj);
-    QVariant old_index = settings_.value("rotarys/index", 0);
+    QVariant old_index = settings.value("rotarys/index", 0);
     if(!old_index.isNull() && old_index.toInt() < rotary_settings->rotarys().size()) {
       rotary_index_ = old_index.toInt();
     } else {
       rotary_index_ = 0;
-      settings_.setValue("rotarys/index", rotary_index_);
+      settings.setValue("rotarys/index", rotary_index_);
     }
-    QVariant old_circumference = settings_.value("rotarys/circumference", 0);
+    QVariant old_circumference = settings.value("rotarys/circumference", 0);
     if(!old_circumference.isNull()) {
       rotary_circumference_ = old_circumference.toDouble();
     } else {
       rotary_circumference_ = working_range_.height();
-      settings_.setValue("rotarys/circumference", rotary_circumference_);
+      settings.setValue("rotarys/circumference", rotary_circumference_);
     }
   }
   connect(rotary_settings, &RotarySettings::saveRotary, [=](QJsonObject save_obj) {
@@ -730,7 +739,8 @@ void MainApplication::updateRotaryIndex(int rotary_index) {
   if(rotary_index < rotary_settings->rotarys().size()) {
     rotary_index_ = rotary_index;
     RotarySettings::RotaryParam current_rotary = rotary_settings->getTargetRotary(rotary_index_);
-    settings_.setValue("rotarys/index", rotary_index_);
+    QSettings settings("flux", "swiftray");
+    settings.setValue("rotarys/index", rotary_index_);
     if(rotary_mode_) travel_speed_ = current_rotary.travel_speed;
     Q_EMIT editRotaryTravelSpeed(current_rotary.travel_speed);
   }
@@ -779,7 +789,8 @@ void MainApplication::updateCircumference(double circumference) {
   MachineSettings::MachineParam current_machine = machine_settings->getTargetMachine(machine_index_);
   if(circumference > 0) {
     rotary_circumference_ = circumference;
-    settings_.setValue("rotarys/circumference", rotary_circumference_);
+    QSettings settings("flux", "swiftray");
+    settings.setValue("rotarys/circumference", rotary_circumference_);
     if(rotary_mode_) {
       working_range_ = QSize(current_machine.width, rotary_circumference_);
       Q_EMIT editWorkingRange(working_range_);
@@ -812,5 +823,6 @@ void MainApplication::calculateRotaryScale() {
 
 void MainApplication::saveRotary() {
   RotarySettings* rotary_settings = &RotarySettings::getInstance();
-  settings_.setValue("rotarys/rotarys", rotary_settings->toJson());
+  QSettings settings("flux", "swiftray");
+  settings.setValue("rotarys/rotarys", rotary_settings->toJson());
 }
