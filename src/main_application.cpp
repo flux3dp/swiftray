@@ -1,4 +1,6 @@
 #include "main_application.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <utils/software_update.h>
 #include <shape/bitmap-shape.h>
 #include <shape/text-shape.h>
