@@ -25,7 +25,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   }
 
   connect(ui->buttonBox, &QDialogButtonBox::accepted, [=](){
-    QSettings settings;
+    QSettings settings("flux", "swiftray");
     QVariant language_code = settings.value("window/language", 0);
     QVariant font_size = settings.value("window/font_size", 0);
     if (language_code.toInt() != ui->comboBox->currentIndex() || font_size.toInt() != ui->horizontalSliderFontSize->value()) {
@@ -65,7 +65,7 @@ void PreferencesWindow::setLanguageComboBox() {
   ui->comboBox->addItem(QString::fromUtf16(u"\u4e2d\u6587"));
   // \u65e5\u672c\u8a9e 為“日本語”unicode
   ui->comboBox->addItem(QString::fromUtf16(u"\u65e5\u672c\u8a9e"));
-  QSettings settings;
+  QSettings settings("flux", "swiftray");
   QVariant language_code = settings.value("window/language", 0);
   ui->comboBox->setCurrentIndex(language_code.toInt());
 }

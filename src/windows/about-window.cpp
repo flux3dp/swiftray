@@ -1,6 +1,5 @@
 #include<QDebug>
 #include <QMessageBox>
-#include <QSettings>
 #include "about-window.h"
 #include "ui_about-window.h"
 #include <QGraphicsItem>

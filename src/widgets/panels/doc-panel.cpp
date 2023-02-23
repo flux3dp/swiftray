@@ -61,16 +61,6 @@ void DocPanel::syncAdvancedSettingsUI() {
  * @brief Update UI (panel & scene) with current settings
  */
 void DocPanel::loadSettings() {
-  QSettings settings;
-  //these should add in machine
-  QVariant rotary_speed = settings.value("rotary/travelSpeed", 0);
-  if(rotary_speed.toDouble() > 0) {
-    ui->rotarySpinBox->setValue(rotary_speed.toDouble());
-  } else {
-    ui->rotarySpinBox->setValue(5);
-    settings.setValue("rotary/travelSpeed", 5);
-  }
-
   // Load DPI setting (select appropriate dpi item index)
   syncDPISettingsUI();
   syncAdvancedSettingsUI();
@@ -128,8 +118,6 @@ void DocPanel::registerEvents() {
     Q_EMIT updateTravelSpeed(value);
   });
   connect(ui->rotarySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
-    // QSettings settings;
-    // settings.setValue("rotary/travelSpeed", value);
     Q_EMIT updateRotarySpeed(value);
   });
 }

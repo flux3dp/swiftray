@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSettings>
 
 
 MainApplication *mainApp = NULL;

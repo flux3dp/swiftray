@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QSettings>
 #include <QJsonDocument>
 #include <QPointF>
 #include <QIcon>

@@ -7,7 +7,6 @@
 #include <QFont>
 #include <QList>
 #include <QSet>
-#include <QSettings>
 #include <shape/shape.h>
 #include <settings/machine-settings.h>
 #include <settings/rotary-settings.h>

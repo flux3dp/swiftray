@@ -95,7 +95,7 @@ void MainWindow::showEvent(QShowEvent *event)
 
 void MainWindow::loadSettings() {
   #ifdef Q_OS_MACOS
-    QSettings settings;
+    QSettings settings("flux", "swiftray");
     restoreGeometry(settings.value("window/geometry").toByteArray());
     if (!restoreState(settings.value("window/windowState").toByteArray())) {
       QSettings classic_settings(":/classicUI.ini", QSettings::IniFormat);
@@ -1556,7 +1556,7 @@ void MainWindow::registerEvents() {
     doc_panel_->setMachineIndex(machine_index);
     active_machine.applyMachineParam(mainApp->getMachineParam());
   });
-  connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](int travel_speed) {
+  connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](double travel_speed) {
     doc_panel_->setTravelSpeed(travel_speed);
   });
   connect(mainApp, &MainApplication::editWorkingRange, this, &MainWindow::updateCanvasSize);

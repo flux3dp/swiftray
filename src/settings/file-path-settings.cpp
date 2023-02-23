@@ -6,7 +6,7 @@
 
 QString FilePathSettings::getDefaultFilePath() {
   QString default_file_dir;
-  QSettings settings;
+  QSettings settings("flux", "swiftray");
   if ( ! settings.contains("defaultFileDir")) { // fall back to desktop path
     QStringList desktop_dir = QStandardPaths::standardLocations(
             QStandardPaths::StandardLocation::DesktopLocation);
@@ -20,7 +20,7 @@ QString FilePathSettings::getDefaultFilePath() {
 }
 
 void FilePathSettings::setDefaultFilePath(QString path) {
-  QSettings settings;
+  QSettings settings("flux", "swiftray");
   if (QDir(path).exists()) {
     settings.setValue("defaultFileDir", path);
   } else { // fall back to desktop path

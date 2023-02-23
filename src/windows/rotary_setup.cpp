@@ -3,7 +3,6 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <QMessageBox>
-#include <QSettings>
 #include <windows/osxwindow.h>
 
 #include <QDebug>
