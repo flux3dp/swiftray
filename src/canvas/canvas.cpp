@@ -203,6 +203,7 @@ void Canvas::loadDXF(QString file_name) {
 }
 
 void Canvas::paint(QPainter *painter) {
+  return;
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
@@ -330,7 +331,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
   }
 
   if (mode() == Mode::Selecting) {
-    ShapePtr hit = document().hitTest(canvas_coord);
+    ShapePtr hit = document().hitTest(canvas_coord, true);
 
     if (hit != nullptr) {
       Q_EMIT cursorChanged(Qt::ClosedHandCursor);
@@ -399,7 +400,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  ShapePtr hit = document().hitTest(canvas_coord);
+  ShapePtr hit = document().hitTest(canvas_coord, true);
   if (mode() == Mode::Selecting) {
     if (hit != nullptr) {
       switch (hit->type()) {
@@ -532,6 +533,7 @@ bool Canvas::event(QEvent *e) {
 
   switch (e->type()) {
     case QEvent::HoverMove:
+      break;
       switch (mode()) {
         case Mode::TextDrawing:
           cursor_shape = Qt::IBeamCursor;

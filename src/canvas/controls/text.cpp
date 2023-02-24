@@ -19,7 +19,7 @@ bool Text::isActive() {
 
 bool Text::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  ShapePtr hit = document().hitTest(canvas_coord);
+  ShapePtr hit = document().hitTest(canvas_coord, true);
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
     if(hit == nullptr || hit->type() != Shape::Type::Text) {

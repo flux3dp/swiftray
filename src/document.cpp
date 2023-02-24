@@ -234,7 +234,7 @@ void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
   layers_mutex_.unlock();
 }
 
-ShapePtr Document::hitTest(QPointF canvas_coord) {
+ShapePtr Document::hitTest(QPointF canvas_coord, bool is_select) {
   qreal smallest_area = std::numeric_limits<qreal>::max();
   ShapePtr selected_shape = nullptr;
   for (auto &layer : layers()) {
@@ -243,6 +243,7 @@ ShapePtr Document::hitTest(QPointF canvas_coord) {
     }
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
+        if(!is_select) return shape;
         // NOTE: Select the shape with the smallest bounding box
         // Alwyas iterate through all shapes -> Performance should be considered carefully
         qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();

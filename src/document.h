@@ -34,7 +34,7 @@ public:
   void setSelections(const QList<ShapePtr> &new_selections);
 
   // Test if any shape in the document hit by mouse
-  ShapePtr hitTest(QPointF canvas_coord);
+  ShapePtr hitTest(QPointF canvas_coord, bool is_select = false);
 
   // Layer functions:
 

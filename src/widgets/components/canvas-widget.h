@@ -6,12 +6,15 @@ class CanvasWidget: public QQuickWidget {
 Q_OBJECT
 
 public:
-    CanvasWidget(QWidget *parent = nullptr);
+  CanvasWidget(QWidget *parent = nullptr);
 protected:
-    void dragEnterEvent(QDragEnterEvent *event) override;
-    void dragLeaveEvent(QDragLeaveEvent *event) override;
-    void dragMoveEvent(QDragMoveEvent *event) override;
-    void dropEvent(QDropEvent *event) override;
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragLeaveEvent(QDragLeaveEvent *event) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
+  bool event(QEvent *e) override;
 Q_SIGNALS:
-    void dropFile(QPoint point, QString filename);
+  void dropFile(QPoint point, QString filename);
+  void enterCanvasWidget();
+  void leaveCanvasWidget();
 };
