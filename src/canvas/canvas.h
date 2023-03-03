@@ -112,6 +112,10 @@ public:
 
   void setCurrentPosition(bool current_position) {current_position_ = current_position;}
 
+  void updateCursor();
+
+  void setHoverMove(bool in_canvas);
+  
 public Q_SLOTS:
 
   void editCut();
@@ -261,6 +265,7 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
+  bool is_in_canvas_ = false;
   bool is_holding_space_ = false;
   bool is_holding_ctrl_  = false;
   bool is_holding_middle_button_ = false;

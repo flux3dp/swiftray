@@ -180,7 +180,7 @@ void Transform::applyMove(bool temporarily) {
   }
 }
 
-const QPointF *Transform::controlPoints() {
+void Transform::controlPoints() {
   QRectF bbox = boundingRect().translated(translate_to_apply_.x(),
                                           translate_to_apply_.y());
   QTransform transform =
@@ -208,8 +208,9 @@ const QPointF *Transform::controlPoints() {
   controls_[5] = transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
   controls_[6] = transform.map(bbox.bottomLeft());
   controls_[7] = transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
-  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);;
-  return controls_;
+  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) 
+                + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) 
+                - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);
 }
 
 Transform::Control Transform::hitTest(QPointF clickPoint,
@@ -331,7 +332,6 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   double current_angle;
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
-      Q_EMIT cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       if(direction_locked_) {
         current_angle = atan2 (translate_to_apply_.y(),translate_to_apply_.x()) * 180 / M_PI;
@@ -400,9 +400,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
 }
 
 bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-  Control cp =
-       hitTest(document().getCanvasCoord(e->pos()), 10 / document().scale());
-
+  Control cp = hitTest(document().getCanvasCoord(e->pos()), 10 / document().scale());
   switch (cp) {
     case Control::ROTATION:
       *cursor = Qt::CrossCursor;

@@ -191,6 +191,12 @@ void MainWindow::loadCanvas() {
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
   ui->quickWidget->show();
+  connect(ui->quickWidget, &CanvasWidget::enterCanvasWidget, [=]() {
+    canvas_->setHoverMove(true);
+    });
+  connect(ui->quickWidget, &CanvasWidget::leaveCanvasWidget, [=]() {
+    canvas_->setHoverMove(false);
+  });
   connect(ui->quickWidget, &CanvasWidget::dropFile,[=](QPoint point, QString filename) {
     QFile file(filename);
 

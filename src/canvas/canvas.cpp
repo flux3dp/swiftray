@@ -61,7 +61,7 @@ Canvas::Canvas(QQuickItem *parent)
 
   // Set main loop and timers
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
-  timer->start(16);
+  timer->start(16);//16 for about 60 fps
   volatility_timer.start();
 
   // Register controls
@@ -83,10 +83,6 @@ Canvas::Canvas(QQuickItem *parent)
   connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
 
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
-
-  connect(&ctrl_transform_, &Controls::Transform::cursorChanged, [=](Qt::CursorShape cursor) {
-    Q_EMIT cursorChanged(cursor);
-  });
 }
 
 Canvas::~Canvas() {
@@ -203,7 +199,7 @@ void Canvas::loadDXF(QString file_name) {
 }
 
 void Canvas::paint(QPainter *painter) {
-  return;
+  // return;
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
@@ -321,6 +317,10 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     is_holding_middle_button_ = true;
     return;
   }
+  if (e->button()==Qt::RightButton) {
+    is_pop_menu_showing_ = true;
+    return;
+  }
   if (is_holding_space_) {
     Q_EMIT cursorChanged(Qt::ClosedHandCursor);
   }
@@ -353,7 +353,6 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
   }
 
   if (is_holding_space_ || is_holding_middle_button_) {
-    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
     QPointF movement = (document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord()) 
                         * document().scale();
     QPointF new_scroll = document().mousePressedCanvasScroll() + movement;
@@ -382,6 +381,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
 
   if (e->button()==Qt::MiddleButton) {
     is_holding_middle_button_ = false;
+    updateCursor();
     return;
   }
 
@@ -526,59 +526,30 @@ bool Canvas::event(QEvent *e) {
   // qInfo() << "QEvent" << e;
   QNativeGestureEvent *nge;
   Qt::CursorShape cursor;
-  QPointF canvas_coord;
-  ShapePtr hit;
-  bool cursor_changed = false;
-  Qt::CursorShape cursor_shape;
-
   switch (e->type()) {
     case QEvent::HoverMove:
-      break;
-      switch (mode()) {
-        case Mode::TextDrawing:
-          cursor_shape = Qt::IBeamCursor;
-          cursor_changed = true;
-          break;
-        case Mode::LineDrawing:
-        case Mode::OvalDrawing:
-        case Mode::PolygonDrawing:
-        case Mode::RectDrawing:
-          cursor_shape = Qt::CrossCursor;
-          cursor_changed = true;
-          break;
-        default:
-          cursor_shape = Qt::ArrowCursor;
-          break;
-      }
-
+      if(!is_in_canvas_ || is_holding_middle_button_) return QQuickPaintedItem::event(e);
       for (auto &control : ctrls_) {
         if (control->isActive() &&
             control->hoverEvent(dynamic_cast<QHoverEvent *>(e), &cursor)) {
           // TODO (Hack this to mainwindow support global cursor)
           // Local cursor has a bug..
-          // setCursor(cursor);
-          cursor_shape = cursor;
-          cursor_changed = true;
-          break;
+          Q_EMIT cursorChanged(cursor);
+          return QQuickPaintedItem::event(e);
         }
       }
-      if(!cursor_changed) {
-        canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
-        hit = document().hitTest(canvas_coord);
+      if(mode_ == Mode::Selecting) {
+        QPointF canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
+        ShapePtr hit = document().hitTest(canvas_coord);
         if(hit != nullptr) {
-          Q_EMIT cursorChanged(Qt::OpenHandCursor);
-        }
-        else if(is_holding_space_) {
           Q_EMIT cursorChanged(Qt::OpenHandCursor);
         } else {
           Q_EMIT cursorChanged(Qt::ArrowCursor);
         }
-      }
-      else {
-        Q_EMIT cursorChanged(cursor_shape);
+      } else if (mode_ == Mode::PathEditing) {
+        Q_EMIT cursorChanged(Qt::ArrowCursor);
       }
       break;
-
     case QEvent::NativeGesture:
       nge = dynamic_cast<QNativeGestureEvent *>(e);
 
@@ -593,9 +564,7 @@ bool Canvas::event(QEvent *e) {
         updateScroll(new_scroll, mouse_pos);
         volatility_timer.restart();
       }
-
       break;
-
     default:
       break;
   }
@@ -1296,7 +1265,33 @@ Canvas::Mode Canvas::mode() const { return mode_; }
 
 void Canvas::setMode(Mode mode) {
   mode_ = mode;
+  updateCursor();
   Q_EMIT modeChanged();
+}
+
+void Canvas::updateCursor() {
+  if(!is_in_canvas_) {
+    Q_EMIT cursorChanged(Qt::ArrowCursor);
+    return;
+  }
+  switch (mode_) {
+    case Mode::TextDrawing:
+      Q_EMIT cursorChanged(Qt::IBeamCursor);
+      break;
+    case Mode::Rotating:
+    case Mode::RectDrawing:
+    case Mode::LineDrawing:
+    case Mode::PolygonDrawing:
+    case Mode::OvalDrawing:
+    case Mode::PathDrawing:
+      Q_EMIT cursorChanged(Qt::CrossCursor);
+      break;
+    case Mode::Moving:
+      Q_EMIT cursorChanged(Qt::ClosedHandCursor);
+      break;
+    default:
+      break;
+  }
 }
 
 QRect Canvas::calculateShapeBoundary() {
@@ -1467,4 +1462,9 @@ const QColor Canvas::backgroundColor() {
 void Canvas::updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos) {
   current_x_ = std::get<0>(target_pos);
   current_y_ = std::get<1>(target_pos);
+}
+
+void Canvas::setHoverMove(bool in_canvas) {
+  is_in_canvas_ = in_canvas;
+  updateCursor();
 }

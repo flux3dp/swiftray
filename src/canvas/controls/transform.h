@@ -44,7 +44,7 @@ namespace Controls {
 
     void reset();
 
-    const QPointF *controlPoints();
+    void controlPoints();
 
     QRectF boundingRect();
 
@@ -130,10 +130,6 @@ namespace Controls {
 
   public Q_SLOTS:
     void updateSelections(QList<ShapePtr> selections);
-
     void updateBoundingRect();
-
-  Q_SIGNALS:
-    void cursorChanged(Qt::CursorShape cursor);
   };
 }
