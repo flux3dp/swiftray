@@ -30,7 +30,7 @@ public:
 
   ~Layer();
 
-  int paint(QPainter *painter) const;
+  void paint(QPainter *painter);
 
   // Add ShapePtr to children array
   void addShape(const ShapePtr &shape);

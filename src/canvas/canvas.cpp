@@ -83,6 +83,15 @@ Canvas::Canvas(QQuickItem *parent)
   connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
 
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
+  connect(&ctrl_transform_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_select_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_rect_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_polygon_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_oval_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_line_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_path_draw_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_path_edit_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_text_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
 }
 
 Canvas::~Canvas() {
@@ -200,18 +209,26 @@ void Canvas::loadDXF(QString file_name) {
 
 void Canvas::paint(QPainter *painter) {
   // return;
+  // QElapsedTimer timer;
+  // timer.start();
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
-  painter->fillRect(0, 0, width(), height(), backgroundColor());
-  // Move to scroll and scale
+  if(document().isScreenChanged() || !is_flushed_) {
+    is_flushed_ = true;
+    canvas_tmpimage_ = QImage(width(), height(), QImage::Format_RGB32);
+    QPainter image_painter(&canvas_tmpimage_);
+    image_painter.fillRect(0, 0, width(), height(), backgroundColor());
+    // Move to scroll and scale
+    image_painter.translate(document().scroll());
+    image_painter.scale(document().scale(), document().scale());
+    ctrl_grid_.paint(&image_painter);
+    document().paint(&image_painter);
+  }
+  painter->drawImage(0, 0, canvas_tmpimage_);
+
   painter->translate(document().scroll());
   painter->scale(document().scale(), document().scale());
-
-  ctrl_grid_.paint(painter);
-
-  document().paint(painter);
-
   for (auto &control : ctrls_) {
     if (control->isActive()) {
       control->paint(painter);
@@ -229,8 +246,9 @@ void Canvas::paint(QPainter *painter) {
   }
 
   painter->restore();
-
   ctrl_ruler_.paint(painter);
+
+  // qDebug() << Q_FUNC_INFO << "Rendering (" << timer.elapsed() << "ms)";
 }
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
@@ -413,6 +431,8 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
             break;
           }
           ctrl_text_.setTarget(hit);
+          ((TextShape*) hit.get())->setEditing(true);
+          is_flushed_ = false;
           setMode(Mode::TextDrawing);
           break;
         case Shape::Type::Path:
@@ -519,7 +539,7 @@ void Canvas::setScaleWithCenter(qreal new_scale) {
 }
 
 void Canvas::loop() {
-  update();
+  update();//update paint & event(HoverMove)
 }
 
 bool Canvas::event(QEvent *e) {
@@ -1462,6 +1482,10 @@ const QColor Canvas::backgroundColor() {
 void Canvas::updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos) {
   current_x_ = std::get<0>(target_pos);
   current_y_ = std::get<1>(target_pos);
+}
+
+void Canvas::canvasUpdated() {
+  is_flushed_ = false;
 }
 
 void Canvas::setHoverMove(bool in_canvas) {

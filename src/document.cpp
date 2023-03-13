@@ -40,6 +40,7 @@ void Document::setSelections(const QList<ShapePtr> &new_selections) {
   }
 
   selections_ = selection_list;
+  screen_changed_ = true;
   Q_EMIT selectionsChanged(selections_);
 }
 
@@ -156,11 +157,13 @@ void Document::setWidth(qreal width) {
     width_ = width;
     settings_.width = width;
   }
+  screen_changed_ = true;
 }
 
 void Document::setHeight(qreal height) {
   height_ = height;
   settings_.height = height;
+  screen_changed_ = true;
 }
 
 void Document::setScroll(QPointF scroll) {
@@ -312,10 +315,9 @@ void Document::ungroupSelections() {
 }
 
 void Document::paint(QPainter *painter) {
-  int object_count = 0;
   for (const LayerPtr &layer : layers()) {
     if (screen_changed_) layer->flushCache();
-    object_count += layer->paint(painter);
+    layer->paint(painter);
   }
 
   screen_changed_ = false;
@@ -335,6 +337,14 @@ const LayerPtr *Document::findLayerByName(const QString &layer_name) {
 
 const Canvas *Document::canvas() const {
   return canvas_;
+}
+
+bool Document::isScreenChanged() {
+  return screen_changed_;
+}
+
+void Document::setScreenChanged() {
+  screen_changed_ = true;
 }
 
 void Document::setCanvas(Canvas *canvas) {

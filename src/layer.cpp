@@ -43,15 +43,15 @@ Layer::Layer() :
 
 Layer::~Layer() = default;
 
-int Layer::paint(QPainter *painter) const {
-  if (!is_visible_) return 0;
+void Layer::paint(QPainter *painter) {
+  if (!is_visible_) return;
   // Update cache if it's not valid
   if (!cache_valid_) {
     cache_->update();
     cache_valid_ = true;
   }
   // Draw shapes
-  return cache_->paint(painter);
+  cache_->paint(painter);
 }
 
 void Layer::addShape(const ShapePtr &shape) {
@@ -115,6 +115,7 @@ bool Layer::isUseDiode() const {
 
 void Layer::flushCache() {
   cache_valid_ = false;
+  document_->setScreenChanged();
 }
 
 double Layer::stepHeight() const { return step_height_; }

@@ -230,6 +230,7 @@ public Q_SLOTS:
 
   void updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos);
 
+  void canvasUpdated();
 
 private:
   // Basic attributes
@@ -280,6 +281,8 @@ private:
   QPointF right_click_;
   QPointF job_origin_;
   QPointF user_origin_;
+  QImage canvas_tmpimage_;
+  bool is_flushed_ = false;
 
   QQuickWidget *widget_;
 

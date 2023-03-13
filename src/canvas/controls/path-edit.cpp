@@ -46,6 +46,7 @@ bool PathEdit::mouseMoveEvent(QMouseEvent *e) {
       }
     }
   }
+  Q_EMIT canvasUpdated();
   return true;
 }
 
@@ -130,6 +131,7 @@ bool PathEdit::mouseReleaseEvent(QMouseEvent *e) {
        Commands::SetRef<PathShape, QPainterPath, &PathShape::path, &PathShape::setPath>(
             &target(), path_)
   );
+  Q_EMIT canvasUpdated();
   return true;
 }
 

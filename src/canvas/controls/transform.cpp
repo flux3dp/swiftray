@@ -270,6 +270,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   }
   if (transform_changed) {
     Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+    Q_EMIT canvasUpdated();
   }
   reset();
   canvas().setMode(Canvas::Mode::Selecting);
@@ -396,6 +397,7 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
     default:
       return false;
   }
+  Q_EMIT canvasUpdated();
   return true;
 }
 
@@ -482,6 +484,7 @@ bool Transform::keyPressEvent(QKeyEvent *e) {
   }
   applyMove();
   Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+  Q_EMIT canvasUpdated();
   return true;
 }
 

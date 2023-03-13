@@ -133,6 +133,10 @@ public:
     execute({cmd0, args...});
   }
 
+  bool isScreenChanged();
+
+  void setScreenChanged();
+
   friend class DocumentSerializer;
 
 Q_SIGNALS:

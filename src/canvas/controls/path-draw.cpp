@@ -93,6 +93,7 @@ bool PathDraw::mouseMoveEvent(QMouseEvent *e) {
     }
   }
   cursor_ = canvas_coord;
+  Q_EMIT canvasUpdated();
   return true;
 }
 
@@ -175,7 +176,7 @@ bool PathDraw::mouseReleaseEvent(QMouseEvent *e) {
     );
     exit();
   }
-
+  Q_EMIT canvasUpdated();
   return true;
 }
 

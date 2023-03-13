@@ -52,6 +52,7 @@ bool Polygon::mouseReleaseEvent(QMouseEvent *e) {
           Commands::AddShape(document().activeLayer(), new_polygon),
           Commands::Select(&document(), {new_polygon})
   );
+  Q_EMIT canvasUpdated();
   exit();
   return true;
 }
