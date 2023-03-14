@@ -12,9 +12,9 @@ bool Grid::isActive() {
 void Grid::paint(QPainter *painter) {
   painter->fillRect(0, 0, document().width(), document().height(),
                     isDarkMode() ? QColor("#F0F0F0") : Qt::white);
-  QPen grey_pen(QColor("#DDD"), 0.5, Qt::SolidLine);
-  QPen black_pen(QColor("#333"), 0.5, Qt::SolidLine);
-  QPen black_thick_pen(QColor("#333"), 1, Qt::SolidLine);
+  QPen grey_pen(QColor("#DDD"), 1, Qt::SolidLine);
+  QPen black_pen(QColor("#333"), 1, Qt::SolidLine);
+  QPen black_thick_pen(QColor("#333"), 2, Qt::SolidLine);
   grey_pen.setCosmetic(true);
   black_pen.setCosmetic(true);
   black_thick_pen.setCosmetic(true);

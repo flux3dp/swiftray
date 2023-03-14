@@ -153,14 +153,14 @@ int CacheStack::paint(QPainter *painter) {
   bool always_fill = layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine;
   bool always_select = isGroup() ? group_->isParentSelected() : false;
 
-  QPen selected_stroke_pen(QColor(18, 139, 219), 1.5, Qt::SolidLine);
-  QPen layer_stroke_pen(color(), 1, Qt::SolidLine);
+  QPen selected_stroke_pen(QColor(18, 139, 219), 3, Qt::SolidLine);
+  QPen layer_stroke_pen(color(), 2, Qt::SolidLine);
   //if (isGroup()) {
   //  highlight_stroke_pen.setColor(QColor(71, 169, 255));
   //}
   layer_stroke_pen.setCosmetic(true);
   selected_stroke_pen.setCosmetic(true);
-  QPen layer_fill_pen(color(), 1, Qt::SolidLine);
+  QPen layer_fill_pen(color(), 2, Qt::SolidLine);
   layer_fill_pen.setCosmetic(true);
 
   for (auto &cache : caches_) {
