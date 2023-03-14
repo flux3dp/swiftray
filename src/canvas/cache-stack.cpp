@@ -146,8 +146,8 @@ void CacheStack::Cache::fill(QPainter *painter, const QPen &pen) {
 
 // Primary logic for painting shapes
 int CacheStack::paint(QPainter *painter) {
-  // QElapsedTimer timer;
-  // timer.start();
+  QElapsedTimer timer;
+  timer.start();
 
   Layer::Type layer_type = isGroup() ? group_->layer()->type() : layer_->type();
   bool always_fill = layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine;
@@ -191,7 +191,7 @@ int CacheStack::paint(QPainter *painter) {
     }
   }
   painter->setBrush(Qt::NoBrush);
-  // qDebug() << Q_FUNC_INFO << "Rendering (" << timer.elapsed() << "ms)";
+  qDebug() << Q_FUNC_INFO << "Rendering (" << timer.elapsed() << "ms)";
   return caches_.size();
 }
 

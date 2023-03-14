@@ -281,7 +281,7 @@ private:
   QPointF right_click_;
   QPointF job_origin_;
   QPointF user_origin_;
-  QImage canvas_tmpimage_;
+  QPixmap canvas_tmpimage_;
   bool is_flushed_ = false;
 
   QQuickWidget *widget_;

@@ -52,6 +52,7 @@ void LayerListItem::loadStyles() {
 
 void LayerListItem::registerEvents() {
   connect(ui->btnColorPicker, &ColorPickerButton::colorChanged, [=](QColor new_color) {
+    canvas_->canvasUpdated();
     layer_->document().execute(
             Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), new_color)
     );
@@ -65,6 +66,7 @@ void LayerListItem::registerEvents() {
   });
   connect(ui->btnLock, &QAbstractButton::clicked, this, &LayerListItem::onUnlockLayer);
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
+    canvas_->canvasUpdated();
     layer_->document().execute(
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );

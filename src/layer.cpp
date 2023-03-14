@@ -115,7 +115,6 @@ bool Layer::isUseDiode() const {
 
 void Layer::flushCache() {
   cache_valid_ = false;
-  document_->setScreenChanged();
 }
 
 double Layer::stepHeight() const { return step_height_; }

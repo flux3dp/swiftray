@@ -77,6 +77,7 @@ void Document::undo() {
 
   // TODO (Fix mode change event and selection, and add layer)
   setActiveLayer(active_layer_name);
+  screen_changed_ = true;
 }
 
 void Document::redo() {
@@ -93,6 +94,7 @@ void Document::redo() {
   QString active_layer_name = activeLayer()->name();
 
   setActiveLayer(active_layer_name);
+  screen_changed_ = true;
 }
 
 void Document::execute(Commands::BaseCmd *cmd) {

@@ -216,7 +216,8 @@ void Canvas::paint(QPainter *painter) {
   painter->save();
   if(document().isScreenChanged() || !is_flushed_) {
     is_flushed_ = true;
-    canvas_tmpimage_ = QImage(width(), height(), QImage::Format_RGB32);
+    canvas_tmpimage_ = QPixmap(width()*1, height()*1);
+    canvas_tmpimage_.setDevicePixelRatio(1);
     QPainter image_painter(&canvas_tmpimage_);
     image_painter.fillRect(0, 0, width(), height(), backgroundColor());
     // Move to scroll and scale
@@ -225,7 +226,7 @@ void Canvas::paint(QPainter *painter) {
     ctrl_grid_.paint(&image_painter);
     document().paint(&image_painter);
   }
-  painter->drawImage(0, 0, canvas_tmpimage_);
+  painter->drawPixmap(0, 0, canvas_tmpimage_);
 
   painter->translate(document().scroll());
   painter->scale(document().scale(), document().scale());
