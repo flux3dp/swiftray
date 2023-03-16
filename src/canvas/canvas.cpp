@@ -349,7 +349,7 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
       return;
   }
 
-  if (mode() == Mode::Selecting) {
+  if (mode() == Mode::Selecting && is_on_shape_) {
     ShapePtr hit = document().hitTest(canvas_coord, true);
 
     if (hit != nullptr) {
@@ -359,10 +359,10 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
         document().setActiveLayer(hit->layer()->name());
         Q_EMIT layerChanged();
       }
-    } else {
-      document().setSelection(nullptr);
-      setMode(Mode::MultiSelecting);
     }
+  } else if(mode() == Mode::Selecting) {
+    document().setSelection(nullptr);
+    setMode(Mode::MultiSelecting);
   }
 }
 
@@ -563,8 +563,10 @@ bool Canvas::event(QEvent *e) {
         QPointF canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
         ShapePtr hit = document().hitTest(canvas_coord);
         if(hit != nullptr) {
+          is_on_shape_ = true;
           Q_EMIT cursorChanged(Qt::OpenHandCursor);
         } else {
+          is_on_shape_ = false;
           Q_EMIT cursorChanged(Qt::ArrowCursor);
         }
       } else if (mode_ == Mode::PathEditing) {

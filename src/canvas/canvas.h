@@ -283,6 +283,7 @@ private:
   QPointF user_origin_;
   QPixmap canvas_tmpimage_;
   bool is_flushed_ = false;
+  bool is_on_shape_ = false;
 
   QQuickWidget *widget_;
 

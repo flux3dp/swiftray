@@ -292,7 +292,6 @@ void ToolpathExporter::outputLayerPathGcode() {
  */
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
-  // Get the image of entire layer
 
   qreal padding_mm;
   qreal accelerate = 4000; // mm/s^2

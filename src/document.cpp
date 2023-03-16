@@ -30,6 +30,7 @@ void Document::setSelection(ShapePtr &shape) {
 }
 
 void Document::setSelections(const QList<ShapePtr> &new_selections) {
+  if(selections_.empty() && new_selections.empty()) return;
   QList<ShapePtr> selection_list;
   for (auto &shape : selections_) { shape->setSelected(false); }
   for (auto &shape : new_selections) {
