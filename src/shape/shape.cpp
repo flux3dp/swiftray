@@ -17,7 +17,8 @@ Shape::Shape() noexcept:
      selected_(false),
      layer_(nullptr),
      parent_(nullptr),
-     bbox_need_recalc_(false) {}
+     bbox_need_recalc_(false),
+     filled_(false) {}
 
 Shape::~Shape() {
   //qDebug() << "[Memory] ~Shape" << this;
@@ -45,7 +46,10 @@ Layer *Shape::layer() const {
 
 bool Shape::selected() const { return selected_; }
 
-void Shape::setLayer(Layer *layer) { layer_ = layer; }
+void Shape::setLayer(Layer *layer) {
+  layer_ = layer;
+  if(layer_->type() == Layer::Type::Fill) filled_ = true;
+}
 
 // Note: hasLayer() does not consider if parent node has layers.
 bool Shape::hasLayer() const { return layer_ != nullptr; }
@@ -165,4 +169,12 @@ bool Shape::isParentSelected() const {
 
 bool Shape::isLayerLocked() const {
   return this->hasLayer() && layer_->isLocked();
+}
+
+bool Shape::isFilled() const {
+  return filled_;
+}
+
+void Shape::setFilled(bool filled) {
+  filled_ = filled;
 }

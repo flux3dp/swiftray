@@ -92,6 +92,15 @@ Canvas::Canvas(QQuickItem *parent)
   connect(&ctrl_path_draw_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
   connect(&ctrl_path_edit_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
   connect(&ctrl_text_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_transform_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_select_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_rect_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_polygon_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_oval_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_line_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_path_draw_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_path_edit_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_text_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
 }
 
 Canvas::~Canvas() {
@@ -214,11 +223,13 @@ void Canvas::paint(QPainter *painter) {
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
-  if(document().isScreenChanged() || !is_flushed_) {
+  if(document().isScreenChanged() || !is_flushed_ || !is_shape_flushed_) {
     is_flushed_ = true;
-    if(document().isScreenChanged()) {
+    if(document().isScreenChanged() || !is_shape_flushed_) {
+      is_shape_flushed_ = true;
       canvas_tmpimage_ = QPixmap(width()*2, height()*2);
       canvas_tmpimage_.setDevicePixelRatio(2);
+      // canvas_tmpimage_.fill(QColor(0,0,0,0));
       QPainter image_painter(&canvas_tmpimage_);
       image_painter.fillRect(0, 0, width(), height(), backgroundColor());
       // Move to scroll and scale
@@ -1497,6 +1508,10 @@ void Canvas::updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos) {
 
 void Canvas::canvasUpdated() {
   is_flushed_ = false;
+}
+
+void Canvas::shapeUpdated() {
+  is_shape_flushed_ = false;
 }
 
 void Canvas::setHoverMove(bool in_canvas) {

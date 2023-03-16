@@ -4,9 +4,9 @@
 
 #define SELECTION_TOLERANCE 10
 
-PathShape::PathShape() noexcept: Shape(), filled_(false) {}
+PathShape::PathShape() noexcept: Shape() {}
 
-PathShape::PathShape(QPainterPath path) : Shape(), filled_(false) {
+PathShape::PathShape(QPainterPath path) : Shape() {
   path_ = path;
 
   // Realign path to center in local coord 0, 0
@@ -61,6 +61,9 @@ void PathShape::paint(QPainter *painter) const {
   painter->save();
   if (selected_) painter->setTransform(temp_transform_, true);
   painter->setTransform(transform(), true);
+  if(filled_) {
+    painter->fillPath(path_, layer()->color());
+  }
   painter->drawPath(path_);
   painter->restore();
 }
@@ -78,13 +81,4 @@ void PathShape::setPath(const QPainterPath &path) {
   // Input path coord is local coord
   path_ = path;
   flushCache();
-}
-
-bool PathShape::isFilled() const {
-  return filled_;
-}
-
-void PathShape::setFilled(bool filled) {
-  qInfo() << "Filled";
-  filled_ = filled;
 }

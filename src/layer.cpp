@@ -157,6 +157,10 @@ void Layer::setType(Layer::Type type) {
   // TODO: Whether setFilled of all shapes in this layer?
   type_ = type;
   flushCache();
+  for (ShapePtr &shape : children_) {
+    if(type == Layer::Type::Line) shape->setFilled(false);
+    else shape->setFilled(true);
+  }
 }
 
 void Layer::setTargetHeight(double height) {

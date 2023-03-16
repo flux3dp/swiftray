@@ -232,6 +232,8 @@ public Q_SLOTS:
 
   void canvasUpdated();
 
+  void shapeUpdated();
+
 private:
   // Basic attributes
   std::unique_ptr<Document> doc_;
@@ -284,6 +286,7 @@ private:
   QPixmap canvas_tmpimage_;
   QPixmap canvas_image_;
   bool is_flushed_ = false;
+  bool is_shape_flushed_ = false;
   bool is_on_shape_ = false;
 
   QQuickWidget *widget_;

@@ -47,5 +47,6 @@ namespace Controls {
     
   Q_SIGNALS:
     void canvasUpdated();
+    void shapeUpdated();
   };
 }
