@@ -216,17 +216,25 @@ void Canvas::paint(QPainter *painter) {
   painter->save();
   if(document().isScreenChanged() || !is_flushed_) {
     is_flushed_ = true;
-    canvas_tmpimage_ = QPixmap(width()*2, height()*2);
-    canvas_tmpimage_.setDevicePixelRatio(2);
-    QPainter image_painter(&canvas_tmpimage_);
-    image_painter.fillRect(0, 0, width(), height(), backgroundColor());
-    // Move to scroll and scale
-    image_painter.translate(document().scroll());
-    image_painter.scale(document().scale(), document().scale());
-    ctrl_grid_.paint(&image_painter);
-    document().paint(&image_painter);
+    if(document().isScreenChanged()) {
+      canvas_tmpimage_ = QPixmap(width()*2, height()*2);
+      canvas_tmpimage_.setDevicePixelRatio(2);
+      QPainter image_painter(&canvas_tmpimage_);
+      image_painter.fillRect(0, 0, width(), height(), backgroundColor());
+      // Move to scroll and scale
+      image_painter.translate(document().scroll());
+      image_painter.scale(document().scale(), document().scale());
+      ctrl_grid_.paint(&image_painter);
+      document().paintUnselected(&image_painter);
+    }
+
+    canvas_image_ = QPixmap(canvas_tmpimage_);
+    QPainter canvas_painter(&canvas_image_);
+    canvas_painter.translate(document().scroll());
+    canvas_painter.scale(document().scale(), document().scale());
+    document().paintSelected(&canvas_painter);
   }
-  painter->drawPixmap(0, 0, canvas_tmpimage_);
+  painter->drawPixmap(0, 0, canvas_image_);
 
   painter->translate(document().scroll());
   painter->scale(document().scale(), document().scale());

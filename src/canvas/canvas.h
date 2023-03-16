@@ -282,6 +282,7 @@ private:
   QPointF job_origin_;
   QPointF user_origin_;
   QPixmap canvas_tmpimage_;
+  QPixmap canvas_image_;
   bool is_flushed_ = false;
   bool is_on_shape_ = false;
 

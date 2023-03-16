@@ -404,7 +404,8 @@ void MainWindow::actionStart() {
       };
       canvas_pixmap.fill(Qt::white);
       auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-      canvas_->document().paint(painter.get());
+      canvas_->document().paintUnselected(painter.get());
+      canvas_->document().paintSelected(painter.get());
       //if (job_dashboard_) {
       //  job_dashboard_->deleteLater();
       //}

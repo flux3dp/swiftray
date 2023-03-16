@@ -317,12 +317,22 @@ void Document::ungroupSelections() {
   execute(cmd);
 }
 
-void Document::paint(QPainter *painter) {
+void Document::paintUnselected(QPainter *painter) {
   for (const LayerPtr &layer : layers()) {
     if (screen_changed_) layer->flushCache();
-    layer->paint(painter);
+    layer->paintUnselected(painter);
   }
+}
 
+void Document::paintSelected(QPainter *painter) {
+  QPen selected_stroke_pen(QColor(18, 139, 219), 3, Qt::SolidLine);
+  selected_stroke_pen.setCosmetic(true);
+  for (ShapePtr &shape : selections_) {
+    if(shape->type() == Shape::Type::Text)
+      if (((TextShape *) shape.get())->isEditing()) continue;
+    painter->setPen(selected_stroke_pen);
+    shape.get()->paint(painter);
+  }
   screen_changed_ = false;
 }
 
