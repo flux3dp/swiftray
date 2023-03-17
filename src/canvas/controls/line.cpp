@@ -51,7 +51,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
        Commands::AddShape(document().activeLayer(), new_line),
        Commands::Select(&document(), {new_line})
   );
-  Q_EMIT canvasUpdated();
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }

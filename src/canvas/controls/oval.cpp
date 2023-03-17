@@ -40,7 +40,7 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
        Commands::AddShape(document().activeLayer(), new_oval),
        Commands::Select(&document(), {new_oval})
   );
-  Q_EMIT canvasUpdated();
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }

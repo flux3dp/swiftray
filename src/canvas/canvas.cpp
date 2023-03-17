@@ -224,9 +224,9 @@ void Canvas::paint(QPainter *painter) {
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
   if(document().isScreenChanged() || !is_flushed_ || !is_shape_flushed_) {
-    is_flushed_ = true;
-    if(document().isScreenChanged() || !is_shape_flushed_) {
-      is_shape_flushed_ = true;
+    is_shape_flushed_ = true;
+    if(document().isScreenChanged() || !is_flushed_) {
+      is_flushed_ = true;
       canvas_tmpimage_ = QPixmap(width()*2, height()*2);
       canvas_tmpimage_.setDevicePixelRatio(2);
       // canvas_tmpimage_.fill(QColor(0,0,0,0));
@@ -452,7 +452,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
           }
           ctrl_text_.setTarget(hit);
           ((TextShape*) hit.get())->setEditing(true);
-          is_flushed_ = false;
+          is_shape_flushed_ = false;
           setMode(Mode::TextDrawing);
           break;
         case Shape::Type::Path:

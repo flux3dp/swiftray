@@ -39,7 +39,7 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
        Commands::AddShape(document().activeLayer(), new_rect),
        Commands::Select(&document(), {new_rect})
   );
-  Q_EMIT canvasUpdated();
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }

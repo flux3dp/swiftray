@@ -77,7 +77,7 @@ bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 bool Text::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
     exit();
-    Q_EMIT canvasUpdated();
+    Q_EMIT shapeUpdated();
     return true;
   }
   return false;
