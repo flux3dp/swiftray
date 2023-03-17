@@ -43,9 +43,9 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
                  * resolution_scale_;
 
   // Generate bitmap canvas
-  layer_image_ = QImage(canvas_size_.width(),
-                        canvas_size_.height(), QImage::Format_Grayscale8);
-  layer_image_.fill(Qt::white);
+  layer_bitmap_ = QPixmap(QSize(canvas_size_.width(),
+                                canvas_size_.height()));
+  layer_bitmap_.fill(Qt::white);
 
   bitmap_dirty_area_ = QRectF();
 
@@ -104,7 +104,8 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   polygons_mutex_.lock();
   layer_polygons_.clear();
   polygons_mutex_.unlock();
-  layer_painter_ = std::make_unique<QPainter>(&layer_image_);
+  with_image_ = false;
+  layer_painter_ = std::make_unique<QPainter>(&layer_bitmap_);
   //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
@@ -123,6 +124,7 @@ void ToolpathExporter::convertShape(const ShapePtr &shape) {
       break;
 
     case Shape::Type::Bitmap:
+      with_image_ = true;
       convertBitmap(dynamic_cast<BitmapShape *>(shape.get()));
       break;
 
@@ -228,7 +230,7 @@ void ToolpathExporter::sortPolygons() {
 }
 
 /**
- * @brief Export the layer_polygons_ and layer_image_ converted from objects on canvas 
+ * @brief Export the layer_polygons_ and layer_bitmap_ converted from objects on canvas 
  *        to generator
  * 
  */
@@ -288,10 +290,20 @@ void ToolpathExporter::outputLayerPathGcode() {
 }
 
 /**
- * @brief Export layer_image_ for filled geometry and images
+ * @brief Export layer_bitmap_ for filled geometry and images
  */
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
+  // Get the image of entire layer
+  QImage layer_image;
+  if(with_image_) {
+    layer_image = layer_bitmap_.toImage()
+                      .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
+                      .convertToFormat(QImage::Format_Grayscale8);
+  } else {
+    layer_image = layer_bitmap_.toImage()
+                      .convertToFormat(QImage::Format_Grayscale8);
+  }
 
   qreal padding_mm;
   qreal accelerate = 4000; // mm/s^2
@@ -327,10 +339,10 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // Start raster
   if(is_high_speed_) {
-    rasterBitmapHighSpeed(layer_image_, bbox,ScanDirectionMode::kBidirectionMode, padding_mm);
+    rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode, padding_mm);
   }
   else {
-    rasterBitmap(layer_image_, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+    rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
   }
 
   gen_->useAbsolutePositioning();

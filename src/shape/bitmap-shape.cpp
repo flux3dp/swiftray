@@ -112,6 +112,7 @@ void BitmapShape::invertPixels() {
 
 void BitmapShape::paint(QPainter *painter) const {
   painter->save();
+  painter->setPen(Qt::NoPen);
   painter->setTransform(temp_transform_, true);
   painter->setTransform(transform(), true);
   painter->drawImage(0, 0, imageForDisplay());
