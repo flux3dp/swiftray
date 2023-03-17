@@ -105,6 +105,7 @@ void Text::exit() {
     if (!target().hasLayer() &&
         canvas().textInput()->toPlainText().length() > 0) {
       // Add the virtual target the layer
+      if(document().activeLayer()->type() == Layer::Type::Fill) target_->setFilled(true);
       document().execute(
            Commands::AddShape(document().activeLayer(), target_),
            Commands::Select(&document(), {target_})

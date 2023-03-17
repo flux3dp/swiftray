@@ -33,6 +33,7 @@ bool Rect::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addRect(rect_);
   ShapePtr new_rect = std::make_shared<PathShape>(path);
+  if(document().activeLayer()->type() == Layer::Type::Fill) new_rect->setFilled(true);
   canvas().setMode(Canvas::Mode::Selecting);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_rect),

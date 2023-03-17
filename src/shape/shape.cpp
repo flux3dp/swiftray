@@ -48,7 +48,6 @@ bool Shape::selected() const { return selected_; }
 
 void Shape::setLayer(Layer *layer) {
   layer_ = layer;
-  if(layer_->type() == Layer::Type::Fill) filled_ = true;
 }
 
 // Note: hasLayer() does not consider if parent node has layers.
