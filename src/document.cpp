@@ -249,7 +249,7 @@ ShapePtr Document::hitTest(QPointF canvas_coord, bool is_select) {
     }
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
-        if(!is_select) return shape;
+        if(!is_select || shape->selected()) return shape;
         // NOTE: Select the shape with the smallest bounding box
         // Alwyas iterate through all shapes -> Performance should be considered carefully
         qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
