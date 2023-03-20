@@ -14,6 +14,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   setLanguageComboBox();
   setSpeedOptimizationComboBox();
   setShareComboBox();
+  setQualityComboBox();
   QFont current_font = QApplication::font();
   if(current_font.pixelSize() > 0) {
     ui->horizontalSliderFontSize->setValue(current_font.pixelSize());
@@ -37,6 +38,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
     }
     Q_EMIT speedModeChanged(ui->comboBoxSpeedOptimization->currentIndex());
     Q_EMIT privacyUpdate(ui->comboBoxShare->currentIndex());
+    Q_EMIT canvasQualityUpdate(ui->comboBoxQuality->currentIndex());
   });
   connect(ui->horizontalSliderFontSize, &QAbstractSlider::valueChanged, [=](int value){
     ui->labelFontSize->setText(QString::number(value));
@@ -59,6 +61,12 @@ void PreferencesWindow::setUpload(bool enable_upload) {
   ui->comboBoxShare->blockSignals(false);
 }
 
+void PreferencesWindow::setCanvasQuality(int canvas_quality) {
+  ui->comboBoxQuality->blockSignals(true);
+  ui->comboBoxQuality->setCurrentIndex(canvas_quality);
+  ui->comboBoxQuality->blockSignals(false);
+}
+
 void PreferencesWindow::setLanguageComboBox() {
   ui->comboBox->addItem("English");
   // \u4e2d\u6587 為“中文”unicode
@@ -78,6 +86,11 @@ void PreferencesWindow::setSpeedOptimizationComboBox() {
 void PreferencesWindow::setShareComboBox() {
   ui->comboBoxShare->addItem("Off");
   ui->comboBoxShare->addItem("On");
+}
+
+void PreferencesWindow::setQualityComboBox() {
+  ui->comboBoxQuality->addItem("Normal");
+  ui->comboBoxQuality->addItem("Low");
 }
 
 void PreferencesWindow::setTabWidget() {

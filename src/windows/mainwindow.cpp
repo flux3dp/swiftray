@@ -106,6 +106,8 @@ void MainWindow::loadSettings() {
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
   preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
+  preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
+  canvas_->setCanvasQuality(mainApp->getCanvasQuality());
   setWindowModified(false);
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
@@ -404,8 +406,8 @@ void MainWindow::actionStart() {
       };
       canvas_pixmap.fill(Qt::white);
       auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-      canvas_->document().paintUnselected(painter.get());
-      canvas_->document().paintSelected(painter.get());
+      canvas_->document().paintUnselected(painter.get(), 2);
+      canvas_->document().paintSelected(painter.get(), 2);
       //if (job_dashboard_) {
       //  job_dashboard_->deleteLater();
       //}
@@ -1153,6 +1155,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, [=]() {
     preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
+    preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
     preferences_window_->show();
     preferences_window_->activateWindow();
     preferences_window_->raise();
@@ -1242,6 +1245,9 @@ void MainWindow::registerEvents() {
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
     mainApp->updateUploadEnable(enable_upload);
+  });
+  connect(preferences_window_, &PreferencesWindow::canvasQualityUpdate, [=](int canvas_quality) {
+    mainApp->updateCanvasQuality(canvas_quality);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
     mainApp->updateUploadEnable(enable_upload);
@@ -1639,6 +1645,11 @@ void MainWindow::registerEvents() {
     ui->actionReplace_with->setEnabled(state);
     ui->actionCrop->setEnabled(state);
     ui->actionSharpen->setEnabled(state);
+  });
+  //about canvas
+  connect(mainApp, &MainApplication::editCanvasQuality, [=](int canvas_quality) {
+    preferences_window_->setCanvasQuality(canvas_quality);
+    canvas_->setCanvasQuality(canvas_quality);
   });
 
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);

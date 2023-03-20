@@ -15,6 +15,7 @@ public:
   ~PreferencesWindow();
   void setSpeedMode(bool is_high_speed);
   void setUpload(bool enable_upload);
+  void setCanvasQuality(int canvas_quality);
 
 private:
   Ui::PreferencesWindow *ui;
@@ -22,10 +23,12 @@ private:
   void setLanguageComboBox();
   void setSpeedOptimizationComboBox();
   void setShareComboBox();
+  void setQualityComboBox();
   void setTabWidget();
 
 Q_SIGNALS:
   void speedModeChanged(bool is_high_speed);
   void fontSizeChanged(int font_size);
   void privacyUpdate(bool enable_upload);
+  void canvasQualityUpdate(int canvas_quality);
 };

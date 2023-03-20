@@ -317,15 +317,15 @@ void Document::ungroupSelections() {
   execute(cmd);
 }
 
-void Document::paintUnselected(QPainter *painter) {
+void Document::paintUnselected(QPainter *painter, double line_width) {
   for (const LayerPtr &layer : layers()) {
     if (screen_changed_) layer->flushCache();
-    layer->paintUnselected(painter);
+    layer->paintUnselected(painter, line_width);
   }
 }
 
-void Document::paintSelected(QPainter *painter) {
-  QPen selected_stroke_pen(QColor(18, 139, 219), 3, Qt::SolidLine);
+void Document::paintSelected(QPainter *painter, double line_width) {
+  QPen selected_stroke_pen(QColor(18, 139, 219), line_width * 1.5, Qt::SolidLine);
   selected_stroke_pen.setCosmetic(true);
   for (ShapePtr &shape : selections_) {
     if(shape->type() == Shape::Type::Text)

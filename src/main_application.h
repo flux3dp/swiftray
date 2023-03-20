@@ -63,6 +63,8 @@ public:
   double getRotaryScale();
   double getRotaryCircumference();
   RotarySettings::RotaryParam getRotaryParam();
+  //about canvas
+  int getCanvasQuality() { return canvas_quality_; }
 
 public Q_SLOTS:
   void updateUploadEnable(bool enable_upload);
@@ -108,6 +110,8 @@ public Q_SLOTS:
   void updateMirrorMode(bool is_mirror_mode);
   void updateRotarySpeed(double speed);
   void updateCircumference(double circumference);
+  //about canvas
+  void updateCanvasQuality(int canvas_quality);
 
 private:
   //about preset
@@ -156,6 +160,8 @@ private:
   bool mirror_mode_;
   double rotary_circumference_;
   double rotary_scale_;
+  //setting of canvas
+  int canvas_quality_;
 
 private Q_SLOTS:
   void cleanup();
@@ -216,6 +222,8 @@ Q_SIGNALS:
   void editRotaryMode(bool is_rotary_mode);
   void editRotaryTravelSpeed(double speed);
   void editCircumference(double circumference);
+  //about canvas
+  void editCanvasQuality(int canvas_quality);
 };
 
 extern MainApplication *mainApp;

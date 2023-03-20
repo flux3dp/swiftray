@@ -43,7 +43,7 @@ Layer::Layer() :
 
 Layer::~Layer() = default;
 
-void Layer::paintUnselected(QPainter *painter) {
+void Layer::paintUnselected(QPainter *painter, double line_width) {
   if (!is_visible_) return;
   // Update cache if it's not valid
   if (!cache_valid_) {
@@ -52,7 +52,7 @@ void Layer::paintUnselected(QPainter *painter) {
   }
   // Draw shapes
   // cache_->paint(painter);
-  QPen layer_stroke_pen(color_, 2, Qt::SolidLine);
+  QPen layer_stroke_pen(color_, line_width, Qt::SolidLine);
   layer_stroke_pen.setCosmetic(true);
   for (ShapePtr &shape : children_) {
     if(shape->selected()) continue;

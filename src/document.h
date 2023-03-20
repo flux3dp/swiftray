@@ -44,9 +44,9 @@ public:
 
   // Paint functions
 
-  void paintUnselected(QPainter *painter);
+  void paintUnselected(QPainter *painter, double line_width);
 
-  void paintSelected(QPainter *painter);
+  void paintSelected(QPainter *painter, double line_width);
 
   // Dumps layers info
   void dumpStack(QList<LayerPtr> &stack);
