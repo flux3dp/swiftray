@@ -50,7 +50,7 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   initialRotary();
 
   QVariant quality_code = settings.value("canvas/quality", 0);
-  canvas_quality_ = quality_code.toInt();
+  canvas_quality_ = (CanvasQuality)quality_code.toInt();
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -833,8 +833,8 @@ void MainApplication::saveRotary() {
 
 //about canvas
 void MainApplication::updateCanvasQuality(int canvas_quality) {
-  canvas_quality_ = canvas_quality;
+  canvas_quality_ = (CanvasQuality)canvas_quality;
   QSettings settings("flux", "swiftray");
-  settings.setValue("canvas/quality", canvas_quality_);
+  settings.setValue("canvas/quality", canvas_quality);
   Q_EMIT editCanvasQuality(canvas_quality_);
 }

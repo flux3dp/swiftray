@@ -223,28 +223,63 @@ void Canvas::paint(QPainter *painter) {
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
-  if(document().isScreenChanged() || !is_flushed_ || !is_shape_flushed_) {
+  
+  double pixel_ratio, line_width;
+  switch (canvas_quality_) {
+  case AutoQuality:
+    if(document().isScreenChanged() || !is_flushed_) {
+      change_quality_ = false;
+      canvas_counter_ = 0;
+      pixel_ratio = 1;
+      line_width = 1;
+    } else if(canvas_counter_ < 3) {
+      canvas_counter_ ++;
+      pixel_ratio = 1;
+      line_width = 1;
+    } else if(!change_quality_) {
+      change_quality_ = true;
+      is_flushed_ = false;
+      pixel_ratio = 2;
+      line_width = 2;
+    } else {
+      pixel_ratio = 2;
+      line_width = 2;
+    }
+    break;
+  case NormalQuality:
+    pixel_ratio = 2;
+    line_width = 2;
+    break;
+  case LowQuality:
+    pixel_ratio = 1;
+    line_width = 1;
+    break;
+  default:
+    break;
+  }
+  if(document().isScreenChanged() 
+      || !is_flushed_ || !is_shape_flushed_) {
     is_shape_flushed_ = true;
     if(document().isScreenChanged() || !is_flushed_) {
       is_flushed_ = true;
-      canvas_tmpimage_ = QPixmap(width()*pixel_ratio_, height()*pixel_ratio_);
-      canvas_tmpimage_.setDevicePixelRatio(pixel_ratio_);
+      canvas_tmpimage_ = QPixmap(width()*pixel_ratio, height()*pixel_ratio);
+      canvas_tmpimage_.setDevicePixelRatio(pixel_ratio);
       // canvas_tmpimage_.fill(QColor(0,0,0,0));
       QPainter image_painter(&canvas_tmpimage_);
       image_painter.fillRect(0, 0, width(), height(), backgroundColor());
       // Move to scroll and scale
       image_painter.translate(document().scroll());
       image_painter.scale(document().scale(), document().scale());
-      ctrl_grid_.setLineWidth(line_width_);
+      ctrl_grid_.setLineWidth(line_width);
       ctrl_grid_.paint(&image_painter);
-      document().paintUnselected(&image_painter, line_width_);
+      document().paintUnselected(&image_painter, line_width);
     }
 
     canvas_image_ = QPixmap(canvas_tmpimage_);
     QPainter canvas_painter(&canvas_image_);
     canvas_painter.translate(document().scroll());
     canvas_painter.scale(document().scale(), document().scale());
-    document().paintSelected(&canvas_painter, line_width_);
+    document().paintSelected(&canvas_painter, line_width);
   }
   painter->drawPixmap(0, 0, canvas_image_);
 
@@ -1520,18 +1555,8 @@ void Canvas::setHoverMove(bool in_canvas) {
   updateCursor();
 }
 
-void Canvas::setCanvasQuality(int quality) {
-  switch (quality) {
-  case NormalQuality:
-    line_width_ = 2;
-    pixel_ratio_ = 2;
-    break;
-  case LowQuality:
-    line_width_ = 1;
-    pixel_ratio_ = 1;
-    break;
-  default:
-    break;
-  }
+void Canvas::setCanvasQuality(CanvasQuality quality) {
+  canvas_quality_ = quality;
+  canvas_counter_ = 0;
   is_flushed_ = false;
 }

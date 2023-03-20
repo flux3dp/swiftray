@@ -1647,7 +1647,7 @@ void MainWindow::registerEvents() {
     ui->actionSharpen->setEnabled(state);
   });
   //about canvas
-  connect(mainApp, &MainApplication::editCanvasQuality, [=](int canvas_quality) {
+  connect(mainApp, &MainApplication::editCanvasQuality, [=](CanvasQuality canvas_quality) {
     preferences_window_->setCanvasQuality(canvas_quality);
     canvas_->setCanvasQuality(canvas_quality);
   });

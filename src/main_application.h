@@ -64,7 +64,7 @@ public:
   double getRotaryCircumference();
   RotarySettings::RotaryParam getRotaryParam();
   //about canvas
-  int getCanvasQuality() { return canvas_quality_; }
+  CanvasQuality getCanvasQuality() { return canvas_quality_; }
 
 public Q_SLOTS:
   void updateUploadEnable(bool enable_upload);
@@ -161,7 +161,7 @@ private:
   double rotary_circumference_;
   double rotary_scale_;
   //setting of canvas
-  int canvas_quality_;
+  CanvasQuality canvas_quality_;
 
 private Q_SLOTS:
   void cleanup();
@@ -223,7 +223,7 @@ Q_SIGNALS:
   void editRotaryTravelSpeed(double speed);
   void editCircumference(double circumference);
   //about canvas
-  void editCanvasQuality(int canvas_quality);
+  void editCanvasQuality(CanvasQuality canvas_quality);
 };
 
 extern MainApplication *mainApp;

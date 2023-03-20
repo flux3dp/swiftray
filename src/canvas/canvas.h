@@ -14,6 +14,7 @@
 #include <canvas/controls/polygon.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
+#include <constants.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <document.h>
 #include <clipboard.h>
@@ -116,7 +117,7 @@ public:
 
   void setHoverMove(bool in_canvas);
 
-  void setCanvasQuality(int quality);
+  void setCanvasQuality(CanvasQuality quality);
   
 public Q_SLOTS:
 
@@ -291,8 +292,9 @@ private:
   bool is_shape_flushed_ = false;
   bool is_on_shape_ = false;
   //the line width to display
-  double line_width_ = 2;
-  double pixel_ratio_ = 2;
+  CanvasQuality canvas_quality_ = AutoQuality;
+  unsigned int canvas_counter_ = 0;
+  bool change_quality_ = false;
 
   QQuickWidget *widget_;
 

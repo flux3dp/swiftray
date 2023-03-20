@@ -89,6 +89,7 @@ void PreferencesWindow::setShareComboBox() {
 }
 
 void PreferencesWindow::setQualityComboBox() {
+  ui->comboBoxQuality->addItem("Auto");
   ui->comboBoxQuality->addItem("Normal");
   ui->comboBoxQuality->addItem("Low");
 }

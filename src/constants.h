@@ -24,7 +24,8 @@ enum StartFrom{
   TotalStartFrom
 };
 enum CanvasQuality{
-  NormalQuality = 0,
+  AutoQuality = 0,
+  NormalQuality,
   LowQuality
 };
 #endif // CONSTANTS_H
