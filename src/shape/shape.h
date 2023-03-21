@@ -92,7 +92,7 @@ public:
 
   bool isFilled() const;
 
-  void setFilled(bool filled);
+  virtual void setFilled(bool filled);
 
   virtual std::shared_ptr<Shape> clone() const;
 
