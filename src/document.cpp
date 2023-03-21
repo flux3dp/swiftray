@@ -319,7 +319,6 @@ void Document::ungroupSelections() {
 
 void Document::paintUnselected(QPainter *painter, double line_width) {
   for (const LayerPtr &layer : layers()) {
-    if (screen_changed_) layer->flushCache();
     layer->paintUnselected(painter, line_width);
   }
 }

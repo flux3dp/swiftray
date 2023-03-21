@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QMenu>
 #include <layer.h>
+#include <canvas/canvas.h>
 
 namespace Ui {
   class LayerListItem;

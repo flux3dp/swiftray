@@ -131,12 +131,6 @@ Shape::Type Shape::type() const { return Shape::Type::None; }
 
 void Shape::flushCache() {
   bbox_need_recalc_ = true;
-  if (layer_) {
-    layer_->flushCache();
-  }
-  /*if (parent_) {
-    parent_->flushCache();
-  }*/
 }
 
 void Shape::setTempTransform(const QTransform &transform) {

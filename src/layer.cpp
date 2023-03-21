@@ -29,8 +29,6 @@ Layer::Layer(Document *doc, const QColor &color, const QString &name) :
      step_height_(0),
      use_diode_(false),
      target_height_(0),
-     cache_(std::make_unique<CacheStack>(this)),
-     cache_valid_(false),
      type_(Type::Line) {}
 
 Layer::Layer(Document *doc, int layer_counter) :
@@ -45,13 +43,7 @@ Layer::~Layer() = default;
 
 void Layer::paintUnselected(QPainter *painter, double line_width) {
   if (!is_visible_) return;
-  // Update cache if it's not valid
-  if (!cache_valid_) {
-    cache_->update();
-    cache_valid_ = true;
-  }
   // Draw shapes
-  // cache_->paint(painter);
   QPen layer_stroke_pen(color_, line_width, Qt::SolidLine);
   layer_stroke_pen.setCosmetic(true);
   for (ShapePtr &shape : children_) {
@@ -64,9 +56,10 @@ void Layer::paintUnselected(QPainter *painter, double line_width) {
 void Layer::addShape(const ShapePtr &shape) {
   shape->setLayer(this);
   children_mutex_.lock();
+  if(type_ == Layer::Type::Line) shape->setFilled(false);
+  else shape->setFilled(true);
   children_.push_back(shape);
   children_mutex_.unlock();
-  cache_valid_ = false;
 }
 
 void Layer::removeShape(const ShapePtr &shape) {
@@ -75,7 +68,6 @@ void Layer::removeShape(const ShapePtr &shape) {
     qInfo() << "[Layer] Failed to remove children";
   }
   children_mutex_.unlock();
-  flushCache();
 }
 
 // Getters
@@ -120,10 +112,6 @@ bool Layer::isUseDiode() const {
   return use_diode_;
 }
 
-void Layer::flushCache() {
-  cache_valid_ = false;
-}
-
 double Layer::stepHeight() const { return step_height_; }
 
 double Layer::targetHeight() const { return target_height_; }
@@ -150,13 +138,11 @@ void Layer::setVisible(bool visible) {
 
 void Layer::setColor(const QColor &color) {
   color_ = color;
-  flushCache();
 }
 
 void Layer::setType(Layer::Type type) {
   // TODO: Whether setFilled of all shapes in this layer?
   type_ = type;
-  flushCache();
   for (ShapePtr &shape : children_) {
     if(type == Layer::Type::Line) shape->setFilled(false);
     else shape->setFilled(true);

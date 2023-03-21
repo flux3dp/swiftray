@@ -65,7 +65,7 @@ void CacheStack::addShape(Shape *shape) {
       break;
     case Shape::Type::Group:
       cache_type = CacheType::Group;
-      ((GroupShape *) shape)->cacheStack().update(); // If the shape is a group, we need to flush it, but do not propagate event back to the top
+      // ((GroupShape *) shape)->cacheStack().update(); // If the shape is a group, we need to flush it, but do not propagate event back to the top
       break;
     default:
       Q_ASSERT_X(false, "CacheStack", "Cannot cache unknown typed shapes");

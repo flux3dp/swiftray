@@ -3,12 +3,10 @@
 #include <shape/group-shape.h>
 
 GroupShape::GroupShape() :
-     Shape(),
-     cache_(std::make_unique<CacheStack>(this)) {}
+     Shape() {}
 
 GroupShape::GroupShape(QList<ShapePtr> &children) :
-     Shape(),
-     cache_(std::make_unique<CacheStack>(this)) {
+     Shape() {
   children_ = children;
   flushCache();
 }
@@ -67,15 +65,16 @@ void GroupShape::calcBoundingBox() const {
 void GroupShape::cache() const {
   if (!hasLayer()) return;
   qInfo() << "Group caching" << this << " called";
-  // TODO: (This breaks if the group is inside another group! Consider using global transform)
-  // note that temp transform is not considered here
-  cache_->update();
 }
 
 void GroupShape::paint(QPainter *painter) const {
   boundingRect();
-
-  cache_->paint(painter);
+  painter->save();
+  painter->setTransform(transform() * tempTransform(), true);
+  for (auto &shape : children_) {
+    shape.get()->paint(painter);
+  }
+  painter->restore();
 }
 
 ShapePtr GroupShape::clone() const {
@@ -96,6 +95,8 @@ const QList<ShapePtr> &GroupShape::children() const { return children_; }
 
 Shape::Type GroupShape::type() const { return Shape::Type::Group; }
 
-CacheStack &GroupShape::cacheStack() const {
-  return *cache_.get();
+void GroupShape::setFilled(bool filled) {
+  for (auto &shape : children_) {
+    shape->setFilled(filled);
+  }
 }

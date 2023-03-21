@@ -74,14 +74,7 @@ Canvas::Canvas(QQuickItem *parent)
   fps_timer.start();
 
   // Register events
-  connect(this, &Canvas::selectionsChanged, [=](QList<ShapePtr> shape_list) {
-    for (auto &layer : document().layers()) {
-      layer->flushCache();
-    }
-  });
-
   connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
-
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
   connect(&ctrl_transform_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
   connect(&ctrl_select_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
