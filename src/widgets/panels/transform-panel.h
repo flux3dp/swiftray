@@ -25,6 +25,7 @@ public:
   void setTransformH(double h);
   void setScaleLock(bool scaleLock);
   void changeTransformEnable(bool enable);
+  void setShapeReference(int shape_reference);
 
 private:
   void loadStyles() override;
@@ -42,6 +43,7 @@ Q_SIGNALS:
   void editShapeTransformW(double w);
   void editShapeTransformH(double h);
   void scaleLockToggled(bool scale_locked);
+  void editShapeReference(int shape_reference);
   void panelShow(bool is_show);
 };
 

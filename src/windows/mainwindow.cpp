@@ -116,6 +116,7 @@ void MainWindow::loadSettings() {
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
   canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
+  canvas_->setShapeReference(mainApp->getShapeReference());
   laser_panel_->setJobOrigin(mainApp->getJobOrigin());
   laser_panel_->setStartFrom(mainApp->getStartFrom());
   laser_panel_->setStartHome(mainApp->getStartWithHome());
@@ -1085,6 +1086,7 @@ void MainWindow::loadWidgets() {
   font_panel_->setUnderline(mainApp->getFont().underline());
   font_panel_->setLineHeight(mainApp->getFontLineHeight());
   transform_panel_->setScaleLock(mainApp->isShapeScaleLocked());
+  transform_panel_->setShapeReference(mainApp->getShapeReference());
   image_panel_->setImageGradient(mainApp->isImageGradient());
   image_panel_->setImageThreshold(mainApp->getImageThreshold());
   image_panel_->changeImageEnable(false);
@@ -1450,6 +1452,7 @@ void MainWindow::registerEvents() {
   connect(transform_panel_, &TransformPanel::editShapeTransformW, mainApp, &MainApplication::updateShapeTransformW);
   connect(transform_panel_, &TransformPanel::editShapeTransformH, mainApp, &MainApplication::updateShapeTransformH);
   connect(transform_panel_, &TransformPanel::scaleLockToggled, mainApp, &MainApplication::updateShapeScaleLock);
+  connect(transform_panel_, &TransformPanel::editShapeReference, mainApp, &MainApplication::updateShapeReference);
   connect(mainApp, &MainApplication::selectAllGeometry, [=](bool state) {
     ui->actionPathOffset->setEnabled(state);
   });
@@ -1476,6 +1479,10 @@ void MainWindow::registerEvents() {
     ui->actionAlignHLeft->setEnabled(state);
     ui->actionAlignHCenter->setEnabled(state);
     ui->actionAlignHRight->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::editShapeReference, [=](int reference_origin) {
+    transform_panel_->setShapeReference(reference_origin);
+    canvas_->setShapeReference(reference_origin);
   });
 
   //about font

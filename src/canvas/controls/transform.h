@@ -5,6 +5,7 @@
 #include <canvas/controls/canvas-control.h>
 #include <document.h>
 #include <cmath>
+#include <constants.h>
 #include <limits>
 #include <shape/shape.h>
 
@@ -58,28 +59,16 @@ namespace Controls {
       return bbox_angle_;
     }
 
-    void updateTransform(double new_x, double new_y, double new_r, double new_w, double new_h) {
-      if (std::abs(new_x - x()) > 0.01 || std::abs(new_y - y()) > 0.01) {
-        translate_to_apply_ = QPointF(new_x - x(), new_y - y());
-        applyMove();
-      }
-      if (std::abs(new_r - rotation()) > 0.01) {
-        rotation_to_apply_ = new_r - rotation();
-        applyRotate(boundingRect().center(), rotation_to_apply_);
-      }
-      if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
-        scale_x_to_apply_ = width() == 0 ? 1 : new_w / width();
-        scale_y_to_apply_ = height() == 0 ? 1 : new_h / height();
-        applyScale(boundingRect().center(), scale_x_to_apply_, scale_y_to_apply_);
-      }
-    }
+    void updateTransform(double new_x, double new_y, double new_r, double new_w, double new_h);
 
     double x() {
-      return boundingRect().center().x();
+      updateReferencePoint();
+      return reference_point_.x();
     }
 
     double y() {
-      return boundingRect().center().y();
+      updateReferencePoint();
+      return reference_point_.y();
     }
 
     double width() {
@@ -100,14 +89,20 @@ namespace Controls {
 
     void applyScale(QPointF center, double scale_x, double scale_y, bool temporarily = false);
 
+    void setReferencePoint(JobOrigin reference_point);
+
   private:
     void applyRotate(QPointF center, double rotation, bool temporarily = false);
 
     Control hitTest(QPointF clickPoint, float tolerance);
 
+    void updateReferencePoint();
+
     QPointF controls_[9];
     Control active_control_;
     QPointF action_center_;
+    JobOrigin reference_origin_;
+    QPointF reference_point_;
     QRectF bounding_rect_;
 
     QList<ShapePtr> selections_;

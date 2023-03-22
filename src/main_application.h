@@ -36,6 +36,7 @@ public:
   double getTransformW();
   double getTransformH();
   bool isShapeScaleLocked();
+  int getShapeReference();
   //about image
   bool isImageGradient();
   int getImageThreshold();
@@ -85,6 +86,7 @@ public Q_SLOTS:
   void updateShapeTransformW(double w);
   void updateShapeTransformH(double h);
   void updateShapeScaleLock(bool locked);
+  void updateShapeReference(int reference_origin);
   //about image
   void updateImageGradient(bool state);
   void updateImageThreshold(int value);
@@ -139,6 +141,7 @@ private:
   double w_;
   double h_;
   bool scale_locked_;
+  JobOrigin reference_origin_;
   //setting of current image
   bool gradient_;
   int thrsh_brightness_;
@@ -193,6 +196,7 @@ Q_SIGNALS:
   //about transform
   void editShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h);
   void editShapeScaleLock(bool locked);
+  void editShapeReference(int reference_origin);
   void changeTransformEnable(bool enable);
   void selectAllGeometry(bool is_geometry);
   void selectAllGroup(bool is_group);

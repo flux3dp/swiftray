@@ -38,6 +38,8 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   line_height_ = LINE_HEIGHT;
   x_ = y_ = r_ = w_ = h_ = 0;
   scale_locked_ = false;
+  QVariant reference_code = settings.value("window/reference", 0);
+  reference_origin_ = (JobOrigin)reference_code.toInt();
   gradient_ = Qt::Checked;
   thrsh_brightness_ = 128;
   job_origin_ = NW;
@@ -294,6 +296,10 @@ bool MainApplication::isShapeScaleLocked() {
   return scale_locked_;
 }
 
+int MainApplication::getShapeReference() {
+  return reference_origin_;
+}
+
 void MainApplication::getSelectShapeTransform(qreal x, qreal y, qreal r, qreal w, qreal h) {
   x_ = x / 10;
   y_ = y / 10;
@@ -355,6 +361,13 @@ void MainApplication::updateShapeTransformH(double h) {
 void MainApplication::updateShapeScaleLock(bool locked) {
   scale_locked_ = locked;
   Q_EMIT editShapeScaleLock(scale_locked_);
+}
+
+void MainApplication::updateShapeReference(int reference_origin) {
+  reference_origin_ = (JobOrigin)reference_origin;
+  QSettings settings("flux", "swiftray");
+  settings.setValue("window/reference", reference_origin);
+  Q_EMIT editShapeReference(reference_origin_);
 }
 
 //about image

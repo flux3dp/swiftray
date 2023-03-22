@@ -180,6 +180,29 @@ void Transform::applyMove(bool temporarily) {
   }
 }
 
+void Transform::updateTransform(double new_x, double new_y, 
+                double new_r, double new_w, double new_h) {
+  bool changed = false;
+  if (std::abs(new_x - x()) > 0.01 || std::abs(new_y - y()) > 0.01) {
+    translate_to_apply_ = QPointF(new_x - x(), new_y - y());
+    applyMove();
+    changed = true;
+  }
+  if (std::abs(new_r - rotation()) > 0.01) {
+    rotation_to_apply_ = new_r - rotation();
+    applyRotate(boundingRect().center(), rotation_to_apply_);
+    changed = true;
+  }
+  if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
+    updateReferencePoint();
+    scale_x_to_apply_ = width() == 0 ? 1 : new_w / width();
+    scale_y_to_apply_ = height() == 0 ? 1 : new_h / height();
+    applyScale(reference_point_, scale_x_to_apply_, scale_y_to_apply_);
+    changed = true;
+  }
+  if(changed) Q_EMIT shapeUpdated();
+}
+
 void Transform::controlPoints() {
   QRectF bbox = boundingRect().translated(translate_to_apply_.x(),
                                           translate_to_apply_.y());
@@ -502,4 +525,42 @@ bool Transform::isDirectionLock() const {
 
 void Transform::setDirectionLock(bool direction_lock) {
   direction_locked_ = direction_lock;
+}
+
+void Transform::setReferencePoint(JobOrigin reference_point) {
+  reference_origin_ = reference_point;
+  updateReferencePoint();
+  Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+}
+
+void Transform::updateReferencePoint() {
+  switch (reference_origin_) {
+    case NW:
+      reference_point_ = boundingRect().topLeft();
+      break;
+    case N:
+      reference_point_ = (boundingRect().topLeft() + boundingRect().topRight() ) /2.;
+      break;
+    case NE:
+      reference_point_ = boundingRect().topRight();
+      break;
+    case E:
+      reference_point_ = (boundingRect().bottomRight() + boundingRect().topRight() ) /2.;
+      break;
+    case SE:
+      reference_point_ = boundingRect().bottomRight();
+      break;
+    case S:
+      reference_point_ = (boundingRect().bottomRight() + boundingRect().bottomLeft() ) /2.;
+      break;
+    case SW:
+      reference_point_ = boundingRect().bottomLeft();
+      break;
+    case W:
+      reference_point_ = (boundingRect().topLeft() + boundingRect().bottomLeft() ) /2.;
+      break;
+    case CENTER:
+      reference_point_ = boundingRect().center();
+      break;
+  }
 }

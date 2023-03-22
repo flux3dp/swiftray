@@ -1543,6 +1543,10 @@ void Canvas::shapeUpdated() {
   is_shape_flushed_ = false;
 }
 
+void Canvas::setShapeReference(int reference_origin) {
+  ctrl_transform_.setReferencePoint((JobOrigin)reference_origin);
+}
+
 void Canvas::setHoverMove(bool in_canvas) {
   is_in_canvas_ = in_canvas;
   updateCursor();

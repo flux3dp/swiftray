@@ -237,6 +237,8 @@ public Q_SLOTS:
 
   void shapeUpdated();
 
+  void setShapeReference(int reference_origin);
+
 private:
   // Basic attributes
   std::unique_ptr<Document> doc_;
