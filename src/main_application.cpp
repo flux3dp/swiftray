@@ -53,6 +53,8 @@ MainApplication::MainApplication(int &argc,  char **argv) :
 
   QVariant quality_code = settings.value("canvas/quality", 0);
   canvas_quality_ = (CanvasQuality)quality_code.toInt();
+  QVariant sort_code = settings.value("canvas/path_sort", 0);
+  path_sort_ = (PathSort)sort_code.toInt();
 
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
@@ -850,4 +852,12 @@ void MainApplication::updateCanvasQuality(int canvas_quality) {
   QSettings settings("flux", "swiftray");
   settings.setValue("canvas/quality", canvas_quality);
   Q_EMIT editCanvasQuality(canvas_quality_);
+}
+
+//about tool path
+void MainApplication::updatePathSort(int path_sort) {
+  path_sort_ = (PathSort)path_sort;
+  QSettings settings("flux", "swiftray");
+  settings.setValue("canvas/path_sort", path_sort);
+  Q_EMIT editPathSort(path_sort_);
 }

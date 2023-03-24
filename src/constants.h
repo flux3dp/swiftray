@@ -28,4 +28,9 @@ enum CanvasQuality{
   NormalQuality,
   LowQuality
 };
+enum PathSort{
+  MergeSort = 0,
+  NestedSort,
+  NoSort
+};
 #endif // CONSTANTS_H

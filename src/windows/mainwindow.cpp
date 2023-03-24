@@ -107,6 +107,7 @@ void MainWindow::loadSettings() {
   #endif
   preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
   preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
+  preferences_window_->setPathSort(mainApp->getPathSort());
   canvas_->setCanvasQuality(mainApp->getCanvasQuality());
   setWindowModified(false);
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
@@ -460,6 +461,7 @@ void MainWindow::actionFrame() {
       end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), mainApp->getStartWithHome());
   if (exporter.isExceedingBoundary()) {
@@ -896,6 +898,7 @@ void MainWindow::exportGCodeFile() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
   if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
                                     mainApp->getStartWithHome(), &progress_dialog)) {
@@ -1158,6 +1161,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionPreferences, &QAction::triggered, [=]() {
     preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
     preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
+    preferences_window_->setPathSort(mainApp->getPathSort());
     preferences_window_->show();
     preferences_window_->activateWindow();
     preferences_window_->raise();
@@ -1250,6 +1254,9 @@ void MainWindow::registerEvents() {
   });
   connect(preferences_window_, &PreferencesWindow::canvasQualityUpdate, [=](int canvas_quality) {
     mainApp->updateCanvasQuality(canvas_quality);
+  });
+  connect(preferences_window_, &PreferencesWindow::pathSortUpdate, [=](int path_sort) {
+    mainApp->updatePathSort(path_sort);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
     mainApp->updateUploadEnable(enable_upload);
@@ -1657,6 +1664,9 @@ void MainWindow::registerEvents() {
   connect(mainApp, &MainApplication::editCanvasQuality, [=](CanvasQuality canvas_quality) {
     preferences_window_->setCanvasQuality(canvas_quality);
     canvas_->setCanvasQuality(canvas_quality);
+  });
+  connect(mainApp, &MainApplication::editPathSort, [=](PathSort path_sort) {
+    preferences_window_->setPathSort(path_sort);
   });
 
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
@@ -2482,7 +2492,7 @@ void MainWindow::genPreviewWindow() {
                                     end_point_,
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
-
+  preview_exporter.setSortRule(mainApp->getPathSort());
   preview_exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
 
   QProgressDialog progress_dialog(tr("Exporting toolpath..."),

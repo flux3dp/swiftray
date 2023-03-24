@@ -210,11 +210,44 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   }
 }
 
-void ToolpathExporter::sortPolygons() {
-  // Performance: O(n^2)
+void mergeQList(QList<QPolygonF> &Array, int front, int mid, int end){
+  // 利用 QList 的constructor, 
+  // 把array[front]~array[mid]放進 LeftSub[]
+  // 把array[mid+1]~array[end]放進 RightSub[]
+  QList<QPolygonF> LeftSub(Array.begin()+front, Array.begin()+mid+1),
+                   RightSub(Array.begin()+mid+1, Array.begin()+end+1);
+
+  LeftSub.insert(LeftSub.end(), QRectF(0,0,std::numeric_limits<double>::max(),1));      // 在LeftSub[]尾端加入值為 Max 的元素
+  RightSub.insert(RightSub.end(), QRectF(0,0,std::numeric_limits<double>::max(),1));    // 在RightSub[]尾端加入值為 Max 的元素
+ 
+  int idxLeft = 0, idxRight = 0;
+  for (int i = front; i <= end; i++) {
+    if (LeftSub[idxLeft].boundingRect().width() <= RightSub[idxRight].boundingRect().width() ) {
+      Array[i] = LeftSub[idxLeft];
+      idxLeft++;
+    }
+    else{
+      Array[i] = RightSub[idxRight];
+      idxRight++;
+    }
+  }
+}
+
+// Performance: O(n log(n))
+void mergeSort(QList<QPolygonF> &array, int front, int end) {
+                                          // front與end為矩陣範圍
+  if (front < end) {                      // 表示目前的矩陣範圍是有效的
+    int mid = (front+end)/2;              // mid即是將矩陣對半分的index
+    mergeSort(array, front, mid);         // 繼續divide矩陣的前半段subarray
+    mergeSort(array, mid+1, end);         // 繼續divide矩陣的後半段subarray
+    mergeQList(array, front, mid, end);   // 將兩個subarray做比較, 並合併出排序後的矩陣
+  }
+}
+
+// Performance: O(n^2)
+void nestedSort(QList<QPolygonF> &array) {
   QList<QPolygonF> sort_result;
-  polygons_mutex_.lock();
-  for (const auto& polygon: layer_polygons_) {
+  for (const auto& polygon: array) {
     int insert_idx = sort_result.size();
     for (int idx = sort_result.size() - 1; idx >= 0; idx--) {
       if (sort_result[idx].boundingRect().contains(polygon.boundingRect())) {
@@ -224,9 +257,22 @@ void ToolpathExporter::sortPolygons() {
     sort_result.insert(insert_idx, polygon);
   }
 
-  layer_polygons_ = sort_result;
-  polygons_mutex_.unlock();
-  return;
+  array = sort_result;
+}
+
+void ToolpathExporter::sortPolygons() {
+  switch (sort_rule_)
+  {
+  case MergeSort:
+    mergeSort(layer_polygons_, 0, layer_polygons_.size()-1);
+    break;
+  case NestedSort:
+    nestedSort(layer_polygons_);
+    break;
+  case NoSort:
+  default:
+    break;
+  }
 }
 
 /**

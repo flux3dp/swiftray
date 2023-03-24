@@ -15,6 +15,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
   setSpeedOptimizationComboBox();
   setShareComboBox();
   setQualityComboBox();
+  setPathSortComboBox();
   QFont current_font = QApplication::font();
   if(current_font.pixelSize() > 0) {
     ui->horizontalSliderFontSize->setValue(current_font.pixelSize());
@@ -39,6 +40,7 @@ PreferencesWindow::PreferencesWindow(QWidget *parent) :
     Q_EMIT speedModeChanged(ui->comboBoxSpeedOptimization->currentIndex());
     Q_EMIT privacyUpdate(ui->comboBoxShare->currentIndex());
     Q_EMIT canvasQualityUpdate(ui->comboBoxQuality->currentIndex());
+    Q_EMIT pathSortUpdate(ui->comboBoxPathSort->currentIndex());
   });
   connect(ui->horizontalSliderFontSize, &QAbstractSlider::valueChanged, [=](int value){
     ui->labelFontSize->setText(QString::number(value));
@@ -67,6 +69,12 @@ void PreferencesWindow::setCanvasQuality(int canvas_quality) {
   ui->comboBoxQuality->blockSignals(false);
 }
 
+void PreferencesWindow::setPathSort(int path_sort) {
+  ui->comboBoxPathSort->blockSignals(true);
+  ui->comboBoxPathSort->setCurrentIndex(path_sort);
+  ui->comboBoxPathSort->blockSignals(false);
+}
+
 void PreferencesWindow::setLanguageComboBox() {
   ui->comboBox->addItem("English");
   // \u4e2d\u6587 為“中文”unicode
@@ -92,6 +100,12 @@ void PreferencesWindow::setQualityComboBox() {
   ui->comboBoxQuality->addItem("Auto");
   ui->comboBoxQuality->addItem("Normal");
   ui->comboBoxQuality->addItem("Low");
+}
+
+void PreferencesWindow::setPathSortComboBox() {
+  ui->comboBoxPathSort->addItem("Merge Sort");
+  ui->comboBoxPathSort->addItem("Nested Sort");
+  ui->comboBoxPathSort->addItem("No Sort");
 }
 
 void PreferencesWindow::setTabWidget() {

@@ -66,6 +66,8 @@ public:
   RotarySettings::RotaryParam getRotaryParam();
   //about canvas
   CanvasQuality getCanvasQuality() { return canvas_quality_; }
+  //about tool path
+  PathSort getPathSort() { return path_sort_; }
 
 public Q_SLOTS:
   void updateUploadEnable(bool enable_upload);
@@ -114,6 +116,8 @@ public Q_SLOTS:
   void updateCircumference(double circumference);
   //about canvas
   void updateCanvasQuality(int canvas_quality);
+  //about tool path
+  void updatePathSort(int path_sort);
 
 private:
   //about preset
@@ -165,6 +169,8 @@ private:
   double rotary_scale_;
   //setting of canvas
   CanvasQuality canvas_quality_;
+  //setting of tool path
+  PathSort path_sort_;
 
 private Q_SLOTS:
   void cleanup();
@@ -228,6 +234,8 @@ Q_SIGNALS:
   void editCircumference(double circumference);
   //about canvas
   void editCanvasQuality(CanvasQuality canvas_quality);
+  //about tool path
+  void editPathSort(PathSort path_sort);
 };
 
 extern MainApplication *mainApp;
