@@ -1809,6 +1809,9 @@ void MainWindow::registerEvents() {
   connect(&active_machine, &Machine::activated, [=]() {
     Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
+    ui->actionFrame->setEnabled(true);
+    jogging_panel_->setControlEnable(true);
+    laser_panel_->setControlEnable(true);
   });
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -2778,6 +2781,9 @@ void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_po
 void MainWindow::machineDisconnected() {
   Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+  ui->actionFrame->setEnabled(false);
+  jogging_panel_->setControlEnable(false);
+  laser_panel_->setControlEnable(false);
 }
 
 void MainWindow::updateCanvasSize(QSize new_size) {
