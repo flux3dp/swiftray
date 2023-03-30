@@ -2,11 +2,6 @@
 #include <document.h>
 #include <layer.h>
 #include <shape/shape.h>
-#include <shape/group-shape.h>
-#include <shape/bitmap-shape.h>
-#include <shape/text-shape.h>
-#include <shape/path-shape.h>
-
 
 #define SELECTION_TOLERANCE 15
 

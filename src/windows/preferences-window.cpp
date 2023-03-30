@@ -103,9 +103,9 @@ void PreferencesWindow::setQualityComboBox() {
 }
 
 void PreferencesWindow::setPathSortComboBox() {
-  ui->comboBoxPathSort->addItem("Merge Sort");
+  ui->comboBoxPathSort->addItem("Ascending Sort");
   ui->comboBoxPathSort->addItem("Nested Sort");
-  ui->comboBoxPathSort->addItem("No Sort");
+  ui->comboBoxPathSort->addItem("Importing Sort");
 }
 
 void PreferencesWindow::setTabWidget() {

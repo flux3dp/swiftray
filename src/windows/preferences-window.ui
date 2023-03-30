@@ -108,7 +108,7 @@
        <item>
         <widget class="QLabel" name="label_6">
          <property name="text">
-          <string>Path Sort</string>
+          <string>G-code Generating Rule</string>
          </property>
         </widget>
        </item>

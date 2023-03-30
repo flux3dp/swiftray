@@ -2461,6 +2461,7 @@ bool MainWindow::generateGcode() {
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
   if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
                                     mainApp->getStartWithHome(), &progress_dialog)) {
