@@ -1438,11 +1438,13 @@ double Canvas::lineHeight() const { return line_height_;}
 
 void Canvas::editHFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editVFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), 1, -1, false);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1454,6 +1456,7 @@ void Canvas::editAlignHLeft() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1465,6 +1468,7 @@ void Canvas::editAlignHCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1476,6 +1480,7 @@ void Canvas::editAlignHRight() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1487,6 +1492,7 @@ void Canvas::editAlignVTop() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1498,6 +1504,7 @@ void Canvas::editAlignVCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
@@ -1509,6 +1516,7 @@ void Canvas::editAlignVBottom() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
+  is_shape_flushed_ = false;
   Q_EMIT selectionsChanged(document().selections());
 }
 
