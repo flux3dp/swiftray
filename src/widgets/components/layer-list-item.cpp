@@ -52,24 +52,25 @@ void LayerListItem::loadStyles() {
 
 void LayerListItem::registerEvents() {
   connect(ui->btnColorPicker, &ColorPickerButton::colorChanged, [=](QColor new_color) {
-    canvas_->canvasUpdated();
     layer_->document().execute(
             Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), new_color)
     );
     Q_EMIT canvas_->layerChanged();
+    canvas_->canvasUpdated();
   });
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
          Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()),
          Commands::Select(&(layer_->document()), {})
     );
+    canvas_->canvasUpdated();
   });
   connect(ui->btnLock, &QAbstractButton::clicked, this, &LayerListItem::onUnlockLayer);
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    canvas_->canvasUpdated();
     layer_->document().execute(
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );
+    canvas_->canvasUpdated();
   });
 }
 
