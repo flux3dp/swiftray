@@ -1515,6 +1515,7 @@ void MainWindow::registerEvents() {
     if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
       selected_img->setGradient(state);
+      canvas_->shapeUpdated();
     }
   });
 
@@ -1650,6 +1651,7 @@ void MainWindow::registerEvents() {
     if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
       BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
       selected_img->setThrshBrightness(value);
+      canvas_->shapeUpdated();
     }
   });
   connect(mainApp, &MainApplication::changeImageEnable, [=](bool state) {
