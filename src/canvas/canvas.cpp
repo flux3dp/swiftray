@@ -1143,6 +1143,7 @@ void Canvas::setFontFamily(QString font_family) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setFont(font_);
@@ -1164,6 +1165,7 @@ void Canvas::setPointSize(int point_size) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setPointSize(point_size);
     if(!ctrl_text_.isEmpty()) {
@@ -1187,6 +1189,7 @@ void Canvas::setLetterSpacing(double spacing) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
     if(!ctrl_text_.isEmpty()) {
@@ -1210,6 +1213,7 @@ void Canvas::setBold(bool bold) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setBold(bold);
     if(!ctrl_text_.isEmpty()) {
@@ -1233,6 +1237,7 @@ void Canvas::setItalic(bool italic) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setItalic(italic);
     if(!ctrl_text_.isEmpty()) {
@@ -1256,6 +1261,7 @@ void Canvas::setUnderline(bool underline) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setUnderline(underline);
     if(!ctrl_text_.isEmpty()) {
@@ -1276,6 +1282,7 @@ void Canvas::setLineHeight(float line_height) {
     }
     document().execute(cmd);
     Q_EMIT selectionsChanged(document().selections());//to update the boundingRect maybe use different Q_SIGNALS?
+    is_shape_flushed_ = false;
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setLineHeight(line_height);
