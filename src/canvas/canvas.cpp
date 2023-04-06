@@ -1450,7 +1450,10 @@ void Canvas::editVFlip() {
 
 void Canvas::editAlignHLeft() {
   auto cmd = Commands::Joined();
-  double left = transformControl().boundingRect().left();
+  double left = transformControl().boundingRect().center().x();
+  for (auto &shape : document().selections()) {
+    if(left > shape->boundingRect().left()) left = shape->boundingRect().left();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(left - shape->boundingRect().left(), 0);
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
@@ -1474,7 +1477,10 @@ void Canvas::editAlignHCenter() {
 
 void Canvas::editAlignHRight() {
   auto cmd = Commands::Joined();
-  double right = transformControl().boundingRect().right();
+  double right = transformControl().boundingRect().center().x();
+  for (auto &shape : document().selections()) {
+    if(right < shape->boundingRect().right()) right = shape->boundingRect().right();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(right - shape->boundingRect().right(), 0);
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
@@ -1486,7 +1492,10 @@ void Canvas::editAlignHRight() {
 
 void Canvas::editAlignVTop() {
   auto cmd = Commands::Joined();
-  double top = transformControl().boundingRect().top();
+  double top = transformControl().boundingRect().center().y();
+  for (auto &shape : document().selections()) {
+    if(top > shape->boundingRect().top()) top = shape->boundingRect().top();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(0, top - shape->boundingRect().top());
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
@@ -1510,7 +1519,10 @@ void Canvas::editAlignVCenter() {
 
 void Canvas::editAlignVBottom() {
   auto cmd = Commands::Joined();
-  double bottom = transformControl().boundingRect().bottom();
+  double bottom = transformControl().boundingRect().center().y();
+  for (auto &shape : document().selections()) {
+    if(bottom < shape->boundingRect().bottom()) bottom = shape->boundingRect().bottom();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(0, bottom - shape->boundingRect().bottom());
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
