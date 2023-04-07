@@ -2,20 +2,15 @@
 #include "font-panel.h"
 #include "ui_font-panel.h"
 #include <constants.h>
-#include <canvas/canvas.h>
-#include <windows/mainwindow.h>
-#include <windows/osxwindow.h>
 
-FontPanel::FontPanel(QWidget *parent, MainWindow *main_window) :
+FontPanel::FontPanel(QWidget *parent, bool is_dark_mode) :
      QFrame(parent),
-     main_window_(main_window),
      ui(new Ui::FontPanel),
      BaseContainer() {
-  assert(parent != nullptr && main_window != nullptr);
+  assert(parent != nullptr);
   ui->setupUi(this);
-  setFont(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold), LINE_HEIGHT);
   initializeContainer();
-  setLayout();
+  setLayout(is_dark_mode);
 }
 
 void FontPanel::loadStyles() {
@@ -35,201 +30,153 @@ void FontPanel::registerEvents() {
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
   auto spin_int_event = QOverload<int>::of(&QSpinBox::valueChanged);
 
-  connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, main_window_->canvas(), &Canvas::setFont);
-
   connect(ui->fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont font) {
-    font_.setFamily(font.family());
-    Q_EMIT fontChanged(font);
+    Q_EMIT editShapeFontFamily(font);
   });
 
   connect(ui->fontSizeSpinBox, spin_int_event, [=](double value) {
-    font_.setPointSize(value);
-    Q_EMIT fontPointSizeChanged(value);
+    Q_EMIT editShapeFontPointSize(value);
   });
 
   connect(ui->letterSpacingSpinBox, spin_event, [=](double value) {
-    font_.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, value);
-    Q_EMIT fontLetterSpacingChanged(value);
+    Q_EMIT editShapeLetterSpacing(value);
   });
 
-  connect(ui->lineHeightSpinBox, spin_event, main_window_->canvas(), &Canvas::setLineHeight);
-
   connect(ui->lineHeightSpinBox, spin_event, [=](double value) {
-    line_height_ = value;
-    Q_EMIT lineHeightChanged(value);
+    Q_EMIT editShapeLineHeight(value);
   });
 
   connect(ui->boldToolButton, &QToolButton::toggled, [=](bool checked) {
-    font_.setBold(checked);
-    Q_EMIT fontBoldChanged(checked);
+    Q_EMIT editShapeBold(checked);
   });
 
   connect(ui->italicToolButton, &QToolButton::toggled, [=](bool checked) {
-    font_.setItalic(checked);
-    Q_EMIT fontItalicChanged(checked);
+    Q_EMIT editShapeItalic(checked);
   });
 
   connect(ui->underlineToolButton, &QToolButton::toggled, [=](bool checked) {
-    font_.setUnderline(checked);
-    Q_EMIT fontUnderlineChanged(checked);
+    Q_EMIT editShapeUnderline(checked);
   });
-
-  connect(main_window_->canvas(), &Canvas::selectionsChanged, this, [=]() {
-    QFont first_qfont;
-    double first_linehight;
-    bool has_txt = false;
-    bool is_font_changed = false, is_pt_changed = false, is_ls_changed = false, is_linehight_changed = false;
-    bool is_bold_changed = false, is_italic_changed = false, is_underline_changed = false;
-    for (auto &shape : main_window_->canvas()->document().selections()) {
-      if (shape->type() == ::Shape::Type::Text) {
-        auto *t = (TextShape *) shape.get();
-        if(!has_txt) {
-          first_linehight = t->lineHeight();
-          first_qfont = t->font();
-          has_txt = true;
-        }
-        if(has_txt && first_qfont.family() != t->font().family())                is_font_changed = true;
-        if(has_txt && first_qfont.pointSize() != t->font().pointSize())          is_pt_changed = true;
-        if(has_txt && first_qfont.letterSpacing() != t->font().letterSpacing())  is_ls_changed = true;
-        if(has_txt && first_qfont.bold() != t->font().bold())                    is_bold_changed = true;
-        if(has_txt && first_qfont.italic() != t->font().italic())                is_italic_changed = true;
-        if(has_txt && first_qfont.underline() != t->font().underline())          is_underline_changed = true;
-        if(has_txt && first_linehight != t->lineHeight())                        is_linehight_changed = true;
-      }
-    }
-    if(has_txt) {
-      if(is_font_changed) {
-        ui->fontComboBox->blockSignals(true);
-        ui->fontComboBox->setCurrentText("");
-        ui->fontComboBox->blockSignals(false);
-      }
-      else {
-        ui->fontComboBox->setCurrentText(first_qfont.family());
-      }
-      if(is_pt_changed) {
-        ui->fontSizeSpinBox->blockSignals(true);
-        ui->fontSizeSpinBox->setSpecialValueText(tr(" "));
-        ui->fontSizeSpinBox->setValue(0);
-        ui->fontSizeSpinBox->blockSignals(false);
-      }
-      else {
-        ui->fontSizeSpinBox->setValue(first_qfont.pointSize());
-      }
-      if(is_ls_changed) {
-        ui->letterSpacingSpinBox->blockSignals(true);
-        ui->letterSpacingSpinBox->setSpecialValueText(tr(" "));
-        ui->letterSpacingSpinBox->setValue(-0.1);
-        ui->letterSpacingSpinBox->blockSignals(false);
-      }
-      else {
-        ui->letterSpacingSpinBox->setValue(first_qfont.letterSpacing());
-      }
-      if(is_bold_changed) {
-        ui->boldToolButton->blockSignals(true);
-        ui->boldToolButton->setChecked(false);
-        font_.setBold(false);
-        ui->boldToolButton->blockSignals(false);
-      }
-      else {
-        ui->boldToolButton->setChecked(first_qfont.bold());
-      }
-      if(is_italic_changed) {
-        ui->italicToolButton->blockSignals(true);
-        ui->italicToolButton->setChecked(false);
-        font_.setItalic(false);
-        ui->italicToolButton->blockSignals(false);
-      }
-      else {
-        ui->italicToolButton->setChecked(first_qfont.italic());
-      }
-      if(is_underline_changed) {
-        ui->underlineToolButton->blockSignals(true);
-        ui->underlineToolButton->setChecked(false);
-        font_.setUnderline(false);
-        ui->underlineToolButton->blockSignals(false);
-      }
-      else {
-        ui->underlineToolButton->setChecked(first_qfont.underline());
-      }
-      if(is_linehight_changed) {
-        ui->lineHeightSpinBox->blockSignals(true);
-        ui->lineHeightSpinBox->setSpecialValueText(tr(" "));
-        ui->lineHeightSpinBox->setValue(0);
-        ui->lineHeightSpinBox->blockSignals(false);
-      }
-      else {
-        ui->lineHeightSpinBox->setValue(first_linehight);
-      }
-    }
-    else {
-      setFont(font_, line_height_);
-      ui->fontComboBox->setCurrentText(font_.family());
-    }
-  });
-}
-
-void FontPanel::setFont(QFont font, float line_height) {
-  font_ = font;
-  line_height_ = line_height;
-  ui->fontComboBox->setCurrentFont(font);
-  ui->fontSizeSpinBox->setValue(font.pointSize());
-  ui->letterSpacingSpinBox->setValue(font.letterSpacing());
-  ui->lineHeightSpinBox->setValue(line_height);
-  ui->boldToolButton->setChecked(font.bold());
-  qInfo() << "font.bold()" << font.bold();
-  ui->italicToolButton->setChecked(font.italic());
-  qInfo() << "font.italic()" << font.italic();
-  ui->underlineToolButton->setChecked(font.underline());
-  qInfo() << "font.underline()" << font.underline();
 }
 
 FontPanel::~FontPanel() {
   delete ui;
 }
 
-QFont FontPanel::font() {
-  return font_;
+void FontPanel::setLayout(bool is_dark_mode) {
+  ui->boldToolButton->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-Bold.png" : ":/resources/images/icon-Bold.png"));
+  ui->italicToolButton->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-I.png" : ":/resources/images/icon-I.png"));
+  ui->underlineToolButton->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-U.png" : ":/resources/images/icon-U.png"));
 }
 
-double FontPanel::lineHeight() {
-  return ui->lineHeightSpinBox->value();
-}
-
-void FontPanel::setFont(const QFont &font) {
-  // QFont current_font = ui->fontComboBox->currentFont();
-  // current_font.setFamily(font.family());
-  // ui->fontComboBox->setCurrentFont(current_font);
-  return ui->fontComboBox->setCurrentFont(font);
+void FontPanel::setFontFamily(QString font_family) {
+  QFont font;
+  font.setFamily(font_family);
+  ui->fontComboBox->blockSignals(true);
+  ui->fontComboBox->setCurrentFont(font);
+  ui->fontComboBox->blockSignals(false);
 }
 
 void FontPanel::setPointSize(int point_size) {
-  return ui->fontSizeSpinBox->setValue(point_size);
+  ui->fontSizeSpinBox->blockSignals(true);
+  ui->fontSizeSpinBox->setValue(point_size);
+  ui->fontSizeSpinBox->blockSignals(false);
 }
 
 void FontPanel::setLetterSpacing(double spacing) {
-  return ui->letterSpacingSpinBox->setValue(spacing);
+  ui->letterSpacingSpinBox->blockSignals(true);
+  ui->letterSpacingSpinBox->setValue(spacing);
+  ui->letterSpacingSpinBox->blockSignals(false);
 }
 
 void FontPanel::setBold(bool bold) {
-  return ui->boldToolButton->setChecked(bold);
+  ui->boldToolButton->blockSignals(true);
+  ui->boldToolButton->setChecked(bold);
+  ui->boldToolButton->blockSignals(false);
 }
 
 void FontPanel::setItalic(bool italic) {
-  return ui->italicToolButton->setChecked(italic);
+  ui->italicToolButton->blockSignals(true);
+  ui->italicToolButton->setChecked(italic);
+  ui->italicToolButton->blockSignals(false);
 }
 
 void FontPanel::setUnderline(bool underline) {
-  return ui->underlineToolButton->setChecked(underline);
-}
-
-void FontPanel::setLayout() {
-  ui->boldToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-Bold.png" : ":/resources/images/icon-Bold.png"));
-  ui->italicToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-I.png" : ":/resources/images/icon-I.png"));
-  ui->underlineToolButton->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-U.png" : ":/resources/images/icon-U.png"));
+  ui->underlineToolButton->blockSignals(true);
+  ui->underlineToolButton->setChecked(underline);
+  ui->underlineToolButton->blockSignals(false);
 }
 
 void FontPanel::setLineHeight(double line_height) {
+  ui->lineHeightSpinBox->blockSignals(true);
   ui->lineHeightSpinBox->setValue(line_height);
+  ui->lineHeightSpinBox->blockSignals(false);
+}
+
+void FontPanel::changeFontEnable(bool enable) {
+  ui->scrollAreaWidgetContents->setEnabled(enable);
+}
+
+//this part must follow mainwindow
+void FontPanel::updateFontView(QSet<QString> font_familys, 
+                    QSet<int> point_sizes, 
+                    QSet<qreal> letter_spacings, 
+                    QSet<bool> bolds, 
+                    QSet<bool> italics, 
+                    QSet<bool> underlines, 
+                    QSet<double> line_heights) {
+  if(font_familys.size() == 1) {
+    setFontFamily(*font_familys.begin());
+  } else if(!font_familys.empty()) {
+    ui->fontComboBox->blockSignals(true);
+    ui->fontComboBox->setCurrentText("");
+    ui->fontComboBox->blockSignals(false);
+  }
+  if(point_sizes.size() == 1) {
+    setPointSize(*point_sizes.begin());
+  } else if(!point_sizes.empty()) {
+    ui->fontSizeSpinBox->blockSignals(true);
+    ui->fontSizeSpinBox->setSpecialValueText(tr(" "));
+    ui->fontSizeSpinBox->setValue(0);
+    ui->fontSizeSpinBox->blockSignals(false);
+  }
+  if(letter_spacings.size() == 1) {
+    setLetterSpacing(*letter_spacings.begin());
+  } else if(!letter_spacings.empty()) {
+    ui->letterSpacingSpinBox->blockSignals(true);
+    ui->letterSpacingSpinBox->setSpecialValueText(tr(" "));
+    ui->letterSpacingSpinBox->setValue(-0.1);
+    ui->letterSpacingSpinBox->blockSignals(false);
+  }
+  if(bolds.size() == 1) {
+    setBold(*bolds.begin());
+  } else if(!bolds.empty()) {
+    ui->boldToolButton->blockSignals(true);
+    ui->boldToolButton->setChecked(false);
+    ui->boldToolButton->blockSignals(false);
+  }
+  if(italics.size() == 1) {
+    setItalic(*italics.begin());
+  } else if(!italics.empty()) {
+    ui->italicToolButton->blockSignals(true);
+    ui->italicToolButton->setChecked(false);
+    ui->italicToolButton->blockSignals(false);
+  }
+  if(underlines.size() == 1) {
+    setUnderline(*underlines.begin());
+  } else if(!underlines.empty()) {
+    ui->underlineToolButton->blockSignals(true);
+    ui->underlineToolButton->setChecked(false);
+    ui->underlineToolButton->blockSignals(false);
+  }
+  if(line_heights.size() == 1) {
+    setLineHeight(*line_heights.begin());
+  } else if(!line_heights.empty()) {
+    ui->lineHeightSpinBox->blockSignals(true);
+    ui->lineHeightSpinBox->setSpecialValueText(tr(" "));
+    ui->lineHeightSpinBox->setValue(0);
+    ui->lineHeightSpinBox->blockSignals(false);
+  }
 }
 
 void FontPanel::hideEvent(QHideEvent *event) {

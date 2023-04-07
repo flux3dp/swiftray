@@ -4,9 +4,7 @@
 #include <QFrame>
 #include <command.h>
 #include <layer.h>
-#include <settings/preset-settings.h>
 #include <widgets/base-container.h>
-#include <windows/preset-manager.h>
 #include <QToolButton>
 
 class MainWindow;
@@ -20,32 +18,33 @@ Q_OBJECT
 
 public:
   explicit LayerParamsPanel(QWidget *parent, MainWindow *main_window);
-
   ~LayerParamsPanel();
+  void setPresetIndex(int preset_index, int param_index);
+  void setLayerParam(double strength, double speed, int repeat);
+  void setLayerBacklash(double backlash);
+  void setLayerParamLock(bool enable);
 
 public Q_SLOTS:
-
   void updateLayer(Layer *layer);
+
+Q_SIGNALS:
+  void editParamIndex(int param_index);
+  void wakeupPresetManager();
+  void editLayerParam(double strength, double speed, int repeat);
+  void editLayerBacklash(double backlash);
+  void editLayerParamIndex(int param_index);
 
 private:
   void loadStyles() override;
-
   void loadSettings() override;
-
   void registerEvents() override;
-
   void resizeEvent(QResizeEvent *) override;
-
   void setToCustom();
-
   void updateMovingComboBox();
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
   MainWindow *main_window_;
-  PresetManager *preset_manager_;
-  PresetSettings *preset_settings_ = &PresetSettings::getInstance();
-  int preset_previous_index_;
   QToolButton *add_layer_btn_;
 };
 

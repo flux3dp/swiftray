@@ -11,6 +11,7 @@ Rectangle {
     signal setupComplete
     signal createStandardProfile(string brand, string model)
     signal createOtherProfile(string name, int width, int height, int origin)
+    function setupMachine() {stackView.push(machineSetupPage)}
 
     StackView {
         id: stackView

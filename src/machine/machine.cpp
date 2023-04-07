@@ -13,14 +13,11 @@
 #include <executor/machine_job/rotary_test_job.h>
 #include <executor/operation_cmd/grbl_cmd.h>
 
-Machine::Machine(QObject *parent)
+Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   : QObject{parent}
 {
 
   // Apply a default (placeholder) machine param
-  MachineSettings::MachineSet mach;
-  mach.origin = MachineSettings::MachineSet::OriginType::RearLeft;
-  mach.board_type = MachineSettings::MachineSet::BoardType::GRBL_2020;
   applyMachineParam(mach);
 
   // Create executors belong to the machine
@@ -46,10 +43,10 @@ Machine::ConnectionState Machine::getConnectionState() {
  * 
  * @param mach 
  */
-bool Machine::applyMachineParam(MachineSettings::MachineSet mach) {
+bool Machine::applyMachineParam(MachineSettings::MachineParam mach) {
   machine_param_ = mach;
   // NOTE: Currently, we only support Grbl machine, 
-  //       thus, no need to re-create motion controller when MachineSet is changed
+  //       thus, no need to re-create motion controller when MachineParam is changed
   //       However, when any other motion controller type is supported, we should handle it
   // TODO: 
   //  0. Determine whether accept new param when connected
@@ -60,11 +57,9 @@ bool Machine::applyMachineParam(MachineSettings::MachineSet mach) {
   return true;
 }
 
-/*
-MachineSettings::MachineSet Machine::getMachineParam() const { 
+MachineSettings::MachineParam Machine::getMachineParam() const { 
   return machine_param_; 
 }
-*/
 
 /**
  * @brief Create and set the gcode job as the next job
@@ -435,7 +430,7 @@ void Machine::motionPortConnected(QSerialPort *port) {
     return;
   }
 
-  // TODO: Pass MachineSettings::MachineSet as argument
+  // TODO: Pass MachineSettings::MachineParam as argument
   //       Should refactor/restructure MachineSettings beforehand
   //       The followings is just a placeholder
   if (motion_controller_) {
@@ -543,17 +538,17 @@ std::tuple<qreal, qreal, qreal> Machine::canvasToMachineCoordConvert(
     std::tuple<qreal, qreal, qreal> pos, bool relative) 
 {  
   switch (machine_param_.origin) {
-    case MachineSettings::MachineSet::OriginType::FrontLeft: // invert Y-axis
+    case MachineSettings::MachineParam::OriginType::FrontLeft: // invert Y-axis
       std::get<1>(pos) = relative ? -(std::get<1>(pos)) : (machine_param_.height - std::get<1>(pos));
       break;
-    case MachineSettings::MachineSet::OriginType::FrontRight: // invert X-axis & Y-axis
+    case MachineSettings::MachineParam::OriginType::FrontRight: // invert X-axis & Y-axis
       std::get<0>(pos) = relative ? -(std::get<0>(pos)) : (machine_param_.width - std::get<0>(pos));
       std::get<1>(pos) = relative ? -(std::get<1>(pos)) : (machine_param_.height - std::get<1>(pos));
       break;
-    case MachineSettings::MachineSet::OriginType::RearRight: // invert X-axis
+    case MachineSettings::MachineParam::OriginType::RearRight: // invert X-axis
       std::get<0>(pos) = relative ? -(std::get<0>(pos)) : (machine_param_.width - std::get<0>(pos));
       break;
-    case MachineSettings::MachineSet::OriginType::RearLeft: // Coordinate of canvas and machine matched
+    case MachineSettings::MachineParam::OriginType::RearLeft: // Coordinate of canvas and machine matched
     default:
       break;
   }

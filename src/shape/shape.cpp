@@ -2,11 +2,6 @@
 #include <document.h>
 #include <layer.h>
 #include <shape/shape.h>
-#include <shape/group-shape.h>
-#include <shape/bitmap-shape.h>
-#include <shape/text-shape.h>
-#include <shape/path-shape.h>
-
 
 #define SELECTION_TOLERANCE 15
 
@@ -17,7 +12,8 @@ Shape::Shape() noexcept:
      selected_(false),
      layer_(nullptr),
      parent_(nullptr),
-     bbox_need_recalc_(false) {}
+     bbox_need_recalc_(false),
+     filled_(false) {}
 
 Shape::~Shape() {
   //qDebug() << "[Memory] ~Shape" << this;
@@ -45,7 +41,9 @@ Layer *Shape::layer() const {
 
 bool Shape::selected() const { return selected_; }
 
-void Shape::setLayer(Layer *layer) { layer_ = layer; }
+void Shape::setLayer(Layer *layer) {
+  layer_ = layer;
+}
 
 // Note: hasLayer() does not consider if parent node has layers.
 bool Shape::hasLayer() const { return layer_ != nullptr; }
@@ -128,12 +126,6 @@ Shape::Type Shape::type() const { return Shape::Type::None; }
 
 void Shape::flushCache() {
   bbox_need_recalc_ = true;
-  if (layer_) {
-    layer_->flushCache();
-  }
-  /*if (parent_) {
-    parent_->flushCache();
-  }*/
 }
 
 void Shape::setTempTransform(const QTransform &transform) {
@@ -165,4 +157,12 @@ bool Shape::isParentSelected() const {
 
 bool Shape::isLayerLocked() const {
   return this->hasLayer() && layer_->isLocked();
+}
+
+bool Shape::isFilled() const {
+  return filled_;
+}
+
+void Shape::setFilled(bool filled) {
+  filled_ = filled;
 }

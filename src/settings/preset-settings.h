@@ -1,11 +1,7 @@
 #pragma once
 
 #include <QString>
-#include <QFile>
 #include <QJsonObject>
-#include <QJsonArray>
-#include <QSettings>
-#include <QJsonDocument>
 
 // TODO (Redesign logic to PresetSettings -> Preset -> Param)
 
@@ -33,7 +29,8 @@ public:
     bool use_autofocus;
 
     Param() :
-         power(20),
+         name("New Custom Parameter"),
+         power(30),
          speed(20),
          repeat(1),
          step_height(0),
@@ -42,88 +39,48 @@ public:
          use_autofocus(false) {}
 
     static Param fromJson(const QJsonObject &obj);
-
     QJsonObject toJson() const;
   };
 
   struct Preset {
   public:
     QString name;
+    double framing_power;
+    double pulse_power;
     QList<Param> params;
 
-    static Preset fromJson(const QJsonObject &obj);
+    Preset() :
+         name("New Preset"),
+         framing_power(2),
+         pulse_power(30) {}
 
+    static Preset fromJson(const QJsonObject &obj);
     QJsonObject toJson() const;
   };
-
-  void loadJson(const QJsonObject &obj) {
-    QJsonArray data = obj["data"].toArray();
-    presets_.clear();
-    for (QJsonValue item : data) {
-      presets_ << Preset::fromJson(item.toObject());
-    }
-  }
-
-  QJsonObject toJson() const {
-    QJsonArray data;
-    for (auto &param : presets_) {
-      data << param.toJson();
-    }
-    QJsonObject obj;
-    obj["data"] = data;
-    return obj;
-  }
 
   const QList<Preset> &presets() {
     return presets_;
   }
-
-  void setCurrentIndex(int index) {
-    current_index_ = index;
-    currentIndexChanged();
+  const QList<Preset> &getOriginPreset() {
+    return origin_preset_;
   }
-
-  const Preset currentPreset() {
-    qInfo() << "Current Preset:" << current_index_ ;
-    return presets_[current_index_];
-  }
-
-  void save() {
-    QSettings settings;
-    settings.setValue("preset/user", QJsonDocument(toJson()));
-  }
-
-  QList<Preset> presets_;
-  int current_index_ = 0;
+  void setPresets(const QList<Preset> &new_presets);
+  void setOriginPresets(const QList<Preset> &presets);
+  void save();
+  void reset();
+  void loadPreset(const QJsonObject &obj);
+  QJsonObject toJson() const;
+  Preset getTargetPreset(int preset_index);
+  Param getTargetParam(int preset_index, int param_index);
+  void setPresetPower(int preset_index, double framing, double pulse);
 
 Q_SIGNALS:
-  void currentIndexChanged();
+  void savePreset(QJsonObject save_obj);
+  void resetPreset();
 
 private:
-  PresetSettings() {
-    //QSettings settings;
-    //QJsonObject obj = settings.value("preset/user").value<QJsonDocument>().object();
-    //if (obj["data"].isNull()) {
-    QList<QString> file_list;
-    //file_list.append("default.json");
-    file_list.append("1.6W.json");
-    file_list.append("5W.json");
-    file_list.append("10W.json");
-    for (int i = 0; i < file_list.size(); ++i) {
-      QFile file(":/resources/parameters/"+file_list[i]);
-      file.open(QFile::ReadOnly);
-      // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
-      auto file_json = QJsonDocument::fromJson(file.readAll()).object();
-      auto preset = Preset::fromJson(file_json);
-      qInfo() << file.fileName();
-      preset.name = file_json.take("name").toString();
-      presets_ << preset;
-      if (preset.name.indexOf("10W") > -1) {
-        setCurrentIndex(i);
-      }
-    }
-    //} else {
-    //  loadJson(obj);
-    //}
-  }
+  PresetSettings();
+
+  QList<Preset> presets_;
+  QList<Preset> origin_preset_;
 };

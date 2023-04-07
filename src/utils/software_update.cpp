@@ -129,7 +129,7 @@ software_update_init(void) {
     win_sparkle_set_can_shutdown_callback(software_update_can_shutdown_callback);
     win_sparkle_set_shutdown_request_callback(software_update_shutdown_request_callback);
     QString language;
-    QSettings settings;
+    QSettings settings("flux", "swiftray");
     QVariant language_code = settings.value("window/language", 0);
     // NOTE: Only allow (ISO639 language code) + (ISO3116 country code) here
     switch(language_code.toInt()) {

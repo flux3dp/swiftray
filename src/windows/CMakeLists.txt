@@ -8,7 +8,6 @@ target_sources(Swiftray PRIVATE
   job-dashboard-dialog.cpp
   machine-manager.cpp
   machine-monitor.cpp
-  new-machine-dialog.cpp
   path-offset-dialog.cpp
   preferences-window.cpp
   preset-manager.cpp

@@ -4,17 +4,17 @@
 
 class DirtyAreaOutlineGenerator : public BaseGenerator {
 public:
-  DirtyAreaOutlineGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+  DirtyAreaOutlineGenerator(const MachineSettings::MachineParam &machine, bool rotary_mode) : BaseGenerator() {
     rotary_mode_ = rotary_mode;
     if(rotary_mode_) {
       switch (machine.origin) {
-        case MachineSettings::MachineSet::OriginType::RearRight:
-        case MachineSettings::MachineSet::OriginType::FrontRight:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+        case MachineSettings::MachineParam::OriginType::RearRight:
+        case MachineSettings::MachineParam::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearRight;
           break;
-        case MachineSettings::MachineSet::OriginType::RearLeft:
-        case MachineSettings::MachineSet::OriginType::FrontLeft:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+        case MachineSettings::MachineParam::OriginType::RearLeft:
+        case MachineSettings::MachineParam::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
           break;
         default:
           break;
@@ -40,19 +40,19 @@ public:
 
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
-      case MachineSettings::MachineSet::OriginType::RearRight:
+      case MachineSettings::MachineParam::OriginType::RearRight:
         // Canvas x axis direction is opposite to machine coordinate
         x = machine_width_ - x;
         break;
-      case MachineSettings::MachineSet::OriginType::FrontRight:
+      case MachineSettings::MachineParam::OriginType::FrontRight:
         // Canvas x, y axis directions are opposite to machine coordinate
         x = machine_width_ - x;
         y = machine_height_ - y;
         break;
-      case MachineSettings::MachineSet::OriginType::RearLeft:
+      case MachineSettings::MachineParam::OriginType::RearLeft:
         // NORMAL canvas x, y axis directions are the same as machine coordinate
         break;
-      case MachineSettings::MachineSet::OriginType::FrontLeft:
+      case MachineSettings::MachineParam::OriginType::FrontLeft:
         // Canvas y axis direction is opposite to machine coordinate
         y = machine_height_ - y;
         break;
@@ -125,7 +125,7 @@ public:
     BaseGenerator::reset();
     machine_width_ = 0;
     machine_height_ = 0;
-    machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+    machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
   }
 
   std::string toString() override {
@@ -166,7 +166,7 @@ private:
     qreal x_max_ = -1;
     qreal y_min_ = -1;
     qreal y_max_ = -1;
-    MachineSettings::MachineSet::OriginType machine_origin_;
+    MachineSettings::MachineParam::OriginType machine_origin_;
     double travel_speed_ = 6000;
     double laser_power_ = 2;
     bool should_home_ = false;

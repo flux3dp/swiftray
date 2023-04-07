@@ -31,9 +31,9 @@ bool Transform::isActive() {
 
 QList<ShapePtr> &Transform::selections() { return selections_; }
 
-void Transform::updateSelections() {
+void Transform::updateSelections(QList<ShapePtr> selections) {
   reset();
-  selections_ = document().selections();
+  selections_ = selections;
   bbox_need_recalc_ = true;
   Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
 }
@@ -180,7 +180,30 @@ void Transform::applyMove(bool temporarily) {
   }
 }
 
-const QPointF *Transform::controlPoints() {
+void Transform::updateTransform(double new_x, double new_y, 
+                double new_r, double new_w, double new_h) {
+  bool changed = false;
+  if (std::abs(new_x - x()) > 0.01 || std::abs(new_y - y()) > 0.01) {
+    translate_to_apply_ = QPointF(new_x - x(), new_y - y());
+    applyMove();
+    changed = true;
+  }
+  if (std::abs(new_r - rotation()) > 0.01) {
+    rotation_to_apply_ = new_r - rotation();
+    applyRotate(boundingRect().center(), rotation_to_apply_);
+    changed = true;
+  }
+  if (std::abs(new_w - width()) > 0.01 || std::abs(new_h - height()) > 0.01) {
+    updateReferencePoint();
+    scale_x_to_apply_ = width() == 0 ? 1 : new_w / width();
+    scale_y_to_apply_ = height() == 0 ? 1 : new_h / height();
+    applyScale(reference_point_, scale_x_to_apply_, scale_y_to_apply_);
+    changed = true;
+  }
+  if(changed) Q_EMIT shapeUpdated();
+}
+
+void Transform::controlPoints() {
   QRectF bbox = boundingRect().translated(translate_to_apply_.x(),
                                           translate_to_apply_.y());
   QTransform transform =
@@ -208,8 +231,9 @@ const QPointF *Transform::controlPoints() {
   controls_[5] = transform.map((bbox.bottomRight() + bbox.bottomLeft()) / 2);
   controls_[6] = transform.map(bbox.bottomLeft());
   controls_[7] = transform.map((bbox.bottomLeft() + bbox.topLeft()) / 2);
-  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);;
-  return controls_;
+  controls_[8] = transform.map((bbox.topLeft() + bbox.topRight()) / 2) 
+                + transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2 + QPointF(0, -40)) 
+                - transformNoScale.map((bbox.topLeft() + bbox.topRight()) / 2);
 }
 
 Transform::Control Transform::hitTest(QPointF clickPoint,
@@ -269,6 +293,7 @@ bool Transform::mouseReleaseEvent(QMouseEvent *e) {
   }
   if (transform_changed) {
     Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+    Q_EMIT shapeUpdated();
   }
   reset();
   canvas().setMode(Canvas::Mode::Selecting);
@@ -331,7 +356,6 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
   double current_angle;
   switch (canvas().mode()) {
     case Canvas::Mode::Moving:
-      Q_EMIT cursorChanged(	Qt::ClosedHandCursor);
       translate_to_apply_ = canvas_coord - document().mousePressedCanvasCoord();
       if(direction_locked_) {
         current_angle = atan2 (translate_to_apply_.y(),translate_to_apply_.x()) * 180 / M_PI;
@@ -396,13 +420,12 @@ bool Transform::mouseMoveEvent(QMouseEvent *e) {
     default:
       return false;
   }
+  Q_EMIT shapeUpdated();
   return true;
 }
 
 bool Transform::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
-  Control cp =
-       hitTest(document().getCanvasCoord(e->pos()), 10 / document().scale());
-
+  Control cp = hitTest(document().getCanvasCoord(e->pos()), 10 / document().scale());
   switch (cp) {
     case Control::ROTATION:
       *cursor = Qt::CrossCursor;
@@ -484,6 +507,7 @@ bool Transform::keyPressEvent(QKeyEvent *e) {
   }
   applyMove();
   Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+  Q_EMIT shapeUpdated();
   return true;
 }
 
@@ -501,4 +525,42 @@ bool Transform::isDirectionLock() const {
 
 void Transform::setDirectionLock(bool direction_lock) {
   direction_locked_ = direction_lock;
+}
+
+void Transform::setReferencePoint(JobOrigin reference_point) {
+  reference_origin_ = reference_point;
+  updateReferencePoint();
+  Q_EMIT canvas().transformChanged(x(), y(), rotation(), width(), height());
+}
+
+void Transform::updateReferencePoint() {
+  switch (reference_origin_) {
+    case NW:
+      reference_point_ = boundingRect().topLeft();
+      break;
+    case N:
+      reference_point_ = (boundingRect().topLeft() + boundingRect().topRight() ) /2.;
+      break;
+    case NE:
+      reference_point_ = boundingRect().topRight();
+      break;
+    case E:
+      reference_point_ = (boundingRect().bottomRight() + boundingRect().topRight() ) /2.;
+      break;
+    case SE:
+      reference_point_ = boundingRect().bottomRight();
+      break;
+    case S:
+      reference_point_ = (boundingRect().bottomRight() + boundingRect().bottomLeft() ) /2.;
+      break;
+    case SW:
+      reference_point_ = boundingRect().bottomLeft();
+      break;
+    case W:
+      reference_point_ = (boundingRect().topLeft() + boundingRect().bottomLeft() ) /2.;
+      break;
+    case CENTER:
+      reference_point_ = boundingRect().center();
+      break;
+  }
 }

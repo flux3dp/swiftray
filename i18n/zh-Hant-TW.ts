@@ -15,8 +15,8 @@
     </message>
     <message>
         <location filename="../src/windows/about-window.ui" line="121"/>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/windows/about-window.ui" line="143"/>
@@ -28,8 +28,8 @@
         <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;版本: 1.0.0b&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2022 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="vanished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright © 2023 FLUX Inc.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;&lt;br/&gt;Swiftray is made possible by&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;the &lt;/span&gt;&lt;a href=&quot;https://github.com/flux3dp/swiftray&quot;&gt;&lt;span style=&quot; font-size:10pt; text-decoration: underline; color:#0068da;&quot;&gt;Swiftray&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; open source project and&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot; style=&quot;line-height:0.5&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;other open source software&lt;br/&gt;&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -135,37 +135,41 @@
 <context>
     <name>Canvas</name>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="160"/>
+        <location filename="../src/canvas/canvas.cpp" line="135"/>
+        <location filename="../src/canvas/canvas.cpp" line="175"/>
         <source>Select layering style:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="161"/>
+        <location filename="../src/canvas/canvas.cpp" line="136"/>
+        <location filename="../src/canvas/canvas.cpp" line="176"/>
         <source>Layer</source>
         <translation type="unfinished">圖層</translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="162"/>
+        <location filename="../src/canvas/canvas.cpp" line="137"/>
+        <location filename="../src/canvas/canvas.cpp" line="177"/>
         <source>Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="164"/>
+        <location filename="../src/canvas/canvas.cpp" line="139"/>
+        <location filename="../src/canvas/canvas.cpp" line="179"/>
         <source>Single Layer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="822"/>
+        <location filename="../src/canvas/canvas.cpp" line="837"/>
         <source>Layer </source>
         <translation>圖層 </translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="1265"/>
+        <location filename="../src/canvas/canvas.cpp" line="1280"/>
         <source>File Open Error</source>
         <translation>檔案無法開啟</translation>
     </message>
     <message>
-        <location filename="../src/canvas/canvas.cpp" line="1266"/>
+        <location filename="../src/canvas/canvas.cpp" line="1281"/>
         <source>Please update the Swiftray version</source>
         <translation>請更新Swiftray版本</translation>
     </message>

@@ -1,37 +1,32 @@
 #pragma once
 
 #include <QDialog>
-#include <settings/preset-settings.h>
 #include <widgets/base-container.h>
+#include <QListWidgetItem>
 
 namespace Ui {
   class PresetManager;
 }
 
-class LayerParamsPanel;
-
 class PresetManager : public QDialog, BaseContainer {
 Q_OBJECT
 
 public:
-  explicit PresetManager(QWidget *parent);
-
+  explicit PresetManager(QWidget *parent, int preset_index);
   ~PresetManager();
 
-  void showPreset();
-
-  void updatePresetData();
-
-  void save();
+Q_SIGNALS:
+  void updateCurrentPresetIndex(int index);
+  void updateCurrentIndex(int preset_index, int param_index);
 
 private:
-
   void loadStyles() override;
-
   void loadSettings() override;
-
   void registerEvents() override;
+  void save();
+  void showPreset();
+  void updatePresetData();
 
   Ui::PresetManager *ui;
-  LayerParamsPanel *layer_panel_;
+  QListWidgetItem *current_param_;
 };

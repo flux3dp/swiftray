@@ -19,7 +19,7 @@ bool Text::isActive() {
 
 bool Text::mousePressEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  ShapePtr hit = document().hitTest(canvas_coord);
+  ShapePtr hit = document().hitTest(canvas_coord, true);
   canvas().textInput()->setFocus();
   if (target_ == nullptr) {
     if(hit == nullptr || hit->type() != Shape::Type::Text) {
@@ -77,6 +77,7 @@ bool Text::hoverEvent(QHoverEvent *e, Qt::CursorShape *cursor) {
 bool Text::keyPressEvent(QKeyEvent *e) {
   if (e->key() == Qt::Key::Key_Escape) {
     exit();
+    Q_EMIT shapeUpdated();
     return true;
   }
   return false;
@@ -100,10 +101,12 @@ void Text::paint(QPainter *painter) {
 
 void Text::exit() {
   if (target_ != nullptr) {
+    target().makeCursorRect(0,0);
     target().setEditing(false);
     if (!target().hasLayer() &&
         canvas().textInput()->toPlainText().length() > 0) {
       // Add the virtual target the layer
+      if(document().activeLayer()->type() == Layer::Type::Fill) target_->setFilled(true);
       document().execute(
            Commands::AddShape(document().activeLayer(), target_),
            Commands::Select(&document(), {target_})
@@ -113,7 +116,7 @@ void Text::exit() {
   target_ = nullptr;
   canvas().textInput()->clear();
   canvas().textInput()->window()->setFocus();
-  Q_EMIT canvas().selectionsChanged();
+  Q_EMIT canvas().selectionsChanged(document().selections());
   canvas().setMode(Canvas::Mode::Selecting);
 }
 

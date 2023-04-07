@@ -16,8 +16,8 @@ Q_OBJECT
 
 public:
   explicit JoggingPanel(QWidget *parent, MainWindow *main_window);
-  void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
-  double getFramingPower();
+  void setFramingPower(double power);
+  void setPulsePower(double power);
   bool getShowCurrent();
   bool getShowUserOrigin();
 
@@ -30,12 +30,13 @@ Q_SIGNALS:
   void actionLaser(qreal power_percent);
   void actionLaserPulse(qreal power_percent);
   void actionHome();
-  void actionMoveRelatively(qreal x, qreal y, qreal feedrate);
-  void actionMoveAbsolutely(std::tuple<qreal, qreal, qreal>pos, qreal feedrate);
-  void actionMoveToEdge(int edge_id, qreal feedrate);
-  void actionMoveToCorner(int corner_id, qreal feedrate);
+  void actionMoveRelatively(qreal x, qreal y);
+  void actionMoveAbsolutely(std::tuple<qreal, qreal, qreal>pos);
+  void actionMoveToEdge(int edge_id);
+  void actionMoveToCorner(int corner_id);
   void actionSetOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   void updateFramingPower(double framing_power);
+  void updatePulsePower(double pulse_power);
   void stopBtnClicked();
   void showCurrentPosition(bool show);
   void showUserOrigin(bool show);
@@ -60,14 +61,10 @@ private:
   void showEvent(QShowEvent *event) override;
   
   Ui::JoggingPanel *ui;
-
   MainWindow *main_window_;
-
   bool is_laser_on_ = false;
-
   bool control_enable_ = true;
 
-  double travel_speed_;
 };
 
 #endif // JOGGING_WIDGET_H

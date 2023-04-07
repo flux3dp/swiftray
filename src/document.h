@@ -34,7 +34,7 @@ public:
   void setSelections(const QList<ShapePtr> &new_selections);
 
   // Test if any shape in the document hit by mouse
-  ShapePtr hitTest(QPointF canvas_coord);
+  ShapePtr hitTest(QPointF canvas_coord, bool is_select = false);
 
   // Layer functions:
 
@@ -44,7 +44,9 @@ public:
 
   // Paint functions
 
-  void paint(QPainter *painter);
+  void paintUnselected(QPainter *painter, double line_width);
+
+  void paintSelected(QPainter *painter, double line_width);
 
   // Dumps layers info
   void dumpStack(QList<LayerPtr> &stack);
@@ -133,11 +135,15 @@ public:
     execute({cmd0, args...});
   }
 
+  bool isScreenChanged();
+
+  void setScreenChanged();
+
   friend class DocumentSerializer;
 
 Q_SIGNALS:
 
-  void selectionsChanged();
+  void selectionsChanged(QList<ShapePtr> shape_list);
 
   void scaleChanged();
 

@@ -40,8 +40,9 @@ void CacheStack::addShape(Shape *shape) {
   CacheType cache_type;
   auto layer_type = isLayer() ? layer_->type() : group_->layer()->type();
   switch (shape->type()) {
-    case Shape::Type::Path:
     case Shape::Type::Text:
+      if (((TextShape *) shape)->isEditing()) return;
+    case Shape::Type::Path:
       if (layer_type == Layer::Type::Mixed) {
         if (isLayer()) {
           if (((PathShape *) shape)->isFilled()) {
@@ -64,7 +65,7 @@ void CacheStack::addShape(Shape *shape) {
       break;
     case Shape::Type::Group:
       cache_type = CacheType::Group;
-      ((GroupShape *) shape)->cacheStack().update(); // If the shape is a group, we need to flush it, but do not propagate event back to the top
+      // ((GroupShape *) shape)->cacheStack().update(); // If the shape is a group, we need to flush it, but do not propagate event back to the top
       break;
     default:
       Q_ASSERT_X(false, "CacheStack", "Cannot cache unknown typed shapes");
@@ -129,7 +130,8 @@ void CacheStack::Cache::cacheFill() {
 }
 
 void CacheStack::Cache::stroke(QPainter *painter, const QPen &pen) {
-  painter->strokePath(joined_path_, pen);
+  painter->setPen(pen);
+  painter->drawPath(joined_path_);
 }
 
 void CacheStack::Cache::fill(QPainter *painter, const QPen &pen) {
@@ -144,8 +146,8 @@ void CacheStack::Cache::fill(QPainter *painter, const QPen &pen) {
 
 // Primary logic for painting shapes
 int CacheStack::paint(QPainter *painter) {
-  QElapsedTimer timer;
-  timer.start();
+  // QElapsedTimer timer;
+  // timer.start();
 
   Layer::Type layer_type = isGroup() ? group_->layer()->type() : layer_->type();
   bool always_fill = layer_type == Layer::Type::Fill || layer_type == Layer::Type::FillLine;
@@ -160,7 +162,6 @@ int CacheStack::paint(QPainter *painter) {
   selected_stroke_pen.setCosmetic(true);
   QPen layer_fill_pen(color(), 2, Qt::SolidLine);
   layer_fill_pen.setCosmetic(true);
-
 
   for (auto &cache : caches_) {
     switch (cache.type()) {
@@ -190,9 +191,7 @@ int CacheStack::paint(QPainter *painter) {
     }
   }
   painter->setBrush(Qt::NoBrush);
-  if (timer.elapsed() > 500) {
-    qDebug() << "[Painting] Slow Rendering (" << this << timer.elapsed() << "ms)";
-  }
+  // qDebug() << Q_FUNC_INFO << "Rendering (" << timer.elapsed() << "ms)";
   return caches_.size();
 }
 

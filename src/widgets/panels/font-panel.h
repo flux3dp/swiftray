@@ -3,6 +3,7 @@
 
 #include <QFrame>
 #include <QFont>
+#include <QSet>
 #include <widgets/base-container.h>
 
 class MainWindow;
@@ -15,61 +16,43 @@ class FontPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
-  explicit FontPanel(QWidget *parent, MainWindow *main_window);
-
+  explicit FontPanel(QWidget *parent, bool is_dark_mode);
   ~FontPanel();
-
-  QFont font();
-
-  double lineHeight();
-
-  void setLayout();
-
-  void setFont(const QFont &font);
-
+  void setFontFamily(QString font_family);
   void setPointSize(int point_size);
-
   void setLetterSpacing(double spacing);
-
   void setBold(bool bold);
-
   void setItalic(bool italic);
-
   void setUnderline(bool underline);
-
   void setLineHeight(double line_height);
+  void changeFontEnable(bool enable);
+
+public Q_SLOTS:
+  void updateFontView(QSet<QString> font_familys, 
+                      QSet<int> point_sizes, 
+                      QSet<qreal> letter_spacings, 
+                      QSet<bool> bolds, 
+                      QSet<bool> italics, 
+                      QSet<bool> underlines, 
+                      QSet<double> line_heights);
 
 private:
   void loadStyles() override;
-
   void registerEvents() override;
-
-  void setFont(QFont font, float line_height);
-
   void hideEvent(QHideEvent *event) override;
-  
   void showEvent(QShowEvent *event) override;
+  void setLayout(bool is_dark_mode);
 
   Ui::FontPanel *ui;
-  MainWindow *main_window_;
-  QFont font_;
-  double line_height_;
 
 Q_SIGNALS:
-  void lineHeightChanged(double line_height);
-
-  void fontChanged(QFont font);
-
-  void fontPointSizeChanged(int point_size);
-
-  void fontLetterSpacingChanged(double letter_spacing);
-
-  void fontBoldChanged(bool font_bold);
-
-  void fontItalicChanged(bool font_italic);
-
-  void fontUnderlineChanged(bool font_underline);
-
+  void editShapeFontFamily(QFont font);
+  void editShapeFontPointSize(int point_size);
+  void editShapeLetterSpacing(qreal letter_spacing);
+  void editShapeBold(bool bold);
+  void editShapeItalic(bool italic);
+  void editShapeUnderline(bool underline);
+  void editShapeLineHeight(double line_height);
   void panelShow(bool is_show);
 };
 

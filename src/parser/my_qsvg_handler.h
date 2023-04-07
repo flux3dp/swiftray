@@ -194,11 +194,12 @@ private:
      */
     const bool m_ownsReader;
     struct NodeData {
-        QString node_name;
+        QList<QString> node_names;
         QString layer_name;
         int type;
         QTransform trans;
         QColor color;
+        bool visible;
         QPainterPath qpath;
         QImage image;
         QFont font;

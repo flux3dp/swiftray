@@ -1,7 +1,6 @@
 #pragma once
 
 #include <shape/shape.h>
-#include <canvas/cache-stack.h>
 
 // We may need to change the group to cross-layer group instead of a shape object in the future
 // This group implementation is downward compatible with other vector design software's paradigm
@@ -23,13 +22,9 @@ public:
 
   const QList<ShapePtr> &children() const;
 
+  void setFilled(bool filled);
+
   friend class DocumentSerializer;
-
-  friend class CacheStack;
-
-protected:
-
-  CacheStack &cacheStack() const;
 
 private:
 
@@ -39,5 +34,4 @@ private:
 
 
   QList<ShapePtr> children_;
-  mutable std::unique_ptr<CacheStack> cache_;
 };

@@ -30,6 +30,7 @@ void Document::setSelection(ShapePtr &shape) {
 }
 
 void Document::setSelections(const QList<ShapePtr> &new_selections) {
+  if(selections_.empty() && new_selections.empty()) return;
   QList<ShapePtr> selection_list;
   for (auto &shape : selections_) { shape->setSelected(false); }
   for (auto &shape : new_selections) {
@@ -40,7 +41,8 @@ void Document::setSelections(const QList<ShapePtr> &new_selections) {
   }
 
   selections_ = selection_list;
-  Q_EMIT selectionsChanged();
+  screen_changed_ = true;
+  Q_EMIT selectionsChanged(selections_);
 }
 
 QList<ShapePtr> &Document::selections() { return selections_; }
@@ -76,6 +78,7 @@ void Document::undo() {
 
   // TODO (Fix mode change event and selection, and add layer)
   setActiveLayer(active_layer_name);
+  screen_changed_ = true;
 }
 
 void Document::redo() {
@@ -92,6 +95,7 @@ void Document::redo() {
   QString active_layer_name = activeLayer()->name();
 
   setActiveLayer(active_layer_name);
+  screen_changed_ = true;
 }
 
 void Document::execute(Commands::BaseCmd *cmd) {
@@ -156,11 +160,13 @@ void Document::setWidth(qreal width) {
     width_ = width;
     settings_.width = width;
   }
+  screen_changed_ = true;
 }
 
 void Document::setHeight(qreal height) {
   height_ = height;
   settings_.height = height;
+  screen_changed_ = true;
 }
 
 void Document::setScroll(QPointF scroll) {
@@ -234,7 +240,7 @@ void Document::setLayersOrder(const QList<LayerPtr> &new_order) {
   layers_mutex_.unlock();
 }
 
-ShapePtr Document::hitTest(QPointF canvas_coord) {
+ShapePtr Document::hitTest(QPointF canvas_coord, bool is_select) {
   qreal smallest_area = std::numeric_limits<qreal>::max();
   ShapePtr selected_shape = nullptr;
   for (auto &layer : layers()) {
@@ -243,6 +249,7 @@ ShapePtr Document::hitTest(QPointF canvas_coord) {
     }
     for (auto &shape : boost::adaptors::reverse(layer->children())) {
       if (shape->hitTest(canvas_coord, 5 / scale())) {
+        if(!is_select || shape->selected()) return shape;
         // NOTE: Select the shape with the smallest bounding box
         // Alwyas iterate through all shapes -> Performance should be considered carefully
         qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
@@ -310,13 +317,21 @@ void Document::ungroupSelections() {
   execute(cmd);
 }
 
-void Document::paint(QPainter *painter) {
-  int object_count = 0;
+void Document::paintUnselected(QPainter *painter, double line_width) {
   for (const LayerPtr &layer : layers()) {
-    if (screen_changed_) layer->flushCache();
-    object_count += layer->paint(painter);
+    layer->paintUnselected(painter, line_width);
   }
+}
 
+void Document::paintSelected(QPainter *painter, double line_width) {
+  QPen selected_stroke_pen(QColor(18, 139, 219), line_width * 1.5, Qt::SolidLine);
+  selected_stroke_pen.setCosmetic(true);
+  for (ShapePtr &shape : selections_) {
+    if(shape->type() == Shape::Type::Text)
+      if (((TextShape *) shape.get())->isEditing()) continue;
+    painter->setPen(selected_stroke_pen);
+    shape.get()->paint(painter);
+  }
   screen_changed_ = false;
 }
 
@@ -334,6 +349,14 @@ const LayerPtr *Document::findLayerByName(const QString &layer_name) {
 
 const Canvas *Document::canvas() const {
   return canvas_;
+}
+
+bool Document::isScreenChanged() {
+  return screen_changed_;
+}
+
+void Document::setScreenChanged() {
+  screen_changed_ = true;
 }
 
 void Document::setCanvas(Canvas *canvas) {

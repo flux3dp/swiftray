@@ -90,6 +90,10 @@ public:
   /** Whether the layer of the object is locked */
   bool isLayerLocked() const;
 
+  bool isFilled() const;
+
+  virtual void setFilled(bool filled);
+
   virtual std::shared_ptr<Shape> clone() const;
 
   virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
@@ -130,6 +134,8 @@ protected:
   mutable QRectF bbox_;
   /** Whether the object is selected by user */
   bool selected_;
+  /** Whether the object is filled type by user */
+  bool filled_;
 };
 
 typedef std::shared_ptr<Shape> ShapePtr;

@@ -56,18 +56,21 @@ void LayerListItem::registerEvents() {
             Commands::SetRef<Layer, QColor, &Layer::color, &Layer::setColor>(layer_.get(), new_color)
     );
     Q_EMIT canvas_->layerChanged();
+    canvas_->canvasUpdated();
   });
   connect(ui->btnHide, &QAbstractButton::clicked, [=]() {
     layer_->document().execute(
          Commands::Set<Layer, bool, &Layer::isVisible, &Layer::setVisible>(layer_.get(), !layer_->isVisible()),
          Commands::Select(&(layer_->document()), {})
     );
+    canvas_->canvasUpdated();
   });
   connect(ui->btnLock, &QAbstractButton::clicked, this, &LayerListItem::onUnlockLayer);
   connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     layer_->document().execute(
          Commands::Set<Layer, Layer::Type, &Layer::type, &Layer::setType>(layer_.get(), (Layer::Type) index)
     );
+    canvas_->canvasUpdated();
   });
 }
 
@@ -151,6 +154,7 @@ void LayerListItem::onDuplicateLayer() {
 }
 
 void LayerListItem::onDeleteLayer() {
+  canvas_->document().setSelection(nullptr);
   if (layer_->document().layers().length() == 1) { // should add one default layer when no layer in the list
     canvas_->addEmptyLayer();
     layer_->document().execute(
@@ -169,9 +173,9 @@ void LayerListItem::onDeleteLayer() {
     if(change_layer) {
       LayerPtr last_layer = canvas_->document().layers().last();
       canvas_->setActiveLayer(last_layer);
-      canvas_->document().setSelection(nullptr);
     }
   }
+  canvas_->canvasUpdated();
   Q_EMIT canvas_->layerChanged();
 }
 

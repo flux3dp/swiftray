@@ -31,6 +31,18 @@ void LayerPanel::registerEvents() {
     // TODO (Add more UI logic here to prevent redrawing all list widget)
     main_window_->canvas()->setActiveLayer(dynamic_cast<LayerListItem *>(ui->layerList->itemWidget(item))->layer_);
   });
+  connect(layer_params_panel_, &LayerParamsPanel::editParamIndex, [=](int param_index) {
+    Q_EMIT editParamIndex(param_index);
+  });
+  connect(layer_params_panel_, &LayerParamsPanel::wakeupPresetManager, [=]() {
+    Q_EMIT wakeupPresetManager();
+  });
+  connect(layer_params_panel_, &LayerParamsPanel::editLayerParam, [=](double strength, double speed, int repeat) {
+    Q_EMIT editLayerParam(strength, speed, repeat);
+  });
+  connect(layer_params_panel_, &LayerParamsPanel::editLayerBacklash, [=](double backlash) {
+    Q_EMIT editLayerBacklash(backlash);
+  });
 }
 
 void LayerPanel::hideEvent(QHideEvent *event) {
@@ -85,4 +97,20 @@ void LayerPanel::layerOrderChanged(const QModelIndex &sourceParent, int sourceSt
 
 LayerPanel::~LayerPanel() {
   delete ui;
+}
+
+void LayerPanel::setPresetIndex(int preset_index, int param_index) {
+  layer_params_panel_->setPresetIndex(preset_index, param_index);
+}
+
+void LayerPanel::setLayerParam(double strength, double speed, int repeat) {
+  layer_params_panel_->setLayerParam(strength, speed, repeat);
+}
+
+void LayerPanel::setLayerBacklash(double backlash) {
+  layer_params_panel_->setLayerBacklash(backlash);
+}
+
+void LayerPanel::setLayerParamLock(bool enable) {
+  layer_params_panel_->setLayerParamLock(enable);
 }
