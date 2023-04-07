@@ -4,7 +4,6 @@
 #include <QFile>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QSettings>
 #include <QJsonDocument>
 #include <QPointF>
 #include <QIcon>
@@ -21,11 +20,16 @@
 class MachineSettings : public QObject {
 Q_OBJECT
 public:
+  MachineSettings();
   /**
-      \class MachineSet
-      \brief The MachineSet class represents a machine config that stores name, width, height... etc
+      \class MachineParam
+      \brief The MachineParam class represents a machine config that stores name, width, height... etc
   */
-  struct MachineSet {
+  static MachineSettings& getInstance() {
+    static MachineSettings sInstance;
+    return sInstance;
+  }
+  struct MachineParam {
     enum class OriginType {
       /**
        *    RearLeft -------- RearRight
@@ -54,43 +58,52 @@ public:
 
     BoardType board_type;
     OriginType origin;
-    int width = 5;
-    int height = 0;
+    int width;
+    int height;
+    double travel_speed;
+    char rotary_axis;
     bool home_on_start;
     QPointF red_pointer_offset;
+    bool is_high_speed_mode;//for lazervida
 
-    static MachineSet fromJson(const QJsonObject &obj);
+    MachineParam() :
+      name("New Machine"),
+      board_type(BoardType::GRBL_2020),
+      origin(OriginType::RearLeft),
+      width(5),
+      height(0),
+      travel_speed(100),
+      rotary_axis('Y'),
+      home_on_start(true),
+      is_high_speed_mode(false) {}
 
+    static MachineParam fromJson(const QJsonObject &obj);
     QJsonObject toJson() const;
-
     QIcon icon() const;
   };
-
-  MachineSettings();
-
-  const QList<MachineSet> &machines();
-
-  void addMachine(MachineSet mach);
-
+  const QList<MachineParam> &getMachines();
+  void setMachines(const QList<MachineParam> &new_machines);
+  void addMachine(MachineParam mach);
   void clearMachines();
-
   void save();
-
-  static MachineSet findPreset(QString brand, QString model);
-
-  static QList<MachineSet> database();
-
+  void loadJson(const QJsonObject &obj);
+  QJsonObject toJson();
+  static MachineParam findPreset(QString brand, QString model);
+  static QList<MachineParam> database();
+  MachineParam getTargetMachine(int machine_index);
   Q_INVOKABLE static QStringList brands();
-
   Q_INVOKABLE static QStringList models(QString brand);
+  void setMachineRange(int machine_index, int width, int height);
+  void setMachineTravelSpeed(int machine_index, double speed);
+  void setMachineRotaryAxis(int machine_index, char axis);
+  void setMachineHightSpeedMode(int machine_index, bool is_hight_mode);
+  void setMachineStartWithHome(int machine_index, bool start_with_home);
+
+Q_SIGNALS:
+  void saveMachines(QJsonObject save_obj);
 
 private:
-  static QList<MachineSet> machineDatabase_; // not important, just a cache for lazy loading
-
-  void loadJson(const QJsonObject &obj);
-
-  QJsonObject toJson();
-
-  QList<MachineSet> machines_;
+  static QList<MachineParam> machineDatabase_; // not important, just a cache for lazy loading
+  QList<MachineParam> machines_;
   QMutex machines_mutex_;
 };

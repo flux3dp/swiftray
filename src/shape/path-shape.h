@@ -36,16 +36,11 @@ public:
 
   void setPath(const QPainterPath &path);
 
-  bool isFilled() const;
-
-  void setFilled(bool filled);
-
   friend class DocumentSerializer;
 
 private:
   void calcBoundingBox() const override;
 
-  bool filled_;
   mutable QRectF hit_test_rect_;
 
 protected:

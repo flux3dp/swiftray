@@ -3,8 +3,6 @@
 
 #include <QFrame>
 #include <QDebug>
-#include <shape/shape.h>
-#include <canvas/controls/transform.h>
 #include <widgets/base-container.h>
 
 class MainWindow;
@@ -17,41 +15,35 @@ class TransformPanel : public QFrame, BaseContainer {
 Q_OBJECT
 
 public:
-  explicit TransformPanel(QWidget *parent, MainWindow *main_window);
-
+  explicit TransformPanel(QWidget *parent, bool is_dark_mode);
   ~TransformPanel();
-
-  bool isScaleLock() const;
-
-  void setLayout();
-
+  void setLayout(bool is_dark_mode);
+  void setTransformX(double x);
+  void setTransformY(double y);
+  void setTransformR(double r);
+  void setTransformW(double w);
+  void setTransformH(double h);
   void setScaleLock(bool scaleLock);
-
-  void updateControl();
+  void changeTransformEnable(bool enable);
+  void setShapeReference(int shape_reference);
 
 private:
   void loadStyles() override;
-
   void registerEvents() override;
-
   void hideEvent(QHideEvent *event) override;
-
   void showEvent(QShowEvent *event) override;
 
   Ui::TransformPanel *ui;
-  double x_;
-  double y_;
-  double r_;
-  double w_;
-  double h_;
-  bool scale_locked_;
-  MainWindow *main_window_;
+  bool is_dark_mode_;
 
 Q_SIGNALS:
-  void transformPanelUpdated(double x, double y, double r, double w, double h);
-
+  void editShapeTransformX(double x);
+  void editShapeTransformY(double y);
+  void editShapeTransformR(double r);
+  void editShapeTransformW(double w);
+  void editShapeTransformH(double h);
   void scaleLockToggled(bool scale_locked);
-
+  void editShapeReference(int shape_reference);
   void panelShow(bool is_show);
 };
 

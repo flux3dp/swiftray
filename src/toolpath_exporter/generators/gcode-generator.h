@@ -27,17 +27,17 @@ public:
     kM05  // spindle off
   };
 
-  GCodeGenerator(const MachineSettings::MachineSet &machine, bool rotary_mode) : BaseGenerator() {
+  GCodeGenerator(const MachineSettings::MachineParam &machine, bool rotary_mode) : BaseGenerator() {
     rotary_mode_ = rotary_mode;
     if(rotary_mode_) {
       switch (machine.origin) {
-        case MachineSettings::MachineSet::OriginType::RearRight:
-        case MachineSettings::MachineSet::OriginType::FrontRight:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearRight;
+        case MachineSettings::MachineParam::OriginType::RearRight:
+        case MachineSettings::MachineParam::OriginType::FrontRight:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearRight;
           break;
-        case MachineSettings::MachineSet::OriginType::RearLeft:
-        case MachineSettings::MachineSet::OriginType::FrontLeft:
-          machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+        case MachineSettings::MachineParam::OriginType::RearLeft:
+        case MachineSettings::MachineParam::OriginType::FrontLeft:
+          machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
           break;
         default:
           break;
@@ -59,19 +59,19 @@ public:
   void moveTo(float x, float y, float speed, float power, double x_backlash) override {
     // 1. Handle the axis direction (convert from canvas to machine)
     switch (machine_origin_) {
-      case MachineSettings::MachineSet::OriginType::RearRight:
+      case MachineSettings::MachineParam::OriginType::RearRight:
         // Canvas x axis direction is opposite to machine coordinate
         x = machine_width_ - x;
         break;
-      case MachineSettings::MachineSet::OriginType::FrontRight:
+      case MachineSettings::MachineParam::OriginType::FrontRight:
         // Canvas x, y axis directions are opposite to machine coordinate
         x = machine_width_ - x;
         y = machine_height_ - y;
         break;
-      case MachineSettings::MachineSet::OriginType::RearLeft:
+      case MachineSettings::MachineParam::OriginType::RearLeft:
         // NORMAL canvas x, y axis directions are the same as machine coordinate
         break;
-      case MachineSettings::MachineSet::OriginType::FrontLeft:
+      case MachineSettings::MachineParam::OriginType::FrontLeft:
         // Canvas y axis direction is opposite to machine coordinate
         y = machine_height_ - y;
         break;
@@ -209,7 +209,7 @@ public:
     BaseGenerator::reset();
     machine_width_ = 0;
     machine_height_ = 0;
-    machine_origin_ = MachineSettings::MachineSet::OriginType::RearLeft;
+    machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
     motion_modal_ = GCodeMotionModal::kG00;
     distance_modal_ = GCodeDistanceModal::kG90;
     spindle_modal_ = MCodeSpindleModal::kM05;
@@ -221,7 +221,7 @@ private:
   GCodeMotionModal motion_modal_ = GCodeMotionModal::kG00;
   GCodeDistanceModal distance_modal_ = GCodeDistanceModal::kG90;
   MCodeSpindleModal spindle_modal_ = MCodeSpindleModal::kM05;
-  MachineSettings::MachineSet::OriginType machine_origin_;
+  MachineSettings::MachineParam::OriginType machine_origin_;
   float epsilon_ = 0.001;
   bool rotary_mode_;
 };

@@ -31,6 +31,7 @@
 #include <executor/executor.h>
 #include <windows/rotary_setup.h>
 #include <windows/consoledialog.h>
+#include <main_application.h>
 
 #include <config.h>
 
@@ -59,8 +60,6 @@ public:
   void closeEvent(QCloseEvent *event) override;
 
   Canvas *canvas() const;
-
-  MachineSettings::MachineSet currentMachine();
 
   void show();
 
@@ -110,11 +109,7 @@ private Q_SLOTS:
 
   void updateMode();
 
-  void updateSelections();
-
   void updateScale();
-
-  void updateToolbarTransform();
 
   void onScaleMinusClicked();
 
@@ -152,8 +147,6 @@ private Q_SLOTS:
 
   void showCanvasPopMenu();
 
-  void showWelcomeDialog();
-
   void showJoggingPanel();
 
   void genPreviewWindow();
@@ -164,12 +157,9 @@ private Q_SLOTS:
 
   void updateTitle(bool file_modified);
 
-  void updateScene();
-
-  void updateTravelSpeed();
-
   void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
   void machineDisconnected();
+  void updateCanvasSize(QSize new_size);
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   void softwareUpdateRequested();
@@ -187,16 +177,7 @@ private:
 
   Ui::MainWindow *ui;
   Canvas *canvas_;
-  double x_, y_, r_, w_, h_;
   bool job_dashboard_exist_;
-  bool is_high_speed_mode_ = false;
-  bool is_upload_enable_ = false;
-  bool is_rotary_mode_ = false;
-  bool is_mirror_mode_ = false;
-  bool start_with_home_ = true;
-  char rotary_axis_ = 'Y';
-  QSize machine_range_;
-  double travel_speed_;
   QPointF end_point_ = QPointF(0,0);
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
@@ -254,6 +235,9 @@ private:
   void actionFrame();
   QPoint calculateJobOrigin();
   QTransform calculateTranslate();
+  void showHighSpeedWarning();
+
+  friend class MainApplication;
 };
 
 #endif // MAINWINDOW_H

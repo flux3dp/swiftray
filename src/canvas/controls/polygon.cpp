@@ -47,11 +47,13 @@ bool Polygon::mouseReleaseEvent(QMouseEvent *e) {
   QPainterPath path;
   path.addPolygon(polygon_);
   ShapePtr new_polygon = std::make_shared<PathShape>(path);
+  if(document().activeLayer()->type() == Layer::Type::Fill) new_polygon->setFilled(true);
   canvas().setMode(Canvas::Mode::Selecting);
   document().execute(
           Commands::AddShape(document().activeLayer(), new_polygon),
           Commands::Select(&document(), {new_polygon})
   );
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }

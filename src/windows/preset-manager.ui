@@ -141,6 +141,118 @@
          </layout>
         </widget>
        </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>10</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="presetTitle">
+         <property name="text">
+          <string>Title</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Pulse Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Framing Power</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QDoubleSpinBox" name="pulseSpinBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>%</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QDoubleSpinBox" name="framingSpinBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="suffix">
+            <string>%</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <double>10.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPushButton" name="resetButton">
+           <property name="text">
+            <string>All Reset</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QPushButton" name="copyButton">
+           <property name="text">
+            <string>Copy Preset</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </item>
      <item>
@@ -181,14 +293,8 @@
            </property>
            <item>
             <widget class="QListWidget" name="paramList">
-             <property name="dragEnabled">
-              <bool>true</bool>
-             </property>
              <property name="dragDropOverwriteMode">
               <bool>false</bool>
-             </property>
-             <property name="dragDropMode">
-              <enum>QAbstractItemView::DragDrop</enum>
              </property>
              <property name="defaultDropAction">
               <enum>Qt::MoveAction</enum>
@@ -310,6 +416,9 @@
               </item>
               <item>
                <widget class="QToolButton" name="removeParamBtn">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                   <horstretch>0</horstretch>
@@ -350,12 +459,8 @@
          <widget class="QLabel" name="paramTitle">
           <property name="font">
            <font>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
-          </property>
-          <property name="text">
-           <string>Title</string>
           </property>
          </widget>
         </item>
@@ -400,7 +505,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="powerSpinBox">
+               <widget class="QDoubleSpinBox" name="powerSpinBox">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -408,10 +513,13 @@
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                 <property name="suffix">
-                 <string> %</string>
+                 <string>%</string>
                 </property>
-                <property name="maximum">
-                 <number>100</number>
+                <property name="decimals">
+                 <number>1</number>
+                </property>
+                <property name="singleStep">
+                 <double>0.100000000000000</double>
                 </property>
                </widget>
               </item>
@@ -427,7 +535,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QSpinBox" name="speedSpinBox">
+               <widget class="QDoubleSpinBox" name="speedSpinBox">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -435,10 +543,13 @@
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                 <property name="suffix">
-                 <string> mm/s</string>
+                 <string>mm/s</string>
                 </property>
-                <property name="maximum">
-                 <number>100</number>
+                <property name="decimals">
+                 <number>1</number>
+                </property>
+                <property name="singleStep">
+                 <double>0.100000000000000</double>
                 </property>
                </widget>
               </item>

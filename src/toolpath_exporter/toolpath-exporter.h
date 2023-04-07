@@ -11,6 +11,7 @@
 #include <toolpath_exporter/generators/base-generator.h>
 #include <document.h>
 #include <bitset>
+#include <constants.h>
 
 #include <QImage>
 
@@ -32,6 +33,8 @@ public:
   void setWorkAreaSize(QRectF work_area) { machine_work_area_mm_ = work_area; }
 
   bool isExceedingBoundary() { return exceed_boundary_; }
+
+  void setSortRule(PathSort sort_rule) { sort_rule_ = sort_rule; }
 
   enum class ScanDirectionMode {
       kBidirectionMode,
@@ -99,4 +102,6 @@ private:
   // ==================================================
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
+  bool with_image_ = false;
+  PathSort sort_rule_;
 };

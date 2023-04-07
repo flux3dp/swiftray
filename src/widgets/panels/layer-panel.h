@@ -16,19 +16,24 @@ Q_OBJECT
 
 public:
   explicit LayerPanel(QWidget *parent, MainWindow *main_window_);
-
   void resizeEvent(QResizeEvent *) override;
-
   ~LayerPanel();
+  void setPresetIndex(int preset_index, int param_index);
+  void setLayerParam(double strength, double speed, int repeat);
+  void setLayerBacklash(double backlash);
+  void setLayerParamLock(bool enable);
 
 Q_SIGNALS:
   void panelShow(bool is_show);
+  void editParamIndex(int param_index);
+  void wakeupPresetManager();
+  void editLayerParam(double strength, double speed, int repeat);
+  void editLayerBacklash(double backlash);
   
 private Q_SLOTS:
 
   void layerOrderChanged(const QModelIndex &sourceParent, int sourceStart, int sourceEnd,
                          const QModelIndex &destinationParent, int destinationRow);
-
   void updateLayers();
 
 private:

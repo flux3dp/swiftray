@@ -14,8 +14,6 @@ DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
      BaseContainer() {
   ui->setupUi(this);
 
-  updateScene();
-
   // Fill data for DPI combobox items
   Q_ASSERT_X(ui->dpiComboBox->count() == 4, "doc-panel", "The item count of dpi combobox must match our expectation.");
   ui->dpiComboBox->setItemData(0, qreal{125*qPow(2,0)}); // Low (125)
@@ -27,8 +25,6 @@ DocPanel::DocPanel(QWidget *parent, MainWindow *main_window) :
 }
 
 DocPanel::~DocPanel() {
-  QSettings settings;
-  settings.setValue("defaultMachine", ui->machineComboBox->currentText());
   delete ui;
 }
 
@@ -65,46 +61,6 @@ void DocPanel::syncAdvancedSettingsUI() {
  * @brief Update UI (panel & scene) with current settings
  */
 void DocPanel::loadSettings() {
-  QSettings settings;
-  MachineSettings machine_settings;
-  QString current_machine = settings.value("defaultMachine").toString();
-  ui->machineComboBox->clear();
-  for (const auto &mach : machine_settings.machines()) {
-    if (mach.name.isEmpty()) continue;
-    ui->machineComboBox->blockSignals(true);
-    ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
-    ui->machineComboBox->blockSignals(false);
-  }
-  //these should add in machine
-  QVariant travel_speed = settings.value("travelSpeed", 0);
-  if(travel_speed.toDouble() > 0) {
-    ui->speedSpinBox->setValue(travel_speed.toDouble());
-  } else {
-    ui->speedSpinBox->setValue(100);
-    settings.setValue("travelSpeed", 100);
-  }
-  QVariant rotary_speed = settings.value("rotary/travelSpeed", 0);
-  if(rotary_speed.toDouble() > 0) {
-    ui->rotarySpinBox->setValue(rotary_speed.toDouble());
-  } else {
-    ui->rotarySpinBox->setValue(5);
-    settings.setValue("rotary/travelSpeed", 5);
-  }
-  // select the item in combobox with matching current_machine name
-  // NOTE: This works only when there is no duplicate name in machines_
-  ui->machineComboBox->setCurrentText(current_machine);
-  updateScene();
-
-  PresetSettings* preset_settings = &PresetSettings::getInstance();
-  QString current_preset_name = preset_settings->currentPreset().name;
-  ui->presetComboBox->clear();
-  for (auto &preset : preset_settings->presets()) {
-    ui->presetComboBox->addItem(preset.name);
-    if (preset.name == current_preset_name) {
-      ui->presetComboBox->setCurrentIndex(ui->presetComboBox->count() - 1);
-    }
-  }
-
   // Load DPI setting (select appropriate dpi item index)
   syncDPISettingsUI();
   syncAdvancedSettingsUI();
@@ -123,30 +79,11 @@ void DocPanel::registerEvents() {
 
   // Events of internal document settings changed trigger update in UI (panel & canvas)
   connect(ui->machineComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    if (index == -1) return;
-    updateScene();
-    QSettings settings;
-    settings.setValue("defaultMachine", ui->machineComboBox->currentText());
-    Q_EMIT machineChanged(ui->machineComboBox->currentText());
+    Q_EMIT updateMachineIndex(index);
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    PresetSettings* preset_settings = &PresetSettings::getInstance();
-    if (index > -1) {
-        preset_settings->setCurrentIndex(index);
-    }
+    Q_EMIT updatePresetIndex(index);
   });
-  connect(main_window_, &MainWindow::presetSettingsChanged, [=]() {
-    loadSettings();
-  });
-  connect(main_window_, &MainWindow::machineSettingsChanged, [=]() {
-    loadSettings();
-    // Select the machine just created by Welcome Dialog
-    ui->machineComboBox->setCurrentIndex(ui->machineComboBox->count() - 1);
-  });
-  connect(main_window_->canvas(), &Canvas::docSettingsChanged, [=]() {
-    loadSettings();
-  });
-
   // Events of panel UI edit complete trigger save actions into internal document settings
   connect(ui->dpiComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     // TODO: Consider using model/view
@@ -178,62 +115,46 @@ void DocPanel::registerEvents() {
     Q_EMIT rotaryModeChange(state);
   });
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
-    QSettings settings;
-    settings.setValue("travelSpeed", value);
-    Q_EMIT updateSpeed();
+    Q_EMIT updateTravelSpeed(value);
   });
   connect(ui->rotarySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double value) {
-    QSettings settings;
-    settings.setValue("rotary/travelSpeed", value);
-    Q_EMIT updateSpeed();
+    Q_EMIT updateRotarySpeed(value);
   });
-}
-
-void DocPanel::updateScene() {
-  if (ui->machineComboBox->count() == 0) return;
-  auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
-  auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
-  // TODO (change width/height to QSize)
-  Q_EMIT updateMachineRange(QSize(machine.width, machine.height));
-  // main_window_->canvas()->document().setWidth(machine.width * 10);
-  // main_window_->canvas()->document().setHeight(machine.height * 10);
-  // main_window_->canvas()->resize();
-}
-
-MachineSettings::MachineSet DocPanel::currentMachine() {
-  if (ui->machineComboBox->count() == 0) {
-    // Return a default
-    MachineSettings::MachineSet m;
-    m.origin = MachineSettings::MachineSet::OriginType::RearLeft;
-    m.board_type = MachineSettings::MachineSet::BoardType::GRBL_2020;
-    m.width = main_window_->canvas()->document().width() / 10;
-    m.height = main_window_->canvas()->document().height() / 10;
-    return m;
-  }
-  auto data = ui->machineComboBox->itemData(ui->machineComboBox->currentIndex());
-  auto machine = MachineSettings::MachineSet::fromJson(data.toJsonObject());
-  return machine;
-}
-
-QString DocPanel::getMachineName() {
-  return ui->machineComboBox->currentText();
 }
 
 void DocPanel::setRotaryMode(bool is_rotary_mode) {
+  ui->rotaryCheckBox->blockSignals(true);
   if(is_rotary_mode) {
     ui->rotaryCheckBox->setCheckState(Qt::Checked);
+    ui->speedSpinBox->setEnabled(false);
+    ui->rotarySpinBox->setEnabled(true);
   }
   else {
     ui->rotaryCheckBox->setCheckState(Qt::Unchecked);
+    ui->speedSpinBox->setEnabled(true);
+    ui->rotarySpinBox->setEnabled(false);
   }
+  ui->rotaryCheckBox->blockSignals(false);
 }
 
-double DocPanel::getTravelSpeed() {
-  return ui->speedSpinBox->value();
+void DocPanel::setTravelSpeed(double travel_speed) {
+  ui->speedSpinBox->blockSignals(true);
+  ui->speedSpinBox->setValue(travel_speed);
+  ui->speedSpinBox->blockSignals(false);
 }
 
-double DocPanel::getRotarySpeed() {
-  return ui->rotarySpinBox->value();
+void DocPanel::setRotarySpeed(double rotary_speed) {
+  ui->rotarySpinBox->blockSignals(true);
+  ui->rotarySpinBox->setValue(rotary_speed);
+  ui->rotarySpinBox->blockSignals(false);
+}
+
+void DocPanel::setMachineSelectLock(bool enable) {
+  ui->machineComboBox->setEnabled(enable);
+}
+
+void DocPanel::setPresetSelectLock(bool enable) {
+  ui->presetComboBox->setEnabled(enable);
 }
 
 void DocPanel::hideEvent(QHideEvent *event) {
@@ -242,4 +163,31 @@ void DocPanel::hideEvent(QHideEvent *event) {
 
 void DocPanel::showEvent(QShowEvent *event) {
   Q_EMIT panelShow(true);
+}
+
+void DocPanel::setPresetIndex(int preset_index) {
+  PresetSettings* settings = &PresetSettings::getInstance();
+  ui->presetComboBox->blockSignals(true);
+  ui->presetComboBox->clear();
+  for (auto &preset : settings->presets()) {
+    ui->presetComboBox->addItem(preset.name);
+  }
+  ui->presetComboBox->setCurrentIndex(preset_index);
+  ui->presetComboBox->blockSignals(false);
+}
+
+void DocPanel::setMachineIndex(int machine_index) {
+  MachineSettings* settings = &MachineSettings::getInstance();
+  ui->machineComboBox->blockSignals(true);
+  ui->machineComboBox->clear();
+  for (const auto &mach : settings->getMachines()) {
+    if (mach.name.isEmpty()) continue;
+    ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
+  }
+  ui->machineComboBox->setCurrentIndex(machine_index);
+  ui->machineComboBox->blockSignals(false);
+  MachineSettings::MachineParam param = settings->getTargetMachine(machine_index);
+  ui->speedSpinBox->blockSignals(true);
+  ui->speedSpinBox->setValue(param.travel_speed);
+  ui->speedSpinBox->blockSignals(false);
 }

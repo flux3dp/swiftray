@@ -51,6 +51,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
        Commands::AddShape(document().activeLayer(), new_line),
        Commands::Select(&document(), {new_line})
   );
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }
@@ -58,7 +59,7 @@ bool Line::mouseReleaseEvent(QMouseEvent *e) {
 void Line::paint(QPainter *painter) {
   if (cursor_ == QPointF(0, 0))
     return;
-  QPen pen(document().activeLayer()->color(), 3, Qt::SolidLine);
+  QPen pen(document().activeLayer()->color(), 2, Qt::SolidLine);
   pen.setCosmetic(true);
   painter->setPen(pen);
   if(direction_locked_) {

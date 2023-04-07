@@ -35,10 +35,12 @@ bool Oval::mouseReleaseEvent(QMouseEvent *e) {
   path.moveTo((rect_.topRight() + rect_.bottomRight()) / 2);
   path.arcTo(rect_, 0, 360 * 16);
   ShapePtr new_oval = std::make_shared<PathShape>(path);
+  if(document().activeLayer()->type() == Layer::Type::Fill) new_oval->setFilled(true);
   document().execute(
        Commands::AddShape(document().activeLayer(), new_oval),
        Commands::Select(&document(), {new_oval})
   );
+  Q_EMIT shapeUpdated();
   exit();
   return true;
 }

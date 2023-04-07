@@ -14,6 +14,7 @@
 #include <canvas/controls/polygon.h>
 #include <canvas/controls/text.h>
 #include <canvas/controls/transform.h>
+#include <constants.h>
 #include <widgets/components/canvas-text-edit.h>
 #include <document.h>
 #include <clipboard.h>
@@ -112,6 +113,12 @@ public:
 
   void setCurrentPosition(bool current_position) {current_position_ = current_position;}
 
+  void updateCursor();
+
+  void setHoverMove(bool in_canvas);
+
+  void setCanvasQuality(CanvasQuality quality);
+  
 public Q_SLOTS:
 
   void editCut();
@@ -202,7 +209,7 @@ public Q_SLOTS:
 
   void resize();
 
-  void setFont(const QFont &font);
+  void setFontFamily(QString font_family);
 
   void setPointSize(int point_size);
 
@@ -226,6 +233,11 @@ public Q_SLOTS:
 
   void updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos);
 
+  void canvasUpdated();
+
+  void shapeUpdated();
+
+  void setShapeReference(int reference_origin);
 
 private:
   // Basic attributes
@@ -261,6 +273,7 @@ private:
   float fps;
   QTimer *timer;
   QThread *mem_thread_;
+  bool is_in_canvas_ = false;
   bool is_holding_space_ = false;
   bool is_holding_ctrl_  = false;
   bool is_holding_middle_button_ = false;
@@ -275,6 +288,15 @@ private:
   QPointF right_click_;
   QPointF job_origin_;
   QPointF user_origin_;
+  QPixmap canvas_tmpimage_;
+  QPixmap canvas_image_;
+  bool is_flushed_ = false;
+  bool is_shape_flushed_ = false;
+  bool is_on_shape_ = false;
+  //the line width to display
+  CanvasQuality canvas_quality_ = AutoQuality;
+  unsigned int canvas_counter_ = 0;
+  bool change_quality_ = false;
 
   QQuickWidget *widget_;
 
@@ -297,7 +319,7 @@ Q_SIGNALS:
 
   void scaleChanged();
 
-  void selectionsChanged();
+  void selectionsChanged(QList<ShapePtr> shape_list);
 
   void fileModifiedChange(bool file_modified);
 

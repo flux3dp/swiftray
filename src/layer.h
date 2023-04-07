@@ -1,8 +1,8 @@
 #pragma once
 
+#include <QDebug>
 #include <QMutex>
 #include <shape/shape.h>
-#include <canvas/cache-stack.h>
 
 class Document;
 
@@ -30,7 +30,7 @@ public:
 
   ~Layer();
 
-  int paint(QPainter *painter) const;
+  void paintUnselected(QPainter *painter, double line_width);
 
   // Add ShapePtr to children array
   void addShape(const ShapePtr &shape);
@@ -43,9 +43,6 @@ public:
 
   // Remove specific ShapePtr
   void removeShape(const ShapePtr &shape);
-
-  // Cache functions
-  void flushCache();
 
   /** Getters **/
 
@@ -130,10 +127,6 @@ private:
   double power_;
   double x_backlash_ = 0;
   int parameter_index_;
-
-  /** Main properties **/
-  mutable bool cache_valid_;
-  mutable std::unique_ptr<CacheStack> cache_;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

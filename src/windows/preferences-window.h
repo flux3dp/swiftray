@@ -12,36 +12,26 @@ Q_OBJECT
 
 public:
   explicit PreferencesWindow(QWidget *parent = nullptr);
-
   ~PreferencesWindow();
-
-  bool isHighSpeedMode();
-
-  bool isUploadEnable();
-
   void setSpeedMode(bool is_high_speed);
-
   void setUpload(bool enable_upload);
+  void setCanvasQuality(int canvas_quality);
+  void setPathSort(int path_sort);
 
 private:
   Ui::PreferencesWindow *ui;
 
   void setLanguageComboBox();
-
   void setSpeedOptimizationComboBox();
-
   void setShareComboBox();
-
+  void setQualityComboBox();
+  void setPathSortComboBox();
   void setTabWidget();
-
-  bool is_high_speed_;
-
-  bool is_upload_enable_;
 
 Q_SIGNALS:
   void speedModeChanged(bool is_high_speed);
-
   void fontSizeChanged(int font_size);
-
   void privacyUpdate(bool enable_upload);
+  void canvasQualityUpdate(int canvas_quality);
+  void pathSortUpdate(int path_sort);
 };

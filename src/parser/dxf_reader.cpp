@@ -2,6 +2,7 @@
 #include "parser/dxf_rs/engine/rs_graphic.h"
 #include "libdxfrw/drw_base.h"
 #include <shape/bitmap-shape.h>
+#include <shape/path-shape.h>
 
 #include <QDebug>
 #include <iostream>

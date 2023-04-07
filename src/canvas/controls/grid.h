@@ -16,6 +16,12 @@ namespace Controls {
     void paint(QPainter *painter) override;
 
     bool isActive() override;
+
+    void setLineWidth(double new_width) {line_width_ = new_width;}
+
+  private:
+    //To set different width for different pixel ratio in canvas
+    double line_width_ = 2;
   };
 
 }

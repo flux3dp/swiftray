@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   // Set app icon
   app.setWindowIcon(QIcon(":/resources/images/icon.png"));
 
-  QSettings settings;
+  QSettings settings("flux", "swiftray");
   // load Open Sans font(addApplicationFont fail in Mac)
   QVariant font_size = settings.value("window/font_size", 0);
   #ifdef Q_OS_WIN

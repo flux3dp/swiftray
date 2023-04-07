@@ -6,11 +6,9 @@
 namespace Ui {
 class PrivacyWindow;
 }
-
 class PrivacyWindow : public QDialog
 {
     Q_OBJECT
-
 public:
     explicit PrivacyWindow(QWidget *parent = nullptr);
     ~PrivacyWindow();

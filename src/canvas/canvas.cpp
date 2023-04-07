@@ -61,7 +61,7 @@ Canvas::Canvas(QQuickItem *parent)
 
   // Set main loop and timers
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
-  timer->start(16);
+  timer->start(16);//16 for about 60 fps
   volatility_timer.start();
 
   // Register controls
@@ -74,19 +74,26 @@ Canvas::Canvas(QQuickItem *parent)
   fps_timer.start();
 
   // Register events
-  connect(this, &Canvas::selectionsChanged, [=]() {
-    for (auto &layer : document().layers()) {
-      layer->flushCache();
-    }
-  });
-
   connect(this, &QQuickPaintedItem::widthChanged, this, &Canvas::resize);
-
   connect(this, &QQuickPaintedItem::heightChanged, this, &Canvas::resize);
-
-  connect(&ctrl_transform_, &Controls::Transform::cursorChanged, [=](Qt::CursorShape cursor) {
-    Q_EMIT cursorChanged(cursor);
-  });
+  connect(&ctrl_transform_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_select_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_rect_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_polygon_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_oval_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_line_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_path_draw_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_path_edit_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_text_, &Controls::CanvasControl::canvasUpdated, this, &Canvas::canvasUpdated);
+  connect(&ctrl_transform_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_select_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_rect_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_polygon_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_oval_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_line_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_path_draw_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_path_edit_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
+  connect(&ctrl_text_, &Controls::CanvasControl::shapeUpdated, this, &Canvas::shapeUpdated);
 }
 
 Canvas::~Canvas() {
@@ -203,18 +210,74 @@ void Canvas::loadDXF(QString file_name) {
 }
 
 void Canvas::paint(QPainter *painter) {
+  // return;
+  // QElapsedTimer timer;
+  // timer.start();
   Q_EMIT syncJobOrigin();
   painter->setRenderHint(QPainter::RenderHint::Antialiasing, fps > 30);
   painter->save();
-  painter->fillRect(0, 0, width(), height(), backgroundColor());
-  // Move to scroll and scale
+  
+  double pixel_ratio, line_width;
+  switch (canvas_quality_) {
+  case AutoQuality:
+    if(document().isScreenChanged() || !is_flushed_) {
+      change_quality_ = false;
+      canvas_counter_ = 0;
+      pixel_ratio = 1;
+      line_width = 1;
+    } else if(canvas_counter_ < 3) {
+      canvas_counter_ ++;
+      pixel_ratio = 1;
+      line_width = 1;
+    } else if(!change_quality_) {
+      change_quality_ = true;
+      is_flushed_ = false;
+      pixel_ratio = 2;
+      line_width = 2;
+    } else {
+      pixel_ratio = 2;
+      line_width = 2;
+    }
+    break;
+  case NormalQuality:
+    pixel_ratio = 2;
+    line_width = 2;
+    break;
+  case LowQuality:
+    pixel_ratio = 1;
+    line_width = 1;
+    break;
+  default:
+    break;
+  }
+  if(document().isScreenChanged() 
+      || !is_flushed_ || !is_shape_flushed_) {
+    is_shape_flushed_ = true;
+    if(document().isScreenChanged() || !is_flushed_) {
+      is_flushed_ = true;
+      canvas_tmpimage_ = QPixmap(width()*pixel_ratio, height()*pixel_ratio);
+      canvas_tmpimage_.setDevicePixelRatio(pixel_ratio);
+      // canvas_tmpimage_.fill(QColor(0,0,0,0));
+      QPainter image_painter(&canvas_tmpimage_);
+      image_painter.fillRect(0, 0, width(), height(), backgroundColor());
+      // Move to scroll and scale
+      image_painter.translate(document().scroll());
+      image_painter.scale(document().scale(), document().scale());
+      ctrl_grid_.setLineWidth(line_width);
+      ctrl_grid_.paint(&image_painter);
+      document().paintUnselected(&image_painter, line_width);
+    }
+
+    canvas_image_ = QPixmap(canvas_tmpimage_);
+    QPainter canvas_painter(&canvas_image_);
+    canvas_painter.translate(document().scroll());
+    canvas_painter.scale(document().scale(), document().scale());
+    document().paintSelected(&canvas_painter, line_width);
+  }
+  painter->drawPixmap(0, 0, canvas_image_);
+
   painter->translate(document().scroll());
   painter->scale(document().scale(), document().scale());
-
-  ctrl_grid_.paint(painter);
-
-  document().paint(painter);
-
   for (auto &control : ctrls_) {
     if (control->isActive()) {
       control->paint(painter);
@@ -232,8 +295,9 @@ void Canvas::paint(QPainter *painter) {
   }
 
   painter->restore();
-
   ctrl_ruler_.paint(painter);
+
+  // qDebug() << Q_FUNC_INFO << "Rendering (" << timer.elapsed() << "ms)";
 }
 
 void Canvas::keyPressEvent(QKeyEvent *e) {
@@ -320,6 +384,10 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
     is_holding_middle_button_ = true;
     return;
   }
+  if (e->button()==Qt::RightButton) {
+    is_pop_menu_showing_ = true;
+    return;
+  }
   if (is_holding_space_) {
     Q_EMIT cursorChanged(Qt::ClosedHandCursor);
   }
@@ -329,8 +397,8 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
       return;
   }
 
-  if (mode() == Mode::Selecting) {
-    ShapePtr hit = document().hitTest(canvas_coord);
+  if (mode() == Mode::Selecting && is_on_shape_) {
+    ShapePtr hit = document().hitTest(canvas_coord, true);
 
     if (hit != nullptr) {
       Q_EMIT cursorChanged(Qt::ClosedHandCursor);
@@ -339,10 +407,10 @@ void Canvas::mousePressEvent(QMouseEvent *e) {
         document().setActiveLayer(hit->layer()->name());
         Q_EMIT layerChanged();
       }
-    } else {
-      document().setSelection(nullptr);
-      setMode(Mode::MultiSelecting);
     }
+  } else if(mode() == Mode::Selecting) {
+    document().setSelection(nullptr);
+    setMode(Mode::MultiSelecting);
   }
 }
 
@@ -352,7 +420,6 @@ void Canvas::mouseMoveEvent(QMouseEvent *e) {
   }
 
   if (is_holding_space_ || is_holding_middle_button_) {
-    Q_EMIT cursorChanged(Qt::ClosedHandCursor);
     QPointF movement = (document().getCanvasCoord(e->pos()) - document().mousePressedCanvasCoord()) 
                         * document().scale();
     QPointF new_scroll = document().mousePressedCanvasScroll() + movement;
@@ -381,6 +448,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
 
   if (e->button()==Qt::MiddleButton) {
     is_holding_middle_button_ = false;
+    updateCursor();
     return;
   }
 
@@ -399,7 +467,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *e) {
 
 void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
   QPointF canvas_coord = document().getCanvasCoord(e->pos());
-  ShapePtr hit = document().hitTest(canvas_coord);
+  ShapePtr hit = document().hitTest(canvas_coord, true);
   if (mode() == Mode::Selecting) {
     if (hit != nullptr) {
       switch (hit->type()) {
@@ -412,6 +480,8 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
             break;
           }
           ctrl_text_.setTarget(hit);
+          ((TextShape*) hit.get())->setEditing(true);
+          is_shape_flushed_ = false;
           setMode(Mode::TextDrawing);
           break;
         case Shape::Type::Path:
@@ -433,6 +503,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
     // NOTE: If Double click outside of text edit box, finish the current text edit
     if (!ctrl_text_.target().boundingRect().contains(canvas_coord)) {
       ctrl_text_.exit();
+      is_shape_flushed_ = false;
     }
   }
 }
@@ -518,65 +589,39 @@ void Canvas::setScaleWithCenter(qreal new_scale) {
 }
 
 void Canvas::loop() {
-  update();
+  update();//update paint & event(HoverMove)
 }
 
 bool Canvas::event(QEvent *e) {
   // qInfo() << "QEvent" << e;
   QNativeGestureEvent *nge;
   Qt::CursorShape cursor;
-  QPointF canvas_coord;
-  ShapePtr hit;
-  bool cursor_changed = false;
-  Qt::CursorShape cursor_shape;
-
   switch (e->type()) {
     case QEvent::HoverMove:
-      switch (mode()) {
-        case Mode::TextDrawing:
-          cursor_shape = Qt::IBeamCursor;
-          cursor_changed = true;
-          break;
-        case Mode::LineDrawing:
-        case Mode::OvalDrawing:
-        case Mode::PolygonDrawing:
-        case Mode::RectDrawing:
-          cursor_shape = Qt::CrossCursor;
-          cursor_changed = true;
-          break;
-        default:
-          cursor_shape = Qt::ArrowCursor;
-          break;
-      }
-
+      if(!is_in_canvas_ || is_holding_middle_button_) return QQuickPaintedItem::event(e);
       for (auto &control : ctrls_) {
         if (control->isActive() &&
             control->hoverEvent(dynamic_cast<QHoverEvent *>(e), &cursor)) {
           // TODO (Hack this to mainwindow support global cursor)
           // Local cursor has a bug..
-          // setCursor(cursor);
-          cursor_shape = cursor;
-          cursor_changed = true;
-          break;
+          Q_EMIT cursorChanged(cursor);
+          return QQuickPaintedItem::event(e);
         }
       }
-      if(!cursor_changed) {
-        canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
-        hit = document().hitTest(canvas_coord);
+      if(mode_ == Mode::Selecting) {
+        QPointF canvas_coord = document().getCanvasCoord(dynamic_cast<QHoverEvent *>(e)->pos());
+        ShapePtr hit = document().hitTest(canvas_coord);
         if(hit != nullptr) {
-          Q_EMIT cursorChanged(Qt::OpenHandCursor);
-        }
-        else if(is_holding_space_) {
+          is_on_shape_ = true;
           Q_EMIT cursorChanged(Qt::OpenHandCursor);
         } else {
+          is_on_shape_ = false;
           Q_EMIT cursorChanged(Qt::ArrowCursor);
         }
-      }
-      else {
-        Q_EMIT cursorChanged(cursor_shape);
+      } else if (mode_ == Mode::PathEditing) {
+        Q_EMIT cursorChanged(Qt::ArrowCursor);
       }
       break;
-
     case QEvent::NativeGesture:
       nge = dynamic_cast<QNativeGestureEvent *>(e);
 
@@ -591,9 +636,7 @@ bool Canvas::event(QEvent *e) {
         updateScroll(new_scroll, mouse_pos);
         volatility_timer.restart();
       }
-
       break;
-
     default:
       break;
   }
@@ -646,7 +689,7 @@ void Canvas::editUndo() {
   t.start();
   document().undo();
   Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
-  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT selectionsChanged(document().selections()); // Force refresh all selection related components
   Q_EMIT undoCalled();
   qInfo() << "[Undo] Took" << t.elapsed() << "ms";
 }
@@ -654,7 +697,7 @@ void Canvas::editUndo() {
 void Canvas::editRedo() {
   document().redo();
   Q_EMIT layerChanged(); // TODO (Check if layers are really changed)
-  Q_EMIT selectionsChanged(); // Force refresh all selection related components
+  Q_EMIT selectionsChanged(document().selections()); // Force refresh all selection related components
   Q_EMIT redoCalled();
 }
 
@@ -1087,20 +1130,21 @@ void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
   );
 }
 
-void Canvas::setFont(const QFont &font) {
-  font_.setFamily(font.family());
+void Canvas::setFontFamily(QString font_family) {
+  font_.setFamily(font_family);
   if (!document().selections().isEmpty()) {
     auto cmd = Commands::Joined();
     for (auto &shape: document().selections()) {
       if (shape->type() == Shape::Type::Text) {
         auto *t = (TextShape *) shape.get();
         QFont target_font = t->font();
-        target_font.setFamily(font.family());
+        target_font.setFamily(font_family);
         cmd << Commands::SetFont((TextShape *) shape.get(), target_font);
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setFont(font_);
@@ -1121,7 +1165,8 @@ void Canvas::setPointSize(int point_size) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setPointSize(point_size);
     if(!ctrl_text_.isEmpty()) {
@@ -1144,7 +1189,8 @@ void Canvas::setLetterSpacing(double spacing) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setLetterSpacing(QFont::SpacingType::AbsoluteSpacing, spacing);
     if(!ctrl_text_.isEmpty()) {
@@ -1167,7 +1213,8 @@ void Canvas::setBold(bool bold) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setBold(bold);
     if(!ctrl_text_.isEmpty()) {
@@ -1190,7 +1237,8 @@ void Canvas::setItalic(bool italic) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setItalic(italic);
     if(!ctrl_text_.isEmpty()) {
@@ -1213,7 +1261,8 @@ void Canvas::setUnderline(bool underline) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());
+    is_shape_flushed_ = false;
   } else {
     target_font.setUnderline(underline);
     if(!ctrl_text_.isEmpty()) {
@@ -1233,7 +1282,8 @@ void Canvas::setLineHeight(float line_height) {
       }
     }
     document().execute(cmd);
-    Q_EMIT selectionsChanged();
+    Q_EMIT selectionsChanged(document().selections());//to update the boundingRect maybe use different Q_SIGNALS?
+    is_shape_flushed_ = false;
   } else {
     if(!ctrl_text_.isEmpty()) {
       ctrl_text_.target().setLineHeight(line_height);
@@ -1294,7 +1344,33 @@ Canvas::Mode Canvas::mode() const { return mode_; }
 
 void Canvas::setMode(Mode mode) {
   mode_ = mode;
+  updateCursor();
   Q_EMIT modeChanged();
+}
+
+void Canvas::updateCursor() {
+  if(!is_in_canvas_) {
+    Q_EMIT cursorChanged(Qt::ArrowCursor);
+    return;
+  }
+  switch (mode_) {
+    case Mode::TextDrawing:
+      Q_EMIT cursorChanged(Qt::IBeamCursor);
+      break;
+    case Mode::Rotating:
+    case Mode::RectDrawing:
+    case Mode::LineDrawing:
+    case Mode::PolygonDrawing:
+    case Mode::OvalDrawing:
+    case Mode::PathDrawing:
+      Q_EMIT cursorChanged(Qt::CrossCursor);
+      break;
+    case Mode::Moving:
+      Q_EMIT cursorChanged(Qt::ClosedHandCursor);
+      break;
+    default:
+      break;
+  }
 }
 
 QRect Canvas::calculateShapeBoundary() {
@@ -1370,23 +1446,29 @@ double Canvas::lineHeight() const { return line_height_;}
 
 void Canvas::editHFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), -1, 1, false);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editVFlip() {
   transformControl().applyScale(transformControl().boundingRect().center(), 1, -1, false);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHLeft() {
   auto cmd = Commands::Joined();
-  double left = transformControl().boundingRect().left();
+  double left = transformControl().boundingRect().center().x();
+  for (auto &shape : document().selections()) {
+    if(left > shape->boundingRect().left()) left = shape->boundingRect().left();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(left - shape->boundingRect().left(), 0);
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHCenter() {
@@ -1397,29 +1479,38 @@ void Canvas::editAlignHCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignHRight() {
   auto cmd = Commands::Joined();
-  double right = transformControl().boundingRect().right();
+  double right = transformControl().boundingRect().center().x();
+  for (auto &shape : document().selections()) {
+    if(right < shape->boundingRect().right()) right = shape->boundingRect().right();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(right - shape->boundingRect().right(), 0);
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVTop() {
   auto cmd = Commands::Joined();
-  double top = transformControl().boundingRect().top();
+  double top = transformControl().boundingRect().center().y();
+  for (auto &shape : document().selections()) {
+    if(top > shape->boundingRect().top()) top = shape->boundingRect().top();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(0, top - shape->boundingRect().top());
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVCenter() {
@@ -1430,18 +1521,23 @@ void Canvas::editAlignVCenter() {
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::editAlignVBottom() {
   auto cmd = Commands::Joined();
-  double bottom = transformControl().boundingRect().bottom();
+  double bottom = transformControl().boundingRect().center().y();
+  for (auto &shape : document().selections()) {
+    if(bottom < shape->boundingRect().bottom()) bottom = shape->boundingRect().bottom();
+  }
   for (auto &shape : document().selections()) {
     QTransform new_transform = QTransform().translate(0, bottom - shape->boundingRect().bottom());
     cmd << Commands::SetTransform(shape.get(), shape->transform() * new_transform);
   }
   document().execute(cmd);
-  Q_EMIT selectionsChanged();
+  is_shape_flushed_ = false;
+  Q_EMIT selectionsChanged(document().selections());
 }
 
 void Canvas::setWidget(QQuickWidget *widget) {
@@ -1465,4 +1561,27 @@ const QColor Canvas::backgroundColor() {
 void Canvas::updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos) {
   current_x_ = std::get<0>(target_pos);
   current_y_ = std::get<1>(target_pos);
+}
+
+void Canvas::canvasUpdated() {
+  is_flushed_ = false;
+}
+
+void Canvas::shapeUpdated() {
+  is_shape_flushed_ = false;
+}
+
+void Canvas::setShapeReference(int reference_origin) {
+  ctrl_transform_.setReferencePoint((JobOrigin)reference_origin);
+}
+
+void Canvas::setHoverMove(bool in_canvas) {
+  is_in_canvas_ = in_canvas;
+  updateCursor();
+}
+
+void Canvas::setCanvasQuality(CanvasQuality quality) {
+  canvas_quality_ = quality;
+  canvas_counter_ = 0;
+  is_flushed_ = false;
 }

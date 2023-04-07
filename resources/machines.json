@@ -7,7 +7,9 @@
       "height": 406,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Ortur",
@@ -16,7 +18,9 @@
       "height": 180,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Ortur",
@@ -25,7 +29,9 @@
       "height": 390,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Ortur",
@@ -34,7 +40,9 @@
       "height": 430,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Ortur",
@@ -43,7 +51,9 @@
       "height": 400,
       "origin": 2,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Neje",
@@ -52,7 +62,9 @@
       "height": 120,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Neje",
@@ -61,7 +73,9 @@
       "height": 170,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     },
     {
       "brand": "Neje",
@@ -70,7 +84,9 @@
       "height": 420,
       "origin": 0,
       "homeOnStart": true,
-      "boardType": 0
+      "boardType": 0,
+      "travel_speed": 100,
+      "rotary_axis": "Y"
     }
   ]
 }

@@ -44,5 +44,9 @@ namespace Controls {
 
   private:
     Canvas *canvas_;
+    
+  Q_SIGNALS:
+    void canvasUpdated();
+    void shapeUpdated();
   };
 }

@@ -37,6 +37,9 @@
 #include <QSerialPort>
 #include <main_application.h>
 #include "parser/pdf2svg.h"
+#include <windows/preset-manager.h>
+#include <settings/machine-settings.h>
+#include <settings/preset-settings.h>
 
 #include <QResource>
 #include <utils/software_update.h>
@@ -61,8 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
   setToolbarFont();
   setToolbarTransform();
   //setToolbarImage();
-  updateSelections();
-  showWelcomeDialog();
+  Q_EMIT canvas_->selectionsChanged(QList<ShapePtr>());
   setScaleBlock();
   setModeBlock();
   setConnectionToolBar();
@@ -93,7 +95,7 @@ void MainWindow::showEvent(QShowEvent *event)
 
 void MainWindow::loadSettings() {
   #ifdef Q_OS_MACOS
-    QSettings settings;
+    QSettings settings("flux", "swiftray");
     restoreGeometry(settings.value("window/geometry").toByteArray());
     if (!restoreState(settings.value("window/windowState").toByteArray())) {
       QSettings classic_settings(":/classicUI.ini", QSettings::IniFormat);
@@ -103,29 +105,38 @@ void MainWindow::loadSettings() {
     QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
-  MachineSettings::MachineSet machine_info = doc_panel_->currentMachine();
-  machine_range_.setHeight(machine_info.height);
-  machine_range_.setWidth(machine_info.width);
-  QString current_machine = doc_panel_->getMachineName();
-  std::size_t found = current_machine.toStdString().find("Lazervida");
-  if(found!=std::string::npos) {
-    is_high_speed_mode_ = true;
-    preferences_window_->setSpeedMode(is_high_speed_mode_);
-  }
-  else {
-    is_high_speed_mode_ = false;
-    preferences_window_->setSpeedMode(is_high_speed_mode_);
-  }
-  is_high_speed_mode_ = preferences_window_->isHighSpeedMode();
+  preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
+  preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
+  preferences_window_->setPathSort(mainApp->getPathSort());
+  canvas_->setCanvasQuality(mainApp->getCanvasQuality());
   setWindowModified(false);
   setWindowFilePath(FilePathSettings::getDefaultFilePath());
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
-  updateTravelSpeed();
-  rotary_setup_->setFramingPower(jogging_panel_->getFramingPower());
-  rotary_setup_->setDefaultCircumference(machine_info.height);
+  MachineSettings::MachineParam machine_param = mainApp->getMachineParam();
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
+  canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
+  canvas_->setShapeReference(mainApp->getShapeReference());
+  laser_panel_->setJobOrigin(mainApp->getJobOrigin());
+  laser_panel_->setStartFrom(mainApp->getStartFrom());
+  laser_panel_->setStartHome(mainApp->getStartWithHome());
+  layer_panel_->setPresetIndex(mainApp->getPresetIndex(), mainApp->getParamIndex());
+  //should update by layer!!!
+  PresetSettings::Param initial_param;
+  layer_panel_->setLayerParam(initial_param.power, initial_param.speed, initial_param.repeat);
+  layer_panel_->setLayerBacklash(0);
+  doc_panel_->setPresetIndex(mainApp->getPresetIndex());
+  jogging_panel_->setFramingPower(mainApp->getFramingPower());
+  jogging_panel_->setPulsePower(mainApp->getPulsePower());
+  doc_panel_->setMachineIndex(mainApp->getMachineIndex());
+  doc_panel_->setTravelSpeed(machine_param.travel_speed);
+  RotarySettings::RotaryParam rotary_param = mainApp->getRotaryParam();
+  doc_panel_->setRotarySpeed(rotary_param.travel_speed);
+  updateCanvasSize(mainApp->getWorkingRange());
+  //should check when machine(which is connected?) change
+  jogging_panel_->setControlEnable(false);
+  laser_panel_->setControlEnable(false);
 #ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   options_ = sentry_options_new();
@@ -156,17 +167,20 @@ void MainWindow::loadSettings() {
   );
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
-  QSettings privacy_settings;
-  QVariant upload_code = privacy_settings.value("window/upload", 0);
-  is_upload_enable_ = upload_code.toBool();
-  if(is_upload_enable_) {
+  if(mainApp->isUploadEnable()) {
     sentry_user_consent_give();
   }
   else {
     sentry_user_consent_revoke();
   }
 #endif
-  preferences_window_->setUpload(is_upload_enable_);
+  if(mainApp->isFirstTime()) {
+    welcome_dialog_->setWindowModality(Qt::ApplicationModal);
+    welcome_dialog_->show();
+    welcome_dialog_->activateWindow();
+    welcome_dialog_->raise();
+  }
+  preferences_window_->setUpload(mainApp->isUploadEnable());
 }
 
 void MainWindow::loadCanvas() {
@@ -181,6 +195,12 @@ void MainWindow::loadCanvas() {
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
   ui->quickWidget->setSource(source);
   ui->quickWidget->show();
+  connect(ui->quickWidget, &CanvasWidget::enterCanvasWidget, [=]() {
+    canvas_->setHoverMove(true);
+    });
+  connect(ui->quickWidget, &CanvasWidget::leaveCanvasWidget, [=]() {
+    canvas_->setHoverMove(false);
+  });
   connect(ui->quickWidget, &CanvasWidget::dropFile,[=](QPoint point, QString filename) {
     QFile file(filename);
 
@@ -201,7 +221,7 @@ void MainWindow::loadCanvas() {
         canvas_->setDocument(ds.deserializeDocument());
         canvas_->document().setCurrentFile(filename);
         canvas_->emitAllChanges();
-        Q_EMIT canvas_->selectionsChanged();
+        Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
@@ -210,7 +230,9 @@ void MainWindow::loadCanvas() {
         // canvas_->loadSVG(data);
         double scale = 10;//define by 3cm Ruler
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * scale, h_ * scale);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * scale, mainApp->getTransformH() * scale);
       }  else if (filename.toLower().endsWith(".dxf")) {
         QTemporaryDir dir;
         QString temp_dxf_filepath = dir.isValid() ? dir.filePath("temp.dxf") : "temp.dxf";
@@ -219,7 +241,9 @@ void MainWindow::loadCanvas() {
         canvas_->loadDXF(temp_dxf_filepath);
         QFile::remove(temp_dxf_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       } else if (filename.toLower().endsWith(".pdf") || filename.toLower().endsWith(".ai")) {
         QTemporaryDir dir;
         Parser::PDF2SVG pdf_converter;
@@ -232,11 +256,15 @@ void MainWindow::loadCanvas() {
         pdf_converter.removeSVGFile(temp_svg_filepath);
         QFile::remove(sanitized_filepath);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       } else {
         importImage(filename);
         QPointF paste_shift(canvas_->document().getCanvasCoord(point));
-        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), r_, w_ * 10, h_ * 10);
+        canvas_->transformControl().updateTransform(paste_shift.x(), paste_shift.y(), 
+                                                    mainApp->getTransformR(), 
+                                                    mainApp->getTransformW() * 10, mainApp->getTransformH() * 10);
       }
     }
   });
@@ -380,7 +408,8 @@ void MainWindow::actionStart() {
       };
       canvas_pixmap.fill(Qt::white);
       auto painter = std::make_unique<QPainter>(&canvas_pixmap);
-      canvas_->document().paint(painter.get());
+      canvas_->document().paintUnselected(painter.get(), 2);
+      canvas_->document().paintSelected(painter.get(), 2);
       //if (job_dashboard_) {
       //  job_dashboard_->deleteLater();
       //}
@@ -425,15 +454,16 @@ void MainWindow::actionFrame() {
 
   // Generate gcode for framing
   QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
       canvas_->document().settings().dpmm(),
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kNoPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_);
+  exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), mainApp->getStartWithHome());
   if (exporter.isExceedingBoundary()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
@@ -454,8 +484,8 @@ void MainWindow::actionFrame() {
     return;
   }
 
-  gen_outline_scanning_gcode->setTravelSpeed(travel_speed_);
-  gen_outline_scanning_gcode->setLaserPower(jogging_panel_->getFramingPower());
+  gen_outline_scanning_gcode->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
+  gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
   // Create Framing Job and start
   if (true == active_machine.createFramingJob(
         QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
@@ -468,34 +498,34 @@ void MainWindow::actionFrame() {
 QPoint MainWindow::calculateJobOrigin() {
   //to get shape bounding
   QRect rect = canvas_->calculateShapeBoundary();
-  int job_origin = laser_panel_->getJobOrigin();
+  int job_origin = mainApp->getJobOrigin();
   QPoint target_point;
   switch(job_origin) {
-    case LaserPanel::JobOrigin::NW:
+    case JobOrigin::NW:
       target_point = QPoint(rect.left(), rect.top());
       break;
-    case LaserPanel::JobOrigin::N:
+    case JobOrigin::N:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
       break;
-    case LaserPanel::JobOrigin::NE:
+    case JobOrigin::NE:
       target_point = QPoint(rect.left() + rect.width(), rect.top());
       break;
-    case LaserPanel::JobOrigin::E:
+    case JobOrigin::E:
       target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
       break;
-    case LaserPanel::JobOrigin::SE:
+    case JobOrigin::SE:
       target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::S:
+    case JobOrigin::S:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::SW:
+    case JobOrigin::SW:
       target_point = QPoint(rect.left(), rect.top() + rect.height());
       break;
-    case LaserPanel::JobOrigin::W:
+    case JobOrigin::W:
       target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
       break;
-    case LaserPanel::JobOrigin::CENTER:
+    case JobOrigin::CENTER:
       target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
       break;
     default:
@@ -505,21 +535,21 @@ QPoint MainWindow::calculateJobOrigin() {
 }
 
 QTransform MainWindow::calculateTranslate() {
-  int start_from = laser_panel_->getStartFrom();
+  int start_from = mainApp->getStartFrom();
   QTransform move_translate = QTransform();
   //to get shape bounding
   QPoint target_point = calculateJobOrigin();
   //unit??
   switch(start_from) {
-    case LaserPanel::StartFrom::AbsoluteCoords:
+    case StartFrom::AbsoluteCoords:
       end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
       break;
-    case LaserPanel::StartFrom::CurrentPosition:
+    case StartFrom::CurrentPosition:
       move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
       end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
       break;
-    case LaserPanel::StartFrom::UserOrigin:
+    case StartFrom::UserOrigin:
       move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
                               std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
       end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
@@ -527,22 +557,30 @@ QTransform MainWindow::calculateTranslate() {
     default:
       break;
   }
-  if(is_rotary_mode_) {
+  if(mainApp->isRotaryMode()) {
     int direction = 1;
-    if(is_mirror_mode_) {
+    if(mainApp->isMirrorMode()) {
       direction = -1;
     }
     move_translate *= QTransform::fromScale(1,direction);
     //to move obj into canvas
     QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
     while(rect.top() < 0) {
-      move_translate.translate(0,rotary_setup_->getCircumference() * 10 * direction);
+      move_translate.translate(0,mainApp->getRotaryCircumference() * 10 * direction);
       rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
     }
-
-    move_translate *= QTransform::fromScale(1, rotary_setup_->getRotaryScale());
+    move_translate *= QTransform::fromScale(1, mainApp->getRotaryScale());
   }
   return move_translate;
+}
+
+void MainWindow::showHighSpeedWarning() {
+  if(mainApp->isHighSpeedMode()) {
+    QMessageBox msgbox;
+    msgbox.setText(tr("Warning"));
+    msgbox.setInformativeText(tr("Please confirm that you are using the Lazervida machine."));
+    msgbox.exec();
+  }
 }
 
 void MainWindow::newFile() {
@@ -557,7 +595,7 @@ void MainWindow::newFile() {
   canvas_->document().setWidth(width);
   canvas_->document().setHeight(height);
   canvas_->emitAllChanges();
-  Q_EMIT canvas_->selectionsChanged();
+  Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   setWindowModified(false);
   setWindowTitle(tr("Untitled") + " - Swiftray");
   current_filename_ = tr("Untitled");
@@ -601,7 +639,7 @@ void MainWindow::openFile() {
       canvas_->setDocument(ds.deserializeDocument());
       canvas_->document().setCurrentFile(file_name);
       canvas_->emitAllChanges();
-      Q_EMIT canvas_->selectionsChanged();
+      Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
@@ -653,7 +691,7 @@ void MainWindow::openExampleOfSwiftray() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -673,7 +711,7 @@ void MainWindow::openMaterialCuttingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -693,7 +731,7 @@ void MainWindow::openMaterialEngravingTest() {
     canvas_->setDocument(ds.deserializeDocument());
     canvas_->document().setCurrentFile(file_name);
     canvas_->emitAllChanges();
-    Q_EMIT canvas_->selectionsChanged();
+    Q_EMIT canvas_->selectionsChanged(canvas_->document().selections());
   }
 }
 
@@ -843,7 +881,7 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -856,12 +894,14 @@ void MainWindow::exportGCodeFile() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(), 
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
+                                    mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
 
@@ -983,103 +1023,29 @@ void MainWindow::updateScale() {
   scale_block_->setText(QString::number(canvas_->document().scale() * 100, 'f', 1)+"%");
 }
 
-void MainWindow::updateSelections() {
-  QList<ShapePtr> &items = canvas_->document().selections();
-  bool all_group = !items.empty();
-  bool all_path = !items.empty();
-  bool all_image = !items.empty();
-  bool all_geometry = !items.empty();
-  bool all_text = !items.empty();
-
-  for (auto &shape : canvas_->document().selections()) {
-    if (shape->type() != Shape::Type::Group) all_group = false;
-
-    if (shape->type() != Shape::Type::Path && shape->type() != Shape::Type::Text) all_path = false;
-    if (shape->type() != Shape::Type::Path) all_geometry = false;
-    if (shape->type() != Shape::Type::Bitmap) all_image = false;
-    if (shape->type() != Shape::Type::Text) all_text = false;
-  }
-
-  cutAction_->setEnabled(items.size() > 0);
-  copyAction_->setEnabled(items.size() > 0);
-  duplicateAction_->setEnabled(items.size() > 0);
-  deleteAction_->setEnabled(items.size() > 0);
-  groupAction_->setEnabled(items.size() > 1);
-  ungroupAction_->setEnabled(all_group);
-
-  ui->actionGroup->setEnabled(items.size() > 1);
-  ui->actionGroupMenu->setEnabled(items.size() > 1);
-  ui->actionUngroup->setEnabled(all_group);
-  ui->actionUngroupMenu->setEnabled(all_group);
-  ui->actionUnion->setEnabled(items.size() > 1 && all_path); // Union can be done with the shape itself if it contains sub polygons
-  ui->actionSubtract->setEnabled(items.size() == 2 && all_path);
-  ui->actionDiff->setEnabled(items.size() == 2 && all_path);
-  ui->actionIntersect->setEnabled(items.size() == 2 && all_path);
-  ui->actionHFlip->setEnabled(!items.empty());
-  ui->actionVFlip->setEnabled(!items.empty());
-  ui->actionAlignVTop->setEnabled(items.size() > 1);
-  ui->actionAlignVCenter->setEnabled(items.size() > 1);
-  ui->actionAlignVBottom->setEnabled(items.size() > 1);
-  ui->actionAlignHLeft->setEnabled(items.size() > 1);
-  ui->actionAlignHCenter->setEnabled(items.size() > 1);
-  ui->actionAlignHRight->setEnabled(items.size() > 1);
-  ui->actionTrace->setEnabled(items.size() == 1 && all_image);
-  ui->actionInvert->setEnabled(items.size() == 1 && all_image);
-  ui->actionReplace_with->setEnabled(items.size() == 1 && all_image);
-  ui->actionCrop->setEnabled(items.size() == 1 && all_image);
-  ui->actionPathOffset->setEnabled(all_geometry);
-  ui->actionSharpen->setEnabled(items.size() == 1 && all_image);
-}
-
-void MainWindow::updateToolbarTransform() {
-  canvas()->transformControl().updateTransform(x_ * 10, y_ * 10, r_, w_ * 10, h_ * 10);
-  Q_EMIT toolbarTransformChanged(x_, y_, r_, w_, h_);
-}
-
-void MainWindow::updateScene() {
-  if(is_rotary_mode_) {
-    mode_block_->setText(tr("Rotary Mode"));
-    canvas()->document().setWidth(machine_range_.width() * 10);
-    canvas()->document().setHeight(rotary_setup_->getCircumference() * 10);
-    canvas()->resize();
-    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
-  } else {
-    mode_block_->setText(tr("XY Mode"));
-    canvas()->document().setWidth(machine_range_.width() * 10);
-    canvas()->document().setHeight(machine_range_.height() * 10);
-    canvas()->resize();
-    laser_panel_->setStartHomeEnable(!is_rotary_mode_);
-  }
-}
-
-void MainWindow::updateTravelSpeed() {
-  if(is_rotary_mode_) {
-    travel_speed_ = doc_panel_->getRotarySpeed() * 60;// mm/s to mm/min
-  }
-  else {
-    travel_speed_ = doc_panel_->getTravelSpeed() * 60;// mm/s to mm/min
-  }
-  rotary_setup_->setTravelSpeed(doc_panel_->getRotarySpeed() * 60);
-  jogging_panel_->setTravelSpeed(travel_speed_);
-}
-
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
   transform_panel_ = new TransformPanel(ui->objectParamDock, this);
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_panel_ = new GCodePanel(ui->serialPortDock, this);
-  font_panel_ = new FontPanel(ui->fontDock, this);
+  font_panel_ = new FontPanel(ui->fontDock, isDarkMode());
   image_panel_ = new ImagePanel(ui->imageDock, this);
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
-  laser_panel_ = new LaserPanel(ui->laserDock, this);
-  machine_manager_ = new MachineManager(this, this);
+  laser_panel_ = new LaserPanel(ui->laserDock, isDarkMode());
+  machine_manager_ = new MachineManager(this, mainApp->getMachineIndex());
   preferences_window_ = new PreferencesWindow(this);
   about_window_ = new AboutWindow(this);
   welcome_dialog_ = new WelcomeDialog(this);
   privacy_window_ = new PrivacyWindow(this);
-  rotary_setup_ = new RotarySetup(this);
+  RotarySetup::RotarySetting rotary_setting;
+  rotary_setting.rotary_mode = mainApp->isRotaryMode();
+  rotary_setting.mirror_mode = mainApp->isMirrorMode();
+  rotary_setting.circumference = mainApp->getRotaryCircumference();
+  rotary_setting.rotary_axis = mainApp->getRotaryAxis();
+  rotary_setting.rotary_index = mainApp->getRotaryIndex();
+  rotary_setup_ = new RotarySetup(rotary_setting, this);
   ui->joggingDock->setWidget(jogging_panel_);
   ui->objectParamDock->setWidget(transform_panel_);
   ui->serialPortDock->setWidget(gcode_panel_);
@@ -1113,6 +1079,20 @@ void MainWindow::loadWidgets() {
   ui->actionTask->setChecked(!ui->toolBarTask->isHidden());
   ui->actionTransform->setChecked(!ui->toolBarTransform->isHidden());
   ui->actionVector->setChecked(!ui->toolBarVector->isHidden());
+
+  //Initial panel setting by MainApplication
+  font_panel_->setFontFamily(mainApp->getFont().family());
+  font_panel_->setPointSize(mainApp->getFont().pointSize());
+  font_panel_->setLetterSpacing(mainApp->getFont().letterSpacing());
+  font_panel_->setBold(mainApp->getFont().bold());
+  font_panel_->setItalic(mainApp->getFont().italic());
+  font_panel_->setUnderline(mainApp->getFont().underline());
+  font_panel_->setLineHeight(mainApp->getFontLineHeight());
+  transform_panel_->setScaleLock(mainApp->isShapeScaleLocked());
+  transform_panel_->setShapeReference(mainApp->getShapeReference());
+  image_panel_->setImageGradient(mainApp->isImageGradient());
+  image_panel_->setImageThreshold(mainApp->getImageThreshold());
+  image_panel_->changeImageEnable(false);
 }
 
 void MainWindow::registerEvents() {
@@ -1121,10 +1101,11 @@ void MainWindow::registerEvents() {
 
   // Monitor canvas events
   connect(canvas_, &Canvas::modeChanged, this, &MainWindow::updateMode);
-  connect(canvas_, &Canvas::selectionsChanged, this, &MainWindow::updateSelections);
   connect(canvas_, &Canvas::scaleChanged, this, &MainWindow::updateScale);
   connect(canvas_, &Canvas::fileModifiedChange, this, &MainWindow::updateTitle);
   connect(canvas_, &Canvas::canvasContextMenuOpened, this, &MainWindow::showCanvasPopMenu);
+  connect(canvas_, &Canvas::transformChanged, mainApp, &MainApplication::getSelectShapeTransform);
+  connect(canvas_, &Canvas::selectionsChanged, mainApp, &MainApplication::getSelectShapeChange);
   // Monitor UI events
   connect(ui->actionNew, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::openFile);
@@ -1154,6 +1135,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionLine, &QAction::triggered, canvas_, &Canvas::editDrawLine);
   connect(ui->actionPath, &QAction::triggered, canvas_, &Canvas::editDrawPath);
   connect(ui->actionText, &QAction::triggered, canvas_, &Canvas::editDrawText);
+  connect(ui->actionText, &QAction::triggered, [=]() {
+    Q_EMIT mainApp->changeFontEnable(true);
+  });
   connect(ui->actionPhoto, &QAction::triggered, this, &MainWindow::openImageFile);
   connect(ui->actionMarket, &QAction::triggered, [=]() {
     QDesktopServices::openUrl(QUrl("https://dmkt.io/"));
@@ -1175,6 +1159,9 @@ void MainWindow::registerEvents() {
   connect(ui->actionAlignHCenter, &QAction::triggered, canvas_, &Canvas::editAlignHCenter);
   connect(ui->actionAlignHRight, &QAction::triggered, canvas_, &Canvas::editAlignHRight);
   connect(ui->actionPreferences, &QAction::triggered, [=]() {
+    preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
+    preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
+    preferences_window_->setPathSort(mainApp->getPathSort());
     preferences_window_->show();
     preferences_window_->activateWindow();
     preferences_window_->raise();
@@ -1189,14 +1176,23 @@ void MainWindow::registerEvents() {
 #endif
 
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
+    doc_panel_->setMachineSelectLock(false);
+    machine_manager_->setMachineIndex(mainApp->getMachineIndex());
     machine_manager_->show();
     machine_manager_->activateWindow();
     machine_manager_->raise();
+    if(machine_manager_->exec() != 1) {
+      Q_EMIT mainApp->editMachineIndex(mainApp->getMachineIndex());
+    }
+    doc_panel_->setMachineSelectLock(true);
   });
   connect(ui->actionRotarySetup, &QAction::triggered, [=]() {
+    rotary_setup_->setRotaryIndex(mainApp->getRotaryIndex());
     rotary_setup_->show();
     rotary_setup_->activateWindow();
     rotary_setup_->raise();
+    if(rotary_setup_->exec() != 1) {
+    }
   });
   connect(ui->actionPathOffset, &QAction::triggered, canvas_, &Canvas::genPathOffset);
   connect(ui->actionTrace, &QAction::triggered, canvas_, &Canvas::genImageTrace);
@@ -1208,7 +1204,6 @@ void MainWindow::registerEvents() {
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
-  connect(machine_manager_, &QDialog::accepted, this, &MainWindow::machineSettingsChanged);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
       QSettings settings(QDir::currentPath() + "/classicUI.ini", QSettings::IniFormat);
@@ -1227,18 +1222,16 @@ void MainWindow::registerEvents() {
       restoreState(settings.value("window/windowState").toByteArray());
   });
   // Complex callbacks
-  connect(welcome_dialog_, &WelcomeDialog::settingsChanged, [=]() {
-    Q_EMIT machineSettingsChanged();
+  connect(welcome_dialog_, &WelcomeDialog::addNewMachine, [=](MachineSettings::MachineParam new_param) {
+    mainApp->addMachine(new_param);
   });
   connect(welcome_dialog_, &WelcomeDialog::finished, [=](int result) {
-    QSettings privacy_settings;
-    QVariant newstart_code = privacy_settings.value("window/newstart", 0);
-    if(!newstart_code.toInt()) {
-      privacy_window_->show();
-      privacy_window_->activateWindow();
-      privacy_window_->raise();
-      privacy_settings.setValue("window/newstart", 1);
-    }
+    privacy_window_->show();
+    privacy_window_->activateWindow();
+    privacy_window_->raise();
+  });
+  connect(privacy_window_, &PrivacyWindow::finished, [=](int result) {
+    showHighSpeedWarning();//to show warning window
   });
   connect(ui->actionExportGcode, &QAction::triggered, this, &MainWindow::exportGCodeFile);
   connect(ui->actionPreview, &QAction::triggered, this, &MainWindow::genPreviewWindow);
@@ -1254,63 +1247,31 @@ void MainWindow::registerEvents() {
   });
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
-    is_high_speed_mode_ = is_high_speed;
+    mainApp->updateMachineHighSpeedMode(is_high_speed);
   });
   connect(preferences_window_, &PreferencesWindow::privacyUpdate, [=](bool enable_upload) {
-    is_upload_enable_ = enable_upload;
-#ifdef ENABLE_SENTRY
-    if(is_upload_enable_) {
-      sentry_user_consent_give();
-    }
-    else {
-      sentry_user_consent_revoke();
-    }
-#endif
-    QSettings settings;
-    settings.setValue("window/upload", is_upload_enable_);
+    mainApp->updateUploadEnable(enable_upload);
+  });
+  connect(preferences_window_, &PreferencesWindow::canvasQualityUpdate, [=](int canvas_quality) {
+    mainApp->updateCanvasQuality(canvas_quality);
+  });
+  connect(preferences_window_, &PreferencesWindow::pathSortUpdate, [=](int path_sort) {
+    mainApp->updatePathSort(path_sort);
   });
   connect(privacy_window_, &PrivacyWindow::privacyUpdate, [=](bool enable_upload) {
-    is_upload_enable_ = enable_upload;
+    mainApp->updateUploadEnable(enable_upload);
+  });
+  connect(mainApp, &MainApplication::editUploadEnable, [=](bool is_enable) {
 #ifdef ENABLE_SENTRY
-    if(is_upload_enable_) {
+    if(is_enable) {
       sentry_user_consent_give();
     }
     else {
       sentry_user_consent_revoke();
     }
 #endif
-    preferences_window_->setUpload(is_upload_enable_);
-    QSettings settings;
-    settings.setValue("window/upload", is_upload_enable_);
+    preferences_window_->setUpload(is_enable);
   });
-  connect(doc_panel_, &DocPanel::machineChanged, [=](QString machine_name) {
-    active_machine.applyMachineParam(currentMachine());
-
-    std::size_t found = machine_name.toStdString().find("Lazervida");
-    if(found!=std::string::npos) {
-      is_high_speed_mode_ = true;
-      preferences_window_->setSpeedMode(is_high_speed_mode_);
-      QMessageBox msgbox;
-      msgbox.setText(tr("Alarm"));
-      msgbox.setInformativeText(tr("Please confirm that you are using the Lazervida machine."));
-      msgbox.exec();
-    }
-    else {
-      is_high_speed_mode_ = false;
-      preferences_window_->setSpeedMode(is_high_speed_mode_);
-    }
-  });
-  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool is_rotary_mode) {
-    is_rotary_mode_ = is_rotary_mode;
-    rotary_setup_->setRotaryMode(is_rotary_mode);
-    updateScene();
-    updateTravelSpeed();
-  });
-  connect(doc_panel_, &DocPanel::updateMachineRange, [=](QSize machine_range) {
-    machine_range_ = machine_range;
-    updateScene();
-  });
-  connect(doc_panel_, &DocPanel::updateSpeed, this, &MainWindow::updateTravelSpeed);
   //panel
   connect(ui->actionFontPanel, &QAction::triggered, [=]() {
     if(ui->fontDock->isHidden()) {
@@ -1491,6 +1452,225 @@ void MainWindow::registerEvents() {
     console_dialog_->raise();
   });
 
+  //about transform
+  connect(transform_panel_, &TransformPanel::editShapeTransformX, mainApp, &MainApplication::updateShapeTransformX);
+  connect(transform_panel_, &TransformPanel::editShapeTransformY, mainApp, &MainApplication::updateShapeTransformY);
+  connect(transform_panel_, &TransformPanel::editShapeTransformR, mainApp, &MainApplication::updateShapeTransformR);
+  connect(transform_panel_, &TransformPanel::editShapeTransformW, mainApp, &MainApplication::updateShapeTransformW);
+  connect(transform_panel_, &TransformPanel::editShapeTransformH, mainApp, &MainApplication::updateShapeTransformH);
+  connect(transform_panel_, &TransformPanel::scaleLockToggled, mainApp, &MainApplication::updateShapeScaleLock);
+  connect(transform_panel_, &TransformPanel::editShapeReference, mainApp, &MainApplication::updateShapeReference);
+  connect(mainApp, &MainApplication::selectAllGeometry, [=](bool state) {
+    ui->actionPathOffset->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::selectAllGroup, [=](bool state) {
+    ungroupAction_->setEnabled(state);
+    ui->actionUngroup->setEnabled(state);
+    ui->actionUngroupMenu->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::changeUnionEnable, [=](bool state) {
+    ui->actionUnion->setEnabled(state); // Union can be done with the shape itself if it contains sub polygons
+  });
+  connect(mainApp, &MainApplication::selectPairPath, [=](bool state) {
+    ui->actionSubtract->setEnabled(state);
+    ui->actionDiff->setEnabled(state);
+    ui->actionIntersect->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::selectGroupEnable, [=](bool state) {
+    groupAction_->setEnabled(state);
+    ui->actionGroup->setEnabled(state);
+    ui->actionGroupMenu->setEnabled(state);
+    ui->actionAlignVTop->setEnabled(state);
+    ui->actionAlignVCenter->setEnabled(state);
+    ui->actionAlignVBottom->setEnabled(state);
+    ui->actionAlignHLeft->setEnabled(state);
+    ui->actionAlignHCenter->setEnabled(state);
+    ui->actionAlignHRight->setEnabled(state);
+  });
+  connect(mainApp, &MainApplication::editShapeReference, [=](int reference_origin) {
+    transform_panel_->setShapeReference(reference_origin);
+    canvas_->setShapeReference(reference_origin);
+  });
+
+  //about font
+  connect(font_panel_, &FontPanel::editShapeFontFamily, mainApp, &MainApplication::updateShapeFontFamily);
+  connect(font_panel_, &FontPanel::editShapeFontPointSize, mainApp, &MainApplication::editShapeFontPointSize);
+  connect(font_panel_, &FontPanel::editShapeLetterSpacing, mainApp, &MainApplication::editShapeLetterSpacing);
+  connect(font_panel_, &FontPanel::editShapeBold, mainApp, &MainApplication::editShapeBold);
+  connect(font_panel_, &FontPanel::editShapeItalic, mainApp, &MainApplication::editShapeItalic);
+  connect(font_panel_, &FontPanel::editShapeUnderline, mainApp, &MainApplication::editShapeUnderline);
+  connect(font_panel_, &FontPanel::editShapeLineHeight, mainApp, &MainApplication::editShapeLineHeight);
+  connect(mainApp, &MainApplication::updateFontView, font_panel_, &FontPanel::updateFontView);
+
+  //about image
+  connect(image_panel_, &ImagePanel::editImageGradient, mainApp, &MainApplication::updateImageGradient);
+  connect(image_panel_, &ImagePanel::editImageThreshold, mainApp, &MainApplication::updateImageThreshold);
+  connect(image_panel_, &ImagePanel::actionCropImage, canvas_, &Canvas::cropImage);
+  connect(image_panel_, &ImagePanel::actionInvertImage, canvas_, &Canvas::invertImage);
+  connect(image_panel_, &ImagePanel::actionSharpenImage, canvas_, &Canvas::sharpenImage);
+  connect(image_panel_, &ImagePanel::actionGenImageTrace, canvas_, &Canvas::genImageTrace);
+  connect(mainApp, &MainApplication::editImageGradient, [=](bool state) {
+    image_panel_->setImageGradient(state);
+    QList<ShapePtr> shape_list = canvas_->document().selections();
+    if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
+      selected_img->setGradient(state);
+      canvas_->shapeUpdated();
+    }
+  });
+
+  //about preset
+  connect(mainApp, &MainApplication::editPresetIndex, [=](int preset_index, int param_index) {
+    doc_panel_->setPresetIndex(preset_index);
+    layer_panel_->setPresetIndex(preset_index, param_index);
+    canvas_->document().activeLayer()->setParameterIndex(param_index);
+  });
+  connect(mainApp, &MainApplication::editFramingPower, [=](double power) {
+    jogging_panel_->setFramingPower(power);
+  });
+  connect(mainApp, &MainApplication::editPulsePower, [=](double power) {
+    jogging_panel_->setPulsePower(power);
+  });
+  connect(doc_panel_, &DocPanel::updatePresetIndex, [=](int index) {
+    mainApp->updatePresetIndex(index);
+  });
+  connect(layer_panel_, &LayerPanel::editParamIndex, [=](int index) {
+    mainApp->updateParamIndex(index);
+  });
+  connect(layer_panel_, &LayerPanel::wakeupPresetManager, [=]() {
+    PresetManager *preset_manager = new PresetManager(this, mainApp->getPresetIndex());
+    connect(preset_manager, &PresetManager::updateCurrentPresetIndex, [=](int index) {
+      mainApp->updatePresetIndex(index);
+    });
+    connect(preset_manager, &PresetManager::updateCurrentIndex, [=](int preset_index, int param_index) {
+      mainApp->updatePresetIndex(preset_index, param_index);
+    });
+    doc_panel_->setPresetSelectLock(false);
+    layer_panel_->setLayerParamLock(false);
+    preset_manager->show();
+    preset_manager->activateWindow();
+    preset_manager->raise();
+    if(preset_manager->exec() != 1) {
+      Q_EMIT mainApp->editPresetIndex(mainApp->getPresetIndex(), mainApp->getParamIndex());
+    }
+    doc_panel_->setPresetSelectLock(true);
+    layer_panel_->setLayerParamLock(true);
+  });
+  connect(layer_panel_, &LayerPanel::editLayerParam, [=](double strength, double speed, int repeat) {
+    canvas_->document().activeLayer()->setStrength(strength);
+    canvas_->document().activeLayer()->setSpeed(speed);
+    canvas_->document().activeLayer()->setRepeat(repeat);
+  });
+  connect(layer_panel_, &LayerPanel::editLayerBacklash, [=](double backlash) {
+    canvas_->document().activeLayer()->setXBacklash(backlash);
+  });
+  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
+    mainApp->updateFramingPower(framing_power);
+  });
+  connect(jogging_panel_, &JoggingPanel::updatePulsePower, [=](double pulse_power) {
+    mainApp->updatePulsePower(pulse_power);
+  });
+  //about machine
+  connect(doc_panel_, &DocPanel::updateMachineIndex, [=](int machine_index) {
+    mainApp->updateMachineIndex(machine_index);
+  });
+  connect(doc_panel_, &DocPanel::updateTravelSpeed, [=](double travel_speed) {
+    mainApp->updateMachineTravelSpeed(travel_speed);
+  });
+  connect(machine_manager_, &MachineManager::updateCurrentMachineIndex, [=](int index) {
+    mainApp->updateMachineIndex(index);
+  });
+  connect(mainApp, &MainApplication::editMachineIndex, [=](int machine_index) {
+    doc_panel_->setMachineIndex(machine_index);
+    active_machine.applyMachineParam(mainApp->getMachineParam());
+  });
+  connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](double travel_speed) {
+    doc_panel_->setTravelSpeed(travel_speed);
+  });
+  connect(mainApp, &MainApplication::editWorkingRange, this, &MainWindow::updateCanvasSize);
+  connect(mainApp, &MainApplication::editMachineRotaryAxis, [=](char axis) {
+    machine_manager_->setRotaryAxis(axis);
+    rotary_setup_->setRotaryAxis(axis);
+  });
+  connect(mainApp, &MainApplication::editMachineHighSpeedMode, [=](bool is_high_speed) {
+    preferences_window_->setSpeedMode(is_high_speed);
+    showHighSpeedWarning();
+  });
+  //about rotary
+  connect(doc_panel_, &DocPanel::updateRotarySpeed, [=](double travel_speed) {
+    mainApp->updateRotarySpeed(travel_speed);
+  });
+  connect(doc_panel_, &DocPanel::rotaryModeChange, [=](bool rotary_mode) {
+    mainApp->updateRotaryMode(rotary_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::updateRotaryIndex, [=](int rotary_index) {
+    mainApp->updateRotaryIndex(rotary_index);
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
+    mainApp->updateRotaryMode(is_rotary_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
+    mainApp->updateMirrorMode(is_mirror_mode);
+  });
+  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char axis) {
+    mainApp->updateMachineRotaryAxis(axis);
+  });
+  connect(rotary_setup_, &RotarySetup::actionTestRotary, [=](double test_distance) {
+    QRectF test_rect(0, 0, 20, test_distance);
+    testRotary(test_rect, mainApp->getRotaryAxis(), mainApp->getTravelSpeed() * 60, mainApp->getFramingPower());// mm/s to mm/min
+  });
+  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
+    mainApp->updateCircumference(circumference);
+  });
+  connect(rotary_setup_, &RotarySetup::updateRotarySpeed, [=](double travel_speed) {
+    mainApp->updateRotarySpeed(travel_speed);
+  });
+  connect(mainApp, &MainApplication::editRotaryMode, [=](bool rotary_mode) {
+    doc_panel_->setRotaryMode(rotary_mode);
+    rotary_setup_->setRotaryMode(rotary_mode);
+    if(rotary_mode) {
+      mode_block_->setText(tr("Rotary Mode"));
+      mainApp->updateReferenceStartWithHome(false);
+      laser_panel_->setStartHomeEnable(!rotary_mode);
+    } else {
+      mode_block_->setText(tr("XY Mode"));
+      mainApp->updateReferenceStartWithHome(laser_panel_->getStartHome());
+      laser_panel_->setStartHomeEnable(!rotary_mode);
+    }
+  });
+  connect(mainApp, &MainApplication::editRotaryIndex, [=](int rotary_index) {
+  });
+  connect(mainApp, &MainApplication::editRotaryTravelSpeed, [=](double speed) {
+    doc_panel_->setRotarySpeed(speed);
+  });
+  connect(mainApp, &MainApplication::editCircumference, [=](double circumference) {});
+  //fail to update image panel qslider
+  connect(mainApp, &MainApplication::editImageThreshold, [=](int value) {
+    image_panel_->setImageThreshold(value);
+    QList<ShapePtr> shape_list = canvas_->document().selections();
+    if(shape_list.size() == 1 && shape_list.at(0)->type() == ::Shape::Type::Bitmap) {
+      BitmapShape* selected_img = dynamic_cast<BitmapShape *>(shape_list.at(0).get());
+      selected_img->setThrshBrightness(value);
+      canvas_->shapeUpdated();
+    }
+  });
+  connect(mainApp, &MainApplication::changeImageEnable, [=](bool state) {
+    image_panel_->changeImageEnable(state);
+    ui->actionTrace->setEnabled(state);
+    ui->actionInvert->setEnabled(state);
+    ui->actionReplace_with->setEnabled(state);
+    ui->actionCrop->setEnabled(state);
+    ui->actionSharpen->setEnabled(state);
+  });
+  //about canvas
+  connect(mainApp, &MainApplication::editCanvasQuality, [=](CanvasQuality canvas_quality) {
+    preferences_window_->setCanvasQuality(canvas_quality);
+    canvas_->setCanvasQuality(canvas_quality);
+  });
+  connect(mainApp, &MainApplication::editPathSort, [=](PathSort path_sort) {
+    preferences_window_->setPathSort(path_sort);
+  });
+
   connect(gcode_panel_, &GCodePanel::exportGcode, this, &MainWindow::exportGCodeFile);
   connect(gcode_panel_, &GCodePanel::importGcode, this, &MainWindow::importGCodeFile);
   connect(gcode_panel_, &GCodePanel::generateGcode, this, &MainWindow::generateGcode);
@@ -1505,35 +1685,47 @@ void MainWindow::registerEvents() {
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
   connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
   connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
-  connect(laser_panel_, &LaserPanel::switchStartFrom, [=](LaserPanel::StartFrom start_from) {
+  connect(laser_panel_, &LaserPanel::selectJobOrigin, mainApp, &MainApplication::updateReferenceJobOrigin);
+  connect(laser_panel_, &LaserPanel::switchStartFrom, mainApp, &MainApplication::updateReferenceStartFrom);
+  connect(laser_panel_, &LaserPanel::startWithHome, mainApp, &MainApplication::updateReferenceStartWithHome);
+  connect(mainApp, &MainApplication::editReferenceJobOrigin, [=](int job_origin) {
+    laser_panel_->setJobOrigin(job_origin);
+  });
+  connect(mainApp, &MainApplication::editReferenceStartFrom, [=](int start_from) {
     switch(start_from) {
-      case LaserPanel::StartFrom::AbsoluteCoords:
+      case StartFrom::AbsoluteCoords:
         canvas_->setJobOrigin(false);
         break;
-      case LaserPanel::StartFrom::UserOrigin:
-      case LaserPanel::StartFrom::CurrentPosition:
+      case StartFrom::UserOrigin:
+      case StartFrom::CurrentPosition:
         canvas_->setJobOrigin(true);
         break;
       default:
         break;
     }
+    laser_panel_->setStartFrom(start_from);
   });
-  connect(laser_panel_, &LaserPanel::startWithHome, [=](bool start_with_home) {
-    start_with_home_ = start_with_home;
+  //keep the start with home at laser panel
+  connect(mainApp, &MainApplication::editReferenceStartWithHome, [=](bool find_home) {
   });
 
   connect(jogging_panel_, &JoggingPanel::actionLaser, this, &MainWindow::laser);
   connect(jogging_panel_, &JoggingPanel::actionLaserPulse, this, &MainWindow::laserPulse);
   connect(jogging_panel_, &JoggingPanel::actionHome, this, &MainWindow::home);
-  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, this, &MainWindow::moveRelatively);
-  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, this, &MainWindow::moveAbsolutely);
-  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, this, &MainWindow::moveToEdge);
-  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, this, &MainWindow::moveToCorner);
+  connect(jogging_panel_, &JoggingPanel::actionMoveRelatively, [=](qreal x, qreal y) {
+    moveRelatively(x, y, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveAbsolutely, [=](std::tuple<qreal, qreal, qreal>pos) {
+    moveAbsolutely(pos, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveToEdge, [=](int edge_id) {
+    moveToEdge(edge_id, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
+  });
+  connect(jogging_panel_, &JoggingPanel::actionMoveToCorner, [=](int corner_id) {
+    moveToCorner(corner_id, mainApp->getTravelSpeed() * 60);// mm/s to mm/min
+  });
   connect(jogging_panel_, &JoggingPanel::actionSetOrigin, this, &MainWindow::setCustomOrigin);
   connect(jogging_panel_, &JoggingPanel::stopBtnClicked, this, &MainWindow::onStopJob);
-  connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
-    rotary_setup_->setFramingPower(framing_power);
-  });
   connect(jogging_panel_, &JoggingPanel::showCurrentPosition, [=](bool show) {
     canvas_->setCurrentPosition(show);
   });
@@ -1541,20 +1733,67 @@ void MainWindow::registerEvents() {
     canvas_->setUserOrigin(show);
   });
 
-  connect(rotary_setup_, &RotarySetup::rotaryModeChanged, [=](bool is_rotary_mode) {
-    is_rotary_mode_ = is_rotary_mode;
-    doc_panel_->setRotaryMode(is_rotary_mode_);
-    updateScene();
+  //panel
+  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
+    ui->actionObjectPanel->setChecked(is_show);
   });
-  connect(rotary_setup_, &RotarySetup::mirrorModeChanged, [=](bool is_mirror_mode) {
-    is_mirror_mode_ = is_mirror_mode;
+  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
+    ui->actionFontPanel->setChecked(is_show);
   });
-  connect(rotary_setup_, &RotarySetup::rotaryAxisChanged, [=](char rotary_axis) {
-    rotary_axis_ = rotary_axis;
+  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
+    ui->actionImagePanel->setChecked(is_show);
   });
-  connect(rotary_setup_, &RotarySetup::actionTestRotary, this, &MainWindow::testRotary);
-  connect(rotary_setup_, &RotarySetup::updateCircumference, [=](double circumference) {
-    updateScene();
+  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
+    ui->actionDocumentPanel->setChecked(is_show);
+  });
+  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
+    ui->actionLaser->setChecked(is_show);
+  });
+  connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
+    ui->actionLayerPanel->setChecked(is_show);
+  });
+  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
+    ui->actionGCodeViewerPanel->setChecked(is_show);
+  });
+  connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
+    ui->actionJoggingPanel->setChecked(is_show);
+  });
+  //toolbar
+  connect(ui->toolBarAlign, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionAlign->setChecked(is_visible);
+  });
+  connect(ui->toolBarBool, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionBoolean->setChecked(is_visible);
+  });
+  connect(ui->toolBarConnection, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionConnection->setChecked(is_visible);
+  });
+  connect(ui->toolBarFlip, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFlip->setChecked(is_visible);
+  });
+  connect(ui->toolBarFont, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFont->setChecked(is_visible);
+  });
+  connect(ui->toolBar, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionFunctional->setChecked(is_visible);
+  });
+  connect(ui->toolBarGroup, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionGroup_2->setChecked(is_visible);
+  });
+  connect(ui->toolBarImage, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionImage->setChecked(is_visible);
+  });
+  connect(ui->toolBarFile, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionProject->setChecked(is_visible);
+  });
+  connect(ui->toolBarTask, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTask->setChecked(is_visible);
+  });
+  connect(ui->toolBarTransform, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionTransform->setChecked(is_visible);
+  });
+  connect(ui->toolBarVector, &QToolBar::visibilityChanged, [=](bool is_visible) {
+    ui->actionVector->setChecked(is_visible);
   });
 
   // TODO: Refactor it when supporting multi-port and multi-machine connection
@@ -1572,6 +1811,9 @@ void MainWindow::registerEvents() {
   connect(&active_machine, &Machine::activated, [=]() {
     Q_EMIT MainWindow::activeMachineConnected();
     ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-link.png" : ":/resources/images/icon-link.png"));
+    ui->actionFrame->setEnabled(true);
+    jogging_panel_->setControlEnable(true);
+    laser_panel_->setControlEnable(true);
   });
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -1602,11 +1844,6 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
 
 Canvas *MainWindow::canvas() const {
   return canvas_;
-}
-
-
-MachineSettings::MachineSet MainWindow::currentMachine() {
-  return doc_panel_->currentMachine();
 }
 
 bool isDarkMode() {
@@ -1732,7 +1969,7 @@ void MainWindow::setConnectionToolBar() {
     serial_port.clearError();
     #endif
     active_machine.motionPortConnected(&serial_port);
-    active_machine.applyMachineParam(currentMachine());
+    active_machine.applyMachineParam(mainApp->getMachineParam());
     connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
     connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
   });
@@ -1785,13 +2022,14 @@ void MainWindow::setToolbarFont() {
   doubleSpinBoxLineHeight->setSingleStep(0.1);
   spinBoxSize->setMaximum(1000);
 
-  QFont initialFont = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
-
-  fontComboBox->setCurrentFont(initialFont);
-  doubleSpinBoxLetterSpacing->setValue(initialFont.letterSpacing());
-  doubleSpinBoxLineHeight->setValue(1.2);
-  spinBoxSize->setValue(initialFont.pointSize());
-  boldToolButton->setChecked(initialFont.bold());
+  //Initial panel setting by MainApplication
+  fontComboBox->setCurrentFont(mainApp->getFont());
+  spinBoxSize->setValue(mainApp->getFont().pointSize());
+  doubleSpinBoxLetterSpacing->setValue(mainApp->getFont().letterSpacing());
+  boldToolButton->setChecked(mainApp->getFont().bold());
+  italicToolButton->setChecked(mainApp->getFont().italic());
+  underlineToolButton->setChecked(mainApp->getFont().underline());
+  doubleSpinBoxLineHeight->setValue(mainApp->getFontLineHeight());
 
   ui->toolBarFont->addWidget(labelSize);
   ui->toolBarFont->addWidget(spinBoxSize);
@@ -1800,135 +2038,149 @@ void MainWindow::setToolbarFont() {
   ui->toolBarFont->addWidget(labelLetterSpacing);
   ui->toolBarFont->addWidget(doubleSpinBoxLetterSpacing);
 
-  connect(fontComboBox, &QFontComboBox::currentFontChanged, canvas(), &Canvas::setFont);
-
-  connect(fontComboBox, &QFontComboBox::currentFontChanged, [=](QFont selected_font) {
-    QFont font = font_panel_->font();
-    font.setFamily(selected_font.family());
-    font_panel_->setFont(font);
+  connect(mainApp, &MainApplication::editShapeFontFamily, [=](QString font_family) {
+    canvas_->setFontFamily(font_family);
+    font_panel_->setFontFamily(font_family);
+    fontComboBox->setCurrentFont(QFont(font_family));
   });
 
-  connect(spinBoxSize, spin_int_event, canvas(), &Canvas::setPointSize);
-
-  connect(spinBoxSize, spin_int_event, font_panel_, &FontPanel::setPointSize);
-
-  connect(doubleSpinBoxLetterSpacing, spin_event, canvas(), &Canvas::setLetterSpacing);
-
-  connect(doubleSpinBoxLetterSpacing, spin_event, font_panel_, &FontPanel::setLetterSpacing);
-
-  connect(doubleSpinBoxLineHeight, spin_event, canvas(), &Canvas::setLineHeight);
-
-  connect(doubleSpinBoxLineHeight, spin_event, font_panel_, &FontPanel::setLineHeight);
-
-  connect(boldToolButton, &QToolButton::toggled, canvas(), &Canvas::setBold);
-
-  connect(boldToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setBold);
-
-  connect(italicToolButton, &QToolButton::toggled, canvas(), &Canvas::setItalic);
-
-  connect(italicToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setItalic);
-
-  connect(underlineToolButton, &QToolButton::toggled, canvas(), &Canvas::setUnderline);
-
-  connect(underlineToolButton, &QToolButton::toggled, font_panel_, &FontPanel::setUnderline);
-
-  connect(font_panel_, &FontPanel::fontChanged, [=](QFont new_font) {
-    fontComboBox->setCurrentFont(new_font);
+  connect(mainApp, &MainApplication::editShapeFontPointSize, [=](int point_size) {
+    canvas_->setPointSize(point_size);
+    font_panel_->setPointSize(point_size);
+    spinBoxSize->setValue(point_size);
   });
 
-  connect(font_panel_, &FontPanel::fontPointSizeChanged, [=](int value){
-    spinBoxSize->setValue(value);
+  connect(mainApp, &MainApplication::editShapeLetterSpacing, [=](qreal letter_spacing) {
+    canvas_->setLetterSpacing(letter_spacing);
+    font_panel_->setLetterSpacing(letter_spacing);
+    doubleSpinBoxLetterSpacing->setValue(letter_spacing);
   });
 
-  connect(font_panel_, &FontPanel::fontLetterSpacingChanged, [=](double value){
-    doubleSpinBoxLetterSpacing->setValue(value);
-  });
-
-  connect(font_panel_, &FontPanel::fontBoldChanged, [=](bool checked){
-    boldToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::fontItalicChanged, [=](bool checked){
-    italicToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::fontUnderlineChanged, [=](bool checked){
-    underlineToolButton->setChecked(checked);
-  });
-
-  connect(font_panel_, &FontPanel::lineHeightChanged, [=](double line_height) {
+  connect(mainApp, &MainApplication::editShapeLineHeight, [=](double line_height) {
+    canvas_->setLineHeight(line_height);
+    font_panel_->setLineHeight(line_height);
     doubleSpinBoxLineHeight->setValue(line_height);
   });
 
-// the ui status is the same to the font panel
-  connect(canvas(), &Canvas::selectionsChanged, this, [=]() {
-    QFont first_qfont;
-    double first_linehight;
-    bool has_txt = false;
-    bool is_font_changed = false, is_pt_changed = false, is_ls_changed = false, is_linehight_changed = false;
-    bool is_bold_changed = false, is_italic_changed = false, is_underline_changed = false;
-    for (auto &shape : canvas_->document().selections()) {
-      if (shape->type() == ::Shape::Type::Text) {
-        auto *t = (TextShape *) shape.get();
-        if(!has_txt) {
-          first_linehight = t->lineHeight();
-          first_qfont = t->font();
-          has_txt = true;
-        }
-        if(has_txt && first_qfont.family() != t->font().family())                is_font_changed = true;
-        if(has_txt && first_qfont.pointSize() != t->font().pointSize())          is_pt_changed = true;
-        if(has_txt && first_qfont.letterSpacing() != t->font().letterSpacing())  is_ls_changed = true;
-        if(has_txt && first_qfont.bold() != t->font().bold())                    is_bold_changed = true;
-        if(has_txt && first_qfont.italic() != t->font().italic())                is_italic_changed = true;
-        if(has_txt && first_qfont.underline() != t->font().underline())          is_underline_changed = true;
-        if(has_txt && first_linehight != t->lineHeight())                        is_linehight_changed = true;
-      }
-    }
-    if(is_font_changed) {
-      fontComboBox->blockSignals(true);
-      fontComboBox->setCurrentText("");
-      fontComboBox->blockSignals(false);
-    }
-    else if(has_txt) {
-      fontComboBox->setCurrentText(first_qfont.family());
-    }
-    else {
-      fontComboBox->setCurrentText(fontComboBox->currentFont().family());
-    }
-    if(is_pt_changed) {
-      spinBoxSize->blockSignals(true);
-      spinBoxSize->setSpecialValueText(tr(" "));
-      spinBoxSize->setValue(0);
-      spinBoxSize->blockSignals(false);
-    }
-    if(is_ls_changed) {
-      doubleSpinBoxLetterSpacing->blockSignals(true);
-      doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
-      doubleSpinBoxLetterSpacing->setValue(-0.1);
-      doubleSpinBoxLetterSpacing->blockSignals(false);
-    }
-    if(is_bold_changed) {
-      boldToolButton->blockSignals(true);
-      boldToolButton->setChecked(false);
-      boldToolButton->blockSignals(false);
-    }
-    if(is_italic_changed) {
-      italicToolButton->blockSignals(true);
-      italicToolButton->setChecked(false);
-      italicToolButton->blockSignals(false);
-    }
-    if(is_underline_changed) {
-      underlineToolButton->blockSignals(true);
-      underlineToolButton->setChecked(false);
-      underlineToolButton->blockSignals(false);
-    }
-    if(is_linehight_changed) {
-      doubleSpinBoxLineHeight->blockSignals(true);
-      doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
-      doubleSpinBoxLineHeight->setValue(0);
-      doubleSpinBoxLineHeight->blockSignals(false);
-    }
+  connect(mainApp, &MainApplication::editShapeBold, [=](bool bold) {
+    canvas_->setBold(bold);
+    font_panel_->setBold(bold);
+    boldToolButton->setChecked(bold);
   });
+
+  connect(mainApp, &MainApplication::editShapeItalic, [=](bool italic) {
+    canvas_->setItalic(italic);
+    font_panel_->setItalic(italic);
+    italicToolButton->setChecked(italic);
+  });
+
+  connect(mainApp, &MainApplication::editShapeUnderline, [=](bool underline) {
+    canvas_->setUnderline(underline);
+    font_panel_->setUnderline(underline);
+    underlineToolButton->setChecked(underline);
+  });
+
+  connect(fontComboBox, &QFontComboBox::currentFontChanged, 
+          mainApp, &MainApplication::updateShapeFontFamily);
+
+  connect(spinBoxSize, spin_int_event, 
+          mainApp, &MainApplication::updateShapeFontPointSize);
+
+  connect(doubleSpinBoxLetterSpacing, spin_event, 
+          mainApp, &MainApplication::updateShapeLetterSpacing);
+  
+  connect(doubleSpinBoxLineHeight, spin_event, 
+          mainApp, &MainApplication::updateShapeLineHeight);
+  
+  connect(boldToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeBold);
+  
+  connect(italicToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeItalic);
+  
+  connect(underlineToolButton, &QToolButton::toggled, 
+          mainApp, &MainApplication::updateShapeUnderline);
+
+  //this part must follow font panel
+  connect(mainApp, &MainApplication::updateFontView, [=](
+          QSet<QString> font_familys, 
+          QSet<int> point_sizes, 
+          QSet<qreal> letter_spacings, 
+          QSet<bool> bolds, 
+          QSet<bool> italics, 
+          QSet<bool> underlines, 
+          QSet<double> line_heights) {
+            if(font_familys.size() == 1) {
+              fontComboBox->setCurrentFont(QFont(*font_familys.begin()));
+            } else if(!font_familys.empty()) {
+              fontComboBox->blockSignals(true);
+              fontComboBox->setCurrentText("");
+              fontComboBox->blockSignals(false);
+            }
+            if(point_sizes.size() == 1) {
+              spinBoxSize->setValue(*point_sizes.begin());
+            } else if(!point_sizes.empty()) {
+              spinBoxSize->blockSignals(true);
+              spinBoxSize->setSpecialValueText(tr(" "));
+              spinBoxSize->setValue(0);
+              spinBoxSize->blockSignals(false);
+            }
+            if(letter_spacings.size() == 1) {
+              doubleSpinBoxLetterSpacing->setValue(*letter_spacings.begin());
+            } else if(!letter_spacings.empty()) {
+              doubleSpinBoxLetterSpacing->blockSignals(true);
+              doubleSpinBoxLetterSpacing->setSpecialValueText(tr(" "));
+              doubleSpinBoxLetterSpacing->setValue(-0.1);
+              doubleSpinBoxLetterSpacing->blockSignals(false);
+            }
+            if(bolds.size() == 1) {
+              boldToolButton->setChecked(*bolds.begin());
+            } else if(!bolds.empty()) {
+              boldToolButton->blockSignals(true);
+              boldToolButton->setChecked(false);
+              boldToolButton->blockSignals(false);
+            }
+            if(italics.size() == 1) {
+              italicToolButton->setChecked(*italics.begin());
+            } else if(!italics.empty()) {
+              italicToolButton->blockSignals(true);
+              italicToolButton->setChecked(false);
+              italicToolButton->blockSignals(false);
+            }
+            if(underlines.size() == 1) {
+              underlineToolButton->setChecked(*underlines.begin());
+            } else if(!underlines.empty()) {
+              underlineToolButton->blockSignals(true);
+              underlineToolButton->setChecked(false);
+              underlineToolButton->blockSignals(false);
+            }
+            if(line_heights.size() == 1) {
+              doubleSpinBoxLineHeight->setValue(*line_heights.begin());
+            } else if(!line_heights.empty()) {
+              doubleSpinBoxLineHeight->blockSignals(true);
+              doubleSpinBoxLineHeight->setSpecialValueText(tr(" "));
+              doubleSpinBoxLineHeight->setValue(0);
+              doubleSpinBoxLineHeight->blockSignals(false);
+            }
+          });
+  connect(mainApp, &MainApplication::changeFontEnable, [=](bool enable) {
+    font_panel_->changeFontEnable(enable);
+    fontComboBox->setEnabled(enable);
+    spinBoxSize->setEnabled(enable);
+    doubleSpinBoxLetterSpacing->setEnabled(enable);
+    boldToolButton->setEnabled(enable);
+    italicToolButton->setEnabled(enable);
+    underlineToolButton->setEnabled(enable);
+    doubleSpinBoxLineHeight->setEnabled(enable);
+  });
+  font_panel_->changeFontEnable(false);
+  fontComboBox->setEnabled(false);
+  spinBoxSize->setEnabled(false);
+  doubleSpinBoxLetterSpacing->setEnabled(false);
+  boldToolButton->setEnabled(false);
+  italicToolButton->setEnabled(false);
+  underlineToolButton->setEnabled(false);
+  doubleSpinBoxLineHeight->setEnabled(false);
 }
 
 void MainWindow::setToolbarTransform() {
@@ -1982,25 +2234,27 @@ void MainWindow::setToolbarTransform() {
   ui->toolBarTransform->addWidget(doubleSpinBoxHeight);
   ui->toolBarTransform->addWidget(labelRotation);
   ui->toolBarTransform->addWidget(doubleSpinBoxRotation);
+  buttonLock->setChecked(mainApp->isShapeScaleLocked());
 
   auto spin_event = QOverload<double>::of(&QDoubleSpinBox::valueChanged);
 
-  connect(canvas(), &Canvas::transformChanged, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
-    x_ = x/10;
-    y_ = y/10;
-    r_ = r;
-    w_ = w/10;
-    h_ = h/10;
+  connect(mainApp, &MainApplication::editShapeTransform, [=](qreal x, qreal y, qreal r, qreal w, qreal h) {
+    canvas_->transformControl().updateTransform(x * 10, y * 10, r, w * 10, h * 10);
+    transform_panel_->setTransformX(x);
+    transform_panel_->setTransformY(y);
+    transform_panel_->setTransformR(r);
+    transform_panel_->setTransformW(w);
+    transform_panel_->setTransformH(h);
     doubleSpinBoxX->blockSignals(true);
     doubleSpinBoxY->blockSignals(true);
     doubleSpinBoxRotation->blockSignals(true);
     doubleSpinBoxWidth->blockSignals(true);
     doubleSpinBoxHeight->blockSignals(true);
-    doubleSpinBoxX->setValue(x/10);
-    doubleSpinBoxY->setValue(y/10);
+    doubleSpinBoxX->setValue(x);
+    doubleSpinBoxY->setValue(y);
     doubleSpinBoxRotation->setValue(r);
-    doubleSpinBoxWidth->setValue(w/10);
-    doubleSpinBoxHeight->setValue(h/10);
+    doubleSpinBoxWidth->setValue(w);
+    doubleSpinBoxHeight->setValue(h);
     doubleSpinBoxX->blockSignals(false);
     doubleSpinBoxY->blockSignals(false);
     doubleSpinBoxRotation->blockSignals(false);
@@ -2008,52 +2262,12 @@ void MainWindow::setToolbarTransform() {
     doubleSpinBoxHeight->blockSignals(false);
   });
 
-  connect(transform_panel_, &TransformPanel::transformPanelUpdated, [=](double x, double y, double r, double w, double h) {
-    x_ = x;
-    y_ = y;
-    r_ = r;
-    w_ = w;
-    h_ = h;
-    doubleSpinBoxX->setValue(x);
-    doubleSpinBoxY->setValue(y);
-    doubleSpinBoxRotation->setValue(r);
-    doubleSpinBoxWidth->setValue(w);
-    doubleSpinBoxHeight->setValue(h);
-  });
-
-  connect(doubleSpinBoxX, spin_event, [=]() {
-    x_ = doubleSpinBoxX->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxY, spin_event, [=]() {
-    y_ = doubleSpinBoxY->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxRotation, spin_event, [=]() {
-    r_ = doubleSpinBoxRotation->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxWidth, spin_event, [=]() {
-    if (transform_panel_->isScaleLock()) {
-      h_ = w_ == 0 ? 0 : h_ * doubleSpinBoxWidth->value() / w_;
-    }
-    w_ = doubleSpinBoxWidth->value();
-    updateToolbarTransform();
-  });
-
-  connect(doubleSpinBoxHeight, spin_event, [=]() {
-    if (transform_panel_->isScaleLock()) {
-      w_ = h_ == 0 ? 0 : w_ * doubleSpinBoxHeight->value() / h_;
-    }
-    h_ = doubleSpinBoxHeight->value();
-    updateToolbarTransform();
-  });
-
-  connect(transform_panel_, &TransformPanel::scaleLockToggled, [=](bool scale_locked) {
+  connect(mainApp, &MainApplication::editShapeScaleLock, [=](bool scale_locked) {
+    canvas_->transformControl().setScaleLock(scale_locked);
+    transform_panel_->setScaleLock(scale_locked);
+    buttonLock->blockSignals(true);
     buttonLock->setChecked(scale_locked);
+    buttonLock->blockSignals(false);
 
     if (scale_locked) {
       buttonLock->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-lock.png" : ":/resources/images/icon-lock.png"));
@@ -2062,72 +2276,39 @@ void MainWindow::setToolbarTransform() {
     }
   });
 
-  connect(buttonLock, &QToolButton::toggled, [=](bool checked) {
-    transform_panel_->setScaleLock(checked);
-  });
+  connect(doubleSpinBoxX, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformX);
 
-  //panel
-  connect(transform_panel_, &TransformPanel::panelShow, [=](bool is_show) {
-    ui->actionObjectPanel->setChecked(is_show);
+  connect(doubleSpinBoxY, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformY);
+
+  connect(doubleSpinBoxRotation, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformR);
+
+  connect(doubleSpinBoxWidth, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformW);
+
+  connect(doubleSpinBoxHeight, QOverload<double>::of(&QDoubleSpinBox::valueChanged), 
+          mainApp, &MainApplication::updateShapeTransformH);
+
+  connect(buttonLock, &QToolButton::toggled, mainApp, &MainApplication::updateShapeScaleLock);
+
+  connect(mainApp, &MainApplication::changeTransformEnable, [=](bool enable) {
+    ui->actionHFlip->setEnabled(enable);
+    ui->actionVFlip->setEnabled(enable);
+    cutAction_->setEnabled(enable);
+    copyAction_->setEnabled(enable);
+    duplicateAction_->setEnabled(enable);
+    deleteAction_->setEnabled(enable);
+    transform_panel_->changeTransformEnable(enable);
+    doubleSpinBoxX->setEnabled(enable);
+    doubleSpinBoxY->setEnabled(enable);
+    doubleSpinBoxRotation->setEnabled(enable);
+    doubleSpinBoxWidth->setEnabled(enable);
+    doubleSpinBoxHeight->setEnabled(enable);
+    buttonLock->setEnabled(enable);
   });
-  connect(font_panel_, &FontPanel::panelShow, [=](bool is_show) {
-    ui->actionFontPanel->setChecked(is_show);
-  });
-  connect(image_panel_, &ImagePanel::panelShow, [=](bool is_show) {
-    ui->actionImagePanel->setChecked(is_show);
-  });
-  connect(doc_panel_, &DocPanel::panelShow, [=](bool is_show) {
-    ui->actionDocumentPanel->setChecked(is_show);
-  });
-  connect(laser_panel_, &LaserPanel::panelShow, [=](bool is_show) {
-    ui->actionLaser->setChecked(is_show);
-  });
-  connect(layer_panel_, &LayerPanel::panelShow, [=](bool is_show) {
-    ui->actionLayerPanel->setChecked(is_show);
-  });
-  connect(gcode_panel_, &GCodePanel::panelShow, [=](bool is_show) {
-    ui->actionGCodeViewerPanel->setChecked(is_show);
-  });
-  connect(jogging_panel_, &JoggingPanel::panelShow, [=](bool is_show) {
-    ui->actionJoggingPanel->setChecked(is_show);
-  });
-  //toolbar
-  connect(ui->toolBarAlign, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionAlign->setChecked(is_visible);
-  });
-  connect(ui->toolBarBool, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionBoolean->setChecked(is_visible);
-  });
-  connect(ui->toolBarConnection, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionConnection->setChecked(is_visible);
-  });
-  connect(ui->toolBarFlip, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFlip->setChecked(is_visible);
-  });
-  connect(ui->toolBarFont, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFont->setChecked(is_visible);
-  });
-  connect(ui->toolBar, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionFunctional->setChecked(is_visible);
-  });
-  connect(ui->toolBarGroup, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionGroup_2->setChecked(is_visible);
-  });
-  connect(ui->toolBarImage, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionImage->setChecked(is_visible);
-  });
-  connect(ui->toolBarFile, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionProject->setChecked(is_visible);
-  });
-  connect(ui->toolBarTask, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionTask->setChecked(is_visible);
-  });
-  connect(ui->toolBarTransform, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionTransform->setChecked(is_visible);
-  });
-  connect(ui->toolBarVector, &QToolBar::visibilityChanged, [=](bool is_visible) {
-    ui->actionVector->setChecked(is_visible);
-  });
+  buttonLock->setChecked(mainApp->isShapeScaleLocked());
 }
 
 /*
@@ -2160,7 +2341,6 @@ void MainWindow::setModeBlock() {
   mode_block_ = new QPushButton(ui->quickWidget);
   mode_block_->setGeometry(ui->quickWidget->geometry().left() + 20, ui->quickWidget->geometry().top() + 15, 100, 30);
   mode_block_->setStyleSheet("QPushButton { border: none; } QPushButton::hover { border: none; background-color: transparent }");
-  updateScene();
 }
 
 void MainWindow::setScaleBlock() {
@@ -2253,15 +2433,6 @@ void MainWindow::showCanvasPopMenu() {
   }
 }
 
-void MainWindow::showWelcomeDialog() {
-  //if (!MachineSettings().machines().empty()) return;
-  QTimer::singleShot(0, [=]() {
-    welcome_dialog_->show();
-    welcome_dialog_->activateWindow();
-    welcome_dialog_->raise();
-  });
-}
-
 void MainWindow::showJoggingPanel() {
   QTimer::singleShot(0, [=]() {
     if(ui->joggingDock->isVisible()) {
@@ -2276,7 +2447,7 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(currentMachine(), is_rotary_mode_);
+  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QProgressDialog progress_dialog(tr("Generating GCode..."),
                                    tr("Cancel"),
                                    0,
@@ -2288,12 +2459,14 @@ bool MainWindow::generateGcode() {
   QTransform move_translate = calculateTranslate();
   ToolpathExporter exporter(gen_gcode.get(),
       canvas_->document().settings().dpmm(),
-      travel_speed_ / 60,// mm/min to mm/s
+      mainApp->getTravelSpeed(),
       end_point_,
       ToolpathExporter::PaddingType::kFixedPadding,
       move_translate);
+  exporter.setSortRule(mainApp->getPathSort());
   exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
-  if ( true != exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
+                                    mainApp->getStartWithHome(), &progress_dialog)) {
     return false; // canceled
   }
   if (exporter.isExceedingBoundary()) {
@@ -2302,7 +2475,7 @@ bool MainWindow::generateGcode() {
     msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
     msgbox.exec();
   }
-  if (is_rotary_mode_ && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
+  if (mainApp->isRotaryMode() && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
     QMessageBox msgbox;
     msgbox.setText(tr("Warning"));
     msgbox.setInformativeText(tr("Some items maybe overlap in rotary mode."));
@@ -2317,15 +2490,15 @@ bool MainWindow::generateGcode() {
 
 void MainWindow::genPreviewWindow() {
   // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(currentMachine(), is_rotary_mode_);
+  auto preview_path_generator = std::make_shared<PreviewGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
   QTransform move_translate = calculateTranslate();
   ToolpathExporter preview_exporter(preview_path_generator.get(),
                                     canvas_->document().settings().dpmm(),
-                                    travel_speed_ / 60,// mm/min to mm/s
+                                    mainApp->getTravelSpeed(),
                                     end_point_,
                                     ToolpathExporter::PaddingType::kFixedPadding,
                                     move_translate);
-
+  preview_exporter.setSortRule(mainApp->getPathSort());
   preview_exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
 
   QProgressDialog progress_dialog(tr("Exporting toolpath..."),
@@ -2337,7 +2510,8 @@ void MainWindow::genPreviewWindow() {
   progress_dialog.activateWindow();
   progress_dialog.raise();
 
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), is_high_speed_mode_, start_with_home_, &progress_dialog)) {
+  if ( true != preview_exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
+                                            mainApp->getStartWithHome(), &progress_dialog)) {
     return; // canceled
   }
   progress_dialog.setValue(progress_dialog.maximum());
@@ -2363,7 +2537,7 @@ void MainWindow::genPreviewWindow() {
     }
 
     double height_scale = 1;
-    if(is_rotary_mode_) height_scale = rotary_setup_->getRotaryScale();
+    if(mainApp->isRotaryMode()) height_scale = mainApp->getRotaryScale();
     PreviewWindow *pw = new PreviewWindow(this,
                                           QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
                                           height_scale);
@@ -2435,31 +2609,26 @@ void MainWindow::syncJobState(Executor::State new_state) {
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     case Executor::State::kRunning:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       laser_panel_->setControlEnable(false);
-      rotary_setup_->setControlEnable(false);
       break;
     case Executor::State::kPaused:
       ui->actionFrame->setEnabled(false);
       jogging_panel_->setControlEnable(false);
       laser_panel_->setControlEnable(false);
-      rotary_setup_->setControlEnable(false);
       break;
     case Executor::State::kCompleted:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     case Executor::State::kStopped:
       ui->actionFrame->setEnabled(true);
       jogging_panel_->setControlEnable(true);
       laser_panel_->setControlEnable(true);
-      rotary_setup_->setControlEnable(true);
       break;
     default:
       break;
@@ -2587,10 +2756,10 @@ void MainWindow::setCustomOrigin(std::tuple<qreal, qreal, qreal> custom_origin) 
 
 void MainWindow::moveToCustomOrigin() {
   bool result = false;
-  if (is_rotary_mode_) { // Only move X pos
-    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+  if (mainApp->isRotaryMode()) { // Only move X pos
+    result = active_machine.createJoggingXAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min
   } else {
-    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), travel_speed_);
+    result = active_machine.createJoggingAbsoluteJob(active_machine.getCustomOrigin(), mainApp->getTravelSpeed()*60);// mm/s to mm/min
   }
   if (result == true)
   {
@@ -2609,12 +2778,21 @@ void MainWindow::testRotary(QRectF bbox, char rotary_axis, qreal feedrate, doubl
 
 void MainWindow::machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos) {
   Q_EMIT MainWindow::positionCached(target_pos);
-  canvas()->updateCurrentPosition(target_pos);
+  canvas_->updateCurrentPosition(target_pos);
 }
 
 void MainWindow::machineDisconnected() {
   Q_EMIT MainWindow::activeMachineDisconnected();
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
+  ui->actionFrame->setEnabled(false);
+  jogging_panel_->setControlEnable(false);
+  laser_panel_->setControlEnable(false);
+}
+
+void MainWindow::updateCanvasSize(QSize new_size) {
+  canvas_->document().setWidth(new_size.width() * 10);
+  canvas_->document().setHeight(new_size.height() * 10);
+  canvas_->resize();
 }
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
