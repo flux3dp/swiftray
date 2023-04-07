@@ -101,6 +101,7 @@ void Text::paint(QPainter *painter) {
 
 void Text::exit() {
   if (target_ != nullptr) {
+    target().makeCursorRect(0,0);
     target().setEditing(false);
     if (!target().hasLayer() &&
         canvas().textInput()->toPlainText().length() > 0) {

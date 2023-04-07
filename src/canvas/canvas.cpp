@@ -503,6 +503,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *e) {
     // NOTE: If Double click outside of text edit box, finish the current text edit
     if (!ctrl_text_.target().boundingRect().contains(canvas_coord)) {
       ctrl_text_.exit();
+      is_shape_flushed_ = false;
     }
   }
 }
