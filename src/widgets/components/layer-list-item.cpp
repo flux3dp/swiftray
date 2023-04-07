@@ -154,6 +154,7 @@ void LayerListItem::onDuplicateLayer() {
 }
 
 void LayerListItem::onDeleteLayer() {
+  canvas_->document().setSelection(nullptr);
   if (layer_->document().layers().length() == 1) { // should add one default layer when no layer in the list
     canvas_->addEmptyLayer();
     layer_->document().execute(
@@ -172,9 +173,9 @@ void LayerListItem::onDeleteLayer() {
     if(change_layer) {
       LayerPtr last_layer = canvas_->document().layers().last();
       canvas_->setActiveLayer(last_layer);
-      canvas_->document().setSelection(nullptr);
     }
   }
+  canvas_->canvasUpdated();
   Q_EMIT canvas_->layerChanged();
 }
 
