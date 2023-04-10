@@ -201,6 +201,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   find_package(LibXml2 REQUIRED)
 endif()
 
+# ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
 set_property(DIRECTORY APPEND
     PROPERTY COMPILE_DEFINITIONS
   # Boost iostreams doesn't honor BOOST_ALL_NO_LIB when linking zlib.
