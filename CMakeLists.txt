@@ -76,33 +76,6 @@ endif()
 
 add_definitions(-DQT_NO_KEYWORDS)
 
-set_property(DIRECTORY APPEND
-    PROPERTY COMPILE_DEFINITIONS
-  # Boost iostreams doesn't honor BOOST_ALL_NO_LIB when linking zlib.
-  # It also tries to link by default to the boost in-source zlib librar,
-  # which we don't want.
-  # http://www.boost.org/doc/libs/1_59_0/boost/iostreams/detail/config/zlib.hpp
-  #$<$<PLATFORM_ID:Windows>:BOOST_ZLIB_BINARY=zlib.lib>
-
-  # with boost 1.61 some boost::optional internals were changed. However
-  # boost::spirit relies on some API the old implementation provided.
-  # This define enables the usage of the old boost::optional
-  # implementation.  Boost upstream tracks this bug as #12349
-  #$<$<AND:$<VERSION_GREATER:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.60>,$<VERSION_LESS:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.67>>:BOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL>
-
-  # We don't need localized output of Boost date_time and not setting
-  # the define causes the inclusion of code, which contains std::tolower.
-  # This however causes a macro substitutions caused by the libpython
-  # headers, which in turn breaks the build.  Python 2.7.13 should have
-  # fixed this with python bug #10910
-  #$<$<PLATFORM_ID:Darwin>:BOOST_DATE_TIME_NO_LOCALE>
-  #$<$<PLATFORM_ID:FreeBSD>:BOOST_DATE_TIME_NO_LOCALE>
-  # Forcing backtrace using api for boost stacktrace due to lacking on ::Unwind side
-  #$<$<PLATFORM_ID:FreeBSD>:BOOST_STACKTRACE_USE_LIBC_BACKTRACE_FUNCTION>
-  # Workaround for boost 1.81 issue https://github.com/boostorg/phoenix/issues/111
-  $<$<VERSION_EQUAL:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.81>:BOOST_PHOENIX_STL_TUPLE_H_>
-)
-
 if (DEFINED ENABLE_SENTRY)
   message(STATUS "Sentry enabled")
   add_definitions(-DENABLE_SENTRY=${ENABLE_SENTRY})
@@ -227,6 +200,33 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   find_package(Boost REQUIRED COMPONENTS thread system)
   find_package(LibXml2 REQUIRED)
 endif()
+
+set_property(DIRECTORY APPEND
+    PROPERTY COMPILE_DEFINITIONS
+  # Boost iostreams doesn't honor BOOST_ALL_NO_LIB when linking zlib.
+  # It also tries to link by default to the boost in-source zlib librar,
+  # which we don't want.
+  # http://www.boost.org/doc/libs/1_59_0/boost/iostreams/detail/config/zlib.hpp
+  #$<$<PLATFORM_ID:Windows>:BOOST_ZLIB_BINARY=zlib.lib>
+
+  # with boost 1.61 some boost::optional internals were changed. However
+  # boost::spirit relies on some API the old implementation provided.
+  # This define enables the usage of the old boost::optional
+  # implementation.  Boost upstream tracks this bug as #12349
+  #$<$<AND:$<VERSION_GREATER:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.60>,$<VERSION_LESS:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.67>>:BOOST_OPTIONAL_CONFIG_USE_OLD_IMPLEMENTATION_OF_OPTIONAL>
+
+  # We don't need localized output of Boost date_time and not setting
+  # the define causes the inclusion of code, which contains std::tolower.
+  # This however causes a macro substitutions caused by the libpython
+  # headers, which in turn breaks the build.  Python 2.7.13 should have
+  # fixed this with python bug #10910
+  #$<$<PLATFORM_ID:Darwin>:BOOST_DATE_TIME_NO_LOCALE>
+  #$<$<PLATFORM_ID:FreeBSD>:BOOST_DATE_TIME_NO_LOCALE>
+  # Forcing backtrace using api for boost stacktrace due to lacking on ::Unwind side
+  #$<$<PLATFORM_ID:FreeBSD>:BOOST_STACKTRACE_USE_LIBC_BACKTRACE_FUNCTION>
+  # Workaround for boost 1.81 issue https://github.com/boostorg/phoenix/issues/111
+  $<$<VERSION_EQUAL:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.81>:BOOST_PHOENIX_STL_TUPLE_H_>
+)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   ws_find_package(WinSparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)
