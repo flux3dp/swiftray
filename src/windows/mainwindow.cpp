@@ -105,6 +105,29 @@ void MainWindow::loadSettings() {
     QSettings settings(":/classicUI.ini", QSettings::IniFormat);
     restoreState(settings.value("window/windowState").toByteArray());
   #endif
+  //panel
+  ui->actionObjectPanel->setChecked(!ui->objectParamDock->isHidden());
+  ui->actionFontPanel->setChecked(!ui->fontDock->isHidden());
+  ui->actionImagePanel->setChecked(!ui->imageDock->isHidden());
+  ui->actionDocumentPanel->setChecked(!ui->documentDock->isHidden());
+  ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
+  ui->actionGCodeViewerPanel->setChecked(!gcode_panel_->isHidden());
+  ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
+  ui->actionLaser->setChecked(!laser_panel_->isHidden());
+  //toolbar
+  ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
+  ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
+  ui->actionConnection->setChecked(!ui->toolBarConnection->isHidden());
+  ui->actionFlip->setChecked(!ui->toolBarFlip->isHidden());
+  ui->actionFont->setChecked(!ui->toolBarFont->isHidden());
+  ui->actionFunctional->setChecked(!ui->toolBar->isHidden());
+  ui->actionGroup_2->setChecked(!ui->toolBarGroup->isHidden());
+  ui->actionImage->setChecked(!ui->toolBarImage->isHidden());
+  ui->actionProject->setChecked(!ui->toolBarFile->isHidden());
+  ui->actionTask->setChecked(!ui->toolBarTask->isHidden());
+  ui->actionTransform->setChecked(!ui->toolBarTransform->isHidden());
+  ui->actionVector->setChecked(!ui->toolBarVector->isHidden());
+  
   preferences_window_->setSpeedMode(mainApp->isHighSpeedMode());
   preferences_window_->setCanvasQuality(mainApp->getCanvasQuality());
   preferences_window_->setPathSort(mainApp->getPathSort());
@@ -1057,28 +1080,6 @@ void MainWindow::loadWidgets() {
 #ifdef Q_OS_IOS
   ui->serialPortDock->setVisible(false);
 #endif
-  //panel
-  ui->actionObjectPanel->setChecked(!ui->objectParamDock->isHidden());
-  ui->actionFontPanel->setChecked(!ui->fontDock->isHidden());
-  ui->actionImagePanel->setChecked(!ui->imageDock->isHidden());
-  ui->actionDocumentPanel->setChecked(!ui->documentDock->isHidden());
-  ui->actionLayerPanel->setChecked(!layer_panel_->isHidden());
-  ui->actionGCodeViewerPanel->setChecked(!gcode_panel_->isHidden());
-  ui->actionJoggingPanel->setChecked(!jogging_panel_->isHidden());
-  ui->actionLaser->setChecked(!laser_panel_->isHidden());
-  //toolbar
-  ui->actionAlign->setChecked(!ui->toolBarAlign->isHidden());
-  ui->actionBoolean->setChecked(!ui->toolBarBool->isHidden());
-  ui->actionConnection->setChecked(!ui->toolBarConnection->isHidden());
-  ui->actionFlip->setChecked(!ui->toolBarFlip->isHidden());
-  ui->actionFont->setChecked(!ui->toolBarFont->isHidden());
-  ui->actionFunctional->setChecked(!ui->toolBar->isHidden());
-  ui->actionGroup_2->setChecked(!ui->toolBarGroup->isHidden());
-  ui->actionImage->setChecked(!ui->toolBarImage->isHidden());
-  ui->actionProject->setChecked(!ui->toolBarFile->isHidden());
-  ui->actionTask->setChecked(!ui->toolBarTask->isHidden());
-  ui->actionTransform->setChecked(!ui->toolBarTransform->isHidden());
-  ui->actionVector->setChecked(!ui->toolBarVector->isHidden());
 
   //Initial panel setting by MainApplication
   font_panel_->setFontFamily(mainApp->getFont().family());
@@ -1829,7 +1830,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     event->ignore();
   }
   else{
-    QSettings settings;
+    // QSettings settings;
+    QSettings settings("flux", "swiftray");
     settings.setValue("window/geometry", saveGeometry());
     settings.setValue("window/windowState", saveState());
     event->accept();
