@@ -568,8 +568,8 @@ void Canvas::wheelEvent(QWheelEvent *e) {
     document().setScale(new_scale);
     new_scroll = mouse_pos - (mouse_pos - document().scroll()) * document().scale() / orig_scale;
   } else {
-    new_scroll.setX(document().scroll().x() + e->angleDelta().x() / 8 / 2.5);
-    new_scroll.setY(document().scroll().y() + e->angleDelta().y() / 8 / 2.5);
+    new_scroll.setX(document().scroll().x() + e->angleDelta().x() / 8 * 2);
+    new_scroll.setY(document().scroll().y() + e->angleDelta().y() / 8 * 2);
     mouse_pos = e->angleDelta();
   }
 
