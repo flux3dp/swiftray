@@ -110,6 +110,7 @@ MachineParam MachineParam::fromJson(const QJsonObject &obj) {
   else {
     m.travel_speed = 100;
   }
+  if(m.travel_speed <= 0) m.travel_speed = 100;
   if(!obj["rotary_axis"].isNull()) m.rotary_axis = *obj["rotary_axis"].toString().toStdString().c_str();
   else {
     m.rotary_axis = 'Y';
