@@ -107,12 +107,20 @@ MachineParam MachineParam::fromJson(const QJsonObject &obj) {
        obj["redPointerOffsetY"].toInt()
   );
   if(!obj["travel_speed"].isNull()) m.travel_speed = obj["travel_speed"].toDouble();
+  else {
+    m.travel_speed = 100;
+  }
   if(!obj["rotary_axis"].isNull()) m.rotary_axis = *obj["rotary_axis"].toString().toStdString().c_str();
+  else {
+    m.rotary_axis = 'Y';
+  }
   if(!obj["is_high_speed_mode"].isNull()) m.is_high_speed_mode = obj["is_high_speed_mode"].toBool();
   else {
     std::size_t found = m.name.toStdString().find("Lazervida");
     if(found!=std::string::npos) {
       m.is_high_speed_mode = true;
+    } else {
+      m.is_high_speed_mode = false;
     }
   }
   return m;
