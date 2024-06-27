@@ -145,6 +145,7 @@ public:
     bool endElement(const QStringRef &localName);
     bool characters(const QStringRef &str);
     bool processingInstruction(const QString &target, const QString &data);
+    QXmlStreamReader *const xml;
 
 private:
     void init();
@@ -177,7 +178,6 @@ private:
 
     int m_animEnd;
 
-    QXmlStreamReader *const xml;
 #ifndef QT_NO_CSSPARSER
     bool m_inStyle;
     QSvgStyleSelector *m_selector;

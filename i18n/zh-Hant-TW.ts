@@ -2046,8 +2046,8 @@ Do you want to save your changes?</source>
         <translation type="vanished">檔案 (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp)</source>
-        <translation type="vanished">檔案 (*.png *.jpg *.jpeg *.svg *.bmp)</translation>
+        <source>Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp)</source>
+        <translation type="vanished">檔案 (*.png *.jpg *.jpeg *.bvg *.svg *.bmp)</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="828"/>
@@ -2097,8 +2097,8 @@ Do you want to save your changes?</source>
         <translation type="vanished">檔案 (*.bb *.bvg *.svg *.png *.jpg *.jpeg *.bmp *.dxf)</translation>
     </message>
     <message>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</source>
-        <translation type="vanished">檔案 (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</translation>
+        <source>Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf)</source>
+        <translation type="vanished">檔案 (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf)</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="1039"/>
@@ -2217,7 +2217,7 @@ Do you want to save your changes?</source>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="783"/>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf *.pdf *.ai)</source>
+        <source>Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf *.pdf *.ai)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -248,7 +248,7 @@ void MainWindow::loadCanvas() {
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
-      } else if (filename.toLower().endsWith(".svg")) {
+      } else if (filename.toLower().endsWith(".svg") || filename.toLower().endsWith(".bvg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
         double scale = 10;//define by 3cm Ruler
@@ -666,7 +666,7 @@ void MainWindow::openFile() {
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
-    } else if (file_name.toLower().endsWith(".svg")) {
+    } else if (file_name.toLower().endsWith(".svg") || file_name.toLower().endsWith(".bvg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
     } else if (file_name.toLower().endsWith(".dxf")) {
@@ -843,7 +843,7 @@ void MainWindow::openImageFile() {
   QString file_name = QFileDialog::getOpenFileName(this,
                                                    "Open Image",
                                                    default_open_dir,
-                                                   tr("Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf *.pdf *.ai)"));
+                                                   tr("Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf *.pdf *.ai)"));
 
   if (!QFile::exists(file_name))
     return;
@@ -851,7 +851,7 @@ void MainWindow::openImageFile() {
   QFileInfo file_info{file_name};
   FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
-  if (file_name.toLower().endsWith(".svg")) {
+  if (file_name.toLower().endsWith(".svg") || file_name.toLower().endsWith(".bvg")) {
     canvas_->loadSVG(file_name);
   } else if (file_name.toLower().endsWith(".dxf")) {
     QTemporaryDir dir;

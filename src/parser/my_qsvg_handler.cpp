@@ -76,6 +76,15 @@ static const char *qt_inherit_text = "inherit";
 QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
+bool g_get_title = false;
+struct LayerInfo{
+    QString layer_name;
+    QColor color;
+    int repeat;
+    double speed;
+    double power;
+};
+QList<LayerInfo> g_layer_contain;
 #define QT_INHERIT QLatin1String(qt_inherit_text)
 
 static QByteArray prefixMessage(const QByteArray &msg, const QXmlStreamReader *r)
@@ -3212,6 +3221,26 @@ static bool parseStyleNode(QSvgNode *parent,
     return true;
 }
 
+static QSvgNode *createTitleNode(QSvgNode *parent,
+                                 const QXmlStreamAttributes &attributes,
+                                 MyQSvgHandler *handler) {
+    Q_UNUSED(parent); Q_UNUSED(attributes);
+    QSvgDefs *node = new QSvgDefs(parent);
+    g_get_title = true;
+    return node;
+}
+
+static QSvgNode *createSymbolNode(QSvgNode *parent,
+                                 const QXmlStreamAttributes &attributes,
+                                 MyQSvgHandler *handler) {
+    Q_UNUSED(parent); Q_UNUSED(attributes);
+    QSvgDefs *node = new QSvgDefs(parent);
+    QString id = attributes.value(QLatin1String("id")).toString();
+    // qDebug() << "createSymbolNode get id = " << id;
+    node->setNodeId(id);
+    return node;
+}
+
 static QSvgNode *createSvgNode(QSvgNode *parent,
                                const QXmlStreamAttributes &attributes,
                                MyQSvgHandler *handler)
@@ -3411,7 +3440,10 @@ static FactoryMethod findGroupFactory(const QString &name)
     case 's':
         if (ref == QLatin1String("vg")) return createSvgNode;
         if (ref == QLatin1String("witch")) return createSwitchNode;
+        if (ref == QLatin1String("ymbol")) return createSymbolNode;
         break;
+    case 't':
+        if (ref == QLatin1String("itle")) return createTitleNode;
     default:
         break;
     }
@@ -3581,7 +3613,7 @@ QString getNodeLayerName(QSvgNode* current_node) {
     while(1) {
         if(current_node->type() == QSvgNode::DOC) 
             break;
-        layer_name = current_node->nodeId();
+        if(!current_node->nodeId().isEmpty()) layer_name = current_node->nodeId();
         current_node = current_node->parent();
     }
     return layer_name;
@@ -3619,6 +3651,13 @@ void MyQSvgHandler::transformUse(QString node_name, QTransform transform) {
 }
 
 LayerPtr MyQSvgHandler::findLayer(QString layer_name, QColor color) {
+  int layer_info_index = -1;
+  for(int i = 0; i < g_layer_contain.size(); ++i) {
+      if (g_layer_contain[i].layer_name == layer_name) {
+          layer_info_index = i;
+          break;
+      }
+  }
   LayerPtr target_layer;
   switch(read_type_) {
     case InSingleLayer:
@@ -3668,6 +3707,12 @@ LayerPtr MyQSvgHandler::findLayer(QString layer_name, QColor color) {
         }
       }
       break;
+  }
+  if(layer_info_index != -1) {
+      target_layer->setColor(g_layer_contain[layer_info_index].color);
+      target_layer->setRepeat(g_layer_contain[layer_info_index].repeat);
+      target_layer->setSpeed(g_layer_contain[layer_info_index].speed);
+      target_layer->setStrength(g_layer_contain[layer_info_index].power);
   }
   return target_layer;
 }
@@ -3997,6 +4042,17 @@ bool MyQSvgHandler::startElement(const QString &localName,
             node_data.node_names.push_back(use_node->linkId());
             node_data.trans = trans;
             data_list_.push_back(node_data);
+            QStringRef xlink = attributes.value(QLatin1String("xlink:href"));
+            if (!xlink.isEmpty()) {
+                QString tmp_string = xlink.toString();
+                tmp_string = tmp_string.right(tmp_string.size() -1);
+                // qDebug() << "USENode with xlink = " << tmp_string;
+                for(int i = 0; i < data_list_.size(); ++i) {
+                    if(data_list_[i].layer_name == tmp_string && !g_layer_contain.isEmpty()) {
+                        data_list_[i].layer_name = g_layer_contain.last().layer_name;
+                    }
+                }
+            }
         } else if(node->type() == QSvgNode::TEXT) {
             QSvgText *text_node = (QSvgText*) node;
             double scale = 30.0 / 8.5;//define by 3cm Ruler
@@ -4025,9 +4081,35 @@ bool MyQSvgHandler::startElement(const QString &localName,
             data_list_.push_back(node_data);
         } else if(node->type() == QSvgNode::TSPAN) {
             // QSvgTspan *tmp_node = (QSvgTspan*) node;
+        } else if(node->type() == QSvgNode::G) {
+            QStringRef class_type = attributes.value(QLatin1String("class"));
+            if (!class_type.isEmpty()) {
+                // qDebug() << "GNode with class_type = " << class_type.toString();
+                //to get speed, strength, repeat, color, ink(ador), zstep ......
+                QStringRef tmp_string_ref;
+                LayerInfo new_info;
+                tmp_string_ref = attributes.value(QLatin1String("data-color"));
+                if(!tmp_string_ref.isEmpty()) {
+                    new_info.color = QColor(tmp_string_ref.toString());
+                }
+                tmp_string_ref = attributes.value(QLatin1String("data-speed"));
+                if(!tmp_string_ref.isEmpty()) {
+                    new_info.speed = tmp_string_ref.toDouble();
+                }
+                tmp_string_ref = attributes.value(QLatin1String("data-strength"));
+                if(!tmp_string_ref.isEmpty()) {
+                    new_info.power = tmp_string_ref.toDouble();
+                }
+                tmp_string_ref = attributes.value(QLatin1String("data-repeat"));
+                if(!tmp_string_ref.isEmpty()) {
+                    new_info.repeat = tmp_string_ref.toInt();
+                }
+                g_layer_contain.push_back(new_info);
+            }
         }
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
+        // qDebug() << "nodeId: "<< node->nodeId() << " layer name: " << getNodeLayerName(node);
     } else {
         //qDebug()<<"Skipping "<<localName;
         m_skipNodes.push(Style);
@@ -4131,6 +4213,12 @@ void MyQSvgHandler::resolveNodes()
 
 bool MyQSvgHandler::characters(const QStringRef &str)
 {
+    if(g_get_title) {
+        // qDebug() << "the title = " << str;
+        g_get_title = false;
+        g_layer_contain.last().layer_name = str.toString();
+    }
+    // qDebug() << "characters with str: " << str;
 #ifndef QT_NO_CSSPARSER
     if (m_inStyle) {
         QString css = str.toString();

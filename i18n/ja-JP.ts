@@ -1876,8 +1876,8 @@ Do you want to save your changes?</source>
         <translation type="unfinished">画像を保存</translation>
     </message>
     <message>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</source>
-        <translation type="obsolete">Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf)</translation>
+        <source>Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf)</source>
+        <translation type="obsolete">Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf)</translation>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="828"/>
@@ -2022,7 +2022,7 @@ Do you want to save your changes?</source>
     </message>
     <message>
         <location filename="../src/windows/mainwindow.cpp" line="783"/>
-        <source>Image Files (*.png *.jpg *.jpeg *.svg *.bmp *.dxf *.pdf *.ai)</source>
+        <source>Image Files (*.png *.jpg *.jpeg *.bvg *.svg *.bmp *.dxf *.pdf *.ai)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
