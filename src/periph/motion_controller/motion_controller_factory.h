@@ -1,5 +1,5 @@
-#ifndef MOTIONCONTROLLERFACTORY_H
-#define MOTIONCONTROLLERFACTORY_H
+#ifndef MotionControllerFactory_H
+#define MotionControllerFactory_H
 
 #include "motion_controller.h"
 #include "grbl_motion_controller.h"
@@ -32,4 +32,4 @@ public:
   }
 };
 
-#endif // MOTIONCONTROLLERFACTORY_H
+#endif // MotionControllerFactory_H
