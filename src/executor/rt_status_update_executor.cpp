@@ -37,7 +37,7 @@ void RTStatusUpdateExecutor::attachMotionController(
 void RTStatusUpdateExecutor::start() {
   stop();
   changeState(State::kRunning);
-  exec_timer_->start(400);
+  exec_timer_->start(1500);
 }
 
 void RTStatusUpdateExecutor::exec() {
@@ -47,10 +47,9 @@ void RTStatusUpdateExecutor::exec() {
     return;
   }
   // NOTE: Keep sending even when hanging
-  GCodeCmd cmd;
-  cmd.setGCode("?");
-  cmd.setMotionController(motion_controller_);
-  cmd.execute(this);
+  // TODO:BSL Move query command to motion controller
+  GCodeCmd cmd("?");
+  cmd.execute(this, motion_controller_);
   
   if (!hanging_) {
     hanging_ = true;

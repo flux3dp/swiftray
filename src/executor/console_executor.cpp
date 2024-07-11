@@ -42,7 +42,7 @@ void ConsoleExecutor::exec() {
     return;
   }
 
-  OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this);
+  OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // retry later
     exec_timer_->stop();
