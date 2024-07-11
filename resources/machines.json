@@ -12,6 +12,50 @@
       "rotary_axis": "Y"
     },
     {
+      "brand": "Promark",
+      "model": "D20",
+      "width": 110,
+      "height": 110,
+      "origin": 0,
+      "homeOnStart": false,
+      "boardType": 1,
+      "travel_speed": 2000,
+      "rotary_axis": "Y"
+    },
+    {
+      "brand": "Promark",
+      "model": "D30",
+      "width": 110,
+      "height": 110,
+      "origin": 0,
+      "homeOnStart": false,
+      "boardType": 1,
+      "travel_speed": 2000,
+      "rotary_axis": "Y"
+    },
+    {
+      "brand": "Promark",
+      "model": "D40",
+      "width": 110,
+      "height": 110,
+      "origin": 0,
+      "homeOnStart": false,
+      "boardType": 1,
+      "travel_speed": 2000,
+      "rotary_axis": "Y"
+    },
+    {
+      "brand": "FLUX",
+      "model": "beamo",
+      "width": 300,
+      "height": 210,
+      "origin": 0,
+      "homeOnStart": false,
+      "boardType": 0,
+      "travel_speed": 2000,
+      "rotary_axis": "Y"
+    },
+    {
       "brand": "Ortur",
       "model": "Aufero Laser 1",
       "width": 180,
