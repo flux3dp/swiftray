@@ -432,6 +432,7 @@ void MainApplication::initialPreset() {
   file_list.append("1.6W.json");
   file_list.append("5W.json");
   file_list.append("10W.json");
+  file_list.append("20W-fiber.json");
   for (int i = 0; i < file_list.size(); ++i) {
     QFile file(":/resources/parameters/"+file_list[i]);
     file.open(QFile::ReadOnly);
@@ -550,6 +551,13 @@ void MainApplication::initialMachine() {
     machine_settings->addMachine(machine);
     saveMachine();
     machine_index_ = 0;
+    settings.setValue("machines/index", machine_index_);
+    MachineSettings::MachineParam machine2 = MachineSettings::findPreset("Promark", "Promark");
+    machine2.name = "Promark";
+    machine2.is_high_speed_mode = false;
+    machine_settings->addMachine(machine2);
+    saveMachine();
+    machine_index_ = 1;
     settings.setValue("machines/index", machine_index_);
   } else {
     machine_settings->loadJson(obj);
