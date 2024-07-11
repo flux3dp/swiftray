@@ -1018,7 +1018,7 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 
 MainWindow::~MainWindow() {
   software_update_cleanup();
-  serial_port.close();
+  active_machine.disconnect();
   delete ui;
 }
 
@@ -1920,57 +1920,37 @@ void MainWindow::setConnectionToolBar() {
         portComboBox_->addItem(info.portName());
       }
     }
-    portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
-
-    // Check whether port is unplugged
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    if (serial_port.isOpen()) {
-      auto matchIt = std::find_if(
-              infos.begin(), infos.end(),
-              [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
-      );
-      if (matchIt == infos.end()) { // Unplugged -> close opened port
-        qInfo() << "Serial port unplugged";
-        serial_port.close();
-      }
-    }
-    #endif
+    // TODO:BSL
+    portComboBox_->addItem("BSL");
+    portComboBox_->setCurrentIndex(2);
+    //portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
 
   });
   connect(ui->actionConnect, &QAction::triggered, [=]() {
-    if (serial_port.isOpen()) {
+    if (active_machine.isConnected()) {
       if (active_machine.getMotionController()) {
         active_machine.getMotionController()->detachPort();
         qInfo() << "[Port] Detached";
       } else {
         qInfo() << "[SerialPort] Disconnect";
-        serial_port.close(); // disconnect
+        active_machine.disconnect(); // disconnect
       }
       return;
     }
+    active_machine.applyMachineParam(mainApp->getMachineParam());
     QString port_name = portComboBox_->currentText();
     QString baudrate = baudComboBox_->currentText();
     qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    serial_port.open(port_name, baudrate.toInt());
-    #else
-    serial_port.setPortName(port_name);
-    serial_port.setBaudRate(baudrate.toInt());
-    serial_port.open(QIODevice::ReadWrite);
-    #endif
-    if (!serial_port.isOpen()) {
+    active_machine.connectSerial(port_name, baudrate.toInt());
+
+    if (!active_machine.isConnected()) {
       QMessageBox msgbox;
       msgbox.setText(tr("Error"));
       msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
       msgbox.exec();
       return;
     }
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    #else
     disconnect(&serial_port, nullptr, nullptr, nullptr);
-    serial_port.clearError();
-    #endif
-    active_machine.motionPortConnected(&serial_port);
     active_machine.applyMachineParam(mainApp->getMachineParam());
     connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
     connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
