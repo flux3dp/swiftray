@@ -49,7 +49,7 @@ OperationCmd::ExecStatus BSLResetCmd::execute(QPointer<Executor> executor, QPoin
     return status_;
   }
 
-  BSLMotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, "\x18");
+  BSLMotionController::CmdSendResult result = motion_controller_->stop();
   if (result == BSLMotionController::CmdSendResult::kOk) {
     succeed();
   } else {

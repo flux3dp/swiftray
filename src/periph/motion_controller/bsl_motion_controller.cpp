@@ -14,25 +14,20 @@ BSLMotionController::BSLMotionController(QObject *parent)
   qInfo() << "BSLMotionController created";
 }
 
-int lock_check = 0;
 void BSLMotionController::handleGcode(QString gcode) {
     std::scoped_lock<std::mutex> lk(port_tx_mutex_);
-    if (lock_check == 1) {
-      qWarning() << "BSLMotionController::sendCmdPacket is locked";
-      exit(-1);
+    if (this->state_ == MotionControllerState::kSleep) {
+        qInfo() << "MotionController is in sleep state, ignore Gcode";
+        return;
     }
-    lock_check = 1;
-    static bool laserStarted = false;
-    static bool laserEnabled = false;
+    static bool laser_enabled = false;
     static double currentX = 0.0, currentY = 0.0;
     static double currentF = 6000.0; // Default speed
     static int currentS = 0; // Default power
     static bool absolutePositioning = true;
     static int listNo = 1;
     static int listBufferSize = 0;
-    static int changeLimit = 0;
-    static bool engravingBegun = false;
-    //qInfo() << "Handle Gcode" << gcode;
+    // qInfo() << "Handle Gcode" << gcode;
 
     // Improved regex for G-code parsing
     QRegularExpression re("([GMXYFS])(-?\\d+\\.?\\d*)");
@@ -69,10 +64,10 @@ void BSLMotionController::handleGcode(QString gcode) {
         } else if (type == "S") {
             currentS = value.toInt();
             if (currentS > 0) {
-              laserEnabled = true;
+              laser_enabled = true;
               lcs_set_laser_power(currentS / 10); // Assuming S1000 is 100% power
             } else {
-              laserEnabled = false;
+              laser_enabled = false;
             }
         }
     }
@@ -81,14 +76,13 @@ void BSLMotionController::handleGcode(QString gcode) {
     } else if (command == "G91") {
         absolutePositioning = false;
     } else if (command == "M3" || command == "M4") {
-        qInfo() << "Begin Laser";
-        if (laserStarted) {
+        qInfo() << "Begin Laser Control";
+        if (is_running_laser_) {
             qWarning() << "Laser already started";
-            lock_check = 2;
             return;
         }
-        laserStarted = true;
-        laserEnabled = false;
+        is_running_laser_ = true;
+        laser_enabled = false;
         // Begin laser control
         // Set Laser mode
         // Disable laser delays
@@ -104,14 +98,13 @@ void BSLMotionController::handleGcode(QString gcode) {
         lcs_set_laser_power(100);
         lcs_set_laser_mode(LCS_FIBER, false);
         lcs_enable_laser();
-        engravingBegun = false;
     } else if (command == "M2") {
-        qInfo() << "Ending Laser";
+        qInfo() << "End Laser Control";
         shouldSwapList = true;
         shouldEndLaser = true;
     } 
 
-    if (listBufferSize > 600) {
+    if (listBufferSize > 500) {
         listBufferSize = 0;
         shouldSwapList = true;
     } else {
@@ -122,18 +115,14 @@ void BSLMotionController::handleGcode(QString gcode) {
       qInfo("Setting end of list %d", listNo);
       lcs_set_end_of_list();
       // sleep 2ms to ensure the list is entirely loaded!
-      QThread::msleep(2);
+      QThread::msleep(4);
       qInfo("Executing list %d", listNo);
       lcs_execute_list(listNo);
       listNo = listNo == 1 ? 2 : 1;
       qInfo("Waiting for list to finish %d", listNo);
       LCS2Error ret = lcs_load_list(listNo, 0);
       while (ret != LCS_RES_NO_ERROR) {
-        if (ret == LCS_GENERAL_CURRENTLY_BUSY) {
-          qInfo("Currently busy", listNo);
-        } else {
-          qInfo("List Status %d", ret);
-        }
+        ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", listNo) : qInfo("List Status %d", ret);
         ret = lcs_load_list(listNo, 0);
         if (ret == LCS_GENERAL_AREADY_OPENED) {
           qInfo("Break because already opened");
@@ -161,8 +150,8 @@ void BSLMotionController::handleGcode(QString gcode) {
               break;
       } while (!Status.bCacheReady);
       qInfo() << "End Laser";
-      laserStarted = false;
-      laserEnabled = false;
+      is_running_laser_ = false;
+      laser_enabled = false;
       shouldEndLaser = false;
       lcs_disable_laser();
       lcs_set_laser_control(false);
@@ -178,9 +167,17 @@ void BSLMotionController::handleGcode(QString gcode) {
                 targetY = currentY + y;
             }
 
-            if (laserEnabled && (command == "G1" || command.isEmpty())) {
+            if (laser_enabled && (command == "G1" || command.isEmpty())) {
                 // qInfo() << "Mark X" << targetX << "Y" << targetY << "S" << currentS << "F" << currentF;
-                lcs_mark_abs(-(targetY - 55), targetX - 55);
+                // If targetX and targetY is near currentX and currentY, jump and mark, if too far, engrave multiple points
+                if ((pow(targetX-currentX, 2) + pow(targetY-currentY, 2)) > 0.1) {
+                    // qInfo() << "Engrave X" << targetX << "Y" << targetY;
+                    lcs_mark_abs(-(targetY - 55), targetX - 55);
+                } else {
+                    // qInfo() << "Jump X" << targetX << "Y" << targetY;
+                    lcs_jump_abs(-(targetY - 55), targetX - 55);
+                    lcs_laser_on_list(100);
+                }
             } else {
                 // qInfo() << "Jump X" << targetX << "Y" << targetY;
                 lcs_jump_abs(-(targetY - 55), targetX - 55);
@@ -189,7 +186,6 @@ void BSLMotionController::handleGcode(QString gcode) {
             currentY = targetY;
         }
     }
-    lock_check = 2;
 }
 
 /**
@@ -221,6 +217,21 @@ void BSLMotionController::attachPortBSL() {
   setState(MotionControllerState::kIdle);
 }
 
+MotionController::CmdSendResult BSLMotionController::pause() {
+}
+
+MotionController::CmdSendResult BSLMotionController::resume() {
+}
+
+MotionController::CmdSendResult BSLMotionController::stop() {
+  setState(MotionControllerState::kSleep);
+  lcs_set_end_of_list();
+  lcs_stop_execution();
+  QThread::sleep(2);
+  Q_EMIT MotionController::resetDetected();
+  is_running_laser_ = false;
+  return CmdSendResult::kOk;
+}
 
 QString BSLMotionController::getAlarmMsg(AlarmCode code) {
   switch (code) {
@@ -230,20 +241,6 @@ QString BSLMotionController::getAlarmMsg(AlarmCode code) {
       return tr("Soft limit");
     case AlarmCode::kAbortCycle:
       return tr("Abort during cycle");
-    case AlarmCode::kProbeFailInitial:
-      return tr("Probe fail");
-    case AlarmCode::kProbeFailContact:
-      return tr("Probe fail");
-    case AlarmCode::kHomingFailReset:
-      return tr("Homing fail");
-    case AlarmCode::kHomingFailDoor:
-      return tr("Homing fail");
-    case AlarmCode::kHomingFailPullOff:
-      return tr("Homing fail");
-    case AlarmCode::kHomingFailApproach:
-      return tr("Homing fail");
-    case AlarmCode::kHomingFailDualApproach:
-      return tr("Homing fail");
     default:
       return "Unknown alarm";
   }
