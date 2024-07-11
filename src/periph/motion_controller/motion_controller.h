@@ -35,12 +35,9 @@ public:
 
   explicit MotionController(QObject *parent = nullptr);
 
-  #ifdef CUSTOM_SERIAL_PORT_LIB
-  void attachPort(SerialPort *port);
-  #else
   void attachPort(QSerialPort *port);
+  void attachPortBSL();
   void detachPort();
-  #endif
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   MotionControllerState getState() const;
   void setState(MotionControllerState new_state);
