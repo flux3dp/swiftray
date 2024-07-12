@@ -139,7 +139,7 @@ void MainWindow::loadSettings() {
   MachineSettings::MachineParam machine_param = mainApp->getMachineParam();
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
-  canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
+  // canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
   canvas_->setShapeReference(mainApp->getShapeReference());
   laser_panel_->setJobOrigin(mainApp->getJobOrigin());
   laser_panel_->setStartFrom(mainApp->getStartFrom());
