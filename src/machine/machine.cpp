@@ -608,27 +608,7 @@ void Machine::handleNotif(QString title, QString msg) {
 
 bool Machine::connectSerial(QString port, int baudrate) {
   if (port == "BSL") {
-    qWarning() << "Connecting BSL Board";
-    // Note: dylib must be placed in pwd!
-    LCS2open();
-    qInfo() << "BSL bypass LCS2Open";
-
-    if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-        qWarning() << "Failed to initialize LCS library.";
-        return false;
-    }
-
-    qInfo() << "LCS Init OK";
-
-    if (lcs_search_cards() == 0) {
-        qWarning() << "No laser cards found.";
-        return false;
-    }
-
-    if (lcs_select_card(0) != LCS_RES_NO_ERROR) {
-        qWarning() << "Failed to select laser card.";
-        return false;
-    }
+    connect_bsl_board();
     bsl_connected_ = true;
     qInfo() << "LCS connected";
     this->setupMotionController();
