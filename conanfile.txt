@@ -13,3 +13,6 @@ cmake
 [imports]
 bin, *.dll -> ./bin # Copies all dll files from packages bin folder to "./bin" folder
 lib, *.dylib* -> ./bin # Copies all dylib files from packages lib folder to "./bin" folder
+
+[tool_requires]
+b2/5.2.0
