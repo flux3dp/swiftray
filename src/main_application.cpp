@@ -12,6 +12,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
+#include "server/swiftray-server.h"
 
 
 MainApplication *mainApp = NULL;
@@ -55,7 +56,7 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   canvas_quality_ = (CanvasQuality)quality_code.toInt();
   QVariant sort_code = settings.value("canvas/generating_rule", NestedSort);
   path_sort_ = (PathSort)sort_code.toInt();
-
+  swiftray_server_ = new SwiftrayServer(6611);
   // NOTE: qApp: built-in macro of the QApplication
   connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
 

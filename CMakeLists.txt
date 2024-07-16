@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 11.1)
 #set(CMAKE_CXX_FLAGS "-O2")
 
 # Set a default build type if none was specified
@@ -189,7 +189,7 @@ find_package(Qt${qtver} COMPONENTS QuickWidgets REQUIRED)
 find_package(Qt${qtver} COMPONENTS OpenGL REQUIRED)
 find_package(Qt${qtver} COMPONENTS Gui REQUIRED)
 find_package(Qt${qtver} COMPONENTS Svg REQUIRED)
-find_package(Qt${qtver} COMPONENTS SerialPort REQUIRED)
+find_package(Qt${qtver} COMPONENTS SerialPort Websockets REQUIRED)
 find_package(Qt${qtver}Gui COMPONENTS Private REQUIRED)
 find_package(Qt${qtver}Widgets COMPONENTS Private REQUIRED)
 find_package(Qt${qtver}Svg COMPONENTS Private REQUIRED)
@@ -437,6 +437,7 @@ add_subdirectory(src/connection)
 add_subdirectory(src/machine)
 add_subdirectory(src/periph)
 add_subdirectory(src/executor)
+add_subdirectory(src/server)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
@@ -480,6 +481,7 @@ target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
 target_link_libraries(${PROJECT_NAME} Qt::Gui)
 target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)
+target_link_libraries(${PROJECT_NAME} Qt::WebSockets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
 
 
