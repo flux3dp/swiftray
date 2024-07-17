@@ -3,6 +3,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
+#include <canvas/canvas.h>
+#include <toolpath_exporter/toolpath-exporter.h>
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
@@ -127,14 +129,60 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   sendCallback(socket, id, result);
 }
 
-void SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {
+bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {
   QJsonObject result;
   result["success"] = true;
 
-  if (action == "loadBvgData") {
+  if (action == "loadSVG") {
     // Implement BVG data loading logic
+    if (m_canvas != nullptr) {
+      delete m_canvas;
+    }
+    m_canvas = new Canvas();
+    QJsonObject params_obj = params.toObject();
+    QJsonObject wrapped_file = params_obj["file"].toObject();
+    QString svg_data = wrapped_file["data"].toString().toUtf8();
+    m_is_rotary = params_obj["rotaryMode"].toBool();
+    qInfo() << "SVG data" << svg_data;
+    QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
+    m_canvas->loadSVG(svg_data_bytes);
+    result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
-    // Implement conversion logic
+    // Create the generator
+    GCodeGenerator gen(machine->getMachineParam(), m_is_rotary);
+    qInfo() << "Generating GCode...";
+    QTransform move_translate = QTransform();
+    ToolpathExporter exporter(
+        (BaseGenerator*)&gen,
+        m_canvas->document().settings().dpmm(),
+        10000,
+        QPointF(std::get<0>(machine->getCustomOrigin()), std::get<1>(machine->getCustomOrigin())),
+        ToolpathExporter::PaddingType::kFixedPadding,
+        move_translate);
+    exporter.setSortRule(PathSort::NestedSort);
+    exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
+
+    //
+    if ( true != exporter.convertStack(m_canvas->document().layers(), true,  true, nullptr)) {
+      return false; // canceled
+    }
+    if (exporter.isExceedingBoundary()) {
+      qWarning() << "Some items aren't placed fully inside the working area.";
+    }
+    if (m_is_rotary && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
+      qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
+    }
+    m_buffer = QString::fromStdString(gen.toString());
+    result["taskBlob"] = m_buffer;
+    result["fileName"] = "swiftray-conversion";
+    auto timestamp_list = MachineJob::calcRequiredTime(m_buffer.split("\n"), NULL);
+    Timestamp total_required_time{0, 0};
+    if (!timestamp_list.empty()) {
+      total_required_time = timestamp_list.last();
+    }
+    result["timeCost"] = total_required_time.second();
+    qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
+    qInfo() << m_buffer;
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {
@@ -192,6 +240,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"name", "Promark Desktop"},
     {"serial", "PD99KJOJIO13993"},
     {"st_id", 0},
+    {"version", "5.0.0"},
     {"model", "promark-d"},
     {"port", "/dev/ttyUSB0"},
     {"type", "Galvanometer"},
@@ -202,6 +251,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"serial", "LV84KAO192839012"},
     {"name", "Lazervida Origin"},
     {"st_id", 0},
+    {"version", "5.0.0"},
     {"model", "lazervida"},
     {"port", "/dev/ttyUSB0"},
     {"type", "Laser Cutter"},

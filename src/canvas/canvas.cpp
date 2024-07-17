@@ -101,22 +101,25 @@ Canvas::~Canvas() {
   mem_thread_->wait(1300);
 }
 
-void Canvas::loadSVG(QByteArray &svg_data) {
-  // TODO(Add undo events for loading svg)
+void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
   QElapsedTimer t;
   t.start();
+  // convert svg_data to QIODevice
+  QBuffer io(&svg_data);
+  io.open(QIODevice::ReadOnly);
   QList<LayerPtr> svg_layers;
-  bool success = svgpp_parser_.parse(&document(), svg_data, &svg_layers);
-  setAntialiasing(true);
-
-  if (success) {
+  MyQSvgHandler::ReadType read_type = MyQSvgHandler::InSingleLayer;
+  MyQSvgHandler handler(&io, &document(), &svg_layers, read_type);
+  if (handler.ok()) {
+    qInfo() << "Handler OK!";
+    handler.document();
+    handler.animationDuration();
     QList<ShapePtr> all_shapes;
     for (auto &layer : svg_layers) {
+      qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
-    double scale = 254 / 72.0;
-    transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
       Q_EMIT layerChanged();
@@ -125,7 +128,32 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     forceActiveFocus();
     emitAllChanges();
     update();
+  } else {
+    qInfo() << "Handler Not OK!" << handler.errorString();
+    delete handler.document();
   }
+  // TODO(Add undo events for loading svg)
+  // QList<LayerPtr> svg_layers;
+  // bool success = svgpp_parser_.parse(&document(), svg_data, &svg_layers);
+  // setAntialiasing(true);
+
+  // if (success) {
+  //   QList<ShapePtr> all_shapes;
+  //   for (auto &layer : svg_layers) {
+  //     all_shapes.append(layer->children());
+  //   }
+  //   document().setSelections(all_shapes);
+  //   double scale = 254 / 72.0;
+  //   transformControl().applyScale(QPointF(0,0), scale, scale, false);
+  //   if (all_shapes.size() == 1) {
+  //     document().setActiveLayer(all_shapes.first()->layer()->name());
+  //     Q_EMIT layerChanged();
+  //   }
+
+  //   forceActiveFocus();
+  //   emitAllChanges();
+  //   update();
+  // }
   qInfo() << "[Parser] Took" << t.elapsed();
 }
 
@@ -158,6 +186,7 @@ void Canvas::loadSVG(QString file_name) {
     handler.animationDuration();
     QList<ShapePtr> all_shapes;
     for (auto &layer : svg_layers) {
+      qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);

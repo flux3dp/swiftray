@@ -57,7 +57,7 @@ public:
 
   void loop();
 
-  void loadSVG(QByteArray &data);
+  void loadSVG(QByteArray &data, bool skip_confirm = false);
 
   void loadSVG(QString file_name);
 
