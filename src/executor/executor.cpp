@@ -17,6 +17,23 @@ void Executor::changeState(State new_state) {
   }
 }
 
+int Executor::getStatusId() {
+  switch (state_) {
+    case State::kIdle:
+      return 0;
+    case State::kRunning:
+      return 16;
+    case State::kPaused:
+      return 48;
+    case State::kCompleted:
+      return 64;
+    case State::kStopped:
+      return 48;
+    default:
+      return -1;
+  }
+}
+
 Executor::State Executor::getState() const {
   return state_;
 }

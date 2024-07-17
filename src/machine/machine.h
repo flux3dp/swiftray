@@ -49,6 +49,7 @@ public:
   std::tuple<qreal, qreal, qreal> getCurrentPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
+  QPointer<ConsoleExecutor> getConsoleExecutor() const { return console_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
 
   #ifdef CUSTOM_SERIAL_PORT_LIB

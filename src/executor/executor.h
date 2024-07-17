@@ -19,6 +19,7 @@ public:
   Q_ENUM(State)
 
   static QString stateToString(State state);
+  int getStatusId();
 
   explicit Executor(QObject *parent = nullptr);
   size_t inProgressCmdCnt();

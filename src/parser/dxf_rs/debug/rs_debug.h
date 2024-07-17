@@ -29,6 +29,7 @@
 #define RS_DEBUG_H
 
 #include <iosfwd>
+#include <cstdio>
 #ifdef __hpux
 #include <sys/_size_t.h>
 #endif
