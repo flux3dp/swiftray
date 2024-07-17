@@ -119,6 +119,9 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
       qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();
       all_shapes.append(layer->children());
     }
+    for (auto &shape : all_shapes) {
+      qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();
+    }
     document().setSelections(all_shapes);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());

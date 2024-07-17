@@ -142,20 +142,28 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     QJsonObject params_obj = params.toObject();
     QJsonObject wrapped_file = params_obj["file"].toObject();
     QString svg_data = wrapped_file["data"].toString().toUtf8();
-    m_is_rotary = params_obj["rotaryMode"].toBool();
+    m_rotary_mode = params_obj["rotaryMode"].toBool();
+    m_engrave_dpi = params_obj["engraveDpi"].toInt() || 254;
     qInfo() << "SVG data" << svg_data;
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
     m_canvas->loadSVG(svg_data_bytes);
     result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
-    // Create the generator
-    GCodeGenerator gen(machine->getMachineParam(), m_is_rotary);
-    qInfo() << "Generating GCode...";
+    // Get the parameters
+    QJsonObject params_obj = params.toObject();
+    QJsonObject workarea = params_obj["workarea"].toObject();
+    MachineSettings::MachineParam machine_param;
+    machine_param.width = workarea["width"].toInt();
+    machine_param.height = workarea["height"].toInt();
+    int travelSpeed = params_obj["travelSpeed"].toInt() || 100;
+    // Generate GCode
+    GCodeGenerator gen(machine_param, m_rotary_mode);
+    qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travelSpeed;
     QTransform move_translate = QTransform();
     ToolpathExporter exporter(
         (BaseGenerator*)&gen,
-        m_canvas->document().settings().dpmm(),
-        10000,
+        m_engrave_dpi,
+        travelSpeed,
         QPointF(std::get<0>(machine->getCustomOrigin()), std::get<1>(machine->getCustomOrigin())),
         ToolpathExporter::PaddingType::kFixedPadding,
         move_translate);
@@ -169,7 +177,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     if (exporter.isExceedingBoundary()) {
       qWarning() << "Some items aren't placed fully inside the working area.";
     }
-    if (m_is_rotary && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
+    if (m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
       qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
     }
     m_buffer = QString::fromStdString(gen.toString());
@@ -182,7 +190,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-    qInfo() << m_buffer;
+    printf(m_buffer.toStdString().c_str());
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {
@@ -241,7 +249,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"serial", "PD99KJOJIO13993"},
     {"st_id", 0},
     {"version", "5.0.0"},
-    {"model", "promark-d"},
+    {"model", "fpm1"},
     {"port", "/dev/ttyUSB0"},
     {"type", "Galvanometer"},
     {"source", "swiftray"}
@@ -252,7 +260,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"name", "Lazervida Origin"},
     {"st_id", 0},
     {"version", "5.0.0"},
-    {"model", "lazervida"},
+    {"model", "flv1"},
     {"port", "/dev/ttyUSB0"},
     {"type", "Laser Cutter"},
     {"source", "swiftray"}
