@@ -3,12 +3,15 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
+#include <cmath>
 #include <canvas/canvas.h>
 #include <toolpath_exporter/toolpath-exporter.h>
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
   this->m_server = new QWebSocketServer("Swiftray Server", QWebSocketServer::NonSecureMode, this);
+
+  m_engrave_dpi = 254;
   if (m_server->listen(QHostAddress::LocalHost, port)) {
     qInfo() << "Swiftray Server listening on port" << port;
     connect(m_server, &QWebSocketServer::newConnection, this, &SwiftrayServer::onNewConnection);
@@ -38,7 +41,7 @@ void SwiftrayServer::processMessage(const QString& message) {
     QString action = data["action"].toString();
     QString id = data["id"].toString();
     QJsonValue params = data["params"];
-    qInfo() << "Received action" << action << "with id" << id << "on path" << path;
+    qInfo() << "Received action" << action << "with params" << params;
     
     if (path == "/devices") {
       handleDevicesAction(socket, id, action, params);
@@ -143,7 +146,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     QJsonObject wrapped_file = params_obj["file"].toObject();
     QString svg_data = wrapped_file["data"].toString().toUtf8();
     m_rotary_mode = params_obj["rotaryMode"].toBool();
-    m_engrave_dpi = params_obj["engraveDpi"].toInt() || 254;
+    m_engrave_dpi = params_obj["engraveDpi"].toInt();
     qInfo() << "SVG data" << svg_data;
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
     m_canvas->loadSVG(svg_data_bytes);
@@ -155,16 +158,17 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     MachineSettings::MachineParam machine_param;
     machine_param.width = workarea["width"].toInt();
     machine_param.height = workarea["height"].toInt();
-    int travelSpeed = params_obj["travelSpeed"].toInt() || 100;
+    int travelSpeed = fmax(params_obj["travelSpeed"].toInt(), 20);
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
     qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travelSpeed;
     QTransform move_translate = QTransform();
+    auto origin = machine == NULL ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : machine->getCustomOrigin();
     ToolpathExporter exporter(
         (BaseGenerator*)&gen,
-        m_engrave_dpi,
+        m_engrave_dpi / 25.4,
         travelSpeed,
-        QPointF(std::get<0>(machine->getCustomOrigin()), std::get<1>(machine->getCustomOrigin())),
+        QPointF(std::get<0>(origin), std::get<1>(origin)),
         ToolpathExporter::PaddingType::kFixedPadding,
         move_translate);
     exporter.setSortRule(PathSort::NestedSort);
@@ -181,7 +185,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
     }
     m_buffer = QString::fromStdString(gen.toString());
-    result["taskBlob"] = m_buffer;
+    result["gcode"] = m_buffer;
     result["fileName"] = "swiftray-conversion";
     auto timestamp_list = MachineJob::calcRequiredTime(m_buffer.split("\n"), NULL);
     Timestamp total_required_time{0, 0};
@@ -229,7 +233,7 @@ void SwiftrayServer::sendCallback(QWebSocket* socket, const QString& id, const Q
   callback["type"] = "callback";
   QJsonDocument doc(callback);
   QString msg = doc.toJson(QJsonDocument::Compact);
-  qInfo() << "Sending callback" << msg;
+  // qInfo() << "Sending callback" << msg;
   socket->sendTextMessage(msg);
 }
 

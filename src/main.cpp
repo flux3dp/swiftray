@@ -52,6 +52,12 @@ int main(int argc, char *argv[]) {
     return mainCLI(argc, argv);
   }
 
+  if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {
+    // Daemon mode
+    qInfo() << "Swiftray daemon mode";
+    return app.exec();
+  }
+
   // Set app icon
   app.setWindowIcon(QIcon(":/resources/images/icon.png"));
 
