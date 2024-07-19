@@ -1,50 +1,11 @@
-// This file is based on QT 5.15.3 qsvg_hander in QtSVG module.
+// This file is based on QT 6.7.2 qsvg_hander in QtSVG module.
 
+#pragma once
+#define QT6
+#define MYSVG
 #ifdef QT6
-    #define MYQSVGHANDLER_H
-#endif
-
-#ifndef MYQSVGHANDLER_H
-#define MYQSVGHANDLER_H
-
-/****************************************************************************
-**
-** Copyright (C) 2016 The Qt Company Ltd.
-** Contact: https://www.qt.io/licensing/
-**
-** This file is part of the Qt SVG module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and The Qt Company. For licensing terms
-** and conditions see https://www.qt.io/terms-conditions. For further
-** information use the contact form at https://www.qt.io/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 3 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL3 included in the
-** packaging of this file. Please review the following information to
-** ensure the GNU Lesser General Public License version 3 requirements
-** will be met: https://www.gnu.org/licenses/lgpl-3.0.html.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 2.0 or (at your option) the GNU General
-** Public license version 3 or any later version approved by the KDE Free
-** Qt Foundation. The licenses are as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL2 and LICENSE.GPL3
-** included in the packaging of this file. Please review the following
-** information to ensure the GNU General Public License requirements will
-** be met: https://www.gnu.org/licenses/gpl-2.0.html and
-** https://www.gnu.org/licenses/gpl-3.0.html.
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
 //
 //  W A R N I N G
@@ -58,17 +19,22 @@
 //
 
 #include "QtCore/qxmlstream.h"
-#include <QHash>
-#include <QStack>
-#include <QLoggingCategory>
+#include "QtCore/qhash.h"
+#include "QtCore/qstack.h"
+#include <QtCore/QLoggingCategory>
+
 #include <private/qsvgstyle_p.h>
 #include <private/qcssparser_p.h>
-#include "qsvggraphics_p.h"
+#include <private/qsvggraphics_p.h>
 #include <private/qtsvgglobal_p.h>
-#include "my-svg-types.h"
+
+#if QT_CONFIG(cssparser)
+#include "private/qcssparser_p.h"
+#endif
 
 #include "layer.h"
 #include "document.h"
+#include "my-svg-types.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -77,21 +43,18 @@ class QSvgTinyDocument;
 class MyQSvgHandler;
 class QColor;
 class QSvgStyleSelector;
-class QXmlStreamReader;
 
 #ifndef QT_NO_CSSPARSER
 
 struct QSvgCssAttribute
 {
-    QXmlStreamStringRef name;
-    QXmlStreamStringRef value;
+    QString name;
+    QString value;
 };
 
 #endif
 
-#define FLUXSVG
-
-class MyQSvgHandler
+class Q_SVG_PRIVATE_EXPORT MyQSvgHandler
 {
 public:
     enum LengthType {
@@ -106,12 +69,12 @@ public:
     };
 
 public:
-#ifdef FLUXSVG
     MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type);
-#endif
-    MyQSvgHandler(const QByteArray &data);
-    MyQSvgHandler(QXmlStreamReader *const data);
+    MyQSvgHandler(QIODevice *device, QtSvg::Options options = {});
+    MyQSvgHandler(const QByteArray &data, QtSvg::Options options = {});
+    MyQSvgHandler(QXmlStreamReader *const data, QtSvg::Options options = {});
     ~MyQSvgHandler();
+
     QIODevice *device() const;
     QSvgTinyDocument *document() const;
 
@@ -141,31 +104,38 @@ public:
     int animationDuration() const;
 
 #ifndef QT_NO_CSSPARSER
-    void parseCSStoXMLAttrs(const QString &css, QVector<QSvgCssAttribute> *attributes);
+    void parseCSStoXMLAttrs(const QString &css, QList<QSvgCssAttribute> *attributes);
 #endif
 
     inline QPen defaultPen() const
     { return m_defaultPen; }
 
+    QtSvg::Options options() const;
+    bool trustedSourceMode() const;
+
 public:
     bool startElement(const QString &localName, const QXmlStreamAttributes &attributes);
-    bool endElement(const QStringRef &localName);
-    bool characters(const QStringRef &str);
+    bool endElement(QStringView localName);
+    bool characters(QStringView str);
     bool processingInstruction(const QString &target, const QString &data);
 
 private:
     void init();
 
     QSvgTinyDocument *m_doc;
-    QStack<QSvgNode*> m_nodes;
-
-    QList<QSvgNode*>  m_resolveNodes;
+    QStack<QSvgNode *> m_nodes;
+    // TODO: This is only needed during parsing, so it unnecessarily takes up space after that.
+    // Temporary container for :
+    // - <use> nodes which haven't been resolved yet.
+    // - <filter> nodes to be checked for unsupported filter primitives.
+    QList<QSvgNode *> m_toBeResolved;
 
     enum CurrentNode
     {
         Unknown,
         Graphics,
-        Style
+        Style,
+        Doc
     };
     QStack<CurrentNode> m_skipNodes;
 
@@ -191,7 +161,7 @@ private:
     QCss::Parser m_cssParser;
 #endif
     void parse();
-    void resolveGradients(QSvgNode *node, int nestedDepth = 0);
+    void resolvePaintServers(QSvgNode *node, int nestedDepth = 0);
     void resolveNodes();
 
     QPen m_defaultPen;
@@ -201,7 +171,9 @@ private:
      */
     const bool m_ownsReader;
 
-#ifdef FLUXSVG
+    const QtSvg::Options m_options;
+
+#ifdef MYSVG
     QList<MySVG::Node> data_list_;
     int read_type_;
     QList<LayerPtr> svg_layers_;
@@ -213,4 +185,4 @@ Q_DECLARE_LOGGING_CATEGORY(lcSvgHandler)
 
 QT_END_NAMESPACE
 
-#endif // MYQSVGHANDLER_H
+#endif
