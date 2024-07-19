@@ -28,7 +28,7 @@ void MotionController::attachPort(QSerialPort *port) {
     QString resp_str = QString::fromUtf8(resp_data);
     int processed_chars = 0;
     for (int i = 0; i < resp_str.length(); i++) {
-      if (resp_str[i] == "\n") {
+      if (resp_str[i] == '\n') {
         respReceived(resp_str.right(resp_str.length() - processed_chars).left(i - processed_chars).trimmed());
         processed_chars = i + 1;
       }

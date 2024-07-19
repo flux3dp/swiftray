@@ -22,7 +22,7 @@ public:
 
   const QList<ShapePtr> &children() const;
 
-  void setFilled(bool filled);
+  void setFilled(bool filled) override;
 
   friend class DocumentSerializer;
 
