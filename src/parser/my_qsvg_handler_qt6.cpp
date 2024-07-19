@@ -14,7 +14,7 @@
 
 #include  <private/qsvgtinydocument_p.h>
 #include  <private/qsvgstructure_p.h>
-#include  <private/qsvggraphics_p.h>
+#include  "qsvggraphics_p_qt6.h"
 #include  <private/qsvgfilter_p.h>
 #include  <private/qsvgnode_p.h>
 #include  <private/qsvgfont_p.h>
@@ -4558,10 +4558,9 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     read_type_ = read_type;
     for(int i = 0; i < data_list_.size(); ++i) {
         switch(data_list_[i].type) {
-            case QSVG_USE: {
+            case QSVG_USE:
                 MySVG::transformUse(data_list_, data_list_[i].node_names[0], data_list_[i].trans);
                 break;
-                }
             default :
                 break;
         }
@@ -4596,11 +4595,11 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         }
     }
     for (auto &layer : svg_layers_) {
-        for (auto shape : layer->children()) {
-            QTransform temp_trans = QTransform();
-            temp_trans.translate(-1*rect.topLeft().x(), -1*rect.topLeft().y());
-            shape->applyTransform(temp_trans);
-        }
+        // for (auto shape : layer->children()) {
+        //     QTransform temp_trans = QTransform();
+        //     temp_trans.translate(-1*rect.topLeft().x(), -1*rect.topLeft().y());
+        //     shape->applyTransform(temp_trans);
+        // }
         doc->addLayer(layer);
         if(layer->isVisible())
             svg_layers->push_back(layer);

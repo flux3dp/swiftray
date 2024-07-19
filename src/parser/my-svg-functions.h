@@ -39,7 +39,7 @@
 ****************************************************************************/
 #include <qplatformdefs.h>
 #include <private/qsvgfont_p.h>
-#include <private/qsvggraphics_p.h>
+#include "qsvggraphics_p.h"
 #include <private/qsvgnode_p.h>
 #include <private/qsvgstructure_p.h>
 #include <private/qsvgtinydocument_p.h>
@@ -80,9 +80,15 @@
 
 namespace MySVG {
     void transformUse(QList<Node> &nodes, QString node_name, QTransform transform) {
+        if (node_name == "") {
+            qInfo() << "Unable to transform empty node name";
+            return;
+        }
+        qInfo() << "Transforming node: " << node_name << "transform" << transform.m11() << transform.m12() << transform.m13() << transform.m21() << transform.m22() << transform.m23() << transform.m31() << transform.m32() << transform.m33();
         for (int i = 0; i < nodes.size(); ++i) {
             for (auto name : nodes[i].node_names) {
                 if (name == node_name) {
+                    qInfo() << " >>" << i << "*=transform";
                     nodes[i].trans *= transform;
                     break;
                 }
@@ -158,6 +164,7 @@ namespace MySVG {
             #else
             n.qpath = *path_node->qpath();
             #endif
+            // Add all parents id to the node
             QSvgNode* tmp_node = node;
             while(tmp_node != nullptr) {
                 n.node_names.push_back(tmp_node->nodeId());
@@ -189,7 +196,8 @@ namespace MySVG {
             Node n;
             n.type = QSVG_USE;
             n.node_names.push_back(use_node->linkId());
-            n.trans = trans;
+            QTransform translate = QTransform().translate(use_node->startPos().x(), use_node->startPos().y());
+            n.trans = translate * trans;
             nodes.push_back(n);
         } else if(node->type() == QSVG_TEXT) {
             QSvgText *text_node = (QSvgText*) node;

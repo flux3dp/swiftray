@@ -25,7 +25,7 @@
 
 #include <private/qsvgstyle_p.h>
 #include <private/qcssparser_p.h>
-#include <private/qsvggraphics_p.h>
+#include "qsvggraphics_p_qt6.h"
 #include <private/qtsvgglobal_p.h>
 
 #if QT_CONFIG(cssparser)

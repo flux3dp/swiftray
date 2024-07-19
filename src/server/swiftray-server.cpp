@@ -41,7 +41,8 @@ void SwiftrayServer::processMessage(const QString& message) {
     QString action = data["action"].toString();
     QString id = data["id"].toString();
     QJsonValue params = data["params"];
-    qInfo() << "Received action" << action << "with params" << params;
+    auto param_str = action == "loadSVG" ? "[skipped]" : params.toString();
+    qInfo() << "Received action" << action << "with params" << param_str;
     
     if (path == "/devices") {
       handleDevicesAction(socket, id, action, params);
@@ -147,9 +148,9 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     QString svg_data = wrapped_file["data"].toString().toUtf8();
     m_rotary_mode = params_obj["rotaryMode"].toBool();
     m_engrave_dpi = params_obj["engraveDpi"].toInt();
-    qInfo() << "SVG data" << svg_data;
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
     m_canvas->loadSVG(svg_data_bytes);
+    qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
     // Get the parameters
@@ -158,16 +159,16 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     MachineSettings::MachineParam machine_param;
     machine_param.width = workarea["width"].toInt();
     machine_param.height = workarea["height"].toInt();
-    int travelSpeed = fmax(params_obj["travelSpeed"].toInt(), 20);
+    int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
-    qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travelSpeed;
+    qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travel_speed;
     QTransform move_translate = QTransform();
     auto origin = machine == NULL ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : machine->getCustomOrigin();
     ToolpathExporter exporter(
         (BaseGenerator*)&gen,
         m_engrave_dpi / 25.4,
-        travelSpeed,
+        travel_speed,
         QPointF(std::get<0>(origin), std::get<1>(origin)),
         ToolpathExporter::PaddingType::kFixedPadding,
         move_translate);
@@ -194,7 +195,8 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-    printf("%s", m_buffer.toStdString().c_str());
+    // Debugging GCode
+    if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {
