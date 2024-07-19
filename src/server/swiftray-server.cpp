@@ -194,7 +194,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-    printf(m_buffer.toStdString().c_str());
+    printf("%s", m_buffer.toStdString().c_str());
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {
