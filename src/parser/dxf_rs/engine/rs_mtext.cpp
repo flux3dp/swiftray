@@ -297,7 +297,7 @@ void RS_MText::update()
                     continue;
                 }
 
-                int j {data.text.indexOf( '}', i)};
+                int j = (int) data.text.indexOf( '}', i);
                 if (j > i) {
                     QString fontName;
                     if (i + 1 == j) {

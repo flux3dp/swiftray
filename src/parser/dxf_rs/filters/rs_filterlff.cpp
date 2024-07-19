@@ -135,7 +135,11 @@ bool RS_FilterLFF::fileExport(RS_Graphic& g, const QString& file, RS2::FormatTyp
 
     QFile f(file);
     QTextStream ts(&f);
+    #ifdef QT6
+    ts.setEncoding(QStringConverter::Utf8);
+    #else
     ts.setCodec("UTF-8");
+    #endif
     if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
 
 
