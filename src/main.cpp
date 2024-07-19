@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QSettings>
 #include <QTranslator>
+#include <QtGlobal>
 #include <QDebug>
 #include <main_application.h>
 #include <canvas/canvas.h>
@@ -32,6 +33,8 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
+  qInfo() << "Initiating Swiftray...";
+  qInfo() << "Qt version:" << QT_VERSION_STR;
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
   MainApplication app(argc, argv);
@@ -39,7 +42,6 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
-
   // Test event
   //sentry_capture_event(sentry_value_new_message_event(
   //  SENTRY_LEVEL_INFO, // level
