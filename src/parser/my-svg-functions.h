@@ -108,6 +108,7 @@ namespace MySVG {
             break;
         case BVG:
         case ByLayers:
+            layer_name = fill ? layer_name + "-filled" : layer_name;
             for (int i = 0; i < layers.size(); ++i) {
                 if (layers[i]->name() == layer_name) return layers[i];
             }

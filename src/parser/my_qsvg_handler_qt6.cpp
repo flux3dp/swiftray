@@ -5145,6 +5145,7 @@ bool MyQSvgHandler::characters(const QStringView str)
             qInfo() << "Layer Power" << layer_config_map_[node_addr].power;
             qInfo() << "Layer Speed" << layer_config_map_[node_addr].speed;
             layer_config_map_[title] = layer_config_map_[node_addr];
+            layer_config_map_[title + "-filled"] = layer_config_map_[node_addr];
         }
         waiting_title_ = false;
 #endif
