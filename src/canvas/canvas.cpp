@@ -118,8 +118,7 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
   QBuffer io(&svg_data);
   io.open(QIODevice::ReadOnly);
   QList<LayerPtr> svg_layers;
-  MySVG::ReadType read_type = MySVG::InSingleLayer;
-  MyQSvgHandler handler(&io, &document(), &svg_layers, read_type);
+  MyQSvgHandler handler(&io, &document(), &svg_layers, MySVG::ReadType::BVG);
   if (handler.ok()) {
     qInfo() << "Handler OK!";
     handler.document();
@@ -130,7 +129,7 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
       all_shapes.append(layer->children());
     }
     for (auto &shape : all_shapes) {
-      qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();
+      // qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();
     }
     document().setSelections(all_shapes);
     if (all_shapes.size() == 1) {

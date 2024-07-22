@@ -844,8 +844,12 @@ static bool resolveColor(QStringView colorStr, QColor &color, MyQSvgHandler *han
                 // rather than falling back to QColor
                 QRgb rgb;
                 bool ok = qsvg_get_hex_rgb(colorStrTr.constData(), colorStrTr.size(), &rgb);
-                if (ok)
+                if (ok) {
                     color.setRgb(rgb);
+                    #ifdef MYSVG
+                    g_color = color;
+                    #endif
+                }
                 return ok;
             }
             break;
@@ -870,6 +874,7 @@ static bool resolveColor(QStringView colorStr, QColor &color, MyQSvgHandler *han
                         color = QColor(int(compo[0]),
                                        int(compo[1]),
                                        int(compo[2]));
+                        g_color = color;
                         return true;
                     }
                     return false;
@@ -880,6 +885,7 @@ static bool resolveColor(QStringView colorStr, QColor &color, MyQSvgHandler *han
         case 'c':
             if (colorStrTr == QLatin1String("currentColor")) {
                 color = handler->currentColor();
+                g_color = color;
                 return true;
             }
             break;
@@ -892,6 +898,7 @@ static bool resolveColor(QStringView colorStr, QColor &color, MyQSvgHandler *han
     }
 
     color = QColor::fromString(colorStrTr.toString());
+    g_color = color;
     return color.isValid();
 }
 
@@ -1018,6 +1025,9 @@ static void parseColor(QSvgNode *,
     if (constructColor(attributes.color, attributes.colorOpacity, color, handler)) {
         handler->popColor();
         handler->pushColor(color);
+        #ifdef MYSVG
+        g_color = color;
+        #endif
     }
 }
 
@@ -2833,10 +2843,22 @@ static bool parseForeignObjectNode(QSvgNode *parent,
 
 static QSvgNode *createGNode(QSvgNode *parent,
                              const QXmlStreamAttributes &attributes,
-                             MyQSvgHandler *)
+                             MyQSvgHandler *handler)
 {
     Q_UNUSED(attributes);
+    #ifdef MYSVG
+    // TODO: The Group Element seems not to be parsing any attributes?
     QSvgG *node = new QSvgG(parent);
+    if (attributes.value("class") == QString("layer")) {
+        // Set layer config when parsing G element with class "layer"
+        QString node_addr = QString::number(reinterpret_cast<quintptr>(node), 16);
+        qInfo() << "Found Layer Group" << node_addr;
+        MySVG::BeamLayerConfig layer_config;
+        layer_config.speed = attributes.value("data-speed").toDouble();
+        layer_config.power = attributes.value("data-strength").toDouble();
+        handler->setLayerConfig(node_addr, layer_config);
+    }
+    #endif
     return node;
 }
 
@@ -4210,6 +4232,18 @@ static bool parseTbreakNode(QSvgNode *parent,
     return true;
 }
 
+#ifdef MYSVG
+static QSvgNode* parseTitleNode(QSvgNode *parent,
+                            const QXmlStreamAttributes &attributes,
+                            MyQSvgHandler *handler)
+{
+    if (parent->type() != QSvgNode::Group)
+        return NULL;
+    handler->waiting_title_ = true;
+    return NULL;
+}
+#endif
+
 static QSvgNode *createTextNode(QSvgNode *parent,
                                 const QXmlStreamAttributes &attributes,
                                 MyQSvgHandler *handler)
@@ -4337,6 +4371,11 @@ static FactoryMethod findGroupFactory(const QString &name, QtSvg::Options option
     case 'p':
         if (ref == QLatin1String("attern") && !options.testFlag(QtSvg::Tiny12FeaturesOnly)) return createPatternNode;
         break;
+#ifdef MYSVG
+    case 't':
+        if (ref == QLatin1String("itle")) return parseTitleNode;
+        break;
+#endif
     default:
         break;
     }
@@ -4546,8 +4585,8 @@ static StyleParseMethod findStyleUtilFactoryMethod(const QString &name)
 }
 
 #ifdef MYSVG
-MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type) : xml(new QXmlStreamReader(device))
-                                             , m_ownsReader(true)
+MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type) : 
+    xml(new QXmlStreamReader(device)), m_ownsReader(true), read_type_(read_type), waiting_title_(false)
 {
     g_color = Qt::black;
     init();
@@ -4555,7 +4594,6 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     qInfo() << "SVG Layers: " << svg_layers->size();
     qInfo() << "SVG Handler Data List Size " << data_list_.size();
 
-    read_type_ = read_type;
     for(int i = 0; i < data_list_.size(); ++i) {
         switch(data_list_[i].type) {
             case QSVG_USE:
@@ -4578,7 +4616,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 1);
         }
         new_shape->applyTransform(data_list_[i].trans);
-        LayerPtr target_layer = MySVG::findLayer(read_type, svg_layers_, data_list_[i].layer_name, data_list_[i].color);
+        LayerPtr target_layer = MySVG::findLayer(read_type, svg_layers_, data_list_[i].layer_name, data_list_[i].color, data_list_[i].fill);
         if(data_list_[i].visible) {
             if(!target_layer->isVisible()) {
                 for (auto shape : target_layer->children())
@@ -4594,12 +4632,14 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             }
         }
     }
-    for (auto &layer : svg_layers_) {
-        // for (auto shape : layer->children()) {
-        //     QTransform temp_trans = QTransform();
-        //     temp_trans.translate(-1*rect.topLeft().x(), -1*rect.topLeft().y());
-        //     shape->applyTransform(temp_trans);
-        // }
+    for (LayerPtr &layer : svg_layers_) {
+        // Read layer config by name
+        if (layer_config_map_.contains(layer->name())) {
+            auto config = layer_config_map_[layer->name()];
+            qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
+            layer->setSpeed(config.speed);
+            layer->setStrength(config.power);
+        }
         doc->addLayer(layer);
         if(layer->isVisible())
             svg_layers->push_back(layer);
@@ -4957,7 +4997,9 @@ bool MyQSvgHandler::startElement(const QString &localName,
     }
 
     if (node) {
-        MySVG::processMySVGNode(node, data_list_, g_scale, g_color, g_image);
+#ifdef MYSVG
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image);
+#endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
     } else {
@@ -5093,6 +5135,19 @@ bool MyQSvgHandler::characters(const QStringView str)
         static_cast<QSvgText*>(m_nodes.top())->addText(str.toString());
     } else if (m_nodes.top()->type() == QSvgNode::Tspan) {
         static_cast<QSvgTspan*>(m_nodes.top())->addText(str.toString());
+#ifdef MYSVG
+    } else if (m_nodes.top()->type() == QSvgNode::Group && waiting_title_) {
+        QString title = str.toString();
+        QString node_addr = QString::number(reinterpret_cast<quintptr>(m_nodes.top()), 16);
+        if (layer_config_map_.contains(node_addr)) {
+            layer_config_map_[node_addr].title = title;
+            qInfo() << "Layer Configuration" << title;
+            qInfo() << "Layer Power" << layer_config_map_[node_addr].power;
+            qInfo() << "Layer Speed" << layer_config_map_[node_addr].speed;
+            layer_config_map_[title] = layer_config_map_[node_addr];
+        }
+        waiting_title_ = false;
+#endif
     }
 
     return true;
@@ -5237,6 +5292,13 @@ MyQSvgHandler::~MyQSvgHandler()
         delete xml;
 }
 
+#ifdef MYSVG
+
+void MyQSvgHandler::setLayerConfig(const QString &layer_name, const MySVG::BeamLayerConfig &config)
+{
+    layer_config_map_.insert(layer_name, config);
+}
+#endif
 QT_END_NAMESPACE
 
 #endif

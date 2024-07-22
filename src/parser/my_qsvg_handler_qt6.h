@@ -92,7 +92,10 @@ public:
     void pushColorCopy();
     void popColor();
     QColor currentColor() const;
-
+#ifdef MYSVG
+    bool waiting_title_;
+    void setLayerConfig(const QString &layer_name, const MySVG::BeamLayerConfig &config);
+#endif
 #ifndef QT_NO_CSSPARSER
     void setInStyle(bool b);
     bool inStyle() const;
@@ -175,9 +178,9 @@ private:
 
 #ifdef MYSVG
     QList<MySVG::Node> data_list_;
-    int read_type_;
+    MySVG::ReadType read_type_;
     QList<LayerPtr> svg_layers_;
-    QMap<QString, QTransform> transform_map_;
+    QMap<QString, MySVG::BeamLayerConfig> layer_config_map_;
 #endif
 };
 

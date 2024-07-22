@@ -3760,7 +3760,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 1);
         }
         new_shape->applyTransform(data_list_[i].trans);
-        LayerPtr target_layer = MySVG::findLayer(read_type, svg_layers_, data_list_[i].layer_name, data_list_[i].color);
+        LayerPtr target_layer = MySVG::findLayer(read_type, svg_layers_, data_list_[i].layer_name, data_list_[i].color, data_list_[i].fill);
         if(data_list_[i].visible) {
             if(!target_layer->isVisible()) {
                 for (auto shape : target_layer->children())
@@ -4014,7 +4014,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, g_scale, g_color, g_image);
+        MySVG::processMySVGNode(node, data_list_, read_type_, layer_config_map_, g_scale, g_color, g_image);
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

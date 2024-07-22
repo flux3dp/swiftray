@@ -160,6 +160,8 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.width = workarea["width"].toInt();
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
+    QString type = params_obj["type"].toString();
+    bool enable_high_speed = type == "fcode";
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
     qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travel_speed;
@@ -176,7 +178,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
     //
-    if ( true != exporter.convertStack(m_canvas->document().layers(), true,  true, nullptr)) {
+    if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true, nullptr)) {
       return false; // canceled
     }
     if (exporter.isExceedingBoundary()) {

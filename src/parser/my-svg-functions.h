@@ -58,6 +58,7 @@
 #include <QVector>
 #include <QtGlobal>
 #include <QtMath>
+#include <QList>
 #include <private/qmath_p.h>
 #include "shape/bitmap-shape.h"
 #include "my-svg-types.h"
@@ -96,61 +97,39 @@ namespace MySVG {
         }
     }
 
-    LayerPtr findLayer(ReadType read_type_, QList<LayerPtr> &layers, QString layer_name, QColor color) {
-        LayerPtr target_layer;
+    LayerPtr findLayer(ReadType read_type_, QList<LayerPtr> &layers, QString layer_name, QColor color, bool fill = false) {
+        LayerPtr target_layer = NULL;
         switch (read_type_) {
         case InSingleLayer:
             if (layers.empty()) {
                 layers.push_back(std::make_shared<Layer>());
             }
-            target_layer = layers[0];
+            return layers[0];
             break;
+        case BVG:
         case ByLayers:
-            if (layers.empty()) {
-                layers.push_back(std::make_shared<Layer>());
-                layers[0]->setName(layer_name);
-                target_layer = layers[0];
-                target_layer->setColor(color);
-            } else {
-                for (int i = 0; i < layers.size(); ++i) {
-                    target_layer = layers[i];
-                    if (target_layer->name() == layer_name) {
-                        break;
-                    } else if (i == layers.size() - 1) {
-                        target_layer = std::make_shared<Layer>();
-                        target_layer->setName(layer_name);
-                        target_layer->setColor(color);
-                        layers.push_back(target_layer);
-                    }
-                }
+            for (int i = 0; i < layers.size(); ++i) {
+                if (layers[i]->name() == layer_name) return layers[i];
             }
             break;
         case ByColors:
-            layer_name = color.name();
-            if (layers.empty()) {
-                layers.push_back(std::make_shared<Layer>());
-                layers[0]->setName(layer_name);
-                target_layer = layers[0];
-                target_layer->setColor(color);
-            } else {
-                for (int i = 0; i < layers.size(); ++i) {
-                    target_layer = layers[i];
-                    if (target_layer->name() == layer_name) {
-                        break;
-                    } else if (i == layers.size() - 1) {
-                        target_layer = std::make_shared<Layer>();
-                        target_layer->setName(layer_name);
-                        target_layer->setColor(color);
-                        layers.push_back(target_layer);
-                    }
-                }
+            layer_name = fill ? color.name() + "-filled" : color.name();
+            for (int i = 0; i < layers.size(); ++i) {
+                if (layers[i]->name() == layer_name) return layers[i];
             }
             break;
         }
+        target_layer = std::make_shared<Layer>();
+        target_layer->setName(layer_name);
+        target_layer->setColor(color);
+        if (fill) target_layer->setType(Layer::Type::Fill);
+        layers.push_back(target_layer);
         return target_layer;
     }
 
-    void processMySVGNode(QSvgNode *node, QList<Node> &nodes, double g_scale, QColor &g_color, QImage &g_image) {
+    void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
+                          MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
+                          double g_scale, QColor &g_color, QImage &g_image) {
         QTransform trans = getNodeTransform(node);
         double scale = 1;
         if(node->type() == QSVG_PATH) {
@@ -170,8 +149,10 @@ namespace MySVG {
                 n.node_names.push_back(tmp_node->nodeId());
                 tmp_node = tmp_node->parent();
             }
-            n.layer_name = getNodeLayerName(node);
+            n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
             n.trans = trans * tmp_scale;
+            auto fillStyle = node->styleProperty(QSvgStyleProperty::FILL);
+            n.fill = fillStyle && ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
             n.color = g_color;
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
@@ -186,7 +167,7 @@ namespace MySVG {
                 n.node_names.push_back(tmp_node->nodeId());
                 tmp_node = tmp_node->parent();
             }
-            n.layer_name = getNodeLayerName(node);
+            n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
             n.trans = trans * tmp_scale;
             n.color = g_color;
             n.visible = getNodeVisible(node);

@@ -205,7 +205,7 @@ private:
     QList<MySVG::Node> data_list_;
     int read_type_;
     QList<LayerPtr> svg_layers_;
-    QMap<QString, QTransform> transform_map_;
+    QMap<QString, MySVG::BeamLayerConfig> layer_config_map_;
 #endif
 };
 

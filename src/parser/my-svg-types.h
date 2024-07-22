@@ -20,11 +20,19 @@ namespace MySVG {
         QImage image;
         QFont font;
         QString text;
+        bool fill;
+    };
+
+    struct BeamLayerConfig {
+        float speed;
+        float power;
+        QString title;
     };
 
     enum ReadType {
         InSingleLayer,
         ByLayers,
-        ByColors
+        ByColors,
+        BVG
     };
 }
