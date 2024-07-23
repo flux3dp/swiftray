@@ -1,8 +1,8 @@
 #include "machine.h"
-//#include <QThread>
 #include <QElapsedTimer>
 #include <QtMath>
 #include <QMessageBox>
+#include <QSerialPort>
 #include <tuple>
 
 #include <settings/machine-settings.h>
@@ -15,7 +15,7 @@
 #include <executor/operation_cmd/bsl_cmd.h>
 #include "liblcs/lcsExpr.h"
 
-Machine::Machine(MachineSettings::MachineParam mach, QSerialPort &serial_port, QObject *parent)
+Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   : QObject{parent}
 {
 
@@ -27,7 +27,6 @@ Machine::Machine(MachineSettings::MachineParam mach, QSerialPort &serial_port, Q
   machine_setup_executor_ = new MachineSetupExecutor{this};
   rt_status_executor_ = new RTStatusUpdateExecutor{this};
   console_executor_ = new ConsoleExecutor(motion_controller_);
-  serial_port_ = &serial_port;
 
   connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
     // TODO: Do something?
@@ -634,4 +633,8 @@ void Machine::disconnect() {
 
 bool Machine::isConnected() {
   return bsl_connected_ || serial_port_->isOpen();
+}
+
+void Machine::setSerialPort(QSerialPort &serial_port) {
+  serial_port_ = &serial_port;
 }

@@ -122,6 +122,7 @@ public Q_SLOTS:
   void updatePathSort(int path_sort);
 
 private:
+  void loadSettings();
   //about preset
   void initialPreset();
   void savePreset();

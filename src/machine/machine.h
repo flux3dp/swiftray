@@ -8,11 +8,7 @@
 #include <QStringList>
 #include <QProgressDialog>
 #include <QPixmap>
-#ifdef CUSTOM_SERIAL_PORT_LIB
-#include <connection/serial-port.h>
-#else
 #include <QSerialPort>
-#endif
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
 #include <executor/machine_job/machine_job.h>
@@ -31,7 +27,7 @@ public:
     kConnected     // Port open and has receive some response from machine
   };
 
-  explicit Machine(MachineSettings::MachineParam mach, QSerialPort &serial_port, QObject *parent = nullptr);
+  explicit Machine(MachineSettings::MachineParam mach, QObject *parent = nullptr);
 
   ConnectionState getConnectionState();
   bool applyMachineParam(MachineSettings::MachineParam mach);
@@ -48,12 +44,14 @@ public:
   bool isConnected();
   void syncPosition();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
+  void setSerialPort(QSerialPort &serial_port);
   bool connectSerial(QString portName, int baudrate);
   void disconnect();
   std::tuple<qreal, qreal, qreal> getCustomOrigin();
   std::tuple<qreal, qreal, qreal> getCurrentPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
+  QPointer<ConsoleExecutor> getConsoleExecutor() const { return console_executor_; }
   QPointer<RTStatusUpdateExecutor> getRTStatusUpdateExecutor() const { return rt_status_executor_; }
 
 public Q_SLOTS:
