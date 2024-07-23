@@ -348,6 +348,11 @@
               <string>GRBL</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>BSL</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>

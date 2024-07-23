@@ -18,14 +18,14 @@ ImagePanel::~ImagePanel()
 }
 
 void ImagePanel::loadStyles() {
-  ui->frameButtons->setStyleSheet("\
-      QToolButton {   \
-          border: none \
-      } \
-      QToolButton:checked{ \
-          border: none \
-      } \
-  ");
+  // ui->frameButtons->setStyleSheet("\
+  //     QpushButton {   \
+  //         border: none \
+  //     } \
+  //     QpushButton:checked{ \
+  //         border: none \
+  //     } \
+  // ");
 }
 
 void ImagePanel::registerEvents() {
@@ -37,25 +37,26 @@ void ImagePanel::registerEvents() {
     Q_EMIT editImageThreshold(value);
   });
 
-  connect(ui->toolButtonCrop, &QAbstractButton::clicked, [=]() {
+  connect(ui->pushButtonCrop, &QAbstractButton::clicked, [=]() {
     Q_EMIT actionCropImage();
   });
-  connect(ui->toolButtonInvert, &QAbstractButton::clicked, [=]() {
+  connect(ui->pushButtonInvert, &QAbstractButton::clicked, [=]() {
     Q_EMIT actionInvertImage();
   });
-  connect(ui->toolButtonSharpen, &QAbstractButton::clicked, [=]() {
+  connect(ui->pushButtonSharpen, &QAbstractButton::clicked, [=]() {
     Q_EMIT actionSharpenImage();
   });
-  connect(ui->toolButtonTrace, &QAbstractButton::clicked, [=]() {
+  connect(ui->pushButtonTrace, &QAbstractButton::clicked, [=]() {
     Q_EMIT actionGenImageTrace();
   });
 }
 
 void ImagePanel::setLayout(bool is_dark_mode) {
-  ui->toolButtonCrop->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
-  ui->toolButtonInvert->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
-  ui->toolButtonSharpen->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
-  ui->toolButtonTrace->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
+  qInfo() << "Is Dark Mode?" << is_dark_mode;
+  ui->pushButtonCrop->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
+  ui->pushButtonInvert->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
+  ui->pushButtonSharpen->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));
+  ui->pushButtonTrace->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-trace.png" : ":/resources/images/icon-trace.png"));
 }
 
 void ImagePanel::setImageGradient(bool state) {

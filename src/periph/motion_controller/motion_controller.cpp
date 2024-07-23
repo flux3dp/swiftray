@@ -7,14 +7,12 @@ MotionController::MotionController(QObject *parent)
 {
 
 }
-#ifdef CUSTOM_SERIAL_PORT_LIB
-void MotionController::attachPort(SerialPort *port) {
-  qInfo() << "MotionController::attachPort()";
-  port_ = port;
-  connect(port_, &SerialPort::lineReceived, this, &MotionController::respReceived);
-  connect(port_, &SerialPort::disconnected, this, &MotionController::disconnected);
+
+// TODO:BSL attachPortBSL
+void MotionController::attachPortBSL() {
+  qInfo() << "MotionController::attachPortBSL() is not implemented in this class";
 }
-#else
+
 void MotionController::attachPort(QSerialPort *port) {
   qInfo() << "MotionController::attachPort()";
   port_ = port;
@@ -51,7 +49,6 @@ void MotionController::detachPort() {
     Q_EMIT disconnected();
   }
 }
-#endif
 
 
 MotionControllerState MotionController::getState() const {

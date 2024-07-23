@@ -12,8 +12,10 @@
 #include <executor/machine_job/jogging_job.h>
 #include <executor/machine_job/rotary_test_job.h>
 #include <executor/operation_cmd/grbl_cmd.h>
+#include <executor/operation_cmd/bsl_cmd.h>
+#include "liblcs/lcsExpr.h"
 
-Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
+Machine::Machine(MachineSettings::MachineParam mach, QSerialPort &serial_port, QObject *parent)
   : QObject{parent}
 {
 
@@ -25,6 +27,7 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   machine_setup_executor_ = new MachineSetupExecutor{this};
   rt_status_executor_ = new RTStatusUpdateExecutor{this};
   console_executor_ = new ConsoleExecutor(motion_controller_);
+  serial_port_ = &serial_port;
 
   connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
     // TODO: Do something?
@@ -45,6 +48,7 @@ Machine::ConnectionState Machine::getConnectionState() {
  */
 bool Machine::applyMachineParam(MachineSettings::MachineParam mach) {
   machine_param_ = mach;
+  qInfo() << "Apply Machine Param: " << mach.name << (int)mach.board_type;
   // NOTE: Currently, we only support Grbl machine, 
   //       thus, no need to re-create motion controller when MachineParam is changed
   //       However, when any other motion controller type is supported, we should handle it
@@ -415,35 +419,33 @@ std::tuple<qreal, qreal, qreal> Machine::getCurrentPosition() {
   return std::make_tuple(cached_x_pos_, cached_y_pos_, cached_z_pos_);
 }
 
-#ifdef CUSTOM_SERIAL_PORT_LIB
-void Machine::motionPortConnected(SerialPort *port) {
-#else 
-void Machine::motionPortConnected(QSerialPort *port) {
-#endif
-  qInfo() << "Machine::motionPortConnected()";
-  // TODO: Use general Port class instead of SerialPort class
-  //SerialPort* port = qobject_cast<SerialPort*>(sender());
-  //if (port == nullptr) {
-  //  return;
-  //}
-  if (!port->isOpen()) {
-    return;
-  }
 
-  // TODO: Pass MachineSettings::MachineParam as argument
-  //       Should refactor/restructure MachineSettings beforehand
-  //       The followings is just a placeholder
+void Machine::setupMotionController() {
+  qInfo() << "Machine::setupMotionController()";
+
   if (motion_controller_) {
     motion_controller_->deleteLater();
     motion_controller_ = nullptr;
   }
+
+
+  qInfo() << "Machine::setupMotionController() creating motion controller";
   motion_controller_ = MotionControllerFactory::createMotionController(machine_param_, this);
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
   connect(motion_controller_, &MotionController::respRcvd, this, &Machine::logRcvd);
 
-  motion_controller_->attachPort(port);
+
+  qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
+  if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
+    qInfo() << "Setup GRBL Motion Controller";
+    motion_controller_->attachPort(serial_port_);
+  } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+    // TODO:BSL
+    qInfo() << "Setup BSL Motion Controller";
+    ((BSLMotionController*)motion_controller_)->attachPortBSL();
+  }
   
   // Reset state variables
   connect_state_ = ConnectionState::kConnecting;
@@ -495,9 +497,15 @@ void Machine::pauseJob() {
   if (console_executor_ && job_executor_) {
     if (job_executor_->getState() == Executor::State::kRunning) {
       // TODO: Add support other motion controller than grbl
-      console_executor_->appendCmd(
-        GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlPause, motion_controller_)
-      );
+      if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
+        console_executor_->appendCmd(
+          GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlPause)
+        );
+      } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+        console_executor_->appendCmd(
+          BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlPause)
+        );
+      }
     }
   }
 }
@@ -507,9 +515,15 @@ void Machine::resumeJob() {
   if (console_executor_ && job_executor_) {
     if (job_executor_->getState() == Executor::State::kPaused) {
       // TODO: Add support other motion controller than grbl
-      console_executor_->appendCmd(
-        GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlResume, motion_controller_)
-      );
+      if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
+        console_executor_->appendCmd(
+          GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlResume)
+        );
+      } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+        console_executor_->appendCmd(
+          BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlResume)
+        );
+      }
     }
   }
 }
@@ -520,9 +534,15 @@ void Machine::stopJob() {
     if (job_executor_->getState() == Executor::State::kRunning || 
         job_executor_->getState() == Executor::State::kPaused) {
       // TODO: Add support other motion controller than grbl
-      console_executor_->appendCmd(
-        GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_)
-      );
+      if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
+        console_executor_->appendCmd(
+          GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset)
+        );
+      } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+        console_executor_->appendCmd(
+          BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlReset)
+        );
+      }
     }
   }
 }
@@ -584,4 +604,34 @@ void Machine::handleNotif(QString title, QString msg) {
     msgbox->setInformativeText(msg);
     msgbox->show();
   }
+}
+
+bool Machine::connectSerial(QString port, int baudrate) {
+  if (port == "BSL") {
+    connect_bsl_board();
+    bsl_connected_ = true;
+    qInfo() << "LCS connected";
+    this->setupMotionController();
+    return true;
+  }
+  // Connects to regular serial port
+  serial_port_->setPortName(port);
+  serial_port_->setBaudRate(baudrate);
+  serial_port_->open(QIODevice::ReadWrite);
+  if (!serial_port_->isOpen()) {
+    qWarning() << "Serial port open failed";
+    return false;
+  }
+  qInfo() << "Serial port opened";
+  serial_port_->clearError();
+  this->setupMotionController();
+  return true;
+}
+
+void Machine::disconnect() {
+  serial_port_->close();
+}
+
+bool Machine::isConnected() {
+  return bsl_connected_ || serial_port_->isOpen();
 }

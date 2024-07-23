@@ -1,0 +1,27 @@
+{
+  "name": "20W (Fiber Laser)",
+  "framing_power": 20,
+  "pulse_power": 30,
+  "data": [
+    {
+      "name": "Metal (Light)",
+      "power": 100,
+      "speed": 1200
+    },
+    {
+      "name": "Metal (Dark)",
+      "power": 100,
+      "speed": 300
+    },
+    {
+      "name": "Plastic",
+      "power": 100,
+      "speed": 1200
+    },
+    {
+      "name": "Stone",
+      "power": 100,
+      "speed": 600
+    }
+  ]
+}

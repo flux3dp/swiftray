@@ -10,6 +10,8 @@
 #include <QPixmap>
 #ifdef CUSTOM_SERIAL_PORT_LIB
 #include <connection/serial-port.h>
+#else
+#include <QSerialPort>
 #endif
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
@@ -29,7 +31,7 @@ public:
     kConnected     // Port open and has receive some response from machine
   };
 
-  explicit Machine(MachineSettings::MachineParam mach, QObject *parent = nullptr);
+  explicit Machine(MachineSettings::MachineParam mach, QSerialPort &serial_port, QObject *parent = nullptr);
 
   ConnectionState getConnectionState();
   bool applyMachineParam(MachineSettings::MachineParam mach);
@@ -43,20 +45,16 @@ public:
   bool createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);
   bool createJoggingCornerJob(int corner_id, qreal feedrate);
   bool createJoggingEdgeJob(int edge_id, qreal feedrate);
+  bool isConnected();
   void syncPosition();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
+  bool connectSerial(QString portName, int baudrate);
+  void disconnect();
   std::tuple<qreal, qreal, qreal> getCustomOrigin();
   std::tuple<qreal, qreal, qreal> getCurrentPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
   QPointer<JobExecutor> getJobExecutor() const { return job_executor_; }
-  QPointer<ConsoleExecutor> getConsoleExecutor() const { return console_executor_; }
-  QPointer<RTStatusUpdateExecutor> getRTSatatusUpdateExecutor() const { return rt_status_executor_; }
-
-  #ifdef CUSTOM_SERIAL_PORT_LIB
-  void motionPortConnected(SerialPort *);   // Opened but not check
-  #else
-  void motionPortConnected(QSerialPort *);  // Opened but not check
-  #endif
+  QPointer<RTStatusUpdateExecutor> getRTStatusUpdateExecutor() const { return rt_status_executor_; }
 
 public Q_SLOTS:
   void motionPortActivated();  // Motion controller working
@@ -78,9 +76,10 @@ Q_SIGNALS:
   void logSent(QString);
   void logRcvd(QString);
 
-private:
+protected:
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
+  QSerialPort *serial_port_ = NULL;
 
   // Hardware equipment controllers
   MotionController *motion_controller_; // created when port connected
@@ -102,10 +101,14 @@ private:
   qreal cached_y_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
   qreal cached_z_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
 
+  bool bsl_connected_ = false;
+
   std::tuple<qreal, qreal, qreal> custom_origin_; // store the custom origin set by user
 
   std::tuple<qreal, qreal, qreal> canvasToMachineCoordConvert(std::tuple<qreal, qreal, qreal> pos, bool relative);
   std::tuple<qreal, qreal, qreal> machineToCanvasCoordConvert(std::tuple<qreal, qreal, qreal> pos, bool relative);
+
+  void setupMotionController();  // Opened but not check
 };
 
 #endif // MACHINE_H

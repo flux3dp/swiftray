@@ -1,16 +1,8 @@
 #include "gcode_cmd.h"
 
-GCodeCmd::GCodeCmd()
+GCodeCmd::GCodeCmd(QString gcode)
   : OperationCmd{}
 {
-
-}
-
-void GCodeCmd::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
-}
-
-void GCodeCmd::setGCode(QString gcode) {
   gcode_ = gcode;
 }
 
@@ -19,7 +11,7 @@ void GCodeCmd::setGCode(QString gcode) {
  * 
  * @return ExecStatus 
  */
-OperationCmd::ExecStatus GCodeCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GCodeCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
