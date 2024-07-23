@@ -18,7 +18,7 @@ message(STATUS "Swiftray Ver: ${PROJECT_VERSION_STR}, MaV: ${VERSION_MAJOR}, MiV
 set(USE_QT6 true)
 
 if (USE_QT6)
-  set(QT_ROOT_DIR "/Users/simon/Qt/6.7.2/macos")
+  # set(QT_ROOT_DIR "/Users/simon/Qt/6.7.2/macos")
   set(CMAKE_PREFIX_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
 endif()
 
