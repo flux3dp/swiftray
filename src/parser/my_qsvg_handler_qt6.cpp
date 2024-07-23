@@ -42,8 +42,8 @@
 
 #ifdef MYSVG
 
-#include "my-svg-helper.h"
-#include "my-svg-functions.h"
+#include <parser/mysvg/mysvg-helper.h>
+#include <parser/mysvg/mysvg-functions.h>
 
 #endif
 

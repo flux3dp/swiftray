@@ -1,4 +1,3 @@
-#include "my_qsvg_handler.h"
 /****************************************************************************
 **
 ** Copyright (C) 2016 The Qt Company Ltd.
@@ -39,7 +38,7 @@
 ****************************************************************************/
 #include <qplatformdefs.h>
 #include <private/qsvgfont_p.h>
-#include "qsvggraphics_p.h"
+#include "../qsvggraphics_p.h"
 #include <private/qsvgnode_p.h>
 #include <private/qsvgstructure_p.h>
 #include <private/qsvgtinydocument_p.h>
@@ -61,7 +60,7 @@
 #include <QList>
 #include <private/qmath_p.h>
 #include "shape/bitmap-shape.h"
-#include "my-svg-types.h"
+#include "mysvg-types.h"
 #include "float.h"
 
 #ifdef QT6

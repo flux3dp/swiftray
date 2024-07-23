@@ -34,7 +34,7 @@
 
 #include "layer.h"
 #include "document.h"
-#include "my-svg-types.h"
+#include <parser/mysvg/mysvg-types.h>
 
 QT_BEGIN_NAMESPACE
 
