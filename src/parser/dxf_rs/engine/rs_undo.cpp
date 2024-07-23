@@ -25,7 +25,8 @@
 **
 **********************************************************************/
 
-#include<iostream>
+#include <iostream>
+#include <list>
 #include "rs_undocycle.h"
 #include "rs_undo.h"
 #include "parser/dxf_rs/debug/rs_debug.h"

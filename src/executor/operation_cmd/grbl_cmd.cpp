@@ -1,11 +1,10 @@
 #include "grbl_cmd.h"
 
-GrblPauseCmd::GrblPauseCmd(QPointer<MotionController> motion_controller)
- : motion_controller_(motion_controller)
+GrblPauseCmd::GrblPauseCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblPauseCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblPauseCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -21,12 +20,11 @@ OperationCmd::ExecStatus GrblPauseCmd::execute(QPointer<Executor> executor) {
 }
 
 
-GrblResumeCmd::GrblResumeCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblResumeCmd::GrblResumeCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblResumeCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblResumeCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -41,12 +39,11 @@ OperationCmd::ExecStatus GrblResumeCmd::execute(QPointer<Executor> executor) {
   return status_;
 }
 
-GrblResetCmd::GrblResetCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblResetCmd::GrblResetCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblResetCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblResetCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -61,12 +58,11 @@ OperationCmd::ExecStatus GrblResetCmd::execute(QPointer<Executor> executor) {
   return status_;
 }
 
-GrblStatusReportCmd::GrblStatusReportCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblStatusReportCmd::GrblStatusReportCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblStatusReportCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblStatusReportCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -81,12 +77,11 @@ OperationCmd::ExecStatus GrblStatusReportCmd::execute(QPointer<Executor> executo
   return status_;
 }
 
-GrblUnlockCmd::GrblUnlockCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblUnlockCmd::GrblUnlockCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblUnlockCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblUnlockCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -101,12 +96,11 @@ OperationCmd::ExecStatus GrblUnlockCmd::execute(QPointer<Executor> executor) {
   return status_;
 }
 
-GrblHomeCmd::GrblHomeCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblHomeCmd::GrblHomeCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblHomeCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblHomeCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -121,12 +115,11 @@ OperationCmd::ExecStatus GrblHomeCmd::execute(QPointer<Executor> executor) {
   return status_;
 }
 
-GrblBuildInfoCmd::GrblBuildInfoCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblBuildInfoCmd::GrblBuildInfoCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblBuildInfoCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblBuildInfoCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -141,12 +134,11 @@ OperationCmd::ExecStatus GrblBuildInfoCmd::execute(QPointer<Executor> executor) 
   return status_;
 }
 
-GrblSettingsCmd::GrblSettingsCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblSettingsCmd::GrblSettingsCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblSettingsCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblSettingsCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;
@@ -161,12 +153,11 @@ OperationCmd::ExecStatus GrblSettingsCmd::execute(QPointer<Executor> executor) {
   return status_;
 }
 
-GrblGCodeParamCmd::GrblGCodeParamCmd(QPointer<MotionController> motion_controller) 
- : motion_controller_(motion_controller)
+GrblGCodeParamCmd::GrblGCodeParamCmd()
 {
 }
 
-OperationCmd::ExecStatus GrblGCodeParamCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus GrblGCodeParamCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) {
   if (motion_controller_.isNull()) {
     fail();
     return status_;

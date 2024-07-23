@@ -3,4 +3,5 @@ target_sources(Swiftray PRIVATE
   gcode_cmd.cpp
   #sync_exec_cmd.cpp
   grbl_cmd.cpp
+  bsl_cmd.cpp
 )

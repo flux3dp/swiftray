@@ -32,10 +32,7 @@ std::shared_ptr<OperationCmd> RotaryTestJob::getNextCmd() {
     return std::shared_ptr<OperationCmd>{nullptr};
   }
   auto idx = next_gcode_idx_++;
-  auto cmd = std::make_shared<GCodeCmd>();
-  cmd->setGCode(gcode_list_.at(idx) + "\n");
-  //cmd->setTarget(OperationCmd::Target::kMotionControl);
-  cmd->setMotionController(motion_controller_);
+  auto cmd = std::make_shared<GCodeCmd>(gcode_list_.at(idx) + "\n");
   return cmd;
 }
 

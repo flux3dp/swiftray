@@ -12,10 +12,10 @@ AboutWindow::AboutWindow(QWidget *parent) :
      BaseContainer() {
   ui->setupUi(this);
   initializeContainer();
-
+  QString app_version = QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
   QString ver_str{"<html><head/><body><p>"};
   ver_str.append(tr("Version ")); 
-  ver_str.append(QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD)); 
+  ver_str.append(app_version); 
   ver_str.append(QString{VERSION_SUFFIX});
   ver_str.append("</p></body></html>");
   qInfo() << "App version: " << ver_str;

@@ -45,9 +45,10 @@ public:
     };
     enum class BoardType {
       GRBL_2020,
+      BSL_2024,
       FLUX_2020,
       M2NANO_7,
-      RUIDA_2020
+      RUIDA_2020,
     };
   public:
     QString id;
@@ -67,11 +68,11 @@ public:
     bool is_high_speed_mode;//for lazervida
 
     MachineParam() :
-      name("New Machine"),
+      name("Default"),
       board_type(BoardType::GRBL_2020),
       origin(OriginType::RearLeft),
-      width(5),
-      height(0),
+      width(100),
+      height(100),
       travel_speed(100),
       rotary_axis('Y'),
       home_on_start(true),

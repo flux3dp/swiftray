@@ -4,16 +4,16 @@
 #include <QPainter>
 #include <QMutex>
 #include <QProgressDialog>
+#include <QImage>
+
 #include <layer.h>
 #include <shape/bitmap-shape.h>
 #include <shape/path-shape.h>
 #include <shape/group-shape.h>
 #include <toolpath_exporter/generators/base-generator.h>
 #include <document.h>
-#include <bitset>
 #include <constants.h>
-
-#include <QImage>
+#include "toolpath-utils.h"
 
 class ToolpathExporter : public QObject
 {
@@ -62,11 +62,12 @@ private:
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
-
-  std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> adjustPrefixSuffixZero(
-          const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt);
+  int calculatePWMPower(unsigned char grayscale);
   bool rasterBitmap(const QImage &layer_image, QRect bbox,
                     ScanDirectionMode direction_mode, qreal padding_mm);
+  bool rasterBitmapDepthMode(const QImage &layer_image, QRect bbox,
+                    ScanDirectionMode direction_mode, qreal padding_mm);
+  bool rasterLine(const QLineF& path, const std::vector<std::array<unsigned char, 32>>& data);
   bool rasterLine(const QLineF& path, const std::vector<std::bitset<32>>& data);
   bool rasterBitmapHighSpeed(const QImage &layer_image, QRect bbox,
                              ScanDirectionMode direction_mode, qreal padding_mm);

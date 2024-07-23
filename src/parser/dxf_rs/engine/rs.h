@@ -39,6 +39,14 @@
 #define RS_TOLERANCE2 1.0e-20
 #define RS_TOLERANCE_ANGLE 1.0e-8
 
+#ifdef QT6
+#define Q_SKIP_EMPTY_PARTS Qt::SkipEmptyParts
+#define Q_KEEP_EMPTY_PARTS Qt::KeepEmptyParts
+#else
+#define Q_SKIP_EMPTY_PARTS QString::SkipEmptyParts
+#define Q_KEEP_EMPTY_PARTS QString::KeepEmptyParts
+#endif
+
 /**
  * Class namespace for various enums along with some simple
  * wrapper methods for converting the enums to the Qt

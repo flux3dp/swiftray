@@ -11,7 +11,7 @@ using namespace Controls;
 Transform::Transform(Canvas *canvas) noexcept:
      CanvasControl(canvas),
      active_control_(Control::NONE),
-     scale_locked_(false),
+     scale_locked_(true),
      direction_locked_(false),
      scale_x_to_apply_(1),
      scale_y_to_apply_(1),

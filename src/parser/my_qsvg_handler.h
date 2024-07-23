@@ -1,3 +1,9 @@
+// This file is based on QT 5.15.3 qsvg_hander in QtSVG module.
+
+#ifdef QT6
+    #define MYQSVGHANDLER_H
+#endif
+
 #ifndef MYQSVGHANDLER_H
 #define MYQSVGHANDLER_H
 
@@ -59,6 +65,7 @@
 #include <private/qcssparser_p.h>
 #include "qsvggraphics_p.h"
 #include <private/qtsvgglobal_p.h>
+#include "my-svg-types.h"
 
 #include "layer.h"
 #include "document.h"
@@ -82,6 +89,8 @@ struct QSvgCssAttribute
 
 #endif
 
+#define FLUXSVG
+
 class MyQSvgHandler
 {
 public:
@@ -97,20 +106,18 @@ public:
     };
 
 public:
-    enum ReadType {
-        InSingleLayer,
-        ByLayers,
-        ByColors
-    };
-    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, ReadType read_type);
+#ifdef FLUXSVG
+    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type);
+#endif
     MyQSvgHandler(const QByteArray &data);
     MyQSvgHandler(QXmlStreamReader *const data);
     ~MyQSvgHandler();
-
     QIODevice *device() const;
     QSvgTinyDocument *document() const;
 
-    bool ok() const;
+    inline bool ok() const {
+        return document() != 0 && !xml->hasError();
+    }
 
     inline QString errorString() const { return xml->errorString(); }
     inline int lineNumber() const { return xml->lineNumber(); }
@@ -193,24 +200,13 @@ private:
      * we need to delete it.
      */
     const bool m_ownsReader;
-    struct NodeData {
-        QList<QString> node_names;
-        QString layer_name;
-        int type;
-        QTransform trans;
-        QColor color;
-        bool visible;
-        QPainterPath qpath;
-        QImage image;
-        QFont font;
-        QString text;
-    };
-    QList<NodeData> data_list_;
+
+#ifdef FLUXSVG
+    QList<MySVG::Node> data_list_;
     int read_type_;
     QList<LayerPtr> svg_layers_;
-    QMap<QString, QTransform> transform_map_;
-    void transformUse(QString node_name, QTransform transform);
-    LayerPtr findLayer(QString layer_name, QColor color);
+    QMap<QString, MySVG::BeamLayerConfig> layer_config_map_;
+#endif
 };
 
 Q_DECLARE_LOGGING_CATEGORY(lcSvgHandler)

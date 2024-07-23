@@ -12,6 +12,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
+#include "globals.h"
+#include "server/swiftray-server.h"
 
 
 MainApplication *mainApp = NULL;
@@ -20,26 +22,16 @@ MainApplication::MainApplication(int &argc,  char **argv) :
     QApplication(argc, argv)
 {
   mainApp = this;
-  QSettings settings("flux", "swiftray");
-  QVariant upload_code = settings.value("window/upload", 0);
-  is_upload_enable_ = upload_code.toBool();
-  QVariant newstart_code = settings.value("window/newstart");
-  is_first_time_ = false;
-  if(!newstart_code.toInt()) {
-    is_first_time_ = true;
-  }
-  settings.setValue("window/newstart", 1);
+  active_machine.setSerialPort(serial_port);
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   connect(this, &MainApplication::softwareUpdateQuit, this, &QApplication::quit, Qt::QueuedConnection);
 #endif
-
+  loadSettings();
   font_ = QFont(FONT_TYPE, FONT_SIZE, QFont::Bold);
   line_height_ = LINE_HEIGHT;
   x_ = y_ = r_ = w_ = h_ = 0;
   scale_locked_ = false;
-  QVariant reference_code = settings.value("window/reference", 0);
-  reference_origin_ = (JobOrigin)reference_code.toInt();
   gradient_ = Qt::Checked;
   thrsh_brightness_ = 128;
   job_origin_ = NW;
@@ -51,14 +43,28 @@ MainApplication::MainApplication(int &argc,  char **argv) :
   rotary_scale_ = 1;
   initialRotary();
 
+  swiftray_server_ = new SwiftrayServer(6611);
+  // NOTE: qApp: built-in macro of the QApplication
+  connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
+
+}
+
+void MainApplication::loadSettings() {
+  QSettings settings("flux", "swiftray");
+  QVariant upload_code = settings.value("window/upload", 0);
+  is_upload_enable_ = upload_code.toBool();
+  QVariant newstart_code = settings.value("window/newstart");
+  is_first_time_ = false;
+  if(!newstart_code.toInt()) {
+    is_first_time_ = true;
+  }
+  settings.setValue("window/newstart", 1);
+  QVariant reference_code = settings.value("window/reference", 0);
+  reference_origin_ = (JobOrigin)reference_code.toInt();
   QVariant quality_code = settings.value("canvas/quality", 0);
   canvas_quality_ = (CanvasQuality)quality_code.toInt();
   QVariant sort_code = settings.value("canvas/generating_rule", NestedSort);
   path_sort_ = (PathSort)sort_code.toInt();
-
-  // NOTE: qApp: built-in macro of the QApplication
-  connect(qApp, &QApplication::aboutToQuit, this, &MainApplication::cleanup);
-
 }
 
 void MainApplication::cleanup()
@@ -432,6 +438,7 @@ void MainApplication::initialPreset() {
   file_list.append("1.6W.json");
   file_list.append("5W.json");
   file_list.append("10W.json");
+  file_list.append("20W-fiber.json");
   for (int i = 0; i < file_list.size(); ++i) {
     QFile file(":/resources/parameters/"+file_list[i]);
     file.open(QFile::ReadOnly);
@@ -550,6 +557,13 @@ void MainApplication::initialMachine() {
     machine_settings->addMachine(machine);
     saveMachine();
     machine_index_ = 0;
+    settings.setValue("machines/index", machine_index_);
+    MachineSettings::MachineParam machine2 = MachineSettings::findPreset("Promark", "Promark");
+    machine2.name = "Promark";
+    machine2.is_high_speed_mode = false;
+    machine_settings->addMachine(machine2);
+    saveMachine();
+    machine_index_ = 1;
     settings.setValue("machines/index", machine_index_);
   } else {
     machine_settings->loadJson(obj);

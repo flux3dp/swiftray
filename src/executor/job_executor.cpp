@@ -173,7 +173,8 @@ void JobExecutor::exec() {
   }
 
   // 4. Send (execute) cmd
-  OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this);
+  // TODO:BSL FIX pending command thread safety
+  OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // Sleep (block) until next real-time status reported or cmd finished
     exec_timer_->stop();
@@ -262,6 +263,7 @@ void JobExecutor::complete() {
  * 
  */
 void JobExecutor::stopImpl() {
+  qInfo() << "JobExecutor stopImpl";
   if (!motion_controller_.isNull()) {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
@@ -277,6 +279,9 @@ void JobExecutor::stopImpl() {
   cmd_in_progress_.clear();
   pending_cmd_.reset();
   changeState(State::kStopped);
+  if (!motion_controller_.isNull() && motion_controller_->getState() == MotionControllerState::kSleep) {
+    motion_controller_->setState(MotionControllerState::kIdle);
+  }
 }
 
 /**

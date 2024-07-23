@@ -4,6 +4,7 @@
 #include <toolpath_exporter/generators/base-generator.h>
 #include <settings/machine-settings.h>
 #include <cmath>
+#include <QDebug>
 
 /*
 Basic GCode Generator for Grbl like machines.
@@ -47,6 +48,7 @@ public:
     }
     machine_height_ = machine.height;
     machine_width_ = machine.width;
+    qInfo() << "Machine width: " << machine_width_ << " height: " << machine_height_;
   }
 
   /**

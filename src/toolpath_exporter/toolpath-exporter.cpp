@@ -338,14 +338,22 @@ void ToolpathExporter::outputLayerPathGcode() {
 /**
  * @brief Export layer_bitmap_ for filled geometry and images
  */
+
+bool depthMode = false;
+
 void ToolpathExporter::outputLayerBitmapGcode() {
   if (bitmap_dirty_area_.width() == 0) return;
   // Get the image of entire layer
   QImage layer_image;
   if(with_image_) {
-    layer_image = layer_bitmap_.toImage()
-                      .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
-                      .convertToFormat(QImage::Format_Grayscale8);
+    if (!depthMode) {
+      layer_image = layer_bitmap_.toImage()
+                        .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
+                        .convertToFormat(QImage::Format_Grayscale8);
+    } else {
+      layer_image = layer_bitmap_.toImage()
+                        .convertToFormat(QImage::Format_Grayscale8);
+    }
   } else {
     layer_image = layer_bitmap_.toImage()
                       .convertToFormat(QImage::Format_Grayscale8);
@@ -385,88 +393,19 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 
   // Start raster
   if(is_high_speed_) {
-    rasterBitmapHighSpeed(layer_image, bbox,ScanDirectionMode::kBidirectionMode, padding_mm);
+    rasterBitmapHighSpeed(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
   }
   else {
-    rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+    if (!depthMode) {
+      rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+    } else {
+      rasterBitmapDepthMode(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+    }
   }
 
   gen_->useAbsolutePositioning();
 
   gen_->turnOffLaser();
-}
-
-/**
- * @brief Remove the suffix and prefix zeros
- *
- * @param src_bit_array
- * @return std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t>
- *         - the trimmed bit array
- *         - the bit idx of the trim start
- *         - the bit idx of the trim end
- */
-std::tuple<std::vector<std::bitset<32>>, uint32_t, uint32_t> ToolpathExporter::adjustPrefixSuffixZero(
-      const std::vector<std::bitset<32>>& src_bit_array, uint32_t padding_dot_cnt) {
-
-  enum class SearchStage {
-      kSearchForStartPos,
-      kSearchForEndPos,
-  };
-  SearchStage search_stage = SearchStage::kSearchForStartPos;
-  uint32_t trim_start_bit_idx = 0;
-  uint32_t trim_end_bit_idx = 0;
-  for (int i = 0; i < src_bit_array.size(); i++) {
-    if (src_bit_array[i].none()) {
-      continue;
-    }
-
-    if (search_stage == SearchStage::kSearchForStartPos) {
-      // Search for the first black dot
-      for (int j = 31; j >= 0; j--) { // search from most significant bit
-        if (src_bit_array[i][j]) {
-          trim_start_bit_idx = i*32 + (31-j);
-          search_stage = SearchStage::kSearchForEndPos;
-          break;
-        }
-      }
-    }
-    if (search_stage == SearchStage::kSearchForEndPos) {
-      // Search for the last black dot
-      for (int j = 0; j < 32; j++) { // search from least significant bit
-        if (src_bit_array[i][j]) {
-          trim_end_bit_idx = i*32 + (31-j);
-          break;
-        }
-      }
-    }
-
-  } // end of search for loop
-
-  // Calculate padding (with restriction of path boundary)
-  trim_start_bit_idx = trim_start_bit_idx > padding_dot_cnt ? (trim_start_bit_idx - padding_dot_cnt) : 0;
-  trim_end_bit_idx = qMin(trim_end_bit_idx + padding_dot_cnt,
-                          uint32_t(src_bit_array.size() * 32u - 1)); // index max = size - 1
-
-  // Trim zeros but also keep padding
-  std::vector<std::bitset<32>> bit_array{
-      src_bit_array.begin() + (trim_start_bit_idx / 32),
-      src_bit_array.begin() + (trim_end_bit_idx / 32) + 1 // (+1 because the last iterator is not included)
-  };
-  // Align the trim first pos with the start of bit array
-  int bit_shift = trim_start_bit_idx % 32;
-  for (auto i = 0; i < bit_array.size(); i++) {
-    if (i+1 == bit_array.size()) {
-      bit_array[i] = (bit_array[i] << bit_shift);
-    } else {
-      bit_array[i] = (bit_array[i] << bit_shift) | (bit_array[i+1] >> (32-bit_shift)) ;
-    }
-  }
-  // Discard all trailing zero bits (not needed, reduce data transmission)
-  while (bit_array.back().none()) {
-    bit_array.pop_back();
-  }
-
-  return std::make_tuple(bit_array, trim_start_bit_idx, trim_end_bit_idx);
 }
 
 /**
@@ -607,6 +546,153 @@ bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::bit
              is_emitting ? current_layer_->xBacklash() : 0);
       is_emitting = !is_emitting;
     }
+    idx++;
+  }
+
+  return true;
+}
+
+bool ToolpathExporter::rasterBitmapDepthMode(const QImage &layer_image,
+    QRect bbox, 
+    ScanDirectionMode direction_mode, 
+    qreal padding_mm) {
+
+  const int white_pixel = 255;
+  bool reverse_raster_dir = false;
+
+  // Prepare raster line paths
+  QList<QLine> raster_lines;
+  for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
+    raster_lines.push_back(QLine{bbox.left(), y,
+                                 bbox.left() + bbox.width(), y});
+  }
+  qInfo() << "bbox: " << bbox;
+  qInfo() << "# of raster line: " << raster_lines.size();
+
+  // Iterate through each raster line
+  for (const auto &raster_line: raster_lines) {
+    if (raster_line.isNull()) {
+      continue;
+    }
+    
+    std::vector<std::array<unsigned char, 32>> grayscale_data_list;
+    
+    // Determine start and end points based on raster direction
+    const QPoint initial_pos = reverse_raster_dir ? raster_line.p2() : raster_line.p1();
+    const QPoint end_pos = reverse_raster_dir ? raster_line.p1() : raster_line.p2();
+    const QLineF path{initial_pos, end_pos};
+    
+    // Calculate step size for scanning
+    const qreal t_step = 1 / path.length();
+    qreal current_t_sample = t_step / 2;
+    QPointF current_pos_sample = path.pointAt(current_t_sample);
+
+    // Scan an entire line of bitmap
+    std::array<unsigned char, 32> grayscale_array;
+    uint32_t array_idx = 0;
+    bool blank_line = true;
+
+    while (1) {
+      // Get grayscale value of current pixel
+      const uchar *data_ptr = layer_image.constScanLine(current_pos_sample.y());
+      unsigned char dot_grayscale = data_ptr[int(current_pos_sample.x())];
+      
+      // Update blank_line flag if a non-white pixel is found
+      if (dot_grayscale < white_pixel && blank_line) {
+        blank_line = false;
+      }
+      
+      // Store grayscale value
+      grayscale_array[array_idx] = dot_grayscale;
+
+      // If grayscale_array is full, add it to grayscale_data_list and reset
+      if (array_idx == 31) {
+        grayscale_data_list.push_back(grayscale_array);
+        array_idx = 0;
+      } else {
+        array_idx++;
+      }
+
+      // Move to next sample point
+      current_t_sample += t_step;
+      if (current_t_sample >= 0.99999) {
+        if (array_idx != 0) { // Append the remaining partial array
+          grayscale_data_list.push_back(grayscale_array);
+        }
+        break;
+      }
+      current_pos_sample = path.pointAt(current_t_sample);
+    }
+
+    // Skip processing if the line is entirely blank
+    if (blank_line) {
+      continue;
+    }
+
+    // Trim unnecessary white space and adjust for padding
+    auto [trimmed_grayscale_array, first_pos_idx, last_pos_idx] =
+    adjustPrefixSuffixZero(grayscale_data_list, padding_mm * dpmm_);
+    
+    // Calculate the actual line segment to be rasterized
+    QLineF dirty_line_segment {
+            path.pointAt(first_pos_idx * t_step),
+            path.pointAt(qMin((last_pos_idx + 1) * t_step, 1.0))
+    };
+
+    // Rasterize the line
+    rasterLine(dirty_line_segment, trimmed_grayscale_array);
+
+    // Switch scan direction if bidirectional mode is enabled
+    if (direction_mode == ScanDirectionMode::kBidirectionMode) {
+      reverse_raster_dir = !reverse_raster_dir;
+    }
+  }
+
+  return true;
+}
+
+int ToolpathExporter::calculatePWMPower(unsigned char grayscale) {
+  // Implement your PWM calculation logic here
+  // For example, you might want to invert the grayscale value and scale it to your PWM range
+  return static_cast<int>((255 - grayscale) * current_layer_->power() / 255);
+}
+
+bool ToolpathExporter::rasterLine(const QLineF& path, const std::vector<std::array<unsigned char, 32>>& data) {
+  const qreal t_step = 1 / path.length();
+  
+  // Move to the start of the line
+  moveTo(path.p1() / dpmm_,
+         travel_speed_,
+         0, 0);
+
+  int idx = 0;
+  while (true) {
+    // Check if we've reached the end of the line
+    if (t_step * idx >= 1) {
+      moveTo(path.p2() / dpmm_,
+             current_layer_->speed(),
+             0, 0);
+      break;
+    }
+    
+    // Check if we've processed all data
+    if (int(idx/32) >= data.size()) {
+      moveTo(path.p2() / dpmm_,
+             current_layer_->speed(),
+             0, 0);
+      break;
+    }
+
+    // Get grayscale value and calculate PWM power
+    unsigned char grayscale = data[int(idx/32)][idx % 32];
+    int pwm_power = calculatePWMPower(grayscale);
+
+    // Move to the point with calculated PWM power
+    moveTo(path.pointAt(t_step * idx) / dpmm_,
+           current_layer_->speed(),
+           pwm_power,
+           current_layer_->xBacklash());
+
     idx++;
   }
 

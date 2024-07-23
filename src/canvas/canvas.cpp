@@ -25,7 +25,17 @@
 #include "parser/dxf_reader.h"
 
 #include <private/qsvgtinydocument_p.h>
+#include <parser/mysvg/mysvg-types.h>
+
+#ifdef QT6
+
+#include "parser/my_qsvg_handler_qt6.h"
+
+#else
+
 #include "parser/my_qsvg_handler.h"
+
+#endif
 
 Canvas::Canvas(QQuickItem *parent)
      : QQuickPaintedItem(parent),
@@ -101,22 +111,27 @@ Canvas::~Canvas() {
   mem_thread_->wait(1300);
 }
 
-void Canvas::loadSVG(QByteArray &svg_data) {
-  // TODO(Add undo events for loading svg)
+void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
   QElapsedTimer t;
   t.start();
+  // convert svg_data to QIODevice
+  QBuffer io(&svg_data);
+  io.open(QIODevice::ReadOnly);
   QList<LayerPtr> svg_layers;
-  bool success = svgpp_parser_.parse(&document(), svg_data, &svg_layers);
-  setAntialiasing(true);
-
-  if (success) {
+  MyQSvgHandler handler(&io, &document(), &svg_layers, MySVG::ReadType::BVG);
+  if (handler.ok()) {
+    qInfo() << "Handler OK!";
+    handler.document();
+    handler.animationDuration();
     QList<ShapePtr> all_shapes;
     for (auto &layer : svg_layers) {
+      qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();
       all_shapes.append(layer->children());
     }
+    for (auto &shape : all_shapes) {
+      // qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();
+    }
     document().setSelections(all_shapes);
-    double scale = 254 / 72.0;
-    transformControl().applyScale(QPointF(0,0), scale, scale, false);
     if (all_shapes.size() == 1) {
       document().setActiveLayer(all_shapes.first()->layer()->name());
       Q_EMIT layerChanged();
@@ -125,7 +140,30 @@ void Canvas::loadSVG(QByteArray &svg_data) {
     forceActiveFocus();
     emitAllChanges();
     update();
+  } else {
+    qInfo() << "Handler Not OK!" << handler.errorString();
+    delete handler.document();
   }
+  // TODO(Add undo events for loading svg)
+  // QList<LayerPtr> svg_layers;
+  // bool success = svgpp_parser_.parse(&document(), svg_data, &svg_layers);
+  // setAntialiasing(true);
+
+  // if (success) {
+  //   QList<ShapePtr> all_shapes;
+  //   for (auto &layer : svg_layers) {
+  //     all_shapes.append(layer->children());
+  //   }
+  //   document().setSelections(all_shapes);
+  //   if (all_shapes.size() == 1) {
+  //     document().setActiveLayer(all_shapes.first()->layer()->name());
+  //     Q_EMIT layerChanged();
+  //   }
+
+  //   forceActiveFocus();
+  //   emitAllChanges();
+  //   update();
+  // }
   qInfo() << "[Parser] Took" << t.elapsed();
 }
 
@@ -137,7 +175,7 @@ void Canvas::loadSVG(QString file_name) {
 
   // QSvgTinyDocument *doc = 0;
   QList<LayerPtr> svg_layers;
-  MyQSvgHandler::ReadType read_type;
+  MySVG::ReadType read_type;
   QMessageBox msgBox;
   msgBox.setText(tr("Select layering style:"));
   QAbstractButton *byLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Layer"), QMessageBox::AcceptRole));
@@ -146,11 +184,11 @@ void Canvas::loadSVG(QString file_name) {
   QAbstractButton *singleLayerButton = dynamic_cast<QAbstractButton*>(msgBox.addButton(tr("Single Layer"), QMessageBox::RejectRole));
   int ret = msgBox.exec();
   if (msgBox.clickedButton() == byColorButton) {
-    read_type = MyQSvgHandler::ByColors;
+    read_type = MySVG::ByColors;
   } else if (msgBox.clickedButton() == singleLayerButton) {
-    read_type = MyQSvgHandler::InSingleLayer;
+    read_type = MySVG::InSingleLayer;
   } else {
-    read_type = MyQSvgHandler::ByLayers;
+    read_type = MySVG::ByLayers;
   }
   MyQSvgHandler handler(&file, &document(), &svg_layers, read_type);
   if (handler.ok()) {
@@ -158,6 +196,7 @@ void Canvas::loadSVG(QString file_name) {
     handler.animationDuration();
     QList<ShapePtr> all_shapes;
     for (auto &layer : svg_layers) {
+      qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();
       all_shapes.append(layer->children());
     }
     document().setSelections(all_shapes);
@@ -885,7 +924,7 @@ void Canvas::addEmptyLayer() {
   Q_EMIT layerChanged();
 }
 
-void Canvas::duplicateLayer(LayerPtr layer) {
+void Canvas::duplicateLayer(const LayerPtr layer) {
   // NOTE: Unselect current shapes first to prevent selection box from malfunctioning
   document().execute(
           Commands::Select(&document(), {})
@@ -915,7 +954,7 @@ void Canvas::resize() {
   document().setScroll(proper_translate);
 }
 
-void Canvas::importImage(QImage &image) {
+void Canvas::importImage(QImage image) {
 #ifdef Q_OS_IOS
   if (image.width() > 500) {
     float scale = 500.0 / image.width();
@@ -1117,12 +1156,12 @@ void Canvas::cropImage() {
   delete dialog;
 }
 
-void Canvas::setActiveLayer(LayerPtr &layer) {
+void Canvas::setActiveLayer(LayerPtr layer) {
   document().setActiveLayer(layer);
   Q_EMIT layerChanged();
 }
 
-void Canvas::setLayerOrder(QList<LayerPtr> &new_order) {
+void Canvas::setLayerOrder(QList<LayerPtr> new_order) {
   document().execute(
        Commands::SetRef<Document, QList<LayerPtr>, &Document::layers, &Document::setLayersOrder>(
             doc_.get(), new_order

@@ -4,7 +4,7 @@
 #include <QPointer>
 
 class Executor;
-
+class MotionController;
 class OperationCmd
 {
 public:
@@ -18,7 +18,7 @@ public:
   explicit OperationCmd();
   ExecStatus getStatus();
 
-  virtual ExecStatus execute(QPointer<Executor> executor) = 0;
+  virtual ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) = 0;
   void succeed();
   void fail();
 
