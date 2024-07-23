@@ -25,7 +25,7 @@
 #include "parser/dxf_reader.h"
 
 #include <private/qsvgtinydocument_p.h>
-#include "parser/my-svg-types.h"
+#include <parser/mysvg/mysvg-types.h>
 
 #ifdef QT6
 
