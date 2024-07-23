@@ -470,9 +470,11 @@ add_subdirectory(src/server)
 add_subdirectory(third_party/clipper)
 add_subdirectory(third_party/QxPotrace)
 add_subdirectory(third_party/libdxfrw)
+add_subdirectory(third_party/liblcs)
 target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
 target_link_libraries(${PROJECT_NAME} libdxfrw)
+target_link_libraries(${PROJECT_NAME} liblcs)
 
 # Sentry
 if (DEFINED ENABLE_SENTRY)
