@@ -11,7 +11,6 @@ typedef void *HINSTANCE;
 #else
 #include <Windows.h>
 #endif
-#include <QDebug>
 
 volatile HINSTANCE gLibLCS = NULL;
 
@@ -536,23 +535,23 @@ void LCS2close(void) {
 
 bool connect_bsl_board() {
     // Note: dylib must be placed in pwd!
-    qInfo() << "Loading BSL library";
+    printf("Loading BSL library");
     LCS2open();
-    qInfo() << "LCSOpen OK";
+    printf("LCSOpen OK");
     if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-        qWarning() << "Failed to initialize LCS library.";
+        printf("Failed to initialize LCS library.");
         return false;
     }
 
-    qInfo() << "LCS Init OK";
+    printf("LCS Init OK");
 
     if (lcs_search_cards() == 0) {
-        qWarning() << "No laser cards found.";
+        printf("No laser cards found.");
         return false;
     }
 
     if (lcs_select_card(0) != LCS_RES_NO_ERROR) {
-        qWarning() << "Failed to select laser card.";
+        printf("Failed to select laser card.");
         return false;
     }
     return true;

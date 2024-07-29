@@ -22,6 +22,12 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::disconnected,
           this, &MachineSetupExecutor::stop);
+  connect(motion_controller_, &MotionController::cmdFinished,
+        this, [=](QPointer<Executor> executor){
+    if (executor.data() == this) {
+      handleCmdFinish(0);
+    }
+  });
 }
 
 void MachineSetupExecutor::start() {

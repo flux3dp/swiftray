@@ -70,10 +70,10 @@ std::tuple<qreal, qreal, qreal> MotionController::getPos() const {
 
 void MotionController::enqueueCmdExecutor(QPointer<Executor> executor) {
   cmd_executor_queue_.push_back(executor);
-  qInfo() << "enqueueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
+  // qInfo() << "enqueueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
 }
 
 void MotionController::dequeueCmdExecutor() {
   cmd_executor_queue_.pop_front();
-  qInfo() << "dequeueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
+  // qInfo() << "dequeueCmdExecutor(), cnt in queue: " <<cmd_executor_queue_.size();
 }

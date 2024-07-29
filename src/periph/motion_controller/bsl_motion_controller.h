@@ -6,11 +6,12 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <mutex>
+#include <thread>
 
 class BSLMotionController : public MotionController
 {
 public:
-  explicit BSLMotionController(QObject *parent = nullptr);
+  BSLMotionController(QObject *parent = nullptr);
   void attachPortBSL();
   CmdSendResult stop() override;
   CmdSendResult pause();
@@ -21,9 +22,13 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
-  void handleGcode(QString cmd_packet);
-  std::mutex port_tx_mutex_;
+  QStringList pending_cmds_;
+  void handleGcode(const QString &cmd_packet);
+  std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false; 
+  bool is_threading = false;
+  bool should_flush_ = false;
+  int buffer_size_ = 0;
   enum class AlarmCode {
     kNone = 0,
     kMin = 1,
@@ -32,7 +37,10 @@ private:
     kAbortCycle = 3,
     kMax = 10,
   };
-
+  std::thread command_runner_thread_;
+  void startCommandRunner();
+  void commandRunner();
+  void dequeueCmd(int count);
   QString getAlarmMsg(AlarmCode code);
 };
 

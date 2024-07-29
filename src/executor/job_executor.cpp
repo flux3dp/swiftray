@@ -1,5 +1,6 @@
 #include "job_executor.h"
 
+#include <QThread>
 #include <QDebug>
 #include <QMessageBox>
 
@@ -16,7 +17,7 @@ void JobExecutor::attachMotionController(
     QPointer<MotionController> motion_controller) {
   // In case running, stop first
   stop();
-  motion_controller_ = motion_controller;
+  this->motion_controller_ = motion_controller;
 }
 
 MachineJob const *JobExecutor::getActiveJob() const {
@@ -30,7 +31,7 @@ MachineJob const *JobExecutor::getActiveJob() const {
  */
 void JobExecutor::start() {
   std::scoped_lock<std::mutex> lk(exec_mutex_);
-
+  qInfo() << "JobExecutor::start";
   // Reject if already runnign a job
   if (state_ != State::kIdle &&
       state_ != State::kCompleted &&
@@ -71,6 +72,12 @@ void JobExecutor::start() {
       msgbox->show();
     }
     stop();
+  });
+  connect(motion_controller_, &MotionController::cmdFinished,
+        this, [=](QPointer<Executor> executor){
+    if (executor.data() == this) {
+      handleCmdFinish(0);
+    }
   });
   connect(motion_controller_, &MotionController::resetDetected,
         this, &JobExecutor::stop);
@@ -164,6 +171,12 @@ void JobExecutor::exec() {
   }
 
   // 3. Prepare the next cmd
+  if (cmd_in_progress_.length() > 90000) {
+    // Too many commands in progress
+    qInfo() << "Buffer is full, waiting";
+    QThread::sleep(2);
+    return;
+  }
   if (!pending_cmd_) {
     if (active_job_->end()) {
       exec_timer_->stop();

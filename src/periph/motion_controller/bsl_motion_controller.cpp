@@ -2,45 +2,91 @@
 
 #include <string>
 #include <memory>
+#include <thread>
 #include <QDebug>
 #include <QThread>
 #include "liblcs/lcsApi.h"
 #include "liblcs/lcsExpr.h"
 #include <QtCore/qcoreapplication.h>
 
+#define MAX_BUFFER_LIST_SIZE 10000
+
 BSLMotionController::BSLMotionController(QObject *parent)
   : MotionController{parent}
 {
   qInfo() << "BSLMotionController created";
+  this->state_ = MotionControllerState::kIdle;
+  this->should_flush_ = false;
 }
 
-void BSLMotionController::handleGcode(QString gcode) {
-    std::scoped_lock<std::mutex> lk(port_tx_mutex_);
+void BSLMotionController::startCommandRunner() {
+  this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunner, this);
+}
+
+void BSLMotionController::commandRunner() {
+  qInfo() << "BSLMotionController::commandRunner() started";
+  while (true) {
+    if (this->state_ == MotionControllerState::kSleep) {
+      qInfo() << "MotionController is in sleep state, ignore commandRunner";
+      QThread::msleep(100);
+      continue;
+    }
+    cmd_list_mutex_.lock();
+    if (this->pending_cmds_.empty()) {
+      qInfo() << "No pending commands, sleep for a while";
+      cmd_list_mutex_.unlock();
+      QThread::msleep(100);
+      if (this->buffer_size_ > 0) {
+        should_flush_ = true;
+      }
+      continue;
+    }
+    QString cmd = this->pending_cmds_.front();
+    this->pending_cmds_.pop_front();
+    cmd_list_mutex_.unlock();
+    this->handleGcode(cmd);
+  }
+}
+
+void BSLMotionController::dequeueCmd(int count) {
+  cmd_list_mutex_.lock();
+  qInfo() << "Begin dequeueCmd with count" << count;
+  for (int i = 0; i < count; i++) {
+    if (!cmd_executor_queue_.isEmpty()) {
+      Q_EMIT cmdFinished(cmd_executor_queue_.at(0));
+      dequeueCmdExecutor();
+    }
+  }
+  qInfo() << "End dequeueCmd with count" << count;
+  cmd_list_mutex_.unlock();
+}
+
+void BSLMotionController::handleGcode(const QString &gcode) {
+    static bool laser_enabled = false;
+    static double current_x = 0.0, current_y = 0.0, current_f = 6000.0; // Default speed
+    static int current_s = 0; // Default power
+    static bool is_absolute_positioning = true;
+    static int list_no = 1;
+    static bool first_list = true;
+
     if (this->state_ == MotionControllerState::kSleep) {
         qInfo() << "MotionController is in sleep state, ignore Gcode";
         return;
     }
-    static bool laser_enabled = false;
-    static double currentX = 0.0, currentY = 0.0;
-    static double currentF = 6000.0; // Default speed
-    static int currentS = 0; // Default power
-    static bool absolutePositioning = true;
-    static int listNo = 1;
-    static int listBufferSize = 0;
-    // qInfo() << "Handle Gcode" << gcode;
+    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "?\n") {
+        dequeueCmd(1);
+        return;
+    }
 
-    // Improved regex for G-code parsing
     QRegularExpression re("([GMXYFS])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
-    bool hasMove = false;
-    bool shouldSwapList = false;
-    bool shouldEndLaser = false;
-    double x = currentX, y = currentY;
-    if (!absolutePositioning) {
-        x = 0;
-        y = 0;
-    }
+    bool is_move_command = false;
+    bool should_swap = false;
+    bool should_end = false;
+    double x = is_absolute_positioning ? current_x : 0;
+    double y = is_absolute_positioning ? current_y : 0;
+
     QString command;
 
     while (i.hasNext()) {
@@ -53,43 +99,40 @@ void BSLMotionController::handleGcode(QString gcode) {
             command = type + value;
         } else if (type == "X") {
             x = value.toDouble();
-            hasMove = true;
+            is_move_command = true;
         } else if (type == "Y") {
             y = value.toDouble();
-            hasMove = true;
+            is_move_command = true;
         } else if (type == "F") {
-            currentF = value.toDouble();
-            lcs_set_mark_speed_ctrl(currentF / 60.0); // Convert mm/min to mm/s
-            lcs_set_jump_speed_ctrl(currentF / 60.0);
+            current_f = value.toDouble();
+            lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
+            lcs_set_jump_speed_ctrl(current_f / 60.0);
         } else if (type == "S") {
-            currentS = value.toInt();
-            if (currentS > 0) {
+            current_s = value.toInt();
+            if (current_s > 0) {
               laser_enabled = true;
-              lcs_set_laser_power(currentS / 10); // Assuming S1000 is 100% power
+              lcs_set_laser_power(current_s / 10); // Assuming S1000 is 100% power
             } else {
               laser_enabled = false;
             }
         }
     }
+
     if (command == "G90") {
-        absolutePositioning = true;
+        is_absolute_positioning = true;
     } else if (command == "G91") {
-        absolutePositioning = false;
+        is_absolute_positioning = false;
     } else if (command == "M3" || command == "M4") {
-        qInfo() << "Begin Laser Control";
+        // Begin Laser Control
+        qInfo() << "[Laser Session Started]";
         if (is_running_laser_) {
-            qWarning() << "Laser already started";
+            qWarning("Laser already started");
             return;
         }
         is_running_laser_ = true;
         laser_enabled = false;
-        // Begin laser control
-        // Set Laser mode
-        // Disable laser delays
-        // lcs_set_delay_mode(true, 0, 0, 50);
-        // Enable Laser
-        // Set power
-        listNo = 1;
+        list_no = 1;
+        first_list = true;
         lcs_set_jump_speed_ctrl(3000);
         lcs_set_mark_speed_ctrl(1000);
         lcs_set_laser_delays(-100, 100);
@@ -99,49 +142,64 @@ void BSLMotionController::handleGcode(QString gcode) {
         lcs_set_laser_mode(LCS_FIBER, false);
         lcs_enable_laser();
     } else if (command == "M2") {
-        qInfo() << "End Laser Control";
-        shouldSwapList = true;
-        shouldEndLaser = true;
+        qInfo("Ending Laser Control");
+        should_swap = true;
+        should_end = true;
     } 
 
-    if (listBufferSize > 500) {
-        listBufferSize = 0;
-        shouldSwapList = true;
+    if (!is_running_laser_) {
+      dequeueCmd(1);
+      return;
+    }
+
+    if (this->buffer_size_ >= MAX_BUFFER_LIST_SIZE) {
+        should_swap = true;
     } else {
-        listBufferSize++;
+        this->buffer_size_++;
     }
 
-    if (shouldSwapList) {
-      qInfo("Setting end of list %d", listNo);
-      lcs_set_end_of_list();
-      // sleep 2ms to ensure the list is entirely loaded!
-      QThread::msleep(4);
-      qInfo("Executing list %d", listNo);
-      lcs_execute_list(listNo);
-      listNo = listNo == 1 ? 2 : 1;
-      qInfo("Waiting for list to finish %d", listNo);
-      LCS2Error ret = lcs_load_list(listNo, 0);
-      while (ret != LCS_RES_NO_ERROR) {
-        ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", listNo) : qInfo("List Status %d", ret);
-        ret = lcs_load_list(listNo, 0);
-        if (ret == LCS_GENERAL_AREADY_OPENED) {
-          qInfo("Break because already opened");
-          break;
+    if (should_swap) {
+      should_flush_ = should_swap = false;
+      qInfo("Closing list %d @ size %d", list_no, this->buffer_size_);
+      if (first_list) {
+        lcs_set_end_of_list();
+        lcs_auto_change();
+        lcs_execute_list(list_no);
+        first_list = false;
+        list_no = list_no == 1 ? 2 : 1;
+        qInfo("Waiting list #%d to be finished", list_no);
+        LCS2Error ret = lcs_load_list(list_no, 0);
+        while (ret != LCS_RES_NO_ERROR) {
+          ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", list_no) : qInfo("List Status 0x%x", ret);
+          ret = lcs_load_list(list_no, 0);
+          QThread::msleep(100);
         }
-        QCoreApplication::processEvents();
+      } else {
+        lcs_set_end_of_list();
+        lcs_auto_change();
+        list_no = list_no == 1 ? 2 : 1;
+        qInfo("Waiting list #%d to be finished", list_no);
+        LCS2Error ret = lcs_load_list(list_no, 0);
+        while (ret != LCS_RES_NO_ERROR) {
+          ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", list_no) : qInfo("List Status 0x%x", ret);
+          ret = lcs_load_list(list_no, 0);
+          QThread::msleep(100);
+        }
+        qInfo("Started new list %d", list_no);
       }
-      qInfo("Waiting done");
-      lcs_set_start_list(listNo);
-      qInfo("Started new list %d", listNo);
+      dequeueCmd(this->buffer_size_);
+      this->buffer_size_ = 0;
+      QThread::msleep(2);
     }
 
-    if (shouldEndLaser) {
+    if (should_end) {
+      qInfo("Finalizing Laser Session with remaining buffer %d", this->buffer_size_);
       lcs_set_end_of_list();
-      lcs_execute_list(listNo);
-      listNo = listNo == 1 ? 2 : 1;
-      while (lcs_load_list(listNo, 0) != LCS_RES_NO_ERROR);
+      lcs_auto_change();
+      dequeueCmd(this->buffer_size_);
+      list_no = list_no == 1 ? 2 : 1;
+      while (lcs_load_list(list_no, 0) != LCS_RES_NO_ERROR);
       BoardRunStatus Status;
-
       do {
           uint32_t Pos;
           LCS2Error ret = lcs_get_status((uint32_t *)&Status, &Pos);
@@ -149,42 +207,38 @@ void BSLMotionController::handleGcode(QString gcode) {
           if (ret != LCS_RES_NO_ERROR)
               break;
       } while (!Status.bCacheReady);
-      qInfo() << "End Laser";
+      qInfo("[Laser Session Closed]");
       is_running_laser_ = false;
       laser_enabled = false;
-      shouldEndLaser = false;
+      should_end = false;
       lcs_disable_laser();
       lcs_set_laser_control(false);
     }
-    if (command.startsWith("G") || hasMove) {
-        if (hasMove) {
-            double targetX, targetY;
-            if (absolutePositioning) {
-                targetX = x;
-                targetY = y;
-            } else {
-                targetX = currentX + x;
-                targetY = currentY + y;
-            }
 
-            if (laser_enabled && (command == "G1" || command.isEmpty())) {
-                // qInfo() << "Mark X" << targetX << "Y" << targetY << "S" << currentS << "F" << currentF;
-                // If targetX and targetY is near currentX and currentY, jump and mark, if too far, engrave multiple points
-                if ((pow(targetX-currentX, 2) + pow(targetY-currentY, 2)) > 0.1) {
-                    // qInfo() << "Engrave X" << targetX << "Y" << targetY;
-                    lcs_mark_abs(-(targetY - 55), targetX - 55);
-                } else {
-                    // qInfo() << "Jump X" << targetX << "Y" << targetY;
-                    lcs_jump_abs(-(targetY - 55), targetX - 55);
-                    lcs_laser_on_list(100);
-                }
-            } else {
-                // qInfo() << "Jump X" << targetX << "Y" << targetY;
-                lcs_jump_abs(-(targetY - 55), targetX - 55);
-            }
-            currentX = targetX;
-            currentY = targetY;
+    // Process move command
+    if (is_move_command) {
+        double target_x, target_y;
+        if (is_absolute_positioning) {
+            target_x = x;
+            target_y = y;
+        } else {
+            target_x = current_x + x;
+            target_y = current_y + y;
         }
+
+        if (laser_enabled && (command == "G1" || command.isEmpty())) {
+            // If target_x and target_y is near current_x and current_y, jump and mark, if too far, engrave multiple points
+            if ((pow(target_x - current_x, 2) + pow(target_y - current_y, 2)) > 0.1) {
+                lcs_mark_abs(-(target_y - 55), target_x - 55);
+            } else {
+                lcs_jump_abs(-(target_y - 55), target_x - 55);
+                lcs_laser_on_list(100);
+            }
+        } else {
+            lcs_jump_abs(-(target_y - 55), target_x - 55);
+        }
+        current_x = target_x;
+        current_y = target_y;
     }
 }
 
@@ -197,8 +251,15 @@ void BSLMotionController::handleGcode(QString gcode) {
  * @return false if port is busy or buffer is full
  */
 MotionController::CmdSendResult BSLMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
-  this->handleGcode(cmd_packet);
-  return CmdSendResult::kFail;
+  cmd_list_mutex_.lock();
+  this->pending_cmds_.push_back(cmd_packet);
+  enqueueCmdExecutor(executor);
+  cmd_list_mutex_.unlock();
+  if (!this->is_threading) {
+    this->is_threading = true;
+    startCommandRunner();
+  }
+  return CmdSendResult::kOk;
 }
 
 /**
@@ -230,6 +291,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   QThread::sleep(2);
   Q_EMIT MotionController::resetDetected();
   is_running_laser_ = false;
+  this->pending_cmds_.clear();
   return CmdSendResult::kOk;
 }
 

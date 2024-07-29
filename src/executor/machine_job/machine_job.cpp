@@ -51,7 +51,7 @@ QList<Timestamp> MachineJob::calcRequiredTime(const QStringList &gcode_list,
     if (canceled) {
       throw "Canceled";
     }
-    if (current_line % 100 == 0 || current_line == (gcode_list.size() - 1)) {
+    if (current_line % 1000 == 0 || current_line == (gcode_list.size() - 1)) {
       if (!progress_dialog.isNull()) {
         progress_dialog->setValue(current_line);
       }
