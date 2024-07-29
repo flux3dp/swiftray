@@ -25,7 +25,8 @@ public:
   void serializeDocument(Document &doc) {
     out << QString("NINJAV1.3");
     out << QSize(doc.width(), doc.height());
-    out << doc.layers().size();
+    int layer_size = doc.layers().size();
+    out << layer_size;
     for (auto &layer : doc.layers()) {
       serializeLayer(layer);
     }
@@ -74,7 +75,7 @@ public:
 
     QJsonObject doc_settings_obj;
     in >> doc_settings_obj;
-    qInfo() << "Doc settings: " << doc_settings_obj;
+    qInfo() << "Doc settings: " << QJsonDocument(doc_settings_obj).toJson(QJsonDocument::Compact);
     if ( doc_settings_obj.contains("machine_model") && doc_settings_obj.value("machine_model").isString() ) {
       doc->settings().machine_model = doc_settings_obj.value("machine_model").toString();
     }
@@ -114,7 +115,8 @@ public:
     out << layer->speed_;
     out << layer->x_backlash_;
 
-    out << layer->children().size();
+    int children_size = layer->children().size();
+    out << children_size;
     for (auto &shape: layer->children()) {
       // TODO (Use string instead of enum int for future compatibility)
       // TODO (Add operator for shape and datastream)
@@ -247,7 +249,8 @@ public:
 
   void serializeGroupShape(GroupShape *shape) {
     serializeShapeProp(shape);
-    out << shape->children_.size();
+    int group_size = shape->children_.size();
+    out << group_size;
     for (auto &shape: shape->children_) {
       serializeShape(shape);
     }
