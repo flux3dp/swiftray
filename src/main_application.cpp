@@ -433,7 +433,7 @@ void MainApplication::updateReferenceStartWithHome(bool find_home) {
 //about preset
 void MainApplication::initialPreset() {
   PresetSettings* preset_settings = &PresetSettings::getInstance();
-  QList<PresetSettings::Preset> origin_preset;
+  QList<PresetSettings::Preset> origin_presets;
   QList<QString> file_list;
   file_list.append("1.6W.json");
   file_list.append("5W.json");
@@ -445,17 +445,17 @@ void MainApplication::initialPreset() {
     // TODO (Is it possible to remove QJsonDocument and use QJsonObject only?)
     auto file_json = QJsonDocument::fromJson(file.readAll()).object();
     auto preset = PresetSettings::Preset::fromJson(file_json);
-    origin_preset << preset;
+    origin_presets << preset;
     if (preset.name.indexOf("10W") > -1) {
       preset_index_ = i;
     }
   }
-  preset_settings->setOriginPresets(origin_preset);
+  preset_settings->setOriginPresets(origin_presets);
   
   QSettings settings("flux", "swiftray");
   QJsonObject obj = settings.value("preset/user").toJsonObject();
   if (obj["data"].isNull()) {
-    preset_settings->setPresets(origin_preset);
+    preset_settings->setPresets(origin_presets);
     savePreset();
     settings.setValue("preset/index", preset_index_);
   } else {
