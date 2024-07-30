@@ -221,9 +221,7 @@ private:
   RotarySetup *rotary_setup_;
   QSharedPointer<ConsoleDialog> console_dialog_;
 
-#ifndef Q_OS_IOS
-#endif
-
+  void connectMachine(QString port_name);
   void newFile();
   void saveFile();
   bool saveAsFile();
