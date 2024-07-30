@@ -8,8 +8,6 @@
 #include <QFontComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QSerialPort>
-#include <QSerialPortInfo>
 #include <QToolButton>
 #include <QCheckBox>
 #include <QMessageBox>
@@ -34,7 +32,6 @@
 #include "widgets/components/canvas-widget.h"
 #include <executor/machine_job/gcode_job.h>
 #include <common/timestamp.h>
-#include <QSerialPort>
 #include <main_application.h>
 #include "parser/pdf2svg.h"
 #include <windows/preset-manager.h>
@@ -139,7 +136,7 @@ void MainWindow::loadSettings() {
   MachineSettings::MachineParam machine_param = mainApp->getMachineParam();
   canvas_->setCurrentPosition(jogging_panel_->getShowCurrent());
   canvas_->setUserOrigin(jogging_panel_->getShowUserOrigin());
-  canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
+  // canvas_->transformControl().setScaleLock(mainApp->isShapeScaleLocked());
   canvas_->setShapeReference(mainApp->getShapeReference());
   laser_panel_->setJobOrigin(mainApp->getJobOrigin());
   laser_panel_->setStartFrom(mainApp->getStartFrom());
@@ -152,7 +149,7 @@ void MainWindow::loadSettings() {
   doc_panel_->setPresetIndex(mainApp->getPresetIndex());
   jogging_panel_->setFramingPower(mainApp->getFramingPower());
   jogging_panel_->setPulsePower(mainApp->getPulsePower());
-  doc_panel_->setMachineIndex(mainApp->getMachineIndex());
+  laser_panel_->setMachineIndex(mainApp->getMachineIndex());
   doc_panel_->setTravelSpeed(machine_param.travel_speed);
   RotarySettings::RotaryParam rotary_param = mainApp->getRotaryParam();
   doc_panel_->setRotarySpeed(rotary_param.travel_speed);
@@ -204,6 +201,7 @@ void MainWindow::loadSettings() {
     welcome_dialog_->raise();
   }
   preferences_window_->setUpload(mainApp->isUploadEnable());
+  this->connectMachine(laser_panel_->getPort());
 }
 
 void MainWindow::loadCanvas() {
@@ -1018,7 +1016,7 @@ void MainWindow::sceneGraphError(QQuickWindow::SceneGraphError, const QString &m
 
 MainWindow::~MainWindow() {
   software_update_cleanup();
-  serial_port.close();
+  active_machine.disconnect();
   delete ui;
 }
 
@@ -1049,11 +1047,11 @@ void MainWindow::updateScale() {
 void MainWindow::loadWidgets() {
   assert(canvas_ != nullptr);
   // TODO (Use event to decouple circular dependency with Mainwindow)
-  transform_panel_ = new TransformPanel(ui->objectParamDock, this);
+  transform_panel_ = new TransformPanel(ui->objectParamDock, isDarkMode());
   layer_panel_ = new LayerPanel(ui->layerDockContents, this);
   gcode_panel_ = new GCodePanel(ui->serialPortDock, this);
   font_panel_ = new FontPanel(ui->fontDock, isDarkMode());
-  image_panel_ = new ImagePanel(ui->imageDock, this);
+  image_panel_ = new ImagePanel(ui->imageDock, isDarkMode());
   doc_panel_ = new DocPanel(ui->documentDock, this);
   jogging_panel_ = new JoggingPanel(ui->joggingDock, this);
   laser_panel_ = new LaserPanel(ui->laserDock, isDarkMode());
@@ -1177,7 +1175,7 @@ void MainWindow::registerEvents() {
 #endif
 
   connect(ui->actionMachineSettings, &QAction::triggered, [=]() {
-    doc_panel_->setMachineSelectLock(false);
+    laser_panel_->setMachineSelectLock(false);
     machine_manager_->setMachineIndex(mainApp->getMachineIndex());
     machine_manager_->show();
     machine_manager_->activateWindow();
@@ -1185,7 +1183,7 @@ void MainWindow::registerEvents() {
     if(machine_manager_->exec() != 1) {
       Q_EMIT mainApp->editMachineIndex(mainApp->getMachineIndex());
     }
-    doc_panel_->setMachineSelectLock(true);
+    laser_panel_->setMachineSelectLock(true);
   });
   connect(ui->actionRotarySetup, &QAction::triggered, [=]() {
     rotary_setup_->setRotaryIndex(mainApp->getRotaryIndex());
@@ -1572,18 +1570,22 @@ void MainWindow::registerEvents() {
     mainApp->updatePulsePower(pulse_power);
   });
   //about machine
-  connect(doc_panel_, &DocPanel::updateMachineIndex, [=](int machine_index) {
+  connect(laser_panel_, &LaserPanel::updateMachineIndex, [=](int machine_index) {
+    // When user select different machine in laser panel
     mainApp->updateMachineIndex(machine_index);
   });
   connect(doc_panel_, &DocPanel::updateTravelSpeed, [=](double travel_speed) {
     mainApp->updateMachineTravelSpeed(travel_speed);
   });
   connect(machine_manager_, &MachineManager::updateCurrentMachineIndex, [=](int index) {
+    // When machine manager return the selected machine index
     mainApp->updateMachineIndex(index);
   });
   connect(mainApp, &MainApplication::editMachineIndex, [=](int machine_index) {
-    doc_panel_->setMachineIndex(machine_index);
+    // This will be called after mainApp->updateMachineIndex is called
+    laser_panel_->setMachineIndex(machine_index);
     active_machine.applyMachineParam(mainApp->getMachineParam());
+    this->connectMachine(laser_panel_->getPort());
   });
   connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](double travel_speed) {
     doc_panel_->setTravelSpeed(travel_speed);
@@ -1815,6 +1817,7 @@ void MainWindow::registerEvents() {
     ui->actionFrame->setEnabled(true);
     jogging_panel_->setControlEnable(true);
     laser_panel_->setControlEnable(true);
+    laser_panel_->setConnected(true);
   });
 
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
@@ -1891,91 +1894,40 @@ void MainWindow::setCanvasContextMenu() {
 }
 
 void MainWindow::setConnectionToolBar() {
-  baudComboBox_ = new QComboBox;
-  portComboBox_ = new QComboBox;
-  portComboBox_->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-  ui->toolBarConnection->insertWidget(ui->actionConnect, portComboBox_);
-  ui->toolBarConnection->insertWidget(ui->actionConnect, baudComboBox_);
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
-  QTimer *timer = new QTimer(this);
-  QList<QSerialPortInfo> portList;
-  baudComboBox_->addItem("9600");
-  baudComboBox_->addItem("19200");
-  baudComboBox_->addItem("38400");
-  baudComboBox_->addItem("57600");
-  baudComboBox_->addItem("115200");
-  baudComboBox_->addItem("230400");
-  baudComboBox_->addItem("460800");
-  baudComboBox_->addItem("921600");
-  baudComboBox_->setCurrentIndex(4); // default baudrate 115200
-  
-  connect(timer, &QTimer::timeout, [=]() {
-    const auto infos = QSerialPortInfo::availablePorts();
-    int current_index = portComboBox_->currentIndex() > -1 ? portComboBox_->currentIndex() : 0;
-    portComboBox_->clear();
-    for (const QSerialPortInfo &info : infos) {
-      if(info.portName().toStdString().compare(0,3,"cu.") == 0 ||
-      info.portName().toStdString().compare(0,13,"tty.Bluetooth") == 0) {}
-      else {
-        portComboBox_->addItem(info.portName());
-      }
-    }
-    portComboBox_->setCurrentIndex(current_index > portComboBox_->count() - 1 ? portComboBox_->count() - 1 : current_index);
+}
 
-    // Check whether port is unplugged
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    if (serial_port.isOpen()) {
-      auto matchIt = std::find_if(
-              infos.begin(), infos.end(),
-              [](const QSerialPortInfo& info) { return info.portName() == serial_port.portName(); }
-      );
-      if (matchIt == infos.end()) { // Unplugged -> close opened port
-        qInfo() << "Serial port unplugged";
-        serial_port.close();
-      }
+void MainWindow::connectMachine(QString port_name) {
+  if (active_machine.isConnected()) {
+    if (active_machine.getMotionController()) {
+      active_machine.getMotionController()->detachPort();
+    } else {
+      active_machine.disconnect(); // disconnect
     }
-    #endif
+    qInfo() << "[Connection] Disconnected from existing connection";
+    laser_panel_->setConnected(false);
+  }
+  auto machine_param = mainApp->getMachineParam();
+  if (machine_param.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+    port_name = "BSL";
+  }
+  active_machine.applyMachineParam(machine_param);
+  qInfo() << "[Connection] Connecting" << machine_param.name << "@ port" << port_name << 115200;
+  active_machine.connectSerial(port_name, 115200);
 
-  });
-  connect(ui->actionConnect, &QAction::triggered, [=]() {
-    if (serial_port.isOpen()) {
-      if (active_machine.getMotionController()) {
-        active_machine.getMotionController()->detachPort();
-        qInfo() << "[Port] Detached";
-      } else {
-        qInfo() << "[SerialPort] Disconnect";
-        serial_port.close(); // disconnect
-      }
-      return;
-    }
-    QString port_name = portComboBox_->currentText();
-    QString baudrate = baudComboBox_->currentText();
-    qInfo() << "[SerialPort] Connecting" << port_name << baudrate;
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    serial_port.open(port_name, baudrate.toInt());
-    #else
-    serial_port.setPortName(port_name);
-    serial_port.setBaudRate(baudrate.toInt());
-    serial_port.open(QIODevice::ReadWrite);
-    #endif
-    if (!serial_port.isOpen()) {
-      QMessageBox msgbox;
-      msgbox.setText(tr("Error"));
-      msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
-      msgbox.exec();
-      return;
-    }
-    #ifdef CUSTOM_SERIAL_PORT_LIB
-    #else
-    disconnect(&serial_port, nullptr, nullptr, nullptr);
-    serial_port.clearError();
-    #endif
-    active_machine.motionPortConnected(&serial_port);
-    active_machine.applyMachineParam(mainApp->getMachineParam());
-    connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
-    connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
-  });
-  timer->start(1500);
+  if (!active_machine.isConnected()) {
+    // QMessageBox msgbox;
+    // msgbox.setText(tr("Error"));
+    // msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
+    // msgbox.exec();
+    qWarning() << "Unable to connect to the port" << port_name << ". Make sure no existing program is using it.";
+    laser_panel_->setConnected(false);
+    return;
+  }
+  disconnect(&serial_port, nullptr, nullptr, nullptr);
+  active_machine.applyMachineParam(mainApp->getMachineParam());
+  connect(&active_machine, &Machine::positionCached, this, &MainWindow::machinePositionCached, Qt::UniqueConnection);
+  connect(&active_machine, &Machine::disconnected, this, &MainWindow::machineDisconnected, Qt::UniqueConnection);
 }
 
 void MainWindow::setToolbarFont() {

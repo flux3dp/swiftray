@@ -10,6 +10,7 @@
 #include <shape/shape.h>
 #include <settings/machine-settings.h>
 #include <settings/rotary-settings.h>
+#include "server/swiftray-server.h"
 
 class MainApplication : public QApplication
 {
@@ -68,6 +69,7 @@ public:
   CanvasQuality getCanvasQuality() { return canvas_quality_; }
   //about tool path
   PathSort getPathSort() { return path_sort_; }
+  SwiftrayServer *swiftray_server_;
 
 public Q_SLOTS:
   void updateUploadEnable(bool enable_upload);
@@ -120,6 +122,7 @@ public Q_SLOTS:
   void updatePathSort(int path_sort);
 
 private:
+  void loadSettings();
   //about preset
   void initialPreset();
   void savePreset();

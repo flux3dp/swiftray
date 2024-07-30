@@ -57,7 +57,7 @@ public:
 
   void loop();
 
-  void loadSVG(QByteArray &data);
+  void loadSVG(QByteArray &data, bool skip_confirm = false);
 
   void loadSVG(QString file_name);
 
@@ -118,6 +118,8 @@ public:
   void setHoverMove(bool in_canvas);
 
   void setCanvasQuality(CanvasQuality quality);
+
+  void save(QDataStream &out);
   
 public Q_SLOTS:
 
@@ -185,9 +187,9 @@ public Q_SLOTS:
 
   void addEmptyLayer();
 
-  void duplicateLayer(LayerPtr layer);
+  void duplicateLayer(const LayerPtr layer);
 
-  void importImage(QImage &image);
+  void importImage(QImage image);
 
   void genPathOffset();
 
@@ -201,9 +203,9 @@ public Q_SLOTS:
   
   void cropImage();
 
-  void setActiveLayer(LayerPtr &layer);
+  void setActiveLayer(LayerPtr layer);
 
-  void setLayerOrder(QList<LayerPtr> &order);
+  void setLayerOrder(QList<LayerPtr> order);
 
   void setScaleWithCenter(qreal new_scale);
 
@@ -228,8 +230,6 @@ public Q_SLOTS:
   void exitCurrentMode();
 
   void setWidget(QQuickWidget *widget);
-
-  void save(QDataStream &out);
 
   void updateCurrentPosition(std::tuple<qreal, qreal, qreal> target_pos);
 

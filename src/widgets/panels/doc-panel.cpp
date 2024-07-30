@@ -78,9 +78,6 @@ void DocPanel::registerEvents() {
   ui->advanceFeatureToggle->hide();
 
   // Events of internal document settings changed trigger update in UI (panel & canvas)
-  connect(ui->machineComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
-    Q_EMIT updateMachineIndex(index);
-  });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     Q_EMIT updatePresetIndex(index);
   });
@@ -149,10 +146,6 @@ void DocPanel::setRotarySpeed(double rotary_speed) {
   ui->rotarySpinBox->blockSignals(false);
 }
 
-void DocPanel::setMachineSelectLock(bool enable) {
-  ui->machineComboBox->setEnabled(enable);
-}
-
 void DocPanel::setPresetSelectLock(bool enable) {
   ui->presetComboBox->setEnabled(enable);
 }
@@ -174,20 +167,4 @@ void DocPanel::setPresetIndex(int preset_index) {
   }
   ui->presetComboBox->setCurrentIndex(preset_index);
   ui->presetComboBox->blockSignals(false);
-}
-
-void DocPanel::setMachineIndex(int machine_index) {
-  MachineSettings* settings = &MachineSettings::getInstance();
-  ui->machineComboBox->blockSignals(true);
-  ui->machineComboBox->clear();
-  for (const auto &mach : settings->getMachines()) {
-    if (mach.name.isEmpty()) continue;
-    ui->machineComboBox->addItem(mach.icon(), " " + mach.name, mach.toJson());
-  }
-  ui->machineComboBox->setCurrentIndex(machine_index);
-  ui->machineComboBox->blockSignals(false);
-  MachineSettings::MachineParam param = settings->getTargetMachine(machine_index);
-  ui->speedSpinBox->blockSignals(true);
-  ui->speedSpinBox->setValue(param.travel_speed);
-  ui->speedSpinBox->blockSignals(false);
 }

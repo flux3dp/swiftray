@@ -55,6 +55,10 @@
 #include "parser/dxf_rs/math/rs_math.h"
 #include "parser/dxf_rs/debug/rs_debug.h"
 
+#ifdef QT6
+    #include <QRegularExpression>
+    #define QRegExp QRegularExpression
+#endif
 
 /**
  * Default constructor.
@@ -2386,7 +2390,7 @@ void RS_FilterJWW::writeEntityContainer(DL_WriterA& dw, RS_EntityContainer* con,
 
         while (true) {
                 tmp = tmp/c;
-                blkName.append((char) tmp %10 + 48);
+                blkName.append((unsigned short)(tmp % 10 + 48));
                 c *= 10;
                 if (tmp < 10) {
                         break;
@@ -3107,8 +3111,13 @@ QString RS_FilterJWW::toNativeString(const char* data, const QString& encoding) 
     bool ok = false;
     do {
         QRegExp regexp("\\\\U\\+[0-9A-Fa-f]{4,4}");
+#ifdef QT6
+        QRegularExpressionMatch match = regexp.match(res);
+        cap = match.hasMatch() ? match.captured() : "";
+#else   
         regexp.indexIn(res);
         cap = regexp.cap();
+#endif
         if (!cap.isNull()) {
             uCode = cap.right(4).toInt(&ok, 16);
             // workaround for Qt 3.0.x:
@@ -3125,8 +3134,13 @@ QString RS_FilterJWW::toNativeString(const char* data, const QString& encoding) 
     ok = false;
     do {
         QRegExp regexp("%%[0-9]{3,3}");
+#ifdef QT6
+        QRegularExpressionMatch match = regexp.match(res);
+        cap = match.hasMatch() ? match.captured() : "";
+#else   
         regexp.indexIn(res);
         cap = regexp.cap();
+#endif
         if (!cap.isNull()) {
             uCode = cap.right(3).toInt(&ok, 10);
             // workaround for Qt 3.0.x:

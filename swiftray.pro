@@ -6,6 +6,7 @@ QT += gui
 QT += gui-private
 QT += svg
 QT += svg-private
+QT += websockets
 ios {
 } else {
 QT += serialport
@@ -15,8 +16,8 @@ QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
 #Application version
 VERSION_MAJOR = 1
-VERSION_MINOR = 2
-VERSION_BUILD = 1
+VERSION_MINOR = 3
+VERSION_BUILD = 0
 VERSION_SUFFIX = "" # empty string or "-beta.X"
 #DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
 #       "VERSION_MINOR=$$VERSION_MINOR"\

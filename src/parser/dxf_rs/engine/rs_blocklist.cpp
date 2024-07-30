@@ -27,7 +27,11 @@
 #include <set>
 #include <iostream>
 #include <QString>
-#include <QRegExp>
+#ifdef QT6
+	#include <QRegularExpression>
+#else
+	#include <QRegExp>
+#endif
 #include "parser/dxf_rs/debug/rs_debug.h"
 #include "rs_blocklist.h"
 #include "rs_block.h"
@@ -241,7 +245,11 @@ QString RS_BlockList::newName(const QString& suggestion) {
 		return suggestion;
 
 	QString name=suggestion;
+#ifdef QT6
+	QRegularExpression const rx(R"(-\d+$)");
+#else
 	QRegExp const rx(R"(-\d+$)");
+#endif
 	int index=name.lastIndexOf(rx);
 	int i=-1;
 	if(index>0){

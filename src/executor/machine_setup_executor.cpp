@@ -22,15 +22,21 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::disconnected,
           this, &MachineSetupExecutor::stop);
+  connect(motion_controller_, &MotionController::cmdFinished,
+        this, [=](QPointer<Executor> executor){
+    if (executor.data() == this) {
+      handleCmdFinish(0);
+    }
+  });
 }
 
 void MachineSetupExecutor::start() {
   stop();
   qInfo() << "MachineSetupExecutor::start()";
   pending_cmd_.clear();
-  // Force a sorft reset at the start of machine setup
-  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset, motion_controller_));
-  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo, motion_controller_));
+  // Force a soft reset at the start of machine setup
+  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset));
+  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
 
   exec_timer_->start(200);
 }
@@ -63,7 +69,7 @@ void MachineSetupExecutor::exec() {
     }
   }
 
-  OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this);
+  OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // retry later
     return;

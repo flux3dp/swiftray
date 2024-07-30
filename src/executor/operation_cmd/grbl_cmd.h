@@ -9,93 +9,66 @@
 class GrblPauseCmd : public OperationCmd 
 {
 public:
-  explicit GrblPauseCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblPauseCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 
 class GrblResumeCmd : public OperationCmd 
 {
 public:
-  explicit GrblResumeCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblResumeCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 
 class GrblResetCmd : public OperationCmd 
 {
 public:
-  explicit GrblResetCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblResetCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblStatusReportCmd : public OperationCmd
 {
  public:
-  explicit GrblStatusReportCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_; 
+  explicit GrblStatusReportCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblUnlockCmd : public OperationCmd 
 {
 public:
-  explicit GrblUnlockCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblUnlockCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblHomeCmd : public OperationCmd 
 {
 public:
-  explicit GrblHomeCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblHomeCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblBuildInfoCmd : public OperationCmd 
 {
 public:
-  explicit GrblBuildInfoCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblBuildInfoCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblSettingsCmd : public OperationCmd 
 {
 public:
-  explicit GrblSettingsCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblSettingsCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 class GrblGCodeParamCmd : public OperationCmd 
 {
 public:
-  explicit GrblGCodeParamCmd(QPointer<MotionController> motion_controller);
-  ExecStatus execute(QPointer<Executor> executor) override;
-
-private:
-  QPointer<MotionController> motion_controller_;
+  explicit GrblGCodeParamCmd();
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 };
 
 
@@ -121,26 +94,26 @@ public:
     //kSysCheck
   };
 
-  static std::shared_ptr<OperationCmd> createGrblCmd(CmdType type, QPointer<MotionController> motion_controller) {
+  static std::shared_ptr<OperationCmd> createGrblCmd(CmdType type) {
     switch (type) {
       case CmdType::kCtrlResume:
-        return std::make_shared<GrblResumeCmd>(motion_controller);
+        return std::make_shared<GrblResumeCmd>();
       case CmdType::kCtrlPause:
-        return std::make_shared<GrblPauseCmd>(motion_controller);
+        return std::make_shared<GrblPauseCmd>();
       case CmdType::kCtrlReset:
-        return std::make_shared<GrblResetCmd>(motion_controller);
+        return std::make_shared<GrblResetCmd>();
       case CmdType::kCtrlStatusReport:
-        return std::make_shared<GrblStatusReportCmd>(motion_controller);
+        return std::make_shared<GrblStatusReportCmd>();
       case CmdType::kSysUnlock:
-        return std::make_shared<GrblUnlockCmd>(motion_controller);
+        return std::make_shared<GrblUnlockCmd>();
       case CmdType::kSysHome:
-        return std::make_shared<GrblHomeCmd>(motion_controller);
+        return std::make_shared<GrblHomeCmd>();
       case CmdType::kSysBuildInfo:
-        return std::make_shared<GrblBuildInfoCmd>(motion_controller);
+        return std::make_shared<GrblBuildInfoCmd>();
       case CmdType::kSysGrblSettings:
-        return std::make_shared<GrblSettingsCmd>(motion_controller);
+        return std::make_shared<GrblSettingsCmd>();
       case CmdType::kSysGCodeParserState:
-        return std::make_shared<GrblGCodeParamCmd>(motion_controller);
+        return std::make_shared<GrblGCodeParamCmd>();
       default:
         Q_ASSERT_X(false, "GrblCmdFactory", "Support for this cmd hasn't benn implemented yet!");
         break;

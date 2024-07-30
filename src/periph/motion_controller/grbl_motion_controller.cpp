@@ -250,3 +250,8 @@ QString GrblMotionController::getAlarmMsg(AlarmCode code) {
       return "Unknown alarm";
   }
 }
+
+MotionController::CmdSendResult GrblMotionController::stop() {
+  qWarning() << "GrblMotionController::stop() is not implemented";
+  return CmdSendResult::kFail;
+}

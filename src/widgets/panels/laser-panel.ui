@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>280</width>
-    <height>280</height>
+    <height>346</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -39,11 +39,37 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>241</width>
-        <height>337</height>
+        <width>256</width>
+        <height>403</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QLabel" name="readyLabel">
+         <property name="text">
+          <string>Disconnected</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="portSelectLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QComboBox" name="machineComboBox"/>
+         </item>
+         <item>
+          <widget class="QComboBox" name="portComboBox">
+           <property name="font">
+            <font>
+             <kerning>true</kerning>
+            </font>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>

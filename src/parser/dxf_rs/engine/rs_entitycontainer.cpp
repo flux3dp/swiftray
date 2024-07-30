@@ -1779,6 +1779,17 @@ void RS_EntityContainer::moveSelectedRef(const RS_Vector& ref,
     }
 }
 
+#ifdef QT6
+void RS_EntityContainer::revertDirection() {
+    for(int k = 0; k < entities.size() / 2; ++k) {
+        std::swap(entities[k], entities[entities.size() - 1 - k]);
+    }
+
+    for(RS_Entity*const entity: entities) {
+        entity->revertDirection();
+    }
+}
+#else
 void RS_EntityContainer::revertDirection() {
 	for(int k = 0; k < entities.size() / 2; ++k) {
 		entities.swap(k, entities.size() - 1 - k);
@@ -1788,7 +1799,7 @@ void RS_EntityContainer::revertDirection() {
 		entity->revertDirection();
 	}
 }
-
+#endif
 /**
  * @brief RS_EntityContainer::draw() draw entities in order
  * @param painter

@@ -9,7 +9,7 @@ Rectangle {
     id: root
     width: 280
     height: 280
-    color: is_dark_mode ? "#333333" : "#F0F0F0"
+    color: "#333333"
     signal home()
     signal laser()
     signal laserPulse()

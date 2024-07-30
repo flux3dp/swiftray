@@ -8,8 +8,7 @@ namespace Ui {
 class LaserPanel;
 }
 
-class LaserPanel : public QFrame, BaseContainer
-{
+class LaserPanel : public QFrame, BaseContainer {
   Q_OBJECT
 
 public:
@@ -21,6 +20,10 @@ public:
   bool getStartHome();
   void setStartHomeEnable(bool enable);
   void setControlEnable(bool enable);
+  void setMachineSelectLock(bool enable);
+  void setMachineIndex(int machine_index);
+  void setConnected(bool connected);
+  QString getPort();
 
 Q_SIGNALS:
   void actionFrame();
@@ -32,6 +35,7 @@ Q_SIGNALS:
   void switchStartFrom(int start_from);
   void panelShow(bool is_show);
   void startWithHome(bool start_with_home);
+  void updateMachineIndex(int index);
 
 private:
   void loadStyles() override;

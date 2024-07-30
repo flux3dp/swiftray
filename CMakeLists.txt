@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 set(CMAKE_TOOLCHAIN_FILE "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake")
-project(Swiftray VERSION 1.2.1)
+project(Swiftray VERSION 1.3.0)
 message("System Name: ${CMAKE_SYSTEM_NAME}")
 
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 2)
-set(VERSION_BUILD 1)
+set(VERSION_MINOR 3)
+set(VERSION_BUILD 0)
 set(VERSION_BETA  0) #x (e.g. 0,1,2,...)
 set(VERSION_SUFFIX "") # e.g. empty("") or "-beta.x"
 #set(PROJECT_VERSION_STR "1.1.2") # e.g. 1.x.x or 1.x.x-beta.x
@@ -15,14 +15,23 @@ set(RC_VERSION ${VERSION_MAJOR},${VERSION_MINOR},${VERSION_BUILD},${VERSION_BETA
 
 message(STATUS "Swiftray Ver: ${PROJECT_VERSION_STR}, MaV: ${VERSION_MAJOR}, MiV: ${VERSION_MINOR}, BuildV: ${VERSION_BUILD}, EV: ${VERSION_SUFFIX}")
 
+# QT Base Settings
+set(USE_QT6 true)
+
+if (USE_QT6)
+  # set(QT_ROOT_DIR "/Users/simon/Qt/6.7.2/macos")
+  set(CMAKE_PREFIX_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
+endif()
+
+# CXX Compiler Settings
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
-#set(CMAKE_CXX_FLAGS "-O2")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0)
+set(CMAKE_CXX_FLAGS "-O2")
 
 # Set a default build type if none was specified
 set(_default_build_type "RelWithDebInfo")
@@ -178,19 +187,33 @@ endmacro()
 
 # ================================= Find dependency packages =================================
 # Qt
-if(USE_qt6)
+if (USE_QT6)
   set(qtver "6")
+  add_definitions(-DQT6)
 else()
   set(qtver "5")
 endif()
 find_package(Qt${qtver} COMPONENTS Core REQUIRED)
+
+if (Qt${qtver}_FOUND)
+    if(Qt${qtver}Core_VERSION)
+        message(STATUS "Found Qt version: ${Qt${qtver}Core_VERSION}")
+        get_filename_component(QT_ROOT_DETECTED "${Qt${qtver}_DIR}/../../../" ABSOLUTE)
+        message(STATUS "Qt${qtver} root directory: ${QT_ROOT_DETECTED}")
+    else()
+        message(STATUS "Found Qt${qtver}, but version information is not available")
+    endif()
+else()
+    message(FATAL_ERROR "Qt${qtver} not found")
+endif()
+
 find_package(Qt${qtver} COMPONENTS Widgets REQUIRED)
 find_package(Qt${qtver} COMPONENTS Quick REQUIRED)
 find_package(Qt${qtver} COMPONENTS QuickWidgets REQUIRED)
 find_package(Qt${qtver} COMPONENTS OpenGL REQUIRED)
 find_package(Qt${qtver} COMPONENTS Gui REQUIRED)
 find_package(Qt${qtver} COMPONENTS Svg REQUIRED)
-find_package(Qt${qtver} COMPONENTS SerialPort REQUIRED)
+find_package(Qt${qtver} COMPONENTS SerialPort Websockets REQUIRED)
 find_package(Qt${qtver}Gui COMPONENTS Private REQUIRED)
 find_package(Qt${qtver}Widgets COMPONENTS Private REQUIRED)
 find_package(Qt${qtver}Svg COMPONENTS Private REQUIRED)
@@ -198,6 +221,10 @@ find_package(Qt${qtver}Svg COMPONENTS Private REQUIRED)
 set( OpenCV_DIR "vcpkg_installed/x64-windows/share/opencv4" )
 
 find_package(OpenCV REQUIRED)
+if (USE_QT6)
+  find_package(Qt6 COMPONENTS OpenGLWidgets REQUIRED)
+  find_package(Qt6 COMPONENTS Core5Compat REQUIRED)
+endif()
 
 find_package(Boost REQUIRED COMPONENTS thread system)
 find_package(LibXml2 REQUIRED)
@@ -269,7 +296,7 @@ set(QT_BIN_PATH "${_qt_bin_path}" CACHE INTERNAL
 # Use qmake to find windeployqt and macdeployqt. Ideally one of
 # the modules in ${QTDIR}/lib/cmake would do this for us.
 if(WIN32)
-  if (USE_qt6 AND USE_MSYSTEM)
+  if (USE_QT6 AND USE_MSYSTEM)
     set(_windeployqt_name "windeployqt-qt6")
   else()
     set(_windeployqt_name "windeployqt")
@@ -437,14 +464,17 @@ add_subdirectory(src/toolpath_exporter)
 add_subdirectory(src/machine)
 add_subdirectory(src/periph)
 add_subdirectory(src/executor)
+add_subdirectory(src/server)
 
 # ====================== Subdirectory libraries =======================
 add_subdirectory(third_party/clipper)
 add_subdirectory(third_party/QxPotrace)
 add_subdirectory(third_party/libdxfrw)
+add_subdirectory(third_party/liblcs)
 target_link_libraries(${PROJECT_NAME} clipper)
 target_link_libraries(${PROJECT_NAME} QxPotrace)
 target_link_libraries(${PROJECT_NAME} libdxfrw)
+target_link_libraries(${PROJECT_NAME} liblcs)
 
 # Sentry
 if (DEFINED ENABLE_SENTRY)
@@ -480,7 +510,13 @@ target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
 target_link_libraries(${PROJECT_NAME} Qt::Gui)
 target_link_libraries(${PROJECT_NAME} Qt::Svg)
 target_link_libraries(${PROJECT_NAME} Qt::Widgets)
+target_link_libraries(${PROJECT_NAME} Qt::WebSockets)
 target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
+
+if (USE_QT6)
+  target_link_libraries(${PROJECT_NAME} Qt6::Core5Compat)
+  target_link_libraries(${PROJECT_NAME} Qt6::OpenGLWidgets)
+endif()
 
 
 

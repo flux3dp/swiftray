@@ -138,10 +138,10 @@ void Ruler::paint(QPainter *painter) {
   QColor ruler_color;
   if (isDarkMode()) {
     line_pen.setColor("#F0F0F0");
-    ruler_color.setNamedColor("#454545");
+    ruler_color = QColor::fromString("#454545");
   } else {
     line_pen.setColor("#333");
-    ruler_color.setNamedColor("#DDD");
+    ruler_color = QColor::fromString("#DDD");
   }
   line_pen.setCosmetic(true);
 

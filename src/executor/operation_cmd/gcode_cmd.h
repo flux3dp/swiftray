@@ -8,14 +8,11 @@ class GCodeCmd : public OperationCmd
 {
 public:
 
-  explicit GCodeCmd();
-  void setMotionController(QPointer<MotionController> motion_controller);
-  void setGCode(QString gcode);
+  explicit GCodeCmd(QString gcode);
 
-  ExecStatus execute(QPointer<Executor> executor) override;
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller_) override;
 
 private:
-  QPointer<MotionController> motion_controller_;
   QString gcode_; // single line of gcode or ctrl cmd for grbl
 };
 

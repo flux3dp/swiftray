@@ -28,7 +28,13 @@
 
 #include <iostream>
 #include <QTextStream>
+#ifdef QT6
+#include <QtCore5Compat/QTextCodec>
+#include <QRegularExpression>
+#else
 #include <QTextCodec>
+#include <QRegExp>
+#endif
 
 #include "rs_font.h"
 #include "rs_arc.h"
@@ -161,7 +167,7 @@ void RS_Font::readCXF(QString path) {
         // Read font settings:
         if (line.at(0)=='#') {
             QStringList lst =
-                    ( line.right(line.length()-1) ).split(':', QString::SkipEmptyParts);
+                    ( line.right(line.length()-1) ).split(':', Q_SKIP_EMPTY_PARTS);
             QStringList::Iterator it3 = lst.begin();
 
             // RVT_PORT sometimes it happens that the size is < 2
@@ -183,7 +189,18 @@ void RS_Font::readCXF(QString path) {
             } else if (identifier.toLower()=="name") {
                 names.append(value);
             } else if (identifier.toLower()=="encoding") {
-                ts.setCodec(QTextCodec::codecForName(value.toLatin1()));
+#ifdef QT6
+                    auto enc = QStringConverter::encodingForName(value.toLatin1());
+                    if (enc.has_value()) {
+                        ts.setEncoding(enc.value());
+                    } else {
+                        // Handle the case where the encoding is not recognized
+                        // You might want to set a default encoding or log a warning
+                        ts.setEncoding(QStringConverter::Utf8);
+                    }
+#else
+                    ts.setCodec(QTextCodec::codecForName(value.toLatin1()));
+#endif
                 encoding = value;
             }
         }
@@ -195,9 +212,15 @@ void RS_Font::readCXF(QString path) {
             QChar ch;
 
             // read unicode:
+#ifdef QT6
+            QRegularExpression regexp("[0-9A-Fa-f]{4,4}");
+            QRegularExpressionMatch match = regexp.match(line);
+            QString cap = match.hasMatch() ? match.captured() : "";
+#else
             QRegExp regexp("[0-9A-Fa-f]{4,4}");
             regexp.indexIn(line);
             QString cap = regexp.cap();
+#endif
             if (!cap.isNull()) {
 				int uCode = cap.toInt(nullptr, 16);
                 ch = QChar(uCode);
@@ -232,7 +255,7 @@ void RS_Font::readCXF(QString path) {
 
                 coordsStr = line.right(line.length()-2);
                 //                coords = QStringList::split(',', coordsStr);
-                coords = coordsStr.split(',', QString::SkipEmptyParts);
+                coords = coordsStr.split(',', Q_SKIP_EMPTY_PARTS);
                 it2 = coords.begin();
 
                 // Line:
@@ -293,7 +316,7 @@ void RS_Font::readLFF(QString path) {
 
         // Read font settings:
         if (line.at(0)=='#') {
-            QStringList lst =line.remove(0,1).split(':', QString::SkipEmptyParts);
+            QStringList lst =line.remove(0,1).split(':', Q_SKIP_EMPTY_PARTS);
             //if size is < 2 is a comentary not parameter
             if (lst.size()<2)
                 continue;
@@ -314,7 +337,18 @@ void RS_Font::readLFF(QString path) {
             } else if (identifier.toLower()=="license") {
                 fileLicense = value;
             } else if (identifier.toLower()=="encoding") {
+#ifdef QT6
+                auto enc = QStringConverter::encodingForName(value.toLatin1());
+                if (enc.has_value()) {
+                    ts.setEncoding(enc.value());
+                } else {
+                    // Handle the case where the encoding is not recognized
+                    // You might want to set a default encoding or log a warning
+                    ts.setEncoding(QStringConverter::Utf8);
+                }
+#else
                 ts.setCodec(QTextCodec::codecForName(value.toLatin1()));
+#endif
                 encoding = value;
             } else if (identifier.toLower()=="created") {
                 fileCreate = value;
@@ -328,9 +362,16 @@ void RS_Font::readLFF(QString path) {
             QChar ch;
 
             // read unicode:
+
+            #ifdef QT6
+            QRegularExpression regexp("[0-9A-Fa-f]{1,5}");
+            QRegularExpressionMatch match = regexp.match(line);
+            QString cap = match.hasMatch() ? match.captured() : "";
+            #else
             QRegExp regexp("[0-9A-Fa-f]{1,5}");
             regexp.indexIn(line);
             QString cap = regexp.cap();
+            #endif
             if (!cap.isNull()) {
 				int uCode = cap.toInt(nullptr, 16);
                 ch = QChar(uCode);
@@ -406,7 +447,7 @@ RS_Block* RS_Font::generateLffFont(const QString& ch){
         }
         //sequence:
         else {
-            vertex = line.split(';', QString::SkipEmptyParts);
+            vertex = line.split(';', Q_SKIP_EMPTY_PARTS);
             //at least is required two vertex
             if (vertex.size()<2)
                 continue;
@@ -417,7 +458,7 @@ RS_Block* RS_Font::generateLffFont(const QString& ch){
                 double x1, y1;
                 double bulge = 0;
 
-                coords = vertex.at(i).split(',', QString::SkipEmptyParts);
+                coords = vertex.at(i).split(',', Q_SKIP_EMPTY_PARTS);
                 //at least X,Y is required
                 if (coords.size()<2)
                     continue;

@@ -47,6 +47,11 @@
 #include "parser/dxf_rs/math/rs_math.h"
 #include "parser/dxf_rs/debug/rs_debug.h"
 
+#ifdef QT6
+    #include <QRegularExpression>
+    #define QRegExp QRegularExpression
+#endif
+
 
 /**
  * Default constructor.
