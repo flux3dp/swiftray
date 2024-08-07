@@ -1,4 +1,5 @@
 #include "toolpath-utils.h"
+#include <algorithm>
 #include <QtMath>
 
 using namespace std;
