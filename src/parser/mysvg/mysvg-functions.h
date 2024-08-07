@@ -173,7 +173,7 @@ namespace MySVG {
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_USE) {
-            QSvgUse* use_node = (QSvgUse*)node;
+            QSvgUse2* use_node = (QSvgUse2*)node;
             Node n;
             n.type = QSVG_USE;
             n.node_names.push_back(use_node->linkId());
