@@ -25,7 +25,7 @@
 
 #include <private/qsvgstyle_p.h>
 #include <private/qcssparser_p.h>
-#include "qsvggraphics_p_qt6.h"
+#include <private/qsvggraphics_p.h>
 #include <private/qtsvgglobal_p.h>
 
 #if QT_CONFIG(cssparser)
@@ -78,11 +78,8 @@ public:
     QIODevice *device() const;
     QSvgTinyDocument *document() const;
 
-    inline bool ok() const {
-        return document() != 0 && !xml->hasError();
-    }
-
-    inline QString errorString() const { return xml->errorString(); }
+    bool ok() const;
+    QString errorString() const;
     inline int lineNumber() const { return xml->lineNumber(); }
 
     void setDefaultCoordinateSystem(LengthType type);

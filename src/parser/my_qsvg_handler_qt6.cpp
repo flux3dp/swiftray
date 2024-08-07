@@ -14,10 +14,11 @@
 
 #include  <private/qsvgtinydocument_p.h>
 #include  <private/qsvgstructure_p.h>
-#include  "qsvggraphics_p_qt6.h"
+#include  <private/qsvggraphics_p.h>
 #include  <private/qsvgfilter_p.h>
 #include  <private/qsvgnode_p.h>
 #include  <private/qsvgfont_p.h>
+#include  <parser/mysvg/qsvguse2.h>
 
 #include "qpen.h"
 #include "qpainterpath.h"
@@ -165,6 +166,7 @@ bool qsvg_get_hex_rgb(const QChar *str, int len, QRgb *rgb)
 }
 
 // ======== end of qcolor_p duplicate
+
 
 static bool parsePathDataFast(QStringView data, QPainterPath &path, bool limitLength = true);
 
@@ -4322,11 +4324,11 @@ static QSvgNode *createUseNode(QSvgNode *parent,
             if (parent->isDescendantOf(link))
                 qCWarning(lcSvgHandler, "link #%s is recursive!", qPrintable(linkId));
 
-            return new QSvgUse(pt, parent, link);
+            return new QSvgUse2(pt, parent, link);
         }
 
         //delay link resolving, link might have not been created yet
-        return new QSvgUse(pt, parent, linkId);
+        return new QSvgUse2(pt, parent, linkId);
     }
 
     qCWarning(lcSvgHandler, "<use> element %s in wrong context!", qPrintable(linkId));
@@ -4729,7 +4731,7 @@ static bool detectCycles(const QSvgNode *node, QList<const QSvgNode *> active = 
         if (active.contains(node))
             return true;
 
-        auto *u = static_cast<const QSvgUse*>(node);
+        auto *u = static_cast<const QSvgUse2*>(node);
         auto *target = u->link();
         if (target) {
             active.append(u);
@@ -4949,7 +4951,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
                 } else if (node->type() == QSvgNode::Tspan) {
                     static_cast<QSvgTspan *>(node)->setWhitespaceMode(m_whitespaceMode.top());
                 } else if (node->type() == QSVG_USE) {
-                    auto useNode = static_cast<QSvgUse *>(node);
+                    auto useNode = static_cast<QSvgUse2 *>(node);
                     if (!useNode->isResolved())
                         m_toBeResolved.append(useNode);
                 }
@@ -5083,7 +5085,7 @@ void MyQSvgHandler::resolveNodes()
 {
     for (QSvgNode *node : std::as_const(m_toBeResolved)) {
         if (node->type() == QSVG_USE) {
-            QSvgUse *useNode = static_cast<QSvgUse *>(node);
+            QSvgUse2 *useNode = static_cast<QSvgUse2 *>(node);
             const auto parent = useNode->parent();
             if (!parent)
                 continue;
@@ -5299,7 +5301,15 @@ void MyQSvgHandler::setLayerConfig(const QString &layer_name, const MySVG::BeamL
 {
     layer_config_map_.insert(layer_name, config);
 }
+
+bool MyQSvgHandler::ok() const {
+    return document() != 0 && !xml->hasError();
+}
+
+QString MyQSvgHandler::errorString() const { return xml->errorString(); }
+
 #endif
+
 QT_END_NAMESPACE
 
 #endif
