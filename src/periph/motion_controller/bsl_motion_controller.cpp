@@ -9,7 +9,7 @@
 #include "liblcs/lcsExpr.h"
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 10000
+#define MAX_BUFFER_LIST_SIZE 20000
 
 BSLMotionController::BSLMotionController(QObject *parent)
   : MotionController{parent}
@@ -158,12 +158,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         this->buffer_size_++;
     }
 
-    if (should_swap) {
+    if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
       qInfo("Closing list %d @ size %d", list_no, this->buffer_size_);
       if (first_list) {
         lcs_set_end_of_list();
-        lcs_auto_change();
+        // lcs_auto_change();
         lcs_execute_list(list_no);
         first_list = false;
         list_no = list_no == 1 ? 2 : 1;
@@ -176,7 +176,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         }
       } else {
         lcs_set_end_of_list();
-        lcs_auto_change();
+        // lcs_auto_change();
+        lcs_execute_list(list_no);
         list_no = list_no == 1 ? 2 : 1;
         qInfo("Waiting list #%d to be finished", list_no);
         LCS2Error ret = lcs_load_list(list_no, 0);
@@ -185,6 +186,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           ret = lcs_load_list(list_no, 0);
           QThread::msleep(100);
         }
+
+        lcs_set_start_list(list_no);
         qInfo("Started new list %d", list_no);
       }
       dequeueCmd(this->buffer_size_);
@@ -279,9 +282,11 @@ void BSLMotionController::attachPortBSL() {
 }
 
 MotionController::CmdSendResult BSLMotionController::pause() {
+  return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::resume() {
+  return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::stop() {
