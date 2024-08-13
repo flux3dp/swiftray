@@ -297,6 +297,7 @@ HEADERS += \
     $$files(src/parser/dxf_rs/fileio/*.h) \
     $$files(src/parser/dxf_rs/muparser/*.h) \
     $$files(src/parser/dxf_rs/jwwlib/*.h) \
+    src/config.h \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
     $$files(src/executor/*.h) \
     $$files(src/executor/machine_job/*.h) \
