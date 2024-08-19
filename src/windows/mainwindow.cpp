@@ -343,27 +343,31 @@ bool MainWindow::handleUnsavedChange() {
     // some modifications have been performed on this document
     QMessageBox msgBox;
     msgBox.setText(tr("The document has been modified.\nDo you want to save your changes?"));
-    msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
-    msgBox.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
-    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+
+    // Optionally override standard button texts
+    msgBox.setButtonText(QMessageBox::Save, tr("Save"));
+    msgBox.setButtonText(QMessageBox::Discard, tr("Don't Save"));
+    msgBox.setButtonText(QMessageBox::Cancel, tr("Cancel"));
+
     int ret = msgBox.exec();
     switch (ret) {
-      case QMessageBox::AcceptRole:
-          if(!canvas_->document().currentFile().isEmpty()) saveFile();
-          else handle_result = saveAsFile();
-          break;
-      case QMessageBox::RejectRole:
-          // Don't Save was clicked
-          handle_result = true;
-          break;
-      case QMessageBox::DestructiveRole:
-          // Cancel was clicked
-          handle_result = false;
+      case QMessageBox::Save:
+        if(!canvas_->document().currentFile().isEmpty()) saveFile();
+        else handle_result = saveAsFile();
+        break;
+      case QMessageBox::Discard:
+        handle_result = true;
+        break;
+      case QMessageBox::Cancel:
+        handle_result = false;
+        break;
       default:
-          // should never be reached
-          handle_result = false;
+        handle_result = false;
     }
   }
+  qInfo() << "Unsaved change handled: " << handle_result;
   return handle_result;
 }
 
