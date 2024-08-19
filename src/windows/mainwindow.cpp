@@ -414,14 +414,8 @@ void MainWindow::actionStart() {
       return;
     }
     try {
-      auto gcode_list = gcode_panel_->getGCode().split('\n');
-      // Estimate total required time
-      auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size() - 1, 
-        this);
-      auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+      auto gcode_list = gcode_panel_->getGCodeList();
+      auto timestamp_list = gcode_panel_->getTimestampList();
       Timestamp total_required_time{0, 0};
       if (!timestamp_list.empty()) {
         total_required_time = timestamp_list.last();
@@ -2482,17 +2476,8 @@ void MainWindow::genPreviewWindow() {
 
   // Prepare total required time
   try {
-    auto gcode_list = gcode_panel_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size()-1, 
-      this);
-    auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    Timestamp last_gcode_timestamp{0, 0};
-    if (!timestamp_list.empty()) {
-      last_gcode_timestamp = timestamp_list.last();
-    }
+    auto gcode_list = gcode_panel_->getGCodeList();
+    auto time = gcode_panel_->getEstimatedTime();
 
     double height_scale = 1;
     if(mainApp->isRotaryMode()) height_scale = mainApp->getRotaryScale();
@@ -2500,7 +2485,7 @@ void MainWindow::genPreviewWindow() {
                                           QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
                                           height_scale);
     pw->setPreviewPath(preview_path_generator);
-    pw->setRequiredTime(last_gcode_timestamp);
+    pw->setRequiredTime(time);
     pw->show();
     pw->activateWindow();
     pw->raise();
@@ -2517,35 +2502,19 @@ void MainWindow::genPreviewWindow() {
  *        Currently, support gcode job only
  */
 void MainWindow::onStartNewJob() {
-  auto gcode_list = gcode_panel_->getGCode().split('\n');
   JobDashboardDialog* job_dialog = qobject_cast<JobDashboardDialog*>(sender());
+  bool job_result;
   if (job_dialog != NULL) {
-    // Job launched from job dashboard -> with preview
-    auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size()-1, 
-        qobject_cast<QWidget*>(job_dialog));
-    if (true == active_machine.createGCodeJob(gcode_list, 
-                                              job_dialog->getPreview(),
-                                              progress_dialog)) {
-      gcode_panel_->attachJob(active_machine.getJobExecutor());
-      job_dashboard_->attachJob(active_machine.getJobExecutor());
-      active_machine.startJob();
-    }
+    job_result = active_machine.createGCodeJob(gcode_panel_->getGCodeList(), gcode_panel_->getTimestampList(), job_dialog->getPreview()); 
   } else {
-    // Job launched from other component, e.g. gcode panel -> no preview (i.e. no job dashboard)
-    auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size()-1, 
-        qobject_cast<QWidget*>(this));
-    if (true == active_machine.createGCodeJob(gcode_list, progress_dialog)) {
-      gcode_panel_->attachJob(active_machine.getJobExecutor());
-      active_machine.startJob();
-    }
+    job_result = active_machine.createGCodeJob(gcode_panel_->getGCodeList(), gcode_panel_->getTimestampList());
   }
-
+  if (job_result == false) return;
+  if (job_dialog != NULL) {
+    job_dashboard_->attachJob(active_machine.getJobExecutor());
+  }
+  gcode_panel_->attachJob(active_machine.getJobExecutor());
+  active_machine.startJob();
 }
 
 void MainWindow::onStopJob() {
@@ -2627,7 +2596,7 @@ void MainWindow::laser(qreal power_percent) {
     //       We currently assume 100% = S1000 here
     gcode_list.push_back(QString("G1S") + QString::number(qRound(10*power_percent)));
   }
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
@@ -2656,7 +2625,7 @@ void MainWindow::laserPulse(qreal power_percentage) {
   } else {
     gcode_list.push_back("M5");
   }
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
@@ -2668,7 +2637,7 @@ void MainWindow::home() {
   //       Send GrblHomeCmd() instead of gcode cmd for grbl controller
   //       Send XXXHomeCmd() for other controller
   gcode_list.push_back("$H");
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }

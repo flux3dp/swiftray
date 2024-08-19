@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QDebug>
 #include <windows/mainwindow.h>
+#include <executor/machine_job/gcode_job.h>
 
 GCodePanel::GCodePanel(QWidget *parent, MainWindow* main_window) :
      main_window_(main_window),
@@ -119,6 +120,29 @@ void GCodePanel::onJobProgressChanged(QVariant progress) {
 
 void GCodePanel::setGCode(const QString &gcode) {
   ui->gcodeText->setPlainText(gcode);
+  gcode_list_ = gcode.split('\n');
+  auto progress_dialog = new QProgressDialog(
+    tr("Estimating task time..."),  
+    tr("Cancel"), 
+    0, gcode_list_.size() - 1, 
+    this);
+  this->timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, progress_dialog);
+  delete progress_dialog;
+}
+
+const QStringList& GCodePanel::getGCodeList() {
+  return gcode_list_;
+}
+
+const QList<Timestamp>& GCodePanel::getTimestampList() {
+  return timestamp_list_;
+}
+
+Timestamp GCodePanel::getEstimatedTime() {
+  if (!timestamp_list_.empty()) {
+    return timestamp_list_.last();
+  }
+  return Timestamp();
 }
 
 QString GCodePanel::getGCode() {

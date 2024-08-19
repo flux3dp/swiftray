@@ -71,34 +71,8 @@ MachineSettings::MachineParam Machine::getMachineParam() const {
  * @return true 
  * @return false: cancelled, no job executor exists or already running a job
  */
-bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog) {
-  // Check state
-  if (connect_state_ != ConnectionState::kConnected) {
-    return false;
-  }
-
-  QList<Timestamp> timestamp_list;
-  try {
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-  } catch (...) {
-    // Terminated (Cancelled)
-    return false;
-  }
-  auto job = QSharedPointer<GCodeJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
-  job->setTimestampList(timestamp_list);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list) {
+  return createGCodeJob(gcode_list, timestamp_list, QPixmap());
 }
 
 /**
@@ -108,24 +82,13 @@ bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> p
  * @return true 
  * @return false: cancelled, no job executor exists or already running a job or machine not connected
  */
-bool Machine::createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog) {
+bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list, QPixmap preview) {
   // Check state
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
   }
 
-  QList<Timestamp> timestamp_list;
-  try {
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-  } catch (...) {
-    // Terminated (Cancelled)
-    return false;
-  }
-  auto job = QSharedPointer<GCodeJob>::create(gcode_list, preview);
+  auto job = preview.width() > 0 ? QSharedPointer<GCodeJob>::create(gcode_list, preview) : QSharedPointer<GCodeJob>::create(gcode_list);
   job->setMotionController(motion_controller_);
   job->setTimestampList(timestamp_list);
   if (!job_executor_) {
@@ -538,6 +501,7 @@ void Machine::stopJob() {
           GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset)
         );
       } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+        qInfo() << "Machine::stopJob";
         console_executor_->appendCmd(
           BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlReset)
         );
