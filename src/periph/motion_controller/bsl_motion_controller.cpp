@@ -9,7 +9,68 @@
 #include "liblcs/lcsExpr.h"
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 20000
+#define MAX_BUFFER_LIST_SIZE 3000
+
+int lcs_error_count = 0;
+
+void handleLCSError(LCS2Error error) {
+  switch (error) {
+    case LCS_RES_NO_ERROR:
+      qInfo() << "LCS_RES_NO_ERROR";
+      break;
+    case LCS_GENERAL_ACTION_FAILED:
+      qWarning() << "LCS_GENERAL_ACTION_FAILED";
+      break;
+    case LCS_GENERAL_ACTION_TIMEOUT:
+      qWarning() << "LCS_GENERAL_ACTION_TIMEOUT";
+      break;
+    case LCS_GENERAL_INVALID_PARAM:
+      qWarning() << "LCS_GENERAL_INVALID_PARAM";
+      break;
+    case LCS_GENERAL_OUT_OF_RANGE:
+      qWarning() << "LCS_GENERAL_OUT_OF_RANGE";
+      break;
+    case LCS_GENERAL_MEMORY_NOT_ENOUGH:
+      qWarning() << "LCS_GENERAL_MEMORY_NOT_ENOUGH";
+      break;
+    case LCS_GENERAL_BUFFER_SIZE_TOO_SMALL:
+      qWarning() << "LCS_GENERAL_BUFFER_SIZE_TOO_SMALL";
+      break;
+    case LCS_GENERAL_WRITE_ERROR:
+      qWarning() << "LCS_GENERAL_WRITE_ERROR";
+      break;
+    case LCS_GENERAL_READ_ERROR:
+      qWarning() << "LCS_GENERAL_READ_ERROR";
+      break;
+    case LCS_GENERAL_UUID_EXIST:
+      qWarning() << "LCS_GENERAL_UUID_EXIST";
+      break;
+    case LCS_GENERAL_UUID_NOT_EXIST:
+      qWarning() << "LCS_GENERAL_UUID_NOT_EXIST";
+      break;
+    case LCS_GENERAL_CURRENTLY_BUSY:
+      qWarning() << "LCS_GENERAL_CURRENTLY_BUSY";
+      break;
+    case LCS_GENERAL_PERMISSION_FAILED:
+      qWarning() << "LCS_GENERAL_PERMISSION_FAILED";
+      break;
+    case LCS_GENERAL_NOT_INITIALIZED:
+      qWarning() << "LCS_GENERAL_NOT_INITIALIZED";
+      break;
+    case LCS_GENERAL_NOT_OPENED:
+      qWarning() << "LCS_GENERAL_NOT_OPENED";
+      break;
+    case LCS_GENERAL_AREADY_OPENED:
+      qWarning() << "LCS_GENERAL_AREADY_OPENED";
+      break;
+    case LCS_BOARD_NOT_CONNECT:
+      qWarning() << "LCS_BOARD_NOT_CONNECT";
+      break;
+    default:
+      qWarning() << "Unknown LCS error";
+      break;
+  }
+}
 
 BSLMotionController::BSLMotionController(QObject *parent)
   : MotionController{parent}
@@ -20,45 +81,46 @@ BSLMotionController::BSLMotionController(QObject *parent)
 }
 
 void BSLMotionController::startCommandRunner() {
-  this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunner, this);
+  this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunnerThread, this);
 }
 
-void BSLMotionController::commandRunner() {
-  qInfo() << "BSLMotionController::commandRunner() started";
+void BSLMotionController::commandRunnerThread() {
+  qInfo() << "BSLMotionController::commandRunnerThread() started";
   while (true) {
     if (this->state_ == MotionControllerState::kSleep) {
-      qInfo() << "MotionController is in sleep state, ignore commandRunner";
+      qInfo() << "MotionController is in sleep state, ignore commandRunnerThread";
       QThread::msleep(100);
       continue;
     }
-    cmd_list_mutex_.lock();
+    this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
-      qInfo() << "No pending commands, sleep for a while";
-      cmd_list_mutex_.unlock();
+      // qInfo() << "No pending commands, sleep for a while";
+      this->cmd_list_mutex_.unlock();
       QThread::msleep(100);
       if (this->buffer_size_ > 0) {
-        should_flush_ = true;
+        this->should_flush_ = true;
       }
       continue;
     }
     QString cmd = this->pending_cmds_.front();
     this->pending_cmds_.pop_front();
-    cmd_list_mutex_.unlock();
+    this->cmd_list_mutex_.unlock();
     this->handleGcode(cmd);
   }
 }
 
 void BSLMotionController::dequeueCmd(int count) {
-  cmd_list_mutex_.lock();
-  qInfo() << "Begin dequeueCmd with count" << count;
+  this->cmd_list_mutex_.lock();
+  // qInfo() << "Begin dequeueCmd with count" << count;
   for (int i = 0; i < count; i++) {
     if (!cmd_executor_queue_.isEmpty()) {
-      Q_EMIT cmdFinished(cmd_executor_queue_.at(0));
+      auto cmd = cmd_executor_queue_.at(0);
       dequeueCmdExecutor();
+      Q_EMIT cmdFinished(cmd);
     }
   }
-  qInfo() << "End dequeueCmd with count" << count;
-  cmd_list_mutex_.unlock();
+  // qInfo() << "End dequeueCmd with count" << count;
+  this->cmd_list_mutex_.unlock();
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
@@ -127,6 +189,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         qInfo() << "[Laser Session Started]";
         if (is_running_laser_) {
             qWarning("Laser already started");
+            this->buffer_size_++;
             return;
         }
         is_running_laser_ = true;
@@ -135,12 +198,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         first_list = true;
         lcs_set_jump_speed_ctrl(3000);
         lcs_set_mark_speed_ctrl(1000);
-        lcs_set_laser_delays(-100, 100);
+        lcs_set_laser_delays(-50, 50);
         lcs_set_laser_control(true);
         lcs_set_start_list(1);
         lcs_set_laser_power(100);
         lcs_set_laser_mode(LCS_FIBER, false);
         lcs_enable_laser();
+        lcs_error_count = 0;
+        setState(MotionControllerState::kRun);
     } else if (command == "M2") {
         qInfo("Ending Laser Control");
         should_swap = true;
@@ -152,10 +217,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
+    this->buffer_size_++;
+    
     if (this->buffer_size_ >= MAX_BUFFER_LIST_SIZE) {
         should_swap = true;
-    } else {
-        this->buffer_size_++;
     }
 
     if (should_swap || is_running_laser_ && should_flush_) {
@@ -170,8 +235,20 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         qInfo("Waiting list #%d to be finished", list_no);
         LCS2Error ret = lcs_load_list(list_no, 0);
         while (ret != LCS_RES_NO_ERROR) {
-          ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", list_no) : qInfo("List Status 0x%x", ret);
+          handleLCSError(ret);
           ret = lcs_load_list(list_no, 0);
+          if (ret == LCS_GENERAL_AREADY_OPENED) {
+            // If the list is already opened, close the list, execute it
+            lcs_set_end_of_list();
+            lcs_execute_list(list_no);
+            ret = lcs_load_list(list_no, 0);
+            break;
+          }
+          if (lcs_error_count ++ > 100) {
+            qWarning("!!Too many errors, stop the laser");
+            this->stop();
+            break;
+          }
           QThread::msleep(100);
         }
       } else {
@@ -182,12 +259,25 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         qInfo("Waiting list #%d to be finished", list_no);
         LCS2Error ret = lcs_load_list(list_no, 0);
         while (ret != LCS_RES_NO_ERROR) {
-          ret == LCS_GENERAL_CURRENTLY_BUSY ? qInfo("*BUSY %d", list_no) : qInfo("List Status 0x%x", ret);
+          handleLCSError(ret);
           ret = lcs_load_list(list_no, 0);
+          if (ret == LCS_GENERAL_AREADY_OPENED) {
+            // If the list is already opened, close the list, execute it
+            lcs_set_end_of_list();
+            lcs_execute_list(list_no);
+            ret = lcs_load_list(list_no, 0);
+            break;
+          }
+          if (lcs_error_count ++ > 100) {
+            qWarning("!!Too many errors, stop the laser");
+            this->stop();
+            break;
+          }
           QThread::msleep(100);
         }
-
-        lcs_set_start_list(list_no);
+        if (ret != LCS_GENERAL_AREADY_OPENED) {
+          lcs_set_start_list(list_no);
+        }
         qInfo("Started new list %d", list_no);
       }
       dequeueCmd(this->buffer_size_);
@@ -198,10 +288,19 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     if (should_end) {
       qInfo("Finalizing Laser Session with remaining buffer %d", this->buffer_size_);
       lcs_set_end_of_list();
-      lcs_auto_change();
-      dequeueCmd(this->buffer_size_);
+      // lcs_auto_change();
       list_no = list_no == 1 ? 2 : 1;
-      while (lcs_load_list(list_no, 0) != LCS_RES_NO_ERROR);
+      lcs_execute_list(list_no);
+      LCS2Error ret = lcs_load_list(list_no, 0);
+      while (ret != LCS_RES_NO_ERROR) {
+        handleLCSError(ret);
+        ret = lcs_load_list(list_no, 0);
+        if (ret == LCS_GENERAL_AREADY_OPENED) {
+          qWarning("!!Final Aready opened");
+          // If the list is already opened, just skip this error
+          break;
+        }
+      }
       BoardRunStatus Status;
       do {
           uint32_t Pos;
@@ -211,6 +310,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
               break;
       } while (!Status.bCacheReady);
       qInfo("[Laser Session Closed]");
+      qInfo() << "Pending commands: " << this->pending_cmds_.size();
+      setState(MotionControllerState::kIdle);
+      dequeueCmd(this->buffer_size_);
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
@@ -235,7 +337,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 lcs_mark_abs(-(target_y - 55), target_x - 55);
             } else {
                 lcs_jump_abs(-(target_y - 55), target_x - 55);
-                lcs_laser_on_list(100);
+                lcs_laser_on_list(30);
             }
         } else {
             lcs_jump_abs(-(target_y - 55), target_x - 55);
@@ -254,10 +356,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
  * @return false if port is busy or buffer is full
  */
 MotionController::CmdSendResult BSLMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
-  cmd_list_mutex_.lock();
+  this->cmd_list_mutex_.lock();
   this->pending_cmds_.push_back(cmd_packet);
   enqueueCmdExecutor(executor);
-  cmd_list_mutex_.unlock();
+  this->cmd_list_mutex_.unlock();
   if (!this->is_threading) {
     this->is_threading = true;
     startCommandRunner();
@@ -282,21 +384,26 @@ void BSLMotionController::attachPortBSL() {
 }
 
 MotionController::CmdSendResult BSLMotionController::pause() {
+  setState(MotionControllerState::kSleep);
+  lcs_set_end_of_list();
+  lcs_stop_execution();
   return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::resume() {
+  setState(MotionControllerState::kRun);
   return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::stop() {
+  qInfo() << "MotionController::stop()";
   setState(MotionControllerState::kSleep);
   lcs_set_end_of_list();
   lcs_stop_execution();
   QThread::sleep(2);
-  Q_EMIT MotionController::resetDetected();
   is_running_laser_ = false;
   this->pending_cmds_.clear();
+  Q_EMIT MotionController::resetDetected();
   return CmdSendResult::kOk;
 }
 

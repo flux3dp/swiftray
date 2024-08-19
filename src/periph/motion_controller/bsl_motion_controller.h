@@ -39,7 +39,7 @@ private:
   };
   std::thread command_runner_thread_;
   void startCommandRunner();
-  void commandRunner();
+  void commandRunnerThread();
   void dequeueCmd(int count);
   QString getAlarmMsg(AlarmCode code);
 };

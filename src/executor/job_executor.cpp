@@ -3,6 +3,7 @@
 #include <QThread>
 #include <QDebug>
 #include <QMessageBox>
+#include <QCoreApplication>
 
 JobExecutor::JobExecutor(QObject *parent)
   : Executor{parent}
@@ -143,6 +144,7 @@ void JobExecutor::resume() {
  *        only perform execution when in active state
  * 
  */
+int debug_count = 0;
 void JobExecutor::exec() {
   std::scoped_lock<std::mutex> lk(exec_mutex_);
 
@@ -158,6 +160,8 @@ void JobExecutor::exec() {
     return;
   }
   if (active_job_->end()) {
+    qInfo() << "Job is ended, cmd in progress: " << cmd_in_progress_.length();
+    QThread::sleep(2);
     if (!pending_cmd_ && cmd_in_progress_.isEmpty()) {
       if (latest_mc_state_ != MotionControllerState::kRun
           && latest_mc_state_ != MotionControllerState::kPaused) {
@@ -171,25 +175,35 @@ void JobExecutor::exec() {
   }
 
   // 3. Prepare the next cmd
-  if (cmd_in_progress_.length() > 90000) {
+  if (cmd_in_progress_.length() > 9000) {
     // Too many commands in progress
-    qInfo() << "Buffer is full, waiting";
-    QThread::sleep(2);
+    if (debug_count++ % 50 == 0) {
+      qInfo() << "JobExecutor:: waiting buffer to clear...";
+    }
+    QThread::msleep(10);
     return;
   }
   if (!pending_cmd_) {
     if (active_job_->end()) {
       exec_timer_->stop();
+      qInfo() << "JobExecutor:: No more pending command, exec timer stopped";
       return;
     }
     pending_cmd_ = active_job_->getNextCmd();
   }
 
   // 4. Send (execute) cmd
-  // TODO:BSL FIX pending command thread safety
+  if (motion_controller_->getState() == MotionControllerState::kSleep) {
+    // If motion controller is in sleep mode, process other stuff
+    QThread::msleep(10);
+  }
+  if (debug_count++ % 1000 == 0) {
+    qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
+  }
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // Sleep (block) until next real-time status reported or cmd finished
+    qInfo() << "pending_cmd_ execute is kIdle";
     exec_timer_->stop();
     return;
   } else if (exec_status == OperationCmd::ExecStatus::kProcessing) {
@@ -203,7 +217,6 @@ void JobExecutor::exec() {
     //}
     pending_cmd_.reset();
   }
-
 }
 
 /**
@@ -246,10 +259,10 @@ void JobExecutor::handleCmdFinish(int code) {
     cmd_in_progress_.pop_front();
   }
   completed_cmd_cnt_ += 1;
-  //if (completed_cmd_cnt_ % 25) {
+  if (completed_cmd_cnt_ % 25 || cmd_in_progress_.length() < 100) {
     Q_EMIT progressChanged(active_job_->getProgressPercent());
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
-  //}
+  }
   Q_EMIT trigger(); // ~ wakeUp() (might be triggered from different thread)
 }
 
