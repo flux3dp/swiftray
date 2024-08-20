@@ -19,6 +19,7 @@ void JobExecutor::attachMotionController(
   // In case running, stop first
   stop();
   this->motion_controller_ = motion_controller;
+  changeState(State::kIdle);
 }
 
 MachineJob const *JobExecutor::getActiveJob() const {

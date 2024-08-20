@@ -24,6 +24,8 @@ private:
   Machine* machine;
   QString m_buffer;
   Canvas* m_canvas;
+  QStringList gcode_list_;
+  QList<Timestamp> timestamp_list_;
 
   bool m_rotary_mode;
   int m_engrave_dpi;

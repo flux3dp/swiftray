@@ -449,8 +449,10 @@ void Machine::motionPortDisonnected() {
 
 void Machine::startJob() {
   if (connect_state_ != ConnectionState::kConnected) {
+    qWarning() << "Machine::startJob() - machine is not connected";
     return;
   }
+  qInfo() << "Machine::startJob()";
   job_executor_->start();
 }
 
@@ -571,11 +573,15 @@ void Machine::handleNotif(QString title, QString msg) {
 
 bool Machine::connectSerial(QString port, int baudrate) {
   if (port == "BSL") {
-    connect_bsl_board();
-    bsl_connected_ = true;
-    qInfo() << "LCS connected";
-    this->setupMotionController();
-    return true;
+    if (lcs_connect()) {
+      bsl_connected_ = true;
+      qInfo() << "LCS connected";
+      this->setupMotionController();
+      return true;
+    } else {
+      qWarning() << "LCS connect failed";
+      return false;
+    }
   }
   // Connects to regular serial port
   serial_port_->setPortName(port);

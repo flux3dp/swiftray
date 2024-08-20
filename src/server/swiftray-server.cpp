@@ -6,6 +6,7 @@
 #include <cmath>
 #include <canvas/canvas.h>
 #include <toolpath_exporter/toolpath-exporter.h>
+#include "liblcs/lcsExpr.h"
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
@@ -41,8 +42,12 @@ void SwiftrayServer::processMessage(const QString& message) {
     QString action = data["action"].toString();
     QString id = data["id"].toString();
     QJsonValue params = data["params"];
-    auto param_str = action == "loadSVG" ? "[skipped]" : params.toString();
-    qInfo() << "Received action" << action << "with params" << param_str;
+    auto param_str = action == "loadSVG" ? "" : params.toString();
+    if (param_str != "") {
+      qInfo() << "ws://" + action << "with params" << param_str;
+    } else {
+      qInfo() << "ws://" + action;
+    }
     
     if (path == "/devices") {
       handleDevicesAction(socket, id, action, params);
@@ -72,9 +77,21 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   if (action == "connect") {
     // Implement device connection logic here
     // TODO:SERVER Determine param based on port
-    this->machine = new Machine(MachineSettings::MachineParam());
+    MachineSettings::MachineParam bsl_param;
+    bsl_param.name = "Default";
+    bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
+    bsl_param.origin = MachineSettings::MachineParam::OriginType::RearLeft;
+    bsl_param.width = 110;
+    bsl_param.height = 110;
+    bsl_param.travel_speed = 1200;
+    bsl_param.rotary_axis = 'Y';
+    bsl_param.home_on_start = false;
+    bsl_param.is_high_speed_mode = false;
+    this->machine = new Machine(bsl_param);
     result["message"] = "Connected to device on port " + port;
+    this->machine->connectSerial("BSL", 0);
   } else if (action == "start") {
+    qInfo() << "Starting job";
     this->machine->startJob();
   } else if (action == "pause") {
     this->machine->pauseJob();
@@ -117,12 +134,17 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement kick logic
   } else if (action == "upload") {
     // Implement file upload logic
+    qInfo() << "File uploaded";
+    bool job_result = this->machine->createGCodeJob(gcode_list_, timestamp_list_);
+    qInfo() << "Job created" << job_result;
+    result["success"] = job_result;
   } else if (action == "sendGCode") {
     QString gcode = params.toObject()["gcode"].toString();
     Executor* executor = this->machine->getConsoleExecutor().data();
     this->machine->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") {
     result["st_id"] = this->machine->getJobExecutor()->getStatusId();
+    result["st_progress"] = this->machine->getJobExecutor()->getProgress() * 0.01f; 
   } else if (action == "home") {
     // Implement homing logic
   } else {
@@ -161,7 +183,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
-    bool enable_high_speed = type == "fcode";
+    bool enable_high_speed = type == "fcode" && this->machine->getMachineParam().is_high_speed_mode;
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
     qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travel_speed;
@@ -187,13 +209,16 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     if (m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
       qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
     }
+    qInfo() << "Conversion completed.";
     m_buffer = QString::fromStdString(gen.toString());
+    qInfo() << m_buffer;
+    gcode_list_ = m_buffer.split("\n");
     result["gcode"] = m_buffer;
     result["fileName"] = "swiftray-conversion";
-    auto timestamp_list = MachineJob::calcRequiredTime(m_buffer.split("\n"), NULL);
+    timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, NULL);
     Timestamp total_required_time{0, 0};
-    if (!timestamp_list.empty()) {
-      total_required_time = timestamp_list.last();
+    if (!timestamp_list_.empty()) {
+      total_required_time = timestamp_list_.last();
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
@@ -251,17 +276,19 @@ void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const Q
 
 QJsonArray SwiftrayServer::getDeviceList() {
   QJsonArray devices;
-  devices.append(QJsonObject{
-    {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
-    {"name", "Promark Desktop"},
-    {"serial", "PD99KJOJIO13993"},
-    {"st_id", 0},
-    {"version", "5.0.0"},
-    {"model", "fpm1"},
-    {"port", "/dev/ttyUSB0"},
-    {"type", "Galvanometer"},
-    {"source", "swiftray"}
-  });
+  if (lcs_available()) {
+    devices.append(QJsonObject{
+      {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
+      {"name", "Promark Desktop"},
+      {"serial", "PD99KJOJIO13993"},
+      {"st_id", 0},
+      {"version", "5.0.0"},
+      {"model", "fpm1"},
+      {"port", "/dev/ttyUSB0"},
+      {"type", "Galvanometer"},
+      {"source", "swiftray"}
+    });
+  }
   devices.append(QJsonObject{
     {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
     {"serial", "LV84KAO192839012"},
@@ -273,5 +300,6 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"type", "Laser Cutter"},
     {"source", "swiftray"}
   });
+  qInfo() << "Device available:" << devices.size();
   return devices;
 }

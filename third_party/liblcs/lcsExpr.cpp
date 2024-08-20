@@ -533,10 +533,9 @@ void LCS2close(void) {
     }
 }
 
-bool connect_bsl_board() {
-    // Note: dylib must be placed in pwd!
-    printf("Loading BSL library\n");
+bool lcs_check_init() {
     if (!gLibLCS) {
+        printf("Loading LCS library...\n");
         LCS2open();
         printf("LCSOpen OK\n");
         if (lcs_init_dll() != LCS_RES_NO_ERROR) {
@@ -548,15 +547,24 @@ bool connect_bsl_board() {
     } else {
         printf("LCS Library already loaded\n");
     }
+}
 
-    if (lcs_search_cards() == 0) {
+bool lcs_available() {
+    lcs_check_init();
+    return lcs_search_cards() != 0;
+}
+
+bool lcs_connect() {
+    if (!lcs_available()) {
         printf("No laser cards found.\n");
         return false;
     }
 
     if (lcs_select_card(0) != LCS_RES_NO_ERROR) {
-        printf("Failed to select laser card.\n");
+        printf("Failed to select laser card. %d\n", static_cast<int>(lcs_select_card(0)));
         return false;
     }
+
+    printf("Connected to BSL card.\n");
     return true;
 }

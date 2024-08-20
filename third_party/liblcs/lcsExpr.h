@@ -1795,4 +1795,5 @@ extern LCS_ETH_REMOVE_CARD lcs_eth_remove_card;
 }			//extern "C" 
 #endif
 
-bool connect_bsl_board();
+bool lcs_connect();
+bool lcs_available();
