@@ -175,51 +175,59 @@ void JobExecutor::exec() {
     }
   }
 
-  // 3. Prepare the next cmd
-  if (cmd_in_progress_.length() > 9000) {
-    // Too many commands in progress
-    if (debug_count++ % 50 == 0) {
-      qInfo() << "JobExecutor:: waiting buffer to clear...";
-    }
-    QThread::msleep(10);
-    return;
-  }
-  if (debug_count++ % 1000 == 0) {
-    qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
-  }
-  if (!pending_cmd_) {
-    if (active_job_->end()) {
-      // exec_timer_->stop();
-      if (debug_count % 40 == 0) {
-        qInfo() << "JobExecutor:: Command is empty. Waiting for completion...";
+  // Submit commands to motion controller buffer as much as possible
+  while (true) {
+    // If buffer is full, wait till next cycle
+    if (cmd_in_progress_.length() > 9000) {
+      // Too many commands in progress
+      if (debug_count++ % 50 == 0) {
+        qInfo() << "JobExecutor:: waiting buffer to clear...";
       }
-      QThread::msleep(25);
+      QThread::msleep(10);
       return;
     }
-    pending_cmd_ = active_job_->getNextCmd();
-  }
 
-  // 4. Send (execute) cmd
-  if (motion_controller_->getState() == MotionControllerState::kSleep) {
-    // If motion controller is in sleep mode, process other stuff
-    QThread::msleep(10);
-  }
-  OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
-  if (exec_status == OperationCmd::ExecStatus::kIdle) {
-    // Sleep (block) until next real-time status reported or cmd finished
-    qInfo() << "pending_cmd_ execute is kIdle";
-    exec_timer_->stop();
-    return;
-  } else if (exec_status == OperationCmd::ExecStatus::kProcessing) {
-    cmd_in_progress_.push_back(pending_cmd_);
-    pending_cmd_.reset();
-  } else { // Finish immediately: ok or error
-    completed_cmd_cnt_ += 1;
-    //if (completed_cmd_cnt_ % 25) {
-      Q_EMIT progressChanged(active_job_->getProgressPercent());
-      Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
-    //}
-    pending_cmd_.reset();
+    // If mc is sleeping, wait till next cycle
+    if (motion_controller_->getState() == MotionControllerState::kSleep) {
+      // If motion controller is in sleep mode, process other stuff
+      QThread::msleep(10);
+      return;
+    }
+    if (debug_count++ % 1000 == 0) {
+      qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
+    }
+    // Fetch new command
+    if (!pending_cmd_) {
+      if (active_job_->end()) {
+        // No more command, wait for completion in next cycle
+        if (debug_count % 40 == 0) {
+          qInfo() << "JobExecutor:: Command is empty. Waiting for completion...";
+        }
+        QThread::msleep(25);
+        return;
+      }
+      pending_cmd_ = active_job_->getNextCmd();
+    }
+
+    // Execute command and check status
+    OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
+    switch(exec_status) {
+      case OperationCmd::ExecStatus::kIdle:
+        // Sleep (block) until next real-time status reported or cmd finished
+        qInfo() << "pending_cmd_ execute returned kIdle";
+        exec_timer_->stop();
+        return;
+      case OperationCmd::ExecStatus::kProcessing:
+        cmd_in_progress_.push_back(pending_cmd_);
+        pending_cmd_.reset();
+        break;
+      default: // Immediate finish
+        completed_cmd_cnt_ += 1;
+        Q_EMIT progressChanged(active_job_->getProgressPercent());
+        Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
+        pending_cmd_.reset();
+        break;
+    }
   }
 }
 
