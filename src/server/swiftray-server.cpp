@@ -12,7 +12,8 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
   this->m_server = new QWebSocketServer("Swiftray Server", QWebSocketServer::NonSecureMode, this);
 
-  m_engrave_dpi = 254;
+  m_machine = nullptr;
+  m_engrave_dpi = 512;
   if (m_server->listen(QHostAddress::LocalHost, port)) {
     qInfo() << "Swiftray Server listening on port" << port;
     connect(m_server, &QWebSocketServer::newConnection, this, &SwiftrayServer::onNewConnection);
@@ -77,28 +78,32 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   if (action == "connect") {
     // Implement device connection logic here
     // TODO:SERVER Determine param based on port
-    MachineSettings::MachineParam bsl_param;
-    bsl_param.name = "Default";
-    bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
-    bsl_param.origin = MachineSettings::MachineParam::OriginType::RearLeft;
-    bsl_param.width = 110;
-    bsl_param.height = 110;
-    bsl_param.travel_speed = 1200;
-    bsl_param.rotary_axis = 'Y';
-    bsl_param.home_on_start = false;
-    bsl_param.is_high_speed_mode = false;
-    this->machine = new Machine(bsl_param);
-    result["message"] = "Connected to device on port " + port;
-    this->machine->connectSerial("BSL", 0);
+    if (this->m_machine == nullptr) {
+      MachineSettings::MachineParam bsl_param;
+      bsl_param.name = "Default";
+      bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
+      bsl_param.origin = MachineSettings::MachineParam::OriginType::RearLeft;
+      bsl_param.width = 110;
+      bsl_param.height = 110;
+      bsl_param.travel_speed = 4000;
+      bsl_param.rotary_axis = 'Y';
+      bsl_param.home_on_start = false;
+      bsl_param.is_high_speed_mode = false;
+      this->m_machine = new Machine(bsl_param);
+      result["message"] = "Connected to device on port " + port;
+      this->m_machine->connectSerial("BSL", 0);
+    } else {
+      result["message"] = "Already connected to device on port";
+    }
   } else if (action == "start") {
     qInfo() << "Starting job";
-    this->machine->startJob();
+    this->m_machine->startJob();
   } else if (action == "pause") {
-    this->machine->pauseJob();
+    this->m_machine->pauseJob();
   } else if (action == "resume") {
-    this->machine->resumeJob();
+    this->m_machine->resumeJob();
   } else if (action == "stop") {
-    this->machine->stopJob();
+    this->m_machine->stopJob();
   } else if (action == "getParam") {
     QString paramName = params.toObject()["name"].toString();
     // Implement get device parameter logic, probably laser speed, power, fan...etc
@@ -122,6 +127,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement switch mode logic
   } else if (action == "quit") {
     // Implement quit task logic
+    this->m_machine->getJobExecutor()->reset();
   } else if (action == "downloadLog") {
     // Implement log download logic
   } else if (action == "downloadFile") {
@@ -135,16 +141,16 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "upload") {
     // Implement file upload logic
     qInfo() << "File uploaded";
-    bool job_result = this->machine->createGCodeJob(gcode_list_, timestamp_list_);
+    bool job_result = this->m_machine->createGCodeJob(gcode_list_, timestamp_list_);
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
   } else if (action == "sendGCode") {
     QString gcode = params.toObject()["gcode"].toString();
-    Executor* executor = this->machine->getConsoleExecutor().data();
-    this->machine->getMotionController()->sendCmdPacket(executor, gcode);
+    Executor* executor = this->m_machine->getConsoleExecutor().data();
+    this->m_machine->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") {
-    result["st_id"] = this->machine->getJobExecutor()->getStatusId();
-    result["st_progress"] = this->machine->getJobExecutor()->getProgress() * 0.01f; 
+    result["st_id"] = this->m_machine->getJobExecutor()->getStatusId();
+    result["st_progress"] = this->m_machine->getJobExecutor()->getProgress() * 0.01f; 
   } else if (action == "home") {
     // Implement homing logic
   } else {
@@ -183,12 +189,12 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
-    bool enable_high_speed = type == "fcode" && this->machine->getMachineParam().is_high_speed_mode;
+    bool enable_high_speed = type == "fcode" && (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode);
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
     qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travel_speed;
     QTransform move_translate = QTransform();
-    auto origin = machine == NULL ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : machine->getCustomOrigin();
+    auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : m_machine->getCustomOrigin();
     ToolpathExporter exporter(
         (BaseGenerator*)&gen,
         m_engrave_dpi / 25.4,
@@ -211,11 +217,17 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     qInfo() << "Conversion completed.";
     m_buffer = QString::fromStdString(gen.toString());
-    qInfo() << m_buffer;
+    // Write m_buffer to file
+    QFile file("swiftray-conversion.gcode");
+    if (file.open(QIODevice::WriteOnly)) {
+      QTextStream stream(&file);
+      stream << m_buffer;
+      file.close();
+    }
     gcode_list_ = m_buffer.split("\n");
     result["gcode"] = m_buffer;
     result["fileName"] = "swiftray-conversion";
-    timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, NULL);
+    timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, nullptr);
     Timestamp total_required_time{0, 0};
     if (!timestamp_list_.empty()) {
       total_required_time = timestamp_list_.last();
