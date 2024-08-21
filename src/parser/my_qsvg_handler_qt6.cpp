@@ -4610,6 +4610,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             new_shape = std::make_shared<PathShape>(data_list_[i].qpath);
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
+            data_list_[i].fill= true;
         } else if(data_list_[i].type == QSVG_USE) {
             continue;
         } else if(data_list_[i].type == QSVG_TEXT) {

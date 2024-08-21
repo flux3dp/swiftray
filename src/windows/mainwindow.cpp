@@ -231,7 +231,7 @@ void MainWindow::loadCanvas() {
       FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
       QByteArray data = file.readAll();
-      qInfo() << "File size:" << data.size();
+      qInfo() << "File size:" << data.size() << "Filename:" << filename;
 
       if (filename.toLower().endsWith(".bb")) {
         if ( ! handleUnsavedChange()) {
@@ -246,6 +246,9 @@ void MainWindow::loadCanvas() {
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
+      } else if (filename.toLower().endsWith(".bvg")) {
+        // Get byte array from file
+        canvas_->loadSVG(data, true);
       } else if (filename.toLower().endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
@@ -650,7 +653,7 @@ void MainWindow::openFile() {
     FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
     QByteArray data = file.readAll();
-    qInfo() << "File size:" << data.size();
+    qInfo() << "File size:" << data.size() << "Filename:" << file_name;
 
     if (file_name.toLower().endsWith(".bb")) {
       QDataStream stream(data);
@@ -662,6 +665,9 @@ void MainWindow::openFile() {
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
+    } else if (file_name.toLower().endsWith(".bvg")) {
+      // Get byte array from file
+      canvas_->loadSVG(data, true);
     } else if (file_name.toLower().endsWith(".svg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);

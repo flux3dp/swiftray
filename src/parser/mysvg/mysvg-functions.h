@@ -130,6 +130,7 @@ namespace MySVG {
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
                           double g_scale, QColor &g_color, QImage &g_image) {
+        if (isSymbolNode(node)) return;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
         if(node->type() == QSVG_PATH) {

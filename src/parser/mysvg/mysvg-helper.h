@@ -43,6 +43,18 @@ QTransform getNodeTransform(QSvgNode *current_node) {
     return trans;
 }
 
+bool isSymbolNode(QSvgNode *current_node) {
+    QTransform trans = QTransform();
+    while (1) {
+        if (current_node->type() == QSVG_DOC)
+            break;
+        if (current_node->type() == QSvgNode::Symbol)
+            return true;
+        current_node = current_node->parent();
+    }
+    return false;
+}
+
 bool getNodeVisible(QSvgNode *current_node) {
     while (current_node != nullptr) {
         if (current_node->displayMode() == QSvgNode::NoneMode)
