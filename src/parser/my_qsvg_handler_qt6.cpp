@@ -2854,6 +2854,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         QString node_addr = QString::number(reinterpret_cast<quintptr>(node), 16);
         qInfo() << "Found Layer Group" << node_addr;
         MySVG::BeamLayerConfig layer_config;
+        resolveColor(attributes.value("data-color"), layer_config.color, handler);
+        qInfo() << "Raw Color" << attributes.value("data-color") << "Resolved Color" << layer_config.color;
         layer_config.speed = attributes.value("data-speed").toDouble();
         layer_config.power = attributes.value("data-strength").toDouble();
         handler->setLayerConfig(node_addr, layer_config);
@@ -4597,7 +4599,8 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     for(int i = 0; i < data_list_.size(); ++i) {
         switch(data_list_[i].type) {
             case QSVG_USE:
-                MySVG::transformUse(data_list_, data_list_[i].node_names[0], data_list_[i].trans);
+                // Clone symbol nodes and apply transformation
+                MySVG::processUse(data_list_, data_list_[i]);
                 break;
             default :
                 break;
@@ -4606,12 +4609,15 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     QRectF rect = QRectF();
     for(int i = 0; i < data_list_.size(); ++i) {
         ShapePtr new_shape;
-        if(data_list_[i].type == QSVG_PATH) {
+        if (data_list_[i].is_symbol) {
+            continue;
+        } else if (data_list_[i].type == QSVG_PATH) {
             new_shape = std::make_shared<PathShape>(data_list_[i].qpath);
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
             data_list_[i].fill= true;
         } else if(data_list_[i].type == QSVG_USE) {
+            // Skip use nodes since we have already processed them
             continue;
         } else if(data_list_[i].type == QSVG_TEXT) {
             new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 1);
@@ -4640,6 +4646,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
             layer->setSpeed(config.speed);
             layer->setStrength(config.power);
+            layer->setColor(config.color);
         }
         doc->addLayer(layer);
         if(layer->isVisible())

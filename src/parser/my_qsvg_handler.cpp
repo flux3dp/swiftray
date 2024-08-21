@@ -3740,7 +3740,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     for(int i = 0; i < data_list_.size(); ++i) {
         switch(data_list_[i].type) {
             case QSvgNode::USE: {
-                MySVG::transformUse(data_list_, data_list_[i].node_names[0], data_list_[i].trans);
+                MySVG::processUse(data_list_, data_list_[i]);
                 break;
                 }
             default :

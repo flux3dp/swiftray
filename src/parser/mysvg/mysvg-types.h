@@ -21,11 +21,13 @@ namespace MySVG {
         QFont font;
         QString text;
         bool fill;
+        bool is_symbol;
     };
 
     struct BeamLayerConfig {
         float speed;
         float power;
+        QColor color;
         QString title;
     };
 
