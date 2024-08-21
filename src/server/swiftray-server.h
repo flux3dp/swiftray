@@ -21,7 +21,7 @@ private Q_SLOTS:
 
 private:
   QWebSocketServer* m_server;
-  Machine* machine;
+  Machine* m_machine;
   QString m_buffer;
   Canvas* m_canvas;
   QStringList gcode_list_;
