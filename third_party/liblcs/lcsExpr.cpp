@@ -544,8 +544,6 @@ bool lcs_check_init() {
         }
 
         printf("LCS Init OK\n");
-    } else {
-        printf("LCS Library already loaded\n");
     }
 }
 

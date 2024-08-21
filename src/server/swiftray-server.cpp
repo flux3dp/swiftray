@@ -312,6 +312,5 @@ QJsonArray SwiftrayServer::getDeviceList() {
     {"type", "Laser Cutter"},
     {"source", "swiftray"}
   });
-  qInfo() << "Device available:" << devices.size();
   return devices;
 }

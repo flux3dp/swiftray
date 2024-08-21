@@ -603,7 +603,7 @@ bool Machine::connectSerial(QString port, int baudrate) {
 }
 
 void Machine::disconnect() {
-  if (motion_controller_ != NULL) {
+  if (motion_controller_ != nullptr) {
     qInfo() << "MotionController detaching port";
     motion_controller_->detachPort();
   }
