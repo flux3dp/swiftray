@@ -24,6 +24,7 @@ public:
   Timestamp getTotalRequiredTime() const;
   float getProgress() const;
   Timestamp getElapsedTime() const;
+  void reset();
 
 
 public Q_SLOTS:

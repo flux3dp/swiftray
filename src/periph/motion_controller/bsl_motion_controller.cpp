@@ -84,19 +84,24 @@ void BSLMotionController::startCommandRunner() {
   this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunnerThread, this);
 }
 
+int debug_count_bsl  = 0;
+
 void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLMotionController::commandRunnerThread() started";
   while (this->state_ != MotionControllerState::kQuit) {
     if (this->state_ == MotionControllerState::kSleep) {
       qInfo() << "MotionController is in sleep state, ignore commandRunnerThread";
-      QThread::msleep(100);
+      QThread::msleep(25);
       continue;
+    }
+    if (debug_count_bsl ++ % 100 == 0) {
+      qInfo() << "CommandRunnerThread is running" << this->pending_cmds_.size();
     }
     this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
       // qInfo() << "No pending commands, sleep for a while";
       this->cmd_list_mutex_.unlock();
-      QThread::msleep(100);
+      QThread::msleep(25);
       if (this->buffer_size_ > 0) {
         this->should_flush_ = true;
       }
@@ -200,10 +205,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       laser_enabled = false;
       list_no = 1;
       first_list = true;
+      lcs_set_laser_control(true);
+      lcs_set_laser_control(true);
       lcs_set_jump_speed_ctrl(3000);
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_laser_delays(-50, 50);
-      lcs_set_laser_control(true);
       lcs_set_start_list(1);
       lcs_set_laser_power(100);
       lcs_set_laser_mode(LCS_MOPA, false);
@@ -255,7 +261,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             this->stop();
             break;
           }
-          QThread::msleep(100);
+          QThread::msleep(25);
         }
       } else {
         lcs_set_end_of_list();
@@ -279,7 +285,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             this->stop();
             break;
           }
-          QThread::msleep(100);
+          QThread::msleep(25);
         }
         if (ret != LCS_GENERAL_AREADY_OPENED) {
           lcs_set_start_list(list_no);

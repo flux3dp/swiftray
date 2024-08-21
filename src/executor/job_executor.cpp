@@ -184,10 +184,16 @@ void JobExecutor::exec() {
     QThread::msleep(10);
     return;
   }
+  if (debug_count++ % 1000 == 0) {
+    qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
+  }
   if (!pending_cmd_) {
     if (active_job_->end()) {
-      exec_timer_->stop();
-      qInfo() << "JobExecutor:: No more pending command, exec timer stopped";
+      // exec_timer_->stop();
+      if (debug_count % 40 == 0) {
+        qInfo() << "JobExecutor:: Command is empty. Waiting for completion...";
+      }
+      QThread::msleep(25);
       return;
     }
     pending_cmd_ = active_job_->getNextCmd();
@@ -197,9 +203,6 @@ void JobExecutor::exec() {
   if (motion_controller_->getState() == MotionControllerState::kSleep) {
     // If motion controller is in sleep mode, process other stuff
     QThread::msleep(10);
-  }
-  if (debug_count++ % 1000 == 0) {
-    qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
   }
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
@@ -368,4 +371,11 @@ Timestamp JobExecutor::getElapsedTime() const {
     return Timestamp{};
   }
   return active_job_->getElapsedTime();
+}
+
+void JobExecutor::reset() {
+  if (state_ == State::kRunning || state_ == State::kPaused) {
+    throw "Unable to reset while running or paused";
+  }
+  changeState(State::kIdle); 
 }
