@@ -201,7 +201,7 @@ void MainWindow::loadSettings() {
     welcome_dialog_->raise();
   }
   preferences_window_->setUpload(mainApp->isUploadEnable());
-  this->connectMachine(laser_panel_->getPort());
+  this->connectMachine(laser_panel_->getPort(), true);
 }
 
 void MainWindow::loadCanvas() {
@@ -1168,6 +1168,9 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
+  connect(ui->actionConnect, &QAction::triggered, [=]() {
+    connectMachine(laser_panel_->getPort());
+  });
 #ifdef HAVE_SOFTWARE_UPDATE
   connect(ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::checkForUpdates);
 #endif
@@ -1583,7 +1586,7 @@ void MainWindow::registerEvents() {
     // This will be called after mainApp->updateMachineIndex is called
     laser_panel_->setMachineIndex(machine_index);
     active_machine.applyMachineParam(mainApp->getMachineParam());
-    this->connectMachine(laser_panel_->getPort());
+    this->connectMachine(laser_panel_->getPort(), true);
   });
   connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](double travel_speed) {
     doc_panel_->setTravelSpeed(travel_speed);
@@ -1895,30 +1898,35 @@ void MainWindow::setConnectionToolBar() {
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }
 
-void MainWindow::connectMachine(QString port_name) {
+void MainWindow::connectMachine(QString port_name, bool auto_connect) {
+  qInfo() << "MainWindow::connectMachine(" << port_name << ")";
   if (active_machine.isConnected()) {
-    if (active_machine.getMotionController()) {
-      active_machine.getMotionController()->detachPort();
-    } else {
-      active_machine.disconnect(); // disconnect
-    }
-    qInfo() << "[Connection] Disconnected from existing connection";
-    laser_panel_->setConnected(false);
+    qInfo() << "MainWindow::connectMachine()- Already connected to the port" << port_name;
+    active_machine.disconnect();
+    if (!auto_connect) return;
+    QThread::msleep(100);
+    qInfo() << "MainWindow::connectMachine() - Reconnecting";
   }
   auto machine_param = mainApp->getMachineParam();
-  if (machine_param.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
-    port_name = "BSL";
-  }
   active_machine.applyMachineParam(machine_param);
-  qInfo() << "[Connection] Connecting" << machine_param.name << "@ port" << port_name << 115200;
-  active_machine.connectSerial(port_name, 115200);
+  bool connection_result;
+  if (machine_param.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+    qInfo() << "[Connection] Connecting BSL";
+    connection_result = active_machine.connectSerial("BSL", 0);
+  } else {
+    qInfo() << "[Connection] Connecting" << machine_param.name << "@ port" << port_name << 115200;
+    connection_result= active_machine.connectSerial(port_name, 115200);
+  }
 
-  if (!active_machine.isConnected()) {
-    // QMessageBox msgbox;
-    // msgbox.setText(tr("Error"));
-    // msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
-    // msgbox.exec();
-    qWarning() << "Unable to connect to the port" << port_name << ". Make sure no existing program is using it.";
+  if (!connection_result) {
+    if (auto_connect) {
+      qWarning() << "Unable to connect to the port" << port_name << ". Make sure no existing program is using it.";
+    } else {
+      QMessageBox msgbox;
+      msgbox.setText(tr("Error"));
+      msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
+      msgbox.exec();
+    }
     laser_panel_->setConnected(false);
     return;
   }
@@ -2714,6 +2722,7 @@ void MainWindow::machineDisconnected() {
   ui->actionFrame->setEnabled(false);
   jogging_panel_->setControlEnable(false);
   laser_panel_->setControlEnable(false);
+  laser_panel_->setConnected(false);
 }
 
 void MainWindow::updateCanvasSize(QSize new_size) {

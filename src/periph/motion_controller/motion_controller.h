@@ -19,6 +19,7 @@ enum class MotionControllerState {
   kAlarm,   
   kSleep,
   kCheck,
+  kQuit
 };
 
 
@@ -35,9 +36,9 @@ public:
 
   explicit MotionController(QObject *parent = nullptr);
 
-  void attachPort(QSerialPort *port);
-  void attachPortBSL();
-  void detachPort();
+  void attachSerialPort(QSerialPort *port);
+  virtual QString type() = 0;
+  virtual bool detachPort() = 0;
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   virtual CmdSendResult stop() = 0;
   // virtual CmdSendResult pause();

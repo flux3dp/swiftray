@@ -13,6 +13,8 @@ class BSLMotionController : public MotionController
 public:
   BSLMotionController(QObject *parent = nullptr);
   void attachPortBSL();
+  bool detachPort() override;
+  QString type() override { return "BSL"; }
   CmdSendResult stop() override;
   CmdSendResult pause();
   CmdSendResult resume();

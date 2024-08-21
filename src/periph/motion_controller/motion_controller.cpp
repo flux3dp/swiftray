@@ -8,13 +8,8 @@ MotionController::MotionController(QObject *parent)
 
 }
 
-// TODO:BSL attachPortBSL
-void MotionController::attachPortBSL() {
-  qInfo() << "MotionController::attachPortBSL() is not implemented in this class";
-}
-
-void MotionController::attachPort(QSerialPort *port) {
-  qInfo() << "MotionController::attachPort()";
+void MotionController::attachSerialPort(QSerialPort *port) {
+  qInfo() << "MotionController::attachSerialPort()";
   port_ = port;
   port_->clear();
   unprocssed_response_.clear();
@@ -41,15 +36,6 @@ void MotionController::attachPort(QSerialPort *port) {
     }
   });
 }
-
-void MotionController::detachPort() {
-  if (port_ && port_->isOpen()) {
-    port_->close();
-    port_ = nullptr;
-    Q_EMIT disconnected();
-  }
-}
-
 
 MotionControllerState MotionController::getState() const {
   std::scoped_lock<std::mutex> lk(state_mutex_);

@@ -86,7 +86,7 @@ void BSLMotionController::startCommandRunner() {
 
 void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLMotionController::commandRunnerThread() started";
-  while (true) {
+  while (this->state_ != MotionControllerState::kQuit) {
     if (this->state_ == MotionControllerState::kSleep) {
       qInfo() << "MotionController is in sleep state, ignore commandRunnerThread";
       QThread::msleep(100);
@@ -140,7 +140,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         return;
     }
 
-    QRegularExpression re("([GMXYFS])(-?\\d+\\.?\\d*)");
+    QRegularExpression re("([GMXYFSZ])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -148,6 +148,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     bool should_end = false;
     double x = is_absolute_positioning ? current_x : 0;
     double y = is_absolute_positioning ? current_y : 0;
+    double z = 0;
 
     QString command;
 
@@ -165,6 +166,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "Y") {
             y = value.toDouble();
             is_move_command = true;
+        } else if (type == "Z") {
+            z = value.toDouble();
+            is_move_command = true;
         } else if (type == "F") {
             current_f = value.toDouble();
             lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
@@ -181,38 +185,40 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     }
 
     if (command == "G90") {
-        is_absolute_positioning = true;
+      is_absolute_positioning = true;
     } else if (command == "G91") {
-        is_absolute_positioning = false;
+      is_absolute_positioning = false;
     } else if (command == "M3" || command == "M4") {
-        // Begin Laser Control
-        qInfo() << "[Laser Session Started]";
-        if (is_running_laser_) {
-            qWarning("Laser already started");
-            this->buffer_size_++;
-            return;
-        }
-        is_running_laser_ = true;
-        laser_enabled = false;
-        list_no = 1;
-        first_list = true;
-        lcs_set_jump_speed_ctrl(3000);
-        lcs_set_mark_speed_ctrl(1000);
-        lcs_set_laser_delays(-50, 50);
-        lcs_set_laser_control(true);
-        lcs_set_start_list(1);
-        lcs_set_laser_power(100);
-        lcs_set_laser_mode(LCS_FIBER, false);
-        lcs_enable_laser();
-        lcs_error_count = 0;
-        setState(MotionControllerState::kRun);
+      // Begin Laser Control
+      qInfo() << "M3M4: Laser Session Started";
+      if (is_running_laser_) {
+          qWarning("M3M4: Laser already started");
+          this->buffer_size_++;
+          return;
+      }
+      is_running_laser_ = true;
+      laser_enabled = false;
+      list_no = 1;
+      first_list = true;
+      lcs_set_jump_speed_ctrl(3000);
+      lcs_set_mark_speed_ctrl(1000);
+      lcs_set_laser_delays(-50, 50);
+      lcs_set_laser_control(true);
+      lcs_set_start_list(1);
+      lcs_set_laser_power(100);
+      lcs_set_laser_mode(LCS_MOPA, false);
+      lcs_enable_laser();
+      lcs_error_count = 0;
+      setState(MotionControllerState::kRun);
     } else if (command == "M2") {
-        qInfo("Ending Laser Control");
-        should_swap = true;
-        should_end = true;
-    } 
-
-    if (!is_running_laser_) {
+      qInfo("M2: Ending Laser Control");
+      should_swap = true;
+      should_end = true;
+    } else if (command == "M6") {
+      qInfo("MTOWER: Moving to Tower");
+      lcs_write_io_port(0b0000);
+      dequeueCmd(1);
+    } else if (!is_move_command) {
       dequeueCmd(1);
       return;
     }
@@ -321,7 +327,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     }
 
     // Process move command
-    if (is_move_command) {
+
+    if (z != 0) {
+      qInfo() << "Z Axis" << z;
+      lcs_set_axis_move(1, z * 1600, false, 800, 10, 1000);
+      lcs_set_axis_move(0, z * 1600, false, 800, 10, 1000);
+      QThread::msleep(8000);
+      dequeueCmd(1);
+    } else if (is_move_command) {
         double target_x, target_y;
         if (is_absolute_positioning) {
             target_x = x;
@@ -379,7 +392,8 @@ void BSLMotionController::respReceived(QString resp) {
 
 // TODO:BSL
 void BSLMotionController::attachPortBSL() {
-  qInfo() << "MotionController::attachPortBSL() is not implemented well";
+  qInfo() << "MotionController::attachPortBSL()";
+  // Actually do nothing..
   setState(MotionControllerState::kIdle);
 }
 
@@ -396,7 +410,7 @@ MotionController::CmdSendResult BSLMotionController::resume() {
 }
 
 MotionController::CmdSendResult BSLMotionController::stop() {
-  qInfo() << "MotionController::stop()";
+  qInfo() << "BSLMotionController::stop()";
   setState(MotionControllerState::kSleep);
   lcs_set_end_of_list();
   lcs_stop_execution();
@@ -405,6 +419,20 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   this->pending_cmds_.clear();
   Q_EMIT MotionController::resetDetected();
   return CmdSendResult::kOk;
+}
+
+bool BSLMotionController::detachPort() {
+  qInfo() << "BSLMotionController::detachPort()";
+  if (is_threading) {
+    setState(MotionControllerState::kQuit);
+    command_runner_thread_.join();
+  }
+  stop();
+  LCS2Error result = lcs_release_card(0);
+  Q_EMIT disconnected();
+  setState(MotionControllerState::kQuit);
+  qInfo() << "BSLMotionController::detachPort() finished";
+  return result == LCS_RES_NO_ERROR;
 }
 
 QString BSLMotionController::getAlarmMsg(AlarmCode code) {

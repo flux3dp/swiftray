@@ -11,8 +11,9 @@ class GrblMotionController : public MotionController
 {
 public:
   explicit GrblMotionController(QObject *parent = nullptr);
-
-  CmdSendResult stop();
+  QString type() override { return "GRBL"; }
+  bool detachPort() override;
+  CmdSendResult stop() override;
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
 
 public Q_SLOTS:

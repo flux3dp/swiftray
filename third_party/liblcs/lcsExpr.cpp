@@ -560,8 +560,15 @@ bool lcs_connect() {
         return false;
     }
 
-    if (lcs_select_card(0) != LCS_RES_NO_ERROR) {
-        printf("Failed to select laser card. %d\n", static_cast<int>(lcs_select_card(0)));
+    auto select_result = lcs_select_card(0);
+
+    if (select_result != LCS_RES_NO_ERROR) {
+        printf("Failed to select laser card (%d), try again...\n", static_cast<int>(select_result));
+        select_result = lcs_select_card(0);
+    }
+
+    if (select_result != LCS_RES_NO_ERROR) {
+        printf("Failed to select laser card (%d).\n", static_cast<int>(select_result));
         return false;
     }
 

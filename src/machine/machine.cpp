@@ -402,7 +402,7 @@ void Machine::setupMotionController() {
   qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
   if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
     qInfo() << "Setup GRBL Motion Controller";
-    motion_controller_->attachPort(serial_port_);
+    motion_controller_->attachSerialPort(serial_port_);
   } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
     // TODO:BSL
     qInfo() << "Setup BSL Motion Controller";
@@ -429,6 +429,7 @@ void Machine::setupMotionController() {
 }
 
 void Machine::motionPortActivated() {
+  qInfo() << "Machine::motionPortActivated()";
   connect_state_ = ConnectionState::kConnected;
   Q_EMIT activated();
 
@@ -436,6 +437,7 @@ void Machine::motionPortActivated() {
 }
 
 void Machine::motionPortDisonnected() {
+  qInfo() << "Machine::motionPortDisonnected()";
   connect_state_ = ConnectionState::kDisconnected;
 
   // Reset state variables
@@ -573,8 +575,10 @@ void Machine::handleNotif(QString title, QString msg) {
 
 bool Machine::connectSerial(QString port, int baudrate) {
   if (port == "BSL") {
-    if (lcs_connect()) {
-      bsl_connected_ = true;
+    if (connect_state_ == ConnectionState::kConnected) {
+      qWarning() << "BSL already connected";
+      return false;
+    } else if (lcs_connect()) {
       qInfo() << "LCS connected";
       this->setupMotionController();
       return true;
@@ -582,27 +586,32 @@ bool Machine::connectSerial(QString port, int baudrate) {
       qWarning() << "LCS connect failed";
       return false;
     }
+  } else {
+    // Connects to regular serial port
+    serial_port_->setPortName(port);
+    serial_port_->setBaudRate(baudrate);
+    serial_port_->open(QIODevice::ReadWrite);
+    if (!serial_port_->isOpen()) {
+      qWarning() << "Serial port open failed";
+      return false;
+    }
+    qInfo() << "Serial port opened";
+    serial_port_->clearError();
+    this->setupMotionController();
   }
-  // Connects to regular serial port
-  serial_port_->setPortName(port);
-  serial_port_->setBaudRate(baudrate);
-  serial_port_->open(QIODevice::ReadWrite);
-  if (!serial_port_->isOpen()) {
-    qWarning() << "Serial port open failed";
-    return false;
-  }
-  qInfo() << "Serial port opened";
-  serial_port_->clearError();
-  this->setupMotionController();
   return true;
 }
 
 void Machine::disconnect() {
+  if (motion_controller_ != NULL) {
+    qInfo() << "MotionController detaching port";
+    motion_controller_->detachPort();
+  }
   serial_port_->close();
 }
 
 bool Machine::isConnected() {
-  return bsl_connected_ || serial_port_->isOpen();
+  return connect_state_ == ConnectionState::kConnected;
 }
 
 void Machine::setSerialPort(QSerialPort &serial_port) {

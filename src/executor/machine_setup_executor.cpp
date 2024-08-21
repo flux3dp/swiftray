@@ -1,6 +1,7 @@
 #include "machine_setup_executor.h"
 
 #include "operation_cmd/grbl_cmd.h"
+#include "operation_cmd/gcode_cmd.h"
 #include <QDebug>
 
 MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
@@ -34,15 +35,23 @@ void MachineSetupExecutor::start() {
   stop();
   qInfo() << "MachineSetupExecutor::start()";
   pending_cmd_.clear();
-  // Force a soft reset at the start of machine setup
-  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset));
-  pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
+  if (motion_controller_->type() != "BSL") {
+    // Force a soft reset at the start of machine setup
+    pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset));
+    pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
 
-  exec_timer_->start(200);
+    exec_timer_->start(200);
+  } else {
+    // pending_cmd_.push_back(std::make_shared<GCodeCmd>("M6"));
+    // for(int i = 0; i < 30; i++) {
+    //   pending_cmd_.push_back(std::make_shared<GCodeCmd>("Z10F600"));
+    // }
+    exec_timer_->start(10);
+  }
 }
 
 void MachineSetupExecutor::exec() {
-  qInfo() << "MachineSetupExecutor exec()";
+  qInfo() << "MachineSetupExecutor exec(), pending command" << pending_cmd_.size();
 
   if (motion_controller_.isNull()) {
     stop();
