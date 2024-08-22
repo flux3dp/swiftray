@@ -25,10 +25,27 @@ namespace MySVG {
     };
 
     struct BeamLayerConfig {
+        bool visible;
         float speed;
         float power;
         QColor color;
         QString title;
+        int repeat;
+        float height;
+        float z_step;
+        int diode;
+        float backlash;
+        int uv;
+        int module;
+        float focus;
+        float focus_step;
+        float printing_strength;
+        double printing_speed;
+        int uv_;
+        int halftone;
+        int multipass;
+        int ink;
+        double min_power;
     };
 
     enum ReadType {

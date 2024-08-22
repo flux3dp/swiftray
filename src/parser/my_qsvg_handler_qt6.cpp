@@ -2841,6 +2841,22 @@ static bool parseForeignObjectNode(QSvgNode *parent,
     return true;
 }
 
+int getAttr(const QXmlStreamAttributes& attributes,
+            const QString& name,
+            int defaultVal) {
+    if (attributes.hasAttribute(name))
+        return attributes.value(name).toInt();
+    return defaultVal;
+}
+
+double getAttr(const QXmlStreamAttributes& attributes,
+               const QString& name,
+               double defaultVal) {
+    if (attributes.hasAttribute(name))
+        return attributes.value(name).toDouble();
+    return defaultVal;
+}
+
 static QSvgNode *createGNode(QSvgNode *parent,
                              const QXmlStreamAttributes &attributes,
                              MyQSvgHandler *handler)
@@ -2856,8 +2872,24 @@ static QSvgNode *createGNode(QSvgNode *parent,
         MySVG::BeamLayerConfig layer_config;
         resolveColor(attributes.value("data-color"), layer_config.color, handler);
         qInfo() << "Raw Color" << attributes.value("data-color") << "Resolved Color" << layer_config.color;
-        layer_config.speed = attributes.value("data-speed").toDouble();
-        layer_config.power = attributes.value("data-strength").toDouble();
+        layer_config.visible = attributes.value("display").toString() != "none";
+        layer_config.speed = getAttr(attributes, "data-speed", 20.0);
+        layer_config.power = getAttr(attributes, "data-strength", 15.0);
+        layer_config.module = getAttr(attributes, "data-module", 1);
+        layer_config.repeat = getAttr(attributes, "data-repeat", 1);
+        layer_config.height = getAttr(attributes, "data-height", 0.0);
+        layer_config.z_step = getAttr(attributes, "data-zstep", 0.0);
+        layer_config.diode = getAttr(attributes, "data-diode", 0);
+        layer_config.multipass = getAttr(attributes, "data-multipass", 1);
+        layer_config.backlash = getAttr(attributes, "data-backlash", 0.0);
+        layer_config.uv = getAttr(attributes, "data-uv", 0);
+        layer_config.halftone = getAttr(attributes, "data-halftone", 1);
+        layer_config.printing_strength = getAttr(attributes, "data-printingStrength", 100.0);
+        layer_config.focus = getAttr(attributes, "data-focus", 0.0);
+        layer_config.focus_step = getAttr(attributes, "data-focusStep", 0.0);
+        layer_config.min_power = getAttr(attributes, "data-minPower", 0);
+        layer_config.ink = getAttr(attributes, "data-ink", 3);
+        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
         handler->setLayerConfig(node_addr, layer_config);
     }
     #endif
@@ -4638,9 +4670,25 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         if (layer_config_map_.contains(layer->name())) {
             auto config = layer_config_map_[layer->name()];
             qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
+            layer->setVisible(config.visible);
             layer->setSpeed(config.speed);
             layer->setStrength(config.power);
             layer->setColor(config.color);
+            layer->setModule(config.module);
+            layer->setRepeat(config.repeat);
+            layer->setTargetHeight(config.height);
+            layer->setStepHeight(config.z_step);
+            layer->setUseDiode(config.diode);
+            layer->setMultipass(config.multipass);
+            layer->setXBacklash(config.backlash);
+            layer->setUv(config.uv);
+            layer->setHalftone(config.halftone);
+            layer->setPrintingStrength(config.printing_strength);
+            layer->setFocus(config.focus);
+            layer->setFocusStep(config.focus_step);
+            layer->setMinPower(config.min_power);
+            layer->setInk(config.ink);
+            layer->setPrintingSpeed(config.printing_speed);
         }
         doc->addLayer(layer);
         if(layer->isVisible())
