@@ -168,7 +168,11 @@ namespace MySVG {
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_IMAGE) {
-            QTransform tmp_scale = QTransform().scale(g_scale * scale, g_scale * scale);
+            QRectF bbox = node->transformedBounds();
+            QSize img_size = g_image.size();
+            QTransform tmp_scale = QTransform().translate(bbox.x(), bbox.y())
+                                               .scale(g_scale * scale * bbox.width() / img_size.width(),
+                                                      g_scale * scale * bbox.height() / img_size.height());
 
             Node n;
             n.type = QSVG_IMAGE;
