@@ -33,6 +33,8 @@ public:
   bool gradient() const { return gradient_; }
   void setThrshBrightness(int thrsh) { thrsh_brightness_ = thrsh; }
   int thrsh_brightness() const { return thrsh_brightness_; }
+  void setPwm(bool pwm) { pwm_ = pwm; }
+  bool pwm() const { return pwm_; }
 
   friend class DocumentSerializer;
 
@@ -46,4 +48,5 @@ private:
 
   bool gradient_ = true; // gradient or binarized
   int thrsh_brightness_ = 128; // threshold value for binarization
+  bool pwm_ = false; // pwm
 };

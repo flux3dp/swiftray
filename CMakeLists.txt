@@ -528,6 +528,7 @@ include_directories(
 #target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} opencv_core)
 target_link_libraries(${PROJECT_NAME} opencv_imgproc)
+target_link_libraries(${PROJECT_NAME} opencv_flann)
 
 # Cairo
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
