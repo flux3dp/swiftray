@@ -3913,12 +3913,6 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     if (nry > bounds.height()/2)
         nry = bounds.height()/2;
 
-    //we draw rounded rect from 0...99
-    //svg from 0...bounds.width()/2 so we're adjusting the
-    //coordinates
-    nrx *= (100/(bounds.width()/2));
-    nry *= (100/(bounds.height()/2));
-
 #ifdef MYSVG
     QPainterPath qpath;
     qpath.addRoundedRect(bounds, nrx, nry);
