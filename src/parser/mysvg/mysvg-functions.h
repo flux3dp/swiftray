@@ -38,7 +38,7 @@
 ****************************************************************************/
 #include <qplatformdefs.h>
 #include <private/qsvgfont_p.h>
-#include "../qsvggraphics_p.h"
+#include <private/qsvggraphics_p.h>
 #include <private/qsvgnode_p.h>
 #include <private/qsvgstructure_p.h>
 #include <private/qsvgtinydocument_p.h>
