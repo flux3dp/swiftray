@@ -38,7 +38,7 @@
 ****************************************************************************/
 #include <qplatformdefs.h>
 #include <private/qsvgfont_p.h>
-#include "../qsvggraphics_p.h"
+#include <private/qsvggraphics_p.h>
 #include <private/qsvgnode_p.h>
 #include <private/qsvgstructure_p.h>
 #include <private/qsvgtinydocument_p.h>
@@ -185,7 +185,7 @@ namespace MySVG {
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_USE) {
-            QSvgUse* use_node = (QSvgUse*)node;
+            QSvgUse2* use_node = (QSvgUse2*)node;
             Node n;
             n.type = QSVG_USE;
             n.node_names.push_back(use_node->linkId());

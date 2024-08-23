@@ -1,36 +1,48 @@
-from conans import ConanFile, AutoToolsBuildEnvironment
-from conans import tools
+from conan import ConanFile
+from conan.tools.gnu import Autotools, AutotoolsToolchain
+from conan.tools.files import copy, chdir
+from conan.tools.microsoft import unix_path
+import os
 
-class libpotrace(ConanFile):
+# Get the directory of the current script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+class LibpotraceConan(ConanFile):
     name = "libpotrace"
     version = "1.16"
     settings = "os", "compiler", "build_type", "arch"
-    generators = "cmake"
-    src_dir = "potrace-1.16"
-    src_src_dir = src_dir + "/src"
-    exports_sources = src_dir + "/*"
-    
-    #def requirements(self):
-    #    self.requires("zlib/1.2.13") # Failed to use for unknown reason, directly install pacman package (mingw-w64-x86_64-zlib) instead
+    generators = "CMakeDeps", "CMakeToolchain"
+    exports_sources = "potrace-1.16/*"
+
+    def layout(self):
+        self.folders.source = "../potrace-1.16"
+        self.folders.build = "build"
+
+    def generate(self):
+        tc = AutotoolsToolchain(self)
+        tc.generate()
 
     def build(self):
-        with tools.chdir(self.src_dir):
-            atools = AutoToolsBuildEnvironment(self, win_bash=tools.os_info.is_windows)
-            print(atools.vars)
-            if tools.os_info.is_windows:
-                atools.configure(args=["--with-libpotrace", "CPPFLAGS=", "CXXFLAGS=", "CFLAGS="]) # use it to run "./configure" if using autotools
+        with chdir(self, self.folders.source):
+            autotools = Autotools(self)
+            if self.settings.os == "Windows":
+                # Use MSYS2 or Cygwin bash to run the configure script
+                bash = unix_path(self, "C:\\msys64\\usr\\bin\\bash.exe")  # Adjust this path if necessary
+                configure_script = unix_path(self, os.path.join(self.folders.source, "configure"))
+                self.run(f'{bash} -c "{configure_script} --with-libpotrace CPPFLAGS= CXXFLAGS= CFLAGS="')
             else:
-                atools.configure(args=["--with-libpotrace"])
-            atools.make()
+                autotools.configure(args=["--with-libpotrace"])
+            
+            autotools.make()
 
     def package(self):
-        self.run("ls -al potrace-1.16/src")
-        self.copy("potracelib.h", dst="include", src=self.src_src_dir)
-        self.copy("*.la", dst="lib", src=(self.src_src_dir + "/.libs"))
-        self.copy("*.a", dst="lib", src=(self.src_src_dir + "/.libs"))
-        self.copy("*.dll", dst="bin", src=(self.src_src_dir + "/.libs"))
+        self.run("ls -al " + os.path.join(self.folders.source, "src", ".libs"))
+        copy(self, "potracelib.h", src=os.path.join(self.folders.source, "src"), dst=os.path.join(self.package_folder, "include"))
+        copy(self, "*.la", src=os.path.join(self.folders.source, "src", ".libs"), dst=os.path.join(self.package_folder, "lib"))
+        copy(self, "*.a", src=os.path.join(self.folders.source, "src", ".libs"), dst=os.path.join(self.package_folder, "lib"))
+        copy(self, "*.dll", src=os.path.join(self.folders.source, "src", ".libs"), dst=os.path.join(self.package_folder, "bin"))
         # TODO: Handle Symlinks
-        self.copy("*.dylib", dst="lib", src=(self.src_src_dir + "/.libs"))
+        copy(self, "*.dylib", src=os.path.join(self.folders.source, "src", ".libs"), dst=os.path.join(self.package_folder, "lib"))
 
     def package_info(self):
         self.cpp_info.libs = ["libpotrace"]

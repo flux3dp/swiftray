@@ -1,20 +1,81 @@
 {
   "name": "swiftray-dependencies",
   "version-string": "1.0.0",
+  "builtin-baseline": "136a0d8b8c4584e07e5b394d69e492f679d81737",
   "dependencies": [
     {
       "name": "opencv",
       "platform": "windows"
     },
-    "python3",
+    "boost",
     "cairo",
+    "icu",
+    "qtbase",
+    "qtquickcontrols2",
+    "qt5compat",
+    "qtdeclarative",
+    "qttools",
+    "qtactiveqt",
+    "qtwebsockets",
+    "qttranslations",
+    "qtsvg",
+    "qtimageformats",
+    "qtserialport",
+    "libxml2",
+    "libiconv",
+    "protobuf",
+    "python3",
     "glib",
     {
       "name": "poppler",
       "platform": "(windows & x64)",
-      "features": [ "cairo", "curl", "glib", "zlib" ]
+      "features": [
+        "cairo",
+        "curl",
+        "glib",
+        "zlib"
+      ]
     },
+    "opencv",
     "sentry-native",
     "winsparkle"
+  ],
+  "overrides": [
+    {
+      "name": "boost",
+      "version": "1.85.0"
+    },
+    {
+      "name": "cairo",
+      "version": "1.18.0"
+    },
+    {
+      "name": "libiconv",
+      "version": "1.17"
+    },
+    {
+      "name": "libxml2",
+      "version": "2.11.7"
+    },
+    {
+      "name": "opencv4",
+      "version": "4.8.0"
+    },
+    {
+      "name": "protobuf",
+      "version": "3.21.12"
+    },
+    {
+      "name": "python3",
+      "version": "3.11.8"
+    },
+    {
+      "name": "sentry-native",
+      "version": "0.7.5"
+    },
+    {
+      "name": "winsparkle",
+      "version": "0.8.1"
+    }
   ]
 }
