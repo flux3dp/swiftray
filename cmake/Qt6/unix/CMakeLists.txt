@@ -159,6 +159,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt::Core Qt::Quick Qt::QuickWidgets Qt::OpenGL Qt::Gui Qt::Svg Qt::Widgets Qt::WebSockets Qt::SerialPort Qt::QuickControls2 Qt6::Core5Compat Qt6::OpenGLWidgets
   opencv_core
   opencv_imgproc
+  opencv_flann
   third_party_libs
   Cairo::Cairo
   GLib::GLib
