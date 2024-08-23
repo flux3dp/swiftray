@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
 #if !defined(ULONG_PTR)         //  usually defined in <BaseTsd.h>
 #if !defined(_WIN64)
 #define ULONG_PTR UINT
