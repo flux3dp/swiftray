@@ -82,7 +82,7 @@ target_link_libraries(third_party_libs INTERFACE
   liblcs
   sentry::sentry)
 
-list (APPEND THIRD_PARTY_EXECS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools//sentry-native/crashpad_handler.exe)
+list (APPEND THIRD_PARTY_EXECS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/sentry-native/crashpad_handler.exe)
 
 # ==== Include and linked libraries ====
 target_link_libraries(${PROJECT_NAME} PRIVATE

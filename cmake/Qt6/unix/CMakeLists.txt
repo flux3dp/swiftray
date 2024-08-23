@@ -23,6 +23,7 @@ endif()
 get_filename_component(SRC_DIR "src" REALPATH)
 include_directories(
   third_party
+  third_party/sentry-native/install/include
   ${SRC_DIR}
 	${CMAKE_BINARY_DIR} # For cmake generated files, e.g. config.h
 )
@@ -37,7 +38,6 @@ find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread system)
 find_package(LibXml2 REQUIRED)
 find_package(Sparkle REQUIRED)
-find_package(sentry CONFIG REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(GLib REQUIRED)
 find_package(Poppler REQUIRED)
@@ -130,8 +130,6 @@ target_sources(${PROJECT_NAME} PRIVATE
   "sparkle.qrc" 
 )
 
-target_link_libraries(${PROJECT_NAME} "-framework AppKit")
-
 add_subdirectory(src)
 add_subdirectory(third_party)
 
@@ -141,49 +139,26 @@ target_link_libraries(third_party_libs INTERFACE
   QxPotrace
   libdxfrw
   liblcs
-  sentry::sentry)
-
-# Sentry
-include_directories(
-  third_party/sentry-native/install/include
-)
-target_link_libraries(${PROJECT_NAME} 
-    ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
+  ${CMAKE_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
 )
 
-# ====================== External libraries =======================
-# Collect all linked Libraries into a list
-
-# Qt
-target_link_libraries(${PROJECT_NAME} Qt::Core)
-target_link_libraries(${PROJECT_NAME} Qt::Quick)
-target_link_libraries(${PROJECT_NAME} Qt::QuickWidgets)
-target_link_libraries(${PROJECT_NAME} Qt::OpenGL)
-target_link_libraries(${PROJECT_NAME} Qt::Gui)
-target_link_libraries(${PROJECT_NAME} Qt::Svg)
-target_link_libraries(${PROJECT_NAME} Qt::Widgets)
-target_link_libraries(${PROJECT_NAME} Qt::WebSockets)
-target_link_libraries(${PROJECT_NAME} Qt::SerialPort)
-target_link_libraries(${PROJECT_NAME} Qt::QuickControls2)
-target_link_libraries(${PROJECT_NAME} Qt6::Core5Compat)
-target_link_libraries(${PROJECT_NAME} Qt6::OpenGLWidgets)
-target_link_libraries(${PROJECT_NAME} opencv_core)
-target_link_libraries(${PROJECT_NAME} opencv_imgproc)
-
-# Cairo
+# ==== Link and include libraries ====
 target_include_directories(${PROJECT_NAME} PRIVATE 
- ${CAIRO_INCLUDE_DIRS}
+  ${CAIRO_INCLUDE_DIRS}
+  ${GLib_INCLUDE_DIR}
+  {Poppler_INCLUDE_DIR}
+  ${Boost_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
+  ${LIBXML2_INCLUDE_DIRS}
+  ${ICONV_INCLUDE_DIR}
+  ${SPARKLE_INCLUDE_DIRS}
 )
 
-# GLIB and GOBJECT
-target_include_directories(${PROJECT_NAME} PRIVATE
-  /usr/local/opt/glib/include/glib-2.0
-  /usr/local/opt/glib/lib/glib-2.0/include
-)
-target_include_directories(${PROJECT_NAME} PRIVATE
-  /usr/local/opt/poppler/include/poppler
-)
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  "-framework AppKit"
+  Qt::Core Qt::Quick Qt::QuickWidgets Qt::OpenGL Qt::Gui Qt::Svg Qt::Widgets Qt::WebSockets Qt::SerialPort Qt::QuickControls2 Qt6::Core5Compat Qt6::OpenGLWidgets
+  opencv_core
+  opencv_imgproc
   third_party_libs
   Cairo::Cairo
   GLib::GLib
@@ -195,25 +170,6 @@ target_link_libraries(${PROJECT_NAME}
   LibXml2::LibXml2
   ${SPARKLE_LIBRARIES}
 )
-list(APPEND swiftray_EXT_INCLUDE_DIRS 
-  ${Boost_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
-  ${LIBXML2_INCLUDE_DIRS}
-  ${ICONV_INCLUDE_DIR}
-)
-
-list(APPEND swiftray_EXT_INCLUDE_DIRS ${SPARKLE_INCLUDE_DIRS})
-
-# ===============================================================
-# Link exec target to all linked libraries
-target_link_libraries(${PROJECT_NAME} 
-  ${swiftray_EXT_LIBS}
-)
-# Add include headers of libraries to exec target
-target_include_directories(${PROJECT_NAME} PRIVATE 
-  ${swiftray_EXT_INCLUDE_DIRS}
-)
-
 
 # ======== Copy external third_party dll/exec manually (some are auto copied by vcpkg) =======
 if (THIRD_PARTY_DLLS)
