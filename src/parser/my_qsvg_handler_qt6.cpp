@@ -56,6 +56,9 @@ Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
+bool g_gradient = true;
+int g_threshold = 128;
+bool g_pwm = false;
 
 #endif
 
@@ -2935,6 +2938,9 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     const QStringView width  = attributes.value(QLatin1String("width"));
     const QStringView height = attributes.value(QLatin1String("height"));
     QString filename = attributes.value(QLatin1String("xlink:href")).toString();
+    g_gradient = attributes.value("data-shading").toString() == "true";
+    g_threshold = attributes.value("data-threshold").toInt();
+    g_pwm = attributes.value("data-pwm").toInt() == 1;
     qreal nx = toDouble(x);
     qreal ny = toDouble(y);
     MyQSvgHandler::LengthType type;
@@ -4642,6 +4648,10 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
             data_list_[i].fill= true;
+            BitmapShape *bitmap_shape = (BitmapShape*)new_shape.get();
+            bitmap_shape->setGradient(data_list_[i].gradient);
+            bitmap_shape->setThrshBrightness(data_list_[i].threshold);
+            bitmap_shape->setPwm(data_list_[i].pwm);
         } else if(data_list_[i].type == QSVG_USE) {
             // Skip use nodes since we have already processed them
             continue;
@@ -5048,7 +5058,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_gradient, g_threshold, g_pwm);
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

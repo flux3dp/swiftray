@@ -22,6 +22,9 @@ namespace MySVG {
         QString text;
         bool fill;
         bool is_symbol;
+        bool gradient;
+        int threshold;
+        bool pwm;
     };
 
     struct BeamLayerConfig {
