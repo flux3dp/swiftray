@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <bitset>
 #include <vector>
 #include <array>

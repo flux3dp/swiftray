@@ -19,7 +19,6 @@
 #include <document.h>
 #include <clipboard.h>
 #include <shape/shape.h>
-#include <parser/svgpp-parser.h>
 
 /**
   \class Canvas
@@ -246,7 +245,6 @@ private:
   QFont font_;
   double line_height_;
   Clipboard clipboard_;
-  Parser::SVGPPParser svgpp_parser_;
 
   // Control components
   Controls::Transform ctrl_transform_;

@@ -17,3 +17,7 @@ target_sources(Swiftray PRIVATE
   rotary_setup.cpp
   consoledialog.cpp
 )
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_sources(Swiftray PRIVATE osxwindow.mm)
+endif()

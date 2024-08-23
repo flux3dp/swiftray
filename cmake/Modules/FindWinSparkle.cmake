@@ -56,3 +56,53 @@ else(WINSPARKLE_FOUND)
 endif(WINSPARKLE_FOUND)
 
 mark_as_advanced(WINSPARKLE_LIBRARIES WINSPARKLE_INCLUDE_DIRS)
+
+
+# ======================================= Helper Macros ======================================
+# Resets cache variables if the <PackageName>_LIBRARY has become invalid.
+# Call it before a find_package(<PackageName> ...) invocation that uses
+# find_library(<PackageName>_LIBRARY ...).
+#
+# Usage: reset_find_package(<PackageName> [<extra variables to clear>])
+function(reset_find_package _package_name)
+	set(variables
+		# find_library / find_package
+		${_package_name}_LIBRARY
+		${_package_name}_INCLUDE_DIR
+		# mark_as_advanced
+		${_package_name}_LIBRARIES
+		${_package_name}_INCLUDE_DIRS
+		# Others
+		${_package_name}_DLL_DIR
+		${_package_name}_DLLS
+		${_package_name}_DLL
+		${_package_name}_PDB
+		${ARGN}
+	)
+	if(NOT ${_package_name}_LIBRARY OR EXISTS ${${_package_name}_LIBRARY})
+		# Cache variable is already missing or cache entry is valid.
+		return()
+	endif()
+	message(STATUS "Package ${_package_name} has changed, clearing cache.")
+	foreach(_var IN LISTS variables)
+		unset(${_var} CACHE)
+	endforeach()
+endfunction()
+
+# ws_find_package(<PackageName>
+#             <CMakeOptions.txt boolean variable>
+#             <cmakeconfig.h.in macro definition>
+#             [remaining find_package() arguments])
+macro(ws_find_package _package_name _enable_package _package_cmakedefine)
+	if(${_enable_package})
+		# Clear outdated cache variables if not already.
+		reset_find_package(${_package_name})
+		find_package(${_package_name} ${ARGN})
+		if(${_package_name}_FOUND)
+			set(${_package_cmakedefine} 1)
+		endif()
+	endif()
+endmacro()
+
+
+ws_find_package(WinSparkle ENABLE_SPARKLE HAVE_SOFTWARE_UPDATE)

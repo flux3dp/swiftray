@@ -75,7 +75,7 @@ void handleLCSError(LCS2Error error) {
 BSLMotionController::BSLMotionController(QObject *parent)
   : MotionController{parent}
 {
-  qInfo() << "BSLMotionController created";
+  qInfo() << "BSLMotionController::BSLMotionController()";
   this->state_ = MotionControllerState::kIdle;
   this->should_flush_ = false;
 }
@@ -87,15 +87,15 @@ void BSLMotionController::startCommandRunner() {
 int debug_count_bsl  = 0;
 
 void BSLMotionController::commandRunnerThread() {
-  qInfo() << "BSLMotionController::commandRunnerThread() started";
+  qInfo() << "BSLMotionController::commandRunnerThread()";
   while (this->state_ != MotionControllerState::kQuit) {
     if (this->state_ == MotionControllerState::kSleep) {
-      qInfo() << "MotionController is in sleep state, ignore commandRunnerThread";
+      qInfo() << "BSLM~::commandRunner() - sleeping";
       QThread::msleep(25);
       continue;
     }
     if (debug_count_bsl ++ % 100 == 0) {
-      qInfo() << "CommandRunnerThread is running" << this->pending_cmds_.size();
+      qInfo() << "BSLM~::commandRunner() - running" << this->pending_cmds_.size();
     }
     this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
@@ -136,11 +136,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int list_no = 1;
     static bool first_list = true;
 
-    if (this->state_ == MotionControllerState::kSleep) {
-        qInfo() << "MotionController is in sleep state, ignore Gcode";
-        return;
-    }
-    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "?\n") {
+    // Skip these GCode
+    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n" || gcode == "?\n") {
         dequeueCmd(1);
         return;
     }
@@ -222,7 +219,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       should_end = true;
     } else if (command == "M6") {
       qInfo("MTOWER: Moving to Tower");
-      lcs_write_io_port(0b0000);
+      lcs_write_io_port(0b1111);
       dequeueCmd(1);
     } else if (!is_move_command) {
       dequeueCmd(1);
@@ -379,8 +376,7 @@ MotionController::CmdSendResult BSLMotionController::sendCmdPacket(QPointer<Exec
   this->pending_cmds_.push_back(cmd_packet);
   enqueueCmdExecutor(executor);
   this->cmd_list_mutex_.unlock();
-  if (!this->is_threading) {
-    this->is_threading = true;
+  if (!this->command_runner_thread_.joinable()) {
     startCommandRunner();
   }
   return CmdSendResult::kOk;
@@ -421,7 +417,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   lcs_set_end_of_list();
   lcs_stop_execution();
   QThread::sleep(2);
-  is_running_laser_ = false;
+  this->is_running_laser_ = false;
   this->pending_cmds_.clear();
   Q_EMIT MotionController::resetDetected();
   return CmdSendResult::kOk;
@@ -429,7 +425,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
 
 bool BSLMotionController::detachPort() {
   qInfo() << "BSLMotionController::detachPort()";
-  if (is_threading) {
+  if (this->command_runner_thread_.joinable()) {
     setState(MotionControllerState::kQuit);
     command_runner_thread_.join();
   }

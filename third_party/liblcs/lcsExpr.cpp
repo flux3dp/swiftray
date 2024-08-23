@@ -10,6 +10,7 @@ typedef void *HINSTANCE;
 //#include <qcoreapplication.h>
 #else
 #include <Windows.h>
+#include <cstdio>
 #endif
 
 volatile HINSTANCE gLibLCS = NULL;

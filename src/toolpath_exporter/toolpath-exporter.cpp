@@ -8,7 +8,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
-#include <boost/range/irange.hpp>
 #include <constants.h>
 
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate) noexcept :

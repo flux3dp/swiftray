@@ -1,6 +1,5 @@
 #include <QDebug>
 #include <QFile>
-#include <boost/range/adaptor/reversed.hpp>
 #include <document.h>
 #include <shape/group-shape.h>
 #include <limits>
@@ -247,17 +246,18 @@ ShapePtr Document::hitTest(QPointF canvas_coord, bool is_select) {
     if (!layer->isVisible()) {
       continue;
     }
-    for (auto &shape : boost::adaptors::reverse(layer->children())) {
-      if (shape->hitTest(canvas_coord, 5 / scale())) {
-        if(!is_select || shape->selected()) return shape;
-        // NOTE: Select the shape with the smallest bounding box
-        // Alwyas iterate through all shapes -> Performance should be considered carefully
-        qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
-        if (bounding_area < smallest_area) {
-          smallest_area = bounding_area;
-          selected_shape = shape;
+    for (auto it = layer->children().rbegin(); it != layer->children().rend(); ++it) {
+        auto &shape = *it;
+        if (shape->hitTest(canvas_coord, 5 / scale())) {
+            if (!is_select || shape->selected()) return shape;
+            // NOTE: Select the shape with the smallest bounding box
+            // Always iterate through all shapes -> Performance should be considered carefully
+            qreal bounding_area = shape->boundingRect().width() * shape->boundingRect().height();
+            if (bounding_area < smallest_area) {
+                smallest_area = bounding_area;
+                selected_shape = shape;
+            }
         }
-      }
     }
   }
   return selected_shape;

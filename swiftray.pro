@@ -9,6 +9,7 @@ QT += gui-private
 QT += svg
 QT += svg-private
 QT += websockets
+QT += qt5compat
 ios {
 } else {
 QT += serialport
@@ -136,20 +137,15 @@ INCLUDEPATH += $$OUT_PWD/config.h
 
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
-# boost, libxml2, potrace
-win32-g++ {
-    # MINGW
-    INCLUDEPATH += $$(MINGW64_PATH)/include
-    INCLUDEPATH += $$(MINGW64_PATH)/include/libxml2
-    INCLUDEPATH += $$(MINGW64_PATH)/include/opencv4
-    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
-}
+
 win32-msvc {
     INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
-    INCLUDEPATH += C:\Dev\opencv_454_msvc\build\include
+    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include
+    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\opencv2
     INCLUDEPATH += C:\Dev\libraries\potrace
-    INCLUDEPATH += C:\Dev\libraries\libxml2\include\libxml2
-    INCLUDEPATH += C:\Dev\libraries\libconv\include
+    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\libxml2
+    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\libconv
+    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\glib-2.0
     INCLUDEPATH += $$PWD\third_party
     INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }
@@ -240,6 +236,7 @@ SOURCES += \
     $$files(src/periph/motion_controller/*.cpp) \
     $$files(src/common/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
+    $$files(src/parser/mysvg/*.cpp) \
     $$files(src/parser/dxf_rs/debug/*.cpp) \
     $$files(src/parser/dxf_rs/engine/*.cpp) \
     $$files(src/parser/dxf_rs/math/*.cpp) \
@@ -319,6 +316,7 @@ HEADERS += \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
+    $$files(src/parser/mysvg/*.h) \
     $$files(src/parser/dxf_rs/debug/*.h) \
     $$files(src/parser/dxf_rs/math/*.h) \
     $$files(src/parser/dxf_rs/information/*.h) \

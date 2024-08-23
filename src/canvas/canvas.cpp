@@ -50,7 +50,6 @@ Canvas::Canvas(QQuickItem *parent)
        ctrl_rect_(Controls::Rect(this)),
        ctrl_polygon_(Controls::Polygon(this)),
        ctrl_text_(Controls::Text(this)),
-       svgpp_parser_(Parser::SVGPPParser()),
        widget_(nullptr),
        fps(0),
        font_(QFont(FONT_TYPE, FONT_SIZE, QFont::Bold)),
