@@ -44,6 +44,9 @@ private:
   void commandRunnerThread();
   void dequeueCmd(int count);
   QString getAlarmMsg(AlarmCode code);
+  double current_x = 0.0;
+  double current_y = 0.0;
+  double current_f = 6000.0; // Default speed
 };
 
 #endif // BSLMOTIONCONTROLLER_H

@@ -181,7 +181,7 @@ void JobExecutor::exec() {
     if (cmd_in_progress_.length() > 9000) {
       // Too many commands in progress
       if (debug_count++ % 50 == 0) {
-        qInfo() << "JobExecutor:: waiting buffer to clear...";
+        qInfo() << "JobExecutor::exec() - waiting buffer to clear...";
       }
       QThread::msleep(10);
       return;
@@ -194,14 +194,14 @@ void JobExecutor::exec() {
       return;
     }
     if (debug_count++ % 1000 == 0) {
-      qInfo() << "executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
+      qInfo() << "JobExecutor::exec() -executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
     }
     // Fetch new command
     if (!pending_cmd_) {
       if (active_job_->end()) {
         // No more command, wait for completion in next cycle
         if (debug_count % 40 == 0) {
-          qInfo() << "JobExecutor:: Command is empty. Waiting for completion...";
+          qInfo() << "JobExecutor::exec() - Command is empty. Waiting for completion...";
         }
         QThread::msleep(25);
         return;
@@ -214,7 +214,7 @@ void JobExecutor::exec() {
     switch(exec_status) {
       case OperationCmd::ExecStatus::kIdle:
         // Sleep (block) until next real-time status reported or cmd finished
-        qInfo() << "pending_cmd_ execute returned kIdle";
+        qInfo() << "JobExecutor::exec() - execute returned kIdle";
         exec_timer_->stop();
         return;
       case OperationCmd::ExecStatus::kProcessing:
@@ -297,11 +297,12 @@ void JobExecutor::complete() {
 }
 
 /**
- * @brief Stop from class internal method
+ * @brief Stop by other, protect with mutex
  * 
  */
-void JobExecutor::stopImpl() {
-  qInfo() << "JobExecutor stopImpl";
+void JobExecutor::stop() {
+  std::scoped_lock<std::mutex> lk(exec_mutex_);
+  qInfo() << "JobExecutor::stop()";
   if (!motion_controller_.isNull()) {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
@@ -320,15 +321,6 @@ void JobExecutor::stopImpl() {
   if (!motion_controller_.isNull() && motion_controller_->getState() == MotionControllerState::kSleep) {
     motion_controller_->setState(MotionControllerState::kIdle);
   }
-}
-
-/**
- * @brief Stop by other, protect with mutex
- * 
- */
-void JobExecutor::stop() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
-  stopImpl();
 }
 
 /**
