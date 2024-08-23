@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQuickStyle>
 #include <QLocale>
 #include <QSettings>
 #include <QTranslator>
@@ -42,6 +43,9 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+  #ifdef Q_OS_WIN
+  QQuickStyle::setStyle("Fusion");
+  #endif
   // Test event
   //sentry_capture_event(sentry_value_new_message_event(
   //  SENTRY_LEVEL_INFO, // level
@@ -66,19 +70,9 @@ int main(int argc, char *argv[]) {
   QSettings settings("flux", "swiftray");
   // load Open Sans font(addApplicationFont fail in Mac)
   QVariant font_size = settings.value("window/font_size", 0);
-  #ifdef Q_OS_WIN
-  int id = QFontDatabase::addApplicationFont(":/resources/fonts/open-sans-latin.ttf");
-  if(id != -1) {
-    QFont font("Open Sans");
-    font.setStyleHint(QFont::Monospace);
-    font.setPixelSize(font_size.toInt());
-    QApplication::setFont(font);
-  }
-  #else
   QFont current_font = QApplication::font();
   current_font.setPixelSize(font_size.toInt());
   QApplication::setFont(current_font);
-  #endif
   
   // Force anti-aliasing
   
