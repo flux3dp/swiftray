@@ -205,12 +205,6 @@ void MainWindow::loadSettings() {
 }
 
 void MainWindow::loadCanvas() {
-#if QT_VERSION > QT_VERSION_CHECK(6, 0, 0)
-  // QPaintedItem in Qt6 does not support Metal rendering yet, so it will be slow using metal RHI
-  qInfo() << "Falling back to OpenGLRhi in QT6";
-  ((QQuickWindow *)ui->quickWidget)->setGraphicsApi(QSGRendererInterface::OpenGLRhi);
-  connect(ui->quickWidget, &QQuickWidget::sceneGraphError, this, &MainWindow::sceneGraphError);
-#endif
   connect(ui->quickWidget, &QQuickWidget::statusChanged, this, &MainWindow::canvasLoaded);
   QUrl source("qrc:/src/windows/main.qml");
   ui->quickWidget->setResizeMode(QQuickWidget::ResizeMode::SizeRootObjectToView);
