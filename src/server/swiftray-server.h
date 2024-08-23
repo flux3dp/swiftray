@@ -24,6 +24,7 @@ private:
   Machine* m_machine;
   QString m_buffer;
   Canvas* m_canvas;
+  QString m_thumbnail;
   QStringList gcode_list_;
   QList<Timestamp> timestamp_list_;
 

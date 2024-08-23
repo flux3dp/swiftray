@@ -57,6 +57,9 @@ Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
+bool g_gradient = true;
+int g_threshold = 128;
+bool g_pwm = false;
 
 #endif
 
@@ -2843,6 +2846,22 @@ static bool parseForeignObjectNode(QSvgNode *parent,
     return true;
 }
 
+int getAttr(const QXmlStreamAttributes& attributes,
+            const QString& name,
+            int defaultVal) {
+    if (attributes.hasAttribute(name))
+        return attributes.value(name).toInt();
+    return defaultVal;
+}
+
+double getAttr(const QXmlStreamAttributes& attributes,
+               const QString& name,
+               double defaultVal) {
+    if (attributes.hasAttribute(name))
+        return attributes.value(name).toDouble();
+    return defaultVal;
+}
+
 static QSvgNode *createGNode(QSvgNode *parent,
                              const QXmlStreamAttributes &attributes,
                              MyQSvgHandler *handler)
@@ -2858,8 +2877,24 @@ static QSvgNode *createGNode(QSvgNode *parent,
         MySVG::BeamLayerConfig layer_config;
         resolveColor(attributes.value("data-color"), layer_config.color, handler);
         qInfo() << "Raw Color" << attributes.value("data-color") << "Resolved Color" << layer_config.color;
-        layer_config.speed = attributes.value("data-speed").toDouble();
-        layer_config.power = attributes.value("data-strength").toDouble();
+        layer_config.visible = attributes.value("display").toString() != "none";
+        layer_config.speed = getAttr(attributes, "data-speed", 20.0);
+        layer_config.power = getAttr(attributes, "data-strength", 15.0);
+        layer_config.module = getAttr(attributes, "data-module", 1);
+        layer_config.repeat = getAttr(attributes, "data-repeat", 1);
+        layer_config.height = getAttr(attributes, "data-height", 0.0);
+        layer_config.z_step = getAttr(attributes, "data-zstep", 0.0);
+        layer_config.diode = getAttr(attributes, "data-diode", 0);
+        layer_config.multipass = getAttr(attributes, "data-multipass", 1);
+        layer_config.backlash = getAttr(attributes, "data-backlash", 0.0);
+        layer_config.uv = getAttr(attributes, "data-uv", 0);
+        layer_config.halftone = getAttr(attributes, "data-halftone", 1);
+        layer_config.printing_strength = getAttr(attributes, "data-printingStrength", 100.0);
+        layer_config.focus = getAttr(attributes, "data-focus", 0.0);
+        layer_config.focus_step = getAttr(attributes, "data-focusStep", 0.0);
+        layer_config.min_power = getAttr(attributes, "data-minPower", 0);
+        layer_config.ink = getAttr(attributes, "data-ink", 3);
+        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
         handler->setLayerConfig(node_addr, layer_config);
     }
     #endif
@@ -2905,6 +2940,9 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     const QStringView width  = attributes.value(QLatin1String("width"));
     const QStringView height = attributes.value(QLatin1String("height"));
     QString filename = attributes.value(QLatin1String("xlink:href")).toString();
+    g_gradient = attributes.value("data-shading").toString() == "true";
+    g_threshold = attributes.value("data-threshold").toInt();
+    g_pwm = attributes.value("data-pwm").toInt() == 1;
     qreal nx = toDouble(x);
     qreal ny = toDouble(y);
     MyQSvgHandler::LengthType type;
@@ -3915,12 +3953,6 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     if (nry > bounds.height()/2)
         nry = bounds.height()/2;
 
-    //we draw rounded rect from 0...99
-    //svg from 0...bounds.width()/2 so we're adjusting the
-    //coordinates
-    nrx *= (100/(bounds.width()/2));
-    nry *= (100/(bounds.height()/2));
-
 #ifdef MYSVG
     QPainterPath qpath;
     qpath.addRoundedRect(bounds, nrx, nry);
@@ -4618,6 +4650,10 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
             data_list_[i].fill= true;
+            BitmapShape *bitmap_shape = (BitmapShape*)new_shape.get();
+            bitmap_shape->setGradient(data_list_[i].gradient);
+            bitmap_shape->setThrshBrightness(data_list_[i].threshold);
+            bitmap_shape->setPwm(data_list_[i].pwm);
         } else if(data_list_[i].type == QSVG_USE) {
             // Skip use nodes since we have already processed them
             continue;
@@ -4646,9 +4682,25 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         if (layer_config_map_.contains(layer->name())) {
             auto config = layer_config_map_[layer->name()];
             qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
+            layer->setVisible(config.visible);
             layer->setSpeed(config.speed);
             layer->setStrength(config.power);
             layer->setColor(config.color);
+            layer->setModule(config.module);
+            layer->setRepeat(config.repeat);
+            layer->setTargetHeight(config.height);
+            layer->setStepHeight(config.z_step);
+            layer->setUseDiode(config.diode);
+            layer->setMultipass(config.multipass);
+            layer->setXBacklash(config.backlash);
+            layer->setUv(config.uv);
+            layer->setHalftone(config.halftone);
+            layer->setPrintingStrength(config.printing_strength);
+            layer->setFocus(config.focus);
+            layer->setFocusStep(config.focus_step);
+            layer->setMinPower(config.min_power);
+            layer->setInk(config.ink);
+            layer->setPrintingSpeed(config.printing_speed);
         }
         doc->addLayer(layer);
         if(layer->isVisible())
@@ -5008,7 +5060,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_gradient, g_threshold, g_pwm);
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

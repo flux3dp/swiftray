@@ -1,3 +1,5 @@
+CONFIG += USE_QT6
+
 QT += quick
 QT += quickwidgets
 QT += widgets
@@ -12,6 +14,11 @@ ios {
 } else {
 QT += serialport
 }
+USE_QT6 {
+QT += openglwidgets
+QT += core5compat
+}
+
 
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
@@ -20,6 +27,7 @@ VERSION_MAJOR = 1
 VERSION_MINOR = 3
 VERSION_BUILD = 0
 VERSION_SUFFIX = "" # empty string or "-beta.X"
+DEFINES += "QT6"
 #DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
 #       "VERSION_MINOR=$$VERSION_MINOR"\
 #       "VERSION_BUILD=$$VERSION_BUILD"
@@ -54,6 +62,19 @@ win32 {
         LIBS += -lboost_system-vc141-mt-x64-1_78
         LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
     }
+    win32-g++ {
+        # MINGW
+        LIBS += -L$$(MINGW64_PATH)/lib
+        LIBS += -lboost_thread-mt
+        LIBS += -lboost_system-mt
+        LIBS += -lopencv_core
+        LIBS += -lopencv_imgproc
+        LIBS += -lopencv_flann
+        LIBS += -lxml2
+        LIBS += -lpotrace
+        LIBS += -llibpotrace
+        LIBS += -L$$PWD\third_party\sentry-native\install\lib -lsentry
+    }
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
@@ -70,6 +91,7 @@ macx{
 #    LIBS += -L"/opt/homebrew/opt/glib/lib"
 #    LIBS += -L"/opt/homebrew/opt/poppler/lib"
 #    LIBS += -L"/opt/homebrew/opt/cairo/lib"
+#    LIBS += -L"/opt/homebrew/opt/potrace/lib"
 
     # Mac Intel
     _BOOST_PATH = "/usr/local/opt/boost/"
@@ -81,6 +103,7 @@ macx{
     LIBS += -lboost_system-mt
     LIBS += -lopencv_core
     LIBS += -lopencv_imgproc
+    LIBS += -lopencv_flann
     LIBS += -lxml2
     LIBS += -lpotrace
     LIBS += -lglib-2.0
@@ -96,6 +119,7 @@ unix:!macx{
     LIBS += -lboost_system-mt
     LIBS += -lopencv_core
     LIBS += -lopencv_imgproc
+    LIBS += -lopencv_flann
     LIBS += -lxml2
     LIBS += -lpotrace
     LIBS += -llibpotrace
@@ -137,7 +161,8 @@ macx{
 #    INCLUDEPATH += /opt/homebrew/include/glib-2.0
 #    INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
 #    INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
-#    INCLUDEPATH += /usr/homebrew/opt/poppler/include/poppler
+#    INCLUDEPATH += /opt/homebrew/opt/poppler/include/poppler
+#    INCLUDEPATH += /opt/homebrew/opt/potrace/include
 
     # Mac Intel
     INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
@@ -197,7 +222,6 @@ SOURCES += \
     $$files(src/connection/*.cpp) \
     $$files(src/connection/QAsyncSerial/*.cpp) \
     $$files(src/toolpath_exporter/*.cpp) \
-    $$files(src/parser/*.cpp) \
     $$files(src/settings/*.cpp) \
     $$files(src/shape/*.cpp) \
     $$files(src/widgets/*.cpp) \
@@ -222,6 +246,9 @@ SOURCES += \
     $$files(src/parser/dxf_rs/muparser/*.cpp) \
     $$files(src/parser/dxf_rs/jwwlib/*.cpp) \
     $$files(src/utils/*.cpp) \
+    src/parser/dxf_reader.cpp \
+    src/parser/pdf2svg.cpp \
+    src/server/swiftray-server.cpp \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
     third_party/libdxfrw/drw_base.cpp \
@@ -243,7 +270,21 @@ SOURCES += \
     third_party/libdxfrw/intern/dxfwriter.cpp \
     third_party/libdxfrw/intern/rscodec.cpp \
     third_party/libdxfrw/libdwgr.cpp \
-    third_party/libdxfrw/libdxfrw.cpp
+    third_party/libdxfrw/libdxfrw.cpp \
+    third_party/liblcs/lcsExpr.cpp
+SOURCES -= src/executor/operation_cmd/sync_exec_cmd.cpp
+USE_QT6 {
+SOURCES += \
+    src/parser/my_qsvg_handler_qt6.cpp \
+    src/parser/qsvggraphics_qt6.cpp \
+} else {
+SOURCES += \
+    src/parser/svgpp-parser.cpp \
+    src/parser/svgpp-impl.cpp \
+    src/parser/svgpp-external-impl.cpp \
+    src/parser/qsvggraphics.cpp \
+    src/parser/my_qsvg_handler.cpp \
+}
 
 RESOURCES += qml.qrc
 RESOURCES += sparkle.qrc
@@ -285,6 +326,7 @@ HEADERS += \
     $$files(src/parser/dxf_rs/jwwlib/*.h) \
     src/config.h \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
+    src/server/swiftray-server.h \
     $$files(src/executor/*.h) \
     $$files(src/executor/machine_job/*.h) \
     $$files(src/executor/operation_cmd/*.h) \
