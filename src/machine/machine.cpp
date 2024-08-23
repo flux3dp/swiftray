@@ -71,34 +71,8 @@ MachineSettings::MachineParam Machine::getMachineParam() const {
  * @return true 
  * @return false: cancelled, no job executor exists or already running a job
  */
-bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog) {
-  // Check state
-  if (connect_state_ != ConnectionState::kConnected) {
-    return false;
-  }
-
-  QList<Timestamp> timestamp_list;
-  try {
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-  } catch (...) {
-    // Terminated (Cancelled)
-    return false;
-  }
-  auto job = QSharedPointer<GCodeJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
-  job->setTimestampList(timestamp_list);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list) {
+  return createGCodeJob(gcode_list, timestamp_list, QPixmap());
 }
 
 /**
@@ -108,24 +82,13 @@ bool Machine::createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> p
  * @return true 
  * @return false: cancelled, no job executor exists or already running a job or machine not connected
  */
-bool Machine::createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog) {
+bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list, QPixmap preview) {
   // Check state
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
   }
 
-  QList<Timestamp> timestamp_list;
-  try {
-    QElapsedTimer timer;
-    qInfo() << "Start calcRequiredTime";
-    timer.start();
-    timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    qDebug() << "The calcRequiredTime took" << timer.elapsed() << "milliseconds";
-  } catch (...) {
-    // Terminated (Cancelled)
-    return false;
-  }
-  auto job = QSharedPointer<GCodeJob>::create(gcode_list, preview);
+  auto job = preview.width() > 0 ? QSharedPointer<GCodeJob>::create(gcode_list, preview) : QSharedPointer<GCodeJob>::create(gcode_list);
   job->setMotionController(motion_controller_);
   job->setTimestampList(timestamp_list);
   if (!job_executor_) {
@@ -439,7 +402,7 @@ void Machine::setupMotionController() {
   qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
   if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
     qInfo() << "Setup GRBL Motion Controller";
-    motion_controller_->attachPort(serial_port_);
+    motion_controller_->attachSerialPort(serial_port_);
   } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
     // TODO:BSL
     qInfo() << "Setup BSL Motion Controller";
@@ -466,6 +429,7 @@ void Machine::setupMotionController() {
 }
 
 void Machine::motionPortActivated() {
+  qInfo() << "Machine::motionPortActivated()";
   connect_state_ = ConnectionState::kConnected;
   Q_EMIT activated();
 
@@ -473,6 +437,7 @@ void Machine::motionPortActivated() {
 }
 
 void Machine::motionPortDisonnected() {
+  qInfo() << "Machine::motionPortDisonnected()";
   connect_state_ = ConnectionState::kDisconnected;
 
   // Reset state variables
@@ -486,8 +451,10 @@ void Machine::motionPortDisonnected() {
 
 void Machine::startJob() {
   if (connect_state_ != ConnectionState::kConnected) {
+    qWarning() << "Machine::startJob() - machine is not connected";
     return;
   }
+  qInfo() << "Machine::startJob()";
   job_executor_->start();
 }
 
@@ -538,6 +505,7 @@ void Machine::stopJob() {
           GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset)
         );
       } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+        qInfo() << "Machine::stopJob";
         console_executor_->appendCmd(
           BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlReset)
         );
@@ -607,32 +575,43 @@ void Machine::handleNotif(QString title, QString msg) {
 
 bool Machine::connectSerial(QString port, int baudrate) {
   if (port == "BSL") {
-    connect_bsl_board();
-    bsl_connected_ = true;
-    qInfo() << "LCS connected";
+    if (connect_state_ == ConnectionState::kConnected) {
+      qWarning() << "BSL already connected";
+      return false;
+    } else if (lcs_connect()) {
+      qInfo() << "LCS connected";
+      this->setupMotionController();
+      return true;
+    } else {
+      qWarning() << "LCS connect failed";
+      return false;
+    }
+  } else {
+    // Connects to regular serial port
+    serial_port_->setPortName(port);
+    serial_port_->setBaudRate(baudrate);
+    serial_port_->open(QIODevice::ReadWrite);
+    if (!serial_port_->isOpen()) {
+      qWarning() << "Serial port open failed";
+      return false;
+    }
+    qInfo() << "Serial port opened";
+    serial_port_->clearError();
     this->setupMotionController();
-    return true;
   }
-  // Connects to regular serial port
-  serial_port_->setPortName(port);
-  serial_port_->setBaudRate(baudrate);
-  serial_port_->open(QIODevice::ReadWrite);
-  if (!serial_port_->isOpen()) {
-    qWarning() << "Serial port open failed";
-    return false;
-  }
-  qInfo() << "Serial port opened";
-  serial_port_->clearError();
-  this->setupMotionController();
   return true;
 }
 
 void Machine::disconnect() {
+  if (motion_controller_ != nullptr) {
+    qInfo() << "MotionController detaching port";
+    motion_controller_->detachPort();
+  }
   serial_port_->close();
 }
 
 bool Machine::isConnected() {
-  return bsl_connected_ || serial_port_->isOpen();
+  return connect_state_ == ConnectionState::kConnected;
 }
 
 void Machine::setSerialPort(QSerialPort &serial_port) {

@@ -251,6 +251,16 @@ QString GrblMotionController::getAlarmMsg(AlarmCode code) {
   }
 }
 
+bool GrblMotionController::detachPort() {
+  if (port_ && port_->isOpen()) {
+    port_->close();
+    port_ = nullptr;
+    Q_EMIT disconnected();
+    return true;
+  }
+  return false;
+}
+
 MotionController::CmdSendResult GrblMotionController::stop() {
   qWarning() << "GrblMotionController::stop() is not implemented";
   return CmdSendResult::kFail;

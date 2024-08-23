@@ -4,9 +4,12 @@
 #include <stdint.h>
 
 #if defined(LCSDLL_EXPORTS)
-#	if defined(__unix__) || defined(__APPLE__)
+#	if defined(__unix__)
 #		define LCS_IMPORT __attribute__ ((visibility("default")))
 #		define LCS_API  __attribute__ ((stdcall))
+#   elif defined(__APPLE__)
+#		define LCS_IMPORT __attribute__ ((visibility("default")))
+#		define LCS_API
 #	elif defined(_WIN32)
 #		define LCS_IMPORT __declspec(dllexport)
 #		define LCS_API
@@ -15,9 +18,12 @@
 #		define LCS_API  __attribute__ ((stdcall))
 #	endif
 #else
-#	if defined(__unix__) || defined(__APPLE__)
+#	if defined(__unix__)
 #		define LCS_IMPORT
 #		define LCS_API   __attribute__ ((stdcall))
+#   elif defined(__APPLE__)
+#		define LCS_IMPORT
+#		define LCS_API
 #	elif defined(_WIN32)
 #		define LCS_IMPORT __declspec(dllimport)
 #		define LCS_API

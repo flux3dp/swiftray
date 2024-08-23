@@ -13,6 +13,8 @@ class BSLMotionController : public MotionController
 public:
   BSLMotionController(QObject *parent = nullptr);
   void attachPortBSL();
+  bool detachPort() override;
+  QString type() override { return "BSL"; }
   CmdSendResult stop() override;
   CmdSendResult pause();
   CmdSendResult resume();
@@ -39,9 +41,12 @@ private:
   };
   std::thread command_runner_thread_;
   void startCommandRunner();
-  void commandRunner();
+  void commandRunnerThread();
   void dequeueCmd(int count);
   QString getAlarmMsg(AlarmCode code);
+  double current_x = 0.0;
+  double current_y = 0.0;
+  double current_f = 6000.0; // Default speed
 };
 
 #endif // BSLMOTIONCONTROLLER_H

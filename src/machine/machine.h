@@ -32,8 +32,8 @@ public:
   ConnectionState getConnectionState();
   bool applyMachineParam(MachineSettings::MachineParam mach);
   MachineSettings::MachineParam getMachineParam() const;
-  bool createGCodeJob(QStringList gcode_list, QPointer<QProgressDialog> progress_dialog);
-  bool createGCodeJob(QStringList gcode_list, QPixmap preview, QPointer<QProgressDialog> progress_dialog);
+  bool createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list = QList<Timestamp>());
+  bool createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list, QPixmap preview);
   bool createFramingJob(QStringList gcode_list);
   bool createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
   bool createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist, qreal feedrate);
@@ -77,7 +77,7 @@ Q_SIGNALS:
 protected:
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
-  QSerialPort *serial_port_ = NULL;
+  QSerialPort *serial_port_ = nullptr;
 
   // Hardware equipment controllers
   MotionController *motion_controller_; // created when port connected

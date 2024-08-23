@@ -201,7 +201,7 @@ void MainWindow::loadSettings() {
     welcome_dialog_->raise();
   }
   preferences_window_->setUpload(mainApp->isUploadEnable());
-  this->connectMachine(laser_panel_->getPort());
+  this->connectMachine(laser_panel_->getPort(), true);
 }
 
 void MainWindow::loadCanvas() {
@@ -225,7 +225,7 @@ void MainWindow::loadCanvas() {
       FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
       QByteArray data = file.readAll();
-      qInfo() << "File size:" << data.size();
+      qInfo() << "File size:" << data.size() << "Filename:" << filename;
 
       if (filename.toLower().endsWith(".bb")) {
         if ( ! handleUnsavedChange()) {
@@ -240,6 +240,9 @@ void MainWindow::loadCanvas() {
         current_filename_ = QFileInfo(filename).baseName();
         setWindowFilePath(filename);
         setWindowTitle(current_filename_ + " - Swiftray");
+      } else if (filename.toLower().endsWith(".bvg")) {
+        // Get byte array from file
+        canvas_->loadSVG(data, true);
       } else if (filename.toLower().endsWith(".svg")) {
         canvas_->loadSVG(filename);
         // canvas_->loadSVG(data);
@@ -337,27 +340,31 @@ bool MainWindow::handleUnsavedChange() {
     // some modifications have been performed on this document
     QMessageBox msgBox;
     msgBox.setText(tr("The document has been modified.\nDo you want to save your changes?"));
-    msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
-    msgBox.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
-    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+    msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Save);
+
+    // Optionally override standard button texts
+    msgBox.setButtonText(QMessageBox::Save, tr("Save"));
+    msgBox.setButtonText(QMessageBox::Discard, tr("Don't Save"));
+    msgBox.setButtonText(QMessageBox::Cancel, tr("Cancel"));
+
     int ret = msgBox.exec();
     switch (ret) {
-      case QMessageBox::AcceptRole:
-          if(!canvas_->document().currentFile().isEmpty()) saveFile();
-          else handle_result = saveAsFile();
-          break;
-      case QMessageBox::RejectRole:
-          // Don't Save was clicked
-          handle_result = true;
-          break;
-      case QMessageBox::DestructiveRole:
-          // Cancel was clicked
-          handle_result = false;
+      case QMessageBox::Save:
+        if(!canvas_->document().currentFile().isEmpty()) saveFile();
+        else handle_result = saveAsFile();
+        break;
+      case QMessageBox::Discard:
+        handle_result = true;
+        break;
+      case QMessageBox::Cancel:
+        handle_result = false;
+        break;
       default:
-          // should never be reached
-          handle_result = false;
+        handle_result = false;
     }
   }
+  qInfo() << "Unsaved change handled: " << handle_result;
   return handle_result;
 }
 
@@ -404,14 +411,8 @@ void MainWindow::actionStart() {
       return;
     }
     try {
-      auto gcode_list = gcode_panel_->getGCode().split('\n');
-      // Estimate total required time
-      auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size() - 1, 
-        this);
-      auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
+      auto gcode_list = gcode_panel_->getGCodeList();
+      auto timestamp_list = gcode_panel_->getTimestampList();
       Timestamp total_required_time{0, 0};
       if (!timestamp_list.empty()) {
         total_required_time = timestamp_list.last();
@@ -646,7 +647,7 @@ void MainWindow::openFile() {
     FilePathSettings::setDefaultFilePath(file_info.absoluteDir().absolutePath());
 
     QByteArray data = file.readAll();
-    qInfo() << "File size:" << data.size();
+    qInfo() << "File size:" << data.size() << "Filename:" << file_name;
 
     if (file_name.toLower().endsWith(".bb")) {
       QDataStream stream(data);
@@ -658,6 +659,9 @@ void MainWindow::openFile() {
       current_filename_ = QFileInfo(file_name).baseName();
       setWindowFilePath(file_name);
       setWindowTitle(current_filename_ + " - Swiftray");
+    } else if (file_name.toLower().endsWith(".bvg")) {
+      // Get byte array from file
+      canvas_->loadSVG(data, true);
     } else if (file_name.toLower().endsWith(".svg")) {
       canvas_->loadSVG(file_name);
       // canvas_->loadSVG(data);
@@ -1164,6 +1168,9 @@ void MainWindow::registerEvents() {
     about_window_->activateWindow();
     about_window_->raise();
   });
+  connect(ui->actionConnect, &QAction::triggered, [=]() {
+    connectMachine(laser_panel_->getPort());
+  });
 #ifdef HAVE_SOFTWARE_UPDATE
   connect(ui->actionCheckForUpdates, &QAction::triggered, this, &MainWindow::checkForUpdates);
 #endif
@@ -1579,7 +1586,7 @@ void MainWindow::registerEvents() {
     // This will be called after mainApp->updateMachineIndex is called
     laser_panel_->setMachineIndex(machine_index);
     active_machine.applyMachineParam(mainApp->getMachineParam());
-    this->connectMachine(laser_panel_->getPort());
+    this->connectMachine(laser_panel_->getPort(), true);
   });
   connect(mainApp, &MainApplication::editMachineTravelSpeed, [=](double travel_speed) {
     doc_panel_->setTravelSpeed(travel_speed);
@@ -1891,30 +1898,35 @@ void MainWindow::setConnectionToolBar() {
   ui->actionConnect->setIcon(QIcon(isDarkMode() ? ":/resources/images/dark/icon-unlink.png" : ":/resources/images/icon-unlink.png"));
 }
 
-void MainWindow::connectMachine(QString port_name) {
+void MainWindow::connectMachine(QString port_name, bool auto_connect) {
+  qInfo() << "MainWindow::connectMachine(" << port_name << ")";
   if (active_machine.isConnected()) {
-    if (active_machine.getMotionController()) {
-      active_machine.getMotionController()->detachPort();
-    } else {
-      active_machine.disconnect(); // disconnect
-    }
-    qInfo() << "[Connection] Disconnected from existing connection";
-    laser_panel_->setConnected(false);
+    qInfo() << "MainWindow::connectMachine()- Already connected to the port" << port_name;
+    active_machine.disconnect();
+    if (!auto_connect) return;
+    QThread::msleep(100);
+    qInfo() << "MainWindow::connectMachine() - Reconnecting";
   }
   auto machine_param = mainApp->getMachineParam();
-  if (machine_param.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
-    port_name = "BSL";
-  }
   active_machine.applyMachineParam(machine_param);
-  qInfo() << "[Connection] Connecting" << machine_param.name << "@ port" << port_name << 115200;
-  active_machine.connectSerial(port_name, 115200);
+  bool connection_result;
+  if (machine_param.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+    qInfo() << "[Connection] Connecting BSL";
+    connection_result = active_machine.connectSerial("BSL", 0);
+  } else {
+    qInfo() << "[Connection] Connecting" << machine_param.name << "@ port" << port_name << 115200;
+    connection_result= active_machine.connectSerial(port_name, 115200);
+  }
 
-  if (!active_machine.isConnected()) {
-    // QMessageBox msgbox;
-    // msgbox.setText(tr("Error"));
-    // msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
-    // msgbox.exec();
-    qWarning() << "Unable to connect to the port" << port_name << ". Make sure no existing program is using it.";
+  if (!connection_result) {
+    if (auto_connect) {
+      qWarning() << "Unable to connect to the port" << port_name << ". Make sure no existing program is using it.";
+    } else {
+      QMessageBox msgbox;
+      msgbox.setText(tr("Error"));
+      msgbox.setInformativeText(tr("Unable to connect to the port.  Make sure no existing program is using it."));
+      msgbox.exec();
+    }
     laser_panel_->setConnected(false);
     return;
   }
@@ -2472,17 +2484,8 @@ void MainWindow::genPreviewWindow() {
 
   // Prepare total required time
   try {
-    auto gcode_list = gcode_panel_->getGCode().split('\n');
-    auto progress_dialog = new QProgressDialog(
-      tr("Estimating task time..."),  
-      tr("Cancel"), 
-      0, gcode_list.size()-1, 
-      this);
-    auto timestamp_list = MachineJob::calcRequiredTime(gcode_list, progress_dialog);
-    Timestamp last_gcode_timestamp{0, 0};
-    if (!timestamp_list.empty()) {
-      last_gcode_timestamp = timestamp_list.last();
-    }
+    auto gcode_list = gcode_panel_->getGCodeList();
+    auto time = gcode_panel_->getEstimatedTime();
 
     double height_scale = 1;
     if(mainApp->isRotaryMode()) height_scale = mainApp->getRotaryScale();
@@ -2490,7 +2493,7 @@ void MainWindow::genPreviewWindow() {
                                           QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10),
                                           height_scale);
     pw->setPreviewPath(preview_path_generator);
-    pw->setRequiredTime(last_gcode_timestamp);
+    pw->setRequiredTime(time);
     pw->show();
     pw->activateWindow();
     pw->raise();
@@ -2507,35 +2510,19 @@ void MainWindow::genPreviewWindow() {
  *        Currently, support gcode job only
  */
 void MainWindow::onStartNewJob() {
-  auto gcode_list = gcode_panel_->getGCode().split('\n');
   JobDashboardDialog* job_dialog = qobject_cast<JobDashboardDialog*>(sender());
+  bool job_result;
   if (job_dialog != NULL) {
-    // Job launched from job dashboard -> with preview
-    auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size()-1, 
-        qobject_cast<QWidget*>(job_dialog));
-    if (true == active_machine.createGCodeJob(gcode_list, 
-                                              job_dialog->getPreview(),
-                                              progress_dialog)) {
-      gcode_panel_->attachJob(active_machine.getJobExecutor());
-      job_dashboard_->attachJob(active_machine.getJobExecutor());
-      active_machine.startJob();
-    }
+    job_result = active_machine.createGCodeJob(gcode_panel_->getGCodeList(), gcode_panel_->getTimestampList(), job_dialog->getPreview()); 
   } else {
-    // Job launched from other component, e.g. gcode panel -> no preview (i.e. no job dashboard)
-    auto progress_dialog = new QProgressDialog(
-        tr("Estimating task time..."),  
-        tr("Cancel"), 
-        0, gcode_list.size()-1, 
-        qobject_cast<QWidget*>(this));
-    if (true == active_machine.createGCodeJob(gcode_list, progress_dialog)) {
-      gcode_panel_->attachJob(active_machine.getJobExecutor());
-      active_machine.startJob();
-    }
+    job_result = active_machine.createGCodeJob(gcode_panel_->getGCodeList(), gcode_panel_->getTimestampList());
   }
-
+  if (job_result == false) return;
+  if (job_dialog != NULL) {
+    job_dashboard_->attachJob(active_machine.getJobExecutor());
+  }
+  gcode_panel_->attachJob(active_machine.getJobExecutor());
+  active_machine.startJob();
 }
 
 void MainWindow::onStopJob() {
@@ -2617,7 +2604,7 @@ void MainWindow::laser(qreal power_percent) {
     //       We currently assume 100% = S1000 here
     gcode_list.push_back(QString("G1S") + QString::number(qRound(10*power_percent)));
   }
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
@@ -2646,7 +2633,7 @@ void MainWindow::laserPulse(qreal power_percentage) {
   } else {
     gcode_list.push_back("M5");
   }
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
@@ -2658,7 +2645,7 @@ void MainWindow::home() {
   //       Send GrblHomeCmd() instead of gcode cmd for grbl controller
   //       Send XXXHomeCmd() for other controller
   gcode_list.push_back("$H");
-  if (true == active_machine.createGCodeJob(gcode_list, nullptr)) {
+  if (true == active_machine.createGCodeJob(gcode_list)) {
     gcode_panel_->attachJob(active_machine.getJobExecutor());
     active_machine.startJob();
   }
@@ -2735,6 +2722,7 @@ void MainWindow::machineDisconnected() {
   ui->actionFrame->setEnabled(false);
   jogging_panel_->setControlEnable(false);
   laser_panel_->setControlEnable(false);
+  laser_panel_->setConnected(false);
 }
 
 void MainWindow::updateCanvasSize(QSize new_size) {

@@ -31,6 +31,10 @@ public:
 
   void attachJob(QPointer<JobExecutor> job_executor);
 
+  const QList<Timestamp>& getTimestampList();
+  const QStringList& getGCodeList();
+  Timestamp getEstimatedTime();
+
 public Q_SLOTS:
   void onJobStateChanged(Executor::State);
   void onJobProgressChanged(QVariant);
@@ -57,6 +61,9 @@ private:
 
   QPointer<JobExecutor> job_executor_;
   QPointer<MainWindow> main_window_;
+
+  QStringList gcode_list_;
+  QList<Timestamp> timestamp_list_;
 
 Q_SIGNALS:
   void exportGcode();

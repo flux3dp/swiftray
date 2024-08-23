@@ -22,6 +22,7 @@ void RTStatusUpdateExecutor::attachMotionController(
     disconnect(motion_controller_, nullptr, this, nullptr);
     motion_controller_.clear();
     stop();
+    changeState(State::kIdle);
   }
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::realTimeStatusUpdated,

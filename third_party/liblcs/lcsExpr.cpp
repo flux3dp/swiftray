@@ -534,26 +534,43 @@ void LCS2close(void) {
     }
 }
 
-bool connect_bsl_board() {
-    // Note: dylib must be placed in pwd!
-    printf("Loading BSL library");
-    LCS2open();
-    printf("LCSOpen OK");
-    if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-        printf("Failed to initialize LCS library.");
+bool lcs_check_init() {
+    if (!gLibLCS) {
+        printf("Loading LCS library...\n");
+        LCS2open();
+        printf("LCSOpen OK\n");
+        if (lcs_init_dll() != LCS_RES_NO_ERROR) {
+            printf("Failed to initialize LCS library.\n");
+            return false;
+        }
+
+        printf("LCS Init OK\n");
+    }
+}
+
+bool lcs_available() {
+    lcs_check_init();
+    return lcs_search_cards() != 0;
+}
+
+bool lcs_connect() {
+    if (!lcs_available()) {
+        printf("No laser cards found.\n");
         return false;
     }
 
-    printf("LCS Init OK");
+    auto select_result = lcs_select_card(0);
 
-    if (lcs_search_cards() == 0) {
-        printf("No laser cards found.");
+    if (select_result != LCS_RES_NO_ERROR) {
+        printf("Failed to select laser card (%d), try again...\n", static_cast<int>(select_result));
+        select_result = lcs_select_card(0);
+    }
+
+    if (select_result != LCS_RES_NO_ERROR) {
+        printf("Failed to select laser card (%d).\n", static_cast<int>(select_result));
         return false;
     }
 
-    if (lcs_select_card(0) != LCS_RES_NO_ERROR) {
-        printf("Failed to select laser card.");
-        return false;
-    }
+    printf("Connected to BSL card.\n");
     return true;
 }

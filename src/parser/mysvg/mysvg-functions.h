@@ -79,17 +79,25 @@
 
 
 namespace MySVG {
-    void transformUse(QList<Node> &nodes, QString node_name, QTransform transform) {
+    void processUse(QList<Node> &nodes, Node use_node) {
+        QString node_name = use_node.node_names[0];
+        QTransform transform = use_node.trans;
         if (node_name == "") {
             qInfo() << "Unable to transform empty node name";
             return;
         }
         qInfo() << "Transforming node: " << node_name << "transform" << transform.m11() << transform.m12() << transform.m13() << transform.m21() << transform.m22() << transform.m23() << transform.m31() << transform.m32() << transform.m33();
         for (int i = 0; i < nodes.size(); ++i) {
+            if (!nodes[i].is_symbol) continue;
             for (auto name : nodes[i].node_names) {
                 if (name == node_name) {
                     qInfo() << " >>" << i << "*=transform";
-                    nodes[i].trans *= transform;
+                    MySVG::Node n = nodes[i];
+                    n.trans *= transform;
+                    n.is_symbol = false;
+                    n.color = use_node.color;
+                    n.layer_name = use_node.layer_name;
+                    nodes.push_back(n);
                     break;
                 }
             }
@@ -122,6 +130,7 @@ namespace MySVG {
         target_layer = std::make_shared<Layer>();
         target_layer->setName(layer_name);
         target_layer->setColor(color);
+        qInfo() << "Creating layer" << layer_name;
         if (fill) target_layer->setType(Layer::Type::Fill);
         layers.push_back(target_layer);
         return target_layer;
@@ -130,6 +139,7 @@ namespace MySVG {
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
                           double g_scale, QColor &g_color, QImage &g_image) {
+        qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
         if(node->type() == QSVG_PATH) {
@@ -138,6 +148,7 @@ namespace MySVG {
 
             Node n;
             n.type = QSVG_PATH;
+            n.is_symbol = isSymbolNode(node);
             #ifdef QT6
             n.qpath = path_node->path();
             #else
@@ -161,6 +172,7 @@ namespace MySVG {
 
             Node n;
             n.type = QSVG_IMAGE;
+            n.is_symbol = isSymbolNode(node);
             n.image = g_image;
             QSvgNode* tmp_node = node;
             while(tmp_node != nullptr) {
@@ -178,6 +190,7 @@ namespace MySVG {
             n.type = QSVG_USE;
             n.node_names.push_back(use_node->linkId());
             QTransform translate = QTransform().translate(use_node->startPos().x(), use_node->startPos().y());
+            n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
             n.trans = translate * trans;
             nodes.push_back(n);
         } else if(node->type() == QSVG_TEXT) {
@@ -198,6 +211,7 @@ namespace MySVG {
             }
             Node n;
             n.type = QSVG_TEXT;
+            n.is_symbol = isSymbolNode(node);
             n.trans = trans * tmp_scale;
             n.color = g_color;
             QSvgNode* tmp_node = node;

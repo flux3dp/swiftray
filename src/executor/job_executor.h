@@ -24,6 +24,7 @@ public:
   Timestamp getTotalRequiredTime() const;
   float getProgress() const;
   Timestamp getElapsedTime() const;
+  void reset();
 
 
 public Q_SLOTS:
@@ -44,7 +45,6 @@ Q_SIGNALS:
 
 private:
   void complete();
-  void stopImpl();
   std::mutex exec_mutex_;
 
   QPointer<MotionController> motion_controller_;
