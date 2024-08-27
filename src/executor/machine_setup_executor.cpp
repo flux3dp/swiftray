@@ -18,11 +18,11 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
     // If already attached, detach first
     disconnect(motion_controller_, nullptr, this, nullptr);
     motion_controller_.clear();
-    stop();
+    handleStopped();
   }
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::disconnected,
-          this, &MachineSetupExecutor::stop);
+          this, &MachineSetupExecutor::handleStopped);
   connect(motion_controller_, &MotionController::cmdFinished,
         this, [=](QPointer<Executor> executor){
     if (executor.data() == this) {
@@ -32,7 +32,7 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
 }
 
 void MachineSetupExecutor::start() {
-  stop();
+  handleStopped();
   qInfo() << "MachineSetupExecutor::start()";
   pending_cmd_.clear();
   if (motion_controller_->type() != "BSL") {
@@ -54,7 +54,7 @@ void MachineSetupExecutor::exec() {
   qInfo() << "MachineSetupExecutor exec(), pending command" << pending_cmd_.size();
 
   if (motion_controller_.isNull()) {
-    stop();
+    handleStopped();
     return;
   }
 
@@ -91,15 +91,7 @@ void MachineSetupExecutor::exec() {
   
 }
 
-void MachineSetupExecutor::pause() {
-
-}
-
-void MachineSetupExecutor::resume() {
-  
-}
-
-void MachineSetupExecutor::stop() {
+void MachineSetupExecutor::handleStopped() {
   exec_timer_->stop();
   pending_cmd_.clear();
   cmd_in_progress_.clear();

@@ -23,20 +23,20 @@ public:
 
   explicit Executor(QObject *parent = nullptr);
   size_t inProgressCmdCnt();
-  virtual void handleCmdFinish(int result_code) = 0;
   State getState() const;
-
-public Q_SLOTS:
   virtual void start() = 0;
-  virtual void exec() = 0;
-  virtual void pause() = 0;
-  virtual void resume() = 0; // resume from pause
-  virtual void stop() = 0;
+  virtual void handleCmdFinish(int result_code) = 0;
 
 Q_SIGNALS:
   void finished();
   void stateChanged(State new_state);
   //void error(QString err);
+
+protected Q_SLOTS:
+  virtual void exec() = 0;
+  virtual void handlePaused() = 0;
+  virtual void handleResume() = 0;
+  virtual void handleStopped() = 0;
 
 protected:
   void changeState(State new_state);

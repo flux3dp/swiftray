@@ -12,21 +12,20 @@ class RTStatusUpdateExecutor : public Executor
   Q_OBJECT
 public:
   explicit RTStatusUpdateExecutor(QObject *parent = nullptr);
+  void attachMotionController(QPointer<MotionController> motion_controller);
+  void start() override;
   void handleCmdFinish(int) override;
 
-  void attachMotionController(QPointer<MotionController> motion_controller);
-
-public Q_SLOTS:
-  void start() override;
-  void exec() override;
-  void pause() override;
-  void resume() override;
-  void stop() override;
-
-  void onReportRcvd();
 
 Q_SIGNALS:
   void hanging();
+
+private Q_SLOTS:
+  void exec() override;
+  void handlePaused() override;
+  void handleResume() override;
+  void handleStopped() override;
+  void onReportRcvd();
 
 private:
 

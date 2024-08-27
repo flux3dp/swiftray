@@ -21,14 +21,14 @@ void RTStatusUpdateExecutor::attachMotionController(
     // If already attached, detach first
     disconnect(motion_controller_, nullptr, this, nullptr);
     motion_controller_.clear();
-    stop();
+    handleStopped();
     changeState(State::kIdle);
   }
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::realTimeStatusUpdated,
           this, &RTStatusUpdateExecutor::onReportRcvd);
   connect(motion_controller_, &MotionController::disconnected,
-          this, &RTStatusUpdateExecutor::stop);
+          this, &RTStatusUpdateExecutor::handleStopped);
 }
 
 /**
@@ -36,7 +36,7 @@ void RTStatusUpdateExecutor::attachMotionController(
  * 
  */
 void RTStatusUpdateExecutor::start() {
-  stop();
+  handleStopped();
   changeState(State::kRunning);
   exec_timer_->start(1500);
 }
@@ -44,7 +44,7 @@ void RTStatusUpdateExecutor::start() {
 void RTStatusUpdateExecutor::exec() {
   //qInfo() << "RTStatusUpdateExecutor exec()";
   if (motion_controller_.isNull()) {
-    stop();
+    handleStopped();
     return;
   }
   // NOTE: Keep sending even when hanging
@@ -58,14 +58,14 @@ void RTStatusUpdateExecutor::exec() {
   }
 }
 
-void RTStatusUpdateExecutor::pause() {
+void RTStatusUpdateExecutor::handlePaused() {
   if (state_ == State::kRunning) {
     changeState(State::kPaused);
     exec_timer_->stop();
   }
 }
 
-void RTStatusUpdateExecutor::resume() {
+void RTStatusUpdateExecutor::handleResume() {
   if (state_ == State::kPaused) {
     changeState(State::kRunning);
     exec_timer_->start();
@@ -77,7 +77,7 @@ void RTStatusUpdateExecutor::onReportRcvd() {
   hanging_ = false;
 }
 
-void RTStatusUpdateExecutor::stop() {
+void RTStatusUpdateExecutor::handleStopped() {
   if (state_ == State::kRunning || state_ == State::kPaused) {
     qInfo() << "RTStatusUpdateExecutor::stop()";
     changeState(State::kStopped);

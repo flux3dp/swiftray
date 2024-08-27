@@ -1,5 +1,4 @@
-#ifndef JOBEXECUTOR_H
-#define JOBEXECUTOR_H
+#pragma once
 
 #include <QObject>
 #include "executor.h"
@@ -10,13 +9,15 @@
 #include <QSharedPointer>
 #include <mutex>
 #include <QTimer>
+#include <atomic>
+#include <thread>
 
 class JobExecutor : public Executor
 {
   Q_OBJECT
 public:
   explicit JobExecutor(QObject *parent = nullptr);
-  void handleCmdFinish(int result_code) override;
+  ~JobExecutor();
 
   bool setNewJob(QSharedPointer<MachineJob> new_job);
   void attachMotionController(QPointer<MotionController> motion_controller);
@@ -25,26 +26,26 @@ public:
   float getProgress() const;
   Timestamp getElapsedTime() const;
   void reset();
-
-
-public Q_SLOTS:
   void start() override;
-  void exec() override;
-  void pause() override;
-  void resume() override;
-  void stop() override;
+  void handleCmdFinish(int result_code) override;
 
 private Q_SLOTS:
-  void wakeUp();   // wake up this job executor
+  void handlePaused() override;
+  void handleResume() override;
+  void handleStopped() override;
+  void exec() override;
+  void handleDisconnect();
+  void handleMotionControllerStateChanged(MotionControllerState last_state, MotionControllerState current_state, 
+                                  qreal x_pos, qreal y_pos, qreal z_pos);
 
-  //void onCmdAcked();
 Q_SIGNALS:
-  void trigger();  // wake up this job executor
   void progressChanged(float prog);
   void elapsedTimeChanged(Timestamp);
 
+protected:
+  void threadFunction();
+
 private:
-  void complete();
   std::mutex exec_mutex_;
 
   QPointer<MotionController> motion_controller_;
@@ -56,6 +57,7 @@ private:
   std::shared_ptr<OperationCmd> pending_cmd_;
   MotionControllerState latest_mc_state_;
   size_t completed_cmd_cnt_ = 0;
-};
+  bool running_{false};
 
-#endif // JOBEXECUTOR_H
+  std::thread exec_thread_;
+};

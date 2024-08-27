@@ -4,22 +4,33 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QCoreApplication>
+#include <debug/debug-timer.h>
+#include <atomic>
 
 JobExecutor::JobExecutor(QObject *parent)
   : Executor{parent}
 {
   qInfo() << "JobExecutor created";
-  exec_timer_ = new QTimer(this); // trigger immediately when started
-  connect(exec_timer_, &QTimer::timeout, this, &JobExecutor::exec);
-  connect(this, &JobExecutor::trigger, this, &JobExecutor::wakeUp);
 }
 
-void JobExecutor::attachMotionController(
-    QPointer<MotionController> motion_controller) {
-  // In case running, stop first
-  stop();
+JobExecutor::~JobExecutor() {
+  this->running_ = false;
+  if (this->exec_thread_.joinable()) {
+    this->exec_thread_.join();
+  }
+}
+
+void JobExecutor::threadFunction() {
+  this->running_ = true;
+  while (this->running_) {
+      this->exec();
+  }
+}
+
+void JobExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
+  handleStopped();
   this->motion_controller_ = motion_controller;
-  changeState(State::kIdle);
+  this->changeState(State::kIdle);
 }
 
 MachineJob const *JobExecutor::getActiveJob() const {
@@ -32,25 +43,18 @@ MachineJob const *JobExecutor::getActiveJob() const {
  * 
  */
 void JobExecutor::start() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
-  qInfo() << "JobExecutor::start";
-  // Reject if already runnign a job
-  if (state_ != State::kIdle &&
-      state_ != State::kCompleted &&
-      state_ != State::kStopped) {
+  qInfo() << "JobExecutor::start() @" << getDebugTime();
+  
+  if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
     return;
   }
 
-  // Reject in case any operation is running
   if (motion_controller_->getState() != MotionControllerState::kIdle) {
     qInfo() << "Motion controller must be idle before job start";
     return;
   }
 
-  // Next job selection rule:
-  //   1. pendning_job_ = start new (next) job
-  //   2. last_job_     = retry
   if (!pending_job_.isNull()) {
     active_job_ = pending_job_;
     pending_job_.reset();
@@ -60,56 +64,29 @@ void JobExecutor::start() {
     last_job_.reset();
   } else {
     active_job_.reset();
-    // Reject if no job available
-    qInfo() << "JobExecutor no job available";
+    qInfo() << "JobExecutor has no job available";
     return;
   }
 
-  connect(motion_controller_, &MotionController::disconnected,
-        this, [=](){
-    if (state_ == State::kRunning || state_ == State::kPaused) {
-      auto msgbox = new QMessageBox;
-      msgbox->setText(tr("Error"));
-      msgbox->setInformativeText(tr("Serial port disconnected"));
-      msgbox->show();
-    }
-    stop();
-  });
+  // Connect all motion_controller_ signals and slots
+  connect(motion_controller_, &MotionController::disconnected, this, &JobExecutor::handleDisconnect);
   connect(motion_controller_, &MotionController::cmdFinished,
         this, [=](QPointer<Executor> executor){
     if (executor.data() == this) {
       handleCmdFinish(0);
     }
   });
-  connect(motion_controller_, &MotionController::resetDetected,
-        this, &JobExecutor::stop);
-  // Register signal slot
-  connect(motion_controller_, &MotionController::realTimeStatusUpdated, 
-      this, [=](MotionControllerState last_state, MotionControllerState current_state, 
-      qreal x_pos, qreal y_pos, qreal z_pos){
-    // NOTE: Currently, state ofjob executor only depends on state of motion controller
-    //       Thus, we update job executor state based on motion controller state
-    //       allow the condition pause/resume/stop from other executor
-    latest_mc_state_ = current_state;
-    if (latest_mc_state_ == MotionControllerState::kAlarm ||
-        latest_mc_state_ == MotionControllerState::kSleep) {
-      qInfo() << "Stopped by alarm or sleep";
-      stop();
-    } else if (latest_mc_state_ == MotionControllerState::kIdle || 
-                latest_mc_state_ == MotionControllerState::kRun) {
-      resume();
-    } else if (latest_mc_state_ == MotionControllerState::kPaused) {
-      pause();
-    } else { 
-      // unhandled
-    }
-  });
+  connect(motion_controller_, &MotionController::resetDetected, this, &JobExecutor::handleStopped);
+  connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &JobExecutor::handleMotionControllerStateChanged);
 
-  // Start running
+  
   completed_cmd_cnt_ = 0;
   Q_EMIT progressChanged(0);
   changeState(State::kRunning);
-  wakeUp();
+
+  if (!this->exec_thread_.joinable()) {
+    this->exec_thread_ = std::thread(&JobExecutor::threadFunction, this);
+  }
 }
 
 /**
@@ -117,27 +94,18 @@ void JobExecutor::start() {
  *        NOTE: Do nothing to motion controller directly
  * 
  */
-void JobExecutor::pause() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
-
+void JobExecutor::handlePaused() {
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ == State::kRunning) {
     changeState(State::kPaused);
-    exec_timer_->stop();
   }
 }
 
-/**
- * @brief Resume the job executor
- *        NOTE: Do nothing to motion controller directly
- * 
- */
-void JobExecutor::resume() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
-
+void JobExecutor::handleResume() {
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ == State::kPaused) {
     changeState(State::kRunning);
   }
-  wakeUp();
 }
 
 /**
@@ -147,87 +115,70 @@ void JobExecutor::resume() {
  */
 int debug_count = 0;
 void JobExecutor::exec() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
+  std::lock_guard<std::mutex> lock(exec_mutex_);
+  debug_count++;
 
-  // 1. Check state first
-  if (state_ != State::kRunning) {
-    exec_timer_->stop();
+  // Check if we need to ignore, or continue exec based on executor's state
+  if (state_ != State::kRunning || 
+      active_job_.isNull() ||
+      motion_controller_->getState() == MotionControllerState::kSleep) {
+    QThread::msleep(100);
     return;
   }
 
-  // 2. Check end condition of job
-  if (active_job_.isNull()) {
-    exec_timer_->stop();
+  // Check if the buffer is full
+  if (cmd_in_progress_.length() > 9000) {
+    if (debug_count % 40 == 0) {
+      qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
+    }
+    QThread::msleep(10);
     return;
   }
+
   if (active_job_->end()) {
-    qInfo() << "Job is ended, cmd in progress: " << cmd_in_progress_.length();
-    QThread::sleep(2);
     if (!pending_cmd_ && cmd_in_progress_.isEmpty()) {
-      if (latest_mc_state_ != MotionControllerState::kRun
-          && latest_mc_state_ != MotionControllerState::kPaused) {
-        // Complete
-        qInfo() << "Job complete";
-        complete();
+      if (latest_mc_state_ != MotionControllerState::kRun && latest_mc_state_ != MotionControllerState::kPaused) {
+        qInfo() << "JobExecutor::exec() - completed @" << getDebugTime();
+        if (!motion_controller_.isNull()) {
+          disconnect(motion_controller_, nullptr, this, nullptr);
+        }
+        // Clear active job
+        last_job_ = active_job_;
+        if (!last_job_.isNull()) {
+          last_job_->reload();
+        }
+        active_job_.reset();
+        // Emit related completion signals
+        changeState(State::kCompleted);
+        Q_EMIT progressChanged(100);
         Q_EMIT Executor::finished();
         return;
       }
     }
+
+    if (debug_count % 40 == 0) {
+      qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
+    }
+  }
+  if (!pending_cmd_) {
+    pending_cmd_ = active_job_->getNextCmd();
   }
 
-  // Submit commands to motion controller buffer as much as possible
-  while (true) {
-    // If buffer is full, wait till next cycle
-    if (cmd_in_progress_.length() > 9000) {
-      // Too many commands in progress
-      if (debug_count++ % 50 == 0) {
-        qInfo() << "JobExecutor::exec() - waiting buffer to clear...";
-      }
-      QThread::msleep(10);
+  OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
+  switch(exec_status) {
+    case OperationCmd::ExecStatus::kIdle:
+      pending_cmd_.reset();
       return;
-    }
-
-    // If mc is sleeping, wait till next cycle
-    if (motion_controller_->getState() == MotionControllerState::kSleep) {
-      // If motion controller is in sleep mode, process other stuff
-      QThread::msleep(10);
-      return;
-    }
-    if (debug_count++ % 1000 == 0) {
-      qInfo() << "JobExecutor::exec() -executing cmd..." << active_job_->end() << " " << cmd_in_progress_.length();
-    }
-    // Fetch new command
-    if (!pending_cmd_) {
-      if (active_job_->end()) {
-        // No more command, wait for completion in next cycle
-        if (debug_count % 40 == 0) {
-          qInfo() << "JobExecutor::exec() - Command is empty. Waiting for completion...";
-        }
-        QThread::msleep(25);
-        return;
-      }
-      pending_cmd_ = active_job_->getNextCmd();
-    }
-
-    // Execute command and check status
-    OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
-    switch(exec_status) {
-      case OperationCmd::ExecStatus::kIdle:
-        // Sleep (block) until next real-time status reported or cmd finished
-        qInfo() << "JobExecutor::exec() - execute returned kIdle";
-        exec_timer_->stop();
-        return;
-      case OperationCmd::ExecStatus::kProcessing:
-        cmd_in_progress_.push_back(pending_cmd_);
-        pending_cmd_.reset();
-        break;
-      default: // Immediate finish
-        completed_cmd_cnt_ += 1;
-        Q_EMIT progressChanged(active_job_->getProgressPercent());
-        Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
-        pending_cmd_.reset();
-        break;
-    }
+    case OperationCmd::ExecStatus::kProcessing:
+      cmd_in_progress_.push_back(pending_cmd_);
+      pending_cmd_.reset();
+      break;
+    default:
+      completed_cmd_cnt_ += 1;
+      Q_EMIT progressChanged(active_job_->getProgressPercent());
+      Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
+      pending_cmd_.reset();
+      break;
   }
 }
 
@@ -256,12 +207,12 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
  *             >0 for failure
  */
 void JobExecutor::handleCmdFinish(int code) {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
+  std::lock_guard<std::mutex> lock(exec_mutex_);
 
   if (active_job_.isNull()) {
     return;
   }
-  
+
   if (!cmd_in_progress_.isEmpty()) {
     if (code == 0) {
       cmd_in_progress_.first()->succeed();
@@ -275,62 +226,39 @@ void JobExecutor::handleCmdFinish(int code) {
     Q_EMIT progressChanged(active_job_->getProgressPercent());
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   }
-  Q_EMIT trigger(); // ~ wakeUp() (might be triggered from different thread)
-}
-
-void JobExecutor::complete() {  
-  if (!motion_controller_.isNull()) {
-    disconnect(motion_controller_, nullptr, this, nullptr);
-  }
-  Q_EMIT progressChanged(100);
-  // Take out the active job to last job
-  last_job_ = active_job_;
-  if (!last_job_.isNull()) {
-    last_job_->reload();
-  }
-  active_job_.reset();
-
-  exec_timer_->stop();
-  cmd_in_progress_.clear();
-  pending_cmd_.reset();
-  changeState(State::kCompleted);
 }
 
 /**
  * @brief Stop by other, protect with mutex
  * 
  */
-void JobExecutor::stop() {
-  std::scoped_lock<std::mutex> lk(exec_mutex_);
-  qInfo() << "JobExecutor::stop()";
+void JobExecutor::handleStopped() {
+  qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
+  std::lock_guard<std::mutex> lock(exec_mutex_);
+  
+  // Disconnect all motion_controller_ signals
   if (!motion_controller_.isNull()) {
     disconnect(motion_controller_, nullptr, this, nullptr);
   }
-  // Take out the active job to last job
-  Q_EMIT progressChanged(0);
+
+  // Clear active job
   last_job_ = active_job_;
   if (!last_job_.isNull()) {
     last_job_->reload();
   }
   active_job_.reset();
 
-  exec_timer_->stop();
+  // Clear pending commands
   cmd_in_progress_.clear();
   pending_cmd_.reset();
-  changeState(State::kStopped);
-  if (!motion_controller_.isNull() && motion_controller_->getState() == MotionControllerState::kSleep) {
-    motion_controller_->setState(MotionControllerState::kIdle);
-  }
-}
 
-/**
- * @brief Wake up the work horse timer
- * 
- */
-void JobExecutor::wakeUp() {
-  if (!exec_timer_->isActive()) {
-    exec_timer_->start();
-  }
+  Q_EMIT progressChanged(0);
+  changeState(State::kStopped);
+
+  // note: this should be not required anymore, since the control of MotionController state won't be changed other than JobExecutor::start()
+  // if (!motion_controller_.isNull() && motion_controller_->getState() == MotionControllerState::kSleep) {
+  //   motion_controller_->setState(MotionControllerState::kIdle);
+  // }
 }
 
 /**
@@ -344,7 +272,7 @@ Timestamp JobExecutor::getTotalRequiredTime() const {
   } else if (!pending_job_.isNull()) {
     return pending_job_->getTotalRequiredTime();
   } else if (!last_job_.isNull()) {
-    return pending_job_->getTotalRequiredTime();
+    return last_job_->getTotalRequiredTime();
   }
   return Timestamp{};
 }
@@ -375,7 +303,30 @@ Timestamp JobExecutor::getElapsedTime() const {
 
 void JobExecutor::reset() {
   if (state_ == State::kRunning || state_ == State::kPaused) {
-    throw "Unable to reset while running or paused";
+    throw std::runtime_error("Unable to reset while running or paused");
   }
-  changeState(State::kIdle); 
+  changeState(State::kIdle);
+}
+
+void JobExecutor::handleDisconnect() {
+  if (state_ == State::kRunning || state_ == State::kPaused) {
+    auto msgbox = new QMessageBox;
+    msgbox->setText(tr("Error"));
+    msgbox->setInformativeText(tr("Serial port disconnected"));
+    msgbox->show();
+  }
+  handleStopped();
+}
+
+void JobExecutor::handleMotionControllerStateChanged(MotionControllerState last_state, MotionControllerState current_state, 
+                       qreal x_pos, qreal y_pos, qreal z_pos) {
+  latest_mc_state_ = current_state;
+  if (latest_mc_state_ == MotionControllerState::kAlarm || latest_mc_state_ == MotionControllerState::kSleep) {
+    qInfo() << "Stopped by alarm or sleep";
+    handleStopped();
+  } else if (latest_mc_state_ == MotionControllerState::kIdle || latest_mc_state_ == MotionControllerState::kRun) {
+    handleResume();
+  } else if (latest_mc_state_ == MotionControllerState::kPaused) {
+    handlePaused();
+  }
 }
