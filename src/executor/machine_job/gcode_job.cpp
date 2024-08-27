@@ -30,10 +30,6 @@ GCodeJob::GCodeJob(QString gcodes, QPixmap preview, QString job_name)
   with_preview_ = true;
 }
 
-void GCodeJob::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
-}
-
 void GCodeJob::setTimestampList(const QList<Timestamp> &ts_list) {
   timestamp_list_ = ts_list;
 }
@@ -49,7 +45,6 @@ std::shared_ptr<OperationCmd> GCodeJob::getNextCmd() {
   auto idx = next_gcode_idx_++;
   auto cmd = std::make_shared<GCodeCmd>(gcode_list_.at(idx) + "\n");
   //cmd->setTarget(OperationCmd::Target::kMotionControl);
-  //cmd->setMotionController(motion_controller_);
   return cmd;
 }
 

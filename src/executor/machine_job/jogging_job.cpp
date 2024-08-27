@@ -17,10 +17,6 @@ JoggingRelativeJob::JoggingRelativeJob(qreal x_pos, qreal y_pos, qreal feedrate,
   gcode_list_.push_back("?");  // Get the realtime position right at the end of job
 }
 
-void JoggingRelativeJob::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
-}
-
 std::shared_ptr<OperationCmd> JoggingRelativeJob::getNextCmd() {
   if (end()) {
     return std::shared_ptr<OperationCmd>{nullptr};
@@ -81,10 +77,6 @@ JoggingAbsoluteJob::JoggingAbsoluteJob(bool x_exist, qreal x_pos, bool y_exist, 
   gcode_list_.push_back(move_gc);
   gcode_list_.push_back("M2"); // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
   gcode_list_.push_back("?");  // Get the realtime position right at the end of job
-}
-
-void JoggingAbsoluteJob::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
 }
 
 std::shared_ptr<OperationCmd> JoggingAbsoluteJob::getNextCmd() {

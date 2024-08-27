@@ -16,6 +16,10 @@ QPixmap MachineJob::getPreview() const {
   return preview_;
 }
 
+void MachineJob::setMotionController(QPointer<MotionController> motion_controller) {
+  motion_controller_ = motion_controller;
+}
+
 /**
  * @brief Calculate the required time from the GCodes inside text area
  * @retval A list of timestamp corresponding to each line of GCode

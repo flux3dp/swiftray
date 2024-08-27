@@ -16,10 +16,6 @@ FramingJob::FramingJob(QString gcodes, QString job_name)
   gcode_list_.push_back("?");  // Get the realtime position right at the end of job
 }
 
-void FramingJob::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
-}
-
 std::shared_ptr<OperationCmd> FramingJob::getNextCmd() {
   if (end()) {
     return std::shared_ptr<OperationCmd>{nullptr};

@@ -20,12 +20,15 @@ public:
   virtual bool end() const = 0;
   virtual void reload() = 0;
   virtual float getProgressPercent() const = 0;
+  virtual int getIndex() const = 0;
+
   virtual Timestamp getElapsedTime() const = 0;
   virtual Timestamp getTotalRequiredTime() const = 0;
   virtual Timestamp getRemainingTime() const = 0;
   
   bool withPreview() const;
   QPixmap getPreview() const;
+  void setMotionController(QPointer<MotionController>);
 
   static QList<Timestamp> calcRequiredTime(const QStringList &gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);
@@ -36,6 +39,8 @@ protected:
   QString job_name_;
   bool with_preview_ = false;
   QPixmap preview_;
+
+  QPointer<MotionController> motion_controller_;
 };
 
 #endif // MACHINEJOB_H

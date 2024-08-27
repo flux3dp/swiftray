@@ -17,7 +17,6 @@ public:
   explicit GCodeJob(QStringList gcode_list, QPixmap preview, QString job_name = "GCodeJob");
   explicit GCodeJob(QString gcodes, QPixmap preview, QString job_name = "GCodeJob");
 
-  void setMotionController(QPointer<MotionController>);
   void setTimestampList(const QList<Timestamp> &ts_list);
   void setTimestampList(QList<Timestamp> &&ts_list);
 
@@ -25,6 +24,7 @@ public:
   bool end() const override;
   void reload() override;
   float getProgressPercent() const override;
+  int getIndex() const override { return next_gcode_idx_; } 
   Timestamp getElapsedTime() const override;
   Timestamp getTotalRequiredTime() const override;
   Timestamp getRemainingTime() const override;
@@ -34,8 +34,6 @@ private:
   qsizetype next_gcode_idx_ = 0;
   QStringList gcode_list_;
   QList<Timestamp> timestamp_list_;
-
-  QPointer<MotionController> motion_controller_;
 };
 
 #endif // GCODEJOB_H

@@ -23,10 +23,6 @@ RotaryTestJob::RotaryTestJob(QRectF bbox,
   gcode_list_.push_back("?");  // Get the realtime position right at the end of job
 }
 
-void RotaryTestJob::setMotionController(QPointer<MotionController> motion_controller) {
-  motion_controller_ = motion_controller;
-}
-
 std::shared_ptr<OperationCmd> RotaryTestJob::getNextCmd() {
   if (end()) {
     return std::shared_ptr<OperationCmd>{nullptr};
