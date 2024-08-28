@@ -1,10 +1,45 @@
 #include "executor.h"
+#include <debug/debug-timer.h>
 #include <QDebug>
+#include <QThread>
+#include <thread>
 
 Executor::Executor(QObject *parent)
   : QObject{parent}
 {
 
+}
+
+Executor::~Executor() {
+  qInfo() << this << "::deconstructor()";
+  this->thread_enabled_ = false;
+  if (this->exec_thread_.joinable()) {
+    this->exec_thread_.join();
+  }
+}
+
+void Executor::startThread() {
+  qInfo() << this << "::startThread()";
+  if (!this->exec_thread_.joinable()) {
+    this->exec_thread_ = std::thread(&Executor::execThread, this);
+  } else {
+    qInfo() << this << "::exec_thread is already running";
+  }
+}
+
+void Executor::execThread() {
+  this->thread_enabled_ = true;
+  while (this->thread_enabled_) {
+    this->exec_loop_count++;
+    if (this->exec_loop_count % 100 == 1) {
+      qInfo() << this << "::threadFunction() alive @" << getDebugTime();
+    }
+    if (this->exec_wait > 0) {
+      QThread::msleep(this->exec_wait);
+      this->exec_wait = 0;
+    }
+    this->exec();
+  }
 }
 
 size_t Executor::inProgressCmdCnt() {
@@ -64,8 +99,24 @@ void Executor::attachMotionController(QPointer<MotionController> motion_controll
     handleStopped();
     changeState(State::kIdle);
   }
-  qInfo() << "Executor::attachMotionController()";
+  qInfo() << this << "::attachMotionController()";
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &Executor::handleMotionControllerStateUpdate);
   connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
+}
+
+void Executor::handleCmdFinish(int result_code) {
+  qInfo() << this << "::handleCmdFinish() not implemented";
+}
+
+void Executor::handlePaused() {
+  qInfo() << this << "::handlePaused() not implemented";
+}
+
+void Executor::handleResume() {
+  qInfo() << this << "::handleResume() not implemented";
+}
+
+void Executor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+  qInfo() << this << "::handleMotionControllerStateUpdate() not implemented";
 }

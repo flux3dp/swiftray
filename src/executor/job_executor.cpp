@@ -13,31 +13,6 @@ JobExecutor::JobExecutor(QObject *parent)
   qInfo() << this << "created";
 }
 
-JobExecutor::~JobExecutor() {
-  qInfo() << this << "destroyed";
-  this->running_ = false;
-  if (this->exec_thread_.joinable()) {
-    this->exec_thread_.join();
-  }
-}
-
-int debug_count = 0;
-int wait_ms = 0;
-void JobExecutor::threadFunction() {
-  this->running_ = true;
-  while (this->running_) {
-    debug_count++;
-    if (debug_count % 1000 == 1) {
-      qInfo() << "JobExecutor::threadFunction() alive @" << getDebugTime();
-    }
-    if (wait_ms > 0) {
-      QThread::msleep(wait_ms);
-      wait_ms = 0;
-    }
-    this->exec();
-  }
-}
-
 MachineJob const *JobExecutor::getActiveJob() const {
   return active_job_.data();
 }
@@ -47,8 +22,8 @@ MachineJob const *JobExecutor::getActiveJob() const {
  *        Setup executor and start workhorse timer
  * 
  */
-void JobExecutor::start() {
-  qInfo() << this << "::start() @" << getDebugTime();
+void JobExecutor::startJob() {
+  qInfo() << this << "::startJob() @" << getDebugTime();
   
   if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
@@ -56,7 +31,7 @@ void JobExecutor::start() {
   }
 
   if (motion_controller_->getState() != MotionControllerState::kIdle) {
-    qInfo() << "Motion controller must be idle before job start";
+    throw std::runtime_error("Motion controller must be idle before job start");
     return;
   }
 
@@ -75,16 +50,12 @@ void JobExecutor::start() {
     return;
   }
 
-  // Connect all motion_controller_ signals and slots
+  // Connect resetDetected
   connect(motion_controller_, &MotionController::resetDetected, this, &JobExecutor::handleStopped);
   
   completed_cmd_cnt_ = 0;
   Q_EMIT progressChanged(0);
   changeState(State::kRunning);
-
-  if (!this->exec_thread_.joinable()) {
-    this->exec_thread_ = std::thread(&JobExecutor::threadFunction, this);
-  }
 }
 
 /**
@@ -94,20 +65,20 @@ void JobExecutor::start() {
  */
 void JobExecutor::handlePaused() {
   std::lock_guard<std::mutex> lock(exec_mutex_);
-  if (active_job_.isNull()) {
-    throw std::runtime_error("Unable to pause with no active job");
-  }
   if (state_ == State::kRunning) {
+    if (active_job_.isNull()) {
+      throw std::runtime_error("Unable to pause with no active job");
+    }
     changeState(State::kPaused);
   }
 }
 
 void JobExecutor::handleResume() {
   std::lock_guard<std::mutex> lock(exec_mutex_);
-  if (active_job_.isNull()) {
-    throw std::runtime_error("Unable to pause with no active job");
-  }
   if (state_ == State::kPaused) {
+    if (active_job_.isNull()) {
+      throw std::runtime_error("Unable to resume with no active job");
+    }
     changeState(State::kRunning);
   }
 }
@@ -123,10 +94,10 @@ void JobExecutor::exec() {
   if (state_ != State::kRunning || 
       active_job_.isNull() ||
       motion_controller_->getState() == MotionControllerState::kSleep) {
-    if (debug_count % 40 == 1) {
+    if (this->exec_loop_count % 10 == 1) {
       qInfo() << "JobExecutor::exec() - not running @" << getDebugTime();
     }
-    wait_ms = 100;
+    this->exec_wait = 100;
     return;
   }
 
@@ -145,27 +116,28 @@ void JobExecutor::exec() {
         return;
       }
     }
-    if (debug_count % 40 == 1) {
+    if (this->exec_loop_count % 40 == 1) {
       qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
     }
-    wait_ms = 10;
+    this->exec_wait = 10;
     return;
   }
 
   // Check if the buffer is full
-  if (cmd_in_progress_.length() > 9000) {
-    if (debug_count % 40 == 1) {
+  if (cmd_in_progress_.length() > 2000) {
+    if (this->exec_loop_count % 40 == 1) {
       qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
     }
-    wait_ms = 10;
+    this->exec_wait = 10;
     return;
   }
 
   if (!pending_cmd_) {
     pending_cmd_ = active_job_->getNextCmd();
   }
-
+  qInfo() << "JobExecutor::exec() - pending_cmd_ -> bec @" << getDebugTime();
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
+  qInfo() << "JobExecutor::exec() - pending_cmd_ -> aec @" << getDebugTime();
   switch(exec_status) {
     case OperationCmd::ExecStatus::kIdle:
       pending_cmd_.reset();
@@ -234,12 +206,6 @@ void JobExecutor::handleCmdFinish(int code) {
  * 
  */
 void JobExecutor::handleStopped() {
-  // if (state_ == State::kRunning || state_ == State::kPaused) {
-  //   auto msgbox = new QMessageBox;
-  //   msgbox->setText(tr("Error"));
-  //   msgbox->setInformativeText(tr("Serial port disconnected"));
-  //   msgbox->show();
-  // }
   qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
 
@@ -253,14 +219,8 @@ void JobExecutor::handleStopped() {
   // Clear pending commands
   cmd_in_progress_.clear();
   pending_cmd_.reset();
-
-  Q_EMIT progressChanged(0);
   changeState(State::kStopped);
-
-  // note: this should be not required anymore, since the control of MotionController state won't be changed other than JobExecutor::start()
-  // if (!motion_controller_.isNull() && motion_controller_->getState() == MotionControllerState::kSleep) {
-  //   motion_controller_->setState(MotionControllerState::kIdle);
-  // }
+  Q_EMIT progressChanged(0);
 }
 
 /**
@@ -315,9 +275,9 @@ void JobExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_sta
   if (latest_mc_state_ == MotionControllerState::kAlarm || latest_mc_state_ == MotionControllerState::kSleep) {
     qInfo() << "Stopped by alarm or sleep";
     handleStopped();
-  } else if (latest_mc_state_ == MotionControllerState::kIdle || latest_mc_state_ == MotionControllerState::kRun) {
+  } else if (latest_mc_state_ == MotionControllerState::kIdle || latest_mc_state_ == MotionControllerState::kRun) { // from paused -> resumed
     handleResume();
-  } else if (latest_mc_state_ == MotionControllerState::kPaused) {
+  } else if (latest_mc_state_ == MotionControllerState::kPaused) {// from running -> paused
     handlePaused();
   }
 }

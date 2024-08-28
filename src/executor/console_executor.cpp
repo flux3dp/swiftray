@@ -5,49 +5,24 @@
 #include <mutex>
 #include <condition_variable>
 
-ConsoleExecutor::ConsoleExecutor(QObject *parent)
-  : Executor{parent}, running_(false)
+ConsoleExecutor::ConsoleExecutor(QObject *parent): Executor{parent}
 {
   qInfo() << "ConsoleExecutor created";
 }
 
-ConsoleExecutor::~ConsoleExecutor()
-{
-  handleStopped();
-}
-
-void ConsoleExecutor::start() {
-  handleStopped();
-
-  qInfo() << "ConsoleExecutor::start()";
-  if (!exec_thread_.joinable()) {
-    exec_thread_ = std::thread(&ConsoleExecutor::threadFunction, this);
-  }
-}
-
-void ConsoleExecutor::threadFunction() {
-  running_ = true;
-  while (running_) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    cv_.wait(lock, [this] { return !pending_cmd_.isEmpty() || !running_; });
-
-    if (!running_) break;
-
-    exec();
-  }
-}
-
 void ConsoleExecutor::exec() {
-  qInfo() << "ConsoleExecutor::exec()" << getDebugTime();
-
-  if (pending_cmd_.isEmpty()) {
-    return;
-  }
-
   if (motion_controller_.isNull()) {
     handleStopped();
+    this->exec_wait = 1000;
     return;
   }
+  
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (pending_cmd_.isEmpty()) {
+    this->exec_wait = 100;
+    return;
+  }
+  qInfo() << "ConsoleExecutor::exec()" << getDebugTime();
 
   OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
@@ -63,11 +38,7 @@ void ConsoleExecutor::exec() {
 }
 
 void ConsoleExecutor::handleStopped() {
-  running_ = false;
-  cv_.notify_one();
-  if (exec_thread_.joinable()) {
-    exec_thread_.join();
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
   pending_cmd_.clear();
   cmd_in_progress_.clear();
 }
@@ -86,12 +57,6 @@ void ConsoleExecutor::handleCmdFinish(int result_code) {
 
 void ConsoleExecutor::appendCmd(std::shared_ptr<OperationCmd> cmd) {
   qInfo() << "ConsoleExecutor::appendCmd()" << getDebugTime();
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    pending_cmd_.push_back(cmd);
-  }
-  if (!running_) {
-    start();
-  }
-  cv_.notify_one();
+  std::lock_guard<std::mutex> lock(mutex_);
+  pending_cmd_.push_back(cmd);
 }

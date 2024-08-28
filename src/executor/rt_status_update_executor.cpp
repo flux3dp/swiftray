@@ -8,69 +8,47 @@ RTStatusUpdateExecutor::RTStatusUpdateExecutor(QObject *parent)
   : Executor{parent}
 {
   qInfo() << "RTStatusUpdateExecutor created";
-  exec_timer_ = new QTimer(this);
-  hangning_detect_timer_ = new QTimer(this);
-  hangning_detect_timer_->setSingleShot(true);
-  connect(exec_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::exec);
-  connect(hangning_detect_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::hanging);
-}
-
-/**
- * @brief Re-initialize state and start
- * 
- */
-void RTStatusUpdateExecutor::start() {
-  handleStopped();
-  changeState(State::kRunning);
-  exec_timer_->start(1500);
+  watchdog_timer_ = new QTimer(this);
+  watchdog_timer_->setSingleShot(true);
+  connect(watchdog_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::timeout);
+  connect(this, &RTStatusUpdateExecutor::startWatchdog, this, &RTStatusUpdateExecutor::onStartWatchdog, Qt::QueuedConnection);
+  connect(this, &RTStatusUpdateExecutor::stopWatchdog, this, &RTStatusUpdateExecutor::onStopWatchdog, Qt::QueuedConnection);
 }
 
 void RTStatusUpdateExecutor::exec() {
-  //qInfo() << "RTStatusUpdateExecutor exec()";
+  // qInfo() << "RTStatusUpdateExecutor::exec()";
   if (motion_controller_.isNull()) {
-    handleStopped();
+    exec_wait = 1000;
     return;
   }
-  // NOTE: Keep sending even when hanging
-  // TODO:BSL Move query command to motion controller
-  GCodeCmd cmd("?");
-  cmd.execute(this, motion_controller_);
   
-  if (!hanging_) {
-    hanging_ = true;
-    hangning_detect_timer_->start(6000);
+  if (motion_controller_->type() != "BSL") {
+    GCodeCmd cmd("?");
+    cmd.execute(this, motion_controller_);
+    Q_EMIT startWatchdog();
   }
-}
-
-void RTStatusUpdateExecutor::handlePaused() {
-  if (state_ == State::kRunning) {
-    changeState(State::kPaused);
-    exec_timer_->stop();
-  }
-}
-
-void RTStatusUpdateExecutor::handleResume() {
-  if (state_ == State::kPaused) {
-    changeState(State::kRunning);
-    exec_timer_->start();
-  }
+  exec_wait = 1500;
 }
 
 void RTStatusUpdateExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
-  hangning_detect_timer_->stop();
-  hanging_ = false;
+  qInfo() << "RTStatusUpdateExecutor::handleMotionControllerStateUpdate()";
+  Q_EMIT stopWatchdog();
 }
 
 void RTStatusUpdateExecutor::handleStopped() {
   if (state_ == State::kRunning || state_ == State::kPaused) {
     qInfo() << "RTStatusUpdateExecutor::stop()";
     changeState(State::kStopped);
-    exec_timer_->stop();
-    hangning_detect_timer_->stop();
+    Q_EMIT stopWatchdog();
   }
 }
 
-void RTStatusUpdateExecutor::handleCmdFinish(int result_code) {
-  // Do nothing
-  return;
+void RTStatusUpdateExecutor::onStartWatchdog() {
+  if (!watchdog_timer_->isActive()) {
+    watchdog_timer_->start(6000);
+  }
+}
+
+void RTStatusUpdateExecutor::onStopWatchdog() {
+  watchdog_timer_->stop();
 }

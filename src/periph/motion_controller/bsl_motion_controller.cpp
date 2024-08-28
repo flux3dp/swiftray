@@ -9,7 +9,7 @@
 #include <debug/debug-timer.h>
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 3000
+#define MAX_BUFFER_LIST_SIZE 1000
 
 int lcs_error_count = 0;
 
@@ -77,7 +77,6 @@ BSLMotionController::BSLMotionController(QObject *parent)
 {
   qInfo() << "BSLMotionController::BSLMotionController()";
   this->setState(MotionControllerState::kIdle);
-  this->should_flush_ = false;
 }
 
 void BSLMotionController::startCommandRunner() {
@@ -88,28 +87,25 @@ void BSLMotionController::startCommandRunner() {
 int debug_count_bsl  = 0;
 
 void BSLMotionController::commandRunnerThread() {
-  qInfo() << "BSLMotionController::thread() - entered @" << getDebugTime();
+  qInfo() << "BSLMotionController::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
+  debug_count_bsl ++;
   while (this->getState() != MotionControllerState::kQuit) {
     if (this->getState() == MotionControllerState::kSleep) {
-      qInfo() << "BSLM~::thread() - sleeping";
       QThread::msleep(25); 
+      qInfo() << "BSLM~::thread() - Sleeping";
       continue;
     }
     this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
-      if (debug_count_bsl ++ % 100 == 0) {
-        qInfo() << "BSLM~::thread() - No pending commands, sleep for a while";
-      }
+      qInfo() << "BSLM~::thread() - No pending commands, sleep for a while";
       this->cmd_list_mutex_.unlock();
       if (this->buffer_size_ > 0) {
         this->should_flush_ = true;
       }
-      QThread::msleep(25);
+      QThread::msleep(1000);
       continue;
     }
-    if (debug_count_bsl++ % 100 == 0) {
-      qInfo() << "BSLM~::thread() - running, pending cmds: " << this->pending_cmds_.size();
-    }
+    qInfo() << "BSLM~::thread() - running, pending cmds: " << this->pending_cmds_.size();
     QString cmd = this->pending_cmds_.front();
     this->pending_cmds_.pop_front();
     this->cmd_list_mutex_.unlock();
@@ -119,7 +115,6 @@ void BSLMotionController::commandRunnerThread() {
 
 void BSLMotionController::dequeueCmd(int count) {
   this->cmd_list_mutex_.lock();
-  // qInfo() << "Begin dequeueCmd with count" << count;
   for (int i = 0; i < count; i++) {
     if (!cmd_executor_queue_.isEmpty()) {
       auto exec = cmd_executor_queue_.at(0);
@@ -127,10 +122,6 @@ void BSLMotionController::dequeueCmd(int count) {
       dequeueCmdExecutor();
     }
   }
-  // if (cmd_executor_queue_.size() < 3) {
-  //   qInfo() << "BSLM~::dequeueCmd(" << count << ") @" << getDebugTime();
-  // }
-  // qInfo() << "End dequeueCmd with count" << count;
   this->cmd_list_mutex_.unlock();
 }
 
@@ -166,9 +157,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static bool first_list = true;
 
     // Skip these GCode
-    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n" || gcode == "?\n") {
+    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
         dequeueCmd(1);
         return;
+    }
+
+    if (gcode == "?" || gcode == "?\n") {
+      Q_EMIT MotionController::realTimeStatusUpdated(state_, current_x, current_y, 0);
+      qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
+      dequeueCmd(1);
+      return;
     }
 
     QRegularExpression re("([GMXYFSZ])(-?\\d+\\.?\\d*)");
@@ -427,6 +425,29 @@ bool BSLMotionController::detachPort() {
   setState(MotionControllerState::kQuit);
   qInfo() << "BSLMotionController::detachPort() finished";
   return result == LCS_RES_NO_ERROR;
+}
+
+bool BSLMotionController::resetState() {
+  qInfo() << "BSLMotionController::resetState()" << getDebugTime();
+  switch (getState()) {
+    case MotionControllerState::kIdle:
+      return true;
+    case MotionControllerState::kRun:
+    case MotionControllerState::kPaused:
+      this->stop();
+      dequeueCmd(this->cmd_executor_queue_.size());
+      this->setState(MotionControllerState::kIdle);
+      return true;
+    case MotionControllerState::kAlarm:
+      this->setState(MotionControllerState::kIdle);
+      return true;
+    case MotionControllerState::kSleep:
+      this->setState(MotionControllerState::kIdle);
+      return true;
+    case MotionControllerState::kUnknown:
+    case MotionControllerState::kQuit:
+      return false;
+  }
 }
 
 QString BSLMotionController::getAlarmMsg(AlarmCode code) {

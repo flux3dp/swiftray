@@ -16,15 +16,13 @@ class JobExecutor : public Executor
   Q_OBJECT
 public:
   explicit JobExecutor(QObject *parent = nullptr);
-  ~JobExecutor();
-
   bool setNewJob(QSharedPointer<MachineJob> new_job);
   MachineJob const *getActiveJob() const;
   Timestamp getTotalRequiredTime() const;
   float getProgress() const;
   Timestamp getElapsedTime() const;
   void reset();
-  void start() override;
+  void startJob();
   void handleCmdFinish(int result_code) override;
 
 private Q_SLOTS:
@@ -53,6 +51,4 @@ private:
   MotionControllerState latest_mc_state_;
   size_t completed_cmd_cnt_ = 0;
   bool running_{false};
-
-  std::thread exec_thread_;
 };

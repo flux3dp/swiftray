@@ -14,6 +14,7 @@
 #include <executor/operation_cmd/grbl_cmd.h>
 #include <executor/operation_cmd/bsl_cmd.h>
 #include "liblcs/lcsExpr.h"
+#include <debug/debug-timer.h>
 
 Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   : QObject{parent}
@@ -28,7 +29,7 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   rt_status_executor_ = new RTStatusUpdateExecutor{this};
   console_executor_ = new ConsoleExecutor(motion_controller_);
 
-  connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
+  connect(rt_status_executor_, &RTStatusUpdateExecutor::timeout, [=]() {
     // TODO: Do something?
     qInfo() << "Realtime status updater hanging";
   });
@@ -422,18 +423,16 @@ void Machine::setupMotionController() {
   machine_setup_executor_->attachMotionController(motion_controller_);
   job_executor_->attachMotionController(motion_controller_);
   console_executor_->attachMotionController(motion_controller_);
-
   Q_EMIT connected();
-
-  machine_setup_executor_->start();
+  machine_setup_executor_->startThread();
 }
 
 void Machine::motionPortActivated() {
   qInfo() << "Machine::motionPortActivated()";
   connect_state_ = ConnectionState::kConnected;
   Q_EMIT activated();
-
-  rt_status_executor_->start();
+  rt_status_executor_->startThread();
+  console_executor_->startThread();
 }
 
 void Machine::motionPortDisonnected() {
@@ -455,7 +454,14 @@ void Machine::startJob() {
     return;
   }
   qInfo() << "Machine::startJob()";
-  job_executor_->start();
+  if (motion_controller_->getState() != MotionControllerState::kIdle) {
+    qWarning() << "Machine::startJob() - motion controller is not idle";
+    if (!motion_controller_->resetState()) {
+      qWarning() << "Machine::startJob() - unable to reset motion controller";
+    }
+    return;
+  }
+  job_executor_->startJob();
 }
 
 void Machine::pauseJob() {
@@ -505,7 +511,7 @@ void Machine::stopJob() {
           GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset)
         );
       } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
-        qInfo() << "Machine::stopJob";
+        qInfo() << "Machine::stopJob() @" << getDebugTime();
         console_executor_->appendCmd(
           BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlReset)
         );

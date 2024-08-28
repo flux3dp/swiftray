@@ -11,24 +11,23 @@ class RTStatusUpdateExecutor : public Executor
   Q_OBJECT
 public:
   explicit RTStatusUpdateExecutor(QObject *parent = nullptr);
-  void start() override;
-  void handleCmdFinish(int) override;
+  void handleCmdFinish(int) override {};
 
 
 Q_SIGNALS:
-  void hanging();
+  void timeout();
+  void startWatchdog();
+  void stopWatchdog();
 
 private Q_SLOTS:
   void exec() override;
-  void handlePaused() override;
-  void handleResume() override;
   void handleStopped() override;
   void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
+  void onStartWatchdog();
+  void onStopWatchdog();
 
 private:
-  bool hanging_ = false;
-  QTimer *exec_timer_;
-  QTimer *hangning_detect_timer_;
+  QTimer *watchdog_timer_;
 };
 
 #endif // RTSTATUSUPDATEEXECUTOR_H
