@@ -45,7 +45,7 @@ void LaserPanel::loadStyles() {
 }
 
 void LaserPanel::setConnected(bool connected) {
-  ui->readyLabel->setText(connected ? "✅ " + tr("Ready") : "⌛️ " + tr("Not Connected"));
+  ui->readyLabel->setText(connected ? tr("Ready") : tr("Not Connected"));
 }
 
 
