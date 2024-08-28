@@ -47,7 +47,6 @@ public:
 
 Q_SIGNALS:
   void cmdSent(QString cmd);
-  void cmdFinished(QPointer<Executor> executor);
   void respRcvd(QString resp);
   void resetDetected();
   void notif(QString title, QString msg);

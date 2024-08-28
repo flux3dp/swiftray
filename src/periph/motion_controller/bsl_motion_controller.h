@@ -7,6 +7,8 @@
 #include <QRegularExpression>
 #include <mutex>
 #include <thread>
+#include "liblcs/lcsApi.h"
+#include "liblcs/lcsExpr.h"
 
 class BSLMotionController : public MotionController
 {
@@ -25,7 +27,6 @@ public Q_SLOTS:
 
 private:
   QStringList pending_cmds_;
-  void handleGcode(const QString &cmd_packet);
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false; 
   bool is_threading = false;
@@ -39,14 +40,16 @@ private:
     kAbortCycle = 3,
     kMax = 10,
   };
+  double current_x = 0.0;
+  double current_y = 0.0;
+  double current_f = 6000.0; // Default speed
   std::thread command_runner_thread_;
+  void handleGcode(const QString &cmd_packet);
+  LCS2Error waitListAvailable(int list_no);
   void startCommandRunner();
   void commandRunnerThread();
   void dequeueCmd(int count);
   QString getAlarmMsg(AlarmCode code);
-  double current_x = 0.0;
-  double current_y = 0.0;
-  double current_f = 6000.0; // Default speed
 };
 
 #endif // BSLMOTIONCONTROLLER_H

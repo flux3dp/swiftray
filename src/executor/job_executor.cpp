@@ -10,20 +10,31 @@
 JobExecutor::JobExecutor(QObject *parent)
   : Executor{parent}
 {
-  qInfo() << "JobExecutor created";
+  qInfo() << this << "created";
 }
 
 JobExecutor::~JobExecutor() {
+  qInfo() << this << "destroyed";
   this->running_ = false;
   if (this->exec_thread_.joinable()) {
     this->exec_thread_.join();
   }
 }
 
+int debug_count = 0;
+int wait_ms = 0;
 void JobExecutor::threadFunction() {
   this->running_ = true;
   while (this->running_) {
-      this->exec();
+    debug_count++;
+    if (debug_count % 1000 == 1) {
+      qInfo() << "JobExecutor::threadFunction() alive @" << getDebugTime();
+    }
+    if (wait_ms > 0) {
+      QThread::msleep(wait_ms);
+      wait_ms = 0;
+    }
+    this->exec();
   }
 }
 
@@ -37,7 +48,7 @@ MachineJob const *JobExecutor::getActiveJob() const {
  * 
  */
 void JobExecutor::start() {
-  qInfo() << "JobExecutor::start() @" << getDebugTime();
+  qInfo() << this << "::start() @" << getDebugTime();
   
   if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
@@ -53,9 +64,11 @@ void JobExecutor::start() {
     active_job_ = pending_job_;
     pending_job_.reset();
     last_job_.reset();
+    qInfo() << "JobExecutor loading the pending job" << active_job_->getIndex() << active_job_->getJobName();
   } else if (!last_job_.isNull()) {
     active_job_ = last_job_;
     last_job_.reset();
+    qInfo() << "JobExecutor reuse last job, index " << active_job_->getIndex();
   } else {
     active_job_.reset();
     qInfo() << "JobExecutor has no job available";
@@ -81,6 +94,9 @@ void JobExecutor::start() {
  */
 void JobExecutor::handlePaused() {
   std::lock_guard<std::mutex> lock(exec_mutex_);
+  if (active_job_.isNull()) {
+    throw std::runtime_error("Unable to pause with no active job");
+  }
   if (state_ == State::kRunning) {
     changeState(State::kPaused);
   }
@@ -88,6 +104,9 @@ void JobExecutor::handlePaused() {
 
 void JobExecutor::handleResume() {
   std::lock_guard<std::mutex> lock(exec_mutex_);
+  if (active_job_.isNull()) {
+    throw std::runtime_error("Unable to pause with no active job");
+  }
   if (state_ == State::kPaused) {
     changeState(State::kRunning);
   }
@@ -98,25 +117,16 @@ void JobExecutor::handleResume() {
  *        only perform execution when in active state
  * 
  */
-int debug_count = 0;
 void JobExecutor::exec() {
   std::lock_guard<std::mutex> lock(exec_mutex_);
-  debug_count++;
-
   // Check if we need to ignore, or continue exec based on executor's state
   if (state_ != State::kRunning || 
       active_job_.isNull() ||
       motion_controller_->getState() == MotionControllerState::kSleep) {
-    QThread::msleep(100);
-    return;
-  }
-
-  // Check if the buffer is full
-  if (cmd_in_progress_.length() > 9000) {
-    if (debug_count % 40 == 0) {
-      qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
+    if (debug_count % 40 == 1) {
+      qInfo() << "JobExecutor::exec() - not running @" << getDebugTime();
     }
-    QThread::msleep(10);
+    wait_ms = 100;
     return;
   }
 
@@ -124,14 +134,9 @@ void JobExecutor::exec() {
     if (!pending_cmd_ && cmd_in_progress_.isEmpty()) {
       if (latest_mc_state_ != MotionControllerState::kRun && latest_mc_state_ != MotionControllerState::kPaused) {
         qInfo() << "JobExecutor::exec() - completed @" << getDebugTime();
-        if (!motion_controller_.isNull()) {
-          disconnect(motion_controller_, nullptr, this, nullptr);
-        }
         // Clear active job
         last_job_ = active_job_;
-        if (!last_job_.isNull()) {
-          last_job_->reload();
-        }
+        last_job_->reload();
         active_job_.reset();
         // Emit related completion signals
         changeState(State::kCompleted);
@@ -140,11 +145,22 @@ void JobExecutor::exec() {
         return;
       }
     }
-
-    if (debug_count % 40 == 0) {
+    if (debug_count % 40 == 1) {
       qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
     }
+    wait_ms = 10;
+    return;
   }
+
+  // Check if the buffer is full
+  if (cmd_in_progress_.length() > 9000) {
+    if (debug_count % 40 == 1) {
+      qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
+    }
+    wait_ms = 10;
+    return;
+  }
+
   if (!pending_cmd_) {
     pending_cmd_ = active_job_->getNextCmd();
   }
@@ -153,7 +169,7 @@ void JobExecutor::exec() {
   switch(exec_status) {
     case OperationCmd::ExecStatus::kIdle:
       pending_cmd_.reset();
-      return;
+      break;
     case OperationCmd::ExecStatus::kProcessing:
       cmd_in_progress_.push_back(pending_cmd_);
       pending_cmd_.reset();
@@ -207,7 +223,7 @@ void JobExecutor::handleCmdFinish(int code) {
     cmd_in_progress_.pop_front();
   }
   completed_cmd_cnt_ += 1;
-  if (completed_cmd_cnt_ % 25 || cmd_in_progress_.length() < 100) {
+  if (completed_cmd_cnt_ % 25 || cmd_in_progress_.length() < 5) {
     Q_EMIT progressChanged(active_job_->getProgressPercent());
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   }
@@ -226,18 +242,13 @@ void JobExecutor::handleStopped() {
   // }
   qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
-  
-  // Disconnect all motion_controller_ signals
-  if (!motion_controller_.isNull()) {
-    disconnect(motion_controller_, nullptr, this, nullptr);
-  }
 
   // Clear active job
-  last_job_ = active_job_;
-  if (!last_job_.isNull()) {
+  if (!active_job_.isNull()) {
+    last_job_ = active_job_;
     last_job_->reload();
+    active_job_.reset();
   }
-  active_job_.reset();
 
   // Clear pending commands
   cmd_in_progress_.clear();

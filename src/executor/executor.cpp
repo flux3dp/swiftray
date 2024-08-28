@@ -1,4 +1,5 @@
 #include "executor.h"
+#include <QDebug>
 
 Executor::Executor(QObject *parent)
   : QObject{parent}
@@ -63,13 +64,8 @@ void Executor::attachMotionController(QPointer<MotionController> motion_controll
     handleStopped();
     changeState(State::kIdle);
   }
+  qInfo() << "Executor::attachMotionController()";
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &Executor::handleMotionControllerStateUpdate);
   connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
-  connect(motion_controller_, &MotionController::cmdFinished,
-        this, [=](QPointer<Executor> executor){
-    if (executor.data() == this) {
-      handleCmdFinish(0);
-    }
-  });
 }
