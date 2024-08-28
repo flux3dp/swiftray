@@ -2,18 +2,16 @@
 
 
 SyncExecCmd::SyncExecCmd()
-  : OperationCmd{}
-{
-
+: OperationCmd{} {
 }
 
 /**
  * @brief Sync the commands in an executor
  *        Wait until all cmd in progress to be finished
- * 
- * @return ExecStatus 
+ *
+ * @return ExecStatus
  */
-OperationCmd::ExecStatus SyncExecCmd::execute(QPointer<Executor> executor) {
+OperationCmd::ExecStatus SyncExecCmd::execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) {
   if (executor.isNull()) {
     succeed();
     return status_;
