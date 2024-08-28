@@ -6,12 +6,14 @@ GCodeJob::GCodeJob(QStringList gcode_list, QString job_name)
   : MachineJob{job_name}
 {
   gcode_list_ = gcode_list;
+  job_name_ = "GCodeJob(" + QString::number(gcode_list_.size()) + ")";
 }
 
 GCodeJob::GCodeJob(QString gcodes, QString job_name)
   : MachineJob{job_name}
 {
   gcode_list_ = gcodes.split('\n');
+  job_name_ = "GCodeJob(" + QString::number(gcode_list_.size()) + ")";
 }
 
 GCodeJob::GCodeJob(QStringList gcode_list, QPixmap preview, QString job_name) 
@@ -20,6 +22,7 @@ GCodeJob::GCodeJob(QStringList gcode_list, QPixmap preview, QString job_name)
   gcode_list_ = gcode_list;
   preview_ = preview;
   with_preview_ = true;
+  job_name_ = "GCodeJob(" + QString::number(gcode_list_.size()) + ")";
 }
 
 GCodeJob::GCodeJob(QString gcodes, QPixmap preview, QString job_name) 
@@ -28,6 +31,7 @@ GCodeJob::GCodeJob(QString gcodes, QPixmap preview, QString job_name)
   gcode_list_ = gcodes.split('\n');
   preview_ = preview;
   with_preview_ = true;
+  job_name_ = "GCodeJob(" + QString::number(gcode_list_.size()) + ")";
 }
 
 void GCodeJob::setTimestampList(const QList<Timestamp> &ts_list) {
@@ -40,6 +44,7 @@ void GCodeJob::setTimestampList(QList<Timestamp> &&ts_list) {
 
 std::shared_ptr<OperationCmd> GCodeJob::getNextCmd() {
   if (end()) {
+    throw std::runtime_error("GCodeJob::getNextCmd() called when job is already finished");
     return std::shared_ptr<OperationCmd>{nullptr};
   }
   auto idx = next_gcode_idx_++;

@@ -21,6 +21,7 @@ public:
   virtual void reload() = 0;
   virtual float getProgressPercent() const = 0;
   virtual int getIndex() const = 0;
+  QString getJobName() const { return job_name_; }
 
   virtual Timestamp getElapsedTime() const = 0;
   virtual Timestamp getTotalRequiredTime() const = 0;
