@@ -54,3 +54,22 @@ QString Executor::stateToString(State state) {
       return tr("Undefined State");
   }
 }
+
+void Executor::attachMotionController(QPointer<MotionController> motion_controller) {
+  if (!motion_controller_.isNull()) {
+    // If already attached, detach first
+    disconnect(motion_controller_, nullptr, this, nullptr);
+    motion_controller_.clear();
+    handleStopped();
+    changeState(State::kIdle);
+  }
+  motion_controller_ = motion_controller;
+  connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &Executor::handleMotionControllerStateUpdate);
+  connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
+  connect(motion_controller_, &MotionController::cmdFinished,
+        this, [=](QPointer<Executor> executor){
+    if (executor.data() == this) {
+      handleCmdFinish(0);
+    }
+  });
+}

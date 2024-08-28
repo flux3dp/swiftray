@@ -18,7 +18,6 @@ public:
 
   void handleCmdFinish(int result_code) override;
 
-  void attachMotionController(QPointer<MotionController> motion_controller);
   void appendCmd(std::shared_ptr<OperationCmd> cmd);
   void start() override;
 
@@ -27,9 +26,9 @@ private Q_SLOTS:
   void handlePaused() override {};
   void handleResume() override {};
   void handleStopped() override;
+  void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override {};
 
 private:
-  QPointer<MotionController> motion_controller_;
   QList<std::shared_ptr<OperationCmd>> pending_cmd_;
   QList<std::shared_ptr<OperationCmd>> cmd_in_progress_;
 

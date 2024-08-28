@@ -1,15 +1,12 @@
-#ifndef MOTIONCONTROLLER_H
-#define MOTIONCONTROLLER_H
+#pragma once
 
 #include <QObject>
-#ifdef CUSTOM_SERIAL_PORT_LIB
-#include <connection/serial-port.h>
-#else
 #include <QSerialPort>
-#endif
-#include <executor/executor.h>
+#include <QPointer>
 #include <mutex>
 #include <tuple>
+
+class Executor;
 
 enum class MotionControllerState {
   kUnknown, // default state
@@ -21,7 +18,6 @@ enum class MotionControllerState {
   kCheck,
   kQuit
 };
-
 
 class MotionController : public QObject
 {
@@ -55,8 +51,7 @@ Q_SIGNALS:
   void respRcvd(QString resp);
   void resetDetected();
   void notif(QString title, QString msg);
-  void realTimeStatusUpdated(MotionControllerState last_state, MotionControllerState new_state, 
-      qreal x, qreal y, qreal z);
+  void realTimeStatusUpdated(MotionControllerState state, qreal x, qreal y, qreal z);
   void disconnected();
 
 public Q_SLOTS:
@@ -78,5 +73,3 @@ protected:
 
   QByteArray unprocssed_response_;
 };
-
-#endif // MOTIONCONTROLLER_H

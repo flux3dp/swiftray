@@ -2,7 +2,6 @@
 
 #include <QObject>
 #include "executor.h"
-#include <periph/motion_controller/motion_controller.h>
 #include "machine_job/machine_job.h"
 #include <common/timestamp.h>
 #include <QPointer>
@@ -20,7 +19,6 @@ public:
   ~JobExecutor();
 
   bool setNewJob(QSharedPointer<MachineJob> new_job);
-  void attachMotionController(QPointer<MotionController> motion_controller);
   MachineJob const *getActiveJob() const;
   Timestamp getTotalRequiredTime() const;
   float getProgress() const;
@@ -34,9 +32,7 @@ private Q_SLOTS:
   void handleResume() override;
   void handleStopped() override;
   void exec() override;
-  void handleDisconnect();
-  void handleMotionControllerStateChanged(MotionControllerState last_state, MotionControllerState current_state, 
-                                  qreal x_pos, qreal y_pos, qreal z_pos);
+  void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
 
 Q_SIGNALS:
   void progressChanged(float prog);
@@ -48,7 +44,6 @@ protected:
 private:
   std::mutex exec_mutex_;
 
-  QPointer<MotionController> motion_controller_;
   QSharedPointer<MachineJob> active_job_; // current running job
   QSharedPointer<MachineJob> pending_job_;// The next job to be activated
   QSharedPointer<MachineJob> last_job_;   // When finished, move active_job_ to here for replay later

@@ -15,22 +15,6 @@ RTStatusUpdateExecutor::RTStatusUpdateExecutor(QObject *parent)
   connect(hangning_detect_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::hanging);
 }
 
-void RTStatusUpdateExecutor::attachMotionController(
-    QPointer<MotionController> motion_controller) {
-  if (!motion_controller_.isNull()) {
-    // If already attached, detach first
-    disconnect(motion_controller_, nullptr, this, nullptr);
-    motion_controller_.clear();
-    handleStopped();
-    changeState(State::kIdle);
-  }
-  motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::realTimeStatusUpdated,
-          this, &RTStatusUpdateExecutor::onReportRcvd);
-  connect(motion_controller_, &MotionController::disconnected,
-          this, &RTStatusUpdateExecutor::handleStopped);
-}
-
 /**
  * @brief Re-initialize state and start
  * 
@@ -72,7 +56,7 @@ void RTStatusUpdateExecutor::handleResume() {
   }
 }
 
-void RTStatusUpdateExecutor::onReportRcvd() {
+void RTStatusUpdateExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
   hangning_detect_timer_->stop();
   hanging_ = false;
 }

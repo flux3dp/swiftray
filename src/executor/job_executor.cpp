@@ -27,12 +27,6 @@ void JobExecutor::threadFunction() {
   }
 }
 
-void JobExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
-  handleStopped();
-  this->motion_controller_ = motion_controller;
-  this->changeState(State::kIdle);
-}
-
 MachineJob const *JobExecutor::getActiveJob() const {
   return active_job_.data();
 }
@@ -69,16 +63,7 @@ void JobExecutor::start() {
   }
 
   // Connect all motion_controller_ signals and slots
-  connect(motion_controller_, &MotionController::disconnected, this, &JobExecutor::handleDisconnect);
-  connect(motion_controller_, &MotionController::cmdFinished,
-        this, [=](QPointer<Executor> executor){
-    if (executor.data() == this) {
-      handleCmdFinish(0);
-    }
-  });
   connect(motion_controller_, &MotionController::resetDetected, this, &JobExecutor::handleStopped);
-  connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &JobExecutor::handleMotionControllerStateChanged);
-
   
   completed_cmd_cnt_ = 0;
   Q_EMIT progressChanged(0);
@@ -233,6 +218,12 @@ void JobExecutor::handleCmdFinish(int code) {
  * 
  */
 void JobExecutor::handleStopped() {
+  // if (state_ == State::kRunning || state_ == State::kPaused) {
+  //   auto msgbox = new QMessageBox;
+  //   msgbox->setText(tr("Error"));
+  //   msgbox->setInformativeText(tr("Serial port disconnected"));
+  //   msgbox->show();
+  // }
   qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
   
@@ -308,19 +299,8 @@ void JobExecutor::reset() {
   changeState(State::kIdle);
 }
 
-void JobExecutor::handleDisconnect() {
-  if (state_ == State::kRunning || state_ == State::kPaused) {
-    auto msgbox = new QMessageBox;
-    msgbox->setText(tr("Error"));
-    msgbox->setInformativeText(tr("Serial port disconnected"));
-    msgbox->show();
-  }
-  handleStopped();
-}
-
-void JobExecutor::handleMotionControllerStateChanged(MotionControllerState last_state, MotionControllerState current_state, 
-                       qreal x_pos, qreal y_pos, qreal z_pos) {
-  latest_mc_state_ = current_state;
+void JobExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+  latest_mc_state_ = mc_state;
   if (latest_mc_state_ == MotionControllerState::kAlarm || latest_mc_state_ == MotionControllerState::kSleep) {
     qInfo() << "Stopped by alarm or sleep";
     handleStopped();

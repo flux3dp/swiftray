@@ -16,18 +16,6 @@ ConsoleExecutor::~ConsoleExecutor()
   handleStopped();
 }
 
-void ConsoleExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
-  if (!motion_controller_.isNull()) {
-    // If already attached, detach first
-    disconnect(motion_controller_, nullptr, this, nullptr);
-    motion_controller_.clear();
-    handleStopped();
-  }
-  motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::disconnected,
-          this, &ConsoleExecutor::handleStopped);
-}
-
 void ConsoleExecutor::start() {
   handleStopped();
 

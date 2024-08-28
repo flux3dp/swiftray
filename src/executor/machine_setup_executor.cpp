@@ -13,24 +13,6 @@ MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
   connect(this, &MachineSetupExecutor::trigger, this, &MachineSetupExecutor::wakeUp);
 }
 
-void MachineSetupExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
-  if (!motion_controller_.isNull()) {
-    // If already attached, detach first
-    disconnect(motion_controller_, nullptr, this, nullptr);
-    motion_controller_.clear();
-    handleStopped();
-  }
-  motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::disconnected,
-          this, &MachineSetupExecutor::handleStopped);
-  connect(motion_controller_, &MotionController::cmdFinished,
-        this, [=](QPointer<Executor> executor){
-    if (executor.data() == this) {
-      handleCmdFinish(0);
-    }
-  });
-}
-
 void MachineSetupExecutor::start() {
   handleStopped();
   qInfo() << "MachineSetupExecutor::start()";

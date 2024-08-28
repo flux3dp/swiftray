@@ -1,5 +1,5 @@
 #include "grbl_motion_controller.h"
-
+#include <executor/executor.h>
 #include <string>
 #include <memory>
 #include <QDebug>
@@ -157,7 +157,7 @@ void GrblMotionController::respReceived(QString resp) {
       //qInfo() << match.captured("pos_type");
       //qInfo() << "(" << x_pos_ << ", " << y_pos_ << ", " << z_pos_ << ")";
       setState(new_state);
-      Q_EMIT MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
+      Q_EMIT MotionController::realTimeStatusUpdated(state_, x_pos_, y_pos_, z_pos_);
     }
   } else if (resp.startsWith("Grbl")) {
     // A reset occurred
@@ -200,7 +200,7 @@ void GrblMotionController::respReceived(QString resp) {
       // Unknown alarm code
     }
     setState(MotionControllerState::kAlarm);
-    Q_EMIT MotionController::realTimeStatusUpdated(old_state, state_, x_pos_, y_pos_, z_pos_);
+    Q_EMIT MotionController::realTimeStatusUpdated(state_, x_pos_, y_pos_, z_pos_);
   } else if (resp.startsWith("[VER:]")) {
     // TODO: Parse grbl version
   } else if (resp.startsWith("[OPT:]")) {
