@@ -35,15 +35,11 @@ public:
   void attachSerialPort(QSerialPort *port);
   virtual QString type() = 0;
   virtual bool detachPort() = 0;
+  virtual bool resetState() = 0;
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   virtual CmdSendResult stop() = 0;
-  // virtual CmdSendResult pause();
-  // virtual CmdSendResult resume();
   MotionControllerState getState() const;
-  void setState(MotionControllerState new_state);
   std::tuple<qreal, qreal, qreal> getPos() const;
-  void enqueueCmdExecutor(QPointer<Executor>);
-  void dequeueCmdExecutor();
 
 Q_SIGNALS:
   void cmdSent(QString cmd);
@@ -62,6 +58,9 @@ protected:
   QSerialPort* port_ = nullptr;
   mutable std::mutex state_mutex_;
   QList<QPointer<Executor>> cmd_executor_queue_;
+  void setState(MotionControllerState new_state);
+  void enqueueCmdExecutor(QPointer<Executor>);
+  void dequeueCmdExecutor();
   
   // Status info
   MotionControllerState state_;  

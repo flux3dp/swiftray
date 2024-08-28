@@ -13,6 +13,7 @@ public:
   explicit GrblMotionController(QObject *parent = nullptr);
   QString type() override { return "GRBL"; }
   bool detachPort() override;
+  bool resetState() override;
   CmdSendResult stop() override;
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
 

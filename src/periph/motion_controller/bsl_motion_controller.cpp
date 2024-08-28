@@ -309,7 +309,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "[Laser Session Closed]" << "@" << getDebugTime();
       qInfo() << "Pending commands: " << this->pending_cmds_.size();
       setState(MotionControllerState::kIdle);
-      dequeueCmd(this->buffer_size_);
+      dequeueCmd(this->buffer_size_ + 1);
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;

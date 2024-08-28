@@ -433,6 +433,7 @@ void Machine::motionPortActivated() {
   Q_EMIT activated();
   rt_status_executor_->startThread();
   console_executor_->startThread();
+  job_executor_->startThread();
 }
 
 void Machine::motionPortDisonnected() {

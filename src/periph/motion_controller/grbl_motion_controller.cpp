@@ -261,6 +261,26 @@ bool GrblMotionController::detachPort() {
   return false;
 }
 
+bool GrblMotionController::resetState() {
+  qInfo() << "GrblMotionController::resetState()";
+  switch (getState()) {
+    case MotionControllerState::kIdle:
+      return true;
+    case MotionControllerState::kRun:
+    case MotionControllerState::kPaused:
+      return false;
+    case MotionControllerState::kAlarm:
+      this->setState(MotionControllerState::kIdle);
+      return true;
+    case MotionControllerState::kSleep:
+      this->setState(MotionControllerState::kIdle);
+      return true;
+    case MotionControllerState::kUnknown:
+    case MotionControllerState::kQuit:
+      return false;
+  }
+}
+
 MotionController::CmdSendResult GrblMotionController::stop() {
   qWarning() << "GrblMotionController::stop() is not implemented";
   return CmdSendResult::kFail;
