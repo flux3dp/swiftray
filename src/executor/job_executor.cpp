@@ -89,7 +89,7 @@ void JobExecutor::handleResume() {
  * 
  */
 void JobExecutor::exec() {
-  std::lock_guard<std::mutex> lock(exec_mutex_);
+  exec_mutex_.lock();
   // Check if we need to ignore, or continue exec based on executor's state
   if (state_ != State::kRunning || 
       active_job_.isNull() ||
@@ -98,6 +98,7 @@ void JobExecutor::exec() {
       qInfo() << "JobExecutor::exec() - not running @" << getDebugTime();
     }
     this->exec_wait = 100;
+    exec_mutex_.unlock();
     return;
   }
 
@@ -113,6 +114,7 @@ void JobExecutor::exec() {
         changeState(State::kCompleted);
         Q_EMIT progressChanged(100);
         Q_EMIT Executor::finished();
+        exec_mutex_.unlock();
         return;
       }
     }
@@ -120,6 +122,7 @@ void JobExecutor::exec() {
       qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
     }
     this->exec_wait = 10;
+    exec_mutex_.unlock();
     return;
   }
 
@@ -129,15 +132,15 @@ void JobExecutor::exec() {
       qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
     }
     this->exec_wait = 10;
+    exec_mutex_.unlock();
     return;
   }
 
   if (!pending_cmd_) {
     pending_cmd_ = active_job_->getNextCmd();
+    exec_mutex_.unlock();
   }
-  qInfo() << "JobExecutor::exec() - pending_cmd_ -> bec @" << getDebugTime();
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
-  qInfo() << "JobExecutor::exec() - pending_cmd_ -> aec @" << getDebugTime();
   switch(exec_status) {
     case OperationCmd::ExecStatus::kIdle:
       pending_cmd_.reset();
