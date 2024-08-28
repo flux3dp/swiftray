@@ -4,10 +4,12 @@ QT += widgets
 QT += opengl
 QT += gui
 QT += gui-private
+QT += quickcontrols2
 QT += svg
 QT += svg-private
 QT += websockets
-QT += qt5compat
+QT += openglwidgets
+QT += core5compat
 ios {
 } else {
 QT += serialport
@@ -24,12 +26,16 @@ VERSION_SUFFIX = "" # empty string or "-beta.X"
 #       "VERSION_MINOR=$$VERSION_MINOR"\
 #       "VERSION_BUILD=$$VERSION_BUILD"
 #DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
+
+DEFINES += QT6
+
 #Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
 win32-msvc {
   VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}
   #$${VERSION_SUFFIX}
 }
+
 
 QMAKE_INFO_PLIST = Info.plist
 ICON=resources/images/icon.icns
@@ -211,6 +217,8 @@ SOURCES += \
     $$files(src/periph/*.cpp) \
     $$files(src/periph/motion_controller/*.cpp) \
     $$files(src/common/*.cpp) \
+    $$files(src/server/*.cpp) \
+    $$files(src/debug/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
     $$files(src/parser/mysvg/*.cpp) \
     $$files(src/parser/dxf_rs/debug/*.cpp) \
@@ -224,26 +232,9 @@ SOURCES += \
     $$files(src/utils/*.cpp) \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
-    third_party/libdxfrw/drw_base.cpp \
-    third_party/libdxfrw/drw_classes.cpp \
-    third_party/libdxfrw/drw_entities.cpp \
-    third_party/libdxfrw/drw_header.cpp \
-    third_party/libdxfrw/drw_objects.cpp \
-    third_party/libdxfrw/intern/drw_dbg.cpp \
-    third_party/libdxfrw/intern/drw_textcodec.cpp \
-    third_party/libdxfrw/intern/dwgbuffer.cpp \
-    third_party/libdxfrw/intern/dwgreader.cpp \
-    third_party/libdxfrw/intern/dwgreader15.cpp \
-    third_party/libdxfrw/intern/dwgreader18.cpp \
-    third_party/libdxfrw/intern/dwgreader21.cpp \
-    third_party/libdxfrw/intern/dwgreader24.cpp \
-    third_party/libdxfrw/intern/dwgreader27.cpp \
-    third_party/libdxfrw/intern/dwgutil.cpp \
-    third_party/libdxfrw/intern/dxfreader.cpp \
-    third_party/libdxfrw/intern/dxfwriter.cpp \
-    third_party/libdxfrw/intern/rscodec.cpp \
-    third_party/libdxfrw/libdwgr.cpp \
-    third_party/libdxfrw/libdxfrw.cpp
+    third_party/liblcs/lcsExpr.cpp \
+    $$files(third_party/libdxfrw/*.cpp) \
+    $$files(third_party/libdxfrw/intern/*.cpp)
 
 RESOURCES += qml.qrc
 RESOURCES += sparkle.qrc
@@ -275,6 +266,8 @@ HEADERS += \
     $$files(src/widgets/panels/*.h) \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
+    $$files(src/server/*.h) \
+    $$files(src/debug/*.h) \
     $$files(src/parser/mysvg/*.h) \
     $$files(src/parser/dxf_rs/debug/*.h) \
     $$files(src/parser/dxf_rs/math/*.h) \
@@ -296,33 +289,9 @@ HEADERS += \
     src/widgets/panels/laser-panel.h \
     src/windows/rotary_setup.h \
     third_party/clipper/clipper.hpp \
-    third_party/libdxfrw/drw_base.h \
-    third_party/libdxfrw/drw_classes.h \
-    third_party/libdxfrw/drw_entities.h \
-    third_party/libdxfrw/drw_header.h \
-    third_party/libdxfrw/drw_interface.h \
-    third_party/libdxfrw/drw_objects.h \
-    third_party/libdxfrw/intern/drw_cptable932.h \
-    third_party/libdxfrw/intern/drw_cptable936.h \
-    third_party/libdxfrw/intern/drw_cptable949.h \
-    third_party/libdxfrw/intern/drw_cptable950.h \
-    third_party/libdxfrw/intern/drw_cptables.h \
-    third_party/libdxfrw/intern/drw_dbg.h \
-    third_party/libdxfrw/intern/drw_textcodec.h \
-    third_party/libdxfrw/intern/dwgbuffer.h \
-    third_party/libdxfrw/intern/dwgreader.h \
-    third_party/libdxfrw/intern/dwgreader15.h \
-    third_party/libdxfrw/intern/dwgreader18.h \
-    third_party/libdxfrw/intern/dwgreader21.h \
-    third_party/libdxfrw/intern/dwgreader24.h \
-    third_party/libdxfrw/intern/dwgreader27.h \
-    third_party/libdxfrw/intern/dwgutil.h \
-    third_party/libdxfrw/intern/dxfreader.h \
-    third_party/libdxfrw/intern/dxfwriter.h \
-    third_party/libdxfrw/intern/rscodec.h \
-    third_party/libdxfrw/libdwgr.h \
-    third_party/libdxfrw/libdxfrw.h \
-    third_party/libdxfrw/main_doc.h
+    $$files(third_party/libdxfrw/intern/*.h) \
+    $$files(third_party/libdxfrw/*.h)
+
 ios {
     HEADERS += \
             src/widgets/components/ios-image-picker.h \
@@ -375,11 +344,12 @@ QML_IMPORT_PATH = src/windows \
 
 macx{
   # Copy additional files to bundle
-  BUNDLE_FRAMEWORKS_FILES.files = $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
+  BUNDLE_FRAMEWORKS_FILES.files += $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
   BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
   QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
   
-  BUNDLE_ADDITIONAL_EXEC_FILES.files = $$PWD/third_party/sentry-native/install/bin/crashpad_handler
+  BUNDLE_ADDITIONAL_EXEC_FILES.files += $$PWD/third_party/sentry-native/install/bin/crashpad_handler \
+                                        $$files($$PWD/third_party/liblcs/lib/*.dylib)
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }
