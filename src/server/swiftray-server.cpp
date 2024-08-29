@@ -244,6 +244,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
   }
 
   sendCallback(socket, id, result);
+  return true;
 }
 
 void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {

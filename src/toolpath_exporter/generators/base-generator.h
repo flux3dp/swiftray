@@ -8,6 +8,7 @@
 class BaseGenerator {
 public:
   BaseGenerator() : x_(0), y_(0), power_(0), speed_(0), x_backlash_(0) {}
+  virtual ~BaseGenerator() = default;
 
   // x,y: absolute position in unit of mm
   virtual void moveTo(float x, float y, float speed, float power, double x_backlash) { NO_BASIC_IMPL }
