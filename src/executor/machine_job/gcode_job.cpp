@@ -53,14 +53,6 @@ std::shared_ptr<OperationCmd> GCodeJob::getNextCmd() {
   return cmd;
 }
 
-bool GCodeJob::end() const {
-  return next_gcode_idx_ >= gcode_list_.length();
-}
-
-void GCodeJob::reload() {
-  next_gcode_idx_ = 0;
-}
-
 float GCodeJob::getProgressPercent() const {
   if (getTotalRequiredTime().totalMSecs() == 0) {
     return 100.0;

@@ -21,18 +21,13 @@ public:
   void setTimestampList(QList<Timestamp> &&ts_list);
 
   std::shared_ptr<OperationCmd> getNextCmd() override;
-  bool end() const override;
-  void reload() override;
   float getProgressPercent() const override;
-  int getIndex() const override { return next_gcode_idx_; } 
   Timestamp getElapsedTime() const override;
   Timestamp getTotalRequiredTime() const override;
   Timestamp getRemainingTime() const override;
 
 
 private:
-  qsizetype next_gcode_idx_ = 0;
-  QStringList gcode_list_;
   QList<Timestamp> timestamp_list_;
 };
 

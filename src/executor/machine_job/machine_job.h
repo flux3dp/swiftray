@@ -16,16 +16,16 @@ class MachineJob : public QObject
 public:
   explicit MachineJob(QString job_name = "Job");
 
-  virtual std::shared_ptr<OperationCmd> getNextCmd() = 0;
-  virtual bool end() const = 0;
-  virtual void reload() = 0;
-  virtual float getProgressPercent() const = 0;
-  virtual int getIndex() const = 0;
+  virtual std::shared_ptr<OperationCmd> getNextCmd();
+  virtual bool end() const;
+  virtual void reload();
+  virtual float getProgressPercent() const;
+  int getIndex() const { return next_gcode_idx_; } 
   QString getJobName() const { return job_name_; }
 
-  virtual Timestamp getElapsedTime() const = 0;
-  virtual Timestamp getTotalRequiredTime() const = 0;
-  virtual Timestamp getRemainingTime() const = 0;
+  virtual Timestamp getElapsedTime() const;
+  virtual Timestamp getTotalRequiredTime() const;
+  virtual Timestamp getRemainingTime() const;
   
   bool withPreview() const;
   QPixmap getPreview() const;
@@ -40,6 +40,8 @@ protected:
   QString job_name_;
   bool with_preview_ = false;
   QPixmap preview_;
+  qsizetype next_gcode_idx_ = 0;
+  QStringList gcode_list_;
 
   QPointer<MotionController> motion_controller_;
 };

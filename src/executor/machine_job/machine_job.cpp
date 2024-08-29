@@ -2,6 +2,7 @@
 
 #include <QtMath>
 #include <QDebug>
+#include <executor/operation_cmd/gcode_cmd.h>
 
 MachineJob::MachineJob(QString job_name)
 {
@@ -316,4 +317,43 @@ QList<Timestamp> MachineJob::calcRequiredTime(QStringList &&gcode_list,
   }
 
   return timestamp_list;
+}
+
+
+std::shared_ptr<OperationCmd> MachineJob::getNextCmd() {
+  if (end()) {
+    return std::shared_ptr<OperationCmd>{nullptr};
+  }
+  auto idx = next_gcode_idx_++;
+  auto cmd = std::make_shared<GCodeCmd>(gcode_list_.at(idx) + "\n");
+  return cmd;
+}
+
+float MachineJob::getProgressPercent() const {
+  if (gcode_list_.isEmpty()) {
+    return 100;
+  } else if (next_gcode_idx_ >= gcode_list_.size()) {
+    return 100;
+  }
+  return 100 * (float)(next_gcode_idx_) / gcode_list_.size();
+}
+
+void MachineJob::reload() {
+  this->next_gcode_idx_ = 0;
+}
+
+bool MachineJob::end() const {
+  return this->next_gcode_idx_ >= this->gcode_list_.size();
+}
+
+Timestamp MachineJob::getElapsedTime() const {
+  return Timestamp();
+}
+
+Timestamp MachineJob::getTotalRequiredTime() const {
+  return Timestamp();
+}
+
+Timestamp MachineJob::getRemainingTime() const {
+  return Timestamp();
 }
