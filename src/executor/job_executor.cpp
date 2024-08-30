@@ -94,7 +94,7 @@ void JobExecutor::exec() {
   if (state_ != State::kRunning || 
       active_job_.isNull() ||
       motion_controller_->getState() == MotionControllerState::kSleep) {
-    if (this->exec_loop_count % 10 == 1) {
+    if (this->exec_loop_count % 600 == 1) {
       qInfo() << "JobExecutor::exec() - not running @" << getDebugTime();
     }
     this->exec_wait = 100;
@@ -138,6 +138,9 @@ void JobExecutor::exec() {
 
   if (!pending_cmd_) {
     pending_cmd_ = active_job_->getNextCmd();
+    if (active_job_->end() && active_job_->auto_loop) {
+      active_job_->reload();
+    }
     exec_mutex_.unlock();
   }
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
@@ -172,6 +175,7 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
   if (!active_job_.isNull()) {
     return false;
   }
+  new_job->setMotionController(motion_controller_);
   pending_job_ = new_job;
   return true;
 }

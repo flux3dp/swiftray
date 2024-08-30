@@ -35,7 +35,7 @@ public:
                                           QPointer<QProgressDialog> progress_dialog);
   static QList<Timestamp> calcRequiredTime(QStringList &&gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);
-
+  bool auto_loop = false;
 protected:
   QString job_name_;
   bool with_preview_ = false;

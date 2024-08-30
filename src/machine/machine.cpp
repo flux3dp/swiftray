@@ -90,16 +90,8 @@ bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestam
   }
 
   auto job = preview.width() > 0 ? QSharedPointer<GCodeJob>::create(gcode_list, preview) : QSharedPointer<GCodeJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
   job->setTimestampList(timestamp_list);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -116,15 +108,10 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   }
 
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
+  if (motion_controller_ && motion_controller_->type() == "BSL") {
+    job->auto_loop = true;
   }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -143,15 +130,7 @@ bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate,
   }
 
   auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate, framing_power);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -177,15 +156,7 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
       std::get<1>(move), 
       feedrate
   );
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -208,14 +179,7 @@ bool Machine::createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> target_po
                                                         true, std::get<1>(target_pos), 
                                                         feedrate);
   job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -237,14 +201,7 @@ bool Machine::createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> target_p
                                                         false, 0, 
                                                         feedrate);
   job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -280,15 +237,7 @@ bool Machine::createJoggingCornerJob(int corner_id, qreal feedrate) {
   target_pos = canvasToMachineCoordConvert(target_pos, false);
   qInfo() << "target pos: " << std::get<0>(target_pos) << ", " << std::get<1>(target_pos);
   auto job = QSharedPointer<JoggingAbsoluteJob>::create(true, std::get<0>(target_pos), true, std::get<1>(target_pos), feedrate);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -338,15 +287,7 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
   job = QSharedPointer<JoggingAbsoluteJob>::create(move_x, std::get<0>(target_machine_pos), 
                                                   move_y, std::get<1>(target_machine_pos), 
                                                   feedrate);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
