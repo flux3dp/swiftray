@@ -88,16 +88,20 @@ int debug_count_bsl  = 0;
 
 void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLMotionController::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
-  debug_count_bsl ++;
   while (this->getState() != MotionControllerState::kQuit) {
+    debug_count_bsl ++;
     if (this->getState() == MotionControllerState::kSleep) {
       QThread::msleep(25); 
-      qInfo() << "BSLM~::thread() - Sleeping";
+      if (debug_count_bsl % 40 == 1) {
+        qInfo() << "BSLM~::thread() - Sleeping State";
+      }
       continue;
     }
     this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
-      qInfo() << "BSLM~::thread() - No pending commands, sleep for a while";
+      if (debug_count_bsl % 30 == 1) {
+        qInfo() << "BSLM~::thread() - No pending commands, wait for a while";
+      }
       this->cmd_list_mutex_.unlock();
       if (this->buffer_size_ > 0) {
         this->should_flush_ = true;
@@ -105,7 +109,9 @@ void BSLMotionController::commandRunnerThread() {
       QThread::msleep(1000);
       continue;
     }
-    qInfo() << "BSLM~::thread() - running, pending cmds: " << this->pending_cmds_.size();
+    if (debug_count_bsl % 1000 == 1) {
+      qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
+    }
     QString cmd = this->pending_cmds_.front();
     this->pending_cmds_.pop_front();
     this->cmd_list_mutex_.unlock();
@@ -150,7 +156,6 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
 
 void BSLMotionController::handleGcode(const QString &gcode) {
     static bool laser_enabled = false;
-    static double current_x = 0.0, current_y = 0.0, current_f = 6000.0; // Default speed
     static int current_s = 0; // Default power
     static bool is_absolute_positioning = true;
     static int list_no = 1;
