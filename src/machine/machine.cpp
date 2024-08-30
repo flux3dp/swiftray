@@ -107,11 +107,12 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
   }
-
-  auto job = QSharedPointer<FramingJob>::create(gcode_list);
-  if (motion_controller_ && motion_controller_->type() == "BSL") {
-    job->auto_loop = true;
+  if (!motion_controller_) {
+    return false;
   }
+  if (motion_controller_->type() != "BSL") gcode_list.append("?"); // Request for realtime status update at the end of the job
+  auto job = QSharedPointer<FramingJob>::create(gcode_list);
+  if (motion_controller_->type() == "BSL") job->auto_loop = true; // If it's a galvanometer machine, run loop
   return job_executor_ && job_executor_->setNewJob(job);
 }
 
@@ -402,9 +403,12 @@ void Machine::startJob() {
     qWarning() << "Machine::startJob() - motion controller is not idle";
     if (!motion_controller_->resetState()) {
       qWarning() << "Machine::startJob() - unable to reset motion controller";
+      return;
+    } else {
+      qWarning() << "Machine::startJob() - reset motion controller done";
     }
-    return;
   }
+  qInfo() << "Machine::startJob() - final starting";
   job_executor_->startJob();
 }
 

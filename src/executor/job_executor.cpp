@@ -93,6 +93,7 @@ void JobExecutor::exec() {
   // Check if we need to ignore, or continue exec based on executor's state
   if (state_ != State::kRunning || 
       active_job_.isNull() ||
+      motion_controller_->getState() == MotionControllerState::kAlarm ||
       motion_controller_->getState() == MotionControllerState::kSleep) {
     if (this->exec_loop_count % 600 == 1) {
       qInfo() << "JobExecutor::exec() - not running @" << getDebugTime();
@@ -129,7 +130,7 @@ void JobExecutor::exec() {
   // Check if the buffer is full
   if (cmd_in_progress_.length() > 2000) {
     if (this->exec_loop_count % 40 == 1) {
-      qInfo() << "JobExecutor::exec() - buffer full @" << getDebugTime();
+      qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress_.length() << ") is full @" << getDebugTime();
     }
     this->exec_wait = 10;
     exec_mutex_.unlock();
@@ -215,6 +216,7 @@ void JobExecutor::handleCmdFinish(int code) {
 void JobExecutor::handleStopped() {
   qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
+  qInfo() << "JobExecutor::handleStopped() entered mutex" << getDebugTime();
 
   // Clear active job
   if (!active_job_.isNull()) {
@@ -222,12 +224,14 @@ void JobExecutor::handleStopped() {
     last_job_->reload();
     active_job_.reset();
   }
+  qInfo() << "JobExecutor::handleStopped() active job cleared" << getDebugTime();
 
   // Clear pending commands
   cmd_in_progress_.clear();
   pending_cmd_.reset();
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
+  qInfo() << "JobExecutor::handleStopped() cleared all commands" << getDebugTime();
 }
 
 /**

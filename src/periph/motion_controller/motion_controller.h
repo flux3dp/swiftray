@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <mutex>
 #include <tuple>
+#include <atomic>
 
 class Executor;
 
@@ -64,7 +65,7 @@ protected:
   void dequeueCmdExecutor();
   
   // Status info
-  MotionControllerState state_;  
+  std::atomic<MotionControllerState> state_;  
   qreal x_pos_ = 0;
   qreal y_pos_ = 0;
   qreal z_pos_ = 0;
