@@ -438,13 +438,13 @@ void ToolpathExporterFcode::updateLayerParam() {
     layer_speed_sec_ = qMax(float(current_layer_->printingSpeed()), config_.min_speed);
     min_padding = config_.min_printing_padding;
     // Update submodule color
-    if (layer_color_ == "9FE3FF" || layer_color_ == "009FE3") {
+    if (layer_color_ == "#9FE3FF" || layer_color_ == "#009FE3") {
       submodule_color_ = "cyan";
-    } else if (layer_color_ == "E6007E") {
+    } else if (layer_color_ == "#E6007E") {
       submodule_color_ = "magenta";
-    } else if (layer_color_ == "FFED00") {
+    } else if (layer_color_ == "#FFED00") {
       submodule_color_ = "yellow";
-    } else if (layer_color_ == "E2E2E2") {
+    } else if (layer_color_ == "#E2E2E2") {
       submodule_color_ = "white";
     } else {
       submodule_color_ = "black";
