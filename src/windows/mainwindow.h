@@ -100,6 +100,8 @@ public Q_SLOTS:
 
   void initSparkle();
   void checkForUpdates();
+  void handleProgress(QString title, QString button_text, float progress);
+  void handleWarnings(QString message);
 
 private Q_SLOTS:
 
@@ -157,6 +159,8 @@ private Q_SLOTS:
 
   void updateTitle(bool file_modified);
 
+  void handleJobAttached();
+
   void machinePositionCached(std::tuple<qreal, qreal, qreal> target_pos);
   void machineDisconnected();
   void updateCanvasSize(QSize new_size);
@@ -178,7 +182,6 @@ private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
   bool job_dashboard_exist_;
-  QPointF end_point_ = QPointF(0,0);
 #ifdef ENABLE_SENTRY
   sentry_options_t *options_;
 #endif
@@ -220,6 +223,7 @@ private:
   PrivacyWindow *privacy_window_;
   RotarySetup *rotary_setup_;
   QSharedPointer<ConsoleDialog> console_dialog_;
+  QSharedPointer<QProgressDialog> progress_dialog_;
 
   void connectMachine(QString port_name, bool auto_connect = false);
   void newFile();
@@ -230,9 +234,6 @@ private:
   bool generateGcode();
   bool handleUnsavedChange();
   void actionStart();
-  void actionFrame();
-  QPoint calculateJobOrigin();
-  QTransform calculateTranslate();
   void showHighSpeedWarning();
 
   friend class MainApplication;

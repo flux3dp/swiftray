@@ -24,7 +24,7 @@ public:
 
   PreviewGenerator *previewPath() const;
 
-  void setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_path);
+  void setPreviewPath(QSharedPointer<PreviewGenerator> &preview_path);
 
   void setRequiredTime(const Timestamp &required_time);
 
@@ -35,7 +35,7 @@ private:
   void resizeEvent(QResizeEvent *event) override;
 
   Ui::PreviewWindow *ui;
-  std::shared_ptr<PreviewGenerator> preview_path_;
+  QSharedPointer<PreviewGenerator> preview_path_;
   QGraphicsView* path_graphics_view_;
   double height_scale_;
   double total_height_;

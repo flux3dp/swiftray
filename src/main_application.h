@@ -7,10 +7,12 @@
 #include <QFont>
 #include <QList>
 #include <QSet>
+#include <canvas/canvas.h>
 #include <shape/shape.h>
 #include <settings/machine-settings.h>
 #include <settings/rotary-settings.h>
-#include "server/swiftray-server.h"
+#include <server/swiftray-server.h>
+#include <toolpath_exporter/generators/preview-generator.h>
 
 class MainApplication : public QApplication
 {
@@ -21,6 +23,7 @@ public:
 
   bool isFirstTime();
   bool isUploadEnable();
+  void setCanvas(Canvas *canvas) { canvas_ = canvas; }
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   void rejectSoftwareUpdate() { software_update_ok_ = false; }
   bool softwareUpdateCanShutdown();
@@ -69,6 +72,7 @@ public:
   CanvasQuality getCanvasQuality() { return canvas_quality_; }
   //about tool path
   PathSort getPathSort() { return path_sort_; }
+  QTransform calcMoveTransform();
   SwiftrayServer *swiftray_server_;
 
 public Q_SLOTS:
@@ -120,7 +124,13 @@ public Q_SLOTS:
   void updateCanvasQuality(int canvas_quality);
   //about tool path
   void updatePathSort(int path_sort);
-
+  //about machine
+  void handleFraming();
+  void handleCancel();
+  QString generateToolpath();
+  QSharedPointer<PreviewGenerator> generatePreview();
+  QPoint calculateJobOrigin();
+ 
 private:
   void loadSettings();
   //about preset
@@ -133,6 +143,7 @@ private:
   void initialRotary();
   void calculateRotaryScale();
   void saveRotary();
+  Canvas *canvas_;
 #if defined(HAVE_SOFTWARE_UPDATE) && defined(Q_OS_WIN)
   bool software_update_ok_ = false;
 #endif
@@ -174,6 +185,7 @@ private:
   CanvasQuality canvas_quality_;
   //setting of tool path
   PathSort path_sort_;
+  QPointF end_point_ = QPointF(0,0);
 
 private Q_SLOTS:
   void cleanup();
@@ -239,6 +251,10 @@ Q_SIGNALS:
   void editCanvasQuality(CanvasQuality canvas_quality);
   //about tool path
   void editPathSort(PathSort path_sort);
+  void progressChanged(QString title, QString button_text, float progress);
+  void warningMessage(QString message);
+  void abortTaskSignal();
+  void jobAttached();
 };
 
 extern MainApplication *mainApp;

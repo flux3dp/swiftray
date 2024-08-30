@@ -23,7 +23,6 @@
 #include <toolpath_exporter/toolpath-exporter.h>
 #include <toolpath_exporter/generators/gcode-generator.h>
 #include <toolpath_exporter/generators/preview-generator.h>
-#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 #include <document-serializer.h>
 #include <settings/file-path-settings.h>
 #include <windows/preview-window.h>
@@ -449,147 +448,6 @@ void MainWindow::actionStart() {
   job_dashboard_exist_ = true;
 }
 
-void MainWindow::actionFrame() {
-
-  // Make sure active machine and job executor exist, 
-  if (active_machine.getJobExecutor().isNull()) {
-    return;
-  }
-  // Make sure port connected
-  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
-    QMessageBox msgbox;
-    msgbox.setText(tr("Serial Port Error"));
-    msgbox.setInformativeText(tr("Please connect to serial port first"));
-    msgbox.exec();
-    return;
-  }
-  // Make sure no active job running
-  if (active_machine.getJobExecutor()->getActiveJob()) {
-    return;
-  }
-
-  // Generate gcode for framing
-  QTransform move_translate = calculateTranslate();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
-  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
-      canvas_->document().settings().dpmm(),
-      mainApp->getTravelSpeed(),
-      end_point_,
-      ToolpathExporter::PaddingType::kNoPadding,
-      move_translate);
-  exporter.setSortRule(mainApp->getPathSort());
-  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), mainApp->getStartWithHome());
-  if (exporter.isExceedingBoundary()) {
-    QMessageBox msgbox;
-    msgbox.setText(tr("Warning"));
-    msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
-    msgbox.exec();
-  }
-
-  // Again, make sure active machine and job executor exist, 
-  if (active_machine.getJobExecutor().isNull()) {
-    return;
-  }
-  // Again, make sure port connected
-  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
-    return;
-  }
-  // Again, make sure no active job running
-  if (active_machine.getJobExecutor()->getActiveJob()) {
-    return;
-  }
-
-  gen_outline_scanning_gcode->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
-  gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
-  // Create Framing Job and start
-  if (true == active_machine.createFramingJob(
-        QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) 
-  {
-    gcode_panel_->attachJob(active_machine.getJobExecutor());
-    active_machine.startJob();
-  }
-}
-
-QPoint MainWindow::calculateJobOrigin() {
-  //to get shape bounding
-  QRect rect = canvas_->calculateShapeBoundary();
-  int job_origin = mainApp->getJobOrigin();
-  QPoint target_point;
-  switch(job_origin) {
-    case JobOrigin::NW:
-      target_point = QPoint(rect.left(), rect.top());
-      break;
-    case JobOrigin::N:
-      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
-      break;
-    case JobOrigin::NE:
-      target_point = QPoint(rect.left() + rect.width(), rect.top());
-      break;
-    case JobOrigin::E:
-      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
-      break;
-    case JobOrigin::SE:
-      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
-      break;
-    case JobOrigin::S:
-      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
-      break;
-    case JobOrigin::SW:
-      target_point = QPoint(rect.left(), rect.top() + rect.height());
-      break;
-    case JobOrigin::W:
-      target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
-      break;
-    case JobOrigin::CENTER:
-      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
-      break;
-    default:
-      break;
-  }
-  return target_point;
-}
-
-QTransform MainWindow::calculateTranslate() {
-  int start_from = mainApp->getStartFrom();
-  QTransform move_translate = QTransform();
-  //to get shape bounding
-  QPoint target_point = calculateJobOrigin();
-  //unit??
-  switch(start_from) {
-    case StartFrom::AbsoluteCoords:
-      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
-      break;
-    case StartFrom::CurrentPosition:
-      move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
-                              std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
-      end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
-      break;
-    case StartFrom::UserOrigin:
-      move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
-                              std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
-      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
-      break;
-    default:
-      break;
-  }
-  if(mainApp->isRotaryMode()) {
-    int direction = 1;
-    if(mainApp->isMirrorMode()) {
-      direction = -1;
-    }
-    move_translate *= QTransform::fromScale(1,direction);
-    //to move obj into canvas
-    QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
-    while(rect.top() < 0) {
-      move_translate.translate(0,mainApp->getRotaryCircumference() * 10 * direction);
-      rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
-    }
-    move_translate *= QTransform::fromScale(1, mainApp->getRotaryScale());
-  }
-  return move_translate;
-}
-
 void MainWindow::showHighSpeedWarning() {
   if(mainApp->isHighSpeedMode()) {
     QMessageBox msgbox;
@@ -900,30 +758,11 @@ void MainWindow::imageSelected(const QImage image) {
 }
 
 void MainWindow::exportGCodeFile() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
-  QProgressDialog progress_dialog(tr("Generating GCode..."),
-                                   tr("Cancel"),
-                                   0,
-                                   100, this);
-  progress_dialog.setWindowModality(Qt::WindowModal);
-  progress_dialog.show();
-  progress_dialog.activateWindow();
-  progress_dialog.raise();
-
-  QTransform move_translate = calculateTranslate();
-  ToolpathExporter exporter(gen_gcode.get(),
-      canvas_->document().settings().dpmm(), 
-      mainApp->getTravelSpeed(),
-      end_point_,
-      ToolpathExporter::PaddingType::kFixedPadding,
-      move_translate);
-  exporter.setSortRule(mainApp->getPathSort());
-  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10)); // TODO: Set machine work area in unit of mm
-  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
-                                    mainApp->getStartWithHome(), &progress_dialog)) {
-    return; // canceled
+  QString gcode = mainApp->generateToolpath();
+  if (gcode.isEmpty()) {
+    qWarning() << "Generated GCode is empty";
+    return;
   }
-
   QString default_save_dir = FilePathSettings::getDefaultFilePath();
 
   QString filter = tr("GCode Files (*.gcode)");
@@ -937,7 +776,7 @@ void MainWindow::exportGCodeFile() {
   QFile file(file_name);
   if (file.open(QFile::WriteOnly)) {
     QTextStream stream(&file);
-    stream << QString::fromStdString(gen_gcode->toString()).toUtf8();
+    stream << gcode.toUtf8();
     file.close();
 
     // update default save dir
@@ -987,6 +826,7 @@ void MainWindow::canvasLoaded(QQuickWidget::Status status) {
   canvas_->text_input_ = new CanvasTextEdit(this);
   canvas_->text_input_->setGeometry(0, 0, 0, 0);
   canvas_->text_input_->setStyleSheet("border:0");
+  mainApp->setCanvas(canvas_);
 }
 
 bool MainWindow::event(QEvent *e) {
@@ -1203,7 +1043,7 @@ void MainWindow::registerEvents() {
   connect(ui->actionCrop, &QAction::triggered, canvas_, &Canvas::cropImage);
   connect(ui->actionStart, &QAction::triggered, this, &MainWindow::actionStart);
   connect(ui->actionStart_2, &QAction::triggered, this, &MainWindow::actionStart);
-  connect(ui->actionFrame, &QAction::triggered, this, &MainWindow::actionFrame);
+  connect(ui->actionFrame, &QAction::triggered, mainApp, &MainApplication::handleFraming);
 
   connect(ui->actionSaveClassic, &QAction::triggered, [=]() {
       QSettings settings(QDir::currentPath() + "/classicUI.ini", QSettings::IniFormat);
@@ -1243,7 +1083,7 @@ void MainWindow::registerEvents() {
     }
   });
   connect(canvas_, &Canvas::syncJobOrigin, [=]() {
-    canvas_->setJobOrigin(calculateJobOrigin());
+    canvas_->setJobOrigin(mainApp->calculateJobOrigin());
   });
 
   connect(preferences_window_, &PreferencesWindow::speedModeChanged, [=](bool is_high_speed) {
@@ -1685,7 +1525,7 @@ void MainWindow::registerEvents() {
   connect(gcode_panel_, &GCodePanel::jobStatusReport, this, &MainWindow::syncJobState);
 
   connect(laser_panel_, &LaserPanel::actionPreview, this, &MainWindow::genPreviewWindow);
-  connect(laser_panel_, &LaserPanel::actionFrame, this, &MainWindow::actionFrame);
+  connect(laser_panel_, &LaserPanel::actionFrame, mainApp, &MainApplication::handleFraming);
   connect(laser_panel_, &LaserPanel::actionStart, this, &MainWindow::actionStart);
   connect(laser_panel_, &LaserPanel::actionHome, this, &MainWindow::home);
   connect(laser_panel_, &LaserPanel::actionMoveToOrigin, this, &MainWindow::moveToCustomOrigin);
@@ -2221,6 +2061,9 @@ void MainWindow::setToolbarTransform() {
     doubleSpinBoxWidth->blockSignals(false);
     doubleSpinBoxHeight->blockSignals(false);
   });
+  connect(mainApp, &MainApplication::progressChanged, this, &MainWindow::handleProgress);
+  connect(mainApp, &MainApplication::warningMessage, this, &MainWindow::handleWarnings);
+  connect(mainApp, &MainApplication::jobAttached, this, &MainWindow::handleJobAttached);
 
   connect(mainApp, &MainApplication::editShapeScaleLock, [=](bool scale_locked) {
     canvas_->transformControl().setScaleLock(scale_locked);
@@ -2407,79 +2250,25 @@ void MainWindow::showJoggingPanel() {
  * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
  */
 bool MainWindow::generateGcode() {
-  auto gen_gcode = std::make_shared<GCodeGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
-  QProgressDialog progress_dialog(tr("Generating GCode..."),
-                                   tr("Cancel"),
-                                   0,
-                                   101, this);
-  progress_dialog.setWindowModality(Qt::WindowModal);
-  progress_dialog.show();
-  progress_dialog.activateWindow();
-  progress_dialog.raise();
-  QTransform move_translate = calculateTranslate();
-  ToolpathExporter exporter(gen_gcode.get(),
-      canvas_->document().settings().dpmm(),
-      mainApp->getTravelSpeed(),
-      end_point_,
-      ToolpathExporter::PaddingType::kFixedPadding,
-      move_translate);
-  exporter.setSortRule(mainApp->getPathSort());
-  exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
-  if ( true != exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
-                                    mainApp->getStartWithHome(), &progress_dialog)) {
-    return false; // canceled
+  QString gcode = mainApp->generateToolpath();
+  if (!gcode.isEmpty()) {
+    gcode_panel_->setGCode(gcode);
+    return true;
   }
-  if (exporter.isExceedingBoundary()) {
-    QMessageBox msgbox;
-    msgbox.setText(tr("Warning"));
-    msgbox.setInformativeText(tr("Some items aren't placed fully inside the working area."));
-    msgbox.exec();
-  }
-  if (mainApp->isRotaryMode() && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
-    QMessageBox msgbox;
-    msgbox.setText(tr("Warning"));
-    msgbox.setInformativeText(tr("Some items maybe overlap in rotary mode."));
-    msgbox.exec();
-  }
-  
-  gcode_panel_->setGCode(QString::fromStdString(gen_gcode->toString()));
-  progress_dialog.setValue(progress_dialog.maximum());
-
-  return true;
+  return false;
 }
 
 void MainWindow::genPreviewWindow() {
-  // Draw preview
-  auto preview_path_generator = std::make_shared<PreviewGenerator>(mainApp->getMachineParam(), mainApp->isRotaryMode());
-  QTransform move_translate = calculateTranslate();
-  ToolpathExporter preview_exporter(preview_path_generator.get(),
-                                    canvas_->document().settings().dpmm(),
-                                    mainApp->getTravelSpeed(),
-                                    end_point_,
-                                    ToolpathExporter::PaddingType::kFixedPadding,
-                                    move_translate);
-  preview_exporter.setSortRule(mainApp->getPathSort());
-  preview_exporter.setWorkAreaSize(QRectF(0,0,canvas_->document().width() / 10, canvas_->document().height() / 10));
-
-  QProgressDialog progress_dialog(tr("Exporting toolpath..."),
-                                   tr("Cancel"),
-                                   0,
-                                   101, this);
-  progress_dialog.setWindowModality(Qt::WindowModal);
-  progress_dialog.show();
-  progress_dialog.activateWindow();
-  progress_dialog.raise();
-
-  if ( true != preview_exporter.convertStack(canvas_->document().layers(), mainApp->isHighSpeedMode(), 
-                                            mainApp->getStartWithHome(), &progress_dialog)) {
-    return; // canceled
+  // Prepare Preview Path
+  QSharedPointer<PreviewGenerator> preview_path_generator = mainApp->generatePreview();
+  if (preview_path_generator.isNull()) {
+    qInfo() << "Failed to generate preview path";
+    return;
   }
-  progress_dialog.setValue(progress_dialog.maximum());
-  QCoreApplication::processEvents();
-  
   // Prepare GCodes
-  if (generateGcode() == false) {
-    return; // canceled
+  if (!generateGcode()) {
+    qInfo() << "Failed to generate GCode";
+    return;
   }
 
   // Prepare total required time
@@ -2501,9 +2290,7 @@ void MainWindow::genPreviewWindow() {
     // Terminated
     return;
   }
-
 }
-
 /**
  * @brief Create and launch a new Job,
  *        Attach control panel (gcode panel & job dashboard) to the active job
@@ -2741,3 +2528,33 @@ void MainWindow::softwareUpdateRequested() {
   }
 }
 #endif
+
+void MainWindow::handleProgress(QString title, QString button_text, float progress) {
+  if (progress_dialog_.isNull()) {
+    progress_dialog_ = QSharedPointer<QProgressDialog>::create(title, button_text, 0, 100, this);
+    progress_dialog_->setWindowModality(Qt::WindowModal);
+    progress_dialog_->setMinimumDuration(0);
+    progress_dialog_->setAutoClose(false);
+    progress_dialog_->setAutoReset(false);
+    progress_dialog_->setCancelButton(nullptr);
+    progress_dialog_->show();
+  } else {
+    progress_dialog_->setLabelText(title);
+    progress_dialog_->setCancelButtonText(button_text);
+    progress_dialog_->setValue(progress);
+  }
+  if (progress > 100 || progress < 0) {
+    progress_dialog_->close();
+  }
+}
+
+void MainWindow::handleWarnings(QString message) {
+  QMessageBox msgbox;
+  msgbox.setText(tr("Warnings"));
+  msgbox.setInformativeText(message);
+  msgbox.exec();
+}
+
+void MainWindow::handleJobAttached() {
+  gcode_panel_->attachJob(active_machine.getJobExecutor());
+}
