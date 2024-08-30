@@ -2893,6 +2893,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.min_power = getAttr(attributes, "data-minPower", 0);
         layer_config.ink = getAttr(attributes, "data-ink", 3);
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
+        layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
     #endif
@@ -4675,10 +4676,19 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             }
         }
     }
+    QList<LayerPtr> orders_path(svg_layer_index_, nullptr);
+    QList<LayerPtr> orders_fill(svg_layer_index_, nullptr);
     for (LayerPtr &layer : svg_layers_) {
         // Read layer config by name
         if (layer_config_map_.contains(layer->name())) {
             auto config = layer_config_map_[layer->name()];
+            if (read_type == MySVG::ReadType::BVG) {
+                if (layer->type() == Layer::Type::Fill) {
+                    orders_fill[config.order_index] = layer;
+                } else {
+                    orders_path[config.order_index] = layer;
+                }
+            }
             qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
             layer->setVisible(config.visible);
             layer->setSpeed(config.speed);
@@ -4700,9 +4710,24 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             layer->setInk(config.ink);
             layer->setPrintingSpeed(config.printing_speed);
         }
-        doc->addLayer(layer);
+        if (read_type != MySVG::ReadType::BVG) {
+            doc->addLayer(layer);
+        }
         if(layer->isVisible())
             svg_layers->push_back(layer);
+    }
+    if (read_type == MySVG::ReadType::BVG) {
+        QList<LayerPtr> ordered_layers;
+        for (int i = 0; i < svg_layer_index_; ++i) {
+            if (orders_fill[i] != nullptr) {
+                ordered_layers.push_back(orders_fill[i]);
+            }
+            if (orders_path[i] != nullptr) {
+                ordered_layers.push_back(orders_path[i]);
+            }
+        }
+        if (ordered_layers.size() > 0)
+            doc->setLayersOrder(ordered_layers);
     }
 }
 
@@ -4734,6 +4759,7 @@ MyQSvgHandler::MyQSvgHandler(QXmlStreamReader *const reader, QtSvg::Options opti
 
 void MyQSvgHandler::init()
 {
+    svg_layer_index_ = 0;
     m_doc = 0;
     m_style = 0;
     m_animEnd = 0;
@@ -5340,6 +5366,11 @@ void MyQSvgHandler::setAnimPeriod(int start, int end)
 int MyQSvgHandler::animationDuration() const
 {
     return m_animEnd;
+}
+
+int MyQSvgHandler::nextLayerIndex()
+{
+    return svg_layer_index_++;
 }
 
 MyQSvgHandler::~MyQSvgHandler()
