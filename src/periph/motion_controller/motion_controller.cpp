@@ -44,7 +44,10 @@ MotionControllerState MotionController::getState() const {
 
 void MotionController::setState(MotionControllerState new_state) {
   std::scoped_lock<std::mutex> lk(state_mutex_);
-  state_ = new_state;
+  if (state_ != new_state) {
+    state_ = new_state;
+    Q_EMIT stateChanged(state_);
+  }
 }
 
 std::tuple<qreal, qreal, qreal> MotionController::getPos() const {

@@ -13,7 +13,7 @@
 
 int lcs_error_count = 0;
 
-void handleLCSError(LCS2Error error) {
+QString BSLMotionController::getErrorString(int error) {
   switch (error) {
     case LCS_RES_NO_ERROR:
       qInfo() << "LCS_RES_NO_ERROR";
@@ -97,6 +97,13 @@ void BSLMotionController::commandRunnerThread() {
       }
       continue;
     }
+    if (this->getState() == MotionControllerState::kAlarm) {
+      QThread::msleep(25); 
+      if (debug_count_bsl % 40 == 1) {
+        qInfo() << "BSLM~::thread() - Alarming State" << current_error_;
+      }
+      continue;
+    }
     this->cmd_list_mutex_.lock();
     if (this->pending_cmds_.empty()) {
       if (debug_count_bsl % 30 == 1) {
@@ -135,7 +142,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   qInfo() << "Waiting list available #" << list_no << "@" << getDebugTime();
   LCS2Error ret = lcs_load_list(list_no, 0);
   while (ret != LCS_RES_NO_ERROR) {
-    handleLCSError(ret);
+    qInfo() << getErrorString(ret);
     ret = lcs_load_list(list_no, 0);
       // If the list is already opened, close the list, execute it
     if (ret == LCS_GENERAL_AREADY_OPENED) {
@@ -146,6 +153,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
     }
     if (lcs_error_count ++ > 20) {
       qWarning() << "BSLM~::waitListAvailable(" << list_no << ") - Error count exceeded 100" << getDebugTime();
+      this->current_error_ = ret;
       this->stop();
       break;
     }
@@ -406,7 +414,11 @@ MotionController::CmdSendResult BSLMotionController::resume() {
 
 MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLMotionController::stop() @" << getDebugTime();
-  this->setState(MotionControllerState::kSleep);
+  if (this->current_error_) {
+    this->setState(MotionControllerState::kAlarm);
+  } else {
+    this->setState(MotionControllerState::kSleep);
+  }
   lcs_set_end_of_list();
   lcs_stop_execution();
   QThread::sleep(2);
@@ -434,6 +446,7 @@ bool BSLMotionController::detachPort() {
 
 bool BSLMotionController::resetState() {
   qInfo() << "BSLMotionController::resetState()" << getDebugTime();
+  this->current_error_ = 0;
   switch (getState()) {
     case MotionControllerState::kIdle:
       return true;
@@ -452,18 +465,5 @@ bool BSLMotionController::resetState() {
     case MotionControllerState::kUnknown:
     case MotionControllerState::kQuit:
       return false;
-  }
-}
-
-QString BSLMotionController::getAlarmMsg(AlarmCode code) {
-  switch (code) {
-    case AlarmCode::kHardLimit:
-      return tr("Hard limit");
-    case AlarmCode::kSoftLimit:
-      return tr("Soft limit");
-    case AlarmCode::kAbortCycle:
-      return tr("Abort during cycle");
-    default:
-      return "Unknown alarm";
   }
 }

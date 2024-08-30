@@ -7,6 +7,7 @@
 
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller_factory.h>
+#include <periph/motion_controller/bsl_motion_controller.h>
 #include <executor/machine_job/gcode_job.h>
 #include <executor/machine_job/framing_job.h>
 #include <executor/machine_job/jogging_job.h>
@@ -339,6 +340,7 @@ void Machine::setupMotionController() {
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
   connect(motion_controller_, &MotionController::respRcvd, this, &Machine::logRcvd);
+  connect(motion_controller_, &MotionController::stateChanged, this, &Machine::handleMotionControllerStateChange);
 
 
   qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
@@ -564,4 +566,17 @@ bool Machine::isConnected() {
 
 void Machine::setSerialPort(QSerialPort &serial_port) {
   serial_port_ = &serial_port;
+}
+
+void Machine::handleMotionControllerStateChange(MotionControllerState state) {
+  qInfo() << "Machine::handleMotionControllerStateChange() - " << (int)state;
+  if (state == MotionControllerState::kAlarm) {
+    if (motion_controller_->type() == "BSL") {
+      BSLMotionController* bsl_mc = (BSLMotionController*)motion_controller_;
+      QMessageBox msgBox;
+      msgBox.setText("Laser alarm detected");
+      msgBox.setInformativeText(bsl_mc->getCurrentError());
+      msgBox.exec();
+    }
+  }
 }

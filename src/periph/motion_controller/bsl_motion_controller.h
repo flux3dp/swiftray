@@ -1,5 +1,4 @@
-#ifndef BSLMOTIONCONTROLLER_H
-#define BSLMOTIONCONTROLLER_H
+#pragma once
 
 #include "motion_controller.h"
 
@@ -22,6 +21,7 @@ public:
   CmdSendResult pause();
   CmdSendResult resume();
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
+  QString getCurrentError() { return this->getErrorString(current_error_); }
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -33,14 +33,6 @@ private:
   bool is_threading = false;
   bool should_flush_ = false;
   int buffer_size_ = 0;
-  enum class AlarmCode {
-    kNone = 0,
-    kMin = 1,
-    kHardLimit = 1,
-    kSoftLimit = 2,
-    kAbortCycle = 3,
-    kMax = 10,
-  };
   double current_x = 0.0;
   double current_y = 0.0;
   double current_f = 6000.0; // Default speed
@@ -50,7 +42,6 @@ private:
   void startCommandRunner();
   void commandRunnerThread();
   void dequeueCmd(int count);
-  QString getAlarmMsg(AlarmCode code);
+  QString getErrorString(int error_code);
+  int current_error_ = 0;
 };
-
-#endif // BSLMOTIONCONTROLLER_H

@@ -48,6 +48,7 @@ Q_SIGNALS:
   void notif(QString title, QString msg);
   void realTimeStatusUpdated(MotionControllerState state, qreal x, qreal y, qreal z);
   void disconnected();
+  void stateChanged(MotionControllerState state);
 
 public Q_SLOTS:
   virtual void respReceived(QString resp) = 0;
