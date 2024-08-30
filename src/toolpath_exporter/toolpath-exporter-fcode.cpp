@@ -778,6 +778,9 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
   } else {
     polygons_mutex_.lock();
     layer_polygons_.append(transformed_path.toSubpathPolygons());
+    if (is_v2_) {
+      preview_painter_->drawPath(transformed_path * getPreviewTransform());
+    }
     polygons_mutex_.unlock();
   }
 }
@@ -1689,7 +1692,7 @@ void ToolpathExporterFcode::writePreviewImage() {
   QByteArray byteArray;
   QBuffer buffer(&byteArray);
   output_image.save(&buffer, "PNG");
-  gen_->write_string("PREVIEW\n", 8);
+  gen_->write_string("PREV", 4);
   gen_->write_string(byteArray.data(), byteArray.size(), true);
 }
 
