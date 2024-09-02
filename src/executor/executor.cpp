@@ -27,6 +27,10 @@ void Executor::startThread() {
   }
 }
 
+void Executor::exec() {
+  qInfo() << this << "::exec() not implemented"; // This is needed to avoid crash in deconstructor calling exec_thread.join()
+}
+
 void Executor::execThread() {
   this->thread_enabled_ = true;
   while (this->thread_enabled_) {
