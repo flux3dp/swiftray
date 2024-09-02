@@ -45,9 +45,9 @@ void SwiftrayServer::processMessage(const QString& message) {
     QJsonValue params = data["params"];
     auto param_str = action == "loadSVG" ? "" : params.toString();
     if (param_str != "") {
-      qInfo() << "ws://" + action << "with params" << param_str;
-    } else {
-      qInfo() << "ws://" + action;
+      qInfo() << QTime::currentTime().toString("HH:mm:ss") << "ws://" + action << "with params" << param_str;
+    } else if (action != "getStatus" && action != "list") {
+      qInfo() << QTime::currentTime().toString("HH:mm:ss") << "ws://" + action;
     }
     
     if (path == "/devices") {
@@ -74,6 +74,7 @@ void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, 
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
   QJsonObject result;
   result["success"] = true;
+  qInfo() << "Device Specific action" << action;
 
   if (action == "connect") {
     // Implement device connection logic here
@@ -136,6 +137,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement device info retrieval logic
   } else if (action == "getPreview") {
     // Implement preview retrieval logic
+    qInfo() << "SwiftrayServer::getPreview()";
+    result["time_cost"] = this->m_time_cost; // Replace with actual time cost
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "upload") {
@@ -149,7 +152,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     Executor* executor = this->m_machine->getConsoleExecutor().data();
     this->m_machine->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") {
-    result["st_id"] = this->m_machine->getJobExecutor()->getStatusId();
+    result["st_id"] = this->m_machine->getStatusId();
     result["st_progress"] = this->m_machine->getJobExecutor()->getProgress() * 0.01f; 
   } else if (action == "home") {
     // Implement homing logic
@@ -234,6 +237,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
+    this->m_time_cost = total_required_time.second();
     // Debugging GCode
     if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
   } else if (action == "loadSettings") {
@@ -290,11 +294,17 @@ void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const Q
 QJsonArray SwiftrayServer::getDeviceList() {
   QJsonArray devices;
   if (lcs_available()) {
+    int st_id = 0;
+    QString sn = "ABC123";
+    if (this->m_machine != nullptr) {
+      st_id = this->m_machine->getStatusId();
+      sn = this->m_machine->getConfig("serial");
+    }
     devices.append(QJsonObject{
       {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
       {"name", "Promark Desktop"},
-      {"serial", "PD99KJOJIO13993"},
-      {"st_id", 0},
+      {"serial", sn},
+      {"st_id", st_id},
       {"version", "5.0.0"},
       {"model", "fpm1"},
       {"port", "/dev/ttyUSB0"},
