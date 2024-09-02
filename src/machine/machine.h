@@ -28,6 +28,7 @@ public:
   };
 
   explicit Machine(MachineSettings::MachineParam mach, QObject *parent = nullptr);
+  ~Machine();
 
   ConnectionState getConnectionState();
   bool applyMachineParam(MachineSettings::MachineParam mach);

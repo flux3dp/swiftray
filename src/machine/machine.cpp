@@ -38,6 +38,25 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   connect(job_executor_, &Executor::finished, this, &Machine::syncPosition); // Always sync the realtime position at the end of job
 }
 
+Machine::~Machine() {
+  qInfo() << this << "::~Machine()";
+  if (motion_controller_) {
+    motion_controller_->deleteLater();
+  }
+  if (job_executor_) {
+    job_executor_->deleteLater();
+  }
+  if (machine_setup_executor_) {
+    machine_setup_executor_->deleteLater();
+  }
+  if (rt_status_executor_) {
+    rt_status_executor_->deleteLater();
+  }
+  if (console_executor_) {
+    console_executor_->deleteLater();
+  }
+}
+
 Machine::ConnectionState Machine::getConnectionState() {
   return connect_state_;
 }
@@ -601,6 +620,7 @@ void Machine::handleConfigUpdate(QString key, QString value) {
 }
 
 QString Machine::getConfig(QString key) {
+  qInfo() << this << "::getConfig() - " << key << "has config" << machine_config_.contains(key);
   if (machine_config_.contains(key)) return machine_config_[key];
-  else "";
+  else return "";
 }
