@@ -31,7 +31,7 @@ void Executor::execThread() {
   this->thread_enabled_ = true;
   while (this->thread_enabled_) {
     this->exec_loop_count++;
-    if (this->exec_loop_count % 100 == 1) {
+    if (this->exec_loop_count % 1000 == 1) {
       qInfo() << this << "::threadFunction() alive @" << getDebugTime();
     }
     if (this->exec_wait > 0) {
@@ -101,7 +101,7 @@ void Executor::attachMotionController(QPointer<MotionController> motion_controll
   }
   qInfo() << this << "::attachMotionController()";
   motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::realTimeStatusUpdated, this, &Executor::handleMotionControllerStateUpdate);
+  connect(motion_controller_, &MotionController::statusUpdate, this, &Executor::handleMotionControllerStatusUpdate);
   connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
 }
 
@@ -117,6 +117,6 @@ void Executor::handleResume() {
   qInfo() << this << "::handleResume() not implemented";
 }
 
-void Executor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
-  qInfo() << this << "::handleMotionControllerStateUpdate() not implemented";
+void Executor::handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+  qInfo() << this << "::handleMotionControllerStatusUpdate() not implemented";
 }

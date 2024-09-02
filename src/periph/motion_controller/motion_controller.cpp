@@ -46,6 +46,7 @@ void MotionController::setState(MotionControllerState new_state) {
     qInfo() << "MotionController::setState(" << static_cast<int>(new_state) << ")";
     state_ = new_state;
     Q_EMIT stateChanged(state_);
+    Q_EMIT statusUpdate(state_, x_pos_, y_pos_, z_pos_);
   }
 }
 

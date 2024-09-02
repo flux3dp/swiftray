@@ -27,21 +27,23 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
+  void handleGcode(const QString &cmd_packet);
+  void startCommandRunner();
+  void commandRunnerThread();
+  void dequeueCmd(int count);
+  LCS2Error waitListAvailable(int list_no);
+  QString getErrorString(int error_code);
+
   QStringList pending_cmds_;
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false; 
   bool is_threading = false;
   bool should_flush_ = false;
+  bool lcs_paused_ = false;
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;
   double current_f = 6000.0; // Default speed
   std::thread command_runner_thread_;
-  void handleGcode(const QString &cmd_packet);
-  LCS2Error waitListAvailable(int list_no);
-  void startCommandRunner();
-  void commandRunnerThread();
-  void dequeueCmd(int count);
-  QString getErrorString(int error_code);
   int current_error_ = 0;
 };

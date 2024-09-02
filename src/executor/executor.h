@@ -41,7 +41,7 @@ protected Q_SLOTS:
   virtual void handlePaused();
   virtual void handleResume();
   virtual void handleStopped() = 0;
-  virtual void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos);
+  virtual void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos);
 
 private: 
   void execThread();

@@ -47,7 +47,7 @@ Q_SIGNALS:
   void respRcvd(QString resp);
   void resetDetected();
   void notif(QString title, QString msg);
-  void realTimeStatusUpdated(MotionControllerState state, qreal x, qreal y, qreal z);
+  void statusUpdate(MotionControllerState state, qreal x, qreal y, qreal z);
   void disconnected();
   void stateChanged(MotionControllerState state);
 

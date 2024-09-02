@@ -22,7 +22,7 @@ Q_SIGNALS:
 private Q_SLOTS:
   void exec() override;
   void handleStopped() override;
-  void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
+  void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
   void onStartWatchdog();
   void onStopWatchdog();
 

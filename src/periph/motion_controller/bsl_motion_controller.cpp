@@ -7,6 +7,7 @@
 #include <QThread>
 #include <executor/executor.h>
 #include <debug/debug-timer.h>
+#include <QApplication>
 #include <QtCore/qcoreapplication.h>
 
 #define MAX_BUFFER_LIST_SIZE 1000
@@ -72,6 +73,27 @@ void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLM~::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
   while (this->getState() != MotionControllerState::kQuit) {
     debug_count_bsl ++;
+    if (this->getState() == MotionControllerState::kPaused) {
+      if (!lcs_paused_) {
+        // First loop after pause
+        lcs_pause_list();
+        lcs_paused_ = true;
+      }
+      QThread::msleep(25); 
+      if (debug_count_bsl % 40 == 1) {
+        qInfo() << "BSLM~::thread() - paused";
+      }
+      continue;
+    } else {
+      if (lcs_paused_) { 
+        // First loop after resume
+        lcs_restart_list();
+        lcs_paused_ = false;
+        QThread::msleep(25); 
+        qInfo() << "BSLM~::thread() - resuming";
+        continue;
+      }
+    }
     if (this->getState() == MotionControllerState::kSleep) {
       QThread::msleep(25); 
       if (debug_count_bsl % 40 == 1) {
@@ -127,6 +149,10 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   LCS2Error ret = lcs_load_list(list_no, 0);
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
+    QThread::msleep(25);
+    if (lcs_paused_) {
+      continue;
+    }
     qInfo() << getErrorString(ret);
     ret = lcs_load_list(list_no, 0);
       // If the list is already opened, close the list, execute it
@@ -145,7 +171,6 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
       this->stop();
       break;
     }
-    QThread::msleep(25);
   }
   return ret;
 }
@@ -164,7 +189,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     }
 
     if (gcode == "?" || gcode == "?\n") {
-      Q_EMIT MotionController::realTimeStatusUpdated(state_, current_x, current_y, 0);
+      Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
       qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
       dequeueCmd(1);
       return;
@@ -176,8 +201,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     bool is_move_command = false;
     bool should_swap = false;
     bool should_end = false;
-    double x = is_absolute_positioning ? current_x : 0;
-    double y = is_absolute_positioning ? current_y : 0;
+    double x = is_absolute_positioning ? x_pos_ : 0;
+    double y = is_absolute_positioning ? y_pos_ : 0;
     double z = 0;
 
     QString command;
@@ -307,8 +332,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_execute_list(list_no);
       QThread::msleep(1);
 
-      // waitListAvailable(list_no); // Wait till the current list is done
-      // lcs_stop_execution();
       BoardRunStatus Status;
       do {
           uint32_t Pos;
@@ -336,28 +359,28 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       QThread::msleep(8000);
       dequeueCmd(1);
     } else if (is_move_command) {
-        double target_x, target_y;
-        if (is_absolute_positioning) {
-            target_x = x;
-            target_y = y;
-        } else {
-            target_x = current_x + x;
-            target_y = current_y + y;
-        }
+      double target_x, target_y;
+      if (is_absolute_positioning) {
+          target_x = x;
+          target_y = y;
+      } else {
+          target_x = x_pos_ + x;
+          target_y = y_pos_ + y;
+      }
 
-        if (laser_enabled && (command == "G1" || command.isEmpty())) {
-            // If target_x and target_y is near current_x and current_y, jump and mark, if too far, engrave multiple points
-            if ((pow(target_x - current_x, 2) + pow(target_y - current_y, 2)) > 0.1) {
-                lcs_mark_abs(-(target_y - 55), target_x - 55);
-            } else {
-                lcs_jump_abs(-(target_y - 55), target_x - 55);
-                lcs_laser_on_list(30);
-            }
-        } else {
-            lcs_jump_abs(-(target_y - 55), target_x - 55);
-        }
-        current_x = target_x;
-        current_y = target_y;
+      if (laser_enabled && (command == "G1" || command.isEmpty())) {
+          // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
+          if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
+              lcs_mark_abs(-(target_y - 55), target_x - 55);
+          } else {
+              lcs_jump_abs(-(target_y - 55), target_x - 55);
+              lcs_laser_on_list(30);
+          }
+      } else {
+          lcs_jump_abs(-(target_y - 55), target_x - 55);
+      }
+      x_pos_ = target_x;
+      y_pos_ = target_y;
     }
 }
 
@@ -398,13 +421,17 @@ void BSLMotionController::attachPortBSL() {
 }
 
 MotionController::CmdSendResult BSLMotionController::pause() {
-  setState(MotionControllerState::kSleep);
-  lcs_set_end_of_list();
-  lcs_stop_execution();
+  if (std::this_thread::get_id() == command_runner_thread_.get_id()) {
+    throw std::runtime_error("BSLM~::pause() - This function should not be called within the command runner thread");
+  }
+  setState(MotionControllerState::kPaused);
   return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::resume() {
+  if (std::this_thread::get_id() == command_runner_thread_.get_id()) {
+    throw std::runtime_error("BSLM~::pause() - This function should not be called within the command runner thread");
+  }
   setState(MotionControllerState::kRun);
   return CmdSendResult::kOk;
 }

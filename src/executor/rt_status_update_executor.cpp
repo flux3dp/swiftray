@@ -30,8 +30,8 @@ void RTStatusUpdateExecutor::exec() {
   exec_wait = 1500;
 }
 
-void RTStatusUpdateExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
-  qInfo() << "RTStatusUpdateExecutor::handleMotionControllerStateUpdate()";
+void RTStatusUpdateExecutor::handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+  qInfo() << "RTStatusUpdateExecutor::handleMotionControllerStatusUpdate()";
   Q_EMIT stopWatchdog();
 }
 

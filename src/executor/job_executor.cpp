@@ -64,6 +64,7 @@ void JobExecutor::startJob() {
  * 
  */
 void JobExecutor::handlePaused() {
+  qInfo() << "JobExecutor::handlePaused() @" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ == State::kRunning) {
     if (active_job_.isNull()) {
@@ -74,6 +75,7 @@ void JobExecutor::handlePaused() {
 }
 
 void JobExecutor::handleResume() {
+  qInfo() << "JobExecutor::handleResume() @" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ == State::kPaused) {
     if (active_job_.isNull()) {
@@ -281,10 +283,10 @@ void JobExecutor::reset() {
   changeState(State::kIdle);
 }
 
-void JobExecutor::handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+void JobExecutor::handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
   latest_mc_state_ = mc_state;
   if (latest_mc_state_ == MotionControllerState::kAlarm || latest_mc_state_ == MotionControllerState::kSleep) {
-    qInfo() << "Stopped by alarm or sleep";
+    qInfo() << "JobExecutor::handleMotionControllerStatusUpdate() - Alarm/Sleep";
     handleStopped();
   } else if (latest_mc_state_ == MotionControllerState::kIdle || latest_mc_state_ == MotionControllerState::kRun) { // from paused -> resumed
     handleResume();

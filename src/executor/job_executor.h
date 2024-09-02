@@ -30,7 +30,7 @@ private Q_SLOTS:
   void handleResume() override;
   void handleStopped() override;
   void exec() override;
-  void handleMotionControllerStateUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
+  void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
 
 Q_SIGNALS:
   void progressChanged(float prog);
