@@ -13,23 +13,6 @@ class RotaryTestJob : public MachineJob
 public:
   explicit RotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power,
                           QString job_name = "Rotary Test Job");
-
-  void setMotionController(QPointer<MotionController>);
-
-  std::shared_ptr<OperationCmd> getNextCmd() override;
-  bool end() const override;
-  void reload() override;
-  float getProgressPercent() const override;
-  Timestamp getElapsedTime() const override;
-  Timestamp getTotalRequiredTime() const override;
-  Timestamp getRemainingTime() const override;
-
-private:
-  qsizetype next_gcode_idx_ = 0;
-  QStringList gcode_list_;
-
-  QPointer<MotionController> motion_controller_;
-
 };
 
 #endif // ROTARY_TEST_JOB_H

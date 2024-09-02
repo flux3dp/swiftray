@@ -1,5 +1,4 @@
-#ifndef CONSOLEEXECUTOR_H
-#define CONSOLEEXECUTOR_H
+#pragma once
 
 #include <QObject>
 #include "executor.h"
@@ -7,29 +6,26 @@
 #include <QPointer>
 #include <QTimer>
 #include <memory>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 class ConsoleExecutor : public Executor
 {
+  Q_OBJECT
 public:
   explicit ConsoleExecutor(QObject *parent = nullptr);
-  void handleCmdFinish(int result_code) override;
 
-  void attachMotionController(QPointer<MotionController> motion_controller);
+  void handleCmdFinish(int result_code) override;
   void appendCmd(std::shared_ptr<OperationCmd> cmd);
 
-public Q_SLOTS:
-  void start() override;
+private Q_SLOTS:
   void exec() override;
-  void pause() override;
-  void resume() override;
-  void stop() override;
+  void handleStopped() override;
 
 private:
-  QPointer<MotionController> motion_controller_;
-  QTimer *exec_timer_;
   QList<std::shared_ptr<OperationCmd>> pending_cmd_;
   QList<std::shared_ptr<OperationCmd>> cmd_in_progress_;
 
+  std::mutex mutex_;
 };
-
-#endif // CONSOLEEXECUTOR_H

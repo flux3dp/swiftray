@@ -24,6 +24,7 @@ namespace Commands {
 
     // BaseCmd 
     BaseCmd() = default;
+    virtual ~BaseCmd() = default;
 
     virtual void undo(Document *doc) {
       Q_ASSERT_X(false, "Commands", "This command did not implement undo");

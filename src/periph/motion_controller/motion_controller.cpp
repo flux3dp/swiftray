@@ -38,14 +38,15 @@ void MotionController::attachSerialPort(QSerialPort *port) {
 }
 
 MotionControllerState MotionController::getState() const {
-  std::scoped_lock<std::mutex> lk(state_mutex_);
   return state_;
 };
 
 void MotionController::setState(MotionControllerState new_state) {
-  {
-    std::scoped_lock<std::mutex> lk(state_mutex_);
+  if (state_ != new_state) {
+    qInfo() << "MotionController::setState(" << static_cast<int>(new_state) << ")";
     state_ = new_state;
+    Q_EMIT stateChanged(state_);
+    Q_EMIT statusUpdate(state_, x_pos_, y_pos_, z_pos_);
   }
 }
 

@@ -23,7 +23,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 add_definitions(-DQT6)
 
 # CMake Debugging Settings
-set(CMAKE_FIND_DEBUG_MODE 1)
+# set(CMAKE_FIND_DEBUG_MODE 1)
 
 # Add additional file assets
 set(ICON_PATH "${CMAKE_SOURCE_DIR}/resources/images/")

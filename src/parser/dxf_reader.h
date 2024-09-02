@@ -1,8 +1,8 @@
 #ifndef DXFREADER_H
 #define DXFREADER_H
 
-#include <QList.h>
-#include <QString.h>
+#include <QList>
+#include <QString>
 #include <layer.h>
 
 #include "parser/dxf_rs/engine/rs_entitycontainer.h"

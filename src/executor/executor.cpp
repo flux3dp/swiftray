@@ -1,9 +1,45 @@
 #include "executor.h"
+#include <debug/debug-timer.h>
+#include <QDebug>
+#include <QThread>
+#include <thread>
 
 Executor::Executor(QObject *parent)
   : QObject{parent}
 {
 
+}
+
+Executor::~Executor() {
+  qInfo() << this << "::deconstructor()";
+  this->thread_enabled_ = false;
+  if (this->exec_thread_.joinable()) {
+    this->exec_thread_.join();
+  }
+}
+
+void Executor::startThread() {
+  qInfo() << this << "::startThread()";
+  if (!this->exec_thread_.joinable()) {
+    this->exec_thread_ = std::thread(&Executor::execThread, this);
+  } else {
+    qInfo() << this << "::exec_thread is already running";
+  }
+}
+
+void Executor::execThread() {
+  this->thread_enabled_ = true;
+  while (this->thread_enabled_) {
+    this->exec_loop_count++;
+    if (this->exec_loop_count % 1000 == 1) {
+      qInfo() << this << "::threadFunction() alive @" << getDebugTime();
+    }
+    if (this->exec_wait > 0) {
+      QThread::msleep(this->exec_wait);
+      this->exec_wait = 0;
+    }
+    this->exec();
+  }
 }
 
 size_t Executor::inProgressCmdCnt() {
@@ -53,4 +89,34 @@ QString Executor::stateToString(State state) {
     default:
       return tr("Undefined State");
   }
+}
+
+void Executor::attachMotionController(QPointer<MotionController> motion_controller) {
+  if (!motion_controller_.isNull()) {
+    // If already attached, detach first
+    disconnect(motion_controller_, nullptr, this, nullptr);
+    motion_controller_.clear();
+    handleStopped();
+    changeState(State::kIdle);
+  }
+  qInfo() << this << "::attachMotionController()";
+  motion_controller_ = motion_controller;
+  connect(motion_controller_, &MotionController::statusUpdate, this, &Executor::handleMotionControllerStatusUpdate);
+  connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
+}
+
+void Executor::handleCmdFinish(int result_code) {
+  qInfo() << this << "::handleCmdFinish() not implemented";
+}
+
+void Executor::handlePaused() {
+  qInfo() << this << "::handlePaused() not implemented";
+}
+
+void Executor::handleResume() {
+  qInfo() << this << "::handleResume() not implemented";
+}
+
+void Executor::handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
+  qInfo() << this << "::handleMotionControllerStatusUpdate() not implemented";
 }

@@ -4,12 +4,11 @@
 #include "operation_cmd.h"
 #include <executor/executor.h>
 
-class SyncExecCmd : public OperationCmd
-{
+class SyncExecCmd : public OperationCmd {
 public:
   explicit SyncExecCmd();
 
- ExecStatus execute(QPointer<Executor> executor) override;
+  ExecStatus execute(QPointer<Executor> executor, QPointer<MotionController> motion_controller) override;
 
 private:
   QPointer<Executor> executor_;

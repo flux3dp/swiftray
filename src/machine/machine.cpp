@@ -7,6 +7,7 @@
 
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller_factory.h>
+#include <periph/motion_controller/bsl_motion_controller.h>
 #include <executor/machine_job/gcode_job.h>
 #include <executor/machine_job/framing_job.h>
 #include <executor/machine_job/jogging_job.h>
@@ -14,6 +15,7 @@
 #include <executor/operation_cmd/grbl_cmd.h>
 #include <executor/operation_cmd/bsl_cmd.h>
 #include "liblcs/lcsExpr.h"
+#include <debug/debug-timer.h>
 
 Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   : QObject{parent}
@@ -28,7 +30,7 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   rt_status_executor_ = new RTStatusUpdateExecutor{this};
   console_executor_ = new ConsoleExecutor(motion_controller_);
 
-  connect(rt_status_executor_, &RTStatusUpdateExecutor::hanging, [=]() {
+  connect(rt_status_executor_, &RTStatusUpdateExecutor::timeout, [=]() {
     // TODO: Do something?
     qInfo() << "Realtime status updater hanging";
   });
@@ -89,16 +91,8 @@ bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestam
   }
 
   auto job = preview.width() > 0 ? QSharedPointer<GCodeJob>::create(gcode_list, preview) : QSharedPointer<GCodeJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
   job->setTimestampList(timestamp_list);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -113,17 +107,13 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
   }
-
+  if (!motion_controller_) {
+    return false;
+  }
+  if (motion_controller_->type() != "BSL") gcode_list.append("?"); // Request for realtime status update at the end of the job
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  if (motion_controller_->type() == "BSL") job->auto_loop = true; // If it's a galvanometer machine, run loop
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -142,15 +132,7 @@ bool Machine::createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate,
   }
 
   auto job = QSharedPointer<RotaryTestJob>::create(bbox, rotary_axis, feedrate, framing_power);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -176,15 +158,7 @@ bool Machine::createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist,
       std::get<1>(move), 
       feedrate
   );
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -207,14 +181,7 @@ bool Machine::createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> target_po
                                                         true, std::get<1>(target_pos), 
                                                         feedrate);
   job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -236,14 +203,7 @@ bool Machine::createJoggingXAbsoluteJob(std::tuple<qreal, qreal, qreal> target_p
                                                         false, 0, 
                                                         feedrate);
   job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -279,15 +239,7 @@ bool Machine::createJoggingCornerJob(int corner_id, qreal feedrate) {
   target_pos = canvasToMachineCoordConvert(target_pos, false);
   qInfo() << "target pos: " << std::get<0>(target_pos) << ", " << std::get<1>(target_pos);
   auto job = QSharedPointer<JoggingAbsoluteJob>::create(true, std::get<0>(target_pos), true, std::get<1>(target_pos), feedrate);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -337,15 +289,7 @@ bool Machine::createJoggingEdgeJob(int edge_id, qreal feedrate) {
   job = QSharedPointer<JoggingAbsoluteJob>::create(move_x, std::get<0>(target_machine_pos), 
                                                   move_y, std::get<1>(target_machine_pos), 
                                                   feedrate);
-  job->setMotionController(motion_controller_);
-  if (!job_executor_) {
-    return false;
-  }
-  if (!job_executor_->setNewJob(job)) {
-    return false;
-  }
-
-  return true;
+  return job_executor_ && job_executor_->setNewJob(job);
 }
 
 /**
@@ -397,6 +341,7 @@ void Machine::setupMotionController() {
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
   connect(motion_controller_, &MotionController::respRcvd, this, &Machine::logRcvd);
+  connect(motion_controller_, &MotionController::stateChanged, this, &Machine::handleMotionControllerStateChange);
 
 
   qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
@@ -422,18 +367,17 @@ void Machine::setupMotionController() {
   machine_setup_executor_->attachMotionController(motion_controller_);
   job_executor_->attachMotionController(motion_controller_);
   console_executor_->attachMotionController(motion_controller_);
-
   Q_EMIT connected();
-
-  machine_setup_executor_->start();
+  machine_setup_executor_->startThread();
 }
 
 void Machine::motionPortActivated() {
   qInfo() << "Machine::motionPortActivated()";
   connect_state_ = ConnectionState::kConnected;
   Q_EMIT activated();
-
-  rt_status_executor_->start();
+  rt_status_executor_->startThread();
+  console_executor_->startThread();
+  job_executor_->startThread();
 }
 
 void Machine::motionPortDisonnected() {
@@ -455,12 +399,24 @@ void Machine::startJob() {
     return;
   }
   qInfo() << "Machine::startJob()";
-  job_executor_->start();
+  if (motion_controller_->getState() != MotionControllerState::kIdle) {
+    qWarning() << "Machine::startJob() - motion controller is not idle";
+    if (!motion_controller_->resetState()) {
+      qWarning() << "Machine::startJob() - unable to reset motion controller";
+      return;
+    } else {
+      qWarning() << "Machine::startJob() - reset motion controller done";
+    }
+  }
+  qInfo() << "Machine::startJob() - final starting";
+  job_executor_->startJob();
 }
 
 void Machine::pauseJob() {
+  qInfo() << "Machine::pauseJob()";
   // Send pause cmd to motion controller
   if (console_executor_ && job_executor_) {
+    qInfo() << "Machine::pauseJob() - Actuator available, job state: " << (int)job_executor_->getState();
     if (job_executor_->getState() == Executor::State::kRunning) {
       // TODO: Add support other motion controller than grbl
       if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
@@ -477,9 +433,11 @@ void Machine::pauseJob() {
 }
 
 void Machine::resumeJob() {
+  qInfo() << "Machine::resumeJob()";
   // Send resume cmd to motion controller
   if (console_executor_ && job_executor_) {
     if (job_executor_->getState() == Executor::State::kPaused) {
+      qInfo() << "Machine::resumeJob() - Actuator available, job state: " << (int)job_executor_->getState();
       // TODO: Add support other motion controller than grbl
       if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
         console_executor_->appendCmd(
@@ -505,7 +463,7 @@ void Machine::stopJob() {
           GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset)
         );
       } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
-        qInfo() << "Machine::stopJob";
+        qInfo() << "Machine::stopJob() @" << getDebugTime();
         console_executor_->appendCmd(
           BSLCmdFactory::createBSLCmd(BSLCmdFactory::CmdType::kCtrlReset)
         );
@@ -616,4 +574,17 @@ bool Machine::isConnected() {
 
 void Machine::setSerialPort(QSerialPort &serial_port) {
   serial_port_ = &serial_port;
+}
+
+void Machine::handleMotionControllerStateChange(MotionControllerState state) {
+  qInfo() << "Machine::handleMotionControllerStateChange() - " << (int)state;
+  if (state == MotionControllerState::kAlarm) {
+    if (motion_controller_->type() == "BSL") {
+      BSLMotionController* bsl_mc = (BSLMotionController*)motion_controller_;
+      QMessageBox msgBox;
+      msgBox.setText("Laser alarm detected");
+      msgBox.setInformativeText(bsl_mc->getCurrentError());
+      msgBox.exec();
+    }
+  }
 }

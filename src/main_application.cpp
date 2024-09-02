@@ -5,6 +5,9 @@
 #include <shape/bitmap-shape.h>
 #include <shape/text-shape.h>
 #include <settings/preset-settings.h>
+#include <server/swiftray-server.h>
+#include <toolpath_exporter/toolpath-exporter.h>
+#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 
 #include <QApplication>
 #include <QDebug>
@@ -12,8 +15,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
+#include <QMessageBox>
 #include "globals.h"
-#include "server/swiftray-server.h"
 
 
 MainApplication *mainApp = NULL;
@@ -874,4 +877,200 @@ void MainApplication::updatePathSort(int path_sort) {
   QSettings settings("flux", "swiftray");
   settings.setValue("canvas/generating_rule", path_sort);
   Q_EMIT editPathSort(path_sort_);
+}
+
+void MainApplication::handleFraming() {
+  qInfo() << "MainApplication::handleFraming()";
+  // Make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Make sure port connected
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
+    Q_EMIT warningMessage(tr("Please connect to serial port first"));
+    return;
+  }
+  // Make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  // Generate gcode for framing
+  QTransform move_translate = calcMoveTransform();
+  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(this->getMachineParam(), this->isRotaryMode());
+  Document &doc = canvas_->document();
+  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+      doc.settings().dpmm(),
+      this->getTravelSpeed(),
+      end_point_,
+      ToolpathExporter::PaddingType::kNoPadding,
+      move_translate);
+  exporter.setSortRule(this->getPathSort());
+  exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
+  exporter.convertStack(doc.layers(), this->isHighSpeedMode(), this->getStartWithHome());
+
+  if (exporter.isExceedingBoundary()) {
+    Q_EMIT warningMessage(tr("Some items aren't placed fully inside the working area."));
+  }
+
+  // Again, make sure active machine and job executor exist, 
+  if (active_machine.getJobExecutor().isNull()) {
+    return;
+  }
+  // Again, make sure port connected
+  if (active_machine.getConnectionState() != Machine::ConnectionState::kConnected) {
+    return;
+  }
+  // Again, make sure no active job running
+  if (active_machine.getJobExecutor()->getActiveJob()) {
+    return;
+  }
+
+  gen_outline_scanning_gcode->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
+  gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
+  // Create Framing Job and start
+  if (active_machine.createFramingJob(QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) {
+    active_machine.startJob();
+  }
+  Q_EMIT jobAttached();
+  Q_EMIT progressChanged(tr("Framing"), tr("Cancel"), 50);
+  connect(this, &MainApplication::abortTaskSignal, &active_machine, &Machine::stopJob);
+}
+
+QTransform MainApplication::calcMoveTransform() {
+  int start_from = this->getStartFrom();
+  QTransform move_translate = QTransform();
+  QPoint target_point = this->calculateJobOrigin();
+  switch(start_from) {
+    case StartFrom::AbsoluteCoords:
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
+      break;
+    case StartFrom::CurrentPosition:
+      move_translate.translate(std::get<0>(active_machine.getCurrentPosition()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCurrentPosition()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCurrentPosition()), std::get<1>(active_machine.getCurrentPosition()));
+      break;
+    case StartFrom::UserOrigin:
+      move_translate.translate(std::get<0>(active_machine.getCustomOrigin()) * 10 - target_point.x(), 
+                              std::get<1>(active_machine.getCustomOrigin()) * 10 - target_point.y());
+      end_point_ = QPointF(std::get<0>(active_machine.getCustomOrigin()), std::get<1>(active_machine.getCustomOrigin()));
+      break;
+    default:
+      break;
+  }
+  if(this->isRotaryMode()) {
+    int direction = 1;
+    if(this->isMirrorMode()) {
+      direction = -1;
+    }
+    move_translate *= QTransform::fromScale(1,direction);
+    //to move obj into canvas
+    QRect rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    while(rect.top() < 0) {
+      move_translate.translate(0,this->getRotaryCircumference() * 10 * direction);
+      rect = move_translate.mapRect(canvas_->calculateShapeBoundary());
+    }
+    move_translate *= QTransform::fromScale(1, this->getRotaryScale());
+  }
+  return move_translate;
+}
+
+/**
+ * @brief Generate gcode from canvas and insert into gcode player (gcode editor)
+ */
+QString MainApplication::generateToolpath() {
+  Q_EMIT progressChanged(tr("Generating GCode..."), tr("Cancel"), 0);
+  Document &doc = canvas_->document();
+  GCodeGenerator generator(this->getMachineParam(), this->isRotaryMode());
+  QTransform move_translate = this->calcMoveTransform();
+  ToolpathExporter exporter(&generator,
+      doc.settings().dpmm(),
+      this->getTravelSpeed(),
+      this->end_point_,
+      ToolpathExporter::PaddingType::kFixedPadding,
+      move_translate);
+  connect(this, &MainApplication::abortTaskSignal, &exporter, &ToolpathExporter::handleCancel);
+  connect(&exporter, &ToolpathExporter::progressChanged, [=](int prog) { Q_EMIT progressChanged(tr("Generating GCode..."), tr("Cancel"), prog); });
+  exporter.setSortRule(this->getPathSort());
+  exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10));
+  if (!exporter.convertStack(doc.layers(), this->isHighSpeedMode(), this->getStartWithHome())) {
+    return ""; // cancelled
+  }
+  if (exporter.isExceedingBoundary()) {
+    Q_EMIT warningMessage(tr("Some items maybe overlap in rotary mode."));
+  }
+  if (this->isRotaryMode() && canvas_->calculateShapeBoundary().height() > canvas_->document().height()) {
+    Q_EMIT warningMessage(tr("Some items maybe overlap in rotary mode."));
+  }
+  
+  Q_EMIT progressChanged(tr("GCode generated"), tr("Close"), 101);
+  return QString::fromStdString(generator.toString());
+}
+
+QSharedPointer<PreviewGenerator> MainApplication::generatePreview() {
+  Q_EMIT progressChanged(tr("Generating Preview..."), tr("Cancel"), 0);
+  Document &doc = canvas_->document();
+  auto preview_generator = QSharedPointer<PreviewGenerator>::create(this->getMachineParam(), this->isRotaryMode());
+  QTransform move_translate = this->calcMoveTransform();
+  ToolpathExporter exporter(preview_generator.data(),
+                            doc.settings().dpmm(),
+                            this->getTravelSpeed(),
+                            this->end_point_,
+                            ToolpathExporter::PaddingType::kFixedPadding,
+                            move_translate);
+  connect(this, &MainApplication::abortTaskSignal, &exporter, &ToolpathExporter::handleCancel);
+  connect(&exporter, &ToolpathExporter::progressChanged, [=](int prog) { Q_EMIT progressChanged(tr("Generating Preview..."), tr("Cancel"), prog); });
+  exporter.setSortRule(this->getPathSort());
+  exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10));
+  Q_EMIT progressChanged(tr("Preview generated"), tr("Close"), 100);
+  if (exporter.convertStack(doc.layers(), mainApp->isHighSpeedMode(), mainApp->getStartWithHome())) {
+    return preview_generator;
+  } else {
+    return QSharedPointer<PreviewGenerator>();
+  }
+}
+
+void MainApplication::handleCancel() {
+  qInfo() << "MainApplication::handleCancel()";
+  // Receive cancel signal, rewiring the signal to exporters
+  Q_EMIT abortTaskSignal();
+}
+
+QPoint MainApplication::calculateJobOrigin() {
+  //to get shape bounding
+  QRect rect = canvas_->calculateShapeBoundary();
+  int job_origin = this->getJobOrigin();
+  QPoint target_point;
+  switch(job_origin) {
+    case JobOrigin::NW:
+      target_point = QPoint(rect.left(), rect.top());
+      break;
+    case JobOrigin::N:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top());
+      break;
+    case JobOrigin::NE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top());
+      break;
+    case JobOrigin::E:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height()/2.0);
+      break;
+    case JobOrigin::SE:
+      target_point = QPoint(rect.left() + rect.width(), rect.top() + rect.height());
+      break;
+    case JobOrigin::S:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height());
+      break;
+    case JobOrigin::SW:
+      target_point = QPoint(rect.left(), rect.top() + rect.height());
+      break;
+    case JobOrigin::W:
+      target_point = QPoint(rect.left(), rect.top() + rect.height()/2.0);
+      break;
+    case JobOrigin::CENTER:
+      target_point = QPoint(rect.left() + rect.width()/2.0, rect.top() + rect.height()/2.0);
+      break;
+    default:
+      break;
+  }
+  return target_point;
 }

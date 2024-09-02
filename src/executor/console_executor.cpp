@@ -1,51 +1,32 @@
 #include "console_executor.h"
-
+#include <debug/debug-timer.h>
 #include <QDebug>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
-ConsoleExecutor::ConsoleExecutor(QObject *parent)
-  : Executor{parent}
+ConsoleExecutor::ConsoleExecutor(QObject *parent): Executor{parent}
 {
   qInfo() << "ConsoleExecutor created";
-  exec_timer_ = new QTimer(this);
-  connect(exec_timer_, &QTimer::timeout, this, &ConsoleExecutor::exec);
-}
-
-void ConsoleExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
-  if (!motion_controller_.isNull()) {
-    // If already attached, detach first
-    disconnect(motion_controller_, nullptr, this, nullptr);
-    motion_controller_.clear();
-    stop();
-  }
-  motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::disconnected,
-          this, &ConsoleExecutor::stop);
-}
-
-void ConsoleExecutor::start() {
-  stop();
-
-  qInfo() << "ConsoleExecutor::start()";
-  exec_timer_->start(100);
 }
 
 void ConsoleExecutor::exec() {
-  qInfo() << "ConsoleExecutor exec()";
-
-  if (pending_cmd_.isEmpty()) {
-    exec_timer_->stop();
-    return;
-  }
-
   if (motion_controller_.isNull()) {
-    stop();
+    handleStopped();
+    this->exec_wait = 1000;
     return;
   }
+  
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (pending_cmd_.isEmpty()) {
+    this->exec_wait = 100;
+    return;
+  }
+  qInfo() << "ConsoleExecutor::exec()" << getDebugTime();
 
   OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // retry later
-    exec_timer_->stop();
   } else if (exec_status == OperationCmd::ExecStatus::kError) {
     pending_cmd_.pop_front();
   } else if (exec_status == OperationCmd::ExecStatus::kOk) {
@@ -54,24 +35,16 @@ void ConsoleExecutor::exec() {
     cmd_in_progress_.push_back(pending_cmd_.first());
     pending_cmd_.pop_front();
   }
-  
 }
 
-void ConsoleExecutor::pause() {
-
-}
-
-void ConsoleExecutor::resume() {
-  
-}
-
-void ConsoleExecutor::stop() {
-  exec_timer_->stop();
+void ConsoleExecutor::handleStopped() {
+  std::lock_guard<std::mutex> lock(mutex_);
   pending_cmd_.clear();
   cmd_in_progress_.clear();
 }
 
 void ConsoleExecutor::handleCmdFinish(int result_code) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!cmd_in_progress_.isEmpty()) {
     if (result_code == 0) {
       cmd_in_progress_.first()->succeed();
@@ -80,12 +53,10 @@ void ConsoleExecutor::handleCmdFinish(int result_code) {
     }
     cmd_in_progress_.pop_front();
   }
-  return ;
 }
 
 void ConsoleExecutor::appendCmd(std::shared_ptr<OperationCmd> cmd) {
+  qInfo() << "ConsoleExecutor::appendCmd()" << getDebugTime();
+  std::lock_guard<std::mutex> lock(mutex_);
   pending_cmd_.push_back(cmd);
-  if (!exec_timer_->isActive()) {
-    exec_timer_->start();
-  }
 }

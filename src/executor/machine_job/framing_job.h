@@ -13,23 +13,6 @@ class FramingJob : public MachineJob
 public:
   explicit FramingJob(QStringList gcode_list, QString job_name = "FramingJob");
   explicit FramingJob(QString gcodes, QString job_name = "FramingJob");
-
-  void setMotionController(QPointer<MotionController>);
-
-  std::shared_ptr<OperationCmd> getNextCmd() override;
-  bool end() const override;
-  void reload() override;
-  float getProgressPercent() const override;
-  Timestamp getElapsedTime() const override;
-  Timestamp getTotalRequiredTime() const override;
-  Timestamp getRemainingTime() const override;
-
-private:
-  qsizetype next_gcode_idx_ = 0;
-  QStringList gcode_list_;
-
-  QPointer<MotionController> motion_controller_;
-
 };
 
 #endif // FRAMINGJOB_H

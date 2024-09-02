@@ -216,7 +216,7 @@ PreviewGenerator *PreviewWindow::previewPath() const {
   return preview_path_.get();
 }
 
-void PreviewWindow::setPreviewPath(std::shared_ptr<PreviewGenerator> &preview_path) {
+void PreviewWindow::setPreviewPath(QSharedPointer<PreviewGenerator> &preview_path) {
   preview_path_ = preview_path;
   ui->progress->setMaximum(preview_path_->paths().size());
   ui->progress->setValue(preview_path_->paths().size());

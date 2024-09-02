@@ -58,12 +58,16 @@ void JobDashboardDialog::registerEvents() {
     if (job_state_ == Executor::State::kIdle ||
         job_state_ == Executor::State::kCompleted ||
         job_state_ == Executor::State::kStopped) {
+      qInfo() << "JobDashboardDialog::startBtnClicked(), job_state: " << static_cast<int>(job_state_);
       Q_EMIT startBtnClicked(); // try to start a new job
     } else if (job_state_ == Executor::State::kRunning) {
+      qInfo() << "JobDashboardDialog::pauseBtnClicked()";
       Q_EMIT pauseBtnClicked();
     } else if (job_state_ == Executor::State::kPaused) {
+      qInfo() << "JobDashboardDialog::resumeBtnClicked()";
       Q_EMIT resumeBtnClicked();
     }
+    qInfo() << "JobDashboardDialog::startBtnClicked() - end";
   });
   connect(ui->stopBtn, &QToolButton::clicked, this, &JobDashboardDialog::stopBtnClicked);
 }
@@ -85,6 +89,7 @@ QPixmap JobDashboardDialog::getPreview() {
 }
 
 void JobDashboardDialog::onJobStateChanged(Executor::State state) {
+  qInfo() << "JobDashboardDialog::onJobStateChanged(" << static_cast<int>(state) << ")";
   job_state_ = state;
 
   ui->statusLabel->setText(Executor::stateToString(job_state_));

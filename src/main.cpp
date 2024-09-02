@@ -12,6 +12,7 @@
 #include <windows/osxwindow.h>
 #include <windows/mainwindow.h>
 #include <string>
+#include <debug/debug-timer.h>
 
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
@@ -34,7 +35,7 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  qInfo() << "Initiating Swiftray...";
+  qInfo() << "Swiftray starting..."  << getDebugTime();
   qInfo() << "Qt version:" << QT_VERSION_STR;
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);

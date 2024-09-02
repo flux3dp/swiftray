@@ -55,11 +55,6 @@ public:
   QPointer<RTStatusUpdateExecutor> getRTStatusUpdateExecutor() const { return rt_status_executor_; }
 
 public Q_SLOTS:
-  void motionPortActivated();  // Motion controller working
-  void motionPortDisonnected();// Closed
-
-  void handleNotif(QString title, QString msg);
-
   void startJob();
   void pauseJob();
   void resumeJob();
@@ -74,7 +69,13 @@ Q_SIGNALS:
   void logSent(QString);
   void logRcvd(QString);
 
-protected:
+private Q_SLOTS:
+  void motionPortActivated();
+  void motionPortDisonnected();
+  void handleMotionControllerStateChange(MotionControllerState state);
+  void handleNotif(QString title, QString msg);
+
+private:
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
   QSerialPort *serial_port_ = nullptr;

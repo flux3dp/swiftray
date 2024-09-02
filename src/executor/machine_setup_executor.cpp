@@ -1,5 +1,4 @@
 #include "machine_setup_executor.h"
-
 #include "operation_cmd/grbl_cmd.h"
 #include "operation_cmd/gcode_cmd.h"
 #include <QDebug>
@@ -8,53 +7,18 @@ MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
   : Executor{parent}
 {
   qInfo() << "MachineSetupExecutor created";
-  exec_timer_ = new QTimer(this);
-  connect(exec_timer_, &QTimer::timeout, this, &MachineSetupExecutor::exec);
-  connect(this, &MachineSetupExecutor::trigger, this, &MachineSetupExecutor::wakeUp);
-}
-
-void MachineSetupExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
-  if (!motion_controller_.isNull()) {
-    // If already attached, detach first
-    disconnect(motion_controller_, nullptr, this, nullptr);
-    motion_controller_.clear();
-    stop();
-  }
-  motion_controller_ = motion_controller;
-  connect(motion_controller_, &MotionController::disconnected,
-          this, &MachineSetupExecutor::stop);
-  connect(motion_controller_, &MotionController::cmdFinished,
-        this, [=](QPointer<Executor> executor){
-    if (executor.data() == this) {
-      handleCmdFinish(0);
-    }
-  });
-}
-
-void MachineSetupExecutor::start() {
-  stop();
-  qInfo() << "MachineSetupExecutor::start()";
-  pending_cmd_.clear();
-  if (motion_controller_->type() != "BSL") {
-    // Force a soft reset at the start of machine setup
-    pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset));
-    pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
-
-    exec_timer_->start(200);
-  } else {
-    // pending_cmd_.push_back(std::make_shared<GCodeCmd>("M6"));
-    // for(int i = 0; i < 30; i++) {
-    //   pending_cmd_.push_back(std::make_shared<GCodeCmd>("Z10F600"));
-    // }
-    exec_timer_->start(10);
-  }
 }
 
 void MachineSetupExecutor::exec() {
+  if (this->finished_) {
+    exec_wait = 1000;
+    return;
+  }
   qInfo() << "MachineSetupExecutor exec(), pending command" << pending_cmd_.size();
 
   if (motion_controller_.isNull()) {
-    stop();
+    handleStopped();
+    exec_wait = 1000;
     return;
   }
 
@@ -68,14 +32,12 @@ void MachineSetupExecutor::exec() {
   //   "$X": unlock immediately
   if (pending_cmd_.isEmpty()) {
     if (cmd_in_progress_.isEmpty()) {
-      exec_timer_->stop();
-      // finish
-      Q_EMIT Executor::finished();
-      return;
-    } else {
-      exec_timer_->stop(); // sleep until next trigger
-      return;
+      if (!this->finished_) {
+        Q_EMIT Executor::finished();
+        this->finished_ = true;
+      }
     }
+    return; // Skip if no pending command
   }
 
   OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
@@ -91,16 +53,7 @@ void MachineSetupExecutor::exec() {
   
 }
 
-void MachineSetupExecutor::pause() {
-
-}
-
-void MachineSetupExecutor::resume() {
-  
-}
-
-void MachineSetupExecutor::stop() {
-  exec_timer_->stop();
+void MachineSetupExecutor::handleStopped() {
   pending_cmd_.clear();
   cmd_in_progress_.clear();
 }
@@ -118,17 +71,23 @@ void MachineSetupExecutor::handleCmdFinish(int result_code) {
       cmd_in_progress_.first()->fail();
     }
     cmd_in_progress_.pop_front();
-  }  
-  Q_EMIT trigger();
+  } 
   return ;
 }
 
-/**
- * @brief Wake up the work horse timer
- * 
- */
-void MachineSetupExecutor::wakeUp() {
-  if (!exec_timer_->isActive()) {
-    exec_timer_->start();
+void MachineSetupExecutor::attachMotionController(QPointer<MotionController> motion_controller) {
+  pending_cmd_.clear();
+  cmd_in_progress_.clear();
+  this->finished_ = false;
+  Executor::attachMotionController(motion_controller);
+  this->pending_cmd_.clear();
+  // Append commands to be executed base on motion controller type
+  if (motion_controller->type() != "BSL") {
+    // Force a soft reset at the start of machine setup
+    this->pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kCtrlReset));
+    this->pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
+    exec_wait = 100;
+  } else {
+    exec_wait = 0;
   }
 }

@@ -25,7 +25,7 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
  * @retval true if completed,
  *         false if canceled or error occurred
  */
-bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog) {
+bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home) {
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
@@ -48,12 +48,6 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 
   bitmap_dirty_area_ = QRectF();
 
-  bool canceled = false;
-  if (dialog != nullptr) {
-    connect(dialog, &QProgressDialog::canceled, [&]() {
-      canceled = true;
-    });
-  }
   int processed_layer_cnt = 0;
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
@@ -62,23 +56,21 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
         convertLayer((*layer_rit));
       }
     }
-    if (canceled) {
+    if (this->cancelled_) {
       break;
     }
     processed_layer_cnt++;
-    if (dialog != nullptr) {
-      dialog->setValue(100 * processed_layer_cnt / layers.count());
-      QCoreApplication::processEvents();
-    }
+    Q_EMIT progressChanged(100 * processed_layer_cnt / layers.count());
+    QCoreApplication::processEvents();
   }
   
-  if (canceled) {
+  if (this->cancelled_) {
     return false;
   }
 
   gen_->finishProgramFlow();
   
-  if (canceled) {
+  if (this->cancelled_) {
     return false;
   }
 
@@ -885,4 +877,8 @@ inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power,
 inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power, double x_backlash) {
   gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
   current_pos_mm_ = dest;
+}
+
+void ToolpathExporter::handleCancel() {
+  this->cancelled_ = true;
 }

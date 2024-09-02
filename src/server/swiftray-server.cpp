@@ -219,7 +219,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
     //
-    if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true, nullptr)) {
+    if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
       return false; // canceled
     }
     if (exporter.isExceedingBoundary()) {
@@ -258,6 +258,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
   }
 
   sendCallback(socket, id, result);
+  return true;
 }
 
 void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {

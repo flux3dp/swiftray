@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include "executor.h"
-#include <periph/motion_controller/motion_controller.h>
 #include <QPointer>
 #include <QTimer>
 
@@ -12,28 +11,23 @@ class RTStatusUpdateExecutor : public Executor
   Q_OBJECT
 public:
   explicit RTStatusUpdateExecutor(QObject *parent = nullptr);
-  void handleCmdFinish(int) override;
+  void handleCmdFinish(int) override {};
 
-  void attachMotionController(QPointer<MotionController> motion_controller);
-
-public Q_SLOTS:
-  void start() override;
-  void exec() override;
-  void pause() override;
-  void resume() override;
-  void stop() override;
-
-  void onReportRcvd();
 
 Q_SIGNALS:
-  void hanging();
+  void timeout();
+  void startWatchdog();
+  void stopWatchdog();
+
+private Q_SLOTS:
+  void exec() override;
+  void handleStopped() override;
+  void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;
+  void onStartWatchdog();
+  void onStopWatchdog();
 
 private:
-
-  QPointer<MotionController> motion_controller_;
-  bool hanging_ = false;
-  QTimer *exec_timer_;
-  QTimer *hangning_detect_timer_;
+  QTimer *watchdog_timer_;
 };
 
 #endif // RTSTATUSUPDATEEXECUTOR_H

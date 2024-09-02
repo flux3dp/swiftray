@@ -28,7 +28,7 @@ public:
 
   ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
 
-  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home, QProgressDialog* dialog = nullptr);
+  bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home);
 
   void setWorkAreaSize(QRectF work_area) { machine_work_area_mm_ = work_area; }
 
@@ -41,6 +41,12 @@ public:
       kUnidirectionMode
   };
 
+Q_SIGNALS:
+  void progressChanged(int value);
+
+public Q_SLOTS:
+  void handleCancel();
+ 
 private:
   void convertLayer(const LayerPtr &layer);
 
@@ -104,5 +110,6 @@ private:
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
   bool with_image_ = false;
+  bool cancelled_ = false;
   PathSort sort_rule_;
 };
