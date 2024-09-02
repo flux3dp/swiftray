@@ -47,6 +47,8 @@ public:
   void setSerialPort(QSerialPort &serial_port);
   bool connectSerial(QString portName, int baudrate);
   void disconnect();
+  int getStatusId();
+  QString getConfig(QString key);
   std::tuple<qreal, qreal, qreal> getCustomOrigin();
   std::tuple<qreal, qreal, qreal> getCurrentPosition();
   QPointer<MotionController> getMotionController() const { return motion_controller_; }
@@ -74,6 +76,7 @@ private Q_SLOTS:
   void motionPortDisonnected();
   void handleMotionControllerStateChange(MotionControllerState state);
   void handleNotif(QString title, QString msg);
+  void handleConfigUpdate(QString key, QString value);
 
 private:
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
@@ -108,6 +111,7 @@ private:
   std::tuple<qreal, qreal, qreal> machineToCanvasCoordConvert(std::tuple<qreal, qreal, qreal> pos, bool relative);
 
   void setupMotionController();  // Opened but not check
+  QMap<QString, QString> machine_config_;
 };
 
 #endif // MACHINE_H

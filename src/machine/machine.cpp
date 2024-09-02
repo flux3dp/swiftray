@@ -342,6 +342,7 @@ void Machine::setupMotionController() {
   connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
   connect(motion_controller_, &MotionController::respRcvd, this, &Machine::logRcvd);
   connect(motion_controller_, &MotionController::stateChanged, this, &Machine::handleMotionControllerStateChange);
+  connect(motion_controller_, &MotionController::configUpdate, this, &Machine::handleConfigUpdate);
 
 
   qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
@@ -587,4 +588,19 @@ void Machine::handleMotionControllerStateChange(MotionControllerState state) {
       msgBox.exec();
     }
   }
+}
+
+int Machine::getStatusId() {
+  if (job_executor_) return job_executor_->getStatusId();
+  return -1;
+}
+
+void Machine::handleConfigUpdate(QString key, QString value) {
+  qInfo() << "Machine::handleConfigUpdate() - " << key << " : " << value;
+  machine_config_[key] = value;
+}
+
+QString Machine::getConfig(QString key) {
+  if (machine_config_.contains(key)) return machine_config_[key];
+  else "";
 }

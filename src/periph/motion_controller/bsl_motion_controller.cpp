@@ -291,6 +291,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo("MTOWER: Moving to Tower");
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
+    } else if (command == "M99" ) {
+      char sn[50];
+      lcs_get_serial_number(sn, 32);
+      qInfo() << "BSLM~::handleGcode() - Serial Number: " << sn;
+      Q_EMIT configUpdate("SN", sn);
+      dequeueCmd(1);
     } else if (!is_move_command) {
       dequeueCmd(1);
       return;

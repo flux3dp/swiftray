@@ -88,6 +88,8 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
     this->pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
     exec_wait = 100;
   } else {
-    exec_wait = 0;
+    auto cmd = std::make_shared<GCodeCmd>("M99");
+    this->pending_cmd_.push_back(cmd);
+    exec_wait = 10;
   }
 }
