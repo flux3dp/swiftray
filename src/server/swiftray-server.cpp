@@ -151,9 +151,9 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     QString gcode = params.toObject()["gcode"].toString();
     Executor* executor = this->m_machine->getConsoleExecutor().data();
     this->m_machine->getMotionController()->sendCmdPacket(executor, gcode);
-  } else if (action == "getStatus") {
+  } else if (action == "getStatus") { // The old "play report" action in Beam Studio
     result["st_id"] = this->m_machine->getStatusId();
-    result["st_progress"] = this->m_machine->getJobExecutor()->getProgress() * 0.01f; 
+    result["prog"] = this->m_machine->getJobExecutor()->getProgress() * 0.01f; 
   } else if (action == "home") {
     // Implement homing logic
   } else {
@@ -295,16 +295,19 @@ QJsonArray SwiftrayServer::getDeviceList() {
   QJsonArray devices;
   if (lcs_available()) {
     int st_id = 0;
+    float st_prog = 0.0f;
     QString sn = "ABC123";
     if (this->m_machine != nullptr) {
       st_id = this->m_machine->getStatusId();
       sn = this->m_machine->getConfig("serial");
+      st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
     }
     devices.append(QJsonObject{
       {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
       {"name", "Promark Desktop"},
       {"serial", sn},
       {"st_id", st_id},
+      {"st_prog", st_prog},
       {"version", "5.0.0"},
       {"model", "fpm1"},
       {"port", "/dev/ttyUSB0"},
