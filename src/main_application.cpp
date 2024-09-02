@@ -880,6 +880,7 @@ void MainApplication::updatePathSort(int path_sort) {
 }
 
 void MainApplication::handleFraming() {
+  qInfo() << "MainApplication::handleFraming()";
   // Make sure active machine and job executor exist, 
   if (active_machine.getJobExecutor().isNull()) {
     return;
@@ -932,6 +933,8 @@ void MainApplication::handleFraming() {
     active_machine.startJob();
   }
   Q_EMIT jobAttached();
+  Q_EMIT progressChanged(tr("Framing"), tr("Cancel"), 50);
+  connect(this, &MainApplication::abortTaskSignal, &active_machine, &Machine::stopJob);
 }
 
 QTransform MainApplication::calcMoveTransform() {
@@ -1028,6 +1031,7 @@ QSharedPointer<PreviewGenerator> MainApplication::generatePreview() {
 }
 
 void MainApplication::handleCancel() {
+  qInfo() << "MainApplication::handleCancel()";
   // Receive cancel signal, rewiring the signal to exporters
   Q_EMIT abortTaskSignal();
 }
