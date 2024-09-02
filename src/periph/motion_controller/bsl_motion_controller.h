@@ -13,6 +13,7 @@ class BSLMotionController : public MotionController
 {
 public:
   BSLMotionController(QObject *parent = nullptr);
+  ~BSLMotionController();
   void attachPortBSL();
   bool detachPort() override;
   bool resetState() override;

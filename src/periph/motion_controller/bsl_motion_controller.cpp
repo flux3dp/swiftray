@@ -62,6 +62,15 @@ BSLMotionController::BSLMotionController(QObject *parent)
   this->setState(MotionControllerState::kIdle);
 }
 
+BSLMotionController::~BSLMotionController() {
+  qInfo() << "BSLM~::~BSLMotionController()";
+  setState(MotionControllerState::kQuit);
+  if (this->command_runner_thread_.joinable()) {
+    this->command_runner_thread_.join();
+  }
+  qInfo() << "BSLM~::~BSLMotionController() - done";
+}
+
 void BSLMotionController::startCommandRunner() {
   qInfo() << "BSLM~::startCommandRunner()";
   this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunnerThread, this);
@@ -73,62 +82,60 @@ void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLM~::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
   while (this->getState() != MotionControllerState::kQuit) {
     debug_count_bsl ++;
-    if (this->getState() == MotionControllerState::kPaused) {
-      if (!lcs_paused_) {
-        // First loop after pause
-        lcs_pause_list();
-        lcs_paused_ = true;
-      }
-      QThread::msleep(25); 
-      if (debug_count_bsl % 40 == 1) {
-        qInfo() << "BSLM~::thread() - paused";
-      }
-      continue;
-    } else {
-      if (lcs_paused_) { 
-        // First loop after resume
-        lcs_restart_list();
-        lcs_paused_ = false;
+    switch (this->getState()) {
+      case MotionControllerState::kPaused:
+        if (!lcs_paused_) {
+          // First loop after pause
+          lcs_pause_list();
+          lcs_paused_ = true;
+        }
         QThread::msleep(25); 
-        qInfo() << "BSLM~::thread() - resuming";
-        continue;
-      }
+        if (debug_count_bsl % 40 == 1) {
+          qInfo() << "BSLM~::thread() - paused";
+        }
+        break;
+      case MotionControllerState::kSleep:
+        if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Sleeping State";
+        QThread::msleep(25); 
+        break;
+      case MotionControllerState::kAlarm:
+        if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Alarm State" << getErrorString(current_error_);
+        QThread::msleep(25); 
+        break;
+      case MotionControllerState::kIdle:
+      case MotionControllerState::kRun:
+        if (lcs_paused_) { 
+          // First loop after resume
+          lcs_restart_list();
+          lcs_paused_ = false;
+          QThread::msleep(25); 
+          qInfo() << "BSLM~::thread() - resuming";
+        }
+        this->cmd_list_mutex_.lock();
+        if (this->pending_cmds_.empty()) {
+          if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - No pending commands, wait for a while";
+          this->cmd_list_mutex_.unlock();
+          this->should_flush_ = this->buffer_size_ > 0;
+          setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
+          QThread::msleep(1000);
+        } else {
+          if (debug_count_bsl % 1000 == 1) {
+            qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
+          }
+          setState(MotionControllerState::kRun); // Set state to running if there are pending commands
+          QString cmd = this->pending_cmds_.front();
+          this->pending_cmds_.pop_front();
+          this->cmd_list_mutex_.unlock();
+          this->handleGcode(cmd);
+        }
+        break;
+      case MotionControllerState::kCheck:
+      case MotionControllerState::kUnknown:
+      default:
+        qInfo() << "BSLM~::thread() - Invalid state" << getDebugTime();
+        setState(MotionControllerState::kAlarm);
+        break;
     }
-    if (this->getState() == MotionControllerState::kSleep) {
-      QThread::msleep(25); 
-      if (debug_count_bsl % 40 == 1) {
-        qInfo() << "BSLM~::thread() - Sleeping State";
-      }
-      continue;
-    }
-    if (this->getState() == MotionControllerState::kAlarm) {
-      QThread::msleep(25); 
-      if (debug_count_bsl % 40 == 1) {
-        qInfo() << "BSLM~::thread() - Alarming State" << getErrorString(current_error_);
-      }
-      continue;
-    }
-    this->cmd_list_mutex_.lock();
-    if (this->pending_cmds_.empty()) {
-      if (debug_count_bsl % 30 == 1) {
-        qInfo() << "BSLM~::thread() - No pending commands, wait for a while";
-      }
-      this->cmd_list_mutex_.unlock();
-      if (this->buffer_size_ > 0) {
-        this->should_flush_ = true;
-      }
-      setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
-      QThread::msleep(1000);
-      continue;
-    }
-    if (debug_count_bsl % 1000 == 1) {
-      qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
-    }
-    setState(MotionControllerState::kRun); // Set state to running if there are pending commands
-    QString cmd = this->pending_cmds_.front();
-    this->pending_cmds_.pop_front();
-    this->cmd_list_mutex_.unlock();
-    this->handleGcode(cmd);
   }
 }
 
