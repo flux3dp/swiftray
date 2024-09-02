@@ -6,6 +6,7 @@
 #include <cmath>
 #include <canvas/canvas.h>
 #include <toolpath_exporter/toolpath-exporter.h>
+#include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include "liblcs/lcsExpr.h"
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
@@ -174,6 +175,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     QJsonObject params_obj = params.toObject();
     QJsonObject wrapped_file = params_obj["file"].toObject();
     QString svg_data = wrapped_file["data"].toString().toUtf8();
+    m_thumbnail = wrapped_file["thumbnail"].toString();
     m_rotary_mode = params_obj["rotaryMode"].toBool();
     m_engrave_dpi = params_obj["engraveDpi"].toInt();
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
@@ -189,6 +191,17 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
+    if (type == "fcode") {
+      QTransform move_translate = QTransform();
+      ToolpathExporterFcode exporter(move_translate, m_engrave_dpi, &params_obj, &m_thumbnail);
+      bool completed = exporter.convertStack(m_canvas->document().layers(), nullptr);
+      if (!completed) {
+        return false;
+      }
+      result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
+      result["fileName"] = "swiftray-conversion";
+      result["timeCost"] = exporter.getTimeCost();
+    } else {
     bool enable_high_speed = type == "fcode" && (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode);
     // Generate GCode
     GCodeGenerator gen(machine_param, m_rotary_mode);
@@ -236,6 +249,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
     // Debugging GCode
     if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
+    }
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {

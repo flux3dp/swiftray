@@ -116,6 +116,26 @@ double Layer::stepHeight() const { return step_height_; }
 
 double Layer::targetHeight() const { return target_height_; }
 
+int Layer::module() const { return module_; }
+
+float Layer::focus() const { return focus_; }
+
+float Layer::focusStep() const { return focus_step_; }
+
+float Layer::printingStrength() const { return printing_strength_; }
+
+double Layer::printingSpeed() const { return printing_speed_; }
+
+int Layer::uv() const { return uv_; }
+
+int Layer::halftone() const { return halftone_; }
+
+int Layer::multipass() const { return multipass_; }
+
+int Layer::ink() const { return ink_; }
+
+double Layer::minPower() const { return min_power_; }
+
 Layer::Type Layer::type() const { return type_; }
 
 Document &Layer::document() {
@@ -183,6 +203,46 @@ void Layer::setUseDiode(bool is_diode) {
 
 void Layer::setStepHeight(double step_height) {
   step_height_ = step_height;
+}
+
+void Layer::setModule(int module) {
+  module_ = module;
+}
+
+void Layer::setFocus(float focus) {
+  focus_ = focus;
+}
+
+void Layer::setFocusStep(float focus_step) {
+  focus_step_ = focus_step;
+}
+
+void Layer::setPrintingStrength(float printing_strength) {
+  printing_strength_ = printing_strength;
+}
+
+void Layer::setPrintingSpeed(double printing_speed) {
+  printing_speed_ = printing_speed;
+}
+
+void Layer::setUv(int uv) {
+  uv_ = uv;
+}
+
+void Layer::setHalftone(int halftone) {
+  halftone_ = halftone;
+}
+
+void Layer::setMultipass(int multipass) {
+  multipass_ = multipass;
+}
+
+void Layer::setInk(int ink) {
+  ink_ = ink;
+}
+
+void Layer::setMinPower(double min_power) {
+  min_power_ = min_power;
 }
 
 void Layer::setDocument(Document *doc) {

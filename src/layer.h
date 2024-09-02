@@ -72,6 +72,26 @@ public:
 
   double targetHeight() const;
 
+  int module() const;
+
+  float focus() const;
+
+  float focusStep() const;
+
+  float printingStrength() const;
+
+  double printingSpeed() const;
+
+  int uv() const;
+
+  int halftone() const;
+
+  int multipass() const;
+
+  int ink() const;
+
+  double minPower() const;
+
   Document &document();
 
 
@@ -103,6 +123,26 @@ public:
 
   void setStepHeight(double step_height);
 
+  void setModule(int module);
+
+  void setFocus(float focus);
+
+  void setFocusStep(float focus_step);
+
+  void setPrintingStrength(float printing_strength);
+
+  void setPrintingSpeed(double printing_speed);
+
+  void setUv(int uv);
+
+  void setHalftone(int halftone);
+
+  void setMultipass(int multipass);
+
+  void setInk(int ink);
+
+  void setMinPower(double min_power);
+
   void setDocument(Document *doc);
 
   //void setLayerCounter(int i);
@@ -127,6 +167,21 @@ private:
   double power_;
   double x_backlash_ = 0;
   int parameter_index_;
+
+  /** BS properties **/
+  int module_ = 0;
+  // new config method for target_height_ and step_height_
+  float focus_ = -2;
+  float focus_step_ = -2;
+  // printing
+  float printing_strength_ = 100;
+  double printing_speed_ = 60;
+  int uv_ = 0;
+  int halftone_ = 1;
+  int multipass_ = 1;
+  int ink_ = 3;
+  // pwm
+  double min_power_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;
