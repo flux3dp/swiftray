@@ -1,4 +1,5 @@
 #include "bsl_cmd.h"
+#include <debug/debug-timer.h>
 
 BSLPauseCmd::BSLPauseCmd() : OperationCmd{}
 {
@@ -10,7 +11,9 @@ OperationCmd::ExecStatus BSLPauseCmd::execute(QPointer<Executor> executor, QPoin
     return status_;
   }
 
-  BSLMotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, "!");
+  qInfo() << "BSLPauseCmd::execute()" << getDebugTime();
+  BSLMotionController *bsl_controller = dynamic_cast<BSLMotionController*>(motion_controller_.data());
+  BSLMotionController::CmdSendResult result = bsl_controller->pause();
   if (result == BSLMotionController::CmdSendResult::kOk) {
     succeed();
   } else {
@@ -30,7 +33,9 @@ OperationCmd::ExecStatus BSLResumeCmd::execute(QPointer<Executor> executor, QPoi
     return status_;
   }
 
-  BSLMotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, "~");
+  qInfo() << "BSLResumeCmd::execute()" << getDebugTime();
+  BSLMotionController *bsl_controller = dynamic_cast<BSLMotionController*>(motion_controller_.data());
+  BSLMotionController::CmdSendResult result = bsl_controller->resume();
   if (result == BSLMotionController::CmdSendResult::kOk) {
     succeed();
   } else {
@@ -49,6 +54,7 @@ OperationCmd::ExecStatus BSLResetCmd::execute(QPointer<Executor> executor, QPoin
     return status_;
   }
 
+  qInfo() << "BSLResetCmd::execute()" << getDebugTime();
   BSLMotionController::CmdSendResult result = motion_controller_->stop();
   if (result == BSLMotionController::CmdSendResult::kOk) {
     succeed();
@@ -67,7 +73,6 @@ OperationCmd::ExecStatus BSLStatusReportCmd::execute(QPointer<Executor> executor
     fail();
     return status_;
   }
-
   BSLMotionController::CmdSendResult result = motion_controller_->sendCmdPacket(executor, "?");
   if (result == BSLMotionController::CmdSendResult::kOk) {
     succeed();

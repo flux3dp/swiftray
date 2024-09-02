@@ -413,8 +413,10 @@ void Machine::startJob() {
 }
 
 void Machine::pauseJob() {
+  qInfo() << "Machine::pauseJob()";
   // Send pause cmd to motion controller
   if (console_executor_ && job_executor_) {
+    qInfo() << "Machine::pauseJob() - Actuator available, job state: " << (int)job_executor_->getState();
     if (job_executor_->getState() == Executor::State::kRunning) {
       // TODO: Add support other motion controller than grbl
       if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
@@ -431,9 +433,11 @@ void Machine::pauseJob() {
 }
 
 void Machine::resumeJob() {
+  qInfo() << "Machine::resumeJob()";
   // Send resume cmd to motion controller
   if (console_executor_ && job_executor_) {
     if (job_executor_->getState() == Executor::State::kPaused) {
+      qInfo() << "Machine::resumeJob() - Actuator available, job state: " << (int)job_executor_->getState();
       // TODO: Add support other motion controller than grbl
       if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
         console_executor_->appendCmd(
