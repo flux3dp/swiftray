@@ -95,7 +95,7 @@ void BSLMotionController::commandRunnerThread() {
         }
         break;
       case MotionControllerState::kSleep:
-        if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Sleeping State";
+        // if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Sleeping State";
         QThread::msleep(25); 
         break;
       case MotionControllerState::kAlarm:
@@ -117,7 +117,7 @@ void BSLMotionController::commandRunnerThread() {
           this->cmd_list_mutex_.unlock();
           this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
-          QThread::msleep(1000);
+          QThread::msleep(25);
         } else {
           if (debug_count_bsl % 1000 == 1) {
             qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
@@ -152,7 +152,7 @@ void BSLMotionController::dequeueCmd(int count) {
 }
 
 LCS2Error BSLMotionController::waitListAvailable(int list_no) {
-  qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
+  // qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
   LCS2Error ret = lcs_load_list(list_no, 0);
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
@@ -197,7 +197,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (gcode == "?" || gcode == "?\n") {
       Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
-      qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
       dequeueCmd(1);
       return;
     }
@@ -252,7 +252,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       is_absolute_positioning = false;
     } else if (command == "M3" || command == "M4") {
       // Begin Laser Control
-      qInfo() << "BSLM~::handleGcode() - M3M4: Laser Session Started" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - M3M4: Laser Session Started" << getDebugTime();
       if (is_running_laser_) {
           qInfo() << "BSLM~::handleGcode() - M3M4: Laser already started" << getDebugTime();
           this->buffer_size_++;
@@ -266,11 +266,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // Dump all lcs status
       ListStatus list_status;
       lcs_read_status((uint32_t *)&list_status);
-      qInfo() << "BSLM~::handleGcode() - List Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
+      if (list_status.bMainOpen || list_status.bSubOepn || list_status.bCharOpen || list_status.bBusy1 || list_status.bBusy2 || list_status.bPaused || list_status.bLoop) {
+        qInfo() << "BSLM~::handleGcode() - Irregular Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
+      }
       uint32_t running_pos;
       BoardRunStatus run_status;
       lcs_get_status((uint32_t *)&run_status, &running_pos);
-      qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
       // Start new list
       lcs_set_jump_speed_ctrl(3000);
       lcs_set_mark_speed_ctrl(1000);
@@ -284,7 +286,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       should_end = false;
       should_flush_ = false;
     } else if (command == "M2") {
-      qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       should_swap = true;
       should_end = true;
     } else if (command == "M6") {
@@ -310,38 +312,38 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
-      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
       lcs_set_end_of_list();
-      qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
       first_list = false;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
       lcs_set_start_list(list_no);
-      qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
+      // qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       dequeueCmd(this->buffer_size_);
       this->buffer_size_ = 0;
       QThread::msleep(1);
     }
 
     if (should_end) {
-      qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
       lcs_set_end_of_list();
-      qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
       lcs_set_start_list(list_no);
       lcs_set_end_of_list();
-      qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
       lcs_set_start_list(list_no);
       lcs_set_end_of_list();
-      qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
       QThread::msleep(1);
 
@@ -353,8 +355,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           if (ret != LCS_RES_NO_ERROR)
               break;
       } while (!Status.bCacheReady);
-      qInfo() << "BSLM~::handleGcode() - [Laser Session Closed]" << "@" << getDebugTime();
-      qInfo() << "BSLM~::handleGcode() - Pending commands: " << this->pending_cmds_.size();
+      // qInfo() << "BSLM~::handleGcode() - [Laser Session Closed]" << "@" << getDebugTime();
+      // qInfo() << "BSLM~::handleGcode() - Pending commands: " << this->pending_cmds_.size();
       dequeueCmd(this->buffer_size_ + 1);
       is_running_laser_ = false;
       laser_enabled = false;
@@ -451,23 +453,19 @@ MotionController::CmdSendResult BSLMotionController::resume() {
 
 MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() @" << getDebugTime();
-
-  qInfo() << "BSLM~::stop() - settings state";
   if (this->current_error_) {
     this->setState(MotionControllerState::kAlarm);
   } else {
     this->setState(MotionControllerState::kSleep);
   }
-  qInfo() << "BSLM~::stop() - settings state done"; 
+  qInfo() << "BSLM~::stop() - Clearing pending commands" << getDebugTime();
   lcs_set_end_of_list();
   lcs_stop_execution();
-  
-  QThread::sleep(2);
   this->is_running_laser_ = false;
-  qInfo() << "BSLM~::stop() - Clearing pending commands";
   this->pending_cmds_.clear();
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();
+  QThread::msleep(2);
   return CmdSendResult::kOk;
 }
 

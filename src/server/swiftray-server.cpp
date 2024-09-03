@@ -1,12 +1,14 @@
+#define _HAS_STD_BYTE 0 // This fixes a Windows compatibility issue
+#include "liblcs/lcsExpr.h"
+#undef _HAS_STD_BYTE
 #include "swiftray-server.h"
+#include <cmath>
+#include <canvas/canvas.h>
+#include <toolpath_exporter/toolpath-exporter.h>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
-#include <cmath>
-#include <canvas/canvas.h>
-#include <toolpath_exporter/toolpath-exporter.h>
-#include "liblcs/lcsExpr.h"
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {

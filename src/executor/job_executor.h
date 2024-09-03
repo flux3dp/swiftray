@@ -28,6 +28,7 @@ public:
 private Q_SLOTS:
   void handlePaused() override;
   void handleResume() override;
+  void handleReset() override;
   void handleStopped() override;
   void exec() override;
   void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) override;

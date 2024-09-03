@@ -41,9 +41,28 @@ MotionControllerState MotionController::getState() const {
   return state_;
 };
 
+QString getStateString(MotionControllerState state) {
+  switch (state) {
+    case MotionControllerState::kIdle:
+      return "Idle";
+    case MotionControllerState::kRun:
+      return "Run";
+    case MotionControllerState::kPaused:
+      return "Paused";
+    case MotionControllerState::kAlarm:
+      return "Alarm";
+    case MotionControllerState::kSleep:
+      return "Sleep";
+    case MotionControllerState::kQuit:
+      return "Quit";
+    default:
+      return "Unknown";
+  }
+}
+
 void MotionController::setState(MotionControllerState new_state) {
   if (state_ != new_state) {
-    qInfo() << "MotionController::setState(" << static_cast<int>(new_state) << ")";
+    qInfo() << "MotionController::setState(" << getStateString(new_state) << ")";
     state_ = new_state;
     Q_EMIT stateChanged(state_);
     Q_EMIT statusUpdate(state_, x_pos_, y_pos_, z_pos_);
