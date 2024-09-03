@@ -1,7 +1,2 @@
-target_sources(Swiftray PRIVATE
-  rs_filterdxfrw.cpp
-  rs_filtercxf.cpp
-  rs_filterdxf1.cpp
-  rs_filterjww.cpp
-  rs_filterlff.cpp
-)
+file(GLOB ENGINE_SOURCES "*.cpp")
+target_sources(dxf_rs PRIVATE ${ENGINE_SOURCES})

@@ -1,5 +1,2 @@
-target_sources(Swiftray PRIVATE
-  dl_jww.cpp
-  dl_writer_ascii.cpp
-  jwwdoc.cpp
-)
+file(GLOB ENGINE_SOURCES "*.cpp")
+target_sources(dxf_rs PRIVATE ${ENGINE_SOURCES})
