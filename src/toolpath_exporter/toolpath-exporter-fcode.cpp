@@ -561,10 +561,10 @@ void ToolpathExporterFcode::updateClip() {
     layer_clip[i] = qMax((config_.workarea_clip[i]), float(module_clip[i]));
   }
 
-  int clip_top = mm2px(layer_clip[0]);
-  int clip_right = mm2px(work_area_mm_.width() - layer_clip[1], true) - 1;
-  int clip_bottom = mm2px(work_area_mm_.height() - layer_clip[2]) - 1;
-  int clip_left = mm2px(layer_clip[3], true);
+  float clip_top = mm2px(layer_clip[0]);
+  float clip_right = mm2px(work_area_mm_.width() - layer_clip[1], true) - 1;
+  float clip_bottom = mm2px(work_area_mm_.height() - layer_clip[2]) - 1;
+  float clip_left = mm2px(layer_clip[3], true);
   clip_area_ = QRect(QPoint(clip_left, clip_top), QPoint(clip_right, clip_bottom));
   border_lines_[0] = QLineF(clip_left, clip_top, clip_right, clip_top);
   border_lines_[1] = QLineF(clip_right, clip_top, clip_right, clip_bottom);
