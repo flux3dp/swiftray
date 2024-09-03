@@ -424,7 +424,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
 void ToolpathExporterFcode::updateLayerParam() {
   layer_module_ = with_module_ ? current_layer_->module() : 15; // 15 = UNIVERSAL_LASER
   is_printing_layer_ = layer_module_ == 5; // 5 = PRINTER
-  layer_color_ = current_layer_->color().name();
+  layer_color_ = current_layer_->color().name().toUpper();
   focus_adjust_ = current_layer_->focus();
   focus_step_ = current_layer_->focusStep();
   pwm_scale_ = 1 - current_layer_->minPower() / current_layer_->power();
