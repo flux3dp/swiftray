@@ -241,11 +241,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         gen_->set_toolhead_pwm(0);
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
       } else {
-        for (int i = 0; i < current_layer_->repeat(); i++) {
+        int repeat = current_layer_->repeat();
+        for (int i = 0; i < repeat; i++) {
           if (has_focus_adjust_ && focus_step_ > 0 && i > 0) {
             if (is_v2_) {
-              float real_z = focus_adjust_ + focus_step_ * i;
-              gen_->sync_motion_type2(184, 128, real_z);
+              gen_->sync_motion_type2(184, 128, focus_step_);
             }
           } else if (config_.enable_autofocus && layer_height > 0) {
             double target_z = 17.0 - layer_height - config_.z_offset + i * layer_z_step;
@@ -256,10 +256,14 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->set_toolhead_pwm(0);
         }
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
+        if (has_focus_adjust_ && is_v2_ && repeat > 1) {
+          float total_step = focus_step_ * (repeat - 1);
+          gen_->sync_motion_type2(184, 128, -total_step);
+        }
       }
       if (is_v2_) {
         if (has_focus_adjust_) {
-          gen_->sync_motion_type2(184, 128, 0);
+          gen_->sync_motion_type2(184, 128, -focus_adjust_);
         }
         gen_->end_task_script_block();
         // Write task info
