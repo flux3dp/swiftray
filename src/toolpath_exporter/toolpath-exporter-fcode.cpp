@@ -737,7 +737,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     bitmap_dirty_area_ = bitmap_dirty_area_.united(new_dirty_area);
   } else {
     bitmap_dirty_area_ = new_dirty_area;
-    outputBitmapFcode(config_.enable_pwm && bmp->pwm());
+    outputBitmapFcode(config_.enable_pwm && bmp->pwm(), bmp->gradient() && !bmp->pwm() ? 1 : 5);
   }
 }
 
@@ -976,12 +976,12 @@ void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
 }
 
 // Handling bitmap and filled path
-void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
+void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample) {
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
     QImage layer_image = laser_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
-    QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, 5);
+    QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, dpmm_y() / downsample);
     char gradient_print_mode = 0;
     if (config_.enable_fast_gradient) {
       gradient_print_mode = pwm_engraving ? config_.print_modes[0] : config_.print_modes[1];
@@ -1920,7 +1920,7 @@ float ToolpathExporterFcode::getCurveEngravingHeight() {
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
                                                        int merge_offset_x,
                                                        int merge_offset_y,
-                                                       int downsample) {
+                                                       float downsample) {
   Q_ASSERT_X(src->format() == QImage::Format_Grayscale8,
              "ToolpathExporterFcode",
              "Input image for getBoundingBoxes() must be Format_Grayscale8");
@@ -1936,7 +1936,7 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   if (downsample > 1) {
     cv::Mat downsampledImg;
-    cv::resize(img, downsampledImg, cv::Size(w / downsample, h / downsample), 0, 0, cv::INTER_CUBIC);
+    cv::resize(img, downsampledImg, cv::Size(float(w) / downsample, float(h) / downsample), 0, 0, cv::INTER_CUBIC);
     cv::findContours(downsampledImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   } else {
     cv::findContours(img, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);

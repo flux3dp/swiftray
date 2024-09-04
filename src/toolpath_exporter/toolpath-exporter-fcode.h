@@ -395,7 +395,7 @@ class ToolpathExporterFcode : public QObject {
   void getIntersectPoint(QLineF line, int position, QPointF* point);
   void handlePathWalk(QPointF point, bool should_emit);
 
-  void outputBitmapFcode(bool pwm_engraving = false);
+  void outputBitmapFcode(bool pwm_engraving = false, int downsample = 5);
   bool rasterBitmap(const QImage& layer_image, QRect bbox, bool pwm_engraving);
   bool rasterLine(const uchar* data_ptr,
                   int left_bound,
@@ -432,7 +432,7 @@ class ToolpathExporterFcode : public QObject {
   QVector<QRect> getBoundingBoxes(QImage* src,
                                   int merge_offset_x = 0,
                                   int merge_offset_y = 0,
-                                  int downsample = 1);
+                                  float downsample = 1);
 
   void pause(bool to_standby_position);
   void moveZ(float z);
