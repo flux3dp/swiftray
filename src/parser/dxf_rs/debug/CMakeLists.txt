@@ -1,3 +1,2 @@
-target_sources(Swiftray PRIVATE
-  rs_debug.cpp
-)
+file(GLOB ENGINE_SOURCES "*.cpp")
+target_sources(dxf_rs PRIVATE ${ENGINE_SOURCES})

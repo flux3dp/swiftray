@@ -1,26 +1,37 @@
+#define _HAS_STD_BYTE 0 // This fixes a Windows compatibility issue
+#include "liblcs/lcsExpr.h"
+#undef _HAS_STD_BYTE
 #include "swiftray-server.h"
+#include <cmath>
+#include <canvas/canvas.h>
+#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
+#include <toolpath_exporter/toolpath-exporter.h>
+#include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
-#include <cmath>
-#include <canvas/canvas.h>
-#include <toolpath_exporter/toolpath-exporter.h>
-#include <toolpath_exporter/toolpath-exporter-fcode.h>
-#include "liblcs/lcsExpr.h"
+#include <QSerialPortInfo>
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
   this->m_server = new QWebSocketServer("Swiftray Server", QWebSocketServer::NonSecureMode, this);
 
   m_machine = nullptr;
-  m_engrave_dpi = 512;
+  this->m_engrave_dpi = 512;
   if (m_server->listen(QHostAddress::LocalHost, port)) {
     qInfo() << "Swiftray Server listening on port" << port;
     connect(m_server, &QWebSocketServer::newConnection, this, &SwiftrayServer::onNewConnection);
   } else {
     qCritical() << "Failed to start Swiftray Server on port" << port;
   }
+}
+
+Machine* SwiftrayServer::getMachine() {
+  if (m_machine == nullptr) {
+    throw std::runtime_error("Machine not set");
+  }
+  return m_machine;
 }
 
 void SwiftrayServer::onNewConnection() {
@@ -46,19 +57,26 @@ void SwiftrayServer::processMessage(const QString& message) {
     QJsonValue params = data["params"];
     auto param_str = action == "loadSVG" ? "" : params.toString();
     if (param_str != "") {
-      qInfo() << "ws://" + action << "with params" << param_str;
-    } else {
-      qInfo() << "ws://" + action;
+      qInfo() << QTime::currentTime().toString("HH:mm:ss") << "ws://" + action << "with params" << param_str;
+    } else if (action != "getStatus" && action != "list") {
+      qInfo() << QTime::currentTime().toString("HH:mm:ss") << "ws://" + action;
     }
-    
-    if (path == "/devices") {
-      handleDevicesAction(socket, id, action, params);
-    } else if (path.startsWith("/devices/")) {
-      handleDeviceSpecificAction(socket, id, action, params, path.mid(9));
-    } else if (path == "/parser") {
-      handleParserAction(socket, id, action, params);
-    } else if (path == "/ws/sr/system") {
-      handleSystemAction(socket, id, action, params);
+    try {
+      if (path == "/devices") {
+        handleDevicesAction(socket, id, action, params);
+      } else if (path.startsWith("/devices/")) {
+        handleDeviceSpecificAction(socket, id, action, params, path.mid(9));
+      } else if (path == "/parser") {
+        handleParserAction(socket, id, action, params);
+      } else if (path == "/ws/sr/system") {
+        handleSystemAction(socket, id, action, params);
+      }
+    } catch (std::exception& e) {
+      qCritical() << "Error processing action" << action << e.what();
+      sendCallback(socket, id, QJsonObject{{"success", false}, {"error", e.what()}});
+    } catch (...) {
+      qCritical() << "Error processing action" << action;
+      sendCallback(socket, id, QJsonObject{{"success", false}, {"error", "Unknown error"}});
     }
   }
 }
@@ -75,11 +93,15 @@ void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, 
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
   QJsonObject result;
   result["success"] = true;
+  qInfo() << "Device Specific action" << action;
 
   if (action == "connect") {
-    // Implement device connection logic here
-    // TODO:SERVER Determine param based on port
-    if (this->m_machine == nullptr) {
+    if (this->machine_map_.contains(port)) {
+      qInfo() << "Server:: Already connected to device on port" << port;
+      result["message"] = "Already connected to device on port " + port;
+      this->m_machine = this->machine_map_[port];
+    } else {
+      qInfo() << "Server:: Connecting to device on new port" << port;
       MachineSettings::MachineParam bsl_param;
       bsl_param.name = "Default";
       bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
@@ -91,20 +113,19 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
       bsl_param.home_on_start = false;
       bsl_param.is_high_speed_mode = false;
       this->m_machine = new Machine(bsl_param);
+      machine_map_.insert(port, m_machine);
       result["message"] = "Connected to device on port " + port;
-      this->m_machine->connectSerial("BSL", 0);
-    } else {
-      result["message"] = "Already connected to device on port";
+      getMachine()->connectSerial("BSL", 0);
     }
   } else if (action == "start") {
     qInfo() << "Starting job";
-    this->m_machine->startJob();
+    getMachine()->startJob();
   } else if (action == "pause") {
-    this->m_machine->pauseJob();
+    getMachine()->pauseJob();
   } else if (action == "resume") {
-    this->m_machine->resumeJob();
+    getMachine()->resumeJob();
   } else if (action == "stop") {
-    this->m_machine->stopJob();
+    getMachine()->stopJob();
   } else if (action == "getParam") {
     QString paramName = params.toObject()["name"].toString();
     // Implement get device parameter logic, probably laser speed, power, fan...etc
@@ -128,7 +149,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement switch mode logic
   } else if (action == "quit") {
     // Implement quit task logic
-    this->m_machine->getJobExecutor()->reset();
+    getMachine()->getJobExecutor()->reset();
   } else if (action == "downloadLog") {
     // Implement log download logic
   } else if (action == "downloadFile") {
@@ -137,21 +158,27 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement device info retrieval logic
   } else if (action == "getPreview") {
     // Implement preview retrieval logic
+    qInfo() << "SwiftrayServer::getPreview()";
+    result["time_cost"] = this->m_time_cost; // Replace with actual time cost
   } else if (action == "kick") {
     // Implement kick logic
+  } else if (action == "startFraming") {
+    result["success"] = this->startFraming();
+  } else if (action == "stopFraming") {
+    getMachine()->stopJob();
   } else if (action == "upload") {
     // Implement file upload logic
     qInfo() << "File uploaded";
-    bool job_result = this->m_machine->createGCodeJob(gcode_list_, timestamp_list_);
+    bool job_result = getMachine()->createGCodeJob(gcode_list_, timestamp_list_);
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
   } else if (action == "sendGCode") {
     QString gcode = params.toObject()["gcode"].toString();
-    Executor* executor = this->m_machine->getConsoleExecutor().data();
-    this->m_machine->getMotionController()->sendCmdPacket(executor, gcode);
-  } else if (action == "getStatus") {
-    result["st_id"] = this->m_machine->getJobExecutor()->getStatusId();
-    result["st_progress"] = this->m_machine->getJobExecutor()->getProgress() * 0.01f; 
+    Executor* executor = getMachine()->getConsoleExecutor().data();
+    getMachine()->getMotionController()->sendCmdPacket(executor, gcode);
+  } else if (action == "getStatus") { // The old "play report" action in Beam Studio
+    result["st_id"] = getMachine()->getStatusId();
+    result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f; 
   } else if (action == "home") {
     // Implement homing logic
   } else {
@@ -171,15 +198,15 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     if (m_canvas != nullptr) {
       delete m_canvas;
     }
-    m_canvas = new Canvas();
     QJsonObject params_obj = params.toObject();
     QJsonObject wrapped_file = params_obj["file"].toObject();
     QString svg_data = wrapped_file["data"].toString().toUtf8();
-    m_thumbnail = wrapped_file["thumbnail"].toString();
-    m_rotary_mode = params_obj["rotaryMode"].toBool();
-    m_engrave_dpi = params_obj["engraveDpi"].toInt();
+    this->m_canvas = new Canvas();
+    this->m_thumbnail = wrapped_file["thumbnail"].toString();
+    this->m_rotary_mode = params_obj["rotaryMode"].toBool();
+    this->m_engrave_dpi = params_obj["engraveDpi"].toInt();
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
-    m_canvas->loadSVG(svg_data_bytes);
+    this->m_canvas->loadSVG(svg_data_bytes);
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
@@ -204,13 +231,13 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     } else {
     bool enable_high_speed = type == "fcode" && (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode);
     // Generate GCode
-    GCodeGenerator gen(machine_param, m_rotary_mode);
-    qInfo() << "Generating GCode..." << "DPI" << m_engrave_dpi << "ROTARY" << m_rotary_mode << "TRAVEL" << travel_speed;
+    GCodeGenerator gen(machine_param, this->m_rotary_mode);
+    qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
     QTransform move_translate = QTransform();
     auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : m_machine->getCustomOrigin();
     ToolpathExporter exporter(
         (BaseGenerator*)&gen,
-        m_engrave_dpi / 25.4,
+        this->m_engrave_dpi / 25.4,
         travel_speed,
         QPointF(std::get<0>(origin), std::get<1>(origin)),
         ToolpathExporter::PaddingType::kFixedPadding,
@@ -225,7 +252,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     if (exporter.isExceedingBoundary()) {
       qWarning() << "Some items aren't placed fully inside the working area.";
     }
-    if (m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
+    if (this->m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
       qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
     }
     qInfo() << "Conversion completed.";
@@ -247,6 +274,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     }
     result["timeCost"] = total_required_time.second();
     qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
+    this->m_time_cost = total_required_time.second();
     // Debugging GCode
     if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
     }
@@ -301,31 +329,98 @@ void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const Q
   socket->sendTextMessage(doc.toJson(QJsonDocument::Compact));
 }
 
+bool serialPortAvailable() {
+  const auto infos = QSerialPortInfo::availablePorts();
+  for (const QSerialPortInfo &info : infos) {
+    if(info.portName().startsWith("cu.") || info.portName().startsWith("tty.Bluetooth")) {
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
 QJsonArray SwiftrayServer::getDeviceList() {
   QJsonArray devices;
   if (lcs_available()) {
+    int st_id = 0;
+    float st_prog = 0.0f;
+    QString sn = "ABC123";
+    if (this->m_machine != nullptr) {
+      st_id = this->m_machine->getStatusId();
+      sn = this->m_machine->getConfig("serial");
+      st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
+    }
     devices.append(QJsonObject{
       {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
       {"name", "Promark Desktop"},
-      {"serial", "PD99KJOJIO13993"},
-      {"st_id", 0},
+      {"serial", sn},
+      {"st_id", st_id},
+      {"st_prog", st_prog},
       {"version", "5.0.0"},
       {"model", "fpm1"},
-      {"port", "/dev/ttyUSB0"},
+      {"port", "/BSL"},
       {"type", "Galvanometer"},
       {"source", "swiftray"}
     });
   }
-  devices.append(QJsonObject{
-    {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
-    {"serial", "LV84KAO192839012"},
-    {"name", "Lazervida Origin"},
-    {"st_id", 0},
-    {"version", "5.0.0"},
-    {"model", "flv1"},
-    {"port", "/dev/ttyUSB0"},
-    {"type", "Laser Cutter"},
-    {"source", "swiftray"}
-  });
+  if (serialPortAvailable()) {
+    int st_id = 0;
+    float st_prog = 0.0f;
+    QString sn = "ABC123";
+    if (this->m_machine != nullptr) {
+      st_id = this->m_machine->getStatusId();
+      sn = this->m_machine->getConfig("serial");
+      st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
+    }
+    devices.append(QJsonObject{
+      {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
+      {"serial", "LV84KAO192839012"},
+      {"name", "Lazervida Origin"},
+      {"st_id", st_id},
+      {"st_prog", st_prog},
+      {"version", "5.0.0"},
+      {"model", "flv1"},
+      {"port", "/dev/ttyUSB0"},
+      {"type", "Grbl"},
+      {"source", "swiftray"}
+    });
+  }
   return devices;
+}
+
+bool SwiftrayServer::startFraming() {
+  qInfo() << "Starting framing job";
+  if (getMachine()->getJobExecutor()->getActiveJob()) {
+    throw std::runtime_error("Job already running");
+  }
+  if (getMachine()->getConnectionState() != Machine::ConnectionState::kConnected) {
+    throw std::runtime_error("Machine not connected");
+  }
+
+  // Generate gcode for framing
+  QTransform move_translate = QTransform();
+  auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : getMachine()->getCustomOrigin();
+  
+  DirtyAreaOutlineGenerator outline_generator(getMachine()->getMachineParam(), this->m_rotary_mode);
+  Document &doc = m_canvas->document();
+  ToolpathExporter exporter(&outline_generator, 
+      doc.settings().dpmm(),
+      getMachine()->getMachineParam().travel_speed,
+      QPointF(std::get<0>(origin), std::get<1>(origin)),
+      ToolpathExporter::PaddingType::kNoPadding,
+      move_translate);
+  exporter.setSortRule(PathSort::NestedSort);
+  exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
+  exporter.convertStack(doc.layers(),  getMachine()->getMachineParam().is_high_speed_mode,  true);
+  throw new std::runtime_error("Some items aren't placed fully inside the working area.");
+
+  outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
+  outline_generator.setLaserPower(0.0f);
+  // Create Framing Job and start
+  if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"))) {
+    getMachine()->startJob();
+    return true;
+  }
+  return false;
 }

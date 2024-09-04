@@ -14,8 +14,6 @@ void MachineSetupExecutor::exec() {
     exec_wait = 1000;
     return;
   }
-  qInfo() << "MachineSetupExecutor exec(), pending command" << pending_cmd_.size();
-
   if (motion_controller_.isNull()) {
     handleStopped();
     exec_wait = 1000;
@@ -40,6 +38,7 @@ void MachineSetupExecutor::exec() {
     return; // Skip if no pending command
   }
 
+  qInfo() << "MachineSetupExecutor exec(), pending command" << pending_cmd_.size();
   OperationCmd::ExecStatus exec_status = (pending_cmd_.first())->execute(this, motion_controller_);
   if (exec_status == OperationCmd::ExecStatus::kIdle) {
     // retry later
@@ -50,7 +49,6 @@ void MachineSetupExecutor::exec() {
   } else { // Finish immediately: ok or error
     pending_cmd_.pop_front();
   }
-  
 }
 
 void MachineSetupExecutor::handleStopped() {
@@ -88,6 +86,8 @@ void MachineSetupExecutor::attachMotionController(QPointer<MotionController> mot
     this->pending_cmd_.push_back(GrblCmdFactory::createGrblCmd(GrblCmdFactory::CmdType::kSysBuildInfo));
     exec_wait = 100;
   } else {
-    exec_wait = 0;
+    auto cmd = std::make_shared<GCodeCmd>("M99");
+    this->pending_cmd_.push_back(cmd);
+    exec_wait = 10;
   }
 }

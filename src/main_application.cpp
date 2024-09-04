@@ -897,9 +897,9 @@ void MainApplication::handleFraming() {
 
   // Generate gcode for framing
   QTransform move_translate = calcMoveTransform();
-  auto gen_outline_scanning_gcode = std::make_shared<DirtyAreaOutlineGenerator>(this->getMachineParam(), this->isRotaryMode());
+  auto outline_generator = std::make_shared<DirtyAreaOutlineGenerator>(this->getMachineParam(), this->isRotaryMode());
   Document &doc = canvas_->document();
-  ToolpathExporter exporter(gen_outline_scanning_gcode.get(), 
+  ToolpathExporter exporter(outline_generator.get(), 
       doc.settings().dpmm(),
       this->getTravelSpeed(),
       end_point_,
@@ -926,10 +926,10 @@ void MainApplication::handleFraming() {
     return;
   }
 
-  gen_outline_scanning_gcode->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
-  gen_outline_scanning_gcode->setLaserPower(mainApp->getFramingPower());
+  outline_generator->setTravelSpeed(mainApp->getTravelSpeed()*60);// mm/s to mm/min
+  outline_generator->setLaserPower(mainApp->getFramingPower());
   // Create Framing Job and start
-  if (active_machine.createFramingJob(QString::fromStdString(gen_outline_scanning_gcode->toString()).split("\n"))) {
+  if (active_machine.createFramingJob(QString::fromStdString(outline_generator->toString()).split("\n"))) {
     active_machine.startJob();
   }
   Q_EMIT jobAttached();

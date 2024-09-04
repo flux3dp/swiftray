@@ -49,9 +49,6 @@ void JobExecutor::startJob() {
     qInfo() << "JobExecutor has no job available";
     return;
   }
-
-  // Connect resetDetected
-  connect(motion_controller_, &MotionController::resetDetected, this, &JobExecutor::handleStopped);
   
   completed_cmd_cnt_ = 0;
   Q_EMIT progressChanged(0);
@@ -216,25 +213,53 @@ void JobExecutor::handleCmdFinish(int code) {
  * 
  */
 void JobExecutor::handleStopped() {
-  qInfo() << "JobExecutor::handleStopped()" << getDebugTime();
+  qInfo() << this << "::handleStopped()" << getDebugTime();
+  if (state_ == State::kStopped) {
+    qInfo() << this << "::handleStopped() - already stopped";
+    return;
+  }
   std::lock_guard<std::mutex> lock(exec_mutex_);
-  qInfo() << "JobExecutor::handleStopped() entered mutex" << getDebugTime();
-
   // Clear active job
   if (!active_job_.isNull()) {
     last_job_ = active_job_;
     last_job_->reload();
     active_job_.reset();
   }
-  qInfo() << "JobExecutor::handleStopped() active job cleared" << getDebugTime();
-
   // Clear pending commands
   cmd_in_progress_.clear();
   pending_cmd_.reset();
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
-  qInfo() << "JobExecutor::handleStopped() cleared all commands" << getDebugTime();
+  qInfo() << this << "::handleStopped()" << "cleared all commands" << getDebugTime();
 }
+
+
+
+/**
+ * @brief Stop by other, protect with mutex
+ * 
+ */
+void JobExecutor::handleReset() {
+  qInfo() << this << "::handleReset()" << getDebugTime();
+  if (state_ == State::kStopped) {
+    qInfo() << this << "::handleReset() - already stopped";
+    return;
+  }
+  std::lock_guard<std::mutex> lock(exec_mutex_);
+  // Clear active job
+  if (!active_job_.isNull()) {
+    last_job_ = active_job_;
+    last_job_->reload();
+    active_job_.reset();
+  }
+  // Clear pending commands
+  cmd_in_progress_.clear();
+  pending_cmd_.reset();
+  changeState(State::kStopped);
+  Q_EMIT progressChanged(0);
+  qInfo() << this << "::handleReset()" << "cleared all commands" << getDebugTime();
+}
+
 
 /**
  * @brief Get the total required Time for active/pending/last job

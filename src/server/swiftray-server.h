@@ -20,6 +20,7 @@ private Q_SLOTS:
   void processMessage(const QString& message);
 
 private:
+  QMap<QString, Machine*> machine_map_;
   QWebSocketServer* m_server;
   Machine* m_machine;
   QString m_buffer;
@@ -30,6 +31,7 @@ private:
 
   bool m_rotary_mode;
   int m_engrave_dpi;
+  int m_time_cost = 0;
 
   void handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
   void handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port);
@@ -37,5 +39,7 @@ private:
   void handleSystemAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
   void sendCallback(QWebSocket* socket, const QString& id, const QJsonObject& result);
   void sendEvent(QWebSocket* socket, const QString& event, const QJsonObject& data);
+  bool startFraming();
+  Machine* getMachine();
   QJsonArray getDeviceList();
 };

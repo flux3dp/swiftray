@@ -2536,8 +2536,9 @@ void MainWindow::handleProgress(QString title, QString button_text, float progre
     progress_dialog_->setMinimumDuration(0);
     progress_dialog_->setAutoClose(false);
     progress_dialog_->setAutoReset(false);
-    progress_dialog_->setCancelButton(nullptr);
+    // progress_dialog_->setCancelButton(nullptr);
     progress_dialog_->show();
+    connect(progress_dialog_.data(), &QProgressDialog::canceled, mainApp, &MainApplication::handleCancel);
   } else {
     progress_dialog_->setLabelText(title);
     progress_dialog_->setCancelButtonText(button_text);

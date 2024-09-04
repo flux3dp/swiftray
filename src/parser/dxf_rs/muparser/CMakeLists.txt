@@ -1,8 +1,2 @@
-target_sources(Swiftray PRIVATE
-  muParser.cpp
-  muParserBase.cpp
-  muParserBytecode.cpp
-  muParserCallback.cpp
-  muParserError.cpp
-  muParserTokenReader.cpp
-)
+file(GLOB ENGINE_SOURCES "*.cpp")
+target_sources(dxf_rs PRIVATE ${ENGINE_SOURCES})

@@ -24,7 +24,7 @@ public:
   int getStatusId();
 
   explicit Executor(QObject *parent = nullptr);
-  ~Executor();
+  virtual ~Executor();
   size_t inProgressCmdCnt();
   State getState() const;
   void startThread();
@@ -37,9 +37,10 @@ Q_SIGNALS:
   //void error(QString err);
 
 protected Q_SLOTS:
-  virtual void exec() = 0;
+  virtual void exec();
   virtual void handlePaused();
   virtual void handleResume();
+  virtual void handleReset();
   virtual void handleStopped() = 0;
   virtual void handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos);
 

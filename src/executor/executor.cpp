@@ -27,6 +27,10 @@ void Executor::startThread() {
   }
 }
 
+void Executor::exec() {
+  qInfo() << this << "::exec() not implemented"; // This is needed to avoid crash in deconstructor calling exec_thread.join()
+}
+
 void Executor::execThread() {
   this->thread_enabled_ = true;
   while (this->thread_enabled_) {
@@ -103,20 +107,25 @@ void Executor::attachMotionController(QPointer<MotionController> motion_controll
   motion_controller_ = motion_controller;
   connect(motion_controller_, &MotionController::statusUpdate, this, &Executor::handleMotionControllerStatusUpdate);
   connect(motion_controller_, &MotionController::disconnected, this, &Executor::handleStopped);
+  connect(motion_controller_, &MotionController::resetDetected, this, &Executor::handleReset);
 }
 
 void Executor::handleCmdFinish(int result_code) {
-  qInfo() << this << "::handleCmdFinish() not implemented";
+  // qInfo() << this << "::handleCmdFinish() is not implemented";
 }
 
 void Executor::handlePaused() {
-  qInfo() << this << "::handlePaused() not implemented";
+  // qInfo() << this << "::handlePaused() is not implemented";
 }
 
 void Executor::handleResume() {
-  qInfo() << this << "::handleResume() not implemented";
+  // qInfo() << this << "::handleResume() is not implemented";
+}
+
+void Executor::handleReset() {
+  // qInfo() << this << "::handleReset() is not implemented";
 }
 
 void Executor::handleMotionControllerStatusUpdate(MotionControllerState mc_state, qreal x_pos, qreal y_pos, qreal z_pos) {
-  qInfo() << this << "::handleMotionControllerStatusUpdate() not implemented";
+  // qInfo() << this << "::handleMotionControllerStatusUpdate() not implemented";
 }

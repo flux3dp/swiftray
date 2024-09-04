@@ -50,6 +50,7 @@ Q_SIGNALS:
   void statusUpdate(MotionControllerState state, qreal x, qreal y, qreal z);
   void disconnected();
   void stateChanged(MotionControllerState state);
+  void configUpdate(QString key, QString value);
 
 public Q_SLOTS:
   virtual void respReceived(QString resp) = 0;
