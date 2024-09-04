@@ -373,6 +373,7 @@ ios {
 OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
 } else {
 OBJECTIVE_SOURCES += src/windows/osxwindow.mm
+OBJECTIVE_SOURCES += src/osx/disable-app-nap.mm
 }
 TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/include/* \
