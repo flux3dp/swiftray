@@ -1,4 +1,8 @@
-target_sources(Swiftray PRIVATE
+# Create windows library
+
+add_library(swiftray_windows STATIC)
+
+target_sources(swiftray_windows PRIVATE
   mainwindow.cpp
   gcode-panel.cpp
   about-window.cpp
@@ -19,5 +23,19 @@ target_sources(Swiftray PRIVATE
 )
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_sources(Swiftray PRIVATE osxwindow.mm)
+  target_sources(swiftray_windows PRIVATE osxwindow.mm)
 endif()
+
+target_link_libraries(swiftray_windows PRIVATE Qt::Core)
+target_link_libraries(swiftray_windows PRIVATE Qt::Widgets)
+target_link_libraries(swiftray_windows PRIVATE Qt::Gui) 
+target_link_libraries(swiftray_windows PRIVATE Qt::SerialPort)
+target_link_libraries(swiftray_windows PRIVATE Qt::OpenGLWidgets)
+target_link_libraries(swiftray_windows PRIVATE Qt::Quick)
+target_link_libraries(swiftray_windows PRIVATE Qt::QuickWidgets)
+target_link_libraries(swiftray_windows PRIVATE Qt::QuickControls2)
+target_link_libraries(swiftray_windows PRIVATE Qt::Qml)
+target_link_libraries(swiftray_windows PRIVATE Qt::WebSockets)
+
+# Link windows library to Swiftray
+target_link_libraries(Swiftray PRIVATE swiftray_windows)

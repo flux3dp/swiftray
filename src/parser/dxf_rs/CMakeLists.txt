@@ -4,8 +4,6 @@ cmake_minimum_required(VERSION 3.10)
 project(dxf_rs)
 
 # Create the library without specifying sources
-find_package(Qt6 COMPONENTS Core Gui Widgets Core5Compat REQUIRED)
-find_package(Boost REQUIRED)
 add_library(dxf_rs STATIC)
 add_subdirectory(engine)
 add_subdirectory(debug)

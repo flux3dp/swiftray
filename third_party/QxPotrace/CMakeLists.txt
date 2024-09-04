@@ -3,9 +3,6 @@ if (WIN32)
 endif()
 
 #find_package(Potrace REQUIRED)
-find_package(Qt6 COMPONENTS Core REQUIRED)
-find_package(Qt6 COMPONENTS Gui REQUIRED)
-find_package(Qt6Gui COMPONENTS Private REQUIRED)
 
 set(REL_LIBPOTRACE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../libpotrace/potrace-1.16/src")
 include_directories(${REL_LIBPOTRACE_INCLUDE_DIR})

@@ -10,7 +10,6 @@
 #include <QVector2D>
 #include <QtMath>
 #include <bitset>
-#include <boost/range/irange.hpp>
 #include <cmath>
 #include <iomanip>
 #include <iostream>

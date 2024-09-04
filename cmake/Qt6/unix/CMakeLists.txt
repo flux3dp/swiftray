@@ -86,10 +86,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/pem/dsa_pub.pem
   )
+  # Add LCS libaries into the app bundle
+  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/*.dylib")
+  message(STATUS "Additional files: ${APP_ADDITIONAL_EXEC_FILES}")
   if (DEFINED ENABLE_SENTRY)
-    set(APP_ADDITIONAL_EXEC_FILES
-      ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler
-    )
+    list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler)
   endif()
   #set_source_files_properties(${APP_HELPER_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Helpers")
   set_source_files_properties(${APP_ADDITIONAL_EXEC_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
@@ -144,12 +145,6 @@ target_link_libraries(third_party_libs INTERFACE
 
 # ==== Link and include libraries ====
 target_include_directories(${PROJECT_NAME} PRIVATE 
-  ${CAIRO_INCLUDE_DIRS}
-  ${GLib_INCLUDE_DIR}
-  {Poppler_INCLUDE_DIR}
-  ${Boost_INCLUDE_DIRS}
-  ${LIBXML2_INCLUDE_DIR}
-  ${LIBXML2_INCLUDE_DIRS}
   ${ICONV_INCLUDE_DIR}
   ${SPARKLE_INCLUDE_DIRS}
 )
@@ -161,35 +156,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   opencv_imgproc
   opencv_flann
   third_party_libs
-  Cairo::Cairo
-  GLib::GLib
-  GLib::GObject
-  Poppler::Poppler
-  ${BOOST_LIBRARIES}
-  Boost::thread Boost::system
-  ${LIBXML2_LIBRARIES}
-  LibXml2::LibXml2
   ${SPARKLE_LIBRARIES}
 )
-
-# ======== Copy external third_party dll/exec manually (some are auto copied by vcpkg) =======
-if (THIRD_PARTY_DLLS)
-  add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-      ${THIRD_PARTY_DLLS}
-      ${CMAKE_BINARY_DIR}/bin
-  )
-endif(THIRD_PARTY_DLLS)
-
-if (THIRD_PARTY_EXECS)
-  add_custom_command(
-    TARGET ${PROJECT_NAME}  POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-      ${THIRD_PARTY_EXECS}
-      ${CMAKE_BINARY_DIR}/bin
-  )
-endif(THIRD_PARTY_EXECS)
 
 # ======================= Packaging =======================
 add_custom_target(swiftray_app_bundle)
