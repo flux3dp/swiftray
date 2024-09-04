@@ -12,6 +12,7 @@ add_subdirectory(periph)
 add_subdirectory(executor)
 add_subdirectory(server)
 add_subdirectory(debug)
+add_subdirectory(osx)
 
 target_sources(${PROJECT_NAME} PRIVATE 
   ${SRC_DIR}/globals.cpp

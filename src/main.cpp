@@ -19,7 +19,7 @@
 #endif
 
 #ifdef Q_OS_MACOS
-#define MACOS
+#include <osx/disable-app-nap.h>
 #endif
 
 int mainCLI(int argc, char *argv[]) {
@@ -44,6 +44,9 @@ int main(int argc, char *argv[]) {
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+  #ifdef Q_OS_MACOS
+  disableAppNap();
+  #endif
   #ifdef Q_OS_WIN
   QQuickStyle::setStyle("Fusion");
   #endif
