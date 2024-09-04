@@ -413,7 +413,9 @@ bool SwiftrayServer::startFraming() {
   exporter.setSortRule(PathSort::NestedSort);
   exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
   exporter.convertStack(doc.layers(),  getMachine()->getMachineParam().is_high_speed_mode,  true);
-  throw new std::runtime_error("Some items aren't placed fully inside the working area.");
+  if (exporter.isExceedingBoundary()) {
+    throw std::runtime_error("Some items aren't placed fully inside the working area.");
+  }
 
   outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
   outline_generator.setLaserPower(0.0f);
