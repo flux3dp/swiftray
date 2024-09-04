@@ -180,6 +180,7 @@ class ToolpathExporterFcode : public QObject {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
       config_.fg_pwm_limit = 0;
+      default_path_acc = 1000;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
