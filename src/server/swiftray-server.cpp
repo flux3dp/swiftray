@@ -4,13 +4,14 @@
 #include "swiftray-server.h"
 #include <cmath>
 #include <canvas/canvas.h>
+#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 #include <toolpath_exporter/toolpath-exporter.h>
+#include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
 #include <QSerialPortInfo>
-#include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
@@ -197,14 +198,15 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     if (m_canvas != nullptr) {
       delete m_canvas;
     }
-    m_canvas = new Canvas();
     QJsonObject params_obj = params.toObject();
     QJsonObject wrapped_file = params_obj["file"].toObject();
     QString svg_data = wrapped_file["data"].toString().toUtf8();
+    this->m_canvas = new Canvas();
+    this->m_thumbnail = wrapped_file["thumbnail"].toString();
     this->m_rotary_mode = params_obj["rotaryMode"].toBool();
     this->m_engrave_dpi = params_obj["engraveDpi"].toInt();
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
-    m_canvas->loadSVG(svg_data_bytes);
+    this->m_canvas->loadSVG(svg_data_bytes);
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
@@ -216,6 +218,17 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
+    if (type == "fcode") {
+      QTransform move_translate = QTransform();
+      ToolpathExporterFcode exporter(move_translate, m_engrave_dpi, &params_obj, &m_thumbnail);
+      bool completed = exporter.convertStack(m_canvas->document().layers(), nullptr);
+      if (!completed) {
+        return false;
+      }
+      result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
+      result["fileName"] = "swiftray-conversion";
+      result["timeCost"] = exporter.getTimeCost();
+    } else {
     bool enable_high_speed = type == "fcode" && (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode);
     // Generate GCode
     GCodeGenerator gen(machine_param, this->m_rotary_mode);
@@ -264,6 +277,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     this->m_time_cost = total_required_time.second();
     // Debugging GCode
     if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
+    }
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {

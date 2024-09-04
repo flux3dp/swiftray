@@ -27,3 +27,9 @@ third_party/libpotrace/conanbuild.conf
 third_party/libpotrace/config.log
 third_party/libpotrace/CMakePresets.json
 third_party/libpotrace/*.tar.gz
+Lib/*
+DLLs/*
+*.pyd
+*.exe
+python*.dll
+out-old/*
