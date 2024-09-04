@@ -1359,6 +1359,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
   }
   int padded_top = qMax(bbox_top - 2 * printing_slice_height, 0);
   int padded_bottom = qMin(bbox_bottom + 2 * printing_slice_height, layer_image.height());
+  // Mock last row with all 0s
   const uchar* last_val_ptr = val_table.constScanLine(0);
   for (int y = padded_top; y <= padded_bottom; y++) {
     const uchar* data_ptr = layer_image.constScanLine(y);
@@ -1405,7 +1406,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
           for (int x = box_left; x < box_right; x++) {
             int column_count = 0;
             QByteArray column_payload;
-            for (int y = box_top + printing_slice_height; y >= box_top;
+            for (int y = box_top + printing_slice_height - 1; y >= box_top;
                  y -= 8) {
               if (y > box_bottom + 8 || y < 0 || y < min_valid_y) {
                 column_payload.append((char)0);
@@ -1416,7 +1417,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               } else if (y - 7 < min_valid_y) {
-                uchar val = val_table.constScanLine(box_bottom - 1)[x];
+                uchar val = val_table.constScanLine(y)[x];
                 // Note: y >= min_valid_y
                 int valid = y - min_valid_y + 1;
                 int overflow = 8 - valid;
@@ -1424,7 +1425,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               } else {
-                uchar val = val_table.constScanLine(y - 1)[x];
+                uchar val = val_table.constScanLine(y)[x];
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               }
@@ -1516,12 +1517,10 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
   int box_top = box.y();
   int box_right = box_left + box.width();
   int box_bottom = box_top + box.height();
-  int slice_height = printing_slice_height - config_.printing_bot_padding;
-  int real_slice_height = slice_height - config_.printing_top_padding;
+  int slice_height = printing_slice_height - config_.printing_bot_padding - config_.printing_top_padding;
   float offset_y_px = mm2px(module_offset_.y());
   int min_allow_y = std::ceil(qMin(offset_y_px, float(0.0)));
-  float bottom_limit = qMax(-offset_y_px, float(0.0)) + clip_area_.bottom();
-  int max_allow_y = int(printing_bitmap_.height() - bottom_limit);
+  int max_allow_y = clip_area_.bottom() - qMax(-offset_y_px, float(0.0));
   QVector<int> x_steps;
   QVector<int> y_starts(multipass);
   for (int x = box_left; x < box_right; x += printing_slice_width) {
@@ -1529,12 +1528,12 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
     x_steps.append(w);
   }
   for (int p = multipass - 1; p >= 0; p--) {
-    int multipass_padding = ((p * real_slice_height) / multipass) + config_.printing_top_padding;
+    int multipass_padding = ((p * slice_height) / multipass) + config_.printing_top_padding;
     int y_start = qMax(box_top - multipass_padding, min_allow_y);
     y_starts[p] = y_start;
   }
 
-  int y_slice_count = (box_bottom - y_starts[multipass - 1]) / real_slice_height + 1;
+  int y_slice_count = (box_bottom - y_starts[multipass - 1]) / slice_height + 1;
   std::function<void(QList<int>)> addBox;
   if (config_.is_reverse_engraving) {
     addBox = [&boxes](QList<int> v) { boxes.prepend(v); };
@@ -1544,7 +1543,7 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
 
   for (int i = 0; i < y_slice_count; i++) {
     for (int p = multipass - 1; p >= 0; p--) {
-      int y = y_starts[p] + i * real_slice_height;
+      int y = y_starts[p] + i * slice_height;
       if (y + config_.printing_top_padding > box_bottom) {
         // Real data is out of box
         break;
