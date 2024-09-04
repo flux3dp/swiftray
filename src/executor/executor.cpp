@@ -68,7 +68,7 @@ int Executor::getStatusId() {
     case State::kCompleted:
       return 64;
     case State::kStopped:
-      return 48;
+      return 128;
     default:
       return -1;
   }
