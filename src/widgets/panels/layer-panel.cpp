@@ -3,7 +3,6 @@
 #include <canvas/canvas.h>
 #include <windows/mainwindow.h>
 #include <QAbstractItemView>
-#include <boost/range/adaptor/reversed.hpp>
 #include <windows/osxwindow.h>
 
 LayerPanel::LayerPanel(QWidget *parent, MainWindow *main_window) :
@@ -60,7 +59,10 @@ void LayerPanel::resizeEvent(QResizeEvent *e) {
 void LayerPanel::updateLayers() {
   ui->layerList->clear();
 
-  for (auto &layer : boost::adaptors::reverse(main_window_->canvas()->document().layers())) {
+  for (auto it = main_window_->canvas()->document().layers().rbegin(); 
+     it != main_window_->canvas()->document().layers().rend(); 
+     ++it) {
+    auto &layer = *it;
     bool active = main_window_->canvas()->document().activeLayer() == layer.get();
     LayerPtr editable_layer = layer;
     auto *list_widget = new LayerListItem(ui->layerList->parentWidget(),
