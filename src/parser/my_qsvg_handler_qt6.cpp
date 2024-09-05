@@ -56,6 +56,7 @@ Q_LOGGING_CATEGORY(lcSvgHandler, "qt.svg")
 QImage g_image;
 QColor g_color = Qt::black;
 double g_scale = 1;
+QRectF g_bbox;
 bool g_gradient = true;
 int g_threshold = 128;
 bool g_pwm = false;
@@ -2939,6 +2940,7 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     const QStringView width  = attributes.value(QLatin1String("width"));
     const QStringView height = attributes.value(QLatin1String("height"));
     QString filename = attributes.value(QLatin1String("xlink:href")).toString();
+    g_bbox.setRect(x.toFloat(), y.toFloat(), width.toFloat(), height.toFloat());
     g_gradient = attributes.value("data-shading").toString() == "true";
     g_threshold = attributes.value("data-threshold").toInt();
     g_pwm = attributes.value("data-pwm").toInt() == 1;
@@ -5084,7 +5086,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_gradient, g_threshold, g_pwm);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm);
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);
