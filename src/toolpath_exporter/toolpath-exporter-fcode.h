@@ -69,6 +69,7 @@ struct Config {
   float workarea_clip[4] = {0, 0, 0, 0}; // inward offset; top, right, bottom, left
   QPointF precut_at;
   QPointF diode_offset;
+  QPointF job_origin;
   QMap<int, QPointF> module_offsets;
   QRectF prespray;
   // px
@@ -90,6 +91,7 @@ struct Config {
   bool enable_mock_fast_gradient = false;
   bool enable_multipass_compensation = false;
   bool enable_vector_speed_constraint = false;
+  bool enable_relative_z_move = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
@@ -113,13 +115,13 @@ class ToolpathExporterFcode : public QObject {
     setDpi(dpi);
 
     if (is_v2_) {
-      if (is_rotary_task_) {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4);
+      if (is_rotary_task_ || with_custom_origin_) {
+        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4, with_custom_origin_);
       } else {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 3);
+        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 3, with_custom_origin_);
       }
     } else {
-      gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
+      gen = std::make_shared<FCodeGeneratorV1>(thumbnail, with_custom_origin_);
     }
     gen_ = gen.get();
 
@@ -140,10 +142,15 @@ class ToolpathExporterFcode : public QObject {
  private:
   void parseParam(const QJsonObject* paramPtr) {
     QJsonObject param = *paramPtr;
+    if (param.contains("job_origin")) {
+      with_custom_origin_ = true;
+      config_.job_origin = QPointF(param["job_origin"].toArray()[0].toDouble(),
+                                   param["job_origin"].toArray()[1].toDouble());
+    }
     float spinning_axis_coord = param["spin"].toDouble();
     if (spinning_axis_coord > 0) {
       is_rotary_task_ = true;
-      config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio;
+      config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio - config_.job_origin.y();
       rotary_y_ratio_ = param["rotary_y_ratio"].toDouble(1);
     }
 
@@ -160,11 +167,13 @@ class ToolpathExporterFcode : public QObject {
     } else if (hardware == "hexa") {
       hardware_ = HardwareType::HEXA;
       config_.fg_pwm_limit = 0;
+      config_.enable_relative_z_move = true;
     } else if (hardware == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
       with_module_ = true;
       config_.fg_pwm_limit = 0;
+      config_.enable_relative_z_move = true;
       if (is_rotary_task_) {
         height += 378.2;
       }
@@ -180,6 +189,7 @@ class ToolpathExporterFcode : public QObject {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
       config_.fg_pwm_limit = 0;
+      config_.enable_relative_z_move = true;
       default_path_acc = 1000;
     } else {
       // default beambox
@@ -338,9 +348,15 @@ class ToolpathExporterFcode : public QObject {
   QPointF getPointInMM(QPointF point) {
     return QPointF(px2mm(point.x(), true), px2mm(point.y())) - module_offset_;
   }
-  qreal getXValInMM(qreal val, bool is_reverse = false, bool auto_adjust = true) {
+  qreal getXValInMM(qreal val, bool is_reverse = false, bool check_negative = false) {
     // Add 1 px width to indicate the right side of the pixel when reverse
-    return px2mm((is_reverse && auto_adjust ? val + 1 : val), true) - module_offset_.x() + (is_reverse ? backlash_ : 0);
+    qreal x = px2mm(val, true);
+    if (check_negative)
+      x = qMax(x, float(0));
+    x -= module_offset_.x();
+    if (!is_reverse)
+      x += backlash_;
+    return x;
   }
   qreal getYValInMM(qreal val) {
     return px2mm(val) - module_offset_.y();
@@ -503,6 +519,7 @@ class ToolpathExporterFcode : public QObject {
   bool is_3d_task_ = false;
   bool with_blade_ = false;
   bool with_module_ = false;
+  bool with_custom_origin_ = false;
 
   QSizeF work_area_mm_;
   QTransform transform_laser_;

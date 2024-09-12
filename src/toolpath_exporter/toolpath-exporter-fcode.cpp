@@ -92,7 +92,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     if (is_rotary_task_) {
       moveZ(-1);
     }
-    gen_->grbl_system_cmd(0);
+    if (!with_custom_origin_) {
+      gen_->grbl_system_cmd(0);
+    }
   } else {
     gen_->home();
   }
@@ -185,7 +187,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
             moveZ(1);
           }
           QPointF tran_pos;
-          if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {
+          if (with_custom_origin_) {
+            tran_pos = QPointF(0, 0);
+          } else if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {
             tran_pos = QPointF(215, 150);
           } else {
             tran_pos = QPointF(work_area_mm_.width() / 2, work_area_mm_.height() / 2);
@@ -202,7 +206,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->flux_custom_cmd(168);
           gen_->flux_custom_cmd(174);
           gen_->user_selection_cmd(0);
-          gen_->grbl_system_cmd(0);
+          if (!with_custom_origin_) {
+            gen_->grbl_system_cmd(0);
+          }
           gen_->sync_grbl_motion(0);
           gen_->miscellaneous_cmd(0);
         }
@@ -222,10 +228,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       if (config_.enable_diode) {
         gen_->set_toolhead_laser_module(current_layer_->isUseDiode());
       }
+      if (with_custom_origin_) {
+        module_offset_ += config_.job_origin;
+      }
       if (has_focus_adjust_) {
-        if (is_v2_) {
-          gen_->sync_motion_type2(184, 128, focus_adjust_);
-        }
+        gen_->sync_motion_type2(184, 128, focus_adjust_);
       }
       if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
         moveZ(-1);
@@ -244,9 +251,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         int repeat = current_layer_->repeat();
         for (int i = 0; i < repeat; i++) {
           if (has_focus_adjust_ && focus_step_ > 0 && i > 0) {
-            if (is_v2_) {
-              gen_->sync_motion_type2(184, 128, focus_step_);
-            }
+            gen_->sync_motion_type2(184, 128, focus_step_);
           } else if (config_.enable_autofocus && layer_height > 0) {
             double target_z = 17.0 - layer_height - config_.z_offset + i * layer_z_step;
             target_z = round(qMax(qMin(target_z, 17.0), 0.0) * 100) / 100;
@@ -256,15 +261,15 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->set_toolhead_pwm(0);
         }
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
-        if (has_focus_adjust_ && is_v2_ && repeat > 1) {
+        if (has_focus_adjust_ && repeat > 1) {
           float total_step = focus_step_ * (repeat - 1);
           gen_->sync_motion_type2(184, 128, -total_step);
         }
       }
+      if (has_focus_adjust_) {
+        gen_->sync_motion_type2(184, 128, -focus_adjust_);
+      }
       if (is_v2_) {
-        if (has_focus_adjust_) {
-          gen_->sync_motion_type2(184, 128, -focus_adjust_);
-        }
         gen_->end_task_script_block();
         // Write task info
         QString submodule_type = "None";
@@ -324,12 +329,17 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     is_printing_layer_ = true;
     updateOffset();
     updateClip();
+    if (with_custom_origin_) {
+      module_offset_ += config_.job_origin;
+    }
     auto [prespray_bbox, test_bbox] = getPresprayBbox();
-    float x = config_.prespray.x();
-    float y = config_.prespray.y();
+    float x = config_.prespray.x() - module_offset_.x();
+    float y = config_.prespray.y() - module_offset_.y();
     QByteArray prespray_payload = generateNozzleSettingPayload(9, true);
     gen_->start_task_script_block("xMIN", "0001");
-    gen_->grbl_system_cmd(0);
+    if (!with_custom_origin_) {
+      gen_->grbl_system_cmd(0);
+    }
     setTravelSpeed(config_.prespray_travel_speed);
     if (is_rotary_task_) {
       travel(x, std::nanf(""), true, 0);
@@ -454,7 +464,7 @@ void ToolpathExporterFcode::updateLayerParam() {
       submodule_color_ = "black";
     }
   } else {
-    has_focus_adjust_ = focus_adjust_ > 0;
+    has_focus_adjust_ = config_.enable_relative_z_move && focus_adjust_ > 0;
     enable_bidirection_ =
         !(config_.enable_diode && current_layer_->isUseDiode() &&
           config_.is_diode_one_way_engraving);
@@ -1096,7 +1106,9 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
           moveto(layer_speed_);
         }
         current_x = x;
-        moveto(std::nanf(""), getXValInMM(current_x, reverse_raster_dir));
+        moveto(std::nanf(""),
+               getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
+                           reverse_raster_dir, true));
         has_unfinished_move = false;
         gen_->set_toolhead_pwm(100);
         is_emitting = true;
@@ -1104,7 +1116,9 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     } else if (is_emitting) {
       // Laser on -> off
       current_x = x;
-      moveto(std::nanf(""), getXValInMM(current_x, reverse_raster_dir));
+      moveto(std::nanf(""),
+             getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
+                         reverse_raster_dir, true));
       has_unfinished_move = false;
       gen_->set_toolhead_pwm(0);
       is_emitting = false;
@@ -1114,7 +1128,8 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
   }
 
   if (current_x >= 0) {
-    qreal real_x = getXValInMM(current_x, reverse_raster_dir);
+    qreal real_x = getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
+                               reverse_raster_dir, true);
     if (has_unfinished_move) {
       moveto(std::nanf(""), real_x);
     }
@@ -1123,11 +1138,14 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
       laser_padding = padding_mm_;
     }
     qreal buffer_x;
+    // Check boundary without module offset (may include job origin)
+    real_x += module_offset_.x();
     if (reverse_raster_dir) {
       buffer_x = qMax(real_x - laser_padding, 0.0);
     } else {
       buffer_x = qMin(real_x + laser_padding, work_area_mm_.width());
     }
+    buffer_x -= module_offset_.x();
     gen_->set_toolhead_pwm(0);
     moveto(std::nanf(""), buffer_x);
     return true;
@@ -1166,8 +1184,8 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
   }
   left = qMax(left_bound, left - padding_px_);
   right = qMin(right_bound, right + padding_px_);
-  float buffer_left = getXValInMM(left, reverse_raster_dir, false);
-  float buffer_right = getXValInMM(right + 1, reverse_raster_dir, false);
+  float buffer_left = getXValInMM(left, reverse_raster_dir);
+  float buffer_right = getXValInMM(right + 1, reverse_raster_dir);
   moveto(layer_speed_ + 1, reverse_raster_dir ? buffer_right : buffer_left, getYValInMM(y));
   moveto(layer_speed_);
   gen_->set_line_pixels(right + 1 - left);
@@ -1238,8 +1256,8 @@ bool ToolpathExporterFcode::rasterLineHighSpeedPwm(const uchar* data_ptr,
   }
   left = qMax(left_bound, left - padding_px_);
   right = qMin(right_bound, right + padding_px_);
-  float buffer_left = getXValInMM(left, reverse_raster_dir, false);
-  float buffer_right = getXValInMM(right + 1, reverse_raster_dir, false);
+  float buffer_left = getXValInMM(left, reverse_raster_dir);
+  float buffer_right = getXValInMM(right + 1, reverse_raster_dir);
   moveto(layer_speed_, reverse_raster_dir ? buffer_right : buffer_left, getYValInMM(y));
   gen_->set_line_pixels(right + 1 - left);
   // 32 bits data, 8 bits per pixel (0~255)

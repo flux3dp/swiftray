@@ -330,6 +330,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   double time_cost;
   float max_x, max_y, max_z, max_r;
   const QString* thumbnail;
+  bool start_with_home;
 
   void write(const char* buf, size_t size, unsigned long* crc32_ptr) override {
     stream->write(buf, size);
@@ -455,11 +456,12 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     write_metadata_("MAX_R", QString::number(max_r + 0.2, 'f', 2), &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
+    write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
     return crc_val;
   }
 
  public:
-  FCodeGeneratorV1(const QString* canvas_thumbnail) : thumbnail(canvas_thumbnail) {
+  FCodeGeneratorV1(const QString* canvas_thumbnail, bool with_custom_origin) : thumbnail(canvas_thumbnail) {
     qInfo() << "FCodeGenerator V1 init";
     stream = new std::stringstream();
     created_at = QDateTime::currentDateTime();
@@ -469,6 +471,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     traveled = time_cost = 0;
     max_x = max_y = max_z = max_r = 0;
     script_crc32 = 0;
+    start_with_home = !with_custom_origin;
 
     write_magic_number(1);
     script_offset = stream->tellp();
@@ -546,6 +549,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   double time_cost;
   float max_x, max_y, max_z;
   const QString* thumbnail;
+  bool start_with_home;
 
   // Ignore crc32_ptr; will be calculated when copying to fc_stream
   void write(const char* buf, size_t size, unsigned long* crc32_ptr) override {
@@ -571,7 +575,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   }
 
  public:
-  FCodeGeneratorV2(const QString* canvas_thumbnail, int magic_number)
+  FCodeGeneratorV2(const QString* canvas_thumbnail, int magic_number, bool with_custom_origin)
       : thumbnail(canvas_thumbnail) {
     qInfo() << "FCodeGenerator V2 init";
     created_at = QDateTime::currentDateTime();
@@ -583,6 +587,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     traveled = time_cost = 0;
     max_x = max_y = max_z = 0;
     script_crc32 = 0;
+    start_with_home = !with_custom_origin;
 
     start = fc_stream->tellp();
     write_magic_number(magic_number);
@@ -750,6 +755,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     write_metadata_("version", "2", &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
+    write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
     write_metadata_("max_z", QString::number(max_z + 0.2, 'f', 2), &crc_val, false);
     write_metadata_("max_y", QString::number(max_y + 0.2, 'f', 2), &crc_val, false);
     write_metadata_("max_x", QString::number(max_x + 0.2, 'f', 2), &crc_val, false);
