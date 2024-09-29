@@ -122,12 +122,16 @@ INCLUDEPATH += $$PWD/src
 
 win32-msvc {
     INCLUDEPATH += C:\Dev\boost_1_78_0_msvc
-    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include
-    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\opencv2
-    INCLUDEPATH += C:\Dev\libraries\potrace
-    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\libxml2
-    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\libconv
-    INCLUDEPATH += C:\Users\simon\Dev\swiftray\vcpkg_installed\x64-windows\include\glib-2.0
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\opencv2
+    INCLUDEPATH += $$PWD\third_party\libpotrace\potrace-1.16\src
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\libxml2
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\libconv
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\glib-2.0
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\cairo
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\lib\glib-2.0\include
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\lib
+    INCLUDEPATH += $$PWD\vcpkg_installed\x64-windows\include\poppler
     INCLUDEPATH += $$PWD\third_party
     INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }

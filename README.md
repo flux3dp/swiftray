@@ -62,11 +62,10 @@ cmake --install build --prefix install
 # The process can be skipped since the sentry-native can be installed via vcpkg
 ```
 
-See discussions [here](https://github.com/microsoft/vcpkg/issues/21888)
-
 ### 3. Build libpotrace from source and handle it with Conan (for Windows)
-in msys2
-install the following packages first
+libpotrace must be compiled in msys or cygwin environment.
+
+Take msys2 for example, install the following packages:
 ```
 pacman -S base-devel
 pacman -S mingw-w64-x86_64-gcc
@@ -96,9 +95,8 @@ $ make -j12
 ```
 
 ### Windows
-1. Install [vcpkg, the dependency manager](https://vcpkg.io/en/getting-started.html)
-2. Build using Visual Studio by automatically loading the CMake project
-3. For local development, set env QML2_IMPORT_PATH to `/path/to/qml/dlls`
+1. Install the latest Visual Studio (tested in 2019) with vcpkg
+2. For local development, set env QML2_IMPORT_PATH to `/path/to/qml/dlls` if debug mode cannot load qml plugins
 
 ## Deployment
 
@@ -109,6 +107,7 @@ $ cd <bin folder in Qt>
 $ ./macdeployqt <absolute path>/build-swiftray-Desktop_Qt_5_15_2_clang_64bit-Release/Swiftray.app -qmldir=<absolute path>/swiftray//src/windows/qml -dmg
 ```
 ### Windows
+Windeployqt is a tool that will gather all the required deployment files for your application. It will copy the necessary Qt libraries, plugins, and QML files to the directory where the application is located. It is necessary to run after compiling the application to properly run the application.
 ```
 $ <Qt_Installed_Dir>/6.7.2/msvc2019_64/bin/windeployqt.exe --qmldir src/windows/qml --compiler-runtime build/bin/Swiftray.exe
 ```
