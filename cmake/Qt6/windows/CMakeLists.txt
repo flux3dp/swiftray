@@ -157,7 +157,7 @@ if (THIRD_PARTY_DLLS)
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different 
     ${THIRD_PARTY_DLLS}
-    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
   )
 endif(THIRD_PARTY_DLLS)
 
@@ -166,7 +166,7 @@ if (THIRD_PARTY_EXECS)
     TARGET ${PROJECT_NAME}  POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different 
     ${THIRD_PARTY_EXECS}
-    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
   )
 endif(THIRD_PARTY_EXECS)
 
@@ -184,22 +184,20 @@ else()
     find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
 endif()
 
+message(STATUS "CMAKE_INSTALL_BINDIR: ${CMAKE_INSTALL_BINDIR}")
+message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "WINDEPLOYQT_EXECUTABLE: ${WINDEPLOYQT_EXECUTABLE}")
 
 file(GLOB DEFAULT_LINKED_DLLS "${CMAKE_BINARY_DIR}/*.dll")
 
-# Run windeployqt after compilation, and copy dlls into /deploy
+# === Run windeployqt to add Qt plugin dlls, and copy dlls into /deploy ===
+# Note: Add --compiler-runtime if using gcc to compile
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E echo "Creating deploy folder and copy dlls.."
-    COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/deploy"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/deploy"
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${PROJECT_NAME}>" "${CMAKE_CURRENT_BINARY_DIR}/deploy"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${DEFAULT_LINKED_DLLS} "${CMAKE_CURRENT_BINARY_DIR}/deploy"
-)
-
-# Note: Add --compiler-runtime if using gcc to compile
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E echo "Running windeployqt..."
     COMMAND "${WINDEPLOYQT_EXECUTABLE}"
         --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/qml"
@@ -207,13 +205,42 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         --verbose 1
         "$<IF:$<CONFIG:Debug>,--debug,--release>"
         "${CMAKE_CURRENT_BINARY_DIR}/deploy/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
-    COMMENT "Deploying Qt dependencies"
+    COMMENT "Deployed Qt Dependencies"
 )
 
-# Set target to bin/deploy/Swiftray.exe instead of bin/Swiftray.exe
-set_property(TARGET ${PROJECT_NAME} PROPERTY 
-    VS_DEBUGGER_COMMAND "${CMAKE_CURRENT_BINARY_DIR}/deploy/${PROJECT_NAME}.exe"
+# ==== Install commands ====
+include(GNUInstallDirs)
+
+# Install the main executable
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
-set_property(TARGET ${PROJECT_NAME} PROPERTY 
-    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+
+# Install QML files
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/windows/qml/
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/qml
+    FILES_MATCHING PATTERN "*.qml"
+)
+
+# Install Qt Plugin Dlls
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deploy/qml
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+)
+
+# Install third-party DLLs
+foreach(DLL ${THIRD_PARTY_DLLS})
+    install(FILES ${DLL} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endforeach()
+
+# Install third-party executables
+foreach(EXEC ${THIRD_PARTY_EXECS})
+    install(PROGRAMS ${EXEC} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endforeach()
+
+# Install deployed Qt dependencies
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deploy/
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+    PATTERN "${PROJECT_NAME}*" EXCLUDE  # Exclude the main executable as it's installed separately
 )
