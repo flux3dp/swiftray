@@ -264,13 +264,11 @@ long LCS2open(void) {
     gLibLCS = LoadLibraryA("lcs2dllx64.DLL");
 #endif // !defined(_WIN64)
 #elif defined(__APPLE__)
-    std::string sLibPath =  "/Users/simon/Dev/bsl-sdk/mac/Debug/liblcs2dll.dylib";
-    std::cout << "Current LibPath" << sLibPath << "\n";
-    gLibLCS = dlopen(sLibPath.c_str(), RTLD_NOW | RTLD_LOCAL);
+    gLibLCS = dlopen("liblcs2dll.dylib", RTLD_NOW | RTLD_LOCAL);
 
     if (!gLibLCS) {
         std::string sErr = dlerror();
-        std::cout << "Unable to link libLCS %s", sErr.c_str();
+        std::cout << "Unable to link libLCS" << sErr << "\n";
         sErr = sErr;
     }
 
@@ -537,19 +535,24 @@ void LCS2close(void) {
 bool lcs_check_init() {
     if (!gLibLCS) {
         printf("Loading LCS library...\n");
-        LCS2open();
-        printf("LCSOpen OK\n");
+        int result = LCS2open();
+        printf("LCSOpen result=%d\n", result);
+        if (!lcs_init_dll) {
+            fprintf(stderr, "Failed to load LCS library.\n");
+            return false;
+        }
         if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-            printf("Failed to initialize LCS library.\n");
+            fprintf(stderr, "Failed to initialize LCS library.\n");
             return false;
         }
 
         printf("LCS Init OK\n");
     }
+    return true;
 }
 
 bool lcs_available() {
-    lcs_check_init();
+    if (!lcs_check_init()) return false;
     return lcs_search_cards() != 0;
 }
 
