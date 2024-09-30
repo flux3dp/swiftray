@@ -12,30 +12,19 @@ QT += svg-private
 QT += websockets
 QT += openglwidgets
 QT += core5compat
-ios {
-} else {
 QT += serialport
-}
-USE_QT6 {
 QT += openglwidgets
 QT += core5compat
-}
-
 
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
+
 #Application version
 VERSION_MAJOR = 1
 VERSION_MINOR = 3
 VERSION_BUILD = 0
 VERSION_SUFFIX = "" # empty string or "-beta.X"
 DEFINES += "QT6"
-#DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
-#       "VERSION_MINOR=$$VERSION_MINOR"\
-#       "VERSION_BUILD=$$VERSION_BUILD"
-#DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
-
-DEFINES += QT6
 
 #Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
@@ -119,6 +108,7 @@ macx{
     LIBS += -lcairo
     LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
+
 unix:!macx{
     # TODO: Linux
     LIBS += -lboost_thread-mt
@@ -129,10 +119,6 @@ unix:!macx{
     LIBS += -lxml2
     LIBS += -lpotrace
     LIBS += -llibpotrace
-}
-
-ios {
-    LIBS += -framework Foundation -framework UIKit
 }
 
 message($$OUT_PWD)
@@ -155,6 +141,7 @@ win32-msvc {
     INCLUDEPATH += $$PWD\third_party
     INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }
+
 macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
@@ -244,6 +231,7 @@ SOURCES += \
     $$files(src/server/*.cpp) \
     $$files(src/debug/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
+    $$files(src/parser/*.cpp) \
     $$files(src/parser/mysvg/*.cpp) \
     $$files(src/parser/dxf_rs/debug/*.cpp) \
     $$files(src/parser/dxf_rs/engine/*.cpp) \
@@ -254,9 +242,6 @@ SOURCES += \
     $$files(src/parser/dxf_rs/muparser/*.cpp) \
     $$files(src/parser/dxf_rs/jwwlib/*.cpp) \
     $$files(src/utils/*.cpp) \
-    src/parser/dxf_reader.cpp \
-    src/parser/pdf2svg.cpp \
-    src/server/swiftray-server.cpp \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
     third_party/liblcs/lcsExpr.cpp \
@@ -265,18 +250,6 @@ SOURCES += \
 
 SOURCES -= src/executor/operation_cmd/sync_exec_cmd.cpp
 
-USE_QT6 {
-SOURCES += \
-    src/parser/my_qsvg_handler_qt6.cpp \
-    src/parser/qsvggraphics_qt6.cpp \
-} else {
-SOURCES += \
-    src/parser/svgpp-parser.cpp \
-    src/parser/svgpp-impl.cpp \
-    src/parser/svgpp-external-impl.cpp \
-    src/parser/qsvggraphics.cpp \
-    src/parser/my_qsvg_handler.cpp \
-}
 
 RESOURCES += qml.qrc
 RESOURCES += sparkle.qrc
@@ -335,11 +308,6 @@ HEADERS += \
     $$files(third_party/libdxfrw/intern/*.h) \
     $$files(third_party/libdxfrw/*.h)
 
-ios {
-    HEADERS += \
-            src/widgets/components/ios-image-picker.h \
-}
-
 FORMS += \
     src/widgets/components/layer-list-item.ui \
     src/widgets/components/task-list-item.ui \
@@ -369,11 +337,10 @@ FORMS += \
     src/windows/image-sharpen-dialog.ui \
     src/windows/privacy_window.ui \
     src/windows/rotary_setup.ui
-ios {
-OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
-} else {
-OBJECTIVE_SOURCES += src/windows/osxwindow.mm
-OBJECTIVE_SOURCES += src/osx/disable-app-nap.mm
+
+macx {
+    OBJECTIVE_SOURCES += src/windows/osxwindow.mm
+    OBJECTIVE_SOURCES += src/osx/disable-app-nap.mm
 }
 TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/include/* \
