@@ -76,22 +76,17 @@ include_directories(
 
 # ===================== Set Bundle properties and add executable target ======================
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Add LCS libaries into the app bundle
+  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/*.dylib")
   if (DEFINED ENABLE_SENTRY)
-    set(APP_FRAMEWORK_FILES
-      ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
-      ${SPARKLE_LIBRARIES}
-      )
+    list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/bin/crashpad_handler)
   endif()
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/pem/dsa_pub.pem
   )
-  # Add LCS libaries into the app bundle
-  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/*.dylib")
-  message(STATUS "Additional files: ${APP_ADDITIONAL_EXEC_FILES}")
-  if (DEFINED ENABLE_SENTRY)
-    list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler)
-  endif()
+  message(STATUS "Additional exec files: ${APP_ADDITIONAL_EXEC_FILES}")
+  message(STATUS "Additional framework files: ${APP_FRAMEWORK_FILES}")
   #set_source_files_properties(${APP_HELPER_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Helpers")
   set_source_files_properties(${APP_ADDITIONAL_EXEC_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
   set_source_files_properties(${APP_FRAMEWORK_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Frameworks")
@@ -168,3 +163,30 @@ add_custom_command(TARGET swiftray_app_bundle
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 add_dependencies(swiftray_app_bundle ${PROJECT_NAME})
+
+# ======================= Use macdeployqt to install plugins and fixup_bundle to install dependency libs  =======================
+
+find_program(MACDEPLOYQT_EXECUTABLE macdeployqt PATHS ${Qt6_DIR}/bin)
+if(MACDEPLOYQT_EXECUTABLE)
+  message(STATUS "Found macdeployqt : ${MACDEPLOYQT_EXECUTABLE}")
+else()
+  message(WARNING "Fail to find macdeployqt. add_qt_mac_app won't have any effect."
+    "Make sure macdeployqt is located in your ${Qt6_DIR}/bin")
+endif()
+
+add_custom_target(TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND echo "Run macdeployqt for app"
+  COMMAND "${MACDEPLOYQT_EXECUTABLE}"
+    -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
+    -verbose=3
+    "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
+)
+
+# Use fixup_bundle to copy and fix dependencies
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Fixing bundle..."
+  COMMAND ${CMAKE_COMMAND} 
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+    -DPROJECT_NAME=${PROJECT_NAME}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Helpers/FixupBundle.cmake
+)

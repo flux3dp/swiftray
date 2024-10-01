@@ -1,5 +1,7 @@
 CONFIG += USE_QT6
+CONFIG += static
 
+# === Define QT Libraries ===
 QT += quick
 QT += quickwidgets
 QT += widgets
@@ -12,39 +14,27 @@ QT += svg-private
 QT += websockets
 QT += openglwidgets
 QT += core5compat
-ios {
-} else {
 QT += serialport
-}
-USE_QT6 {
 QT += openglwidgets
 QT += core5compat
-}
 
-
+# === Define Project Name and Versions ===
 QMAKE_TARGET_BUNDLE_PREFIX = com.flux
 TARGET = Swiftray
-#Application version
+
 VERSION_MAJOR = 1
 VERSION_MINOR = 3
 VERSION_BUILD = 0
 VERSION_SUFFIX = "" # empty string or "-beta.X"
-DEFINES += "QT6"
-#DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
-#       "VERSION_MINOR=$$VERSION_MINOR"\
-#       "VERSION_BUILD=$$VERSION_BUILD"
-#DEFINES += "VERSION_SUFFIX=\\\"$$VERSION_SUFFIX\\\""
-
-DEFINES += QT6
-
-#Target version
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
-win32-msvc {
+
+win32 {
   VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}
   #$${VERSION_SUFFIX}
 }
 
-
+# === Compilation Config ===
+DEFINES += "QT6"
 QMAKE_INFO_PLIST = Info.plist
 ICON=resources/images/icon.icns
 RC_ICONS = resources/images/icon.ico
@@ -54,7 +44,11 @@ CONFIG += no_keywords
 win32 {
     QMAKE_CXXFLAGS_RELEASE -= -O2
     QMAKE_CXXFLAGS_RELEASE += -Os
+}
 
+# === Import Other Libraries ===
+
+win32 {
     # libxml2, potrace, boost, opencv
     win32-msvc {
         LIBS += "C:\Dev\libraries\libxml2\lib\libxml2.dll.a"
@@ -84,41 +78,46 @@ win32 {
     # resolve __imp_WSAStartup & __imp_WSACleanup undefined issue
     LIBS += -lws2_32
     # resolve WinSock.h already included issue
-    DEFINES+=WIN32_LEAN_AND_MEAN
+    DEFINES += WIN32_LEAN_AND_MEAN
 }
+
 macx{
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
     LIBS += -L"/usr/local/lib"
 
     # Mac M1
-#    _BOOST_PATH = "/opt/homebrew/opt/boost"
-#    LIBS += -L"/opt/homebrew/opt/boost/lib"
-#    LIBS += -L"/opt/homebrew/opt/libxml2/lib"
-#    LIBS += -L"/opt/homebrew/opt/opencv/lib"
-#    LIBS += -L"/opt/homebrew/opt/glib/lib"
-#    LIBS += -L"/opt/homebrew/opt/poppler/lib"
-#    LIBS += -L"/opt/homebrew/opt/cairo/lib"
-#    LIBS += -L"/opt/homebrew/opt/potrace/lib"
+    contains(QMAKE_HOST.arch, arm64) {
+        _BOOST_PATH = "/opt/homebrew/opt/boost"
+        LIBS += -L"/opt/homebrew/opt/boost/lib"
+        LIBS += -L"/opt/homebrew/opt/libxml2/lib"
+        LIBS += -L"/opt/homebrew/opt/opencv/lib"
+        LIBS += -L"/opt/homebrew/opt/glib/lib"
+        LIBS += -L"/opt/homebrew/opt/poppler/lib"
+        LIBS += -L"/opt/homebrew/opt/cairo/lib"
+        LIBS += -L"/opt/homebrew/opt/potrace/lib"
+    } lese {
+        # Mac Intel
+        _BOOST_PATH = "/usr/local/opt/boost/"
+        LIBS += -L"/usr/lib"
+        LIBS += -L"/usr/local/opt/libxml2/lib"
+        LIBS += -L"/usr/local/opt/opencv/lib"
 
-    # Mac Intel
-    _BOOST_PATH = "/usr/local/opt/boost/"
-    LIBS += -L"/usr/lib"
-    LIBS += -L"/usr/local/opt/libxml2/lib"
-    LIBS += -L"/usr/local/opt/opencv/lib"
-
-    LIBS += -lboost_thread-mt
-    LIBS += -lboost_system-mt
-    LIBS += -lopencv_core
-    LIBS += -lopencv_imgproc
-    LIBS += -lopencv_flann
-    LIBS += -lxml2
-    LIBS += -lpotrace
-    LIBS += -lglib-2.0
-    LIBS += -lgobject-2.0
-    LIBS += -lpoppler-glib
-    LIBS += -lpoppler
-    LIBS += -lcairo
-    LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
+        LIBS += -lboost_thread-mt
+        LIBS += -lboost_system-mt
+        LIBS += -lopencv_core
+        LIBS += -lopencv_imgproc
+        LIBS += -lopencv_flann
+        LIBS += -lxml2
+        LIBS += -lpotrace
+        LIBS += -lglib-2.0
+        LIBS += -lgobject-2.0
+        LIBS += -lpoppler-glib
+        LIBS += -lpoppler
+        LIBS += -lcairo
+        LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
+    }
 }
+
 unix:!macx{
     # TODO: Linux
     LIBS += -lboost_thread-mt
@@ -131,16 +130,13 @@ unix:!macx{
     LIBS += -llibpotrace
 }
 
-ios {
-    LIBS += -framework Foundation -framework UIKit
-}
-
 message($$OUT_PWD)
 versionconfig.input = $$PWD/qmake/qmakeconfig.h.in
 versionconfig.output = $$OUT_PWD/config.h
 QMAKE_SUBSTITUTES += versionconfig
-INCLUDEPATH += $$OUT_PWD/config.h
 
+# === Add Header Paths ===
+INCLUDEPATH += $$OUT_PWD/config.h
 INCLUDEPATH += $$PWD/third_party
 INCLUDEPATH += $$PWD/src
 
@@ -155,32 +151,36 @@ win32-msvc {
     INCLUDEPATH += $$PWD\third_party
     INCLUDEPATH += $$PWD\third_party\sentry-native\install\include
 }
+
 macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
     INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
-    # Mac M1
-#    INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
-#    INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
-#    INCLUDEPATH += /opt/homebrew/include/poppler/glib
-#    INCLUDEPATH += /opt/homebrew/include/glib-2.0
-#    INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
-#    INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
-#    INCLUDEPATH += /opt/homebrew/opt/poppler/include/poppler
-#    INCLUDEPATH += /opt/homebrew/opt/potrace/include
-
-    # Mac Intel
-    INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
-    INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
-    INCLUDEPATH += /usr/local/include/poppler/glib
-    INCLUDEPATH += /usr/local/include/glib-2.0
-    INCLUDEPATH += /usr/local/opt/glib/lib/glib-2.0/include
-    INCLUDEPATH += /usr/local/opt/cairo/include/cairo
-    INCLUDEPATH += /usr/local/opt/poppler/include/poppler
+    contains(QMAKE_HOST.arch, arm64) {
+        # Mac M1
+       INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
+       INCLUDEPATH += /opt/homebrew/opt/opencv/include/opencv4
+       INCLUDEPATH += /opt/homebrew/include/poppler/glib
+       INCLUDEPATH += /opt/homebrew/include/glib-2.0
+       INCLUDEPATH += /opt/homebrew/opt/glib/lib/glib-2.0/include
+       INCLUDEPATH += /opt/homebrew/opt/cairo/include/cairo
+       INCLUDEPATH += /opt/homebrew/opt/poppler/include/poppler
+       INCLUDEPATH += /opt/homebrew/opt/potrace/include
+    } else {
+        # Mac Intel
+        INCLUDEPATH += /usr/local/opt/libxml2/include/libxml2/
+        INCLUDEPATH += /usr/local/opt/opencv/include/opencv4
+        INCLUDEPATH += /usr/local/include/poppler/glib
+        INCLUDEPATH += /usr/local/include/glib-2.0
+        INCLUDEPATH += /usr/local/opt/glib/lib/glib-2.0/include
+        INCLUDEPATH += /usr/local/opt/cairo/include/cairo
+        INCLUDEPATH += /usr/local/opt/poppler/include/poppler
+    }
 
 }
 
+# === CXX Config ===
 # Remove -Wall and -Wextra flag
 win32 {
     win32-g++ {
@@ -200,6 +200,7 @@ win32 {
         debug:QMAKE_CXXFLAGS += -bigobj
     }
 }
+
 unix {
     QMAKE_CFLAGS_WARN_ON -= -Wall
     QMAKE_CXXFLAGS_WARN_ON -= -Wall
@@ -213,6 +214,7 @@ unix {
     QMAKE_CXXFLAGS += -Wno-deprecated-declarations
     QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 }
+
 macx{
     # flag for clang only
     QMAKE_CXXFLAGS += -ferror-limit=1
@@ -221,6 +223,8 @@ macx{
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+# === Define Sources ===
 SOURCES += \
     $$files(src/*.cpp) \
     $$files(src/canvas/*.cpp) \
@@ -244,6 +248,7 @@ SOURCES += \
     $$files(src/server/*.cpp) \
     $$files(src/debug/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
+    $$files(src/parser/*.cpp) \
     $$files(src/parser/mysvg/*.cpp) \
     $$files(src/parser/dxf_rs/debug/*.cpp) \
     $$files(src/parser/dxf_rs/engine/*.cpp) \
@@ -254,9 +259,6 @@ SOURCES += \
     $$files(src/parser/dxf_rs/muparser/*.cpp) \
     $$files(src/parser/dxf_rs/jwwlib/*.cpp) \
     $$files(src/utils/*.cpp) \
-    src/parser/dxf_reader.cpp \
-    src/parser/pdf2svg.cpp \
-    src/server/swiftray-server.cpp \
     src/widgets/components/graphicitems/resizeable-rect-item.cpp \
     third_party/clipper/clipper.cpp \
     third_party/liblcs/lcsExpr.cpp \
@@ -265,26 +267,15 @@ SOURCES += \
 
 SOURCES -= src/executor/operation_cmd/sync_exec_cmd.cpp
 
-USE_QT6 {
-SOURCES += \
-    src/parser/my_qsvg_handler_qt6.cpp \
-    src/parser/qsvggraphics_qt6.cpp \
-} else {
-SOURCES += \
-    src/parser/svgpp-parser.cpp \
-    src/parser/svgpp-impl.cpp \
-    src/parser/svgpp-external-impl.cpp \
-    src/parser/qsvggraphics.cpp \
-    src/parser/my_qsvg_handler.cpp \
-}
-
 RESOURCES += qml.qrc
 RESOURCES += sparkle.qrc
 TRANSLATIONS += \
     i18n/zh-Hant-TW.ts \
     i18n/ja-JP.ts
+
 CONFIG += lrelease
 CONFIG += embed_translations
+
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
 # Additional import path used to resolve QML modules just for Qt Quick Designer
@@ -293,6 +284,7 @@ QML_DESIGNER_IMPORT_PATH =
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path):INSTALLS += target
+
 HEADERS += \
     $$files(src/*.h) \
     $$files(src/canvas/*.h) \
@@ -335,11 +327,6 @@ HEADERS += \
     $$files(third_party/libdxfrw/intern/*.h) \
     $$files(third_party/libdxfrw/*.h)
 
-ios {
-    HEADERS += \
-            src/widgets/components/ios-image-picker.h \
-}
-
 FORMS += \
     src/widgets/components/layer-list-item.ui \
     src/widgets/components/task-list-item.ui \
@@ -369,12 +356,12 @@ FORMS += \
     src/windows/image-sharpen-dialog.ui \
     src/windows/privacy_window.ui \
     src/windows/rotary_setup.ui
-ios {
-OBJECTIVE_SOURCES += src/widgets/components/ios-image-picker.mm
-} else {
-OBJECTIVE_SOURCES += src/windows/osxwindow.mm
-OBJECTIVE_SOURCES += src/osx/disable-app-nap.mm
+
+macx {
+    OBJECTIVE_SOURCES += src/windows/osxwindow.mm
+    OBJECTIVE_SOURCES += src/osx/disable-app-nap.mm
 }
+
 TR_EXCLUDE += $$PWD/third_party/* \
              /usr/local/include/* \
              /usr/local/opt/libxml2/include/* \
@@ -383,8 +370,10 @@ TR_EXCLUDE += $$PWD/third_party/* \
 QML_IMPORT_PATH = src/windows \
                   src/windows/qml
 
+
+# === macOS Bundle Config ===
 # Mac M1
-#QMAKE_APPLE_DEVICE_ARCHS=arm64
+# QMAKE_APPLE_DEVICE_ARCHS=arm64
 
 macx{
   # Copy additional files to bundle
