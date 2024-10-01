@@ -138,7 +138,7 @@ namespace MySVG {
 
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
-                          double g_scale, QColor &g_color, QImage &g_image) {
+                          double g_scale, QColor &g_color, QImage &g_image, bool g_gradient = true, int g_threshold = 128, bool g_pwm = false) {
         qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
@@ -168,7 +168,11 @@ namespace MySVG {
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_IMAGE) {
-            QTransform tmp_scale = QTransform().scale(g_scale * scale, g_scale * scale);
+            QRectF bbox = node->transformedBounds();
+            QSize img_size = g_image.size();
+            QTransform tmp_scale = QTransform().translate(bbox.x(), bbox.y())
+                                               .scale(g_scale * scale * bbox.width() / img_size.width(),
+                                                      g_scale * scale * bbox.height() / img_size.height());
 
             Node n;
             n.type = QSVG_IMAGE;
@@ -183,6 +187,9 @@ namespace MySVG {
             n.trans = trans * tmp_scale;
             n.color = g_color;
             n.visible = getNodeVisible(node);
+            n.gradient = g_gradient;
+            n.threshold = g_threshold;
+            n.pwm = g_pwm;
             nodes.push_back(n);
         } else if(node->type() == QSVG_USE) {
             QSvgUse2* use_node = (QSvgUse2*)node;

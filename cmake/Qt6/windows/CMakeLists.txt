@@ -37,12 +37,8 @@ find_package(Qt6Gui COMPONENTS Private REQUIRED)
 find_package(Qt6Widgets COMPONENTS Private REQUIRED)
 find_package(Qt6Svg COMPONENTS Private REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(LibXml2 REQUIRED)
 find_package(WinSparkle REQUIRED)
 find_package(sentry CONFIG REQUIRED)
-find_package(Cairo REQUIRED)
-find_package(GLib REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread system)
 find_package(Poppler REQUIRED)
 
 # ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
@@ -117,15 +113,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt::Qml
   opencv_core
   opencv_imgproc
+  opencv_flann
   third_party_libs
-  Cairo::Cairo
-  GLib::GLib
-  GLib::GObject
-  Poppler::Poppler
-  ${BOOST_LIBRARIES}
-  Boost::thread Boost::system
-  ${LIBXML2_LIBRARIES}
-  LibXml2::LibXml2
   ${WINSPARKLE_LIBRARIES}
 )
 

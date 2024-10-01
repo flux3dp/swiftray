@@ -627,6 +627,16 @@ if [ -n "$CODE_SIGN_IDENTITY" ] ; then
 		fi
 	done
 
+	echo "Signing LCS libraries"
+	codesign_file "$pkgexec/libutils.dylib"
+	codesign_file "$pkgexec/libtransfer.dylib"
+	codesign_file "$pkgexec/libparam.dylib"
+	codesign_file "$pkgexec/liblcs2dll.dylib"
+	codesign_file "$pkgexec/libexecutor.dylib"
+	codesign_file "$pkgexec/libcrypto6.0.dylib"
+	codesign_file "$pkgexec/libcrypto3.dylib"
+	codesign_file "$pkgexec/libBslCal.dylib"
+
 	echo "Signing primary executable"
 	codesign_file "$pkgexec/$app_name"
   

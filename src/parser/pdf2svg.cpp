@@ -1,4 +1,10 @@
 #include "pdf2svg.h"
+#include <glib.h>
+#include <glib/poppler.h>
+#include <glib/poppler-document.h>
+#include <glib/poppler-page.h>
+#include <cairo.h>
+#include <cairo-svg.h>
 #include <QFile>
 
 namespace Parser {
@@ -23,16 +29,11 @@ void PDF2SVG::convertPDFFile(QString target_pdf, QString svg_filename)
 	g_free(filename_uri);
 
     page = poppler_document_get_page(pdffile, 0);
-	convertPage(page, svg_filename.toStdString().data());
-}
 
-void PDF2SVG::removeSVGFile(QString svg_filename)
-{
-    QFile::remove(svg_filename);
-}
+    // Start converting the PDF file
 
-int PDF2SVG::convertPage(PopplerPage *page, const char* svgFilename)
-{
+	const char* svg_filename_str = svg_filename.toStdString().data();
+
     // Poppler stuff
     double width, height;
 
@@ -41,13 +42,13 @@ int PDF2SVG::convertPage(PopplerPage *page, const char* svgFilename)
     cairo_t *drawcontext;
 
     if (page == NULL) {
-        // fprintf(stderr, "Page does not exist\n");
-        return -1;
+        fprintf(stderr, "Page does not exist\n");
+        return;
     }
     poppler_page_get_size (page, &width, &height);
 
     // Open the SVG file
-    surface = cairo_svg_surface_create(svgFilename, width, height);
+    surface = cairo_svg_surface_create(svg_filename_str, width, height);
     drawcontext = cairo_create(surface);
 
     // Render the PDF file into the SVG file
@@ -60,8 +61,9 @@ int PDF2SVG::convertPage(PopplerPage *page, const char* svgFilename)
 
     // Close the PDF file
     g_object_unref(page);
-
-    return 0;
 }
 
+void PDF2SVG::removeSVGFile(QString svg_filename) {
+    QFile::remove(svg_filename);
+}
 }
