@@ -28,7 +28,7 @@ include_directories(
 	${CMAKE_BINARY_DIR} # For cmake generated files, e.g. config.h
 )
 
-# ================================= Find dependency packages =================================
+# ==== Find dependency packages ====
 # Qt6
 find_package(Qt6 COMPONENTS Core Widgets Quick QuickWidgets Websockets OpenGL QuickControls2 Qml Gui Svg SerialPort OpenGLWidgets Core5Compat REQUIRED)
 find_package(Qt6Gui COMPONENTS Private REQUIRED)
@@ -48,7 +48,7 @@ set_property(DIRECTORY APPEND
   $<$<VERSION_EQUAL:${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION},1.81>:BOOST_PHOENIX_STL_TUPLE_H_>
 )
 
-# ========================= Set variables or configs after find_package() ====================================
+# ==== Set variables or configs after find_package() ====
 
 find_program(DMGBUILD_EXECUTABLE dmgbuild
   DOC "Path to the dmgbuild utility"
@@ -59,14 +59,14 @@ if(CMAKE_OSX_DEPLOYMENT_TARGET AND CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS MIN_
   message(FATAL_ERROR "Qt version ${Qt6Widgets_VERSION} requires CMAKE_OSX_DEPLOYMENT_TARGET (${CMAKE_OSX_DEPLOYMENT_TARGET}) >= ${MIN_MACOS_VERSION}")
 endif()
 
-# ================= Generate source files with contents filled by cmake ====================
+# ==== Generate source files with contents filled by cmake =====
 # NOTE: This should be after all ws_find_package() function calls
 configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
 foreach( _cfg_file ${CFG_OUT_FILES} )
 	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
 endforeach()
 
-# ================ General included headers ===================    
+# ==== General included headers ====    
 include_directories(
   ${Qt6Gui_PRIVATE_INCLUDE_DIRS}
   ${Qt6Svg_PRIVATE_INCLUDE_DIRS}
@@ -74,7 +74,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-# ===================== Set Bundle properties and add executable target ======================
+# ==== Set Bundle properties and add executable target ====
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Add LCS libaries into the app bundle
   file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/*.dylib")
@@ -119,7 +119,7 @@ else()
     message(STATUS "Platform: Unknown")
 endif()
 
-# ====================== Subdirectory sources =======================
+# ===== Subdirectory sources ====
 
 target_sources(${PROJECT_NAME} PRIVATE 
   "qml.qrc" 
@@ -146,25 +146,25 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
   "-framework AppKit"
-  Qt::Core Qt::Quick Qt::QuickWidgets Qt::OpenGL Qt::Gui Qt::Svg Qt::Widgets Qt::WebSockets Qt::SerialPort Qt::QuickControls2 Qt6::Core5Compat Qt6::OpenGLWidgets
+  Qt6::Core
+  Qt6::Qml Qt6::Quick Qt6::QuickWidgets Qt6::Gui Qt6::Svg Qt6::Widgets Qt6::QuickControls2 
+  Qt6::Core5Compat
+  Qt6::WebSockets Qt6::SerialPort
+  Qt6::OpenGL Qt6::OpenGLWidgets
   opencv_core
   opencv_imgproc
   opencv_flann
   third_party_libs
+  poppler
   ${SPARKLE_LIBRARIES}
 )
 
-# ======================= Packaging =======================
+# ==== Packaging ====
 add_custom_target(swiftray_app_bundle)
 set_target_properties(swiftray_app_bundle PROPERTIES FOLDER "Copy Tasks")
-add_custom_command(TARGET swiftray_app_bundle
-  POST_BUILD
-  COMMAND "${CMAKE_BINARY_DIR}/packaging/macOS/osx-app.sh"
-  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-)
 add_dependencies(swiftray_app_bundle ${PROJECT_NAME})
 
-# ======================= Use macdeployqt to install plugins and fixup_bundle to install dependency libs  =======================
+# ==== Use macdeployqt to install plugins, fixup_bundle to copy and fix dependencies ====
 
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt PATHS ${Qt6_DIR}/bin)
 if(MACDEPLOYQT_EXECUTABLE)
@@ -174,19 +174,25 @@ else()
     "Make sure macdeployqt is located in your ${Qt6_DIR}/bin")
 endif()
 
-add_custom_target(TARGET ${PROJECT_NAME} POST_BUILD
-  COMMAND echo "Run macdeployqt for app"
+set(CODE_SIGN_IDENTITY "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)")
+add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Run macdeployqt for app"
   COMMAND "${MACDEPLOYQT_EXECUTABLE}"
-    -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
-    -verbose=3
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
+    -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
+    -codesign="${CODESIGN_IDENTITY}"
+    -verbose=2
 )
 
-# Use fixup_bundle to copy and fix dependencies
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "Fixing bundle..."
-  COMMAND ${CMAKE_COMMAND} 
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-    -DPROJECT_NAME=${PROJECT_NAME}
-    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Helpers/FixupBundle.cmake
-)
+# add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E echo "Fixing bundle..."
+#   COMMAND ${CMAKE_COMMAND} 
+#     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+#     -DPROJECT_NAME=${PROJECT_NAME}
+#     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Helpers/FixupBundle.cmake
+# )
+
+# add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+#   COMMAND "${CMAKE_BINARY_DIR}/packaging/macOS/osx-app.sh"
+#   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+# )
