@@ -1,9 +1,15 @@
 message(STATUS "CMake Configuring for Windows")
 
+# We use MSVC to compile the project by default
+
+set(CMAKE_CXX_FLAGS_DEBUG "/Od /Zi /MDd")
+set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MD")
 add_compile_options("/permissive-") # Qt requires MSVC /permissive- option since 6.3 release
 
 # Set build type if none was specified
 set(_default_build_type "RelWithDebInfo")  
+message(STATUS "Building Type ${CMAKE_BUILD_TYPE}")
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 	set(CMAKE_BUILD_TYPE "${_default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 	# Set the possible values of build type for cmake-gui
@@ -58,7 +64,6 @@ include_directories(
 
 # ==== Set Bundle properties and add executable target ====
 add_executable(${PROJECT_NAME} 
-  WIN32 # Make it a GUI app instead of console app
   ${SRC_DIR}/main.cpp 
   ${CMAKE_BINARY_DIR}/resources/win.rc)
 
@@ -67,6 +72,28 @@ target_sources(${PROJECT_NAME} PRIVATE
   "sparkle.qrc" 
 )
 
+# ==== Set up the canvas include directory for QML ====
+set(CANVAS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/canvas)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CANVAS_INCLUDE_DIR})
+set(QML_IMPORT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/x64-windows/debug/Qt6/qml" CACHE STRING "" FORCE)
+# ==== Set up QML resources ====
+set(QML_RESOURCES
+    src/windows/main.qml
+    src/windows/qml/WelcomeDialog.qml
+    src/windows/qml/MachineSetupPage.qml
+    src/windows/qml/MaintenanceDialog.qml
+)
+
+qt_add_qml_module(${PROJECT_NAME}
+    URI ${PROJECT_NAME}_Module
+    VERSION 1.0
+    RESOURCE_PREFIX "qt/qml/"
+    QML_FILES
+        ${QML_RESOURCES}
+    IMPORTS
+        Swiftray
+)
+ 
 # ==== Subdirectory sources ====
 add_subdirectory(src)
 add_subdirectory(third_party)
@@ -83,6 +110,7 @@ list (APPEND THIRD_PARTY_EXECS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/to
 # ==== Include and linked libraries ====
 target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt::Core Qt::Quick Qt::QuickWidgets Qt::OpenGL Qt::Gui Qt::Svg Qt::Widgets Qt::WebSockets Qt::SerialPort Qt::QuickControls2 Qt6::Core5Compat Qt6::OpenGLWidgets
+  Qt::Qml
   opencv_core
   opencv_imgproc
   opencv_flann
@@ -92,7 +120,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${WINSPARKLE_INCLUDE_DIRS}
-  ${CONAN_INCLUDE_DIRES}
+  ${Boost_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
+  ${LIBXML2_INCLUDE_DIRS}
   ${ICONV_INCLUDE_DIR}
 )
 
@@ -100,6 +130,15 @@ if (WINSPARKLE_FOUND)
   list (APPEND THIRD_PARTY_DLLS "${WINSPARKLE_DLL_DIR}/${WINSPARKLE_DLL}")
 endif()
 
+# ==== Add LCS library DLLS ====
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x64/release")
+else()
+    set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x86/release")
+endif()
+
+file(GLOB LCS_DLLS "${LCS_LIB_DIR}/*.dll")
+list(APPEND THIRD_PARTY_DLLS ${LCS_DLLS})
 
 # ==== Clone third-party DLLs and executables ====
 if (THIRD_PARTY_DLLS)
@@ -107,7 +146,7 @@ if (THIRD_PARTY_DLLS)
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different 
     ${THIRD_PARTY_DLLS}
-    ${CMAKE_BINARY_DIR}/bin
+    ${CMAKE_CURRENT_BINARY_DIR}
   )
 endif(THIRD_PARTY_DLLS)
 
@@ -116,6 +155,81 @@ if (THIRD_PARTY_EXECS)
     TARGET ${PROJECT_NAME}  POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different 
     ${THIRD_PARTY_EXECS}
-    ${CMAKE_BINARY_DIR}/bin
+    ${CMAKE_CURRENT_BINARY_DIR}
   )
 endif(THIRD_PARTY_EXECS)
+
+# === Create a deploy folder and copy all necessar files into it ====
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(WINDEPLOYQT_DEBUG_PATH "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/Qt6/bin/windeployqt.debug.bat")
+    if(NOT EXISTS "${WINDEPLOYQT_DEBUG_PATH}")
+        message(STATUS "windeployqt.debug.bat not found")
+    else()
+        message(STATUS "Using windeployqt.debug.bat")
+    endif()
+    set(WINDEPLOYQT_EXECUTABLE "${WINDEPLOYQT_DEBUG_PATH}")
+else()
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${CMAKE_PREFIX_PATH}/bin")
+endif()
+
+message(STATUS "CMAKE_INSTALL_BINDIR: ${CMAKE_INSTALL_BINDIR}")
+message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "WINDEPLOYQT_EXECUTABLE: ${WINDEPLOYQT_EXECUTABLE}")
+
+file(GLOB DEFAULT_LINKED_DLLS "${CMAKE_BINARY_DIR}/*.dll")
+
+# === Run windeployqt to add Qt plugin dlls, and copy dlls into /deploy ===
+# Note: Add --compiler-runtime if using gcc to compile
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E echo "Creating deploy folder and copy dlls.."
+    COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+    COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${PROJECT_NAME}>" "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${DEFAULT_LINKED_DLLS} "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+    COMMAND "${CMAKE_COMMAND}" -E echo "Running windeployqt..."
+    COMMAND "${WINDEPLOYQT_EXECUTABLE}"
+        --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/src/windows/qml"
+        --dir "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+        --verbose 1
+        "$<IF:$<CONFIG:Debug>,--debug,--release>"
+        "${CMAKE_CURRENT_BINARY_DIR}/deploy/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+    COMMENT "Deployed Qt Dependencies"
+)
+
+# ==== Install commands ====
+include(GNUInstallDirs)
+
+# Install the main executable
+install(TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
+)
+
+# Install QML files
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/windows/qml/
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/qml
+    FILES_MATCHING PATTERN "*.qml"
+)
+
+# Install Qt Plugin Dlls
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deploy/qml
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+)
+
+# Install third-party DLLs
+foreach(DLL ${THIRD_PARTY_DLLS})
+    install(FILES ${DLL} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endforeach()
+
+# Install third-party executables
+foreach(EXEC ${THIRD_PARTY_EXECS})
+    install(PROGRAMS ${EXEC} DESTINATION ${CMAKE_INSTALL_PREFIX})
+endforeach()
+
+# Install deployed Qt dependencies
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deploy/
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+    PATTERN "${PROJECT_NAME}*" EXCLUDE  # Exclude the main executable as it's installed separately
+)
