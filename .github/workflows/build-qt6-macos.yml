@@ -214,7 +214,7 @@ jobs:
 
       - name: "Staple Release Build"
         if: ${{ matrix.cfg.dist }}
-        uses: BoundfoxStudios/action-xcode-staple
+        uses: BoundfoxStudios/action-xcode-staple@v1
         with:
           product-path: "build/Swiftray.app"
 
