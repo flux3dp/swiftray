@@ -57,7 +57,8 @@ jobs:
           python3 -m pip install setuptools wheel
           python3 -m pip install py7zr
           python3 -m pip install aqtinstall==2.1.0
-          python3 -m aqt install-qt  mac desktop 6.7.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+          brew install qt@6.7.2
+      # python3 -m aqt install-qt  mac desktop 6.7.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
       # Build and Install Potrace library
       #- name: Restore Potrace cache
       #  uses: actions/cache@v3
