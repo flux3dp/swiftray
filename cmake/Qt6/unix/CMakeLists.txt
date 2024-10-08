@@ -176,6 +176,8 @@ endif()
 
 set(CODE_SIGN_IDENTITY "Developer ID Application: FLUX TECHNOLOGY CORP. \\(4Y92JWKV94\\)")
 add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Removing liblcs files from MacOS folder"
+  COMMAND ${CMAKE_COMMAND} -E remove "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/*.dylib"
   COMMAND ${CMAKE_COMMAND} -E echo "Removing .txt files from logs folder"
   COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/logs"
   COMMAND ${CMAKE_COMMAND} -E echo "Running macdeployqt for app"
@@ -184,6 +186,8 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
     -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
+  COMMAND ${CMAKE_COMMAND} -E echo "Adding back lcs libary..."
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/third_party/liblcs/lib/macos" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS"
 )
 
 # add_custom_command(TARGET swiftray_app_bundle POST_BUILD
