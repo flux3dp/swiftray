@@ -42,7 +42,7 @@ jobs:
 
       - name: Install OpenCV 4.4
         run: |
-          curl https://raw.githubusercontent.com/Homebrew/homebrew-core/9f30b8ec76cbee58fd7acb50bc366b214ec48faf/Formula/opencv.rb --output opencv.rb
+          curl https://raw.githubusercontent.com/Homebrew/homebrew-core/24f787507aaa51508445005f87c4720f16433962/Formula/opencv.rb --output opencv.rb
           brew install opencv.rb
       
       - name: Install Qt 6.7.2
