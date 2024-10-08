@@ -41,6 +41,8 @@ find_package(Sparkle REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(GLib REQUIRED)
 find_package(Poppler REQUIRED)
+message(STATUS "SPARKLE_LIBRARIES: ${SPARKLE_LIBRARIES}")
+
 
 # ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
 set_property(DIRECTORY APPEND
@@ -76,11 +78,16 @@ include_directories(
 
 # ==== Set Bundle properties and add executable target ====
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Define if the app should be hidden from the dock
+  set(MACOSX_HIDE_APP 1)
   # Add LCS libaries into the app bundle
-  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/*.dylib")
-  if (DEFINED ENABLE_SENTRY)
-    list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/bin/crashpad_handler)
-  endif()
+  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
+
+  list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler)
+  set(APP_FRAMEWORK_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
+    ${SPARKLE_LIBRARIES}
+  )
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/pem/dsa_pub.pem
@@ -108,12 +115,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}
     MACOSX_BUNDLE_BUNDLE_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}
     MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2023, FLUX Inc."
+    MACOSX_HIDE_APP ${MACOSX_HIDE_APP}
   )
-  #add_custom_command(
-  #  TARGET ${PROJECT_NAME} POST_BUILD 
-  #  COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
-  #          $<TARGET_FILE:${PROJECT_NAME}>
-  #)
+  add_custom_command(
+   TARGET ${PROJECT_NAME} POST_BUILD 
+   COMMAND ${CMAKE_COMMAND} -E echo "Setting rpath for app"
+   COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
+           $<TARGET_FILE:${PROJECT_NAME}>
+  )
 else()
     # Linux and others
     message(STATUS "Platform: Unknown")
@@ -139,10 +148,6 @@ target_link_libraries(third_party_libs INTERFACE
 )
 
 # ==== Link and include libraries ====
-target_include_directories(${PROJECT_NAME} PRIVATE 
-  ${ICONV_INCLUDE_DIR}
-  ${SPARKLE_INCLUDE_DIRS}
-)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
   "-framework AppKit"
@@ -159,12 +164,15 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ${SPARKLE_LIBRARIES}
 )
 
-# ==== Packaging ====
+target_include_directories(${PROJECT_NAME} PRIVATE 
+  ${ICONV_INCLUDE_DIR}
+  ${SPARKLE_INCLUDE_DIRS}
+)
+
+# ==== MacOS Packaging ====
 add_custom_target(swiftray_app_bundle)
 set_target_properties(swiftray_app_bundle PROPERTIES FOLDER "Copy Tasks")
 add_dependencies(swiftray_app_bundle ${PROJECT_NAME})
-
-# ==== Use macdeployqt to install plugins, fixup_bundle to copy and fix dependencies ====
 
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt PATHS ${Qt6_DIR}/bin)
 if(MACDEPLOYQT_EXECUTABLE)
@@ -174,31 +182,58 @@ else()
     "Make sure macdeployqt is located in your ${Qt6_DIR}/bin")
 endif()
 
+
+# ==== Prepare "Sparkle.framework" and remove unused log files ====
 set(CODE_SIGN_IDENTITY "Developer ID Application: FLUX TECHNOLOGY CORP. \\(4Y92JWKV94\\)")
+set(SPARKLE_FRAMEWORK_PATH "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks/Sparkle.framework")
 add_custom_command(TARGET swiftray_app_bundle POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "Removing liblcs files from MacOS folder"
-  COMMAND ${CMAKE_COMMAND} -E remove "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/*.dylib"
-  COMMAND ${CMAKE_COMMAND} -E echo "Removing .txt files from logs folder"
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 1. Copying Sparkle framework to app"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${SPARKLE_LIBRARIES}/Versions/B" "${SPARKLE_FRAMEWORK_PATH}/Versions/B"
+  COMMAND ${CMAKE_COMMAND} -E copy "${SPARKLE_LIBRARIES}/Resources/Info.plist" "${SPARKLE_FRAMEWORK_PATH}/Resources/Info.plist"
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 2. Code-signing Sparkle framework"
+  COMMAND codesign
+    --sign ${CODE_SIGN_IDENTITY}
+    --force
+    --deep
+    --options runtime
+    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/AutoUpdate"
+    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/Updater.app"
+    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/Sparkle"
+    "${SPARKLE_FRAMEWORK_PATH}"
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 3. Removing .txt files from logs folder"
   COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/logs"
-  COMMAND ${CMAKE_COMMAND} -E echo "Running macdeployqt for app"
+)
+
+# ==== Use macdeployqt to install plugins and embed linked libraries ====
+set(XZ_OPT -9) # Set xz compression level to 9
+add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 4. Running macdeployqt to build app bundle"
   COMMAND "${MACDEPLOYQT_EXECUTABLE}"
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
     -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
-  COMMAND ${CMAKE_COMMAND} -E echo "Adding back lcs libary..."
-  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/third_party/liblcs/lib/macos" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS"
+  COMMAND tar -Jcvf ${PROJECT_NAME}.app.tar.xz "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app"
 )
 
-# add_custom_command(TARGET swiftray_app_bundle POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E echo "Fixing bundle..."
-#   COMMAND ${CMAKE_COMMAND} 
-#     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-#     -DPROJECT_NAME=${PROJECT_NAME}
-#     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Helpers/FixupBundle.cmake
-# )
-
-# add_custom_command(TARGET swiftray_app_bundle POST_BUILD
-#   COMMAND "${CMAKE_BINARY_DIR}/packaging/macOS/osx-app.sh"
-#   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-# )
+add_custom_target(swiftray_app_dmg)
+set_target_properties(swiftray_app_dmg PROPERTIES FOLDER "Copy Tasks")
+add_dependencies(swiftray_app_dmg swiftray_app_bundle)
+add_custom_command(TARGET swiftray_app_dmg POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 5. Create folder"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/dist"
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 6. Copy app bundle to dist folder"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" "${CMAKE_BINARY_DIR}/dist/${PROJECT_NAME}.app"
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 7. Create dmg file"
+  COMMAND create-dmg
+  --volname "Swiftray Installer"
+  --window-pos 200 120
+  --window-size 800 400
+  --icon-size 100
+  --icon "Swiftray.app" 200 190
+  --hide-extension "Swiftray.app"
+  --app-drop-link 600 185
+  "Swiftray-Installer.dmg"
+  "dist/"
+)
+# We could assign app dmg background with --background "installer_background.png"

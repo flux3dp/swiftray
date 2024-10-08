@@ -34,5 +34,7 @@
     <string>${MACOSX_BUNDLE_BUNDLE_VERSION}</string>
     <key>NSHumanReadableCopyright</key>
     <string>${MACOSX_BUNDLE_COPYRIGHT}</string>
+    <key>LSUIElement</key>
+    <integer>${MACOSX_HIDE_APP}</integer>
 </dict>
 </plist>
