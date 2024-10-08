@@ -8,7 +8,7 @@ on:
       logLevel:
         description: 'Log level'
         required: true
-        default: 'warning'
+        default: 'debug'
         type: choice
         options:
         - info
@@ -53,7 +53,7 @@ jobs:
       # NOTE: jurplel/install-qt-action@v2.14.0 hasn't supported Qt6.2.4
       - name: Install Qt 6.7.2
         run: |
-          brew install qt@6.7.2
+          brew install qt@6
       # brew install p7zip
       # python3 -m pip install setuptools wheel
       # python3 -m pip install py7zr
