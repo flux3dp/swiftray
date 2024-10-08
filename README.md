@@ -103,7 +103,7 @@ $ make -j12
 ### macOS
 Use the following command to make a *distributable* app bundle.
 ```
-cmake --build .. --target swiftrayapp_bundle -j8
+cmake --build . --target swiftray_app_bundle -j8
 ```
 ### Windows
 Windeployqt is a tool that will gather all the required deployment files for your application. It will copy the necessary Qt libraries, plugins, and QML files to the directory where the application is located. It is necessary to run after compiling the application to properly run the application.

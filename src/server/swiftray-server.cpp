@@ -219,6 +219,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
     if (type == "fcode") {
+      qInfo() << "Generating FCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
       QTransform move_translate = QTransform();
       ToolpathExporterFcode exporter(move_translate, m_engrave_dpi, &params_obj, &m_thumbnail);
       bool completed = exporter.convertStack(m_canvas->document().layers(), nullptr);
@@ -229,54 +230,53 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       result["fileName"] = "swiftray-conversion";
       result["timeCost"] = exporter.getTimeCost();
     } else {
-    bool enable_high_speed = type == "fcode" && (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode);
-    // Generate GCode
-    GCodeGenerator gen(machine_param, this->m_rotary_mode);
-    qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
-    QTransform move_translate = QTransform();
-    auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : m_machine->getCustomOrigin();
-    ToolpathExporter exporter(
-        (BaseGenerator*)&gen,
-        this->m_engrave_dpi / 25.4,
-        travel_speed,
-        QPointF(std::get<0>(origin), std::get<1>(origin)),
-        ToolpathExporter::PaddingType::kFixedPadding,
-        move_translate);
-    exporter.setSortRule(PathSort::NestedSort);
-    exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
+      qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
+      bool enable_high_speed = m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode;
+      // Generate GCode
+      GCodeGenerator gen(machine_param, this->m_rotary_mode);
+      QTransform move_translate = QTransform();
+      auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : m_machine->getCustomOrigin();
+      ToolpathExporter exporter(
+          (BaseGenerator*)&gen,
+          this->m_engrave_dpi / 25.4,
+          travel_speed,
+          QPointF(std::get<0>(origin), std::get<1>(origin)),
+          ToolpathExporter::PaddingType::kFixedPadding,
+          move_translate);
+      exporter.setSortRule(PathSort::NestedSort);
+      exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
-    //
-    if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
-      return false; // canceled
-    }
-    if (exporter.isExceedingBoundary()) {
-      qWarning() << "Some items aren't placed fully inside the working area.";
-    }
-    if (this->m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
-      qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
-    }
-    qInfo() << "Conversion completed.";
-    m_buffer = QString::fromStdString(gen.toString());
-    // Write m_buffer to file
-    QFile file("swiftray-conversion.gcode");
-    if (file.open(QIODevice::WriteOnly)) {
-      QTextStream stream(&file);
-      stream << m_buffer;
-      file.close();
-    }
-    gcode_list_ = m_buffer.split("\n");
-    result["gcode"] = m_buffer;
-    result["fileName"] = "swiftray-conversion";
-    timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, nullptr);
-    Timestamp total_required_time{0, 0};
-    if (!timestamp_list_.empty()) {
-      total_required_time = timestamp_list_.last();
-    }
-    result["timeCost"] = total_required_time.second();
-    qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-    this->m_time_cost = total_required_time.second();
-    // Debugging GCode
-    if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
+      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
+        return false; // canceled
+      }
+      if (exporter.isExceedingBoundary()) {
+        qWarning() << "Some items aren't placed fully inside the working area.";
+      }
+      if (this->m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
+        qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
+      }
+      qInfo() << "Conversion completed.";
+      m_buffer = QString::fromStdString(gen.toString());
+      // Write m_buffer to file
+      QFile file("swiftray-conversion.gcode");
+      if (file.open(QIODevice::WriteOnly)) {
+        QTextStream stream(&file);
+        stream << m_buffer;
+        file.close();
+      }
+      gcode_list_ = m_buffer.split("\n");
+      result["gcode"] = m_buffer;
+      result["fileName"] = "swiftray-conversion";
+      timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, nullptr);
+      Timestamp total_required_time{0, 0};
+      if (!timestamp_list_.empty()) {
+        total_required_time = timestamp_list_.last();
+      }
+      result["timeCost"] = total_required_time.second();
+      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
+      this->m_time_cost = total_required_time.second();
+      // Debugging GCode
+      if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
     }
   } else if (action == "loadSettings") {
     // Implement settings loading logic
