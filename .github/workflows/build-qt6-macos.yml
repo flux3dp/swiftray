@@ -40,15 +40,15 @@ jobs:
       #    cache: 'pip'
       - run: mkdir $RUNNER_WORKSPACE/dev/
 
-      - name: Install OpenCV 4.4
-        run: |
-          curl https://raw.githubusercontent.com/Homebrew/homebrew-core/24f787507aaa51508445005f87c4720f16433962/Formula/opencv.rb --output opencv.rb
-          brew install opencv.rb
-      
       - name: Install Qt 6.7.2
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.7.2'
+
+      - name: Install OpenCV 4.5
+        run: |
+          curl https://raw.githubusercontent.com/Homebrew/homebrew-core/24f787507aaa51508445005f87c4720f16433962/Formula/opencv.rb --output opencv.rb
+          brew install opencv.rb
 
       - name: Install dependencies for project
         run: |
