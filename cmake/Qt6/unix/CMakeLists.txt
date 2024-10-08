@@ -174,13 +174,15 @@ else()
     "Make sure macdeployqt is located in your ${Qt6_DIR}/bin")
 endif()
 
-set(CODE_SIGN_IDENTITY "Developer ID Application: FLUX TECHNOLOGY CORP. (4Y92JWKV94)")
+set(CODE_SIGN_IDENTITY "Developer ID Application: FLUX TECHNOLOGY CORP. \\(4Y92JWKV94\\)")
 add_custom_command(TARGET swiftray_app_bundle POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "Run macdeployqt for app"
+  COMMAND ${CMAKE_COMMAND} -E echo "Removing .txt files from logs folder"
+  COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/logs"
+  COMMAND ${CMAKE_COMMAND} -E echo "Running macdeployqt for app"
   COMMAND "${MACDEPLOYQT_EXECUTABLE}"
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
-    -codesign=\"${CODE_SIGN_IDENTITY}\"
+    -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
 )
 
