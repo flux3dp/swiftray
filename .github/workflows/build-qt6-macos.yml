@@ -20,7 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
-          #- { os: macos-10.15, xcode_version: '11.3',   build: 'qmake', dist: false }
           - { os: macos-12, xcode_version: '14.2.0', build: 'cmake', dist: true}
 
     name: ${{matrix.cfg.os}} ${{matrix.cfg.build}}
@@ -42,9 +41,10 @@ jobs:
       - run: mkdir $RUNNER_WORKSPACE/dev/
       
       - name: Install Qt 6.7.2
-        run: |
-          brew install qt@6
-          
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+
       - name: Install dependencies for project
         run: |
           brew install icu4c
@@ -59,7 +59,7 @@ jobs:
       # python3 -m pip install setuptools wheel
       # python3 -m pip install py7zr
       # python3 -m pip install aqtinstall
-      # python3 -m aqt install-qt  mac desktop 6.7.2 -m debug_info -O $RUNNER_WORKSPACE/Qt
+      # python3 -m aqt install-qt mac desktop 6.7.2-O $RUNNER_WORKSPACE/Qt
       # Build and Install Potrace library
       #- name: Restore Potrace cache
       #  uses: actions/cache@v3
@@ -111,15 +111,7 @@ jobs:
           cmake --build build --config RelWithDebInfo --parallel
           cmake --install build --prefix install
 
-      - name: QMake project
-        if: ${{matrix.cfg.build == 'qmake' }}
-        run: |
-          mkdir build
-          cd build
-          $RUNNER_WORKSPACE/Qt/6.7.2/clang_64/bin/qmake DEFINES+=ENABLE_SENTRY=${{secrets.SENTRY_DSN}} ${{ github.workspace }}/swiftray.pro -spec macx-clang CONFIG+=qtquickcompiler
-      
       - name: CMake generate buildsystem
-        if: ${{matrix.cfg.build == 'cmake' }}
         run: |
           mkdir build
           cd build
@@ -145,14 +137,6 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASSWORD build.keychain
 
       - name: Compile (Build) project
-        if: ${{matrix.cfg.build == 'qmake' }}
-        run: |
-          cd build
-          make qmake_all
-          make -j10
-      
-      - name: Compile (Build) project
-        if: ${{matrix.cfg.build == 'cmake'}}
         env: 
           MACOS_CERTIFICATE: ${{ secrets.DEVELOPMENT_CERTIFICATE_DATA }}
           MACOS_CERTIFICATE_PWD: ${{ secrets.DEVELOPMENT_CERTIFICATE_PASSPHRASE }}
