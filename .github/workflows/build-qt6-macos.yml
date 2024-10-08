@@ -40,6 +40,39 @@ jobs:
       #    cache: 'pip'
       - run: mkdir $RUNNER_WORKSPACE/dev/
       
+      - name: Install FFMpeg for OpenCV
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        id: setup-ffmpeg
+        with:
+          # A specific version to download, may also be "release" or a specific version
+          # like "6.1.0". At the moment semver specifiers (i.e. >=6.1.0) are supported
+          # only on Windows, on other platforms they are allowed but version is matched
+          # exactly regardless.
+          ffmpeg-version: release
+
+      - name: Install OpenVino for OpenCV
+        run: |
+          pip3 install -U openvino
+
+      - name: Restore OpenCV cache
+        uses: actions/cache@v3
+        id: cache-opencv
+        with:
+          path: |
+            /usr/local/include/opencv4/
+            /usr/local/lib/libopencv_**.dylib
+            /usr/local/bin/opencv_**
+            /usr/local/share/licenses/opencv4
+            /usr/local/share/opencv4
+            /usr/local/lib/cmake/opencv4
+            /usr/local/bin/setup_vars_opencv4.sh
+          key: opencv
+
+      - name: Install OpenCV
+        if: steps.cache-opencv.outputs.cache-hit != 'true'
+        run: |
+          brew install opencv
+      
       - name: Install Qt 6.7.2
         uses: jurplel/install-qt-action@v4
         with:
@@ -81,24 +114,6 @@ jobs:
             cd potrace-1.16
             ./configure --with-libpotrace
             make install
-      # Build and Install OpenCV library
-      #- name: Restore OpenCV cache
-      #  uses: actions/cache@v3
-      #  id: cache-opencv
-      #  with:
-      #    path: |
-      #      /usr/local/include/opencv4/
-      #      /usr/local/lib/libopencv_**.dylib
-      #      /usr/local/bin/opencv_**
-      #      /usr/local/share/licenses/opencv4
-      #      /usr/local/share/opencv4
-      #      /usr/local/lib/cmake/opencv4
-      #      /usr/local/bin/setup_vars_opencv4.sh
-      #    key: opencv
-      - name: Install OpenCV
-        #if: steps.cache-opencv.outputs.cache-hit != 'true'
-        run: |
-          brew install opencv
       
       - name: build submodules in project - sentry-native
         run: |

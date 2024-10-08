@@ -180,7 +180,7 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
   COMMAND "${MACDEPLOYQT_EXECUTABLE}"
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
-    -codesign="${CODESIGN_IDENTITY}"
+    -codesign=\"${CODE_SIGN_IDENTITY}\"
     -verbose=2
 )
 
