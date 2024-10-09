@@ -1,5 +1,6 @@
 #include "bsl_motion_controller.h"
 
+#include <bitset>
 #include <string>
 #include <memory>
 #include <thread>
