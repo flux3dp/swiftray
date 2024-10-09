@@ -316,7 +316,6 @@ HEADERS += \
     $$files(src/parser/dxf_rs/jwwlib/*.h) \
     src/config.h \
     src/toolpath_exporter/generators/dirty-area-outline-generator.h \
-    src/server/swiftray-server.h \
     $$files(src/executor/*.h) \
     $$files(src/executor/machine_job/*.h) \
     $$files(src/executor/operation_cmd/*.h) \
