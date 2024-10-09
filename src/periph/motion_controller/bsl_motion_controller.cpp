@@ -463,8 +463,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      //lcs_set_axis_move(1, z * 1600, false, 1600, 10, 255);
-      should_swap = true;
       lcs_set_axis_move(0, z * 1600, false, 800, 10, 1000);
       // QThread::msleep(1000);
       dequeueCmd(1);
@@ -486,25 +484,25 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
-                lcs_mark_abs(0, target_x - center_pos);
+                lcs_mark_abs(0, target_x - 55);
             } else {
-                lcs_jump_abs(0, target_x - center_pos);
+                lcs_jump_abs(0, target_x - 55);
                 lcs_laser_on_list(30);
             }
         } else {
-            lcs_jump_abs(0, target_x - center_pos);
+            lcs_jump_abs(0, target_x - 55);
         }
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
-                lcs_mark_abs(-(target_y - center_pos), target_x - center_pos);
+                lcs_mark_abs(-(target_y - 55), target_x - 55);
             } else {
-                lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
+                lcs_jump_abs(-(target_y - 55), target_x - 55);
                 lcs_laser_on_list(100);
             }
         } else {
-            lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
+            lcs_jump_abs(-(target_y - 55), target_x - 55);
         }
       }
       x_pos_ = target_x;
