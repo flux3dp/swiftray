@@ -48,9 +48,13 @@ public:
   virtual void appendCustomCmd(std::string&& cmd) { str_stream_ << cmd; }
 
   // Advanced laser cutter features
-  virtual void enableRotary() { Q_ASSERT_X(true, "BaseGenerator", "Rotary feature not implemented"); }
+  virtual void enableRotary() { 
+    qWarning() << "BaseGenerator::enableRotary()" << "Rotary feature not implemented"; 
+  }
 
-  virtual void disableRotary() { Q_ASSERT_X(true, "BaseGenerator", "Rotary feature not implemented"); }
+  virtual void disableRotary() { 
+    qWarning() << "BaseGenerator::disableRotary()" << "Rotary feature not implemented"; 
+  }
 
   virtual void enableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
 
@@ -84,6 +88,8 @@ public:
 
   float speed() { return speed_; }
 
+  bool isRotaryMode() const { return rotary_mode_; }
+
 protected:
   std::stringstream str_stream_;
   float x_; // in canvas coordinate -> have nothing to do with machine coordinate
@@ -91,4 +97,5 @@ protected:
   float power_;
   float speed_;
   double x_backlash_;
+  bool rotary_mode_;
 };

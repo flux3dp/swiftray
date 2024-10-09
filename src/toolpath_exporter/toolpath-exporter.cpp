@@ -29,13 +29,20 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
-  // Pre cmds
+  // Initial Setup
+  if (!gen_->isRotaryMode()) {
+    gen_->disableRotary();
+  }
   gen_->turnOffLaser(); // M5
   if(start_with_home) {
     gen_->home();
   }
   gen_->useAbsolutePositioning();
+  if (gen_->isRotaryMode()) {
+    gen_->enableRotary();
+  }
 
+  // Start Parsing Layers
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
   canvas_size_ = QSizeF((layers.at(0)->document()).width(), 
                         (layers.at(0)->document()).height())

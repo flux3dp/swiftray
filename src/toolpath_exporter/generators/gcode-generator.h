@@ -169,6 +169,14 @@ public:
     power_ = 1;
   }
 
+  void enableRotary() override {
+    str_stream_ << "M101" << std::endl;
+  }
+
+  void disableRotary() override {
+    str_stream_ << "M100" << std::endl;
+  }
+
   void turnOnLaserAdpatively() override {
     str_stream_ << "M4S0" << std::endl;
     spindle_modal_ = MCodeSpindleModal::kM04;
@@ -225,5 +233,4 @@ private:
   MCodeSpindleModal spindle_modal_ = MCodeSpindleModal::kM05;
   MachineSettings::MachineParam::OriginType machine_origin_;
   float epsilon_ = 0.001;
-  bool rotary_mode_;
 };

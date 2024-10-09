@@ -183,7 +183,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
-    static bool rotary_mode = true;
+    static bool rotary_mode = false;
     static bool laser_enabled = false;
     static int current_s = 0; // Default power
     static bool is_absolute_positioning = true;
@@ -290,8 +290,18 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       should_swap = true;
       should_end = true;
-    } else if (command == "M6") {
-      qInfo("MTOWER: Moving to Tower");
+      rotary_mode = false;
+    } else if (command == "M5") {
+      qInfo() << "Turn Off Laser";
+      dequeueCmd(1);
+    } else if (command == "M100") { 
+      rotary_mode = false;
+      dequeueCmd(1);
+    } else if (command == "M101") {
+      rotary_mode = true;
+      dequeueCmd(1);
+    } else if (command == "M102") {
+      qInfo() << "Enable OUT1/OUT2";
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
     } else if (command == "M99" ) {
