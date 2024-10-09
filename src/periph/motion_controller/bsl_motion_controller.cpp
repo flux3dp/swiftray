@@ -202,7 +202,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
-    QRegularExpression re("([GMXYFSZ])(-?\\d+\\.?\\d*)");
+    QRegularExpression re("([GMXYFSZD])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -237,13 +237,88 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             lcs_set_jump_speed_ctrl(current_f / 60.0);
         } else if (type == "S") {
             current_s = value.toInt();
-            if (current_s > 0) {
-              laser_enabled = true;
-              lcs_set_laser_power(current_s / 10); // Assuming S1000 is 100% power
-            } else {
-              laser_enabled = false;
+            if (!is_handling_high_speed_) {
+                if (current_s > 0) {
+                  laser_enabled = true;
+                  lcs_set_laser_power(current_s / 10);  // Assuming S1000 is 100% power
+                } else {
+                  laser_enabled = false;
+                }
             }
+        } else if (type == "D") {
+            if (value == "0") {
+                QChar resolution = gcode.at(3);
+                if (resolution == 'U') high_speed_step_ = 0.025;
+                else if (resolution == 'H') high_speed_step_ = 0.05;
+                else if (resolution == 'L') high_speed_step_ = 0.2;
+                else high_speed_step_ = 0.1;
+            } else if (value == "1") {
+                high_speed_data_.clear();
+                high_speed_data_count_ = gcode.last(gcode.size() - 4).toInt();  // 4 = Prefix D1PC
+            } else if (value == "2") {
+                high_speed_data_ += gcode.last(gcode.size() - 3).simplified();  // 3 = Prefix D2W
+            } else if (value == "4") {
+                is_handling_high_speed_ = true;
+            }
+            dequeueCmd(1);
+            return;
         }
+    }
+    if (is_handling_high_speed_ && is_move_command) {
+        is_handling_high_speed_ = false;
+        // Note: GCodeGenerator moveTo add a small epsilon (0.001 < step) on border
+        // Fix start position to the nearest step
+        double start_pos = round(x_pos_ / high_speed_step_) * high_speed_step_;
+        double current_pos = x_pos_;
+        // Note: is_absolute_positioning should be false according to ToolpathExporter
+        double final_pos = is_absolute_positioning ? x : x + x_pos_;
+        bool is_reverse = final_pos < current_pos;
+        double step = is_reverse ? -high_speed_step_ : high_speed_step_;
+        int step_count = 0;
+        int laser_power = current_s;
+        bool laser = false;
+        bool completed = false;
+        double new_x, x_move;
+        std::bitset<4> bits;
+        for (auto& c : high_speed_data_) {
+            bits = c.isDigit() ? c.unicode() - '0' : c.unicode() - 'A' + 10;
+            for (int i = 3; i >= 0; i--) {
+                if (high_speed_data_count_ == step_count) {
+                    completed = true;
+                    break;
+                }
+                if (bits[i] != laser) {
+                    if (step_count == 0) {
+                        // No need to handle laser off before the first pixel
+                        step_count++;
+                        laser = !laser;
+                        continue;
+                    }
+                    new_x = start_pos + step * step_count;
+                    if (is_reverse != (new_x > final_pos)) {
+                        // Limit new_x according to final position
+                        new_x = final_pos;
+                    }
+                    if (is_absolute_positioning) {
+                        x_move = round(new_x * 1000) / 1000;
+                        current_pos = x_move;
+                    } else {
+                        x_move = round((new_x - current_pos) * 1000) / 1000;
+                        current_pos += x_move;
+                    }
+                    handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0));
+                    laser = !laser;
+                }
+                step_count++;
+            }
+            if (completed) break;
+        }
+        if (std::fabs(final_pos - current_pos) > 0.001) {
+            x_move = round((is_absolute_positioning ? final_pos: final_pos - current_pos) * 1000) /1000;
+            handleGcode(QString("X%1S0").arg(x_move));
+        }
+        dequeueCmd(1);
+        return;
     }
 
     if (command == "G90") {

@@ -37,7 +37,8 @@ private:
 
   QStringList pending_cmds_;
   std::mutex cmd_list_mutex_;
-  bool is_running_laser_ = false; 
+  bool is_running_laser_ = false;
+  bool is_handling_high_speed_ = false;
   bool is_threading = false;
   bool should_flush_ = false;
   bool lcs_paused_ = false;
@@ -47,4 +48,7 @@ private:
   double current_f = 6000.0; // Default speed
   std::thread command_runner_thread_;
   int current_error_ = 0;
+  double high_speed_step_;
+  int high_speed_data_count_ = 0;
+  QString high_speed_data_;
 };
