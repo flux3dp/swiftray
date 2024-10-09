@@ -40,7 +40,7 @@ Rectangle {
 
             Item {
                 id: item1
-                width: parent.parent.width
+                Layout.fillWidth: true
                 height: 200
 
                 Image {

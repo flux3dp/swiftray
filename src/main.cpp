@@ -35,8 +35,8 @@ int mainCLI(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  qInfo() << "Swiftray starting..."  << getDebugTime();
-  qInfo() << "Qt version:" << QT_VERSION_STR;
+  qInfo() << "Swiftray Version:" << QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
+  qInfo() << "Qt Version:" << QT_VERSION_STR;
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
   MainApplication app(argc, argv);

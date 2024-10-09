@@ -534,19 +534,19 @@ void LCS2close(void) {
 
 bool lcs_check_init() {
     if (!gLibLCS) {
-        printf("Loading LCS library...\n");
+        printf("LCS:: Loading LCS library...\n");
         int result = LCS2open();
-        printf("LCSOpen result=%d\n", result);
+        printf("LCS:: LCSOpen result=%d\n", result);
         if (!lcs_init_dll) {
-            fprintf(stderr, "Failed to load LCS library.\n");
+            printf("LCS:: Failed to load LCS library.\n");
             return false;
         }
         if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-            fprintf(stderr, "Failed to initialize LCS library.\n");
+            printf("LCS:: Failed to initialize LCS library.\n");
             return false;
         }
 
-        printf("LCS Init OK\n");
+        printf("LCS:: Initialized successfully.\n");
     }
     return true;
 }
@@ -558,7 +558,7 @@ bool lcs_available() {
 
 bool lcs_connect() {
     if (!lcs_available()) {
-        printf("No laser cards found.\n");
+        printf("LCS:: No laser cards found.\n");
         return false;
     }
 
