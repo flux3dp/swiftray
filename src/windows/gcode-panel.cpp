@@ -131,6 +131,10 @@ void GCodePanel::setGCode(const QString &gcode) {
 }
 
 const QStringList& GCodePanel::getGCodeList() {
+  QString gcode_data = ui->gcodeText->toPlainText();
+  if (gcode_data.length > 0) {
+    gcode_list_ = gcode_data.split('\n');
+  }
   return gcode_list_;
 }
 
