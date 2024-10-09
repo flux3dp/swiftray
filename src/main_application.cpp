@@ -563,7 +563,7 @@ void MainApplication::initialMachine() {
     settings.setValue("machines/index", machine_index_);
     MachineSettings::MachineParam machine2 = MachineSettings::findPreset("Promark", "Promark");
     machine2.name = "Promark";
-    machine2.is_high_speed_mode = false;
+    machine2.is_high_speed_mode = true;
     machine_settings->addMachine(machine2);
     saveMachine();
     machine_index_ = 1;
