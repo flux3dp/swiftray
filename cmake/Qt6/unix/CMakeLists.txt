@@ -79,7 +79,7 @@ include_directories(
 # ==== Set Bundle properties and add executable target ====
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Define if the app should be hidden from the dock
-  set(MACOSX_HIDE_APP 1)
+  set(MACOSX_HIDE_APP 0)
   # Add LCS libaries into the app bundle
   file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
 
