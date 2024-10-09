@@ -982,7 +982,7 @@ QString MainApplication::generateToolpath() {
   Q_EMIT progressChanged(tr("Generating GCode..."), tr("Cancel"), 0);
   Document &doc = canvas_->document();
   GCodeGenerator generator(this->getMachineParam(), this->isRotaryMode());
-  QTransform move_translate = this->calcMoveTransform();
+  QTransform move_translate = this->calcMoveTransform(); // This includes the rotary transform as well..
   ToolpathExporter exporter(&generator,
       doc.settings().dpmm(),
       this->getTravelSpeed(),
