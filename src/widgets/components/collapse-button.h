@@ -25,7 +25,6 @@ public:
   }
 
   void setContent(QWidget *content) {
-    qInfo() << "Set content" << content;
     assert(content != nullptr);
     content_ = content;
     auto animation_ = new QPropertyAnimation(content_, "maximumHeight"); // QObject with auto delete

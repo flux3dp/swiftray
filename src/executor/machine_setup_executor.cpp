@@ -6,7 +6,7 @@
 MachineSetupExecutor::MachineSetupExecutor(QObject *parent)
   : Executor{parent}
 {
-  qInfo() << "MachineSetupExecutor created";
+  qInfo() << this << "created";
 }
 
 void MachineSetupExecutor::exec() {

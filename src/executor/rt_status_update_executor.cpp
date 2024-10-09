@@ -7,7 +7,7 @@
 RTStatusUpdateExecutor::RTStatusUpdateExecutor(QObject *parent)
   : Executor{parent}
 {
-  qInfo() << "RTStatusUpdateExecutor created";
+  qInfo() << this << "created";
   watchdog_timer_ = new QTimer(this);
   watchdog_timer_->setSingleShot(true);
   connect(watchdog_timer_, &QTimer::timeout, this, &RTStatusUpdateExecutor::timeout);

@@ -68,7 +68,7 @@ Machine::ConnectionState Machine::getConnectionState() {
  */
 bool Machine::applyMachineParam(MachineSettings::MachineParam mach) {
   machine_param_ = mach;
-  qInfo() << "Apply Machine Param: " << mach.name << (int)mach.board_type;
+  qInfo() << "Machine::applyMachineParam(" << mach.name << "," << (int)mach.board_type << ")";
   // NOTE: Currently, we only support Grbl machine, 
   //       thus, no need to re-create motion controller when MachineParam is changed
   //       However, when any other motion controller type is supported, we should handle it
@@ -557,11 +557,11 @@ bool Machine::connectSerial(QString port, int baudrate) {
       qWarning() << "BSL already connected";
       return false;
     } else if (lcs_connect()) {
-      qInfo() << "LCS connected";
+      qInfo() << "Machine::connectSerial():: LCS connected";
       this->setupMotionController();
       return true;
     } else {
-      qWarning() << "LCS connect failed";
+      qWarning() << "Machine::connectSerial():: LCS connection failed";
       return false;
     }
   } else {

@@ -18,7 +18,6 @@ AboutWindow::AboutWindow(QWidget *parent) :
   ver_str.append(app_version); 
   ver_str.append(QString{VERSION_SUFFIX});
   ver_str.append("</p></body></html>");
-  qInfo() << "App version: " << ver_str;
   ui->labelVersion->setText(ver_str);
 
   ui->label_4->setPixmap(QPixmap(isDarkMode() ? ":/resources/images/dark/icon-about.png" : ":/resources/images/icon-about.png"));
