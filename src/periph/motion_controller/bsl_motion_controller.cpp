@@ -351,9 +351,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_get_status((uint32_t *)&run_status, &running_pos);
       // qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
       // Start new list
-      lcs_set_jump_speed_ctrl(3000);
+      lcs_set_jump_speed_ctrl(2000);
       lcs_set_mark_speed_ctrl(1000);
-      lcs_set_laser_delays(-50, 50);
+      lcs_set_laser_delays(100, 100);
+      lcs_set_scanner_delays(100, 50);
       lcs_set_start_list(1);
       lcs_set_laser_power(100);
       lcs_set_laser_mode(LCS_MOPA, false);
@@ -384,7 +385,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       char sn[50];
       lcs_get_serial_number(sn, 32);
       qInfo() << "BSLM~::handleGcode() - Serial Number: " << sn;
-      Q_EMIT configUpdate("SN", sn);
+      Q_EMIT configUpdate("serial", sn);
       dequeueCmd(1);
     } else if (!is_move_command) {
       dequeueCmd(1);
