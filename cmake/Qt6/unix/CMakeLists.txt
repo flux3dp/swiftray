@@ -79,7 +79,7 @@ include_directories(
 # ==== Set Bundle properties and add executable target ====
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Define if the app should be hidden from the dock
-  set(MACOSX_HIDE_APP 1)
+  set(MACOSX_HIDE_APP 0)
   # Add LCS libaries into the app bundle
   file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
 
@@ -213,7 +213,7 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
     -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
-  COMMAND tar -Jcvf ${PROJECT_NAME}.app.tar.xz "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app"
+  COMMAND tar -C "${CMAKE_BINARY_DIR}" -Jcvf ${PROJECT_NAME}.app.tar.xz "${PROJECT_NAME}.app"
 )
 
 add_custom_target(swiftray_app_dmg)

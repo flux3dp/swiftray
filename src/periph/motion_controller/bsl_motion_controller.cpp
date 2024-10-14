@@ -10,7 +10,7 @@
 #include <QApplication>
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 1000
+#define MAX_BUFFER_LIST_SIZE 20000
 
 int lcs_error_count = 0;
 
@@ -183,6 +183,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
+    static bool rotary_mode = false;
     static bool laser_enabled = false;
     static int current_s = 0; // Default power
     static bool is_absolute_positioning = true;
@@ -289,8 +290,18 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       should_swap = true;
       should_end = true;
-    } else if (command == "M6") {
-      qInfo("MTOWER: Moving to Tower");
+      rotary_mode = false;
+    } else if (command == "M5") {
+      qInfo() << "Turn Off Laser";
+      dequeueCmd(1);
+    } else if (command == "M100") { 
+      rotary_mode = false;
+      dequeueCmd(1);
+    } else if (command == "M101") {
+      rotary_mode = true;
+      dequeueCmd(1);
+    } else if (command == "M102") {
+      qInfo() << "Enable OUT1/OUT2";
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
     } else if (command == "M99" ) {
@@ -331,7 +342,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
-      QThread::msleep(1);
+      QThread::msleep(2);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
       lcs_set_start_list(list_no);
@@ -369,9 +380,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      lcs_set_axis_move(1, z * 1600, false, 800, 10, 1000);
+      //lcs_set_axis_move(1, z * 1600, false, 1600, 10, 255);
+      should_swap = true;
       lcs_set_axis_move(0, z * 1600, false, 800, 10, 1000);
-      QThread::msleep(8000);
+      // QThread::msleep(1000);
       dequeueCmd(1);
     } else if (is_move_command) {
       double target_x, target_y;
@@ -383,16 +395,34 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           target_y = y_pos_ + y;
       }
 
-      if (laser_enabled && (command == "G1" || command.isEmpty())) {
-          // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-          if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
-              lcs_mark_abs(-(target_y - 55), target_x - 55);
-          } else {
-              lcs_jump_abs(-(target_y - 55), target_x - 55);
-              lcs_laser_on_list(30);
-          }
+      if (rotary_mode) {
+        double diff_y = target_y - y_pos_;
+        if (diff_y != 0) {
+          lcs_set_axis_move(1, fabs(diff_y) * 100, diff_y < 0, 3200, 10, 255);
+        }
+        if (laser_enabled && (command == "G1" || command.isEmpty())) {
+            // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
+            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
+                lcs_mark_abs(0, target_x - 55);
+            } else {
+                lcs_jump_abs(0, target_x - 55);
+                lcs_laser_on_list(30);
+            }
+        } else {
+            lcs_jump_abs(0, target_x - 55);
+        }
       } else {
-          lcs_jump_abs(-(target_y - 55), target_x - 55);
+        if (laser_enabled && (command == "G1" || command.isEmpty())) {
+            // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
+            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
+                lcs_mark_abs(-(target_y - 55), target_x - 55);
+            } else {
+                lcs_jump_abs(-(target_y - 55), target_x - 55);
+                lcs_laser_on_list(100);
+            }
+        } else {
+            lcs_jump_abs(-(target_y - 55), target_x - 55);
+        }
       }
       x_pos_ = target_x;
       y_pos_ = target_y;
@@ -505,4 +535,9 @@ bool BSLMotionController::resetState() {
     case MotionControllerState::kQuit:
       return false;
   }
+}
+
+void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
+  qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
 }

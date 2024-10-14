@@ -7,7 +7,7 @@
 
 ConsoleExecutor::ConsoleExecutor(QObject *parent): Executor{parent}
 {
-  qInfo() << "ConsoleExecutor created";
+  qInfo() << this << "created";
 }
 
 void ConsoleExecutor::exec() {

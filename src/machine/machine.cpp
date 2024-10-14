@@ -68,7 +68,7 @@ Machine::ConnectionState Machine::getConnectionState() {
  */
 bool Machine::applyMachineParam(MachineSettings::MachineParam mach) {
   machine_param_ = mach;
-  qInfo() << "Apply Machine Param: " << mach.name << (int)mach.board_type;
+  qInfo() << "Machine::applyMachineParam(" << mach.name << "," << (int)mach.board_type << ")";
   // NOTE: Currently, we only support Grbl machine, 
   //       thus, no need to re-create motion controller when MachineParam is changed
   //       However, when any other motion controller type is supported, we should handle it
@@ -557,11 +557,11 @@ bool Machine::connectSerial(QString port, int baudrate) {
       qWarning() << "BSL already connected";
       return false;
     } else if (lcs_connect()) {
-      qInfo() << "LCS connected";
+      qInfo() << "Machine::connectSerial():: LCS connected";
       this->setupMotionController();
       return true;
     } else {
-      qWarning() << "LCS connect failed";
+      qWarning() << "Machine::connectSerial():: LCS connection failed";
       return false;
     }
   } else {
@@ -623,4 +623,15 @@ QString Machine::getConfig(QString key) {
   qInfo() << this << "::getConfig() - " << key << "has config" << machine_config_.contains(key);
   if (machine_config_.contains(key)) return machine_config_[key];
   else return "";
+}
+
+void Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  if (motion_controller_) {
+    if (motion_controller_->type() == "BSL") {
+      ((BSLMotionController*)motion_controller_)->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
+      qInfo() << "Machine::setCorrection() - Correction set" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
+    } else {
+      qWarning() << "Machine::setCorrection() - Not supported for this motion controller";
+    }
+  }
 }

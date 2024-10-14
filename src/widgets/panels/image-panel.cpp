@@ -52,7 +52,6 @@ void ImagePanel::registerEvents() {
 }
 
 void ImagePanel::setLayout(bool is_dark_mode) {
-  qInfo() << "Is Dark Mode?" << is_dark_mode;
   ui->pushButtonCrop->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-crop.png" : ":/resources/images/icon-crop.png"));
   ui->pushButtonInvert->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-invert.png" : ":/resources/images/icon-invert.png"));
   ui->pushButtonSharpen->setIcon(QIcon(is_dark_mode ? ":/resources/images/dark/icon-sharpen.png" : ":/resources/images/icon-sharpen.png"));

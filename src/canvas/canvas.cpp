@@ -1357,6 +1357,9 @@ void Canvas::exitCurrentMode() {
     case Mode::PathEditing:
       ctrl_path_edit_.exit();
       break;
+    default:
+      qInfo() << "No control to exit with mode" << static_cast<int>(mode());
+      break;
   }
 }
 
