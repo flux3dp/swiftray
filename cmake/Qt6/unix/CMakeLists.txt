@@ -213,7 +213,7 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
     -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
-  COMMAND tar -Jcvf ${PROJECT_NAME}.app.tar.xz "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app"
+  COMMAND tar -C "${CMAKE_BINARY_DIR}" -Jcvf ${PROJECT_NAME}.app.tar.xz "${PROJECT_NAME}.app"
 )
 
 add_custom_target(swiftray_app_dmg)

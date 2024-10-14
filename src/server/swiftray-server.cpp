@@ -130,6 +130,16 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     QString paramName = params.toObject()["name"].toString();
     // Implement get device parameter logic, probably laser speed, power, fan...etc
     result["value"] = 0; // Replace with actual value
+  } else if (action == "setCorrection") {
+    double scaleX = params.toObject()["scaleX"].toDouble();
+    double scaleY = params.toObject()["scaleY"].toDouble();
+    double bucketX = params.toObject()["bucketX"].toDouble();
+    double bucketY = params.toObject()["bucketY"].toDouble();
+    double paralleX = params.toObject()["paralleX"].toDouble();
+    double paralleY = params.toObject()["paralleY"].toDouble();
+    double trapeX = params.toObject()["trapeX"].toDouble();
+    double trapeY = params.toObject()["trapeY"].toDouble();
+    getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY); 
   } else if (action == "setParam") {
     QString paramName = params.toObject()["name"].toString();
     QJsonValue paramValue = params.toObject()["value"];

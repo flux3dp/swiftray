@@ -23,6 +23,7 @@ public:
   CmdSendResult resume();
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
   QString getCurrentError() { return this->getErrorString(current_error_); }
+  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
