@@ -624,3 +624,14 @@ QString Machine::getConfig(QString key) {
   if (machine_config_.contains(key)) return machine_config_[key];
   else return "";
 }
+
+void Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  if (motion_controller_) {
+    if (motion_controller_->type() == "BSL") {
+      ((BSLMotionController*)motion_controller_)->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
+      qInfo() << "Machine::setCorrection() - Correction set" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
+    } else {
+      qWarning() << "Machine::setCorrection() - Not supported for this motion controller";
+    }
+  }
+}

@@ -536,3 +536,8 @@ bool BSLMotionController::resetState() {
       return false;
   }
 }
+
+void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
+  qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
+}
