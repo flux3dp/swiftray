@@ -154,7 +154,7 @@ void JobExecutor::exec() {
       break;
     default:
       completed_cmd_cnt_ += 1;
-      Q_EMIT progressChanged(active_job_->getProgressPercent());
+      Q_EMIT progressChanged(100 -100 * cmd_in_progress_.length() / active_job_->length());
       Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
       pending_cmd_.reset();
       break;
@@ -203,7 +203,7 @@ void JobExecutor::handleCmdFinish(int code) {
   }
   completed_cmd_cnt_ += 1;
   if (completed_cmd_cnt_ % 25 || cmd_in_progress_.length() < 5) {
-    Q_EMIT progressChanged(active_job_->getProgressPercent());
+    Q_EMIT progressChanged(100 - 100 * cmd_in_progress_.length() / active_job_->length());
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   }
 }
@@ -286,7 +286,7 @@ float JobExecutor::getProgress() const {
   if (active_job_.isNull()) {
     return 0;
   }
-  return active_job_->getProgressPercent();
+  return 100 - 100 * cmd_in_progress_.length() / active_job_->length();
 }
 
 /**

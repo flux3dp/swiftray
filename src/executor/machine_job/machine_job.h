@@ -21,6 +21,7 @@ public:
   virtual void reload();
   virtual float getProgressPercent() const;
   int getIndex() const { return next_gcode_idx_; } 
+  int length() const { return gcode_list_.length(); }
   QString getJobName() const { return job_name_; }
 
   virtual Timestamp getElapsedTime() const;
