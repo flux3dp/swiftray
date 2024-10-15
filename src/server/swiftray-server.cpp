@@ -241,7 +241,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       result["timeCost"] = exporter.getTimeCost();
     } else {
       qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
-      bool enable_high_speed = m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode;
+      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap();
       // Generate GCode
       GCodeGenerator gen(machine_param, this->m_rotary_mode);
       QTransform move_translate = QTransform();

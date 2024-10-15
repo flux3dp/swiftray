@@ -122,6 +122,7 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
     qInfo() << "MyQSVGHandler parsed successfully.";
     auto svg_doc = handler.document();
     handler.animationDuration();
+    has_bitmap_ = false;
 
     if (document().width() != svg_doc->viewBox().width() || document().height() != svg_doc->viewBox().height()) {
         qInfo() << "SVG size is different from the canvas size";
@@ -135,6 +136,10 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
       all_shapes.append(layer->children());
     }
     for (auto &shape : all_shapes) {
+      if (shape->type() == Shape::Type::Bitmap) {
+        has_bitmap_ = true;
+        break;
+      }
       // qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();
     }
     document().setSelections(all_shapes);
@@ -1632,4 +1637,8 @@ void Canvas::setCanvasQuality(CanvasQuality quality) {
   canvas_quality_ = quality;
   canvas_counter_ = 0;
   is_flushed_ = false;
+}
+
+bool Canvas::hasBitmap() {
+  return has_bitmap_;
 }

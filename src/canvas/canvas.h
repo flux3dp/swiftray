@@ -119,6 +119,8 @@ public:
   void setCanvasQuality(CanvasQuality quality);
 
   void save(QDataStream &out);
+
+  bool hasBitmap();
   
 public Q_SLOTS:
 
@@ -295,6 +297,7 @@ private:
   CanvasQuality canvas_quality_ = AutoQuality;
   unsigned int canvas_counter_ = 0;
   bool change_quality_ = false;
+  bool has_bitmap_ = false;
 
   QQuickWidget *widget_;
 
