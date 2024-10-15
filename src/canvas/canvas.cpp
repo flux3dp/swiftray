@@ -119,9 +119,16 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
   QList<LayerPtr> svg_layers;
   MyQSvgHandler handler(&io, &document(), &svg_layers, MySVG::ReadType::BVG);
   if (handler.ok()) {
-    qInfo() << "Handler OK!";
-    handler.document();
+    qInfo() << "MyQSVGHandler parsed successfully.";
+    auto svg_doc = handler.document();
     handler.animationDuration();
+
+    if (document().width() != svg_doc->viewBox().width() || document().height() != svg_doc->viewBox().height()) {
+        qInfo() << "SVG size is different from the canvas size";
+        document().setWidth(svg_doc->viewBox().width());
+        document().setHeight(svg_doc->viewBox().height());
+    }
+
     QList<ShapePtr> all_shapes;
     for (auto &layer : svg_layers) {
       qInfo() << "Layer: " << layer->name() << " children " << layer->children().size();

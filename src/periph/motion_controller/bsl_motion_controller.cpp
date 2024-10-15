@@ -190,6 +190,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static bool is_absolute_positioning = true;
     static int list_no = 1;
     static bool first_list = true;
+    static double center_pos = 55;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -204,7 +205,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
-    QRegularExpression re("([GMXYFSZD])(-?\\d+\\.?\\d*)");
+    QRegularExpression re("([GMXYFSZDW])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -264,6 +265,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             }
             dequeueCmd(1);
             return;
+        } else if (type == "W") {
+            double workarea = value.toDouble();
+            center_pos = workarea / 2;
+            lcs_set_scanahead_params(workarea, false, false, false, 0, 0, 0);
+            qInfo() << "BSLM~::handleGcode() - Workarea set to " << workarea << "@" << getDebugTime();
         }
     }
     if (is_handling_high_speed_ && is_move_command) {
@@ -480,25 +486,25 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
-                lcs_mark_abs(0, target_x - 55);
+                lcs_mark_abs(0, target_x - center_pos);
             } else {
-                lcs_jump_abs(0, target_x - 55);
+                lcs_jump_abs(0, target_x - center_pos);
                 lcs_laser_on_list(30);
             }
         } else {
-            lcs_jump_abs(0, target_x - 55);
+            lcs_jump_abs(0, target_x - center_pos);
         }
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1) {
-                lcs_mark_abs(-(target_y - 55), target_x - 55);
+                lcs_mark_abs(-(target_y - center_pos), target_x - center_pos);
             } else {
-                lcs_jump_abs(-(target_y - 55), target_x - 55);
+                lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
                 lcs_laser_on_list(100);
             }
         } else {
-            lcs_jump_abs(-(target_y - 55), target_x - 55);
+            lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
         }
       }
       x_pos_ = target_x;

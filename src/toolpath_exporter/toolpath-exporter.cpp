@@ -41,6 +41,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   if (gen_->isRotaryMode()) {
     gen_->enableRotary();
   }
+  gen_->setWorkarea(machine_work_area_mm_);
 
   // Start Parsing Layers
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");

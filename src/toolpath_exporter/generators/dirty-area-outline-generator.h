@@ -128,6 +128,11 @@ public:
     machine_origin_ = MachineSettings::MachineParam::OriginType::RearLeft;
   }
 
+  void setWorkarea(QRectF workarea) override {
+    machine_width_ = workarea.width();
+    machine_height_ = workarea.height();
+  }
+
   std::string toString() override {
     str_stream_.str(std::string()); // clear
 
@@ -139,6 +144,7 @@ public:
     str_stream_ << "G1F" << std::to_string(travel_speed_) << std::endl;
     str_stream_ << "G1S0" << std::endl;
     str_stream_ << "M3" << std::endl;
+    str_stream_ << "W" << machine_width_ << std::endl;
     if (x_min_ == x_max_ && x_min_ == -1) {
       str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
       str_stream_ << "G1S0" << std::endl;

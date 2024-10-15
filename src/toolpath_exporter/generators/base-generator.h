@@ -66,6 +66,10 @@ public:
 
   virtual void disableDiodeLaser() { Q_ASSERT_X(true, "BaseGenerator", "Diode laser not implemented"); }
 
+  virtual void setWorkarea(QRectF workarea) {
+    qWarning() << "BaseGenerator::setWorkarea() not implemented"; 
+  }
+
   virtual void beginHighSpeedRastering(int pixels) {
     Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented");
   }

@@ -3,10 +3,7 @@
 // Copyright (C) 2022 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
-#define QT6
 #define MYSVG
-
-#ifdef QT6
 
 #include "qplatformdefs.h"
 
@@ -4628,6 +4625,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
     init();
 
     qInfo() << "SVG Layers: " << svg_layers->size();
+    qInfo() << "SVG Size: " << m_doc->viewBox().width() << "x" << m_doc->viewBox().height();
     qInfo() << "SVG Handler Data List Size " << data_list_.size();
 
     for(int i = 0; i < data_list_.size(); ++i) {
@@ -5371,5 +5369,3 @@ QString MyQSvgHandler::errorString() const { return xml->errorString(); }
 #endif
 
 QT_END_NAMESPACE
-
-#endif
