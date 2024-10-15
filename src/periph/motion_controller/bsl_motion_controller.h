@@ -29,7 +29,7 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
-  void handleGcode(const QString &cmd_packet);
+  void handleGcode(const QString &cmd_packet, bool force_pulse = false);
   void startCommandRunner();
   void commandRunnerThread();
   void dequeueCmd(int count);

@@ -118,7 +118,7 @@ void JobExecutor::exec() {
         return;
       }
     }
-    if (this->exec_loop_count % 40 == 1) {
+    if (this->exec_loop_count % 500 == 1) {
       qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
     }
     this->exec_wait = 10;

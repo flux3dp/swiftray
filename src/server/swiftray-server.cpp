@@ -111,7 +111,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
       bsl_param.travel_speed = 4000;
       bsl_param.rotary_axis = 'Y';
       bsl_param.home_on_start = false;
-      bsl_param.is_high_speed_mode = false;
+      bsl_param.is_high_speed_mode = true;
       this->m_machine = new Machine(bsl_param);
       machine_map_.insert(port, m_machine);
       result["message"] = "Connected to device on port " + port;
