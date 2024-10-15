@@ -36,7 +36,7 @@ void Executor::execThread() {
   while (this->thread_enabled_) {
     this->exec_loop_count++;
     if (this->exec_loop_count % 1000 == 1) {
-      qInfo() << this << "::threadFunction() alive @" << getDebugTime();
+      // qInfo() << this << "::threadFunction() alive @" << getDebugTime();
     }
     if (this->exec_wait > 0) {
       QThread::msleep(this->exec_wait);

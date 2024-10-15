@@ -177,6 +177,10 @@ public:
     str_stream_ << "M100" << std::endl;
   }
 
+  void setWorkarea(QRectF workarea) override {
+    str_stream_ << "W" << workarea.width() << std::endl;
+  }
+
   void turnOnLaserAdpatively() override {
     str_stream_ << "M4S0" << std::endl;
     spindle_modal_ = MCodeSpindleModal::kM04;
