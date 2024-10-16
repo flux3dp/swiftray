@@ -137,7 +137,10 @@ void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
     }
     for (auto &shape : all_shapes) {
       if (shape->type() == Shape::Type::Bitmap) {
-        has_bitmap_ = true;
+        BitmapShape *bitmap = dynamic_cast<BitmapShape *>(shape.get());
+        if (bitmap->gradient()) {
+          has_bitmap_ = true;
+        }
         break;
       }
       // qInfo() << "Shape: " << static_cast<int>(shape->type()) << shape->boundingRect().width() << shape->boundingRect().height();

@@ -862,13 +862,18 @@ bool ToolpathExporter::rasterLineHighSpeed(const QLineF& path, const std::vector
  */
 QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
   Q_ASSERT_X(src.allGray(), "ToolpathExporter", "Input image for imageBinarize() must be grayscaled");
+  if (src.format() != QImage::Format_ARGB32) {
+    qInfo() << "Bitmap Conversion from format" << static_cast<int>(src.format());
+    src = src.convertToFormat(QImage::Format_ARGB32);
+  }
   Q_ASSERT_X(src.format() == QImage::Format_ARGB32, "ToolpathExporter", "Input image for imageBinarize() must be Format_ARGB32");
   
   QImage result_img{src.width(), src.height(), QImage::Format_Grayscale8};
 
   for (int y = 0; y < src.height(); ++y) {
     for (int x = 0; x < src.width(); ++x) {
-      int grayscale_val = qGray(src.pixel(x, y));
+      auto pixel = src.pixel(x, y);
+      int grayscale_val = qAlpha(pixel) < 10 ? 255 :  qGray(pixel);
       result_img.setPixel(x, y,
                           grayscale_val <= threshold ? qRgb(0, 0, 0) :
                           qRgb(255, 255, 255));
