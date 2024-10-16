@@ -342,7 +342,9 @@ void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const Q
 bool serialPortAvailable() {
   const auto infos = QSerialPortInfo::availablePorts();
   for (const QSerialPortInfo &info : infos) {
-    if(info.portName().startsWith("cu.") || info.portName().startsWith("tty.Bluetooth")) {
+    if(info.portName().startsWith("cu.") || 
+       info.portName().startsWith("tty.Bluetooth") || 
+       info.portName().startsWith("tty.BLTH")) {
       continue;
     }
     return true;
@@ -387,8 +389,8 @@ QJsonArray SwiftrayServer::getDeviceList() {
       {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
       {"serial", "LV84KAO192839012"},
       {"name", "Lazervida Origin"},
-      {"st_id", st_id},
-      {"st_prog", st_prog},
+      {"st_id", 0},
+      {"st_prog", 0},
       {"version", "5.0.0"},
       {"model", "flv1"},
       {"port", "/dev/ttyUSB0"},
