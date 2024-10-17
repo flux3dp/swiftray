@@ -89,7 +89,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   if (is_v2_) {
     gen_->start_task_script_block("xMIN", "0003");
     gen_->miscellaneous_cmd(1);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(-1);
     }
     if (!with_custom_origin_) {
@@ -106,6 +106,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   // Supporting for spinning axis
   if (is_rotary_task_) {
     if (is_v2_) {
+      if (!config_.enable_rotary_z_move) {
+        travel(0, config_.spinning_axis_coord + 1, true);
+        travel(0, config_.spinning_axis_coord - 1, true);
+        travel(0, config_.spinning_axis_coord, true);
+        pause(false);
+      }
       is_a_mode_ = true;
     } else {
       travel(0, config_.spinning_axis_coord + 1);
@@ -183,7 +189,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         // Write transition script
         gen_->start_task_script_block("TRAN", NULL);
         if (with_module_) {
-          if (is_rotary_task_) {
+          if (is_rotary_task_ && config_.enable_rotary_z_move) {
             moveZ(1);
           }
           QPointF tran_pos;
@@ -194,7 +200,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           } else {
             tran_pos = QPointF(work_area_mm_.width() / 2, work_area_mm_.height() / 2);
           }
-          if (is_rotary_task_) {
+          if (is_rotary_task_ && config_.enable_rotary_z_move) {
             travel(std::nanf(""), 0, true);
             travel(tran_pos.x(), std::nanf(""), true);
             travel(std::nanf(""), tran_pos.y(), true);
@@ -216,8 +222,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         // Write main script
         gen_->start_task_script_block("MAIN", NULL);
         if (is_rotary_task_) {
-          rotary_wait_move_ = true;
-          rotary_y_offset_ = config_.spinning_axis_coord - module_offset_.y();
+          if (config_.enable_rotary_z_move) {
+            rotary_wait_move_ = true;
+            rotary_y_offset_ = config_.spinning_axis_coord - module_offset_.y();
+          } else {
+            travel(std::nanf(""), config_.spinning_axis_coord - module_offset_.y(), true);
+          }
           module_offset_.setY(0);
         } else {
           gen_->sync_motion_type2(179, 128, 2.0);
@@ -341,7 +351,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       gen_->grbl_system_cmd(0);
     }
     setTravelSpeed(config_.prespray_travel_speed);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       travel(x, std::nanf(""), true, 0);
       travel(std::nanf(""), y, true, 0);
       moveZ(35);
@@ -367,7 +377,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
     moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(std::nanf(""), 0, true);
     }
@@ -375,7 +385,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     // 0002 pure prespray task
     gen_->start_task_script_block("xMIN", "0002");
     setTravelSpeed(config_.prespray_travel_speed);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       travel(x, std::nanf(""), true, 0);
       travel(std::nanf(""), y, true, 0);
       moveZ(35);
@@ -391,7 +401,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
     moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(std::nanf(""), 0, true);
     }
@@ -407,7 +417,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
   if (is_rotary_task_) {
     if (is_v2_) {
-      moveZ(1);
+      if (config_.enable_rotary_z_move) {
+        moveZ(1);
+      }
       travel(std::nanf(""), config_.spinning_axis_coord);
       travel(std::nanf(""), 0, true);
       gen_->sync_grbl_motion(36);
@@ -423,7 +435,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     travel(0, 0);
   }
   if (is_v2_) {
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       gen_->sync_motion_type2(185, 128, 0.0);
     } else {
       gen_->sync_motion_type2(179, 128, 3.0);

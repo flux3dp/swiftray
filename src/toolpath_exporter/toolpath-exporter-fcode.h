@@ -92,6 +92,7 @@ struct Config {
   bool enable_multipass_compensation = false;
   bool enable_vector_speed_constraint = false;
   bool enable_relative_z_move = false;
+  bool enable_rotary_z_move = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
@@ -174,6 +175,7 @@ class ToolpathExporterFcode : public QObject {
       with_module_ = true;
       config_.fg_pwm_limit = 0;
       config_.enable_relative_z_move = true;
+      config_.enable_rotary_z_move = true;
       if (is_rotary_task_) {
         height += 378.2;
       }
