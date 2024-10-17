@@ -1130,11 +1130,13 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
   }
 
   if (current_x >= 0) {
-    qreal real_x = getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
-                               reverse_raster_dir, true);
+    qreal real_x = px2mm(reverse_raster_dir ? current_x + 1 : current_x, true);
     if (has_unfinished_move) {
-      moveto(std::nanf(""), real_x);
+      qreal move_x = qMax(real_x, float(0)) - module_offset_.x();
+      moveto(std::nanf(""), move_x);
     }
+    if (!reverse_raster_dir)
+      real_x += backlash_;
     qreal laser_padding = 25;
     if (config_.enable_mock_fast_gradient) {
       laser_padding = padding_mm_;
