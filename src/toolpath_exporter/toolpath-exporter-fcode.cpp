@@ -412,14 +412,16 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       travel(std::nanf(""), 0, true);
       gen_->sync_grbl_motion(36);
       is_a_mode_ = false;
+      travel(0, 0);
     } else {
       travel(0, config_.spinning_axis_coord);
     }
     if (rotary_y_ratio_ != 1) {
       rotary_y_ratio_ = 1;
     }
+  } else {
+    travel(0, 0);
   }
-  travel(0, 0);
   if (is_v2_) {
     if (is_rotary_task_) {
       gen_->sync_motion_type2(185, 128, 0.0);
@@ -1868,21 +1870,28 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
   }
   if (!isnan(y)) {
     curve_y_ = y;
-    if (is_v2_ && is_a_mode_ && !force_y) {
-      if (rotary_y_ratio_ != 1) {
-        y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
-      }
-      if (is_travel) {
-        gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
-                     config_.a_travel_speed, std::nanf(""), std::nanf(""),
-                     std::nanf(""), y, std::nanf(""));
-        y = std::nanf("");
+    if (is_v2_) {
+      if (is_a_mode_ && !force_y) {
+        if (rotary_y_ratio_ != 1) {
+          y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
+        }
+        if (is_travel) {
+          gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
+                       config_.a_travel_speed, std::nanf(""), std::nanf(""),
+                       std::nanf(""), y, std::nanf(""));
+          y = std::nanf("");
+        } else {
+          a = y;
+          y = std::nanf("");
+          flags |= FCodeGenerator::move_flag_A;
+        }
       } else {
-        a = y;
-        y = std::nanf("");
-        flags |= FCodeGenerator::move_flag_A;
+        flags |= FCodeGenerator::move_flag_Y;
       }
     } else {
+      if (!disable_rotary_ && rotary_y_ratio_ != 1) {
+        y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
+      }
       flags |= FCodeGenerator::move_flag_Y;
     }
   }
