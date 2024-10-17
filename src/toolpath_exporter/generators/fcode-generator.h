@@ -82,6 +82,7 @@ class FCodeGenerator {
   virtual std::string to_string() = 0;
   virtual size_t total_length() = 0;
   virtual float get_time_cost() = 0;
+  virtual QJsonObject get_metadata() = 0;
 
   void set_time_est_acc(uint32_t x, uint32_t y = 2000) {
     acc_x = (float)x;
@@ -301,9 +302,9 @@ class FCodeGenerator {
   void grbl_system_cmd(uint8_t cmd) { one_seg_custom_cmd(22, cmd); }
 
   // v1 only
-  virtual void terminated(void) {};
+  virtual void terminated(float min_x, float max_x, float min_y, float max_y) {};
   // v2 only
-  virtual void end_content(void) {}
+  virtual void end_content(float min_x, float max_x, float min_y, float max_y) {}
   virtual void write_post_config(const QJsonArray post_config) {}
   virtual void append_anchor(uint32_t value) {}
   virtual void write_string(const char* s,
@@ -325,10 +326,10 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   float last_direction;
   float current_feedrate, current_x, current_y, current_z;
   // metadata
+  QJsonObject metadata{};
   QDateTime created_at;
   double traveled;
   double time_cost;
-  float max_x, max_y, max_z, max_r;
   const QString* thumbnail;
   bool start_with_home;
 
@@ -363,24 +364,15 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     if (flags & FCodeGenerator::move_flag_X) {
       mv[0] = x - current_x;
       current_x = x;
-      max_x = fmax(max_x, x);
       has_move = true;
     }
     if (flags & FCodeGenerator::move_flag_Y) {
       mv[1] = y - current_y;
       current_y = y;
-      max_y = fmax(max_y, y);
       has_move = true;
     } else if (flags & FCodeGenerator::move_flag_A) {
       mv[1] = a - current_y;
       current_y = a;
-      max_y = fmax(max_y, a);
-      has_move = true;
-    }
-    if (flags & FCodeGenerator::move_flag_X ||
-        flags & FCodeGenerator::move_flag_Y) {
-      float r = sqrtf(pow(current_x, 2) + pow(current_y, 2));
-      max_r = fmax(max_r, r);
       has_move = true;
     }
     if (flags & FCodeGenerator::move_flag_Z) {
@@ -389,7 +381,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
       } else {
         mv[2] = z - current_z;
         current_z = z;
-        max_z = fmax(max_z, z);
         has_move = true;
       }
     }
@@ -415,8 +406,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
       } else if (abs(mv[2]) > 0) {
         float dist = abs(mv[2]);
         traveled += dist;
-        // autofocus movespeed 7.5 mm/s
-        float tc = (dist / 7.5);
+        float tc = (dist / current_feedrate);
         if (!isnan(tc)) {
           time_cost += tc;
         }
@@ -438,22 +428,27 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   }
 
   void write_metadata_(QString key, QString value, unsigned long* crc_ptr) {
+    metadata.insert(key, value);
     write(key.toStdString().c_str(), key.size(), crc_ptr);
     write("=", 1, crc_ptr);
     write(value.toStdString().c_str(), value.size(), crc_ptr);
     write("\x00", 1, crc_ptr);
   }
 
-  unsigned long write_metadata(void) {
+  unsigned long write_metadata(float min_x, float max_x, float min_y, float max_y) {
     unsigned long crc_val = 0;
     write_metadata_("VERSION", "1", &crc_val);
     write_metadata_("HEAD_TYPE", "LASER", &crc_val);
     write_metadata_("TIME_COST", QString::number(time_cost, 'f', 2), &crc_val);
     write_metadata_("TRAVEL_DIST", QString::number(traveled, 'f', 2), &crc_val);
-    write_metadata_("MAX_X", QString::number(max_x + 0.2, 'f', 2), &crc_val);
-    write_metadata_("MAX_Y", QString::number(max_y + 0.2, 'f', 2), &crc_val);
-    write_metadata_("MAX_Z", QString::number(max_z + 0.2, 'f', 2), &crc_val);
-    write_metadata_("MAX_R", QString::number(max_r + 0.2, 'f', 2), &crc_val);
+    if (!std::isnan(min_x))
+      write_metadata_("min_x", QString::number(min_x, 'f', 2), &crc_val);
+    if (!std::isnan(max_x))
+      write_metadata_("max_x", QString::number(max_x, 'f', 2), &crc_val);
+    if (!std::isnan(min_y))
+      write_metadata_("min_y", QString::number(min_y, 'f', 2), &crc_val);
+    if (!std::isnan(max_y))
+      write_metadata_("max_y", QString::number(max_y, 'f', 2), &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
     write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
@@ -469,7 +464,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     last_direction = 0;
     current_x = current_y = current_z = 0;
     traveled = time_cost = 0;
-    max_x = max_y = max_z = max_r = 0;
     script_crc32 = 0;
     start_with_home = !with_custom_origin;
 
@@ -494,7 +488,9 @@ class FCodeGeneratorV1 : public FCodeGenerator {
 
   float get_time_cost() override { return time_cost; }
 
-  void terminated(void) override {
+  QJsonObject get_metadata() override { return metadata; }
+
+  void terminated(float min_x, float max_x, float min_y, float max_y) override {
     uint32_t u32value;
 
     // Write script size and CRC32
@@ -509,7 +505,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     int metadata_offset = stream->tellp();
     int metadata_end_offset;
     write("\x00\x00\x00\x00", 4, NULL);
-    unsigned long metadata_crc32 = write_metadata();
+    unsigned long metadata_crc32 = write_metadata(min_x, max_x, min_y, max_y);
     metadata_end_offset = stream->tellp();
     stream->seekp(metadata_offset, stream->beg);
     u32value = metadata_end_offset - metadata_offset - 4;
@@ -544,10 +540,10 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   float last_direction;
   float current_feedrate, current_x, current_y, current_z;
   // metadata
+  QJsonObject metadata{};
   QDateTime created_at;
   double traveled;
   double time_cost;
-  float max_x, max_y, max_z;
   const QString* thumbnail;
   bool start_with_home;
 
@@ -585,7 +581,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     last_direction = 0;
     current_x = current_y = current_z = 0;
     traveled = time_cost = 0;
-    max_x = max_y = max_z = 0;
     script_crc32 = 0;
     start_with_home = !with_custom_origin;
 
@@ -605,6 +600,8 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   size_t total_length() override { return int(fc_stream->tellp()) - start; };
 
   float get_time_cost() override { return time_cost; }
+
+  QJsonObject get_metadata() override { return metadata; }
 
   void write_string(const char* s,
                     size_t length,
@@ -664,18 +661,15 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     if (flags & move_flag_X) {
       mv[0] = x - current_x;
       current_x = x;
-      max_x = fmax(max_x, x);
       has_move = true;
     }
     if (flags & move_flag_Y) {
       mv[1] = y - current_y;
       current_y = y;
-      max_y = fmax(max_y, y);
       has_move = true;
     } else if (flags & move_flag_A) {
       mv[1] = a - current_y;
       current_y = a;
-      max_y = fmax(max_y, a);
       has_move = true;
     }
     if (flags & move_flag_Z) {
@@ -685,7 +679,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
       } else {
         mv[2] = z - current_z;
         current_z = z;
-        max_z = fmax(max_z, z);
         has_move = true;
       }
     }
@@ -737,6 +730,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
                        unsigned long* crc32_ptr,
                        bool is_string = true,
                        bool has_next = true) {
+    metadata.insert(key, value);
     write_to_all("\"", 1, crc32_ptr);
     write_to_all(key.toStdString().c_str(), key.size(), crc32_ptr);
     write_to_all("\":", 2, crc32_ptr);
@@ -749,29 +743,34 @@ class FCodeGeneratorV2 : public FCodeGenerator {
       write_to_all(",", 1, crc32_ptr);
   }
 
-  unsigned long write_metadata(void) {
+  unsigned long write_metadata(float min_x, float max_x, float min_y, float max_y) {
     unsigned long crc_val = 0;
     write_to_all("{", 1, &crc_val);
     write_metadata_("version", "2", &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
     write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
-    write_metadata_("max_z", QString::number(max_z + 0.2, 'f', 2), &crc_val, false);
-    write_metadata_("max_y", QString::number(max_y + 0.2, 'f', 2), &crc_val, false);
-    write_metadata_("max_x", QString::number(max_x + 0.2, 'f', 2), &crc_val, false);
+    if (!std::isnan(min_x))
+      write_metadata_("min_x", QString::number(min_x, 'f', 2), &crc_val);
+    if (!std::isnan(max_x))
+      write_metadata_("max_x", QString::number(max_x, 'f', 2), &crc_val);
+    if (!std::isnan(min_y))
+      write_metadata_("min_y", QString::number(min_y, 'f', 2), &crc_val);
+    if (!std::isnan(max_y))
+      write_metadata_("max_y", QString::number(max_y, 'f', 2), &crc_val);
     write_metadata_("travel_dist", QString::number(traveled, 'f', 2), &crc_val, false);
     write_metadata_("time_cost", QString::number(time_cost, 'f', 2), &crc_val, false, false);
     write_to_all("}", 1, &crc_val);
     return crc_val;
   }
 
-  void end_content(void) {
+  void end_content(float min_x, float max_x, float min_y, float max_y) {
     // Write metadata
     uint32_t u32value;
     write_to_all("FILE", 4, NULL);
     int metadata_start_pos = fc_stream->tellp();
     write_to_all("\x00\x00\x00\x00", 4, NULL);
-    unsigned long metadata_crc32 = write_metadata();
+    unsigned long metadata_crc32 = write_metadata(min_x, max_x, min_y, max_y);
     int metadata_end_pos = fc_stream->tellp();
     fc_stream->seekp(metadata_start_pos, fc_stream->beg);
     u32value = metadata_end_pos - metadata_start_pos - 4;

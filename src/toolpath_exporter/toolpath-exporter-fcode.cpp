@@ -250,6 +250,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       }
       gen_->set_toolhead_pwm(-current_layer_->power() / 100);
 
+      is_handling_main_work_ = true;
       if (is_printing_layer_) {
         if (!with_print_task_) {
           with_print_task_ = true;
@@ -276,6 +277,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->sync_motion_type2(184, 128, -total_step);
         }
       }
+      is_handling_main_work_ = false;
       if (has_focus_adjust_) {
         gen_->sync_motion_type2(184, 128, -focus_adjust_);
       }
@@ -441,10 +443,10 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       gen_->sync_motion_type2(179, 128, 3.0);
     }
     gen_->end_task_script_block();
-    gen_->end_content();
+    gen_->end_content(min_x_, max_x_, min_y_, max_y_);
     gen_->write_post_config(post_config);
   }
-  gen_->terminated();
+  gen_->terminated(min_x_, max_x_, min_y_, max_y_);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -1818,6 +1820,16 @@ void ToolpathExporterFcode::moveto(float feedrate,
                                    float s,
                                    bool force_y,
                                    bool is_travel) {
+  if (is_handling_main_work_) {
+    if (!std::isnan(x)) {
+      min_x_ = std::isnan(min_x_) ? x : qMin(min_x_, x);
+      max_x_ = std::isnan(max_x_) ? x : qMax(max_x_, x);
+    }
+    if (!std::isnan(y)) {
+      min_y_ = std::isnan(min_y_) ? y : qMin(min_y_, y);
+      max_y_ = std::isnan(max_y_) ? y : qMax(max_y_, y);
+    }
+  }
   if (is_travel || !is_3d_task_ || !std::isnan(z) || is_a_mode_) {
     if (rotary_wait_move_) {
       moveto_(feedrate, x, std::nanf(""), z, s, force_y, is_travel);

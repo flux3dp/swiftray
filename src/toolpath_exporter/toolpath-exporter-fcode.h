@@ -137,6 +137,8 @@ class ToolpathExporterFcode : public QObject {
 
   float getTimeCost() { return gen_->get_time_cost(); }
 
+  QJsonObject getMetadata() { return gen_->get_metadata(); }
+
   bool convertStack(const QList<LayerPtr>& layers,
                     QProgressDialog* dialog = nullptr);
 
@@ -553,6 +555,7 @@ class ToolpathExporterFcode : public QObject {
   QLineF border_lines_[4];  // px; top, right, bottom, left
 
   // Updated during processing
+  bool is_handling_main_work_ = false;
   bool is_handling_bitmap_ = false;
   bool is_a_mode_ = false;
   bool rotary_wait_move_ = false;
@@ -568,4 +571,9 @@ class ToolpathExporterFcode : public QObject {
   // For 3d curve
   float curve_x_ = 0;
   float curve_y_ = 0;
+  // Metadata
+  float min_x_ = std::nanf("");
+  float max_x_ = std::nanf("");
+  float min_y_ = std::nanf("");
+  float max_y_ = std::nanf("");
 };
