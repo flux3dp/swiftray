@@ -51,9 +51,9 @@ struct CurveEngravingSettings {
 struct Config {
   // mm/min
   float min_speed = 3;
-  float travel_speed = 7500;
+  float travel_speed = 7500; // default val = 7500 in ghost, 12000 in client
   float a_travel_speed = 2000;
-  float path_travel_speed = 7500;
+  float path_travel_speed = 7500; // default val = 3600 for ador, 7500 for others
   float prespray_speed = 1800;
   float prespray_travel_speed = 7500;
   // mm^2/s
@@ -69,6 +69,7 @@ struct Config {
   float workarea_clip[4] = {0, 0, 0, 0}; // inward offset; top, right, bottom, left
   QPointF precut_at;
   QPointF diode_offset;
+  QPointF job_origin;
   QMap<int, QPointF> module_offsets;
   QRectF prespray;
   // px
@@ -90,6 +91,8 @@ struct Config {
   bool enable_mock_fast_gradient = false;
   bool enable_multipass_compensation = false;
   bool enable_vector_speed_constraint = false;
+  bool enable_relative_z_move = false;
+  bool enable_rotary_z_move = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
@@ -113,13 +116,13 @@ class ToolpathExporterFcode : public QObject {
     setDpi(dpi);
 
     if (is_v2_) {
-      if (is_rotary_task_) {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4);
+      if (is_rotary_task_ || with_custom_origin_) {
+        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4, with_custom_origin_);
       } else {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 3);
+        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 3, with_custom_origin_);
       }
     } else {
-      gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
+      gen = std::make_shared<FCodeGeneratorV1>(thumbnail, with_custom_origin_);
     }
     gen_ = gen.get();
 
@@ -134,16 +137,23 @@ class ToolpathExporterFcode : public QObject {
 
   float getTimeCost() { return gen_->get_time_cost(); }
 
+  QJsonObject getMetadata() { return gen_->get_metadata(); }
+
   bool convertStack(const QList<LayerPtr>& layers,
                     QProgressDialog* dialog = nullptr);
 
  private:
   void parseParam(const QJsonObject* paramPtr) {
     QJsonObject param = *paramPtr;
-    float spinning_axis_coord = param["spinning_axis_coord"].toDouble();
+    if (param.contains("job_origin")) {
+      with_custom_origin_ = true;
+      config_.job_origin = QPointF(param["job_origin"].toArray()[0].toDouble(),
+                                   param["job_origin"].toArray()[1].toDouble());
+    }
+    float spinning_axis_coord = param["spin"].toDouble();
     if (spinning_axis_coord > 0) {
       is_rotary_task_ = true;
-      config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio;
+      config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio - config_.job_origin.y();
       rotary_y_ratio_ = param["rotary_y_ratio"].toDouble(1);
     }
 
@@ -151,22 +161,27 @@ class ToolpathExporterFcode : public QObject {
     int width = workarea["width"].toInt();
     int height = workarea["height"].toInt();
     QString hardware = param["hardware_name"].toString();
+    float default_path_travel_speed = 7500;
     float default_path_acc = std::nanf("");
     if (hardware == "beamo") {
       hardware_ = HardwareType::beamo;
-    } else if (hardware == "beambox-pro") {
+    } else if (hardware == "pro") {
       hardware_ = HardwareType::BeamboxPro;
     } else if (hardware == "hexa") {
       hardware_ = HardwareType::HEXA;
       config_.fg_pwm_limit = 0;
-    } else if (hardware == "ador") {
+      config_.enable_relative_z_move = true;
+    } else if (hardware == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
       with_module_ = true;
       config_.fg_pwm_limit = 0;
+      config_.enable_relative_z_move = true;
+      config_.enable_rotary_z_move = true;
       if (is_rotary_task_) {
         height += 378.2;
       }
+      default_path_travel_speed = 3600;
       default_path_acc = 500;
       if (param.contains("prespray")) {
         QJsonArray prespray_arr = param["prespray"].toArray();
@@ -178,6 +193,8 @@ class ToolpathExporterFcode : public QObject {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
       config_.fg_pwm_limit = 0;
+      config_.enable_relative_z_move = true;
+      default_path_acc = 1000;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
@@ -186,7 +203,7 @@ class ToolpathExporterFcode : public QObject {
     config_.dpmm_preview = 500.0 / width;
 
     if (with_module_) {
-      QJsonObject offset_dict = param["module_offsets"].toObject();
+      QJsonObject offset_dict = param["mof"].toObject();
       for (QString module_key : offset_dict.keys()) {
         QJsonArray offset = offset_dict[module_key].toArray();
         config_.module_offsets[module_key.toInt()] =
@@ -194,51 +211,51 @@ class ToolpathExporterFcode : public QObject {
       }
     }
 
-    config_.enable_diode = param["support_diode"].toBool();
-    if (config_.enable_diode) {
-      QJsonArray diode_offset = param["diode_offset"].toArray();
+    if (param.contains("diode")) {
+      config_.enable_diode = true;
+      QJsonArray diode_offset = param["diode"].toArray();
       config_.diode_offset =
           QPointF(diode_offset[0].toDouble(), diode_offset[1].toDouble());
     }
-    config_.enable_autofocus = param["enable_autofocus"].toBool();
-    config_.enable_custom_backlash = param["custom_backlash"].toBool();
-    config_.enable_fast_gradient = param["support_fast_gradient"].toBool();
-    config_.enable_mock_fast_gradient = param["mock_fast_gradient"].toBool();
+    config_.enable_autofocus = param["af"].toBool();
+    config_.enable_custom_backlash = param["cbl"].toBool();
+    config_.enable_fast_gradient = param["fg"].toBool();
+    config_.enable_mock_fast_gradient = param["mfg"].toBool();
     config_.enable_pwm = !param["no_pwm"].toBool();
-    config_.enable_multipass_compensation = param["multipass_compensation"].toBool();
-    config_.enable_vector_speed_constraint = param["has_vector_speed_constraint"].toBool();
-    config_.is_one_way_printing = param["one_way_printing"].toBool();
-    config_.is_diode_one_way_engraving = param["diode_one_way_engraving"].toBool();
-    config_.is_reverse_engraving = param["is_reverse_engraving"].toBool();
+    config_.enable_multipass_compensation = param["mpc"].toBool();
+    config_.enable_vector_speed_constraint = param["vsc"].toBool();
+    config_.is_one_way_printing = param["owp"].toBool();
+    config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
+    config_.is_reverse_engraving = param["rev"].toBool();
     config_.min_speed = param["min_speed"].toDouble(3);
-    config_.travel_speed = param["travel_speed"].toDouble(7500);
-    config_.a_travel_speed = param["a_travel_speed"].toDouble(2000);
-    config_.path_travel_speed = param["path_travel_speed"].toDouble(7500);
+    config_.travel_speed = param["ts"].toDouble(7500);
+    config_.a_travel_speed = param["ats"].toDouble(2000);
+    config_.path_travel_speed = param["pts"].toDouble(default_path_travel_speed);
     config_.path_acc = param["path_acc"].toDouble(default_path_acc);
     config_.padding_acc = param["acc"].toDouble(4000);
-    config_.min_engraving_padding = param["min_engraving_padding"].toDouble(std::nanf(""));
-    config_.min_printing_padding = param["min_printing_padding"].toDouble(std::nanf(""));
+    config_.min_engraving_padding = param["mep"].toDouble(std::nanf(""));
+    config_.min_printing_padding = param["mpp"].toDouble(std::nanf(""));
     config_.z_offset = param["z_offset"].toDouble(0);
-    config_.blade_radius = param["blade_radius"].toDouble();
+    config_.blade_radius = param["blade"].toDouble();
     if (config_.blade_radius > 0) {
       with_blade_ = true;
-      if (param.contains("precut_at")) {
+      if (param.contains("precut")) {
         config_.enable_precut = true;
-        config_.precut_at = QPointF(param["precut_at"].toArray()[0].toDouble(),
-                                    param["precut_at"].toArray()[1].toDouble());
+        config_.precut_at = QPointF(param["precut"].toArray()[0].toDouble(),
+                                    param["precut"].toArray()[1].toDouble());
       }
     }
     config_.loop_compensation = param["loop_compensation"].toDouble() / canvas_mm_ratio;
-    config_.printing_top_padding = param["printing_top_padding"].toInt(10);
-    config_.printing_bot_padding = param["printing_bot_padding"].toInt(10);
-    if (param.contains("nozzle_votage")) {
-      nozzle_settings.voltage = param["nozzle_votage"].toDouble();
+    config_.printing_top_padding = param["ptp"].toInt(10);
+    config_.printing_bot_padding = param["pbp"].toInt(10);
+    if (param.contains("nv")) {
+      nozzle_settings.voltage = param["nv"].toDouble();
     }
-    if (param.contains("nozzle_pulse_width")) {
-      nozzle_settings.pulse_width = param["nozzle_pulse_width"].toDouble();
+    if (param.contains("npw")) {
+      nozzle_settings.pulse_width = param["npw"].toDouble();
     }
 
-    QJsonArray clip = param["clip"].toArray();
+    QJsonArray clip = param["mask"].toArray();
     if (clip.size() == 4) {
       for (int i = 0; i < 4; i++) {
         config_.workarea_clip[i] = clip[i].toDouble();
@@ -335,9 +352,15 @@ class ToolpathExporterFcode : public QObject {
   QPointF getPointInMM(QPointF point) {
     return QPointF(px2mm(point.x(), true), px2mm(point.y())) - module_offset_;
   }
-  qreal getXValInMM(qreal val, bool is_reverse = false, bool auto_adjust = true) {
+  qreal getXValInMM(qreal val, bool is_reverse = false, bool check_negative = false) {
     // Add 1 px width to indicate the right side of the pixel when reverse
-    return px2mm((is_reverse && auto_adjust ? val + 1 : val), true) - module_offset_.x() + (is_reverse ? backlash_ : 0);
+    qreal x = px2mm(val, true);
+    if (check_negative)
+      x = qMax(x, float(0));
+    x -= module_offset_.x();
+    if (!is_reverse)
+      x += backlash_;
+    return x;
   }
   qreal getYValInMM(qreal val) {
     return px2mm(val) - module_offset_.y();
@@ -393,7 +416,7 @@ class ToolpathExporterFcode : public QObject {
   void getIntersectPoint(QLineF line, int position, QPointF* point);
   void handlePathWalk(QPointF point, bool should_emit);
 
-  void outputBitmapFcode(bool pwm_engraving = false);
+  void outputBitmapFcode(bool pwm_engraving = false, int downsample = 5);
   bool rasterBitmap(const QImage& layer_image, QRect bbox, bool pwm_engraving);
   bool rasterLine(const uchar* data_ptr,
                   int left_bound,
@@ -430,7 +453,7 @@ class ToolpathExporterFcode : public QObject {
   QVector<QRect> getBoundingBoxes(QImage* src,
                                   int merge_offset_x = 0,
                                   int merge_offset_y = 0,
-                                  int downsample = 1);
+                                  float downsample = 1);
 
   void pause(bool to_standby_position);
   void moveZ(float z);
@@ -500,6 +523,7 @@ class ToolpathExporterFcode : public QObject {
   bool is_3d_task_ = false;
   bool with_blade_ = false;
   bool with_module_ = false;
+  bool with_custom_origin_ = false;
 
   QSizeF work_area_mm_;
   QTransform transform_laser_;
@@ -531,6 +555,7 @@ class ToolpathExporterFcode : public QObject {
   QLineF border_lines_[4];  // px; top, right, bottom, left
 
   // Updated during processing
+  bool is_handling_main_work_ = false;
   bool is_handling_bitmap_ = false;
   bool is_a_mode_ = false;
   bool rotary_wait_move_ = false;
@@ -546,4 +571,9 @@ class ToolpathExporterFcode : public QObject {
   // For 3d curve
   float curve_x_ = 0;
   float curve_y_ = 0;
+  // Metadata
+  float min_x_ = std::nanf("");
+  float max_x_ = std::nanf("");
+  float min_y_ = std::nanf("");
+  float max_y_ = std::nanf("");
 };

@@ -102,6 +102,7 @@ public:
 
     void setAnimPeriod(int start, int end);
     int animationDuration() const;
+    int nextLayerIndex();
 
 #ifndef QT_NO_CSSPARSER
     void parseCSStoXMLAttrs(const QString &css, QList<QSvgCssAttribute> *attributes);
@@ -177,6 +178,7 @@ private:
     QList<MySVG::Node> data_list_;
     MySVG::ReadType read_type_;
     QList<LayerPtr> svg_layers_;
+    int svg_layer_index_;
     QMap<QString, MySVG::BeamLayerConfig> layer_config_map_;
 #endif
 };

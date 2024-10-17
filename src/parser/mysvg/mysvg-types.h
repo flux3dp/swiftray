@@ -28,6 +28,7 @@ namespace MySVG {
     };
 
     struct BeamLayerConfig {
+        int order_index;
         bool visible;
         float speed;
         float power;

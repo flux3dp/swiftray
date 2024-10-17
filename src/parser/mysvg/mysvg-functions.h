@@ -138,7 +138,7 @@ namespace MySVG {
 
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
-                          double g_scale, QColor &g_color, QImage &g_image, bool g_gradient = true, int g_threshold = 128, bool g_pwm = false) {
+                          double g_scale, QColor &g_color, QImage &g_image, QRectF g_bbox = QRectF(),  bool g_gradient = true, int g_threshold = 128, bool g_pwm = false) {
         qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
@@ -168,11 +168,10 @@ namespace MySVG {
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_IMAGE) {
-            QRectF bbox = node->transformedBounds();
             QSize img_size = g_image.size();
-            QTransform tmp_scale = QTransform().translate(bbox.x(), bbox.y())
-                                               .scale(g_scale * scale * bbox.width() / img_size.width(),
-                                                      g_scale * scale * bbox.height() / img_size.height());
+            QTransform tmp_scale = QTransform().translate(g_bbox.x(), g_bbox.y())
+                                               .scale(g_scale * scale * g_bbox.width() / img_size.width(),
+                                                      g_scale * scale * g_bbox.height() / img_size.height());
 
             Node n;
             n.type = QSVG_IMAGE;
@@ -184,7 +183,7 @@ namespace MySVG {
                 tmp_node = tmp_node->parent();
             }
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
-            n.trans = trans * tmp_scale;
+            n.trans = tmp_scale * trans;
             n.color = g_color;
             n.visible = getNodeVisible(node);
             n.gradient = g_gradient;

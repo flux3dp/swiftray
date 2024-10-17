@@ -88,10 +88,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   if (is_v2_) {
     gen_->start_task_script_block("xMIN", "0003");
     gen_->miscellaneous_cmd(1);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(-1);
     }
-    gen_->grbl_system_cmd(0);
+    if (!with_custom_origin_) {
+      gen_->grbl_system_cmd(0);
+    }
   } else {
     gen_->home();
   }
@@ -103,6 +105,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   // Supporting for spinning axis
   if (is_rotary_task_) {
     if (is_v2_) {
+      if (!config_.enable_rotary_z_move) {
+        travel(0, config_.spinning_axis_coord + 1, true);
+        travel(0, config_.spinning_axis_coord - 1, true);
+        travel(0, config_.spinning_axis_coord, true);
+        pause(false);
+      }
       is_a_mode_ = true;
     } else {
       travel(0, config_.spinning_axis_coord + 1);
@@ -180,16 +188,18 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         // Write transition script
         gen_->start_task_script_block("TRAN", NULL);
         if (with_module_) {
-          if (is_rotary_task_) {
+          if (is_rotary_task_ && config_.enable_rotary_z_move) {
             moveZ(1);
           }
           QPointF tran_pos;
-          if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {
+          if (with_custom_origin_) {
+            tran_pos = QPointF(0, 0);
+          } else if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {
             tran_pos = QPointF(215, 150);
           } else {
             tran_pos = QPointF(work_area_mm_.width() / 2, work_area_mm_.height() / 2);
           }
-          if (is_rotary_task_) {
+          if (is_rotary_task_ && config_.enable_rotary_z_move) {
             travel(std::nanf(""), 0, true);
             travel(tran_pos.x(), std::nanf(""), true);
             travel(std::nanf(""), tran_pos.y(), true);
@@ -201,7 +211,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->flux_custom_cmd(168);
           gen_->flux_custom_cmd(174);
           gen_->user_selection_cmd(0);
-          gen_->grbl_system_cmd(0);
+          if (!with_custom_origin_) {
+            gen_->grbl_system_cmd(0);
+          }
           gen_->sync_grbl_motion(0);
           gen_->miscellaneous_cmd(0);
         }
@@ -209,8 +221,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         // Write main script
         gen_->start_task_script_block("MAIN", NULL);
         if (is_rotary_task_) {
-          rotary_wait_move_ = true;
-          rotary_y_offset_ = config_.spinning_axis_coord - module_offset_.y();
+          if (config_.enable_rotary_z_move) {
+            rotary_wait_move_ = true;
+            rotary_y_offset_ = config_.spinning_axis_coord - module_offset_.y();
+          } else {
+            travel(std::nanf(""), config_.spinning_axis_coord - module_offset_.y(), true);
+          }
           module_offset_.setY(0);
         } else {
           gen_->sync_motion_type2(179, 128, 2.0);
@@ -221,10 +237,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       if (config_.enable_diode) {
         gen_->set_toolhead_laser_module(current_layer_->isUseDiode());
       }
+      if (with_custom_origin_) {
+        module_offset_ += config_.job_origin;
+      }
       if (has_focus_adjust_) {
-        if (is_v2_) {
-          gen_->sync_motion_type2(184, 128, focus_adjust_);
-        }
+        gen_->sync_motion_type2(184, 128, focus_adjust_);
       }
       if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
         moveZ(-1);
@@ -232,6 +249,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       }
       gen_->set_toolhead_pwm(-current_layer_->power() / 100);
 
+      is_handling_main_work_ = true;
       if (is_printing_layer_) {
         if (!with_print_task_) {
           with_print_task_ = true;
@@ -240,12 +258,10 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         gen_->set_toolhead_pwm(0);
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
       } else {
-        for (int i = 0; i < current_layer_->repeat(); i++) {
+        int repeat = current_layer_->repeat();
+        for (int i = 0; i < repeat; i++) {
           if (has_focus_adjust_ && focus_step_ > 0 && i > 0) {
-            if (is_v2_) {
-              float real_z = focus_adjust_ + focus_step_ * i;
-              gen_->sync_motion_type2(184, 128, real_z);
-            }
+            gen_->sync_motion_type2(184, 128, focus_step_);
           } else if (config_.enable_autofocus && layer_height > 0) {
             double target_z = 17.0 - layer_height - config_.z_offset + i * layer_z_step;
             target_z = round(qMax(qMin(target_z, 17.0), 0.0) * 100) / 100;
@@ -255,11 +271,16 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->set_toolhead_pwm(0);
         }
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
+        if (has_focus_adjust_ && focus_step_ > 0 && repeat > 1) {
+          float total_step = focus_step_ * (repeat - 1);
+          gen_->sync_motion_type2(184, 128, -total_step);
+        }
+      }
+      is_handling_main_work_ = false;
+      if (has_focus_adjust_) {
+        gen_->sync_motion_type2(184, 128, -focus_adjust_);
       }
       if (is_v2_) {
-        if (has_focus_adjust_) {
-          gen_->sync_motion_type2(184, 128, 0);
-        }
         gen_->end_task_script_block();
         // Write task info
         QString submodule_type = "None";
@@ -319,14 +340,19 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     is_printing_layer_ = true;
     updateOffset();
     updateClip();
+    if (with_custom_origin_) {
+      module_offset_ += config_.job_origin;
+    }
     auto [prespray_bbox, test_bbox] = getPresprayBbox();
-    float x = config_.prespray.x();
-    float y = config_.prespray.y();
+    float x = config_.prespray.x() - module_offset_.x();
+    float y = config_.prespray.y() - module_offset_.y();
     QByteArray prespray_payload = generateNozzleSettingPayload(9, true);
     gen_->start_task_script_block("xMIN", "0001");
-    gen_->grbl_system_cmd(0);
+    if (!with_custom_origin_) {
+      gen_->grbl_system_cmd(0);
+    }
     setTravelSpeed(config_.prespray_travel_speed);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       travel(x, std::nanf(""), true, 0);
       travel(std::nanf(""), y, true, 0);
       moveZ(35);
@@ -352,7 +378,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
     moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(std::nanf(""), 0, true);
     }
@@ -360,7 +386,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     // 0002 pure prespray task
     gen_->start_task_script_block("xMIN", "0002");
     setTravelSpeed(config_.prespray_travel_speed);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       travel(x, std::nanf(""), true, 0);
       travel(std::nanf(""), y, true, 0);
       moveZ(35);
@@ -376,7 +402,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
     moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(std::nanf(""), 0, true);
     }
@@ -392,30 +418,34 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
   if (is_rotary_task_) {
     if (is_v2_) {
-      moveZ(1);
+      if (config_.enable_rotary_z_move) {
+        moveZ(1);
+      }
       travel(std::nanf(""), config_.spinning_axis_coord);
       travel(std::nanf(""), 0, true);
       gen_->sync_grbl_motion(36);
       is_a_mode_ = false;
+      travel(0, 0);
     } else {
       travel(0, config_.spinning_axis_coord);
     }
     if (rotary_y_ratio_ != 1) {
       rotary_y_ratio_ = 1;
     }
+  } else {
+    travel(0, 0);
   }
-  travel(0, 0);
   if (is_v2_) {
-    if (is_rotary_task_) {
+    if (is_rotary_task_ && config_.enable_rotary_z_move) {
       gen_->sync_motion_type2(185, 128, 0.0);
     } else {
       gen_->sync_motion_type2(179, 128, 3.0);
     }
     gen_->end_task_script_block();
-    gen_->end_content();
+    gen_->end_content(min_x_, max_x_, min_y_, max_y_);
     gen_->write_post_config(post_config);
   }
-  gen_->terminated();
+  gen_->terminated(min_x_, max_x_, min_y_, max_y_);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -423,7 +453,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
 void ToolpathExporterFcode::updateLayerParam() {
   layer_module_ = with_module_ ? current_layer_->module() : 15; // 15 = UNIVERSAL_LASER
   is_printing_layer_ = layer_module_ == 5; // 5 = PRINTER
-  layer_color_ = current_layer_->color().name();
+  layer_color_ = current_layer_->color().name().toUpper();
   focus_adjust_ = current_layer_->focus();
   focus_step_ = current_layer_->focusStep();
   pwm_scale_ = 1 - current_layer_->minPower() / current_layer_->power();
@@ -437,19 +467,19 @@ void ToolpathExporterFcode::updateLayerParam() {
     layer_speed_sec_ = qMax(float(current_layer_->printingSpeed()), config_.min_speed);
     min_padding = config_.min_printing_padding;
     // Update submodule color
-    if (layer_color_ == "9FE3FF" || layer_color_ == "009FE3") {
+    if (layer_color_ == "#9FE3FF" || layer_color_ == "#009FE3") {
       submodule_color_ = "cyan";
-    } else if (layer_color_ == "E6007E") {
+    } else if (layer_color_ == "#E6007E") {
       submodule_color_ = "magenta";
-    } else if (layer_color_ == "FFED00") {
+    } else if (layer_color_ == "#FFED00") {
       submodule_color_ = "yellow";
-    } else if (layer_color_ == "E2E2E2") {
+    } else if (layer_color_ == "#E2E2E2") {
       submodule_color_ = "white";
     } else {
       submodule_color_ = "black";
     }
   } else {
-    has_focus_adjust_ = focus_adjust_ > 0;
+    has_focus_adjust_ = config_.enable_relative_z_move && focus_adjust_ > 0;
     enable_bidirection_ =
         !(config_.enable_diode && current_layer_->isUseDiode() &&
           config_.is_diode_one_way_engraving);
@@ -560,10 +590,10 @@ void ToolpathExporterFcode::updateClip() {
     layer_clip[i] = qMax((config_.workarea_clip[i]), float(module_clip[i]));
   }
 
-  int clip_top = mm2px(layer_clip[0]);
-  int clip_right = mm2px(work_area_mm_.width() - layer_clip[1], true) - 1;
-  int clip_bottom = mm2px(work_area_mm_.height() - layer_clip[2]) - 1;
-  int clip_left = mm2px(layer_clip[3], true);
+  float clip_top = mm2px(layer_clip[0]);
+  float clip_right = mm2px(work_area_mm_.width() - layer_clip[1], true) - 1;
+  float clip_bottom = mm2px(work_area_mm_.height() - layer_clip[2]) - 1;
+  float clip_left = mm2px(layer_clip[3], true);
   clip_area_ = QRect(QPoint(clip_left, clip_top), QPoint(clip_right, clip_bottom));
   border_lines_[0] = QLineF(clip_left, clip_top, clip_right, clip_top);
   border_lines_[1] = QLineF(clip_right, clip_top, clip_right, clip_bottom);
@@ -736,7 +766,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     bitmap_dirty_area_ = bitmap_dirty_area_.united(new_dirty_area);
   } else {
     bitmap_dirty_area_ = new_dirty_area;
-    outputBitmapFcode(config_.enable_pwm && bmp->pwm());
+    outputBitmapFcode(config_.enable_pwm && bmp->pwm(), bmp->gradient() && !bmp->pwm() ? 1 : 5);
   }
 }
 
@@ -777,6 +807,9 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
   } else {
     polygons_mutex_.lock();
     layer_polygons_.append(transformed_path.toSubpathPolygons());
+    if (is_v2_) {
+      preview_painter_->drawPath(transformed_path * getPreviewTransform());
+    }
     polygons_mutex_.unlock();
   }
 }
@@ -972,12 +1005,12 @@ void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
 }
 
 // Handling bitmap and filled path
-void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
+void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample) {
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
     QImage layer_image = laser_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
-    QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, 5);
+    QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, dpmm_y() / downsample);
     char gradient_print_mode = 0;
     if (config_.enable_fast_gradient) {
       gradient_print_mode = pwm_engraving ? config_.print_modes[0] : config_.print_modes[1];
@@ -1088,7 +1121,9 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
           moveto(layer_speed_);
         }
         current_x = x;
-        moveto(std::nanf(""), getXValInMM(current_x, reverse_raster_dir));
+        moveto(std::nanf(""),
+               getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
+                           reverse_raster_dir, true));
         has_unfinished_move = false;
         gen_->set_toolhead_pwm(100);
         is_emitting = true;
@@ -1096,7 +1131,9 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     } else if (is_emitting) {
       // Laser on -> off
       current_x = x;
-      moveto(std::nanf(""), getXValInMM(current_x, reverse_raster_dir));
+      moveto(std::nanf(""),
+             getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
+                         reverse_raster_dir, true));
       has_unfinished_move = false;
       gen_->set_toolhead_pwm(0);
       is_emitting = false;
@@ -1106,20 +1143,26 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
   }
 
   if (current_x >= 0) {
-    qreal real_x = getXValInMM(current_x, reverse_raster_dir);
+    qreal real_x = px2mm(reverse_raster_dir ? current_x + 1 : current_x, true);
     if (has_unfinished_move) {
-      moveto(std::nanf(""), real_x);
+      qreal move_x = qMax(real_x, float(0)) - module_offset_.x();
+      moveto(std::nanf(""), move_x);
     }
+    if (!reverse_raster_dir)
+      real_x += backlash_;
     qreal laser_padding = 25;
     if (config_.enable_mock_fast_gradient) {
       laser_padding = padding_mm_;
     }
     qreal buffer_x;
+    // Check boundary without module offset (may include job origin)
+    real_x += module_offset_.x();
     if (reverse_raster_dir) {
       buffer_x = qMax(real_x - laser_padding, 0.0);
     } else {
       buffer_x = qMin(real_x + laser_padding, work_area_mm_.width());
     }
+    buffer_x -= module_offset_.x();
     gen_->set_toolhead_pwm(0);
     moveto(std::nanf(""), buffer_x);
     return true;
@@ -1158,8 +1201,8 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
   }
   left = qMax(left_bound, left - padding_px_);
   right = qMin(right_bound, right + padding_px_);
-  float buffer_left = getXValInMM(left, reverse_raster_dir, false);
-  float buffer_right = getXValInMM(right + 1, reverse_raster_dir, false);
+  float buffer_left = getXValInMM(left, reverse_raster_dir);
+  float buffer_right = getXValInMM(right + 1, reverse_raster_dir);
   moveto(layer_speed_ + 1, reverse_raster_dir ? buffer_right : buffer_left, getYValInMM(y));
   moveto(layer_speed_);
   gen_->set_line_pixels(right + 1 - left);
@@ -1230,8 +1273,8 @@ bool ToolpathExporterFcode::rasterLineHighSpeedPwm(const uchar* data_ptr,
   }
   left = qMax(left_bound, left - padding_px_);
   right = qMin(right_bound, right + padding_px_);
-  float buffer_left = getXValInMM(left, reverse_raster_dir, false);
-  float buffer_right = getXValInMM(right + 1, reverse_raster_dir, false);
+  float buffer_left = getXValInMM(left, reverse_raster_dir);
+  float buffer_right = getXValInMM(right + 1, reverse_raster_dir);
   moveto(layer_speed_, reverse_raster_dir ? buffer_right : buffer_left, getYValInMM(y));
   gen_->set_line_pixels(right + 1 - left);
   // 32 bits data, 8 bits per pixel (0~255)
@@ -1355,6 +1398,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
   }
   int padded_top = qMax(bbox_top - 2 * printing_slice_height, 0);
   int padded_bottom = qMin(bbox_bottom + 2 * printing_slice_height, layer_image.height());
+  // Mock last row with all 0s
   const uchar* last_val_ptr = val_table.constScanLine(0);
   for (int y = padded_top; y <= padded_bottom; y++) {
     const uchar* data_ptr = layer_image.constScanLine(y);
@@ -1401,7 +1445,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
           for (int x = box_left; x < box_right; x++) {
             int column_count = 0;
             QByteArray column_payload;
-            for (int y = box_top + printing_slice_height; y >= box_top;
+            for (int y = box_top + printing_slice_height - 1; y >= box_top;
                  y -= 8) {
               if (y > box_bottom + 8 || y < 0 || y < min_valid_y) {
                 column_payload.append((char)0);
@@ -1412,7 +1456,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               } else if (y - 7 < min_valid_y) {
-                uchar val = val_table.constScanLine(box_bottom - 1)[x];
+                uchar val = val_table.constScanLine(y)[x];
                 // Note: y >= min_valid_y
                 int valid = y - min_valid_y + 1;
                 int overflow = 8 - valid;
@@ -1420,7 +1464,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               } else {
-                uchar val = val_table.constScanLine(y - 1)[x];
+                uchar val = val_table.constScanLine(y)[x];
                 column_payload.append(val);
                 column_count += ((std::bitset<8>)val).count();
               }
@@ -1512,12 +1556,10 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
   int box_top = box.y();
   int box_right = box_left + box.width();
   int box_bottom = box_top + box.height();
-  int slice_height = printing_slice_height - config_.printing_bot_padding;
-  int real_slice_height = slice_height - config_.printing_top_padding;
+  int slice_height = printing_slice_height - config_.printing_bot_padding - config_.printing_top_padding;
   float offset_y_px = mm2px(module_offset_.y());
   int min_allow_y = std::ceil(qMin(offset_y_px, float(0.0)));
-  float bottom_limit = qMax(-offset_y_px, float(0.0)) + clip_area_.bottom();
-  int max_allow_y = int(printing_bitmap_.height() - bottom_limit);
+  int max_allow_y = clip_area_.bottom() - qMax(-offset_y_px, float(0.0));
   QVector<int> x_steps;
   QVector<int> y_starts(multipass);
   for (int x = box_left; x < box_right; x += printing_slice_width) {
@@ -1525,12 +1567,12 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
     x_steps.append(w);
   }
   for (int p = multipass - 1; p >= 0; p--) {
-    int multipass_padding = ((p * real_slice_height) / multipass) + config_.printing_top_padding;
+    int multipass_padding = ((p * slice_height) / multipass) + config_.printing_top_padding;
     int y_start = qMax(box_top - multipass_padding, min_allow_y);
     y_starts[p] = y_start;
   }
 
-  int y_slice_count = (box_bottom - y_starts[multipass - 1]) / real_slice_height + 1;
+  int y_slice_count = (box_bottom - y_starts[multipass - 1]) / slice_height + 1;
   std::function<void(QList<int>)> addBox;
   if (config_.is_reverse_engraving) {
     addBox = [&boxes](QList<int> v) { boxes.prepend(v); };
@@ -1540,7 +1582,7 @@ void ToolpathExporterFcode::sliceBox(QList<QList<QList<int>>>* sliced_boxes,
 
   for (int i = 0; i < y_slice_count; i++) {
     for (int p = multipass - 1; p >= 0; p--) {
-      int y = y_starts[p] + i * real_slice_height;
+      int y = y_starts[p] + i * slice_height;
       if (y + config_.printing_top_padding > box_bottom) {
         // Real data is out of box
         break;
@@ -1688,7 +1730,7 @@ void ToolpathExporterFcode::writePreviewImage() {
   QByteArray byteArray;
   QBuffer buffer(&byteArray);
   output_image.save(&buffer, "PNG");
-  gen_->write_string("PREVIEW\n", 8);
+  gen_->write_string("PREV", 4);
   gen_->write_string(byteArray.data(), byteArray.size(), true);
 }
 
@@ -1777,6 +1819,16 @@ void ToolpathExporterFcode::moveto(float feedrate,
                                    float s,
                                    bool force_y,
                                    bool is_travel) {
+  if (is_handling_main_work_) {
+    if (!std::isnan(x)) {
+      min_x_ = std::isnan(min_x_) ? x : qMin(min_x_, x);
+      max_x_ = std::isnan(max_x_) ? x : qMax(max_x_, x);
+    }
+    if (!std::isnan(y)) {
+      min_y_ = std::isnan(min_y_) ? y : qMin(min_y_, y);
+      max_y_ = std::isnan(max_y_) ? y : qMax(max_y_, y);
+    }
+  }
   if (is_travel || !is_3d_task_ || !std::isnan(z) || is_a_mode_) {
     if (rotary_wait_move_) {
       moveto_(feedrate, x, std::nanf(""), z, s, force_y, is_travel);
@@ -1843,21 +1895,28 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
   }
   if (!isnan(y)) {
     curve_y_ = y;
-    if (is_v2_ && is_a_mode_ && !force_y) {
-      if (rotary_y_ratio_ != 1) {
-        y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
-      }
-      if (is_travel) {
-        gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
-                     config_.a_travel_speed, std::nanf(""), std::nanf(""),
-                     std::nanf(""), y, std::nanf(""));
-        y = std::nanf("");
+    if (is_v2_) {
+      if (is_a_mode_ && !force_y) {
+        if (rotary_y_ratio_ != 1) {
+          y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
+        }
+        if (is_travel) {
+          gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
+                       config_.a_travel_speed, std::nanf(""), std::nanf(""),
+                       std::nanf(""), y, std::nanf(""));
+          y = std::nanf("");
+        } else {
+          a = y;
+          y = std::nanf("");
+          flags |= FCodeGenerator::move_flag_A;
+        }
       } else {
-        a = y;
-        y = std::nanf("");
-        flags |= FCodeGenerator::move_flag_A;
+        flags |= FCodeGenerator::move_flag_Y;
       }
     } else {
+      if (!disable_rotary_ && rotary_y_ratio_ != 1) {
+        y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
+      }
       flags |= FCodeGenerator::move_flag_Y;
     }
   }
@@ -1917,7 +1976,7 @@ float ToolpathExporterFcode::getCurveEngravingHeight() {
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
                                                        int merge_offset_x,
                                                        int merge_offset_y,
-                                                       int downsample) {
+                                                       float downsample) {
   Q_ASSERT_X(src->format() == QImage::Format_Grayscale8,
              "ToolpathExporterFcode",
              "Input image for getBoundingBoxes() must be Format_Grayscale8");
@@ -1933,7 +1992,7 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   if (downsample > 1) {
     cv::Mat downsampledImg;
-    cv::resize(img, downsampledImg, cv::Size(w / downsample, h / downsample), 0, 0, cv::INTER_CUBIC);
+    cv::resize(img, downsampledImg, cv::Size(float(w) / downsample, float(h) / downsample), 0, 0, cv::INTER_CUBIC);
     cv::findContours(downsampledImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   } else {
     cv::findContours(img, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);

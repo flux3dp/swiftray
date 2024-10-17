@@ -239,6 +239,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
       result["fileName"] = "swiftray-conversion";
       result["timeCost"] = exporter.getTimeCost();
+      result["metadata"] = exporter.getMetadata();
     } else {
       qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
       bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap();
