@@ -261,7 +261,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->set_toolhead_pwm(0);
         }
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
-        if (has_focus_adjust_ && repeat > 1) {
+        if (has_focus_adjust_ && focus_step_ > 0 && repeat > 1) {
           float total_step = focus_step_ * (repeat - 1);
           gen_->sync_motion_type2(184, 128, -total_step);
         }
