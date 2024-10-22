@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QList>
+#include <QPointer>
+
 /**
     \class BaseContainer
     \brief A class template for widget containers
@@ -29,4 +32,22 @@ protected:
 
   /** Overridable function for "Connect events" */
   virtual void registerEvents() {};
+
+  void blockInputSignals() {
+    for (auto obj : inputs_) {
+      if (obj) obj->blockSignals(true);
+    }
+  };
+
+  void unblockInputSignals() {
+    for (auto obj : inputs_) {
+      if (obj) obj->blockSignals(false);
+    }
+  };
+
+  void addInput(std::initializer_list<QPointer<QObject>> input) {
+    inputs_.append(input);
+  }
+
+  QList<QPointer<QObject>> inputs_;
 };

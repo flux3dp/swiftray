@@ -2893,6 +2893,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.min_power = getAttr(attributes, "data-minPower", 0);
         layer_config.ink = getAttr(attributes, "data-ink", 3);
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
+        layer_config.frequency = getAttr(attributes, "data-frequency", 0);
+        layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", 0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }

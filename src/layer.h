@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QMutex>
 #include <shape/shape.h>
+#include <meta/layer-parameters.h>
 
 class Document;
 
@@ -92,6 +93,12 @@ public:
 
   double minPower() const;
 
+  int frequency() const;
+  
+  int pulseWidth() const;
+
+  void setParameters(const LayerParameters &params);
+
   Document &document();
 
 
@@ -145,6 +152,10 @@ public:
 
   void setDocument(Document *doc);
 
+  void setFrequency(int frequency);
+
+  void setPulseWidth(int pulse_width);
+
   //void setLayerCounter(int i);
 
   friend class DocumentSerializer;
@@ -182,6 +193,9 @@ private:
   int ink_ = 3;
   // pwm
   double min_power_ = 0;
+  // fiber
+  int frequency_ = 0;
+  int pulse_width_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

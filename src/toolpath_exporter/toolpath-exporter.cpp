@@ -108,6 +108,12 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
+  if (layer->frequency() != 0) {
+    gen_->setFrequency(layer->frequency());
+  }
+  if (layer->pulseWidth() != 0) {
+    gen_->setPulseWidth(layer->pulseWidth());
+  }
   for (auto &shape : layer->children()) {
     convertShape(shape);
   }

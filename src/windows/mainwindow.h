@@ -65,6 +65,8 @@ public:
 
   virtual void showEvent(QShowEvent *event) override;
 
+  MachineSettings::MachineParam selectedMachineParam() const;
+
 Q_SIGNALS:
 
   void windowWasShown();

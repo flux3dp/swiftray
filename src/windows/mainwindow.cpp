@@ -36,6 +36,7 @@
 #include <windows/preset-manager.h>
 #include <settings/machine-settings.h>
 #include <settings/preset-settings.h>
+#include <meta/layer-parameters.h>
 
 #include <QResource>
 #include <utils/software_update.h>
@@ -1396,13 +1397,13 @@ void MainWindow::registerEvents() {
     doc_panel_->setPresetSelectLock(true);
     layer_panel_->setLayerParamLock(true);
   });
-  connect(layer_panel_, &LayerPanel::editLayerParam, [=](double strength, double speed, int repeat) {
-    canvas_->document().activeLayer()->setStrength(strength);
-    canvas_->document().activeLayer()->setSpeed(speed);
-    canvas_->document().activeLayer()->setRepeat(repeat);
-  });
-  connect(layer_panel_, &LayerPanel::editLayerBacklash, [=](double backlash) {
-    canvas_->document().activeLayer()->setXBacklash(backlash);
+  connect(layer_panel_, &LayerPanel::editLayerParams, [=](LayerParameters& params) {
+    canvas_->document().activeLayer()->setStrength(params.strength);
+    canvas_->document().activeLayer()->setSpeed(params.speed);
+    canvas_->document().activeLayer()->setRepeat(params.repeat);
+    canvas_->document().activeLayer()->setXBacklash(params.backlash);
+    canvas_->document().activeLayer()->setFrequency(params.frequency);
+    canvas_->document().activeLayer()->setPulseWidth(params.pulse_width);
   });
   connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
     mainApp->updateFramingPower(framing_power);
@@ -2558,4 +2559,8 @@ void MainWindow::handleWarnings(QString message) {
 
 void MainWindow::handleJobAttached() {
   gcode_panel_->attachJob(active_machine.getJobExecutor());
+}
+
+MachineSettings::MachineParam MainWindow::selectedMachineParam() const {
+  return mainApp->getMachineParam();
 }

@@ -192,6 +192,8 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static bool first_list = true;
     static double center_pos = 55;
     static int d_buffer = 0;
+    static int freq = 100; //100 khz
+    static int pulse_width = 100; // 100 ns
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -206,7 +208,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       return;
     }
 
-    QRegularExpression re("([GMXYFSZDW])(-?\\d+\\.?\\d*)");
+    QRegularExpression re("([GMXYFSZDWQP])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -222,6 +224,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         QRegularExpressionMatch match = i.next();
         QString type = match.captured(1);
         QString value = match.captured(2);
+        
         if (type == "G") {
             command = type + value;
         } else if (type == "M") {
@@ -235,6 +238,14 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         } else if (type == "Z") {
             z = value.toDouble();
             is_move_command = true;
+        } else if (type == "Q") {
+          freq = value.toInt();
+          int duration = 1000 / freq; // freq is in khz
+          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
+        } else if (type == "P") {
+          pulse_width = value.toInt();
+          int duration = 1000 / freq; // freq is in khz
+          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
         } else if (type == "F") {
             current_f = value.toDouble();
             lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
@@ -389,7 +400,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       rotary_mode = true;
       dequeueCmd(1);
     } else if (command == "M102") {
-      qInfo() << "Enable OUT1/OUT2";
+      qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
     } else if (command == "M99" ) {

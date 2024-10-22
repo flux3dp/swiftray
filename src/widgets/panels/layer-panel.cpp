@@ -36,11 +36,8 @@ void LayerPanel::registerEvents() {
   connect(layer_params_panel_, &LayerParamsPanel::wakeupPresetManager, [=]() {
     Q_EMIT wakeupPresetManager();
   });
-  connect(layer_params_panel_, &LayerParamsPanel::editLayerParam, [=](double strength, double speed, int repeat) {
-    Q_EMIT editLayerParam(strength, speed, repeat);
-  });
-  connect(layer_params_panel_, &LayerParamsPanel::editLayerBacklash, [=](double backlash) {
-    Q_EMIT editLayerBacklash(backlash);
+  connect(layer_params_panel_, &LayerParamsPanel::editLayerParams, [=](LayerParameters &params) {
+    Q_EMIT editLayerParams(params);
   });
 }
 
@@ -115,4 +112,12 @@ void LayerPanel::setLayerBacklash(double backlash) {
 
 void LayerPanel::setLayerParamLock(bool enable) {
   layer_params_panel_->setLayerParamLock(enable);
+}
+
+void LayerPanel::setLayerFrequency(int frequency) {
+  layer_params_panel_->setLayerFrequency(frequency);
+}
+
+void LayerPanel::setLayerPulseWidth(int pulse_width) {
+  layer_params_panel_->setLayerPulseWidth(pulse_width);
 }

@@ -4,6 +4,7 @@
 #include <QFrame>
 #include <QToolButton>
 #include <widgets/panels/layer-params-panel.h>
+#include <meta/layer-parameters.h>
 
 class MainWindow;
 
@@ -21,14 +22,15 @@ public:
   void setPresetIndex(int preset_index, int param_index);
   void setLayerParam(double strength, double speed, int repeat);
   void setLayerBacklash(double backlash);
+  void setLayerFrequency(int frequency);
+  void setLayerPulseWidth(int pulse_width);
   void setLayerParamLock(bool enable);
 
 Q_SIGNALS:
   void panelShow(bool is_show);
   void editParamIndex(int param_index);
   void wakeupPresetManager();
-  void editLayerParam(double strength, double speed, int repeat);
-  void editLayerBacklash(double backlash);
+  void editLayerParams(LayerParameters& params);
   
 private Q_SLOTS:
 

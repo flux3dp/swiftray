@@ -138,6 +138,10 @@ double Layer::minPower() const { return min_power_; }
 
 Layer::Type Layer::type() const { return type_; }
 
+int Layer::frequency() const { return frequency_; }
+
+int Layer::pulseWidth() const { return pulse_width_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -249,6 +253,23 @@ void Layer::setDocument(Document *doc) {
   document_ = doc;
 }
 
+void Layer::setFrequency(int frequency) {
+  frequency_ = frequency;
+}
+
+void Layer::setPulseWidth(int pulse_width) {
+  pulse_width_ = pulse_width;
+}
+
+void Layer::setParameters(const LayerParameters &params) {
+  this->setSpeed(params.speed);
+  this->setStrength(params.strength);
+  this->setRepeat(params.repeat);
+  this->setXBacklash(params.backlash);
+  this->setFrequency(params.frequency);
+  this->setPulseWidth(params.pulse_width);
+}
+
 // Clone
 
 LayerPtr Layer::clone() {
@@ -263,6 +284,8 @@ LayerPtr Layer::clone() {
   new_layer->setUseDiode(isUseDiode());
   new_layer->setTargetHeight(targetHeight());
   new_layer->setType(type());
+  new_layer->setFrequency(frequency());
+  new_layer->setPulseWidth(pulseWidth());
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

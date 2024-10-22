@@ -16,6 +16,13 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
   ui->setupUi(this);
   initializeContainer();
   updateMovingComboBox();
+  this->addInput({ui->powerSpinBox,
+                 ui->speedSpinBox,
+                 ui->repeatSpinBox,
+                 ui->presetComboBox,
+                 ui->backlashSpinBox,
+                 ui->freqSpinBox,
+                 ui->pulseWidthSpinBox});
 }
 
 LayerParamsPanel::~LayerParamsPanel() {
@@ -50,19 +57,31 @@ void LayerParamsPanel::loadSettings() {
 
 void LayerParamsPanel::registerEvents() {
   connect(ui->powerSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double strength) {
-    Q_EMIT editLayerParam(strength, ui->speedSpinBox->value(), ui->repeatSpinBox->value());
+    current_params_.strength = strength;
+    Q_EMIT editLayerParams(current_params_);
     setToCustom();
   });
   connect(ui->speedSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double speed) {
-    Q_EMIT editLayerParam(ui->powerSpinBox->value(), speed, ui->repeatSpinBox->value());
+    current_params_.speed = speed;
+    Q_EMIT editLayerParams(current_params_);
+    setToCustom();
+  });
+  connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
+    current_params_.repeat = repeat;
+    Q_EMIT editLayerParams(current_params_);
     setToCustom();
   });
   connect(ui->backlashSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double backlash) {
-    Q_EMIT editLayerBacklash(backlash);
+    current_params_.backlash = backlash;
+    Q_EMIT editLayerParams(current_params_);
   });
-  connect(ui->repeatSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int repeat) {
-    Q_EMIT editLayerParam(ui->powerSpinBox->value(), ui->speedSpinBox->value(), repeat);
-    setToCustom();
+  connect(ui->freqSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int frequency) {
+    current_params_.frequency = frequency;
+    Q_EMIT editLayerParams(current_params_);
+  });
+  connect(ui->pulseWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int pulse_width) {
+    current_params_.pulse_width = pulse_width;
+    Q_EMIT editLayerParams(current_params_);
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
     if (index == ui->presetComboBox->count() - 1) {
@@ -133,22 +152,17 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   if(previous_index < 0) previous_index = ui->presetComboBox->count() - 2;
   layer_ = layer;
   ui->presetParamLabel->setText(tr("Parameter Settings") + "("+ layer->name() + ")");
-  ui->powerSpinBox->blockSignals(true);
-  ui->speedSpinBox->blockSignals(true);
-  ui->repeatSpinBox->blockSignals(true);
-  ui->presetComboBox->blockSignals(true);
-  ui->backlashSpinBox->blockSignals(true);
+  this->blockInputSignals();
   ui->powerSpinBox->setValue(layer->power());
   ui->speedSpinBox->setValue(layer->speed());
   ui->repeatSpinBox->setValue(layer->repeat());
   ui->backlashSpinBox->setValue(layer->xBacklash());
+  ui->freqSpinBox->setValue(layer->frequency());
+  ui->pulseWidthSpinBox->setValue(layer->pulseWidth());
   ui->presetComboBox->setCurrentIndex(previous_index);
-  ui->powerSpinBox->blockSignals(false);
-  ui->speedSpinBox->blockSignals(false);
-  ui->repeatSpinBox->blockSignals(false);
-  ui->presetComboBox->blockSignals(false);
-  ui->backlashSpinBox->blockSignals(false);
+  this->unblockInputSignals();
   updateMovingComboBox();
+  updateParams();
 }
 
 /*
@@ -180,38 +194,56 @@ void LayerParamsPanel::setPresetIndex(int preset_index, int param_index) {
     ui->presetComboBox->blockSignals(false);
   } else {
     PresetSettings::Param param = settings->getTargetParam(preset_index, param_index);
-    ui->powerSpinBox->blockSignals(true);
-    ui->speedSpinBox->blockSignals(true);
-    ui->repeatSpinBox->blockSignals(true);
+    this->blockInputSignals();
     ui->powerSpinBox->setValue(param.power);
     ui->speedSpinBox->setValue(param.speed);
     ui->repeatSpinBox->setValue(param.repeat);
-    ui->powerSpinBox->blockSignals(false);
-    ui->speedSpinBox->blockSignals(false);
-    ui->repeatSpinBox->blockSignals(false);
-    ui->presetComboBox->blockSignals(true);
     ui->presetComboBox->setCurrentIndex(param_index);
-    ui->presetComboBox->blockSignals(false);
-    Q_EMIT editLayerParam(param.power, param.speed, param.repeat);
+    this->unblockInputSignals();
+    updateParams();
+    Q_EMIT editLayerParams(current_params_);
   }
 }
 
 void LayerParamsPanel::setLayerParam(double strength, double speed, int repeat) {
-  ui->powerSpinBox->blockSignals(true);
-  ui->speedSpinBox->blockSignals(true);
-  ui->repeatSpinBox->blockSignals(true);
+  this->blockInputSignals();
   ui->powerSpinBox->setValue(strength);
   ui->speedSpinBox->setValue(speed);
   ui->repeatSpinBox->setValue(repeat);
-  ui->powerSpinBox->blockSignals(false);
-  ui->speedSpinBox->blockSignals(false);
-  ui->repeatSpinBox->blockSignals(false);
+  this->unblockInputSignals();
 }
 
 void LayerParamsPanel::setLayerBacklash(double backlash) {
-  ui->backlashSpinBox->blockSignals(true);
+  this->blockInputSignals();
   ui->backlashSpinBox->setValue(backlash);
-  ui->backlashSpinBox->blockSignals(false);
+  this->unblockInputSignals();
+}
+
+void LayerParamsPanel::setLayerFrequency(int frequency) {
+  this->blockInputSignals();
+  ui->freqSpinBox->setValue(frequency);
+  this->unblockInputSignals();
+}
+
+void LayerParamsPanel::setLayerPulseWidth(int pulseWidth) {
+  this->blockInputSignals();
+  ui->pulseWidthSpinBox->setValue(pulseWidth);
+  this->unblockInputSignals();
+}
+
+const LayerParameters LayerParamsPanel::updateParams() {
+  current_params_.strength = ui->powerSpinBox->value();
+  current_params_.speed = ui->speedSpinBox->value();
+  current_params_.repeat = ui->repeatSpinBox->value();
+  current_params_.backlash = ui->backlashSpinBox->value();
+  current_params_.frequency = ui->freqSpinBox->value();
+  current_params_.pulse_width = ui->pulseWidthSpinBox->value();
+  if (main_window_->selectedMachineParam().board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
+    ui->fiberOptions->show();
+  } else {
+    ui->fiberOptions->hide();
+  }
+  return current_params_;
 }
 
 void LayerParamsPanel::setLayerParamLock(bool enable) {
