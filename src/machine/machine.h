@@ -59,10 +59,10 @@ public:
   QPointer<RTStatusUpdateExecutor> getRTStatusUpdateExecutor() const { return rt_status_executor_; }
 
 public Q_SLOTS:
-  void startJob();
-  void pauseJob();
-  void resumeJob();
-  void stopJob();
+  bool startJob();
+  bool pauseJob();
+  bool resumeJob();
+  bool stopJob();
 
 Q_SIGNALS:
   void connected();
@@ -81,6 +81,7 @@ private Q_SLOTS:
   void handleConfigUpdate(QString key, QString value);
 
 private:
+  void alert(QString title, QString msg);
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
   QSerialPort *serial_port_ = nullptr;

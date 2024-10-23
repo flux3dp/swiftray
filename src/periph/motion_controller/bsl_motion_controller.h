@@ -24,6 +24,8 @@ public:
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
   QString getCurrentError() { return this->getErrorString(current_error_); }
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
+  BoardRunStatus getBoardStatus();
+  bool isConnected() override;
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -43,6 +45,7 @@ private:
   bool is_threading = false;
   bool should_flush_ = false;
   bool lcs_paused_ = false;
+  bool is_board_connected_ = false;
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;

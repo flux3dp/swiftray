@@ -1739,7 +1739,7 @@ void MainWindow::setConnectionToolBar() {
 }
 
 void MainWindow::connectMachine(QString port_name, bool auto_connect) {
-  qInfo() << "MainWindow::connectMachine(" << port_name << ")";
+  qInfo() << "MainWindow::connectMachine(Port:" << port_name << ")";
   if (active_machine.isConnected()) {
     qInfo() << "MainWindow::connectMachine()- Already connected to the port" << port_name;
     active_machine.disconnect();
@@ -2309,7 +2309,14 @@ void MainWindow::onStartNewJob() {
     job_dashboard_->attachJob(active_machine.getJobExecutor());
   }
   gcode_panel_->attachJob(active_machine.getJobExecutor());
-  active_machine.startJob();
+  if (!active_machine.startJob()) {
+    if (!active_machine.isConnected()) {
+      QMessageBox msgbox;
+      msgbox.setText(tr("Error"));
+      msgbox.setInformativeText(tr("Please connect to the machine first."));
+      msgbox.exec();
+    }
+  }
 }
 
 void MainWindow::onStopJob() {

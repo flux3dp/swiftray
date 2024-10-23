@@ -28,8 +28,32 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
 }
 
 Machine* SwiftrayServer::getMachine() {
+  // TODO: Support other machine parameters
   if (m_machine == nullptr) {
-    throw std::runtime_error("Machine not set");
+    MachineSettings::MachineParam bsl_param;
+    bsl_param.name = "Default";
+    bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
+    bsl_param.origin = MachineSettings::MachineParam::OriginType::RearLeft;
+    bsl_param.width = 110;
+    bsl_param.height = 110;
+    bsl_param.travel_speed = 4000;
+    bsl_param.rotary_axis = 'Y';
+    bsl_param.home_on_start = false;
+    bsl_param.is_high_speed_mode = true;
+    this->m_machine = new Machine(bsl_param);
+    this->m_machine->connectSerial("BSL", 0);
+    return this->m_machine;
+  }
+  if (!m_machine->isConnected()) {
+    qWarning() << "Server::getMachine(): Device is disconnected, retry connection";
+    this->m_machine = new Machine(m_machine->getMachineParam());
+    if (!m_machine->connectSerial("BSL", 0)) {
+      qWarning() << "Server::getMachine(): Unable to reconnect to machine";
+    } else {
+      qInfo() << "Server::getMachine(): Reconnected to machine";
+      // Sleep for a bit to allow the machine to connect and init
+      QThread::msleep(50);
+    }
   }
   return m_machine;
 }
@@ -100,25 +124,18 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
       qInfo() << "Server:: Already connected to device on port" << port;
       result["message"] = "Already connected to device on port " + port;
       this->m_machine = this->machine_map_[port];
+      getMachine();
+      machine_map_.insert(port, this->m_machine);
     } else {
       qInfo() << "Server:: Connecting to device on new port" << port;
-      MachineSettings::MachineParam bsl_param;
-      bsl_param.name = "Default";
-      bsl_param.board_type = MachineSettings::MachineParam::BoardType::BSL_2024;
-      bsl_param.origin = MachineSettings::MachineParam::OriginType::RearLeft;
-      bsl_param.width = 110;
-      bsl_param.height = 110;
-      bsl_param.travel_speed = 4000;
-      bsl_param.rotary_axis = 'Y';
-      bsl_param.home_on_start = false;
-      bsl_param.is_high_speed_mode = true;
-      this->m_machine = new Machine(bsl_param);
-      machine_map_.insert(port, m_machine);
+      // Create a new machine and write it to the machine map
+      this->m_machine = nullptr;
+      getMachine();
+      machine_map_.insert(port, this->m_machine);
       result["message"] = "Connected to device on port " + port;
-      getMachine()->connectSerial("BSL", 0);
     }
   } else if (action == "start") {
-    qInfo() << "Starting job";
+    qInfo() << "Server::Starting job";
     getMachine()->startJob();
   } else if (action == "pause") {
     getMachine()->pauseJob();
@@ -306,7 +323,7 @@ void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, c
 
   if (action == "getInfo") {
     QJsonObject info;
-    info["swiftrayVersion"] = "1.0.0";
+    info["swiftrayVersion"] = QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
     info["qtVersion"] = QT_VERSION_STR;
     info["os"] = QSysInfo::prettyProductName();
     info["cpuArchitecture"] = QSysInfo::currentCpuArchitecture();
