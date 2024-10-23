@@ -130,7 +130,7 @@ namespace MySVG {
         target_layer = std::make_shared<Layer>();
         target_layer->setName(layer_name);
         target_layer->setColor(color);
-        qInfo() << "Creating layer" << layer_name;
+        qInfo() << "MySVG::Creating layer" << layer_name;
         if (fill) target_layer->setType(Layer::Type::Fill);
         layers.push_back(target_layer);
         return target_layer;

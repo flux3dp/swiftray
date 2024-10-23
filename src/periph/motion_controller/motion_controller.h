@@ -39,6 +39,9 @@ public:
   virtual bool resetState() = 0;
   virtual CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) = 0;
   virtual CmdSendResult stop() = 0;
+  virtual bool isConnected() {
+    return port_ && port_->isOpen();
+  }
   MotionControllerState getState() const;
   std::tuple<qreal, qreal, qreal> getPos() const;
 

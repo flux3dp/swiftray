@@ -720,7 +720,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     FCodeGenerator::sleep(seconds);
   }
 
-  void home(void) {
+  void home(void) override {
     current_x = current_y = current_z = 0;
     FCodeGenerator::home();
   }
@@ -764,7 +764,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     return crc_val;
   }
 
-  void end_content(float min_x, float max_x, float min_y, float max_y) {
+  void end_content(float min_x, float max_x, float min_y, float max_y) override {
     // Write metadata
     uint32_t u32value;
     write_to_all("FILE", 4, NULL);
@@ -800,7 +800,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     FCodeGenerator::write((uint32_t)script_crc32, NULL, true);
   }
 
-  void write_post_config(const QJsonArray post_config) {
+  void write_post_config(const QJsonArray post_config) override {
     unsigned long post_config_crc32 = 0;
     QJsonDocument doc(post_config);
     QString str(doc.toJson(QJsonDocument::Compact));

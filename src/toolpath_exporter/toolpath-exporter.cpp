@@ -26,6 +26,7 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
  *         false if canceled or error occurred
  */
 bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home) {
+  qInfo() << "[Export] Start converting stack with layers" << layers.count();
   is_high_speed_ = is_high_speed;
   QElapsedTimer t;
   t.start();
@@ -44,11 +45,15 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   gen_->setWorkarea(machine_work_area_mm_);
 
   // Start Parsing Layers
+  qInfo() << "[Export] Start parsing layers";
   Q_ASSERT_X(!layers.empty(), "ToolpathExporter", "Must input at least one layer");
-  canvas_size_ = QSizeF((layers.at(0)->document()).width(), 
-                        (layers.at(0)->document()).height())
+  LayerPtr first_layer = layers.at(0);
+  qInfo() << "[Export] First layer: " << first_layer->name() << " " << first_layer.get(); 
+  qInfo() << "[Export] Document: " << &first_layer->document();
+  canvas_size_ = QSizeF((first_layer->document()).width(), 
+                        (first_layer->document()).height())
                  * resolution_scale_;
-
+  qInfo() << "[Export] Canvas size: " << canvas_size_;
   // Generate bitmap canvas
   layer_bitmap_ = QPixmap(QSize(canvas_size_.width(),
                                 canvas_size_.height()));

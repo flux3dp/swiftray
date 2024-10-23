@@ -349,13 +349,14 @@ void Machine::setupMotionController() {
   qInfo() << "Machine::setupMotionController()";
 
   if (motion_controller_) {
+    qInfo() << "Machine::setupMotionController() - found existing motion controller" << motion_controller_;
     motion_controller_->deleteLater();
     motion_controller_ = nullptr;
   }
 
 
-  qInfo() << "Machine::setupMotionController() creating motion controller";
   motion_controller_ = MotionControllerFactory::createMotionController(machine_param_, this);
+  qInfo() << "Machine::setupMotionController() - creating new motion controller" << motion_controller_;
   connect(motion_controller_, &MotionController::disconnected, this, &Machine::motionPortDisonnected);
   connect(motion_controller_, &MotionController::notif, this, &Machine::handleNotif);
   connect(motion_controller_, &MotionController::cmdSent, this, &Machine::logSent);
@@ -363,14 +364,12 @@ void Machine::setupMotionController() {
   connect(motion_controller_, &MotionController::stateChanged, this, &Machine::handleMotionControllerStateChange);
   connect(motion_controller_, &MotionController::configUpdate, this, &Machine::handleConfigUpdate);
 
-
-  qInfo() << "Machine::board_type: " << (int)machine_param_.board_type;
   if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::GRBL_2020) {
-    qInfo() << "Setup GRBL Motion Controller";
+    qInfo() << "Machine::setupMotionController() - Setup GRBL Motion Controller";
     motion_controller_->attachSerialPort(serial_port_);
   } else if (machine_param_.board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
     // TODO:BSL
-    qInfo() << "Setup BSL Motion Controller";
+    qInfo() << "Machine::setupMotionController() - Setup BSL Motion Controller";
     ((BSLMotionController*)motion_controller_)->attachPortBSL();
   }
   
@@ -413,26 +412,34 @@ void Machine::motionPortDisonnected() {
   Q_EMIT disconnected();
 }
 
-void Machine::startJob() {
+bool Machine::startJob() {
   if (connect_state_ != ConnectionState::kConnected) {
-    qWarning() << "Machine::startJob() - machine is not connected";
-    return;
+    qWarning() << "Machine::startJob() - machine state is not connected";
+    alert("Machine::startJob()", "Machine state is not connected, job skipped.");
+    return false;
   }
-  qInfo() << "Machine::startJob()";
+  if (!motion_controller_->isConnected()) {
+    qWarning() << "Machine::startJob() - board is not connected";
+    alert("Machine::startJob()", "Board is not connected, job skipped.");
+    return false;
+  }
+  qInfo() << "Machine::startJob() - state check";
   if (motion_controller_->getState() != MotionControllerState::kIdle) {
     qWarning() << "Machine::startJob() - motion controller is not idle";
     if (!motion_controller_->resetState()) {
       qWarning() << "Machine::startJob() - unable to reset motion controller";
-      return;
+      alert("Machine::startJob()", "Unable to reset motion controller, job skipped.");
+      return false;
     } else {
       qWarning() << "Machine::startJob() - reset motion controller done";
     }
   }
-  qInfo() << "Machine::startJob() - final starting";
+  qInfo() << "Machine::startJob() - starting job executor";
   job_executor_->startJob();
+  return true;
 }
 
-void Machine::pauseJob() {
+bool Machine::pauseJob() {
   qInfo() << "Machine::pauseJob()";
   // Send pause cmd to motion controller
   if (console_executor_ && job_executor_) {
@@ -450,9 +457,10 @@ void Machine::pauseJob() {
       }
     }
   }
+  return true;
 }
 
-void Machine::resumeJob() {
+bool Machine::resumeJob() {
   qInfo() << "Machine::resumeJob()";
   // Send resume cmd to motion controller
   if (console_executor_ && job_executor_) {
@@ -470,9 +478,10 @@ void Machine::resumeJob() {
       }
     }
   }
+  return true;
 }
 
-void Machine::stopJob() {
+bool Machine::stopJob() {
   // Send stop cmd to motion controller
   if (console_executor_ && job_executor_) {
     if (job_executor_->getState() == Executor::State::kRunning || 
@@ -490,6 +499,7 @@ void Machine::stopJob() {
       }
     }
   }
+  return true;
 }
 
 /**
@@ -543,25 +553,29 @@ std::tuple<qreal, qreal, qreal> Machine::machineToCanvasCoordConvert(
 void Machine::handleNotif(QString title, QString msg) {
   if (job_executor_->getState() == Executor::State::kRunning || 
         job_executor_->getState() == Executor::State::kPaused) {
-    auto msgbox = new QMessageBox;
-    //msgbox->setWindowTitle();
-    msgbox->setText(title);
-    msgbox->setInformativeText(msg);
-    msgbox->show();
+    alert(title, msg);
   }
+}
+
+void Machine::alert(QString title, QString msg) {
+  auto msgbox = new QMessageBox;
+  //msgbox->setWindowTitle();
+  msgbox->setText(title);
+  msgbox->setInformativeText(msg);
+  msgbox->show();
 }
 
 bool Machine::connectSerial(QString port, int baudrate) {
   if (port == "BSL") {
     if (connect_state_ == ConnectionState::kConnected) {
-      qWarning() << "BSL already connected";
+      qWarning() << "Machine::connectSerial() - BSL already connected";
       return false;
     } else if (lcs_connect()) {
-      qInfo() << "Machine::connectSerial():: LCS connected";
+      qInfo() << "Machine::connectSerial() - LCS connected";
       this->setupMotionController();
       return true;
     } else {
-      qWarning() << "Machine::connectSerial():: LCS connection failed";
+      qWarning() << "Machine::connectSerial() - LCS connection failed";
       return false;
     }
   } else {
