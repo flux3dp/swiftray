@@ -64,6 +64,8 @@ private:
 
   void outputLayerPathGcode();
 
+  void outputLayerFillGcode();
+
   void outputLayerBitmapGcode();
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
@@ -90,7 +92,8 @@ private:
   double travel_speed_ = 80;      // The speed form point to point(mm/s)
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
-  QPixmap layer_bitmap_;            // place the filled geometry & image (excluding unfilled path), expressed in unit of document dot
+  QList<QPolygonF> layer_filled_polygons_; // place the filled path geometry, expressed in unit of document dot
+  QPixmap layer_bitmap_;            // place the image (excluding unfilled path), expressed in unit of document dot
   QRectF bitmap_dirty_area_;        // Expressed in unit of document dot.
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   // === The followings depend on canvas resolution ===

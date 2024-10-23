@@ -102,6 +102,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
   polygons_mutex_.lock();
   layer_polygons_.clear();
+  layer_filled_polygons_.clear();
   polygons_mutex_.unlock();
   with_image_ = false;
   layer_painter_ = std::make_unique<QPainter>(&layer_bitmap_);
@@ -114,6 +115,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   if (layer->pulseWidth() != 0) {
     gen_->setPulseWidth(layer->pulseWidth());
   }
+  // Iterate through all shapes in the layer
   for (auto &shape : layer->children()) {
     convertShape(shape);
   }
@@ -199,11 +201,14 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       current_layer_->type() == Layer::Type::FillLine) {
     // TODO (Fix overlapping fills inside a single layer)
     // TODO (Consider CacheStack as a primary painter for layers?)
-    layer_painter_->setPen(Qt::NoPen); // Otherwise, the border would occupy at least 1 pixel
-    layer_painter_->setBrush(Qt::black);
-    layer_painter_->drawPath(transformed_path);
-    layer_painter_->setBrush(Qt::NoBrush);
-    bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
+    // layer_painter_->setPen(Qt::NoPen); // Otherwise, the border would occupy at least 1 pixel
+    // layer_painter_->setBrush(Qt::black);
+    // layer_painter_->drawPath(transformed_path);
+    // layer_painter_->setBrush(Qt::NoBrush);
+    // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
+    polygons_mutex_.lock();
+    layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
+    polygons_mutex_.unlock();
   }
   // Line shape
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
@@ -287,8 +292,95 @@ void ToolpathExporter::sortPolygons() {
  */
 void ToolpathExporter::outputLayerGcode() {
   outputLayerBitmapGcode();
+  outputLayerFillGcode();
   outputLayerPathGcode();
 }
+
+/**
+ * @brief Export layer_filled_polygons_ for non-filled geometry
+ */
+void ToolpathExporter::outputLayerFillGcode() {
+  QPainterPath path;
+  polygons_mutex_.lock();
+  for (auto &poly : layer_filled_polygons_) {
+    if (poly.empty()) continue;
+    path.addPolygon(poly);
+  }
+  qInfo() << "Fill Path Count: " << path.elementCount();
+  double fill_interval = current_layer_->fillInterval() * dpmm_;
+  double fill_angle = current_layer_->fillAngle();
+  // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
+  // Get path bounds
+  QRectF bounds = path.boundingRect();
+  qInfo() << "Fill Path Bounds: " << bounds;
+  
+  // Calculate diagonal length to ensure coverage
+  double diagonal = qSqrt(bounds.width() * bounds.width() + 
+                        bounds.height() * bounds.height());
+  qInfo() << "Diagonal: " << diagonal / dpmm_;
+  
+  // Convert angle to radians
+  double angleRad = qDegreesToRadians(fill_angle);
+  
+  // Calculate perpendicular direction for scanning
+  QPointF direction(qCos(angleRad), qSin(angleRad));
+  QPointF perpendicular(-direction.y(), direction.x());
+  
+  // Calculate center point
+  QPointF center = bounds.center();
+  qInfo() << "Center Point: " << center / dpmm_;
+  
+  // Calculate start point (offset by half diagonal in perpendicular direction)
+  QPointF start = center - (perpendicular * diagonal / 2);
+  qInfo() << "Start Point: " << start / dpmm_;
+  gen_->turnOnLaser();
+  // Scan across the path
+  for (double offset = -diagonal/2; offset <= diagonal; offset += fill_interval) {
+      // Calculate line start and end points
+      QPointF lineStart = start + perpendicular * offset - direction * diagonal/2;
+      QPointF lineEnd = lineStart + direction * diagonal;
+      QLineF scanLine(lineStart, lineEnd);
+      
+      // Get intersections with path
+      QList<QPointF> intersections;
+      for (int i = 0; i < path.elementCount(); ++i) {
+          QPainterPath::Element elem = path.elementAt(i);
+          if (i + 1 < path.elementCount()) {
+              QPainterPath::Element nextElem = path.elementAt(i + 1);
+              QLineF pathSegment(QPointF(elem.x, elem.y), 
+                                QPointF(nextElem.x, nextElem.y));
+              
+              QPointF intersection;
+              if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
+                  intersections.append(intersection);
+              }
+          }
+      }
+      
+      // Sort intersections by distance from line start
+      std::sort(intersections.begin(), intersections.end(),
+                [&lineStart](const QPointF& a, const QPointF& b) {
+                    return QLineF(lineStart, a).length() < QLineF(lineStart, b).length();
+                });
+      
+      // Process pairs of intersections
+      for (int i = 0; i < intersections.size() - 1; i += 2) {
+          // Move to start point with no laser
+          moveTo(intersections[i] / dpmm_,
+            current_layer_->speed(),
+            0, 0);
+
+          // Move to end point
+          moveTo(intersections[i + 1] / dpmm_,
+            current_layer_->speed(),
+            current_layer_->power(),
+            0);
+      }
+  }
+  polygons_mutex_.unlock();
+  gen_->turnOffLaser();
+}
+
 
 /**
  * @brief Export layer_polygons_ for non-filled geometry
