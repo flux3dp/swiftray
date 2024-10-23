@@ -4,6 +4,7 @@
 #include <QMutex>
 #include <shape/shape.h>
 #include <meta/layer-parameters.h>
+#include <parser/mysvg/mysvg-types.h>
 
 class Document;
 
@@ -97,28 +98,17 @@ public:
   
   int pulseWidth() const;
 
-  void setParameters(const LayerParameters &params);
+  double fillInterval() const;
+
+  double fillAngle() const;
 
   Document &document();
-
 
   /** Setters **/
 
   void setColor(const QColor &color);
 
-  void setUseDiode(bool is_diode);
-
-  void setTargetHeight(double height);
-
   void setName(const QString &name);
-
-  void setRepeat(int repeat);
-
-  void setSpeed(double speed);
-
-  void setStrength(double strength);
-
-  void setXBacklash(double x_backlash);
 
   void setParameterIndex(int parameter_index);
 
@@ -128,33 +118,11 @@ public:
 
   void setVisible(bool visible);
 
-  void setStepHeight(double step_height);
-
-  void setModule(int module);
-
-  void setFocus(float focus);
-
-  void setFocusStep(float focus_step);
-
-  void setPrintingStrength(float printing_strength);
-
-  void setPrintingSpeed(double printing_speed);
-
-  void setUv(int uv);
-
-  void setHalftone(int halftone);
-
-  void setMultipass(int multipass);
-
-  void setInk(int ink);
-
-  void setMinPower(double min_power);
-
   void setDocument(Document *doc);
 
-  void setFrequency(int frequency);
+  void setParameters(const LayerParameters &params);
 
-  void setPulseWidth(int pulse_width);
+  void setParameters(const MySVG::BeamLayerConfig &params);
 
   //void setLayerCounter(int i);
 
@@ -196,6 +164,9 @@ private:
   // fiber
   int frequency_ = 0;
   int pulse_width_ = 0;
+  // filling
+  double fill_interval_;
+  double fill_angle_;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

@@ -1398,12 +1398,7 @@ void MainWindow::registerEvents() {
     layer_panel_->setLayerParamLock(true);
   });
   connect(layer_panel_, &LayerPanel::editLayerParams, [=](LayerParameters& params) {
-    canvas_->document().activeLayer()->setStrength(params.strength);
-    canvas_->document().activeLayer()->setSpeed(params.speed);
-    canvas_->document().activeLayer()->setRepeat(params.repeat);
-    canvas_->document().activeLayer()->setXBacklash(params.backlash);
-    canvas_->document().activeLayer()->setFrequency(params.frequency);
-    canvas_->document().activeLayer()->setPulseWidth(params.pulse_width);
+    canvas_->document().activeLayer()->setParameters(params);
   });
   connect(jogging_panel_, &JoggingPanel::updateFramingPower, [=](double framing_power) {
     mainApp->updateFramingPower(framing_power);

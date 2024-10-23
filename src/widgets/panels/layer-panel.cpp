@@ -113,11 +113,3 @@ void LayerPanel::setLayerBacklash(double backlash) {
 void LayerPanel::setLayerParamLock(bool enable) {
   layer_params_panel_->setLayerParamLock(enable);
 }
-
-void LayerPanel::setLayerFrequency(int frequency) {
-  layer_params_panel_->setLayerFrequency(frequency);
-}
-
-void LayerPanel::setLayerPulseWidth(int pulse_width) {
-  layer_params_panel_->setLayerPulseWidth(pulse_width);
-}

@@ -142,6 +142,10 @@ int Layer::frequency() const { return frequency_; }
 
 int Layer::pulseWidth() const { return pulse_width_; }
 
+double Layer::fillInterval() const { return fill_interval_; }
+
+double Layer::fillAngle() const { return fill_angle_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -173,119 +177,85 @@ void Layer::setType(Layer::Type type) {
   }
 }
 
-void Layer::setTargetHeight(double height) {
-  target_height_ = height;
-}
-
 void Layer::setName(const QString &name) {
   name_ = name;
-}
-
-void Layer::setSpeed(double speed) {
-  speed_ = speed;
-}
-
-void Layer::setStrength(double strength) {
-  power_ = strength;
-}
-
-void Layer::setXBacklash(double x_backlash) {
-  x_backlash_ = x_backlash;
-}
-
-void Layer::setRepeat(int repeat) {
-  repeat_ = repeat;
 }
 
 void Layer::setParameterIndex(int parameter_index) {
   parameter_index_ = parameter_index;
 }
 
-void Layer::setUseDiode(bool is_diode) {
-  use_diode_ = is_diode;
-}
-
-void Layer::setStepHeight(double step_height) {
-  step_height_ = step_height;
-}
-
-void Layer::setModule(int module) {
-  module_ = module;
-}
-
-void Layer::setFocus(float focus) {
-  focus_ = focus;
-}
-
-void Layer::setFocusStep(float focus_step) {
-  focus_step_ = focus_step;
-}
-
-void Layer::setPrintingStrength(float printing_strength) {
-  printing_strength_ = printing_strength;
-}
-
-void Layer::setPrintingSpeed(double printing_speed) {
-  printing_speed_ = printing_speed;
-}
-
-void Layer::setUv(int uv) {
-  uv_ = uv;
-}
-
-void Layer::setHalftone(int halftone) {
-  halftone_ = halftone;
-}
-
-void Layer::setMultipass(int multipass) {
-  multipass_ = multipass;
-}
-
-void Layer::setInk(int ink) {
-  ink_ = ink;
-}
-
-void Layer::setMinPower(double min_power) {
-  min_power_ = min_power;
-}
-
 void Layer::setDocument(Document *doc) {
   document_ = doc;
 }
 
-void Layer::setFrequency(int frequency) {
-  frequency_ = frequency;
-}
-
-void Layer::setPulseWidth(int pulse_width) {
-  pulse_width_ = pulse_width;
-}
-
+// UI Adjustable Parameters in Swiftray
 void Layer::setParameters(const LayerParameters &params) {
-  this->setSpeed(params.speed);
-  this->setStrength(params.strength);
-  this->setRepeat(params.repeat);
-  this->setXBacklash(params.backlash);
-  this->setFrequency(params.frequency);
-  this->setPulseWidth(params.pulse_width);
+  // use attr instead of setter
+  this->speed_ = params.speed;
+  this->power_ = params.strength;
+  this->repeat_ = params.repeat;
+  this->x_backlash_ = params.backlash;
+  this->frequency_ = params.frequency;
+  this->pulse_width_ = params.pulse_width;
+  this->fill_interval_ = params.fill_interval;
+  this->fill_angle_ = params.fill_angle;
+}
+
+// Adjustable parameters in Beam Studio (including Ador's printing module)
+void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
+  this->is_visible_ = config.visible;
+  this->speed_ = config.speed;
+  this->power_ = config.power;
+  this->color_ = config.color;
+  this->module_ = config.module;
+  this->repeat_ = config.repeat;
+  this->target_height_ = config.height;
+  this->step_height_ = config.z_step;
+  this->use_diode_ = config.diode;
+  this->multipass_ = config.multipass;
+  this->x_backlash_ = config.backlash;
+  this->uv_ = config.uv;
+  this->halftone_ = config.halftone;
+  this->printing_strength_ = config.printing_strength;
+  this->focus_ = config.focus;
+  this->focus_step_ = config.focus_step;
+  this->min_power_ = config.min_power;
+  this->ink_ = config.ink;
+  this->printing_speed_ = config.printing_speed;
+  this->frequency_ = config.frequency;
+  this->pulse_width_ = config.pulse_width;
+  this->fill_interval_ = config.fill_interval;
+  this->fill_angle_ = config.fill_angle;
 }
 
 // Clone
 
 LayerPtr Layer::clone() {
   LayerPtr new_layer = std::make_shared<Layer>(document_, color(), name());
-  new_layer->setSpeed(speed());
-  new_layer->setStrength(power());
-  new_layer->setRepeat(repeat());
-  new_layer->setParameterIndex(parameterIndex());
-  new_layer->setLocked(isLocked());
-  new_layer->setVisible(isVisible());
-  new_layer->setStepHeight(stepHeight());
-  new_layer->setUseDiode(isUseDiode());
-  new_layer->setTargetHeight(targetHeight());
-  new_layer->setType(type());
-  new_layer->setFrequency(frequency());
-  new_layer->setPulseWidth(pulseWidth());
+  new_layer->is_visible_ = this->is_visible_;
+  new_layer->speed_ = this->speed_;
+  new_layer->power_ = this->power_;
+  new_layer->color_ = this->color_;
+  new_layer->module_ = this->module_;
+  new_layer->repeat_ = this->repeat_;
+  new_layer->target_height_ = this->target_height_;
+  new_layer->step_height_ = this->step_height_;
+  new_layer->use_diode_ = this->use_diode_;
+  new_layer->multipass_ = this->multipass_;
+  new_layer->x_backlash_ = this->x_backlash_;
+  new_layer->uv_ = this->uv_;
+  new_layer->halftone_ = this->halftone_;
+  new_layer->printing_strength_ = this->printing_strength_;
+  new_layer->focus_ = this->focus_;
+  new_layer->focus_step_ = this->focus_step_;
+  new_layer->min_power_ = this->min_power_;
+  new_layer->ink_ = this->ink_;
+  new_layer->printing_speed_ = this->printing_speed_;
+  new_layer->frequency_ = this->frequency_;
+  new_layer->pulse_width_ = this->pulse_width_;
+  new_layer->fill_interval_ = this->fill_interval_;
+  new_layer->fill_angle_ = this->fill_angle_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

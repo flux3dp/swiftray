@@ -8,6 +8,8 @@ int repeat = 0;
 double backlash = 0.0;
 int frequency = 0;
 int pulse_width = 0;
+double fill_interval = 0;
+double fill_angle = 0;
 };
 
 // Register the type for Qt's meta-object system

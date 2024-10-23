@@ -22,7 +22,9 @@ LayerParamsPanel::LayerParamsPanel(QWidget *parent, MainWindow *main_window) :
                  ui->presetComboBox,
                  ui->backlashSpinBox,
                  ui->freqSpinBox,
-                 ui->pulseWidthSpinBox});
+                 ui->pulseWidthSpinBox,
+                 ui->fillIntervalSpinBox,
+                 ui->fillAngleSpinBox});
 }
 
 LayerParamsPanel::~LayerParamsPanel() {
@@ -81,6 +83,14 @@ void LayerParamsPanel::registerEvents() {
   });
   connect(ui->pulseWidthSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), [=](int pulse_width) {
     current_params_.pulse_width = pulse_width;
+    Q_EMIT editLayerParams(current_params_);
+  });
+  connect(ui->fillIntervalSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double fill_interval) {
+    current_params_.fill_interval = fill_interval;
+    Q_EMIT editLayerParams(current_params_);
+  });
+  connect(ui->fillAngleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [=](double fill_angle) {
+    current_params_.fill_angle = fill_angle;
     Q_EMIT editLayerParams(current_params_);
   });
   connect(ui->presetComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index) {
@@ -159,6 +169,8 @@ void LayerParamsPanel::updateLayer(Layer *layer) {
   ui->backlashSpinBox->setValue(layer->xBacklash());
   ui->freqSpinBox->setValue(layer->frequency());
   ui->pulseWidthSpinBox->setValue(layer->pulseWidth());
+  ui->fillIntervalSpinBox->setValue(layer->fillInterval());
+  ui->fillAngleSpinBox->setValue(layer->fillAngle());
   ui->presetComboBox->setCurrentIndex(previous_index);
   this->unblockInputSignals();
   updateMovingComboBox();
@@ -219,18 +231,6 @@ void LayerParamsPanel::setLayerBacklash(double backlash) {
   this->unblockInputSignals();
 }
 
-void LayerParamsPanel::setLayerFrequency(int frequency) {
-  this->blockInputSignals();
-  ui->freqSpinBox->setValue(frequency);
-  this->unblockInputSignals();
-}
-
-void LayerParamsPanel::setLayerPulseWidth(int pulseWidth) {
-  this->blockInputSignals();
-  ui->pulseWidthSpinBox->setValue(pulseWidth);
-  this->unblockInputSignals();
-}
-
 const LayerParameters LayerParamsPanel::updateParams() {
   current_params_.strength = ui->powerSpinBox->value();
   current_params_.speed = ui->speedSpinBox->value();
@@ -238,6 +238,8 @@ const LayerParameters LayerParamsPanel::updateParams() {
   current_params_.backlash = ui->backlashSpinBox->value();
   current_params_.frequency = ui->freqSpinBox->value();
   current_params_.pulse_width = ui->pulseWidthSpinBox->value();
+  current_params_.fill_interval = ui->fillIntervalSpinBox->value();
+  current_params_.fill_angle = ui->fillAngleSpinBox->value();
   if (main_window_->selectedMachineParam().board_type == MachineSettings::MachineParam::BoardType::BSL_2024) {
     ui->fiberOptions->show();
   } else {

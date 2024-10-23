@@ -2895,6 +2895,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
         layer_config.frequency = getAttr(attributes, "data-frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", 0);
+        layer_config.fill_interval = getAttr(attributes, "data-fillInterval", 0);
+        layer_config.fill_angle = getAttr(attributes, "data-fillAngle", 0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
@@ -4694,25 +4696,8 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
                 }
             }
             qInfo() << "Layer Configuring: " << config.title << "P" << config.power << "S" << config.speed;
-            layer->setVisible(config.visible);
-            layer->setSpeed(config.speed);
-            layer->setStrength(config.power);
-            layer->setColor(config.color);
-            layer->setModule(config.module);
-            layer->setRepeat(config.repeat);
-            layer->setTargetHeight(config.height);
-            layer->setStepHeight(config.z_step);
-            layer->setUseDiode(config.diode);
-            layer->setMultipass(config.multipass);
-            layer->setXBacklash(config.backlash);
-            layer->setUv(config.uv);
-            layer->setHalftone(config.halftone);
-            layer->setPrintingStrength(config.printing_strength);
-            layer->setFocus(config.focus);
-            layer->setFocusStep(config.focus_step);
-            layer->setMinPower(config.min_power);
-            layer->setInk(config.ink);
-            layer->setPrintingSpeed(config.printing_speed);
+            layer->setParameters(config);
+            layer->setDocument(doc);
         }
         if (read_type != MySVG::ReadType::BVG) {
             doc->addLayer(layer);

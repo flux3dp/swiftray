@@ -24,9 +24,6 @@ public:
   void setLayerParam(double strength, double speed, int repeat);
   void setLayerBacklash(double backlash);
   void setLayerParamLock(bool enable);
-  void setLayerFrequency(int frequency);
-  void setLayerPulseWidth(int pulse_width);
-  const LayerParameters updateParams();
 
 public Q_SLOTS:
   void updateLayer(Layer *layer);
@@ -44,6 +41,7 @@ private:
   void resizeEvent(QResizeEvent *) override;
   void setToCustom();
   void updateMovingComboBox();
+  const LayerParameters updateParams();
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;

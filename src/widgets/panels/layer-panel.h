@@ -22,8 +22,6 @@ public:
   void setPresetIndex(int preset_index, int param_index);
   void setLayerParam(double strength, double speed, int repeat);
   void setLayerBacklash(double backlash);
-  void setLayerFrequency(int frequency);
-  void setLayerPulseWidth(int pulse_width);
   void setLayerParamLock(bool enable);
 
 Q_SIGNALS:
