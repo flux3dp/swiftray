@@ -272,7 +272,7 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
           ToolpathExporter::PaddingType::kFixedPadding,
           move_translate);
       exporter.setSortRule(PathSort::NestedSort);
-      exporter.setWorkAreaSize(QRectF(0,0,m_canvas->document().width() / 10, m_canvas->document().height() / 10));
+      exporter.setWorkAreaSize(QRectF(0, 0, m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
       if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
         return false; // canceled
