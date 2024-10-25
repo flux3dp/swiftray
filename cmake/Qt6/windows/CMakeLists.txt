@@ -40,6 +40,9 @@ find_package(OpenCV REQUIRED)
 find_package(WinSparkle REQUIRED)
 find_package(sentry CONFIG REQUIRED)
 find_package(Poppler REQUIRED)
+find_package(Boost REQUIRED)
+find_package(Cairo REQUIRED)
+find_package(GLib REQUIRED)
 
 # ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
 set_property(DIRECTORY APPEND
@@ -103,6 +106,9 @@ target_link_libraries(third_party_libs INTERFACE
   QxPotrace
   libdxfrw
   liblcs
+  opencv_core
+  opencv_imgproc
+  opencv_flann
   sentry::sentry)
 
 list (APPEND THIRD_PARTY_EXECS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/sentry-native/crashpad_handler.exe)
@@ -111,9 +117,6 @@ list (APPEND THIRD_PARTY_EXECS ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/to
 target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt::Core Qt::Quick Qt::QuickWidgets Qt::OpenGL Qt::Gui Qt::Svg Qt::Widgets Qt::WebSockets Qt::SerialPort Qt::QuickControls2 Qt6::Core5Compat Qt6::OpenGLWidgets
   Qt::Qml
-  opencv_core
-  opencv_imgproc
-  opencv_flann
   third_party_libs
   ${WINSPARKLE_LIBRARIES}
 )
@@ -183,8 +186,9 @@ file(GLOB DEFAULT_LINKED_DLLS "${CMAKE_BINARY_DIR}/*.dll")
 # Note: Add --compiler-runtime if using gcc to compile
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E echo "Creating deploy folder and copy dlls.."
+    COMMAND "${CMAKE_COMMAND}" -E echo "Creating deploy folder.."
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/deploy"
+    COMMAND "${CMAKE_COMMAND}" -E echo "Copying files.."
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:${PROJECT_NAME}>" "${CMAKE_CURRENT_BINARY_DIR}/deploy"
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different ${DEFAULT_LINKED_DLLS} "${CMAKE_CURRENT_BINARY_DIR}/deploy"
     COMMAND "${CMAKE_COMMAND}" -E echo "Running windeployqt..."
