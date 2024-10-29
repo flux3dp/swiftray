@@ -11,7 +11,7 @@
 #include <QApplication>
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 20000
+#define MAX_BUFFER_LIST_SIZE 50000
 
 int lcs_error_count = 0;
 
@@ -181,6 +181,16 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
     }
   }
   return ret;
+}
+
+void jump_to(double y, double x) {
+  // If xy is inverted swap x, y
+  lcs_jump_abs(y, x);
+}
+
+void mark_to(double y, double x) {
+  // If xy is inverted, swap x, y
+  lcs_mark_abs(y, x);
 }
 
 void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
@@ -422,15 +432,15 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
 
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
-      // qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
+      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
       lcs_set_end_of_list();
-      // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
+      qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
       first_list = false;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
       lcs_set_start_list(list_no);
-      // qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
+      qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       dequeueCmd(this->buffer_size_ - d_buffer);
       this->buffer_size_ = d_buffer = 0;
       QThread::msleep(1);
@@ -500,25 +510,25 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
-                lcs_mark_abs(0, target_x - center_pos);
+                mark_to(0, target_x - center_pos);
             } else {
-                lcs_jump_abs(0, target_x - center_pos);
+                jump_to(0, target_x - center_pos);
                 lcs_laser_on_list(100);
             }
         } else {
-            lcs_jump_abs(0, target_x - center_pos);
+            jump_to(0, target_x - center_pos);
         }
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
             if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
-                lcs_mark_abs(-(target_y - center_pos), target_x - center_pos);
+                mark_to(-(target_y - center_pos), target_x - center_pos);
             } else {
-                lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
+                jump_to(-(target_y - center_pos), target_x - center_pos);
                 lcs_laser_on_list(100000 / (current_f / 60.0));
             }
         } else {
-            lcs_jump_abs(-(target_y - center_pos), target_x - center_pos);
+            jump_to(-(target_y - center_pos), target_x - center_pos);
         }
       }
       x_pos_ = target_x;
