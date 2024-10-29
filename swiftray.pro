@@ -101,21 +101,20 @@ macx{
         LIBS += -L"/usr/lib"
         LIBS += -L"/usr/local/opt/libxml2/lib"
         LIBS += -L"/usr/local/opt/opencv/lib"
-
-        LIBS += -lboost_thread-mt
-        LIBS += -lboost_system-mt
-        LIBS += -lopencv_core
-        LIBS += -lopencv_imgproc
-        LIBS += -lopencv_flann
-        LIBS += -lxml2
-        LIBS += -lpotrace
-        LIBS += -lglib-2.0
-        LIBS += -lgobject-2.0
-        LIBS += -lpoppler-glib
-        LIBS += -lpoppler
-        LIBS += -lcairo
-        LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
     }
+    LIBS += -lboost_thread-mt
+    LIBS += -lboost_system-mt
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lopencv_flann
+    LIBS += -lxml2
+    LIBS += -lpotrace
+    LIBS += -lglib-2.0
+    LIBS += -lgobject-2.0
+    LIBS += -lpoppler-glib
+    LIBS += -lpoppler
+    LIBS += -lcairo
+    LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
 
 unix:!macx{
