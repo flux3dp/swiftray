@@ -561,7 +561,10 @@ bool lcs_connect() {
         printf("LCS:: No laser cards found.\n");
         return false;
     }
-
+    
+    // Refresh the card list every time
+    lcs_remove_card(0);
+    lcs_assign_card(0, 0);
     auto select_result = lcs_select_card(0);
 
     if (select_result != LCS_RES_NO_ERROR) {
@@ -574,6 +577,14 @@ bool lcs_connect() {
         return false;
     }
 
-    printf("Connected to BSL card.\n");
+    printf("LCS:: Selected BSL card #0. Getting status.\n");
+    // Double Check with get_status
+    BoardRunStatus status;
+    uint32_t pos;
+    auto res = lcs_get_status((uint32_t*)&status, &pos);
+    if (!status.bConnected) {
+        printf("LCS:: Failed to really connect to BSL card #0.\n");
+        return false;
+    }
     return true;
 }

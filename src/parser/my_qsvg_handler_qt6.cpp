@@ -4630,8 +4630,6 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
 {
     g_color = Qt::black;
     init();
-
-    qInfo() << "SVG Layers: " << svg_layers->size();
     qInfo() << "SVG Size: " << m_doc->viewBox().width() << "x" << m_doc->viewBox().height();
     qInfo() << "SVG Handler Data List Size " << data_list_.size();
 

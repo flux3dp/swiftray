@@ -64,16 +64,16 @@ BSLMotionController::BSLMotionController(QObject *parent)
 }
 
 BSLMotionController::~BSLMotionController() {
-  qInfo() << "BSLM~::~BSLMotionController()";
+  qInfo() << this << "::~BSLMotionController()";
   setState(MotionControllerState::kQuit);
   if (this->command_runner_thread_.joinable()) {
     this->command_runner_thread_.join();
   }
-  qInfo() << "BSLM~::~BSLMotionController() - done";
+  qInfo() << this << "::~BSLMotionController() - done";
 }
 
 void BSLMotionController::startCommandRunner() {
-  qInfo() << "BSLM~::startCommandRunner()";
+  qInfo() << this << "::startCommandRunner()";
   this->command_runner_thread_ = std::thread(&BSLMotionController::commandRunnerThread, this);
 }
 
@@ -114,7 +114,14 @@ void BSLMotionController::commandRunnerThread() {
         }
         this->cmd_list_mutex_.lock();
         if (this->pending_cmds_.empty()) {
-          if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - No pending commands, wait for a while";
+          if (debug_count_bsl % 40 == 1) {
+            qInfo() << "BSLM~::thread() - No pending commands, wait 1s. Board Connection: " << isConnected() << "@" << getDebugTime();
+            if (!isConnected()) {
+              this->cmd_list_mutex_.unlock();
+              this->setState(MotionControllerState::kQuit); // Invalid this motion controller once the connection is lost
+              break;
+            }
+          }
           this->cmd_list_mutex_.unlock();
           this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
@@ -417,7 +424,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       char sn[50];
       lcs_get_serial_number(sn, 32);
       qInfo() << "BSLM~::handleGcode() - Serial Number: " << sn;
-      Q_EMIT configUpdate("serial", sn);
+      if (sn[0] != '\0') {
+        Q_EMIT configUpdate("serial", sn);
+      }
       dequeueCmd(1);
     } else if (!is_move_command) {
       dequeueCmd(1);
@@ -647,4 +656,25 @@ bool BSLMotionController::resetState() {
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
+}
+
+BoardRunStatus BSLMotionController::getBoardStatus() {
+  BoardRunStatus status;
+  status.bConnected = false;
+  uint32_t pos;
+  LCS2Error ret = lcs_get_status((uint32_t *)&status, &pos);
+  if (ret == LCS_RES_NO_ERROR) return status;
+  return status;
+}
+
+bool BSLMotionController::isConnected() {
+  if (is_board_connected_ != getBoardStatus().bConnected) {
+    is_board_connected_ = !is_board_connected_;
+    if (!is_board_connected_) {
+      qInfo() << "BSLM~::isConnected() - Board disconnected";
+      lcs_release_card(0);
+      Q_EMIT disconnected(); 
+    }
+  }
+  return is_board_connected_;
 }
