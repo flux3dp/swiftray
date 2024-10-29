@@ -307,8 +307,12 @@ void ToolpathExporter::outputLayerFillGcode() {
     path.addPolygon(poly);
   }
   qInfo() << "Fill Path Count: " << path.elementCount();
+  qInfo() << "DPMM: " << dpmm_;
+  // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;
+  if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
+  if (fill_angle == 0) fill_angle = 45;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
   QRectF bounds = path.boundingRect();
@@ -316,7 +320,7 @@ void ToolpathExporter::outputLayerFillGcode() {
   
   // Calculate diagonal length to ensure coverage
   double diagonal = qSqrt(bounds.width() * bounds.width() + 
-                        bounds.height() * bounds.height());
+                        bounds.height() * bounds.height()) * 1.1;
   qInfo() << "Diagonal: " << diagonal / dpmm_;
   
   // Convert angle to radians
@@ -343,18 +347,20 @@ void ToolpathExporter::outputLayerFillGcode() {
       
       // Get intersections with path
       QList<QPointF> intersections;
-      for (int i = 0; i < path.elementCount(); ++i) {
-          QPainterPath::Element elem = path.elementAt(i);
-          if (i + 1 < path.elementCount()) {
-              QPainterPath::Element nextElem = path.elementAt(i + 1);
-              QLineF pathSegment(QPointF(elem.x, elem.y), 
-                                QPointF(nextElem.x, nextElem.y));
-              
-              QPointF intersection;
-              if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-                  intersections.append(intersection);
-              }
+      for (const auto& poly : layer_filled_polygons_) {
+        if (poly.empty()) continue;
+        
+        // Check each line segment of the polygon
+        for (int i = 0; i < poly.size(); ++i) {
+          QPointF curr = poly[i];
+          QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
+          QLineF pathSegment(curr, next);
+          
+          QPointF intersection;
+          if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
+            intersections.append(intersection);
           }
+        }
       }
       
       // Sort intersections by distance from line start
