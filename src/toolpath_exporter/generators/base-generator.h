@@ -56,11 +56,17 @@ public:
     qWarning() << "BaseGenerator::disableRotary()" << "Rotary feature not implemented"; 
   }
 
+  virtual void setFrequency(int frequency) {
+    qWarning() << "BaseGenerator::setFrequency()" << "Rotary feature not implemented"; 
+  }
+
+  virtual void setPulseWidth(int pulse_width) { 
+    qWarning() << "BaseGenerator::setPulseWidth()" << "Rotary feature not implemented"; 
+  }
+
   virtual void enableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
 
-  virtual void disableHighSpeedRastering() {
-    Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented");
-  }
+  virtual void disableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
 
   virtual void enableDiodeLaser() { Q_ASSERT_X(true, "BaseGenerator", "Diode laser not implemented"); }
 

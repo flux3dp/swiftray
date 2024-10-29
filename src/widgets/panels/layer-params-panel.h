@@ -6,6 +6,7 @@
 #include <layer.h>
 #include <widgets/base-container.h>
 #include <QToolButton>
+#include <meta/layer-parameters.h>
 
 class MainWindow;
 
@@ -30,8 +31,7 @@ public Q_SLOTS:
 Q_SIGNALS:
   void editParamIndex(int param_index);
   void wakeupPresetManager();
-  void editLayerParam(double strength, double speed, int repeat);
-  void editLayerBacklash(double backlash);
+  void editLayerParams(LayerParameters& params);
   void editLayerParamIndex(int param_index);
 
 private:
@@ -41,11 +41,13 @@ private:
   void resizeEvent(QResizeEvent *) override;
   void setToCustom();
   void updateMovingComboBox();
+  const LayerParameters updateParams();
 
   Ui::LayerParamsPanel *ui;
   Layer *layer_;
   MainWindow *main_window_;
   QToolButton *add_layer_btn_;
+  LayerParameters current_params_;
 };
 
 #endif // LAYER_PARAMS_PANEL_H

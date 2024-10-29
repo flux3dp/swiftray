@@ -50,6 +50,10 @@ namespace MySVG {
         int multipass;
         int ink;
         double min_power;
+        int frequency; //khz
+        int pulse_width; //ns
+        double fill_interval; //mm
+        double fill_angle; //deg
     };
 
     enum ReadType {

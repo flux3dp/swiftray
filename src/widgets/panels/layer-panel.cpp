@@ -36,11 +36,8 @@ void LayerPanel::registerEvents() {
   connect(layer_params_panel_, &LayerParamsPanel::wakeupPresetManager, [=]() {
     Q_EMIT wakeupPresetManager();
   });
-  connect(layer_params_panel_, &LayerParamsPanel::editLayerParam, [=](double strength, double speed, int repeat) {
-    Q_EMIT editLayerParam(strength, speed, repeat);
-  });
-  connect(layer_params_panel_, &LayerParamsPanel::editLayerBacklash, [=](double backlash) {
-    Q_EMIT editLayerBacklash(backlash);
+  connect(layer_params_panel_, &LayerParamsPanel::editLayerParams, [=](LayerParameters &params) {
+    Q_EMIT editLayerParams(params);
   });
 }
 

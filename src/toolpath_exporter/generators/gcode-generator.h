@@ -181,6 +181,14 @@ public:
     str_stream_ << "W" << workarea.width() << std::endl;
   }
 
+  void setFrequency(int frequency) override{
+    str_stream_ << "Q" << frequency << std::endl;
+  }
+
+  void setPulseWidth(int pulse_width) override{ 
+    str_stream_ << "P" << pulse_width << std::endl;
+  }
+
   void turnOnLaserAdpatively() override {
     str_stream_ << "M4S0" << std::endl;
     spindle_modal_ = MCodeSpindleModal::kM04;
