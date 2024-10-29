@@ -127,8 +127,8 @@ void JobExecutor::exec() {
   }
 
   // Check if the buffer is full
-  if (cmd_in_progress_.length() > 40000) {
-    if (this->exec_loop_count % 40 == 1) {
+  if (cmd_in_progress_.length() > 150000) {
+    if (this->exec_loop_count % 400 == 1) {
       qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress_.length() << ") is full @" << getDebugTime();
     }
     this->exec_wait = 10;
