@@ -383,7 +383,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
     }
     devices.append(QJsonObject{
       {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
-      {"name", "Promark Desktop"},
+      {"name", "Promark"},
       {"serial", sn},
       {"st_id", st_id},
       {"st_prog", st_prog},
