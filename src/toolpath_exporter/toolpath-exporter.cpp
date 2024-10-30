@@ -324,7 +324,6 @@ void ToolpathExporter::outputLayerFillGcode() {
   double fill_interval = current_layer_->fillInterval() * dpmm_;
   if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
-  if (fill_angle == 0) fill_angle = 45;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
   QRectF bounds = merged_poly.boundingRect();
