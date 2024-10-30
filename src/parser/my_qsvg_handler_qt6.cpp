@@ -2895,8 +2895,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
         layer_config.frequency = getAttr(attributes, "data-frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", 0);
-        layer_config.fill_interval = getAttr(attributes, "data-fillInterval", 0);
-        layer_config.fill_angle = getAttr(attributes, "data-fillAngle", 0);
+        layer_config.fill_interval = getAttr(attributes, "data-fillInterval", 0.0);
+        layer_config.fill_angle = getAttr(attributes, "data-fillAngle", 0.0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
