@@ -212,6 +212,8 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     // layer_painter_->setBrush(Qt::NoBrush);
     // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
     polygons_mutex_.lock();
+    transformed_path.setFillRule(Qt::WindingFill);
+    transformed_path = transformed_path.simplified();
     layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
     polygons_mutex_.unlock();
   }
@@ -305,13 +307,12 @@ void ToolpathExporter::outputLayerGcode() {
  * @brief Export layer_filled_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerFillGcode() {
-  QPainterPath path;
+  QPolygonF merged_poly;
   polygons_mutex_.lock();
   for (auto &poly : layer_filled_polygons_) {
     if (poly.empty()) continue;
-    path.addPolygon(poly);
+    merged_poly = merged_poly.united(poly);
   }
-  qInfo() << "Fill Path Count: " << path.elementCount();
   qInfo() << "DPMM: " << dpmm_;
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;
@@ -320,7 +321,7 @@ void ToolpathExporter::outputLayerFillGcode() {
   if (fill_angle == 0) fill_angle = 45;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
-  QRectF bounds = path.boundingRect();
+  QRectF bounds = merged_poly.boundingRect();
   qInfo() << "Fill Path Bounds: " << bounds;
   
   // Calculate diagonal length to ensure coverage
@@ -333,8 +334,9 @@ void ToolpathExporter::outputLayerFillGcode() {
   
   // Calculate perpendicular direction for scanning
   QPointF direction(qCos(angleRad), qSin(angleRad));
+  QPointF epsilon = direction * 0.001;
   QPointF perpendicular(-direction.y(), direction.x());
-  
+
   // Calculate center point
   QPointF center = bounds.center();
   qInfo() << "Center Point: " << center / dpmm_;
@@ -363,7 +365,12 @@ void ToolpathExporter::outputLayerFillGcode() {
           
           QPointF intersection;
           if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-            intersections.append(intersection);
+            QPointF check1 = intersection - epsilon;
+            QPointF check2 = intersection + epsilon;
+            // Ignore intersections within merged path
+            if (merged_poly.containsPoint(check1, Qt::WindingFill) != merged_poly.containsPoint(check2, Qt::WindingFill)) {
+              intersections.append(intersection);
+            }
           }
         }
       }
