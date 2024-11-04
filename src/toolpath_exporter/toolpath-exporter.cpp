@@ -212,6 +212,8 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     // layer_painter_->setBrush(Qt::NoBrush);
     // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
     polygons_mutex_.lock();
+    transformed_path.setFillRule(Qt::WindingFill);
+    transformed_path = transformed_path.simplified();
     layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
     polygons_mutex_.unlock();
   }
@@ -305,22 +307,26 @@ void ToolpathExporter::outputLayerGcode() {
  * @brief Export layer_filled_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerFillGcode() {
-  QPainterPath path;
+  QPolygonF merged_poly;
   polygons_mutex_.lock();
   for (auto &poly : layer_filled_polygons_) {
     if (poly.empty()) continue;
-    path.addPolygon(poly);
+    merged_poly = merged_poly.united(poly);
   }
-  qInfo() << "Fill Path Count: " << path.elementCount();
+  double width = canvas_size_.width();
+  double height = canvas_size_.height();
+  QLineF left_border(0, 0, 0, height);
+  QLineF top_border(0, 0, width, 0);
+  QLineF right_border(width, 0, width, canvas_size_.height());
+  QLineF bottom_border(0, height, width, height);
   qInfo() << "DPMM: " << dpmm_;
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;
   if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
-  if (fill_angle == 0) fill_angle = 45;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
-  QRectF bounds = path.boundingRect();
+  QRectF bounds = merged_poly.boundingRect();
   qInfo() << "Fill Path Bounds: " << bounds;
   
   // Calculate diagonal length to ensure coverage
@@ -333,8 +339,9 @@ void ToolpathExporter::outputLayerFillGcode() {
   
   // Calculate perpendicular direction for scanning
   QPointF direction(qCos(angleRad), qSin(angleRad));
+  QPointF epsilon = direction * 0.001;
   QPointF perpendicular(-direction.y(), direction.x());
-  
+
   // Calculate center point
   QPointF center = bounds.center();
   qInfo() << "Center Point: " << center / dpmm_;
@@ -363,7 +370,12 @@ void ToolpathExporter::outputLayerFillGcode() {
           
           QPointF intersection;
           if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-            intersections.append(intersection);
+            QPointF check1 = intersection - epsilon;
+            QPointF check2 = intersection + epsilon;
+            // Ignore intersections within merged path
+            if (merged_poly.containsPoint(check1, Qt::WindingFill) != merged_poly.containsPoint(check2, Qt::WindingFill)) {
+              intersections.append(intersection);
+            }
           }
         }
       }
@@ -376,6 +388,47 @@ void ToolpathExporter::outputLayerFillGcode() {
       
       // Process pairs of intersections
       for (int i = 0; i < intersections.size() - 1; i += 2) {
+        // Fix points outside the workarea
+        QLineF pathSegment(intersections[i], intersections[i + 1]);
+        double x1 = intersections[i].x();
+        double y1 = intersections[i].y();
+        bool is_p1_outside = (x1 < 0 || x1 > width || y1 < 0 || y1 > height);
+        if (is_p1_outside) {
+          bool ok = false;
+          if (x1 < 0) {
+            ok = pathSegment.intersects(left_border, &intersections[i]) == QLineF::BoundedIntersection;
+          } else if (x1 > width) {
+            ok = pathSegment.intersects(right_border, &intersections[i]) == QLineF::BoundedIntersection;
+          }
+          if (!ok) {
+            if (y1 < 0) {
+              ok = pathSegment.intersects(top_border, &intersections[i]) == QLineF::BoundedIntersection;
+            } else {
+              ok = pathSegment.intersects(bottom_border, &intersections[i]) == QLineF::BoundedIntersection;
+            }
+            if (!ok) continue;
+          }
+        }
+        double x2 = intersections[i + 1].x();
+        double y2 = intersections[i + 1].y();
+        bool is_p2_outside = (x2 < 0 || x2 > width || y2 < 0 || y2 > height);
+        if (is_p2_outside) {
+          bool ok = false;
+          if (x2 < 0) {
+            ok = pathSegment.intersects(left_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
+          } else if (x2 > width) {
+            ok = pathSegment.intersects(right_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
+          }
+          if (!ok) {
+            if (y2 < 0) {
+              ok = pathSegment.intersects(top_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
+            } else {
+              ok = pathSegment.intersects(bottom_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
+            }
+            if (!ok) continue;
+          }
+        }
+
           // Move to start point with no laser
           moveTo(intersections[i] / dpmm_,
             current_layer_->speed(),
