@@ -47,6 +47,7 @@ public:
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   void setSerialPort(QSerialPort &serial_port);
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
+  void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   bool connectSerial(QString portName, int baudrate);
   void disconnect();
   int getStatusId();

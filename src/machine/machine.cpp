@@ -649,3 +649,14 @@ void Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bu
     }
   }
 }
+
+void Machine::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+  if (motion_controller_) {
+    if (motion_controller_->type() == "BSL") {
+      ((BSLMotionController*)motion_controller_)->setScanaheadParams(worksize, angle, xOffset, yOffset);
+      qInfo() << "Machine::setScanaheadParams() - set" << worksize << angle << xOffset << yOffset;
+    } else {
+      qWarning() << "Machine::setScanaheadParams() - Not supported for this motion controller";
+    }
+  }
+}
