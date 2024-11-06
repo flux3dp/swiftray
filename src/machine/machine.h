@@ -88,7 +88,7 @@ private:
   QSerialPort *serial_port_ = nullptr;
 
   // Hardware equipment controllers
-  MotionController *motion_controller_; // created when port connected
+  MotionController *motion_controller_ = nullptr; // created when port connected
   //AutofocusController *af_controller_;
   //CameraController *camera_controller_;
   

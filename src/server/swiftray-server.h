@@ -24,7 +24,7 @@ private:
   QWebSocketServer* m_server;
   Machine* m_machine;
   QString m_buffer;
-  Canvas* m_canvas;
+  Canvas* m_canvas = nullptr;
   QString m_thumbnail;
   QStringList gcode_list_;
   QList<Timestamp> timestamp_list_;
