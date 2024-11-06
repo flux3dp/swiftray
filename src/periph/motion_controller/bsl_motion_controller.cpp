@@ -280,8 +280,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         } else if (type == "W") {
             double workarea = value.toDouble();
             center_pos = workarea / 2;
-            lcs_set_scanahead_params(workarea, false, false, false, 0, 0, 0);
-            // qInfo() << "BSLM~::handleGcode() - Workarea set to " << workarea << "@" << getDebugTime();
         } else if (type == "D") {
             if (value == "0") {
                 QChar resolution = gcode.at(3);
@@ -656,6 +654,11 @@ bool BSLMotionController::resetState() {
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
+}
+
+void BSLMotionController::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+  LCS2Error ret = lcs_set_scanahead_params(worksize, false, false, false, angle, xOffset, yOffset);
+  qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
 }
 
 BoardRunStatus BSLMotionController::getBoardStatus() {

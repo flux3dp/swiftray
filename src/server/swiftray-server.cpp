@@ -157,6 +157,13 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     double trapeX = params.toObject()["trapeX"].toDouble();
     double trapeY = params.toObject()["trapeY"].toDouble();
     getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY); 
+  } else if (action == "setScanaheadParams") {
+    QJsonObject obj = params.toObject();
+    double worksize = obj["worksize"].toDouble();
+    double angle = obj["angle"].toDouble();
+    double xOffset = obj["xOffset"].toDouble();
+    double yOffset = obj["yOffset"].toDouble();
+    getMachine()->setScanaheadParams(worksize, angle, xOffset, yOffset);
   } else if (action == "setParam") {
     QString paramName = params.toObject()["name"].toString();
     QJsonValue paramValue = params.toObject()["value"];
