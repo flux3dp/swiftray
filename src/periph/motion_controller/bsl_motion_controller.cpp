@@ -211,6 +211,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static int d_buffer = 0;
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
+    static bool is_framing = false;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -394,7 +395,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_set_scanner_delays(100, 50);
       lcs_set_start_list(1);
       lcs_set_laser_power(100);
-      lcs_set_laser_mode(LCS_MOPA, false);
+      // only set red light to true only when framing for MOPA
+      qInfo() << "BSLM~::handleGcode() is_framing" << is_framing;
+      lcs_set_laser_mode(LCS_MOPA, is_framing);
       lcs_enable_laser();
       lcs_error_count = 0;
       should_swap = false;
@@ -408,6 +411,14 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
       dequeueCmd(1);
+    } else if (command == "M99" ) {
+      char sn[50];
+      lcs_get_serial_number(sn, 32);
+      qInfo() << "BSLM~::handleGcode() - Serial Number: " << sn;
+      if (sn[0] != '\0') {
+        Q_EMIT configUpdate("serial", sn);
+      }
+      dequeueCmd(1);
     } else if (command == "M100") { 
       rotary_mode = false;
       dequeueCmd(1);
@@ -418,14 +429,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
-    } else if (command == "M99" ) {
-      char sn[50];
-      lcs_get_serial_number(sn, 32);
-      qInfo() << "BSLM~::handleGcode() - Serial Number: " << sn;
-      if (sn[0] != '\0') {
-        Q_EMIT configUpdate("serial", sn);
-      }
-      dequeueCmd(1);
+    } else if (command == "M103") {
+      // Indicate the job is a framing job
+      is_framing = true;
     } else if (!is_move_command) {
       dequeueCmd(1);
       return;
@@ -489,7 +495,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       laser_enabled = false;
       should_end = false;
       lcs_disable_laser();
-      lcs_set_laser_control(false);
+      qInfo() << "Handle end, is_framing:\n" << is_framing << "\n";
+      if (!is_framing) lcs_set_laser_control(false);
+      is_framing = false;
     }
 
     // Process move command
