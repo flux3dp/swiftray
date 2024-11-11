@@ -177,6 +177,10 @@ public:
     str_stream_ << "M100" << std::endl;
   }
 
+  void setRedLight(bool val) override {
+    str_stream_ << (val ? "M103" : "M104") << std::endl;
+  }
+
   void setWorkarea(QRectF workarea) override {
     str_stream_ << "W" << workarea.width() << std::endl;
   }

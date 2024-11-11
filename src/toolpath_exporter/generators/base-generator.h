@@ -56,6 +56,10 @@ public:
     qWarning() << "BaseGenerator::disableRotary()" << "Rotary feature not implemented"; 
   }
 
+  virtual void setRedLight(bool val) {
+    qWarning() << "BaseGenerator::setRedLight()" << "setRedLight not implemented"; 
+  }
+
   virtual void setFrequency(int frequency) {
     qWarning() << "BaseGenerator::setFrequency()" << "Rotary feature not implemented"; 
   }
