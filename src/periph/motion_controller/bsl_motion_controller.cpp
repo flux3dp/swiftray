@@ -428,11 +428,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_write_io_port(0b1111);
       dequeueCmd(1);
     } else if (command == "M103") {
-      // Indicate the job is a framing job
       is_framing = true;
       dequeueCmd(1);
     } else if (command == "M104") {
-      // Indicate the job is not a framing job
       is_framing = false;
       dequeueCmd(1);
     } else if (!is_move_command) {
