@@ -33,6 +33,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   // Initial Setup
   if (!gen_->isRotaryMode()) {
     gen_->disableRotary();
+    gen_->setRedLight(false);
   }
   gen_->turnOffLaser(); // M5
   if(start_with_home) {

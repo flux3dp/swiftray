@@ -129,9 +129,11 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   if (!motion_controller_) {
     return false;
   }
-  if (motion_controller_->type() != "BSL") gcode_list.append("?"); // Request for realtime status update at the end of the job
+  bool is_bsl = motion_controller_->type() == "BSL";
+  if (is_bsl) gcode_list.insert(0, "M103"); // Custom gcode indicating framing for BSL machine
+  else gcode_list.append("?"); // Request for realtime status update at the end of the job
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
-  if (motion_controller_->type() == "BSL") job->auto_loop = true; // If it's a galvanometer machine, run loop
+  if (is_bsl) job->auto_loop = true; // If it's a galvanometer machine, run loop
   return job_executor_ && job_executor_->setNewJob(job);
 }
 
