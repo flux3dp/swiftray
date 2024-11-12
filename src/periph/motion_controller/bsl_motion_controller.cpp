@@ -259,11 +259,11 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         } else if (type == "Q") {
           freq = value.toInt();
           int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
+          lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "P") {
           pulse_width = value.toInt();
           int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
+          lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "F") {
             current_f = value.toDouble();
             lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
@@ -422,6 +422,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       dequeueCmd(1);
     } else if (command == "M101") {
       rotary_mode = true;
+      lcs_write_io_port(0b0);
       dequeueCmd(1);
     } else if (command == "M102") {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis

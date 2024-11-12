@@ -116,9 +116,13 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   bitmap_dirty_area_ = QRectF();
   current_layer_ = layer;
   if (layer->frequency() != 0) {
+    // Make sure cmd list is opened
+    gen_->turnOnLaser();
     gen_->setFrequency(layer->frequency());
   }
   if (layer->pulseWidth() != 0) {
+    // Make sure cmd list is opened
+    gen_->turnOnLaser();
     gen_->setPulseWidth(layer->pulseWidth());
   }
   // Iterate through all shapes in the layer

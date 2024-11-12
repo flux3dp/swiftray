@@ -185,11 +185,11 @@ public:
     str_stream_ << "W" << workarea.width() << std::endl;
   }
 
-  void setFrequency(int frequency) override{
+  void setFrequency(int frequency) override {
     str_stream_ << "Q" << frequency << std::endl;
   }
 
-  void setPulseWidth(int pulse_width) override{ 
+  void setPulseWidth(int pulse_width) override { 
     str_stream_ << "P" << pulse_width << std::endl;
   }
 

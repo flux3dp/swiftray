@@ -61,11 +61,11 @@ public:
   }
 
   virtual void setFrequency(int frequency) {
-    qWarning() << "BaseGenerator::setFrequency()" << "Rotary feature not implemented"; 
+    qWarning() << "BaseGenerator::setFrequency()" << "Promark feature not implemented"; 
   }
 
   virtual void setPulseWidth(int pulse_width) { 
-    qWarning() << "BaseGenerator::setPulseWidth()" << "Rotary feature not implemented"; 
+    qWarning() << "BaseGenerator::setPulseWidth()" << "Promark feature not implemented"; 
   }
 
   virtual void enableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
