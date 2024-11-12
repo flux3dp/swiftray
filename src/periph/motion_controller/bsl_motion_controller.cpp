@@ -212,6 +212,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
     static bool is_framing = false;
+    static bool last_is_z_command = false;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -259,11 +260,11 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         } else if (type == "Q") {
           freq = value.toInt();
           int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
+          lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "P") {
           pulse_width = value.toInt();
           int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses_ctrl(duration, 0, pulse_width);
+          lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "F") {
             current_f = value.toDouble();
             lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
@@ -403,6 +404,10 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       should_flush_ = false;
     } else if (command == "M2") {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
+      if (last_is_z_command) {
+        // Appand a dummy move command to ensure the last Z command is executed
+        lcs_set_axis_move(1, 1, z > 0, 4800.0, 10.0, 255);
+      }
       should_swap = true;
       should_end = true;
       rotary_mode = false;
@@ -422,6 +427,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       dequeueCmd(1);
     } else if (command == "M101") {
       rotary_mode = true;
+      lcs_write_io_port(0b0);
       dequeueCmd(1);
     } else if (command == "M102") {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
@@ -503,7 +509,8 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      lcs_set_axis_move(0, z * 1600, false, 800, 10, 1000);
+      lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
+      last_is_z_command = true;
       // QThread::msleep(1000);
       dequeueCmd(1);
     } else if (is_move_command) {
@@ -519,7 +526,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       if (rotary_mode) {
         double diff_y = target_y - y_pos_;
         if (diff_y != 0) {
-          lcs_set_axis_move(1, fabs(diff_y) * 100, diff_y < 0, 3200, 10, 255);
+          lcs_set_axis_move(0, fabs(diff_y) * 100, diff_y < 0, 3200, 1600, 255);
         }
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
@@ -547,6 +554,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       }
       x_pos_ = target_x;
       y_pos_ = target_y;
+      last_is_z_command = false;
     }
 }
 

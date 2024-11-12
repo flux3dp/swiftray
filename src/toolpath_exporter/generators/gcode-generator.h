@@ -152,6 +152,11 @@ public:
     str_stream_ << std::endl;
   }
 
+  void moveZ(float z) override {
+    str_stream_ << "M102" << std::endl;
+    str_stream_ << "Z" << std::round(z * 1000) / 1000 << std::endl;
+  }
+
   void setLaserPower(float power) override {
     str_stream_ << "M3S" << power * 10 << std::endl;
     power_ = power;
@@ -185,11 +190,11 @@ public:
     str_stream_ << "W" << workarea.width() << std::endl;
   }
 
-  void setFrequency(int frequency) override{
+  void setFrequency(int frequency) override {
     str_stream_ << "Q" << frequency << std::endl;
   }
 
-  void setPulseWidth(int pulse_width) override{ 
+  void setPulseWidth(int pulse_width) override { 
     str_stream_ << "P" << pulse_width << std::endl;
   }
 

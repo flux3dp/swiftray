@@ -15,6 +15,8 @@ public:
 
   virtual void moveToX(float x) { moveTo(x, y_, speed_, power_, x_backlash_); }
 
+  virtual void moveZ(float z) { }
+
   virtual void setSpeed(float speed) { moveTo(x_, y_, speed_, power_, x_backlash_); }
 
   virtual void setLaserPower(float power) { NO_BASIC_IMPL }
@@ -61,11 +63,11 @@ public:
   }
 
   virtual void setFrequency(int frequency) {
-    qWarning() << "BaseGenerator::setFrequency()" << "Rotary feature not implemented"; 
+    qWarning() << "BaseGenerator::setFrequency()" << "Promark feature not implemented"; 
   }
 
   virtual void setPulseWidth(int pulse_width) { 
-    qWarning() << "BaseGenerator::setPulseWidth()" << "Rotary feature not implemented"; 
+    qWarning() << "BaseGenerator::setPulseWidth()" << "Promark feature not implemented"; 
   }
 
   virtual void enableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
