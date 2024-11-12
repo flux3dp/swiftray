@@ -215,7 +215,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     polygons_mutex_.lock();
     transformed_path.setFillRule(Qt::WindingFill);
     transformed_path = transformed_path.simplified();
-    layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
+    layer_filled_polygons_.append(transformed_path.toFillPolygon());
     polygons_mutex_.unlock();
   }
   // Line shape
