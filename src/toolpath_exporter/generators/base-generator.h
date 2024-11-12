@@ -15,6 +15,8 @@ public:
 
   virtual void moveToX(float x) { moveTo(x, y_, speed_, power_, x_backlash_); }
 
+  virtual void moveZ(float z) { }
+
   virtual void setSpeed(float speed) { moveTo(x_, y_, speed_, power_, x_backlash_); }
 
   virtual void setLaserPower(float power) { NO_BASIC_IMPL }

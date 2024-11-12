@@ -66,8 +66,28 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-      for (int i = 0; i < (*layer_rit)->repeat(); i++) {
+      int repeat = (*layer_rit)->repeat();
+      float focus = (*layer_rit)->focus();
+      float focus_step = (*layer_rit)->focusStep();
+      float total_move = 0;
+      for (int i = 0; i < repeat; i++) {
+        if (i == 0) {
+          if (focus > 0) {
+            // Make sure cmd list is opened
+            gen_->turnOnLaser();
+            gen_->moveZ(-focus);
+            total_move += focus;
+          }
+        } else if (focus_step > 0) {
+          // Make sure cmd list is opened
+          gen_->turnOnLaser();
+          gen_->moveZ(-focus_step);
+          total_move += focus_step;
+        }
         convertLayer((*layer_rit));
+      }
+      if (total_move > 0) {
+        gen_->moveZ(total_move);
       }
     }
     if (this->cancelled_) {
