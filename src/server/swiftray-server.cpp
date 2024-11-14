@@ -203,6 +203,11 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "upload") {
     // Implement file upload logic
     qInfo() << "File uploaded";
+    QString data = params.toObject()["data"].toString();
+    if (data != "") {
+      gcode_list_ = data.split("\n");
+      timestamp_list_ = QList<Timestamp>();
+    }
     bool job_result = getMachine()->createGCodeJob(gcode_list_, timestamp_list_);
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
