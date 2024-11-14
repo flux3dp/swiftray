@@ -130,6 +130,12 @@ void BSLMotionController::commandRunnerThread() {
           if (debug_count_bsl % 1000 == 1) {
             qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
           }
+          bool is_connected = isConnected();
+          if (!is_connected) {
+            this->cmd_list_mutex_.unlock();
+            this->setState(MotionControllerState::kQuit);
+            break;
+          }
           setState(MotionControllerState::kRun); // Set state to running if there are pending commands
           QString cmd = this->pending_cmds_.front();
           this->pending_cmds_.pop_front();

@@ -212,7 +212,11 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     getMachine()->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") { // The old "play report" action in Beam Studio
     result["st_id"] = getMachine()->getStatusId();
-    result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f; 
+    result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
+    bool is_connected = getMachine()->isConnected();
+    if (!is_connected) {
+      result["error"] = "DISCONNECTED";
+    }
   } else if (action == "home") {
     // Implement homing logic
   } else {
