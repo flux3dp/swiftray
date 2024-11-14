@@ -203,6 +203,11 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "upload") {
     // Implement file upload logic
     qInfo() << "File uploaded";
+    QString data = params.toObject()["data"].toString();
+    if (data != "") {
+      gcode_list_ = data.split("\n");
+      timestamp_list_ = QList<Timestamp>();
+    }
     bool job_result = getMachine()->createGCodeJob(gcode_list_, timestamp_list_);
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
@@ -212,7 +217,11 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     getMachine()->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") { // The old "play report" action in Beam Studio
     result["st_id"] = getMachine()->getStatusId();
-    result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f; 
+    result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
+    bool is_connected = getMachine()->isConnected();
+    if (!is_connected) {
+      result["error"] = "DISCONNECTED";
+    }
   } else if (action == "home") {
     // Implement homing logic
   } else {
@@ -398,28 +407,6 @@ QJsonArray SwiftrayServer::getDeviceList() {
       {"model", "fpm1"},
       {"port", "/BSL"},
       {"type", "Galvanometer"},
-      {"source", "swiftray"}
-    });
-  }
-  if (serialPortAvailable()) {
-    int st_id = 0;
-    float st_prog = 0.0f;
-    QString sn = "ABC123";
-    if (this->m_machine != nullptr) {
-      st_id = this->m_machine->getStatusId();
-      sn = this->m_machine->getConfig("serial");
-      st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
-    }
-    devices.append(QJsonObject{
-      {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
-      {"serial", "LV84KAO192839012"},
-      {"name", "Lazervida Origin"},
-      {"st_id", 0},
-      {"st_prog", 0},
-      {"version", "5.0.0"},
-      {"model", "flv1"},
-      {"port", "/dev/ttyUSB0"},
-      {"type", "Grbl"},
       {"source", "swiftray"}
     });
   }
