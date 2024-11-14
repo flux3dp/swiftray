@@ -405,28 +405,6 @@ QJsonArray SwiftrayServer::getDeviceList() {
       {"source", "swiftray"}
     });
   }
-  if (serialPortAvailable()) {
-    int st_id = 0;
-    float st_prog = 0.0f;
-    QString sn = "ABC123";
-    if (this->m_machine != nullptr) {
-      st_id = this->m_machine->getStatusId();
-      sn = this->m_machine->getConfig("serial");
-      st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
-    }
-    devices.append(QJsonObject{
-      {"uuid", "bcf5c788-8635-4ffc-9706-3519d9e8fa7b"},
-      {"serial", "LV84KAO192839012"},
-      {"name", "Lazervida Origin"},
-      {"st_id", 0},
-      {"st_prog", 0},
-      {"version", "5.0.0"},
-      {"model", "flv1"},
-      {"port", "/dev/ttyUSB0"},
-      {"type", "Grbl"},
-      {"source", "swiftray"}
-    });
-  }
   return devices;
 }
 
