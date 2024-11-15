@@ -194,10 +194,16 @@ void JobExecutor::handleCmdFinish(int code) {
   }
 
   if (!cmd_in_progress_.isEmpty()) {
-    if (code == 0) {
-      cmd_in_progress_.first()->succeed();
+    auto front_cmd = cmd_in_progress_.first();
+    if (front_cmd != nullptr) {
+      if (code == 0) {
+        front_cmd->succeed();
+      } else {
+        front_cmd->fail();
+      }
     } else {
-      cmd_in_progress_.first()->fail();
+      int cmd_in_progress_size = cmd_in_progress_.size();
+      qInfo() << "\nJobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size << "\n";
     }
     cmd_in_progress_.pop_front();
   }
