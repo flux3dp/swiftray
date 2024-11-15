@@ -203,7 +203,7 @@ void JobExecutor::handleCmdFinish(int code) {
       }
     } else {
       int cmd_in_progress_size = cmd_in_progress_.size();
-      qInfo() << "\nJobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size << "\n";
+      qInfo() << "JobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size;
     }
     cmd_in_progress_.pop_front();
   }
