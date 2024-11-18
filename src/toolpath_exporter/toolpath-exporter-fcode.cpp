@@ -240,7 +240,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       if (with_custom_origin_) {
         module_offset_ += config_.job_origin;
       }
-      if (has_focus_adjust_) {
+      if (has_focus_adjust_ && focus_adjust_ > 0) {
         gen_->sync_motion_type2(184, 128, focus_adjust_);
       }
       if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
@@ -277,7 +277,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         }
       }
       is_handling_main_work_ = false;
-      if (has_focus_adjust_) {
+      if (has_focus_adjust_ && focus_adjust_ > 0) {
         gen_->sync_motion_type2(184, 128, -focus_adjust_);
       }
       if (is_v2_) {
@@ -479,7 +479,7 @@ void ToolpathExporterFcode::updateLayerParam() {
       submodule_color_ = "black";
     }
   } else {
-    has_focus_adjust_ = config_.enable_relative_z_move && focus_adjust_ > 0;
+    has_focus_adjust_ = config_.enable_relative_z_move && (focus_adjust_ > 0 || focus_step_ > 0);
     enable_bidirection_ =
         !(config_.enable_diode && current_layer_->isUseDiode() &&
           config_.is_diode_one_way_engraving);
