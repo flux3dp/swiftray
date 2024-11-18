@@ -275,7 +275,8 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       result["metadata"] = exporter.getMetadata();
     } else {
       qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
-      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap();
+      bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
+      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode
       GCodeGenerator gen(machine_param, this->m_rotary_mode);
       QTransform move_translate = QTransform();
