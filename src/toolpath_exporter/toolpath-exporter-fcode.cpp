@@ -1797,7 +1797,9 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
 
 void ToolpathExporterFcode::pause(bool to_standby_position) {
   gen_->pause(to_standby_position);
-  disable_rotary_ = to_standby_position;
+  if (!to_standby_position) {
+    disable_rotary_ = to_standby_position;
+  }
 }
 
 void ToolpathExporterFcode::moveZ(float z) {
