@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {
     // Daemon mode
     qInfo() << "Swiftray daemon mode";
+    app.is_daemon_mode_ = true;
     return app.exec();
   }
 

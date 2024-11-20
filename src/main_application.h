@@ -21,6 +21,7 @@ public:
   explicit MainApplication(int &argc, char **argv);
   ~MainApplication();
 
+  bool is_daemon_mode_ = false; // For Beam studio daemon mode not showing Machine::alert
   bool isFirstTime();
   bool isUploadEnable();
   void setCanvas(Canvas *canvas) { canvas_ = canvas; }
