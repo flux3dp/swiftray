@@ -242,8 +242,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       }
       if (has_focus_adjust_ && focus_adjust_ > 0) {
         gen_->sync_motion_type2(184, 128, focus_adjust_);
-      }
-      if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
+      } else if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
         moveZ(-1);
         did_home_z_ = true;
       }
