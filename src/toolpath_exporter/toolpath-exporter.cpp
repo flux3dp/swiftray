@@ -381,89 +381,144 @@ void ToolpathExporter::outputLayerFillGcode() {
       QPointF lineStart = start + perpendicular * offset - direction * diagonal/2;
       QPointF lineEnd = lineStart + direction * diagonal;
       QLineF scanLine(lineStart, lineEnd);
-      
+      std::function<bool(const QPointF& a, const QPointF& b)> isCloser =
+          [&lineStart](const QPointF& a, const QPointF& b) {
+            return QLineF(lineStart, a).length() <
+                   QLineF(lineStart, b).length();
+          };
+
+      QPointF innerStart(lineStart);
+      QPointF innerEnd(lineEnd);
+      double x1 = innerStart.x();
+      double y1 = innerStart.y();
+      bool is_p1_outside = (x1 < 0 || x1 > width || y1 < 0 || y1 > height);
+      if (is_p1_outside) {
+        bool ok = false;
+        if (x1 < 0) {
+          ok = scanLine.intersects(left_border, &innerStart) == QLineF::BoundedIntersection;
+        } else if (x1 > width) {
+          ok = scanLine.intersects(right_border, &innerStart) == QLineF::BoundedIntersection;
+        }
+        if (!ok) {
+          if (y1 < 0) {
+            ok = scanLine.intersects(top_border, &innerStart) == QLineF::BoundedIntersection;
+          } else {
+            ok = scanLine.intersects(bottom_border, &innerStart) == QLineF::BoundedIntersection;
+          }
+          if (!ok) continue;
+        }
+      }
+      double x2 = innerEnd.x();
+      double y2 = innerEnd.y();
+      bool is_p2_outside = (x2 < 0 || x2 > width || y2 < 0 || y2 > height);
+      if (is_p2_outside) {
+        bool ok = false;
+        if (x2 < 0) {
+          ok = scanLine.intersects(left_border, &innerEnd) == QLineF::BoundedIntersection;
+        } else if (x2 > width) {
+          ok = scanLine.intersects(right_border, &innerEnd) == QLineF::BoundedIntersection;
+        }
+        if (!ok) {
+          if (y2 < 0) {
+            ok = scanLine.intersects(top_border, &innerEnd) == QLineF::BoundedIntersection;
+          } else {
+            ok = scanLine.intersects(bottom_border, &innerEnd) == QLineF::BoundedIntersection;
+          }
+          if (!ok) continue;
+        }
+      }
+
       // Get intersections with path
-      QList<QPointF> intersections;
+      QList<QList<QPointF>> all_intersections;
+      QList<QPointF> merged_intersections;
+      QList<int> indices(layer_filled_polygons_.size());
       for (const auto& poly : layer_filled_polygons_) {
         if (poly.empty()) continue;
-        
+        QList<QPointF> intersections;
         // Check each line segment of the polygon
         for (int i = 0; i < poly.size(); ++i) {
           QPointF curr = poly[i];
           QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
           QLineF pathSegment(curr, next);
-          
+
           QPointF intersection;
           if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-            QPointF check1 = intersection - epsilon;
-            QPointF check2 = intersection + epsilon;
             // Ignore intersections within merged path
-            if (merged_poly.containsPoint(check1, Qt::WindingFill) != merged_poly.containsPoint(check2, Qt::WindingFill)) {
-              intersections.append(intersection);
-            }
+            intersections.append(intersection);
           }
         }
+        if (intersections.size() == 0) continue;
+        // Sort intersections by distance from line start, each consecutive pair is a start and end point
+        std::sort(intersections.begin(), intersections.end(), isCloser);
+        all_intersections.append(intersections);
       }
-      
-      // Sort intersections by distance from line start
-      std::sort(intersections.begin(), intersections.end(),
-                [&lineStart](const QPointF& a, const QPointF& b) {
-                    return QLineF(lineStart, a).length() < QLineF(lineStart, b).length();
-                });
-      
+
+      // Combine intersections of all polygons
+      // Find laser on/off pairs in each loop
+      merged_intersections.append(innerStart);
+      merged_intersections.append(innerStart);
+      QPointF lastOffPoint = innerStart;
+      bool hasReachEnd = false;
+      while (!hasReachEnd) {
+        QPointF currentOnPoint = innerEnd;
+        int currentIdx = -1;
+        for (int i = 0; !hasReachEnd && i < all_intersections.size(); ++i) {
+          for (int j = indices[i]; !hasReachEnd && j < all_intersections[i].size(); j += 2) {
+            QPointF start = all_intersections[i][j];
+            if (isCloser(start, lastOffPoint)) {
+              // Handle overlapping intersections
+              QPointF end = all_intersections[i][j + 1];
+              if (isCloser(end, lastOffPoint)) {
+                // Skip completed included intersections
+                // This will also skip those intersections that end before inner start
+                indices[i] += 2;
+                continue;
+              }
+              if (!isCloser(end, innerEnd)) {
+                // Clip end point
+                end = innerEnd;
+                hasReachEnd = true;
+              } else {
+                indices[i] += 2;
+              }
+              // Merge overlapping intersections by updating laser off point
+              lastOffPoint = end;
+              merged_intersections.last() = end;
+              continue;
+            } else if (isCloser(start, currentOnPoint)) {
+              // Find the next intersection without overlapping
+              currentOnPoint = start;
+              currentIdx = i;
+            }
+            break;
+          }
+        }
+        if (currentIdx == -1)
+          break;
+
+        merged_intersections.append(currentOnPoint);
+        lastOffPoint = all_intersections[currentIdx][indices[currentIdx] + 1];
+        if (!isCloser(lastOffPoint, innerEnd)) {
+          // Clip end point
+          lastOffPoint = innerEnd;
+          hasReachEnd = true;
+        }
+        merged_intersections.append(lastOffPoint);
+        indices[currentIdx] += 2;
+      }
+
       // Process pairs of intersections
-      for (int i = 0; i < intersections.size() - 1; i += 2) {
-        // Fix points outside the workarea
-        QLineF pathSegment(intersections[i], intersections[i + 1]);
-        double x1 = intersections[i].x();
-        double y1 = intersections[i].y();
-        bool is_p1_outside = (x1 < 0 || x1 > width || y1 < 0 || y1 > height);
-        if (is_p1_outside) {
-          bool ok = false;
-          if (x1 < 0) {
-            ok = pathSegment.intersects(left_border, &intersections[i]) == QLineF::BoundedIntersection;
-          } else if (x1 > width) {
-            ok = pathSegment.intersects(right_border, &intersections[i]) == QLineF::BoundedIntersection;
-          }
-          if (!ok) {
-            if (y1 < 0) {
-              ok = pathSegment.intersects(top_border, &intersections[i]) == QLineF::BoundedIntersection;
-            } else {
-              ok = pathSegment.intersects(bottom_border, &intersections[i]) == QLineF::BoundedIntersection;
-            }
-            if (!ok) continue;
-          }
-        }
-        double x2 = intersections[i + 1].x();
-        double y2 = intersections[i + 1].y();
-        bool is_p2_outside = (x2 < 0 || x2 > width || y2 < 0 || y2 > height);
-        if (is_p2_outside) {
-          bool ok = false;
-          if (x2 < 0) {
-            ok = pathSegment.intersects(left_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
-          } else if (x2 > width) {
-            ok = pathSegment.intersects(right_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
-          }
-          if (!ok) {
-            if (y2 < 0) {
-              ok = pathSegment.intersects(top_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
-            } else {
-              ok = pathSegment.intersects(bottom_border, &intersections[i + 1]) == QLineF::BoundedIntersection;
-            }
-            if (!ok) continue;
-          }
+      for (int i = 0; i < merged_intersections.size() - 1; i += 2) {
+        if (merged_intersections[i] == merged_intersections[i + 1]) {
+          // Skip zero length segments
+          continue;
         }
 
-          // Move to start point with no laser
-          moveTo(intersections[i] / dpmm_,
-            current_layer_->speed(),
-            0, 0);
+        // Move to start point with no laser
+        moveTo(merged_intersections[i] / dpmm_, current_layer_->speed(), 0, 0);
 
-          // Move to end point
-          moveTo(intersections[i + 1] / dpmm_,
-            current_layer_->speed(),
-            current_layer_->power(),
-            0);
+        // Move to end point
+        moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
   }
   polygons_mutex_.unlock();
