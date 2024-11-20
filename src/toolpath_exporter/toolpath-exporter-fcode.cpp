@@ -530,8 +530,8 @@ void ToolpathExporterFcode::updateLayerParam() {
   // Update speed in min
   layer_speed_ = layer_speed_sec_ * 60;
   path_speed_ = layer_speed_;
-  if (config_.enable_vector_speed_constraint && path_speed_ > 1200) {
-    path_speed_ = 1200;
+  if (config_.vector_speed_constraint > 0 && path_speed_ > config_.vector_speed_constraint) {
+    path_speed_ = config_.vector_speed_constraint;
   }
   // Update offset
   updateOffset();
