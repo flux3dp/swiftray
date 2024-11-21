@@ -80,6 +80,7 @@ include_directories(
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Define if the app should be hidden from the dock
   set(MACOSX_HIDE_APP 0)
+  set(MACOSX_DEBUG_TARGET ${PROJECT_NAME}) # Use ${PROJECT_NAME} to always generate dSYM, use "swiftray_app_bundle" to only generate dSYM in release build
   # Add LCS libaries into the app bundle
   file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
 
@@ -126,7 +127,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   if(ENABLE_SENTRY)
     add_custom_command(
-      TARGET ${PROJECT_NAME} POST_BUILD 
+      TARGET ${MACOSX_DEBUG_TARGET} POST_BUILD 
       COMMAND ${CMAKE_COMMAND} -E echo "Exporting dSYM information"
       COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}>
       COMMAND sentry-cli debug-files upload -o flux3dp -p swiftray "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/Swiftray.dSYM"
