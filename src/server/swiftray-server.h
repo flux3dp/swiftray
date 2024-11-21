@@ -31,7 +31,7 @@ private:
 
   bool m_rotary_mode;
   int m_engrave_dpi;
-  int m_time_cost = 0;
+  double m_time_cost = 0;
 
   void handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
   void handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port);

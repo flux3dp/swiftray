@@ -312,14 +312,9 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       gcode_list_ = m_buffer.split("\n");
       result["gcode"] = m_buffer;
       result["fileName"] = "swiftray-conversion";
-      timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, nullptr);
-      Timestamp total_required_time{0, 0};
-      if (!timestamp_list_.empty()) {
-        total_required_time = timestamp_list_.last();
-      }
-      result["timeCost"] = total_required_time.second();
-      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-      this->m_time_cost = total_required_time.second();
+      this->m_time_cost = MachineJob::calcTotalTime(gcode_list_)/1000;
+      result["timeCost"] = this->m_time_cost;
+      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << this->m_time_cost;
       // Debugging GCode
       if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
     }
