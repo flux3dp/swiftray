@@ -201,6 +201,14 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMENT "Deployed Qt Dependencies"
 )
 
+if(ENABLE_SENTRY)
+  add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD 
+    COMMAND ${CMAKE_COMMAND} -E echo "Uploading debug symbols"
+    COMMAND sentry-cli debug-files upload -o flux3dp -p swiftray "${CMAKE_BINARY_DIR}/Swiftray.pdb"
+  )
+endif()
+
 # ==== Install commands ====
 include(GNUInstallDirs)
 
