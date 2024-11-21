@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   MainApplication app(argc, argv);
 
   init_debugger();
-  cause_crash();
+  // cause_crash();
   
   #ifdef Q_OS_MACOS
   disableAppNap();
