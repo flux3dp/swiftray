@@ -15,6 +15,8 @@
 #define VERSION_BUILD ${VERSION_BUILD}
 #define VERSION_BETA  ${VERSION_BETA}
 #define VERSION_SUFFIX "${VERSION_SUFFIX}"
+#define SENTRY_DSN "https://${ENABLE_SENTRY}"
+#define VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}${VERSION_SUFFIX}"
 
 /* Define to 1 if you have the Sparkle or WinSparkle library */
 #cmakedefine HAVE_SOFTWARE_UPDATE 1

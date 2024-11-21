@@ -157,43 +157,6 @@ void MainWindow::loadSettings() {
   //should check when machine(which is connected?) change
   jogging_panel_->setControlEnable(false);
   laser_panel_->setControlEnable(false);
-#ifdef ENABLE_SENTRY
-  // Launch Crashpad with Sentry
-  options_ = sentry_options_new();
-  QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
-  sentry_options_set_database_path(options_, database_path.toStdString().c_str());
-  std::string dsn_string(xstr(ENABLE_SENTRY));
-  dsn_string = "https://" + dsn_string;
-  sentry_options_set_dsn(options_, dsn_string.c_str());
-  #ifdef Q_OS_MACOS
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/../Resources/crashpad_handler");
-  sentry_options_set_handler_path(options_,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler").c_str());
-  #else
-  //qInfo() << "Crashpad path" << QCoreApplication::applicationDirPath().append("/crashpad_handler.exe");
-  sentry_options_set_handler_path(options_,
-      QCoreApplication::applicationDirPath().toStdString().append("/crashpad_handler.exe").c_str());
-  #endif
-  // sentry_options_set_debug(options_, 1); // More details for debug
-  sentry_options_set_release(options_,
-      std::string("Swiftray@")
-      .append(std::to_string(VERSION_MAJOR))
-      .append(".")
-      .append(std::to_string(VERSION_MINOR))
-      .append(".")
-      .append(std::to_string(VERSION_BUILD))
-      .append(VERSION_SUFFIX)
-      .c_str()
-  );
-  sentry_options_set_require_user_consent(options_, true);
-  sentry_init(options_);
-  if(mainApp->isUploadEnable()) {
-    sentry_user_consent_give();
-  }
-  else {
-    sentry_user_consent_revoke();
-  }
-#endif
   if(mainApp->isFirstTime()) {
     welcome_dialog_->setWindowModality(Qt::ApplicationModal);
     welcome_dialog_->show();

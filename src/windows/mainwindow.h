@@ -184,9 +184,6 @@ private:
   Ui::MainWindow *ui;
   Canvas *canvas_;
   bool job_dashboard_exist_;
-#ifdef ENABLE_SENTRY
-  sentry_options_t *options_;
-#endif
   QString current_filename_;
 
   // Context menu of canvas

@@ -13,6 +13,8 @@
 #include <windows/mainwindow.h>
 #include <string>
 #include <debug/debug-timer.h>
+#include <config.h>
+#include <utils/executable_path.h>
 
 #ifdef ENABLE_SENTRY
 #include <sentry.h>
@@ -22,7 +24,7 @@
 #include <osx/disable-app-nap.h>
 #endif
 
-int mainCLI(int argc, char *argv[]) {
+int handle_cli_mode(int argc, char *argv[]) {
   qInfo() << "Swiftray CLI interface";
   Canvas vcanvas;
   QFile file(argv[2]);
@@ -34,16 +36,54 @@ int mainCLI(int argc, char *argv[]) {
   return 0;
 }
 
+void init_debugger() {
+  // Launch Crashpad with Sentry
+  sentry_options_t *options_ = sentry_options_new();
+  QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
+  sentry_options_set_database_path(options_, database_path.toStdString().c_str());
+  sentry_options_set_dsn(options_, SENTRY_DSN);
+  QString crashpad_path = QString::fromStdString(get_executable_dir() + "/crashpad_handler");
+  #ifdef Q_OS_WIN
+    crashpad_path += ".exe";
+  #endif
+  // Checking crashbad_handler exists
+  qInfo() << "Sentry DSN:" << SENTRY_DSN;
+  qInfo() << "Crashpad path:" << crashpad_path << "exist" << QFile::exists(crashpad_path);
+  sentry_options_set_handler_path(options_, crashpad_path.toStdString().c_str());
+  sentry_options_set_release(options_,
+      std::string("Swiftray@")
+      .append(VERSION_STRING)
+      .c_str()
+  );
+  sentry_options_set_debug(options_, 1); // More details for debug
+  sentry_options_set_require_user_consent(options_, true);
+  sentry_init(options_);
+  sentry_user_consent_give();
+}
+
+void cause_crash() {
+    QString *str = new QString("Hello");
+    str = nullptr;
+    qInfo() << str->toStdString().c_str();
+}
+
+
 int main(int argc, char *argv[]) {
-  qInfo() << "Swiftray Version:" << QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
+  qInfo() << "Swiftray Version:" << VERSION_STRING;
   qInfo() << "Qt Version:" << QT_VERSION_STR;
-  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-  MainApplication app(argc, argv);
+
   QCoreApplication::setOrganizationName("FLUX");
   QCoreApplication::setOrganizationDomain("flux3dp.com");
   QCoreApplication::setApplicationName("Swiftray");
   QCoreApplication::setApplicationVersion(QT_VERSION_STR);
+  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
+  MainApplication app(argc, argv);
+
+  init_debugger();
+  cause_crash();
+  
   #ifdef Q_OS_MACOS
   disableAppNap();
   #endif
@@ -59,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   // CLI
   if (argc > 1 && strcmp(argv[1], "cli") == 0) {
-    return mainCLI(argc, argv);
+    return handle_cli_mode(argc, argv);
   }
 
   if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {

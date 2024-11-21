@@ -63,7 +63,7 @@ endif()
 
 # ==== Generate source files with contents filled by cmake =====
 # NOTE: This should be after all ws_find_package() function calls
-configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_BINARY_DIR}/config.h)
+configure_file(${CMAKE_SOURCE_DIR}/cmakeconfig.h.in ${CMAKE_SOURCE_DIR}/src/config.h)
 foreach( _cfg_file ${CFG_OUT_FILES} )
 	configure_file( ${CMAKE_SOURCE_DIR}/${_cfg_file}.in ${CMAKE_BINARY_DIR}/${_cfg_file} @ONLY )
 endforeach()
@@ -123,6 +123,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
            $<TARGET_FILE:${PROJECT_NAME}>
   )
+
+  if(ENABLE_SENTRY)
+    add_custom_command(
+      TARGET ${PROJECT_NAME} POST_BUILD 
+      COMMAND ${CMAKE_COMMAND} -E echo "Exporting dSYM information"
+      COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}>
+      COMMAND sentry-cli debug-files upload -o flux3dp -p swiftray "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/Swiftray.dSYM"
+    )
+  endif()
 else()
     # Linux and others
     message(STATUS "Platform: Unknown")
@@ -202,6 +211,9 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
     "${SPARKLE_FRAMEWORK_PATH}"
   COMMAND ${CMAKE_COMMAND} -E echo "Step 3. Removing .txt files from logs folder"
   COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/logs"
+
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 4. Removing .dSYM files from logs folder"
+  COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/Swiftray.dSYM"
 )
 
 # ==== Use macdeployqt to install plugins and embed linked libraries ====

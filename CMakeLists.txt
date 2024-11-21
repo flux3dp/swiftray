@@ -41,7 +41,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 message(STATUS "Project version: ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}")
 
-# Sentry configuration
+# Sentry configurations
+set(ENABLE_SENTRY "ad81ff6a57274de58ba17f6520240929@o28957.ingest.us.sentry.io/6586888")
 if (DEFINED ENABLE_SENTRY)
   message(STATUS "Sentry enabled")
   add_definitions(-DENABLE_SENTRY=${ENABLE_SENTRY})
