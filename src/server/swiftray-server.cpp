@@ -286,12 +286,12 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
           this->m_engrave_dpi / 25.4,
           travel_speed,
           QPointF(std::get<0>(origin), std::get<1>(origin)),
-          ToolpathExporter::PaddingType::kFixedPadding,
+          ToolpathExporter::PaddingType::kNoPadding,
           move_translate);
       exporter.setSortRule(PathSort::NestedSort);
       exporter.setWorkAreaSize(QRectF(0, 0, m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
-      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
+      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed, true)) {
         return false; // canceled
       }
       if (exporter.isExceedingBoundary()) {
