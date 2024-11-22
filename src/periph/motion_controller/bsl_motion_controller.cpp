@@ -273,8 +273,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
           lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "F") {
             current_f = value.toDouble();
-            lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
-            lcs_set_jump_speed_ctrl(current_f / 60.0);
+            lcs_set_mark_speed_ctrl(current_f / 60.0);
         } else if (type == "S") {
             current_s = value.toInt();
             if (!is_handling_high_speed_) {
@@ -395,7 +394,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_get_status((uint32_t *)&run_status, &running_pos);
       // qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
       // Start new list
-      lcs_set_jump_speed_ctrl(2000);
+      lcs_set_jump_speed_ctrl(4000);
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_delay_mode(true, 200, 400, 10);
       lcs_set_start_list(1);
