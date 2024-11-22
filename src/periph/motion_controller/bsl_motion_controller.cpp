@@ -398,9 +398,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_set_jump_speed_ctrl(2000);
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_delay_mode(true, 200, 400, 10);
+      lcs_set_start_list(1);
       lcs_set_laser_delays(-100, 100);
       lcs_set_scanner_delays(100, 50);
-      lcs_set_start_list(1);
       lcs_set_laser_power(100);
       lcs_set_laser_mode(LCS_MOPA, is_framing);
       lcs_enable_laser();
@@ -474,6 +474,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
 
     if (should_end) {
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
+      lcs_disable_laser();
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
@@ -507,7 +508,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
-      lcs_disable_laser();
       if (!is_framing) lcs_set_laser_control(false);
     }
 
