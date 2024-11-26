@@ -141,6 +141,7 @@ void BSLMotionController::commandRunnerThread() {
           this->pending_cmds_.pop_front();
           this->cmd_list_mutex_.unlock();
           this->handleGcode(cmd);
+          dequeueCmd(1);
         }
         break;
       case MotionControllerState::kCheck:
@@ -214,7 +215,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static int list_no = 1;
     static bool first_list = true;
     static double center_pos = 55;
-    static int d_buffer = 0;
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
     static bool is_framing = false;
@@ -222,14 +222,12 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
-        dequeueCmd(1);
         return;
     }
 
     if (gcode == "?" || gcode == "?\n") {
       Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
       // qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
-      dequeueCmd(1);
       return;
     }
 
@@ -303,7 +301,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
             } else if (value == "4") {
                 is_handling_high_speed_ = true;
             }
-            dequeueCmd(1);
             return;
         }
     }
@@ -351,7 +348,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
                     }
                     handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0), laser);
                     laser = bits[i];
-                    d_buffer++;
                 }
                 step_count++;
             }
@@ -360,9 +356,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         if (std::fabs(final_pos - current_pos) > 0.001) {
             x_move = round((is_absolute_positioning ? final_pos: final_pos - current_pos) * 1000) /1000;
             handleGcode(QString("X%1S0").arg(x_move));
-            d_buffer++;
         }
-        dequeueCmd(1);
         return;
     }
 
@@ -418,7 +412,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       rotary_mode = false;
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
-      dequeueCmd(1);
     } else if (command == "M99" ) {
       char sn[50];
       lcs_get_serial_number(sn, 32);
@@ -426,26 +419,19 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       if (sn[0] != '\0') {
         Q_EMIT configUpdate("serial", sn);
       }
-      dequeueCmd(1);
     } else if (command == "M100") { 
       rotary_mode = false;
-      dequeueCmd(1);
     } else if (command == "M101") {
       rotary_mode = true;
       lcs_write_io_port(0b0);
-      dequeueCmd(1);
     } else if (command == "M102") {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b0010);
-      dequeueCmd(1);
     } else if (command == "M103") {
       is_framing = true;
-      dequeueCmd(1);
     } else if (command == "M104") {
       is_framing = false;
-      dequeueCmd(1);
     } else if (!is_move_command) {
-      dequeueCmd(1);
       return;
     }
 
@@ -466,8 +452,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       waitListAvailable(list_no);
       lcs_set_start_list(list_no);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
-      dequeueCmd(this->buffer_size_ - d_buffer);
-      this->buffer_size_ = d_buffer = 0;
+      this->buffer_size_ = 0;
       QThread::msleep(1);
     }
 
@@ -503,7 +488,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       } while (!Status.bCacheReady);
       // qInfo() << "BSLM~::handleGcode() - [Laser Session Closed]" << "@" << getDebugTime();
       // qInfo() << "BSLM~::handleGcode() - Pending commands: " << this->pending_cmds_.size();
-      dequeueCmd(this->buffer_size_ + 1 - d_buffer);
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
@@ -517,7 +501,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
       last_is_z_command = true;
       // QThread::msleep(1000);
-      dequeueCmd(1);
     } else if (is_move_command) {
       double target_x, target_y;
       if (is_absolute_positioning) {
