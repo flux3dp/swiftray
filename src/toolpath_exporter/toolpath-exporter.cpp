@@ -110,7 +110,8 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
 
   // Post cmds
   // gen_->home();
-  moveTo(end_point_, travel_speed_, 0, 0);
+  // No final homing for Promark
+  // moveTo(end_point_, travel_speed_, 0, 0);
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
