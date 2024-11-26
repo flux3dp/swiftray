@@ -436,7 +436,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       dequeueCmd(1);
     } else if (command == "M102") {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
-      lcs_write_io_port(0b1111);
+      lcs_write_io_port(0b0010);
       dequeueCmd(1);
     } else if (command == "M103") {
       is_framing = true;
