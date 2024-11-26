@@ -535,7 +535,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         }
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
+            if (!force_pulse) {
                 mark_to(0, target_x - center_pos);
             } else {
                 jump_to(0, target_x - center_pos);
@@ -547,7 +547,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
+            if (!force_pulse) {
                 mark_to(-(target_y - center_pos), target_x - center_pos);
             } else {
                 jump_to(-(target_y - center_pos), target_x - center_pos);
