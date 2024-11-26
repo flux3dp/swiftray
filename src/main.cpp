@@ -37,6 +37,7 @@ int handle_cli_mode(int argc, char *argv[]) {
 }
 
 void init_debugger() {
+#ifdef ENABLE_SENTRY
   // Launch Crashpad with Sentry
   sentry_options_t *options_ = sentry_options_new();
   QString database_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/sentry-native";
@@ -59,6 +60,7 @@ void init_debugger() {
   sentry_options_set_require_user_consent(options_, true);
   sentry_init(options_);
   sentry_user_consent_give();
+#endif
 }
 
 void cause_crash() {
@@ -105,6 +107,7 @@ int main(int argc, char *argv[]) {
   if (argc > 1 && strcmp(argv[1], "--daemon") == 0) {
     // Daemon mode
     qInfo() << "Swiftray daemon mode";
+    app.is_daemon_mode_ = true;
     return app.exec();
   }
 

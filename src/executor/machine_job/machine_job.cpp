@@ -22,6 +22,119 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
 }
 
 /**
+ * Modified from MachineJob::calcRequiredTime for Promark
+ * @brief Calculate the required time
+ * @retval Total time required in ms
+ */
+double MachineJob::calcTotalTime(const QStringList& gcode_list) {
+  double total_time = 0;
+  double move_time = 0;
+  int current_line = 0;
+  bool relative_mode = false;  // G90 or G91
+  float last_abs_x = 0, last_abs_y = 0;
+  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500;
+  bool hasEnd = false;
+
+  while (current_line < gcode_list.size() && !hasEnd) {
+    QString line = gcode_list[current_line];
+    line = line.toUpper().section(';', 0, 0);  // Eliminate comment (;)
+    if (line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (FLUX's custom cmd)
+    } else {
+      QChar current_param{';'};
+      QString val_str;
+      line.append(' ');  // To ensure the last param is processed
+      // Set default value when X/Y field is absent
+      x_param = relative_mode ? 0 : last_abs_x;
+      y_param = relative_mode ? 0 : last_abs_y;
+      z_param = 0;
+      for (auto& c : line) {
+        if (c == '-' || c == '.' || c.isDigit()) {
+          if (current_param != ';') {
+            val_str.append(c);
+          }
+        } else {
+          // Finish a cmd (G-Code or M-Code)
+          if (current_param == 'G') {
+            if (val_str.toInt() == 90 || val_str.toInt() == 91) {
+              relative_mode = val_str.toInt() == 90 ? false : true;
+              // Reset default value when X/Y field is absent
+              x_param = relative_mode ? 0 : last_abs_x;
+              y_param = relative_mode ? 0 : last_abs_y;
+              z_param = 0;
+            } else if (val_str.toInt() == 1) {
+              // G1 Motion modal group
+            }
+          } else if (current_param == 'M') {
+            if (val_str.toInt() == 2) {
+              // End of program
+              hasEnd = true;
+              break;
+            }
+          }
+
+          // Finish a param
+          if (current_param == 'X') {
+            x_param = val_str.toFloat();
+          } else if (current_param == 'Y') {
+            y_param = val_str.toFloat();
+          } else if (current_param == 'Z') {
+            z_param = val_str.toFloat();
+          } else if (current_param == 'F') {
+            f_param = val_str.toFloat();
+          } else if (current_param == 'S') {
+            // ignore
+          }
+
+          // The start of new param
+          if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
+              c == 'S' || c == 'F') {
+            // Finish a param
+            current_param = c;
+            val_str.clear();
+          } else {
+            current_param = ';';
+            val_str.clear();
+          }
+        }
+      }
+
+      Q_ASSERT_X(f_param > 0, "GCode Player", "Feedrate must be larger than 0");
+      // NOTE: F value is in unit of mm/min
+      if (z_param != 0) {
+        // Z move fPulse = fabs(z_param) * 1600 pulse
+        // RunSpeed = 4800 pulse/second
+        // startSpeed = 10 pulse/second
+        // accTime = 255 ms
+
+        // TODO: Check Z speed
+        // Ingore acc time
+        move_time = 1000.0 * fabs(z_param) / 3;
+        total_time += move_time;
+      } else if (relative_mode) {
+        move_time = 1000.0 * qSqrt(qPow(x_param, 2) + qPow(y_param, 2)) / f_param * 60;
+        total_time += move_time;
+        last_abs_x += x_param;
+        last_abs_y += y_param;
+      } else {
+        move_time = 1000.0 *
+                    qSqrt(qPow(x_param - last_abs_x, 2) +
+                          qPow(y_param - last_abs_y, 2)) /
+                    f_param * 60;
+        total_time += move_time;
+        last_abs_x = x_param;
+        last_abs_y = y_param;
+      }
+    }
+    current_line++;
+  }
+
+  return total_time;
+}
+
+/**
  * @brief Calculate the required time from the GCodes inside text area
  * @retval A list of timestamp corresponding to each line of GCode
  *         throw exception when canceled

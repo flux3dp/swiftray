@@ -32,6 +32,8 @@ public:
   QPixmap getPreview() const;
   void setMotionController(QPointer<MotionController>);
 
+  static double calcTotalTime(const QStringList& gcode_list);
+
   static QList<Timestamp> calcRequiredTime(const QStringList &gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);
   static QList<Timestamp> calcRequiredTime(QStringList &&gcode_list,

@@ -56,6 +56,7 @@ struct Config {
   float path_travel_speed = 7500; // default val = 3600 for ador, 7500 for others
   float prespray_speed = 1800;
   float prespray_travel_speed = 7500;
+  float vector_speed_constraint = 0;
   // mm^2/s
   float path_acc = std::nanf("");
   float padding_acc = 4000;
@@ -90,7 +91,6 @@ struct Config {
   bool enable_fast_gradient = false;
   bool enable_mock_fast_gradient = false;
   bool enable_multipass_compensation = false;
-  bool enable_vector_speed_constraint = false;
   bool enable_relative_z_move = false;
   bool enable_rotary_z_move = false;
   bool is_one_way_printing = false;
@@ -223,7 +223,6 @@ class ToolpathExporterFcode : public QObject {
     config_.enable_mock_fast_gradient = param["mfg"].toBool();
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
-    config_.enable_vector_speed_constraint = param["vsc"].toBool();
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();
@@ -231,6 +230,7 @@ class ToolpathExporterFcode : public QObject {
     config_.travel_speed = param["ts"].toDouble(7500);
     config_.a_travel_speed = param["ats"].toDouble(2000);
     config_.path_travel_speed = param["pts"].toDouble(default_path_travel_speed);
+    config_.vector_speed_constraint = param["vsl"].toDouble(0);
     config_.path_acc = param["path_acc"].toDouble(default_path_acc);
     config_.padding_acc = param["acc"].toDouble(4000);
     config_.min_engraving_padding = param["mep"].toDouble(std::nanf(""));

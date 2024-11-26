@@ -6,7 +6,7 @@
 /* Note: You cannot use earlier #defines in later #cmakedefines (cmake 2.6.2). */
 
 /* Name of package */
-#define PACKAGE "Swiftray"
+#define PACKAGE "\"Swiftray\""
 
 /* Version number of Wireshark and associated utilities */
 //#define PROJECT_VERSION_STR "$$PROJECT_VERSION_STR"
@@ -14,7 +14,9 @@
 #define VERSION_MINOR $$VERSION_MINOR
 #define VERSION_BUILD $$VERSION_BUILD
 #define VERSION_BETA  $$VERSION_BETA
-#define VERSION_SUFFIX "$$VERSION_SUFFIX"
+#define VERSION_SUFFIX "\"$$VERSION_SUFFIX\""
+#define SENTRY_DSN "\"https://$$ENABLE_SENTRY\""
+#define VERSION_STRING "\"$$VERSION\""
 
 // NOTE: Currently not support Sparkle in QMake
 

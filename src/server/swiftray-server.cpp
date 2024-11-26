@@ -275,7 +275,8 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       result["metadata"] = exporter.getMetadata();
     } else {
       qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
-      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap();
+      bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
+      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode
       GCodeGenerator gen(machine_param, this->m_rotary_mode);
       QTransform move_translate = QTransform();
@@ -285,12 +286,12 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
           this->m_engrave_dpi / 25.4,
           travel_speed,
           QPointF(std::get<0>(origin), std::get<1>(origin)),
-          ToolpathExporter::PaddingType::kFixedPadding,
+          ToolpathExporter::PaddingType::kNoPadding,
           move_translate);
       exporter.setSortRule(PathSort::NestedSort);
       exporter.setWorkAreaSize(QRectF(0, 0, m_canvas->document().width() / 10, m_canvas->document().height() / 10));
 
-      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed,  true)) {
+      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed, true)) {
         return false; // canceled
       }
       if (exporter.isExceedingBoundary()) {
@@ -311,14 +312,9 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
       gcode_list_ = m_buffer.split("\n");
       result["gcode"] = m_buffer;
       result["fileName"] = "swiftray-conversion";
-      timestamp_list_ = MachineJob::calcRequiredTime(gcode_list_, nullptr);
-      Timestamp total_required_time{0, 0};
-      if (!timestamp_list_.empty()) {
-        total_required_time = timestamp_list_.last();
-      }
-      result["timeCost"] = total_required_time.second();
-      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << result["timeCost"];
-      this->m_time_cost = total_required_time.second();
+      this->m_time_cost = MachineJob::calcTotalTime(gcode_list_)/1000;
+      result["timeCost"] = this->m_time_cost;
+      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << this->m_time_cost;
       // Debugging GCode
       if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
     }

@@ -141,6 +141,7 @@ void BSLMotionController::commandRunnerThread() {
           this->pending_cmds_.pop_front();
           this->cmd_list_mutex_.unlock();
           this->handleGcode(cmd);
+          dequeueCmd(1);
         }
         break;
       case MotionControllerState::kCheck:
@@ -214,7 +215,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static int list_no = 1;
     static bool first_list = true;
     static double center_pos = 55;
-    static int d_buffer = 0;
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
     static bool is_framing = false;
@@ -222,14 +222,12 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
-        dequeueCmd(1);
         return;
     }
 
     if (gcode == "?" || gcode == "?\n") {
       Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
       // qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
-      dequeueCmd(1);
       return;
     }
 
@@ -273,8 +271,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
           lcs_set_laser_pulses(duration, 0, pulse_width);
         } else if (type == "F") {
             current_f = value.toDouble();
-            lcs_set_mark_speed_ctrl(current_f / 60.0); // Convert mm/min to mm/s
-            lcs_set_jump_speed_ctrl(current_f / 60.0);
+            lcs_set_mark_speed_ctrl(current_f / 60.0);
         } else if (type == "S") {
             current_s = value.toInt();
             if (!is_handling_high_speed_) {
@@ -304,7 +301,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
             } else if (value == "4") {
                 is_handling_high_speed_ = true;
             }
-            dequeueCmd(1);
             return;
         }
     }
@@ -352,7 +348,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
                     }
                     handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0), laser);
                     laser = bits[i];
-                    d_buffer++;
                 }
                 step_count++;
             }
@@ -361,9 +356,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         if (std::fabs(final_pos - current_pos) > 0.001) {
             x_move = round((is_absolute_positioning ? final_pos: final_pos - current_pos) * 1000) /1000;
             handleGcode(QString("X%1S0").arg(x_move));
-            d_buffer++;
         }
-        dequeueCmd(1);
         return;
     }
 
@@ -395,12 +388,12 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_get_status((uint32_t *)&run_status, &running_pos);
       // qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
       // Start new list
-      lcs_set_jump_speed_ctrl(2000);
+      lcs_set_jump_speed_ctrl(4000);
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_delay_mode(true, 200, 400, 10);
+      lcs_set_start_list(1);
       lcs_set_laser_delays(-100, 100);
       lcs_set_scanner_delays(100, 50);
-      lcs_set_start_list(1);
       lcs_set_laser_power(100);
       lcs_set_laser_mode(LCS_MOPA, is_framing);
       lcs_enable_laser();
@@ -419,7 +412,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       rotary_mode = false;
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
-      dequeueCmd(1);
     } else if (command == "M99" ) {
       char sn[50];
       lcs_get_serial_number(sn, 32);
@@ -427,26 +419,19 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       if (sn[0] != '\0') {
         Q_EMIT configUpdate("serial", sn);
       }
-      dequeueCmd(1);
     } else if (command == "M100") { 
       rotary_mode = false;
-      dequeueCmd(1);
     } else if (command == "M101") {
       rotary_mode = true;
       lcs_write_io_port(0b0);
-      dequeueCmd(1);
     } else if (command == "M102") {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
-      lcs_write_io_port(0b1111);
-      dequeueCmd(1);
+      lcs_write_io_port(0b0010);
     } else if (command == "M103") {
       is_framing = true;
-      dequeueCmd(1);
     } else if (command == "M104") {
       is_framing = false;
-      dequeueCmd(1);
     } else if (!is_move_command) {
-      dequeueCmd(1);
       return;
     }
 
@@ -467,13 +452,13 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       waitListAvailable(list_no);
       lcs_set_start_list(list_no);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
-      dequeueCmd(this->buffer_size_ - d_buffer);
-      this->buffer_size_ = d_buffer = 0;
+      this->buffer_size_ = 0;
       QThread::msleep(1);
     }
 
     if (should_end) {
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
+      lcs_disable_laser();
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       lcs_execute_list(list_no);
@@ -503,11 +488,9 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       } while (!Status.bCacheReady);
       // qInfo() << "BSLM~::handleGcode() - [Laser Session Closed]" << "@" << getDebugTime();
       // qInfo() << "BSLM~::handleGcode() - Pending commands: " << this->pending_cmds_.size();
-      dequeueCmd(this->buffer_size_ + 1 - d_buffer);
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
-      lcs_disable_laser();
       if (!is_framing) lcs_set_laser_control(false);
     }
 
@@ -518,7 +501,6 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
       last_is_z_command = true;
       // QThread::msleep(1000);
-      dequeueCmd(1);
     } else if (is_move_command) {
       double target_x, target_y;
       if (is_absolute_positioning) {
@@ -536,7 +518,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
         }
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
+            if (!force_pulse) {
                 mark_to(0, target_x - center_pos);
             } else {
                 jump_to(0, target_x - center_pos);
@@ -548,7 +530,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if ((pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2)) > 0.1 && !force_pulse) {
+            if (!force_pulse) {
                 mark_to(-(target_y - center_pos), target_x - center_pos);
             } else {
                 jump_to(-(target_y - center_pos), target_x - center_pos);

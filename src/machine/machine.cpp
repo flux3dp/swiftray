@@ -16,6 +16,7 @@
 #include <executor/operation_cmd/bsl_cmd.h>
 #include "liblcs/lcsExpr.h"
 #include <debug/debug-timer.h>
+#include <windows/mainwindow.h>
 
 Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   : QObject{parent}
@@ -560,6 +561,10 @@ void Machine::handleNotif(QString title, QString msg) {
 }
 
 void Machine::alert(QString title, QString msg) {
+  if( mainApp->is_daemon_mode_ ) {
+    qWarning() << "Machine::alert() - " << title << " : " << msg;
+    return;
+  }
   auto msgbox = new QMessageBox;
   //msgbox->setWindowTitle();
   msgbox->setText(title);
