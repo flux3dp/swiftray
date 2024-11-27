@@ -439,6 +439,7 @@ bool SwiftrayServer::startFraming() {
 
   outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
   outline_generator.setLaserPower(0.0f);
+  outline_generator.setStep(50);
   // Create Framing Job and start
   if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"))) {
     getMachine()->startJob();
