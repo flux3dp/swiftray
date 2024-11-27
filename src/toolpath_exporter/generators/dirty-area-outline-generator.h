@@ -4,9 +4,8 @@
 
 class DirtyAreaOutlineGenerator : public BaseGenerator {
 public:
-  DirtyAreaOutlineGenerator(const MachineSettings::MachineParam &machine, bool rotary_mode, float step = 0) : BaseGenerator() {
+  DirtyAreaOutlineGenerator(const MachineSettings::MachineParam &machine, bool rotary_mode) : BaseGenerator() {
     rotary_mode_ = rotary_mode;
-    if (step > 0) step_ = step;
     if(rotary_mode_) {
       switch (machine.origin) {
         case MachineSettings::MachineParam::OriginType::RearRight:
@@ -185,6 +184,10 @@ public:
   void setTravelSpeed(double travel_speed) {travel_speed_ = travel_speed;}
 
   void setLaserPower(double laser_power) {laser_power_ = laser_power;}
+
+  void setStep(double step) {
+    if (step > 0) step_ = step;
+  }
 
 private:
     int machine_width_;
