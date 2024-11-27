@@ -56,6 +56,7 @@ namespace MySVG {
         double fill_angle; //deg
         bool fill_bidirectional;
         bool fill_hatch;
+        int dotting_time;
     };
 
     enum ReadType {

@@ -207,7 +207,7 @@ void mark_to(double y, double x) {
   lcs_mark_abs(y, x);
 }
 
-void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
+void BSLMotionController::handleGcode(const QString &gcode) {
     static bool rotary_mode = false;
     static bool laser_enabled = false;
     static int current_s = 0; // Default power
@@ -219,6 +219,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
     static int pulse_width = 100; // 100 ns
     static bool is_framing = false;
     static bool last_is_z_command = false;
+    static int dotting_time = 0;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -231,7 +232,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
       return;
     }
 
-    QRegularExpression re("([GMXYFSZDWQP])(-?\\d+\\.?\\d*)");
+    QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
     QRegularExpressionMatchIterator i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -269,6 +270,8 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
           pulse_width = value.toInt();
           int duration = 1000 / freq; // freq is in khz
           lcs_set_laser_pulses(duration, 0, pulse_width);
+        } else if (type == "T") {
+          dotting_time = value.toInt();
         } else if (type == "F") {
             current_f = value.toDouble();
             lcs_set_mark_speed_ctrl(current_f / 60.0);
@@ -346,7 +349,7 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
                         x_move = round((new_x - current_pos) * 1000) / 1000;
                         current_pos += x_move;
                     }
-                    handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0), laser);
+                    handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0));
                     laser = bits[i];
                 }
                 step_count++;
@@ -517,24 +520,22 @@ void BSLMotionController::handleGcode(const QString &gcode, bool force_pulse) {
           lcs_set_axis_move(0, fabs(diff_y) * 100, diff_y < 0, 3200, 1600, 255);
         }
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
-            // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if (!force_pulse) {
+            if (dotting_time == 0) {
                 mark_to(0, target_x - center_pos);
             } else {
                 jump_to(0, target_x - center_pos);
-                lcs_laser_on_list(100);
+                lcs_laser_on_list(dotting_time);
             }
         } else {
             jump_to(0, target_x - center_pos);
         }
       } else {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
-            // If target_x and target_y is near x_pos_ and y_pos_, jump and mark, if too far, engrave multiple points
-            if (!force_pulse) {
+            if (dotting_time == 0) {
                 mark_to(-(target_y - center_pos), target_x - center_pos);
             } else {
                 jump_to(-(target_y - center_pos), target_x - center_pos);
-                lcs_laser_on_list(100000 / (current_f / 60.0));
+                lcs_laser_on_list(dotting_time);
             }
         } else {
             jump_to(-(target_y - center_pos), target_x - center_pos);

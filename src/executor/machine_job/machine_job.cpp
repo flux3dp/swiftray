@@ -27,18 +27,34 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
  * @retval Total time required in ms
  */
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
-  double total_time = 0;
+  double total_time = 0; // ms
+  double laser_time = 0;
+  double z_time = 0;
   double move_time = 0;
   int current_line = 0;
   bool relative_mode = false;  // G90 or G91
   float last_abs_x = 0, last_abs_y = 0;
-  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500;
+  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
+  int dotting_time = 0; // us
+  double jump_speed = 240000;
   bool hasEnd = false;
 
   while (current_line < gcode_list.size() && !hasEnd) {
     QString line = gcode_list[current_line];
-    line = line.toUpper().section(';', 0, 0);  // Eliminate comment (;)
-    if (line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+    line = line.toUpper();
+    if (!(line.startsWith("X", Qt::CaseSensitivity::CaseInsensitive) ||line.startsWith("Y", Qt::CaseSensitivity::CaseInsensitive) ||line.startsWith("S", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("F", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("G", Qt::CaseSensitivity::CaseInsensitive))) {
+      qInfo() << "Line: " << line;
+    }
+    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)){
+      // Specific comment for High Speed Mode
+      int dots = line.mid(4).toInt();
+      qInfo() << "Dots: " << dots << " Dotting Time: " << dotting_time << (0.001 * dots * dotting_time);
+      laser_time += 0.001 * dots * dotting_time;
+      total_time += 0.001 * dots * dotting_time;
+    } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
@@ -85,12 +101,15 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
           } else if (current_param == 'F') {
             f_param = val_str.toFloat();
           } else if (current_param == 'S') {
-            // ignore
+            s_param = val_str.toFloat();
+          } else if (current_param == 'T') {
+            dotting_time = val_str.toInt();
+            qInfo() << "Dotting Time: " << dotting_time;
           }
 
           // The start of new param
           if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
-              c == 'S' || c == 'F') {
+              c == 'S' || c == 'F' || c == 'T') {
             // Finish a param
             current_param = c;
             val_str.clear();
@@ -101,20 +120,16 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         }
       }
 
-      Q_ASSERT_X(f_param > 0, "GCode Player", "Feedrate must be larger than 0");
-      // NOTE: F value is in unit of mm/min
       if (z_param != 0) {
         // Z move fPulse = fabs(z_param) * 1600 pulse
         // RunSpeed = 4800 pulse/second
-        // startSpeed = 10 pulse/second
-        // accTime = 255 ms
-
-        // TODO: Check Z speed
-        // Ingore acc time
+        // Note: Ingore acc time
         move_time = 1000.0 * fabs(z_param) / 3;
+        z_time += move_time;
         total_time += move_time;
       } else if (relative_mode) {
-        move_time = 1000.0 * qSqrt(qPow(x_param, 2) + qPow(y_param, 2)) / f_param * 60;
+        move_time = 1000.0 * qSqrt(qPow(x_param, 2) + qPow(y_param, 2)) / (s_param>0? f_param:jump_speed) * 60;
+        if(s_param>0) laser_time += move_time;
         total_time += move_time;
         last_abs_x += x_param;
         last_abs_y += y_param;
@@ -122,7 +137,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         move_time = 1000.0 *
                     qSqrt(qPow(x_param - last_abs_x, 2) +
                           qPow(y_param - last_abs_y, 2)) /
-                    f_param * 60;
+                    (s_param>0? f_param:jump_speed) * 60;
+        if(s_param>0) laser_time += move_time;
         total_time += move_time;
         last_abs_x = x_param;
         last_abs_y = y_param;
@@ -131,6 +147,10 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
     current_line++;
   }
 
+  qInfo() << "Total Time: " << total_time << "ms" 
+  << " Laser Time: " << laser_time << "ms" 
+  << " Z Time: " << z_time << "ms" 
+  << " Travel Time: " << total_time - laser_time - z_time << "ms";
   return total_time;
 }
 

@@ -198,6 +198,14 @@ public:
     str_stream_ << "P" << pulse_width << std::endl;
   }
 
+  void setDottingTime(int dotting_time) override { 
+    str_stream_ << "T" << dotting_time << std::endl;
+  }
+
+  void addComment(QString msg) override {
+    str_stream_ << ";" << msg.toStdString() << std::endl;
+  }
+
   void turnOnLaserAdpatively() override {
     str_stream_ << "M4S0" << std::endl;
     spindle_modal_ = MCodeSpindleModal::kM04;

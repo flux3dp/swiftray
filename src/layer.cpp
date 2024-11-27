@@ -150,6 +150,8 @@ bool Layer::fillBidirectional() const { return fill_bidirectional_; }
 
 bool Layer::fillHatch() const { return fill_hatch_; }
 
+int Layer::dottingTime() const { return dotting_time_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -233,6 +235,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_angle_ = config.fill_angle;
   this->fill_bidirectional_ = config.fill_bidirectional;
   this->fill_hatch_ = config.fill_hatch;
+  this->dotting_time_ = config.dotting_time;
 }
 
 // Clone
@@ -264,6 +267,7 @@ LayerPtr Layer::clone() {
   new_layer->fill_angle_ = this->fill_angle_;
   new_layer->fill_bidirectional_ = this->fill_bidirectional_;
   new_layer->fill_hatch_ = this->fill_hatch_;
+  new_layer->dotting_time_ = this->dotting_time_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

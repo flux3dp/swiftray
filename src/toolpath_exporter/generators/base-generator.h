@@ -70,6 +70,14 @@ public:
     qWarning() << "BaseGenerator::setPulseWidth()" << "Promark feature not implemented"; 
   }
 
+  virtual void setDottingTime(int dotting_time) { 
+    qWarning() << "BaseGenerator::setDottingTime()" << "Promark feature not implemented"; 
+  }
+
+  virtual void addComment(QString msg) { 
+    qWarning() << "BaseGenerator::addComment()" << "Promark feature not implemented"; 
+  }
+
   virtual void enableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
 
   virtual void disableHighSpeedRastering() { Q_ASSERT_X(true, "BaseGenerator", "High-speed rastering not implemented"); }
