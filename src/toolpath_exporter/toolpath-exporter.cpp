@@ -350,6 +350,8 @@ void ToolpathExporter::outputLayerFillGcode() {
   double fill_interval = current_layer_->fillInterval() * dpmm_;
   if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
+  bool fill_bidirectional = current_layer_->fillBidirectional();
+  int hatch_count = current_layer_->fillHatch() ? 2 : 1;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
   QRectF bounds = merged_poly.boundingRect();
@@ -359,28 +361,31 @@ void ToolpathExporter::outputLayerFillGcode() {
   double diagonal = qSqrt(bounds.width() * bounds.width() + 
                         bounds.height() * bounds.height()) * 1.1;
   qInfo() << "Diagonal: " << diagonal / dpmm_;
-  
-  // Convert angle to radians
-  double angleRad = qDegreesToRadians(fill_angle);
-  
-  // Calculate perpendicular direction for scanning
-  QPointF direction(qCos(angleRad), qSin(angleRad));
-  QPointF epsilon = direction * 0.001;
-  QPointF perpendicular(-direction.y(), direction.x());
 
-  // Calculate center point
-  QPointF center = bounds.center();
-  qInfo() << "Center Point: " << center / dpmm_;
-  
-  // Calculate start point (offset by half diagonal in perpendicular direction)
-  QPointF start = center - (perpendicular * diagonal / 2);
-  qInfo() << "Start Point: " << start / dpmm_;
-  gen_->turnOnLaser();
-  // Scan across the path
-  for (double offset = -diagonal/2; offset <= diagonal; offset += fill_interval) {
+  for (int hatch = 0; hatch < hatch_count; hatch++) {
+    // Convert angle to radians
+    double angleRad = qDegreesToRadians(fill_angle);
+
+    // Calculate perpendicular direction for scanning
+    QPointF direction(qCos(angleRad), qSin(angleRad));
+    QPointF perpendicular(-direction.y(), direction.x());
+
+    // Calculate center point
+    QPointF center = bounds.center();
+    qInfo() << "Center Point: " << center / dpmm_;
+
+    // Calculate start point (offset by half diagonal in perpendicular direction)
+    QPointF start = center - (perpendicular * diagonal / 2);
+    qInfo() << "Start Point: " << start / dpmm_;
+    gen_->turnOnLaser();
+
+    bool reverse = false;
+    // Scan across the path
+    for (double offset = -diagonal / 2; offset <= diagonal; offset += fill_interval) {
       // Calculate line start and end points
-      QPointF lineStart = start + perpendicular * offset - direction * diagonal/2;
+      QPointF lineStart = start + perpendicular * offset - direction * diagonal / 2;
       QPointF lineEnd = lineStart + direction * diagonal;
+      if (reverse) std::swap(lineStart, lineEnd);
       QLineF scanLine(lineStart, lineEnd);
       std::function<bool(const QPointF& a, const QPointF& b)> isCloser =
           [&lineStart](const QPointF& a, const QPointF& b) {
@@ -521,6 +526,9 @@ void ToolpathExporter::outputLayerFillGcode() {
         // Move to end point
         moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
+      if (fill_bidirectional) reverse = !reverse;
+    }
+    fill_angle += 90;
   }
   polygons_mutex_.unlock();
   gen_->turnOffLaser();
