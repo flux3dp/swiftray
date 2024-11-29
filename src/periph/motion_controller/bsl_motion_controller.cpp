@@ -330,13 +330,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                     completed = true;
                     break;
                 }
-                if (true) {
-                    if (step_count == 0) {
-                        // No need to handle laser off before the first pixel
-                        step_count++;
-                        laser = bits[i];
-                        continue;
-                    }
+                if (step_count == 0) {
+                    // No need to handle laser off before the first pixel
+                    step_count++;
+                    laser = bits[i];
+                    continue;
+                }
+                // Skip consecutive laser off
+                if (laser || bits[i]) {
                     new_x = start_pos + step * step_count;
                     if (is_reverse != (new_x > final_pos)) {
                         // Limit new_x according to final position
@@ -350,8 +351,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                         current_pos += x_move;
                     }
                     handleGcode(QString("X%1S%2").arg(x_move).arg(laser ? laser_power : 0));
-                    laser = bits[i];
                 }
+                laser = bits[i];
                 step_count++;
             }
             if (completed) break;
