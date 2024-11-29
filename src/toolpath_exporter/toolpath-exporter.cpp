@@ -992,6 +992,8 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
   const int white_pixel = 255;
   bool is_emitting_laser = false;
   bool reverse_raster_dir = false;
+  int dot_count = 0;
+  int jump_count = 0;
 
   // 2-1. Prepare raster line paths
   QList<QLine> raster_lines;
@@ -1031,10 +1033,18 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
       const uchar *data_ptr = layer_image.constScanLine(current_pos_sample.y());
       int dot_grayscale = data_ptr[int(current_pos_sample.x())];
       //qInfo() << dot_grayscale;
-      if (dot_grayscale < white_pixel && blank_line) {
-        blank_line = false;
+      if (dot_grayscale < white_pixel) {
+        if (blank_line) blank_line = false;
+        if (!is_emitting_laser) is_emitting_laser = true;
+        dot_count++;
+        data_word.set(bit_idx);
+      } else {
+        if (is_emitting_laser) {
+          is_emitting_laser = false;
+          jump_count++;
+        }
+        data_word.reset(bit_idx);
       }
-      dot_grayscale == white_pixel ? data_word.reset(bit_idx) : data_word.set(bit_idx);
 
       if (bit_idx == 0) {
         dot_data_list.push_back(data_word);
@@ -1077,6 +1087,8 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 
   // 5. Exit fast raster mode
   gen_->appendCustomCmd(std::string("D5\n"));
+  gen_->addComment(QString("DOT%1").arg(dot_count));
+  gen_->addComment(QString("JUMP%1").arg(jump_count));
 
   return true;
 }

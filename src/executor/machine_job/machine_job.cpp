@@ -50,6 +50,10 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       int dots = line.mid(4).toInt();
       total_time += dots * jump_delay; // Jump delay for each dot
       total_time += 0.001 * dots * dotting_time; // Actual dotting time
+    } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for High Speed Mode
+      int jumps = line.mid(5).toInt();
+      total_time += jumps * jump_delay;  // Jump delay for blank parts
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
