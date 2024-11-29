@@ -29,7 +29,7 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   // Controller constants
   double z_speed = 3; // mm/s lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
-  double jump_speed = 240000; // mm/min lcs_set_jump_speed_ctrl(4000);
+  double jump_speed = 4000; // mm/s lcs_set_jump_speed_ctrl(4000);
   double jump_delay = 0.3; // ms lcs_set_delay_mode(true, 200, 400, 10);
   double laser_delay = 0.2; // ms lcs_set_laser_delays(-100, 100);
 
