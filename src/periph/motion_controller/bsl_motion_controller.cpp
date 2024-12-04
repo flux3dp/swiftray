@@ -612,7 +612,9 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   lcs_set_end_of_list();
   lcs_stop_execution();
   this->is_running_laser_ = false;
+  this->cmd_list_mutex_.lock();
   this->pending_cmds_.clear();
+  this->cmd_list_mutex_.unlock();
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();
   QThread::msleep(2);

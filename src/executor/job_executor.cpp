@@ -24,7 +24,7 @@ MachineJob const *JobExecutor::getActiveJob() const {
  */
 void JobExecutor::startJob() {
   qInfo() << this << "::startJob() @" << getDebugTime();
-  
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
     return;
@@ -141,7 +141,6 @@ void JobExecutor::exec() {
     if (active_job_->end() && active_job_->auto_loop) {
       active_job_->reload();
     }
-    exec_mutex_.unlock();
   }
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
   switch(exec_status) {
@@ -159,6 +158,7 @@ void JobExecutor::exec() {
       pending_cmd_.reset();
       break;
   }
+  exec_mutex_.unlock();
 }
 
 /**
@@ -172,6 +172,7 @@ void JobExecutor::exec() {
  * @return false if unable to add new job to pending list
  */
 bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (!active_job_.isNull()) {
     return false;
   }
