@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <atomic>
 #include <thread>
+#include <queue>
 
 class JobExecutor : public Executor
 {
@@ -49,6 +50,7 @@ private:
 
   QTimer *exec_timer_;
   std::shared_ptr<OperationCmd> pending_cmd_;
+  std::queue<std::shared_ptr<OperationCmd>> cmd_in_progress__;
   MotionControllerState latest_mc_state_;
   size_t completed_cmd_cnt_ = 0;
   bool running_{false};
