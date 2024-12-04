@@ -220,6 +220,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static bool is_framing = false;
     static bool last_is_z_command = false;
     static int dotting_time = 0;
+    static QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
+    static QRegularExpressionMatchIterator i;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
@@ -232,8 +234,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
-    QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
-    QRegularExpressionMatchIterator i = re.globalMatch(gcode);
+    i = re.globalMatch(gcode);
 
     bool is_move_command = false;
     bool should_swap = false;
