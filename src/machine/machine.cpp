@@ -622,10 +622,7 @@ void Machine::handleMotionControllerStateChange(MotionControllerState state) {
   if (state == MotionControllerState::kAlarm) {
     if (motion_controller_->type() == "BSL") {
       BSLMotionController* bsl_mc = (BSLMotionController*)motion_controller_;
-      QMessageBox msgBox;
-      msgBox.setText("Laser alarm detected");
-      msgBox.setInformativeText(bsl_mc->getCurrentError());
-      msgBox.exec();
+      alert("Laser alarm detected", bsl_mc->getCurrentError());
     }
   }
 }
