@@ -141,6 +141,7 @@ void JobExecutor::exec() {
     if (active_job_->end() && active_job_->auto_loop) {
       active_job_->reload();
     }
+    exec_mutex_.unlock();
   }
   OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
   switch(exec_status) {
@@ -158,7 +159,6 @@ void JobExecutor::exec() {
       pending_cmd_.reset();
       break;
   }
-  exec_mutex_.unlock();
 }
 
 /**
