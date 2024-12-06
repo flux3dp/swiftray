@@ -183,7 +183,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
       if (!fixing_aready) {
         fixing_aready = true;
         lcs_set_end_of_list();
-        lcs_execute_list(list_no);
+        if(!executeList(list_no)) return ret;
       }
       ret = lcs_load_list(list_no, 0);
     }
@@ -217,7 +217,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static double center_pos = 55;
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
-    static bool is_framing = false;
     static bool last_is_z_command = false;
     static int dotting_time = 0;
     static QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
@@ -400,7 +399,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_laser_delays(-100, 100);
       lcs_set_scanner_delays(100, 50);
       lcs_set_laser_power(100);
-      lcs_set_laser_mode(LCS_MOPA, is_framing);
+      lcs_set_laser_mode(LCS_MOPA, is_framing_);
       lcs_enable_laser();
       lcs_error_count = 0;
       should_swap = false;
@@ -433,9 +432,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b0010);
     } else if (command == "M103") {
-      is_framing = true;
+      is_framing_ = true;
     } else if (command == "M104") {
-      is_framing = false;
+      is_framing_ = false;
     } else if (!is_move_command) {
       return;
     }
@@ -451,7 +450,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
       lcs_set_end_of_list();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
-      lcs_execute_list(list_no);
+      if(!executeList(list_no)) return;
       first_list = false;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
@@ -466,21 +465,21 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_disable_laser();
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
-      lcs_execute_list(list_no);
+      if(!executeList(list_no)) return;
       QThread::msleep(2);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
       lcs_set_start_list(list_no);
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
-      lcs_execute_list(list_no);
+      if(!executeList(list_no)) return;
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
       lcs_set_start_list(list_no);
       lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
-      lcs_execute_list(list_no);
+      if(!executeList(list_no)) return;
       QThread::msleep(1);
 
       BoardRunStatus Status;
@@ -496,7 +495,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
-      if (!is_framing) lcs_set_laser_control(false);
+      if (!is_framing_) lcs_set_laser_control(false);
     }
 
     // Process move command
@@ -678,14 +677,49 @@ BoardRunStatus BSLMotionController::getBoardStatus() {
   return status;
 }
 
+std::mutex reconnect_mutex_;
 bool BSLMotionController::isConnected() {
   if (is_board_connected_ != getBoardStatus().bConnected) {
     is_board_connected_ = !is_board_connected_;
     if (!is_board_connected_) {
-      qInfo() << "BSLM~::isConnected() - Board disconnected";
-      lcs_release_card(0);
-      Q_EMIT disconnected(); 
+      qInfo() << "BSLM~::isConnected() - Board disconnected" << is_framing_;
+      if(!is_running_laser_){
+        // Handle running thread first
+        QThread::msleep(100);
+      }
+      std::lock_guard<std::mutex> lock(reconnect_mutex_);
+      is_board_connected_ = getBoardStatus().bConnected;
+      if(!is_board_connected_){
+        lcs_release_card(0);
+        if(is_framing_){
+          for(int i = 0; i < 3 && !is_board_connected_; i++){
+            QThread::msleep(200);
+            qInfo() << "Try reconnecting to the board" << i;
+            is_board_connected_ = lcs_connect();
+          }
+          qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
+        }
+        if(!is_board_connected_){
+          Q_EMIT disconnected(); 
+        }
+      }
     }
   }
   return is_board_connected_;
+}
+
+
+// A temparary method to avoid freezing when Promark disconnected
+// TODO: handling for normal task
+bool BSLMotionController::executeList(int list_no) {
+  bool is_connected = true;
+  if (is_framing_) {
+    is_connected = isConnected();
+  } else if (!getBoardStatus().bConnected) {
+    qWarning() << "Execute list when board is not connected";
+  }
+  if (is_connected) {
+    lcs_execute_list(list_no);
+  }
+  return is_connected;
 }

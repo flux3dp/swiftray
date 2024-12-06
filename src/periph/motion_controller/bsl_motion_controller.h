@@ -27,6 +27,7 @@ public:
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
+  bool executeList(int list_no);
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -42,6 +43,7 @@ private:
   QStringList pending_cmds_;
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false;
+  bool is_framing_ = false;
   bool is_handling_high_speed_ = false;
   bool is_threading = false;
   bool should_flush_ = false;
