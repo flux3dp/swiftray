@@ -111,12 +111,12 @@ public:
         }
       }
       if (std::fabs(x - x_) >= epsilon_) {
-        float dist_x = round((x - x_) * 1000) / 1000;
+        float dist_x = round((x - x_) * move_precision_) / move_precision_;
         str_stream_ << "X" << dist_x;
         x_ = x_ + dist_x;
       }
       if (std::fabs(y - y_) >= epsilon_) {
-        float dist_y = std::round((y - y_) * 1000) / 1000;
+        float dist_y = std::round((y - y_) * move_precision_) / move_precision_;
         str_stream_ << "Y" << dist_y;
         y_ = y_ + dist_y;
       }
@@ -131,11 +131,11 @@ public:
         motion_modal_ = GCodeMotionModal::kG01;
       }
       if (std::fabs(x - x_) >= epsilon_) {
-        str_stream_ << "X" << std::round(x * 1000) / 1000;
+        str_stream_ << "X" << std::round(x * move_precision_) / move_precision_;
         x_ = x;
       }
       if (std::fabs(y - y_) >= epsilon_) {
-        str_stream_ << "Y" << std::round(y * 1000) / 1000;
+        str_stream_ << "Y" << std::round(y * move_precision_) / move_precision_;
         y_ = y;
       }
     }
@@ -154,7 +154,7 @@ public:
 
   void moveZ(float z) override {
     str_stream_ << "M102" << std::endl;
-    str_stream_ << "Z" << std::round(z * 1000) / 1000 << std::endl;
+    str_stream_ << "Z" << std::round(z * move_precision_) / move_precision_ << std::endl;
   }
 
   void setLaserPower(float power) override {
@@ -261,5 +261,6 @@ private:
   GCodeDistanceModal distance_modal_ = GCodeDistanceModal::kG90;
   MCodeSpindleModal spindle_modal_ = MCodeSpindleModal::kM05;
   MachineSettings::MachineParam::OriginType machine_origin_;
-  float epsilon_ = 0.001;
+  float epsilon_ = 0.00005;
+  float move_precision_ = 10000; // 10000 for Promark, 1000 for other machines
 };
