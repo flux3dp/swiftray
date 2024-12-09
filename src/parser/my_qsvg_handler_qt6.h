@@ -22,6 +22,7 @@
 #include "QtCore/qhash.h"
 #include "QtCore/qstack.h"
 #include <QtCore/QLoggingCategory>
+#include <QJsonObject>
 
 #include <private/qsvgstyle_p.h>
 #include <private/qcssparser_p.h>
@@ -69,7 +70,7 @@ public:
     };
 
 public:
-    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type);
+    MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type, QJsonObject *default_config = nullptr);
     MyQSvgHandler(QIODevice *device, QtSvg::Options options = {});
     MyQSvgHandler(const QByteArray &data, QtSvg::Options options = {});
     MyQSvgHandler(QXmlStreamReader *const data, QtSvg::Options options = {});
@@ -113,6 +114,7 @@ public:
 
     QtSvg::Options options() const;
     bool trustedSourceMode() const;
+    QJsonObject default_config_;
 
 public:
     bool startElement(const QString &localName, const QXmlStreamAttributes &attributes);
