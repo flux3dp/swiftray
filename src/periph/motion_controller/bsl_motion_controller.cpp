@@ -138,7 +138,7 @@ void BSLMotionController::commandRunnerThread() {
           }
           setState(MotionControllerState::kRun); // Set state to running if there are pending commands
           QString cmd = this->pending_cmds_.front();
-          this->pending_cmds_.pop_front();
+          this->pending_cmds_.pop();
           this->cmd_list_mutex_.unlock();
           this->handleGcode(cmd);
           dequeueCmd(1);
@@ -558,7 +558,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
  */
 MotionController::CmdSendResult BSLMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
   this->cmd_list_mutex_.lock();
-  this->pending_cmds_.push_back(cmd_packet);
+  this->pending_cmds_.push(cmd_packet);
   enqueueCmdExecutor(executor);
   this->cmd_list_mutex_.unlock();
   if (!this->command_runner_thread_.joinable()) {
@@ -612,7 +612,8 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   lcs_stop_execution();
   this->is_running_laser_ = false;
   this->cmd_list_mutex_.lock();
-  this->pending_cmds_.clear();
+  std::queue<QString> new_queue;
+  this->pending_cmds_.swap(new_queue);
   this->cmd_list_mutex_.unlock();
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();

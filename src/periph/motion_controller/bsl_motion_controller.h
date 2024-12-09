@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <mutex>
 #include <thread>
+#include <queue>
 #include "liblcs/lcsApi.h"
 #include "liblcs/lcsExpr.h"
 
@@ -40,7 +41,7 @@ private:
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
 
-  QStringList pending_cmds_;
+  std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false;
   bool is_framing_ = false;
