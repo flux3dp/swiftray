@@ -15,17 +15,36 @@ if(WIN32)
     REQUIRED
   )
 elseif(APPLE)
+  # use prebuilt dylib
+  # set(POPPLER_CUSTOM_LIB_DIR "${CMAKE_SOURCE_DIR}/../lib/prebuilt/poppler")
+  # set(POPPLER_CUSTOM_LIB_DIR "/Users/jasonshiao/FLUX/swiftray/lib/prebuilt/poppler")
+
+  # Find the include directory with GLib headers
+  # find_path(Poppler_INCLUDE_DIR
+  #   NAMES glib/poppler.h
+  #   PATHS ${POPPLER_CUSTOM_INCLUDE_DIR}
+  #   NO_DEFAULT_PATH
+  #   REQUIRED
+  # )
+
+  # find_library(Poppler_LIBRARY
+  #   NAMES poppler-glib poppler-glib.8 # Use the exact library name or a pattern
+  #   PATHS ${POPPLER_CUSTOM_LIB_DIR}
+  #   NO_DEFAULT_PATH  # Ignore system paths
+  #   REQUIRED
+  # )
+  
   find_path(Poppler_INCLUDE_DIR
     NAMES glib/poppler.h
-    PATHS /usr/local/opt/poppler/include/poppler /opt/homebrew/opt/poppler/include/poppler
-    NO_DEFAULT_PATH
+    PATHS /usr/local/Cellar/poppler/24.04.0_1/include/poppler /usr/local/opt/poppler/include/poppler /opt/homebrew/opt/poppler/include/poppler
+    NO_DEFAULT_PATH  # Ignore system paths
     REQUIRED
   )
   
   find_library(Poppler_LIBRARY
     NAMES poppler-glib
-    PATHS /usr/local/opt/poppler/lib /opt/homebrew/opt/poppler/lib
-    NO_DEFAULT_PATH
+    PATHS /usr/local/Cellar/poppler/24.04.0_1/lib /usr/local/opt/poppler/lib /opt/homebrew/opt/poppler/lib
+    NO_DEFAULT_PATH  # Ignore system paths
     REQUIRED
   )
 else()
@@ -70,3 +89,17 @@ if(Poppler_FOUND AND NOT TARGET Poppler::Poppler)
 endif()
 
 mark_as_advanced(Poppler_INCLUDE_DIR Poppler_LIBRARY)
+
+# include(FindPackageHandleStandardArgs)
+# find_package_handle_standard_args(Poppler
+#   REQUIRED_VARS Poppler_LIBRARY
+# )
+
+# if(Poppler_FOUND AND NOT TARGET Poppler::Poppler)
+#   add_library(Poppler::Poppler UNKNOWN IMPORTED)
+#   set_target_properties(Poppler::Poppler PROPERTIES
+#     IMPORTED_LOCATION "${Poppler_LIBRARY}"
+#   )
+# endif()
+
+# mark_as_advanced(Poppler_LIBRARY)
