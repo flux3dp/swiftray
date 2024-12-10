@@ -83,8 +83,18 @@ win32 {
 }
 
 macx{
-    QMAKE_MACOSX_DEPLOYMENT_TARGET = 10.15
+    QMAKE_MACOSX_DEPLOYMENT_TARGET = 13.0
+    LIBS += -L"/Users/jasonshiao/Qt/6.7.2/macos/lib"
     LIBS += -L"/usr/local/lib"
+    LIBS += -lopencv_core
+    LIBS += -lopencv_imgproc
+    LIBS += -lopencv_flann
+    LIBS += -lpotrace
+    LIBS += -lcairo
+    LIBS += -lglib-2.0
+    LIBS += -lgobject-2.0
+    LIBS += -lpoppler-glib
+    LIBS += -lpoppler
 
     # Mac M1
     contains(QMAKE_HOST.arch, arm64) {
@@ -102,6 +112,10 @@ macx{
         LIBS += -L"/usr/lib"
         LIBS += -L"/usr/local/opt/libxml2/lib"
         LIBS += -L"/usr/local/opt/opencv/lib"
+        LIBS += -lboost_thread-mt
+        LIBS += -lboost_system-mt
+        LIBS += -lxml2
+        LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
     }
     LIBS += -lboost_thread-mt
     LIBS += -lboost_system-mt
@@ -157,6 +171,7 @@ win32-msvc {
 }
 
 macx{
+    INCLUDEPATH += /Users/jasonshiao/Qt/6.7.2/macos/include
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include

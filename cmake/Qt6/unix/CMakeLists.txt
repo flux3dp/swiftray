@@ -1,11 +1,13 @@
-set(MIN_MACOS_VERSION 10.14)
+set(MIN_MACOS_VERSION 13.0)
 
 # QT Base Settings
-set(QT_ROOT_DIR "/Users/simon/Qt/6.7.2/macos")
+set(QT_ROOT_DIR "/Users/jasonshiao/Qt/6.7.2/macos")
 set(CMAKE_PREFIX_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
+set(CMAKE_FRAMEWORK_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
 
 # Set build type if none was specified
 set(_default_build_type "RelWithDebInfo")
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 	set(CMAKE_BUILD_TYPE "${_default_build_type}" CACHE STRING "Choose the type of build." FORCE)
 	# Set the possible values of build type for cmake-gui
@@ -30,7 +32,8 @@ include_directories(
 
 # ==== Find dependency packages ====
 # Qt6
-find_package(Qt6 COMPONENTS Core Widgets Quick QuickWidgets Websockets OpenGL QuickControls2 Qml Gui Svg SerialPort OpenGLWidgets Core5Compat REQUIRED)
+find_package(Qt6 COMPONENTS Core Widgets Quick QuickWidgets Websockets OpenGL QuickControls2 Qml Gui Svg SerialPort OpenGLWidgets Core5Compat DBUS REQUIRED HINTS ${QT_ROOT_DIR})
+find_package(Qt6DBus COMPONENTS Private REQUIRED)
 find_package(Qt6Gui COMPONENTS Private REQUIRED)
 find_package(Qt6Widgets COMPONENTS Private REQUIRED)
 find_package(Qt6Svg COMPONENTS Private REQUIRED)
@@ -41,6 +44,10 @@ find_package(Sparkle REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(GLib REQUIRED)
 find_package(Poppler REQUIRED)
+message(STATUS "Qt6Widgets_VERSION: ${Qt6Widgets_VERSION}")
+message(STATUS "QT6_INCLUDE_DIRS: ${Qt6Widgets_INCLUDE_DIRS}")
+message(STATUS "POPPLER_INCLUDE_DIR: ${Poppler_INCLUDE_DIR}")
+message(STATUS "POPPLER_LIBRARIES: ${Poppler_LIBRARY}")
 message(STATUS "SPARKLE_LIBRARIES: ${SPARKLE_LIBRARIES}")
 
 
@@ -79,7 +86,7 @@ include_directories(
 # ==== Set Bundle properties and add executable target ====
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # Define if the app should be hidden from the dock
-  set(MACOSX_HIDE_APP 0)
+  set(MACOSX_HIDE_APP 1)
   set(MACOSX_DEBUG_TARGET ${PROJECT_NAME}) # Use ${PROJECT_NAME} to always generate dSYM, use "swiftray_app_bundle" to only generate dSYM in release build
   # Add LCS libaries into the app bundle
   file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
@@ -123,6 +130,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    COMMAND ${CMAKE_COMMAND} -E echo "Setting rpath for app"
    COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
            $<TARGET_FILE:${PROJECT_NAME}>
+   COMMAND ${CMAKE_COMMAND} -E echo "Setting rpath for app - local"
+   COMMAND install_name_tool -add_rpath "@executable_path"
+           $<TARGET_FILE:${PROJECT_NAME}>
   )
 
   if(ENABLE_SENTRY)
@@ -162,7 +172,7 @@ target_link_libraries(third_party_libs INTERFACE
 target_link_libraries(${PROJECT_NAME} PRIVATE
   "-framework AppKit"
   Qt6::Core
-  Qt6::Qml Qt6::Quick Qt6::QuickWidgets Qt6::Gui Qt6::Svg Qt6::Widgets Qt6::QuickControls2 
+  Qt6::Qml Qt6::Quick Qt6::QuickWidgets Qt6::Gui Qt6::Svg Qt6::Widgets Qt6::QuickControls2 Qt::DBus
   Qt6::Core5Compat
   Qt6::WebSockets Qt6::SerialPort
   Qt6::OpenGL Qt6::OpenGLWidgets
@@ -170,7 +180,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   opencv_imgproc
   opencv_flann
   third_party_libs
-  poppler
+  Poppler::Poppler
   ${SPARKLE_LIBRARIES}
 )
 
@@ -183,9 +193,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 add_custom_target(swiftray_app_bundle)
 set_target_properties(swiftray_app_bundle PROPERTIES FOLDER "Copy Tasks")
 add_dependencies(swiftray_app_bundle ${PROJECT_NAME})
-
-find_program(MACDEPLOYQT_EXECUTABLE macdeployqt PATHS ${Qt6_DIR}/bin)
-if(MACDEPLOYQT_EXECUTABLE)
+message(STATUS "QT_ROOT_DIR: ${QT_ROOT_DIR}")
+find_program(MACDEPLOYQT_EXECUTABLE macdeployqt PATHS ${QT_ROOT_DIR}/bin)
+if(MACDEPLOYQT_EXECUTABLE) 
   message(STATUS "Found macdeployqt : ${MACDEPLOYQT_EXECUTABLE}")
 else()
   message(WARNING "Fail to find macdeployqt. add_qt_mac_app won't have any effect."
@@ -200,16 +210,6 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Step 1. Copying Sparkle framework to app"
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${SPARKLE_LIBRARIES}/Versions/B" "${SPARKLE_FRAMEWORK_PATH}/Versions/B"
   COMMAND ${CMAKE_COMMAND} -E copy "${SPARKLE_LIBRARIES}/Resources/Info.plist" "${SPARKLE_FRAMEWORK_PATH}/Resources/Info.plist"
-  COMMAND ${CMAKE_COMMAND} -E echo "Step 2. Code-signing Sparkle framework"
-  COMMAND codesign
-    --sign ${CODE_SIGN_IDENTITY}
-    --force
-    --deep
-    --options runtime
-    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/AutoUpdate"
-    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/Updater.app"
-    "${SPARKLE_FRAMEWORK_PATH}/Versions/B/Sparkle"
-    "${SPARKLE_FRAMEWORK_PATH}"
   COMMAND ${CMAKE_COMMAND} -E echo "Step 3. Removing .txt files from logs folder"
   COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/logs"
 
@@ -224,7 +224,6 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
   COMMAND "${MACDEPLOYQT_EXECUTABLE}"
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
-    -codesign=${CODE_SIGN_IDENTITY}
     -verbose=2
   COMMAND tar -C "${CMAKE_BINARY_DIR}" -Jcvf ${PROJECT_NAME}.app.tar.xz "${PROJECT_NAME}.app"
 )
