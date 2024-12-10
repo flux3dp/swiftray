@@ -102,6 +102,12 @@ public:
 
   double fillAngle() const;
 
+  bool fillBidirectional() const;
+
+  bool fillHatch() const;
+
+  int dottingTime() const;
+
   Document &document();
 
   /** Setters **/
@@ -167,6 +173,10 @@ private:
   // filling
   double fill_interval_;
   double fill_angle_;
+  bool fill_bidirectional_;
+  bool fill_hatch_;
+  // Promark gradient
+  int dotting_time_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

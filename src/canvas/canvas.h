@@ -2,6 +2,7 @@
 
 #include <QtQuick>
 #include <QQuickWidget>
+#include <QJsonObject>
 #include <canvas/controls/canvas-control.h>
 #include <canvas/controls/grid.h>
 #include <canvas/controls/ruler.h>
@@ -56,7 +57,7 @@ public:
 
   void loop();
 
-  void loadSVG(QByteArray &data, bool skip_confirm = false);
+  void loadSVG(QByteArray &data, bool skip_confirm = false, QJsonObject default_config = QJsonObject());
 
   void loadSVG(QString file_name);
 

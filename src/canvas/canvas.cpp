@@ -110,14 +110,15 @@ Canvas::~Canvas() {
   mem_thread_->wait(1300);
 }
 
-void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm) {
+void Canvas::loadSVG(QByteArray &svg_data, bool skip_confirm, QJsonObject default_config) {
   QElapsedTimer t;
   t.start();
   // convert svg_data to QIODevice
   QBuffer io(&svg_data);
   io.open(QIODevice::ReadOnly);
   QList<LayerPtr> svg_layers;
-  MyQSvgHandler handler(&io, &document(), &svg_layers, MySVG::ReadType::BVG);
+
+  MyQSvgHandler handler(&io, &document(), &svg_layers, MySVG::ReadType::BVG, &default_config);
   if (handler.ok()) {
     qInfo() << "MyQSVGHandler parsed successfully.";
     auto svg_doc = handler.document();

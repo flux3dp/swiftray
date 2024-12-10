@@ -26,6 +26,13 @@ public:
       kDynamicPadding // Based on layer speed and acceleration
   };
 
+
+  enum BitmapHandlerType {
+      NormalMode, // Binary image
+      GradientMode, // Gradient image
+      DepthMode, // Depth mode image
+  };
+
   ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home);
@@ -66,13 +73,13 @@ private:
 
   void outputLayerFillGcode();
 
-  void outputLayerBitmapGcode();
+  void outputLayerBitmapGcode(BitmapHandlerType type);
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
   int calculatePWMPower(unsigned char grayscale);
   bool rasterBitmap(const QImage &layer_image, QRect bbox,
-                    ScanDirectionMode direction_mode, qreal padding_mm);
+                    ScanDirectionMode direction_mode, qreal padding_mm, int* count = nullptr);
   bool rasterBitmapDepthMode(const QImage &layer_image, QRect bbox,
                     ScanDirectionMode direction_mode, qreal padding_mm);
   bool rasterLine(const QLineF& path, const std::vector<std::array<unsigned char, 32>>& data);
@@ -93,8 +100,8 @@ private:
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
   QList<QPolygonF> layer_filled_polygons_; // place the filled path geometry, expressed in unit of document dot
-  QPixmap layer_bitmap_;            // place the image (excluding unfilled path), expressed in unit of document dot
-  QRectF bitmap_dirty_area_;        // Expressed in unit of document dot.
+  QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
+  QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   // === The followings depend on canvas resolution ===
   const qreal canvas_mm_ratio_ = 10.0; // Currently 10 units in canvas = 1 mm in real world

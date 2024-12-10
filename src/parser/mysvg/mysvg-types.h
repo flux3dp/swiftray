@@ -54,6 +54,9 @@ namespace MySVG {
         int pulse_width; //ns
         double fill_interval; //mm
         double fill_angle; //deg
+        bool fill_bidirectional;
+        bool fill_hatch;
+        int dotting_time;
     };
 
     enum ReadType {

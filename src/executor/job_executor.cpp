@@ -24,7 +24,7 @@ MachineJob const *JobExecutor::getActiveJob() const {
  */
 void JobExecutor::startJob() {
   qInfo() << this << "::startJob() @" << getDebugTime();
-  
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
     return;
@@ -103,7 +103,7 @@ void JobExecutor::exec() {
   }
 
   if (active_job_->end()) {
-    if (!pending_cmd_ && cmd_in_progress_.isEmpty()) {
+    if (!pending_cmd_ && cmd_in_progress__.empty()) {
       if (latest_mc_state_ != MotionControllerState::kRun && latest_mc_state_ != MotionControllerState::kPaused) {
         qInfo() << "JobExecutor::exec() - completed @" << getDebugTime();
         // Clear active job
@@ -119,7 +119,7 @@ void JobExecutor::exec() {
       }
     }
     if (this->exec_loop_count % 500 == 1) {
-      qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress_.size()  << "commands @" << getDebugTime();
+      qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress__.size()  << "commands @" << getDebugTime();
     }
     this->exec_wait = 10;
     exec_mutex_.unlock();
@@ -127,9 +127,9 @@ void JobExecutor::exec() {
   }
 
   // Check if the buffer is full
-  if (cmd_in_progress_.length() > 150000) {
+  if (cmd_in_progress__.size() > 150000) {
     if (this->exec_loop_count % 400 == 1) {
-      qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress_.length() << ") is full @" << getDebugTime();
+      qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress__.size() << ") is full @" << getDebugTime();
     }
     this->exec_wait = 10;
     exec_mutex_.unlock();
@@ -149,12 +149,12 @@ void JobExecutor::exec() {
       pending_cmd_.reset();
       break;
     case OperationCmd::ExecStatus::kProcessing:
-      cmd_in_progress_.push_back(pending_cmd_);
+      cmd_in_progress__.push(pending_cmd_);
       pending_cmd_.reset();
       break;
     default:
       completed_cmd_cnt_ += 1;
-      Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress_.length() / active_job_->length()));
+      Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length()));
       Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
       pending_cmd_.reset();
       break;
@@ -172,6 +172,7 @@ void JobExecutor::exec() {
  * @return false if unable to add new job to pending list
  */
 bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
+  std::lock_guard<std::mutex> lock(exec_mutex_);
   if (!active_job_.isNull()) {
     return false;
   }
@@ -193,17 +194,23 @@ void JobExecutor::handleCmdFinish(int code) {
     return;
   }
 
-  if (!cmd_in_progress_.isEmpty()) {
-    if (code == 0) {
-      cmd_in_progress_.first()->succeed();
+  if (!cmd_in_progress__.empty()) {
+    auto front_cmd = cmd_in_progress__.front();
+    if (front_cmd != nullptr) {
+      if (code == 0) {
+        front_cmd->succeed();
+      } else {
+        front_cmd->fail();
+      }
     } else {
-      cmd_in_progress_.first()->fail();
+      int cmd_in_progress_size = cmd_in_progress__.size();
+      qInfo() << "JobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size;
     }
-    cmd_in_progress_.pop_front();
+    cmd_in_progress__.pop();
   }
   completed_cmd_cnt_ += 1;
-  if (completed_cmd_cnt_ % 25 || cmd_in_progress_.length() < 5) {
-    Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress_.length() / active_job_->length()));
+  if (completed_cmd_cnt_ % 25 || cmd_in_progress__.size() < 5) {
+    Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length()));
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   }
 }
@@ -226,7 +233,8 @@ void JobExecutor::handleStopped() {
     active_job_.reset();
   }
   // Clear pending commands
-  cmd_in_progress_.clear();
+  std::queue<std::shared_ptr<OperationCmd>> new_queue;
+  cmd_in_progress__.swap(new_queue);
   pending_cmd_.reset();
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
@@ -253,7 +261,8 @@ void JobExecutor::handleReset() {
     active_job_.reset();
   }
   // Clear pending commands
-  cmd_in_progress_.clear();
+  std::queue<std::shared_ptr<OperationCmd>> new_queue;
+  cmd_in_progress__.swap(new_queue);
   pending_cmd_.reset();
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
@@ -286,7 +295,7 @@ float JobExecutor::getProgress() const {
   if (active_job_.isNull()) {
     return 0;
   }
-  return fmax(0, 100 - 100 * cmd_in_progress_.length() / active_job_->length());
+  return fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length());
 }
 
 /**

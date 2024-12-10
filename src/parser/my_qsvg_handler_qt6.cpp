@@ -34,6 +34,7 @@
 #include "qvarlengtharray.h"
 #include "private/qmath_p.h"
 #include "qimagereader.h"
+#include "qjsonobject.h"
 
 #include "float.h"
 #include <cmath>
@@ -2845,19 +2846,23 @@ static bool parseForeignObjectNode(QSvgNode *parent,
 }
 
 int getAttr(const QXmlStreamAttributes& attributes,
-            const QString& name,
+            const QString& attr_name,
+            QJsonObject *default_config,
+            const QString& key_name,
             int defaultVal) {
-    if (attributes.hasAttribute(name))
-        return attributes.value(name).toInt();
-    return defaultVal;
+    if (attributes.hasAttribute(attr_name))
+        return attributes.value(attr_name).toInt();
+    return default_config->value(key_name).toInt(defaultVal);
 }
 
 double getAttr(const QXmlStreamAttributes& attributes,
-               const QString& name,
+               const QString& attr_name,
+               QJsonObject *default_config,
+               const QString& key_name,
                double defaultVal) {
-    if (attributes.hasAttribute(name))
-        return attributes.value(name).toDouble();
-    return defaultVal;
+    if (attributes.hasAttribute(attr_name))
+        return attributes.value(attr_name).toDouble();
+    return default_config->value(key_name).toDouble(defaultVal);
 }
 
 static QSvgNode *createGNode(QSvgNode *parent,
@@ -2876,27 +2881,31 @@ static QSvgNode *createGNode(QSvgNode *parent,
         resolveColor(attributes.value("data-color"), layer_config.color, handler);
         qInfo() << "Raw Color" << attributes.value("data-color") << "Resolved Color" << layer_config.color;
         layer_config.visible = attributes.value("display").toString() != "none";
-        layer_config.speed = getAttr(attributes, "data-speed", 20.0);
-        layer_config.power = getAttr(attributes, "data-strength", 15.0);
-        layer_config.module = getAttr(attributes, "data-module", 1);
-        layer_config.repeat = getAttr(attributes, "data-repeat", 1);
-        layer_config.height = getAttr(attributes, "data-height", 0.0);
-        layer_config.z_step = getAttr(attributes, "data-zstep", 0.0);
-        layer_config.diode = getAttr(attributes, "data-diode", 0);
-        layer_config.multipass = getAttr(attributes, "data-multipass", 1);
-        layer_config.backlash = getAttr(attributes, "data-backlash", 0.0);
-        layer_config.uv = getAttr(attributes, "data-uv", 0);
-        layer_config.halftone = getAttr(attributes, "data-halftone", 1);
-        layer_config.printing_strength = getAttr(attributes, "data-printingStrength", 100.0);
-        layer_config.focus = getAttr(attributes, "data-focus", 0.0);
-        layer_config.focus_step = getAttr(attributes, "data-focusStep", 0.0);
-        layer_config.min_power = getAttr(attributes, "data-minPower", 0);
-        layer_config.ink = getAttr(attributes, "data-ink", 3);
-        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", 60.0);
-        layer_config.frequency = getAttr(attributes, "data-frequency", 0);
-        layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", 0);
-        layer_config.fill_interval = getAttr(attributes, "data-fillInterval", 0.0);
-        layer_config.fill_angle = getAttr(attributes, "data-fillAngle", 0.0);
+        QJsonObject *default_config = &(handler->default_config_);
+        layer_config.speed = getAttr(attributes, "data-speed", default_config, "speed", 20.0);
+        layer_config.power = getAttr(attributes, "data-strength", default_config, "power", 15.0);
+        layer_config.module = getAttr(attributes, "data-module", default_config, "module", 1);
+        layer_config.repeat = getAttr(attributes, "data-repeat", default_config, "repeat", 1);
+        layer_config.height = getAttr(attributes, "data-height", default_config, "height", 0.0);
+        layer_config.z_step = getAttr(attributes, "data-zstep", default_config, "zStep", 0.0);
+        layer_config.diode = getAttr(attributes, "data-diode", default_config, "diode", 0);
+        layer_config.multipass = getAttr(attributes, "data-multipass", default_config, "multipass", 1);
+        layer_config.backlash = getAttr(attributes, "data-backlash", default_config, "backlash", 0.0);
+        layer_config.uv = getAttr(attributes, "data-uv", default_config, "uv", 0);
+        layer_config.halftone = getAttr(attributes, "data-halftone", default_config, "halftone", 1);
+        layer_config.printing_strength = getAttr(attributes, "data-printingStrength", default_config, "printingStrength", 100.0);
+        layer_config.focus = getAttr(attributes, "data-focus", default_config, "focus", 0.0);
+        layer_config.focus_step = getAttr(attributes, "data-focusStep", default_config, "focusStep", 0.0);
+        layer_config.min_power = getAttr(attributes, "data-minPower", default_config, "minPower", 0);
+        layer_config.ink = getAttr(attributes, "data-ink", default_config, "ink", 3);
+        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", default_config, "printingSpeed", 60.0);
+        layer_config.frequency = getAttr(attributes, "data-frequency", default_config, "frequency", 0);
+        layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", default_config, "pulseWidth", 0);
+        layer_config.fill_interval = getAttr(attributes, "data-fillInterval", default_config, "fillInterval", 0.0);
+        layer_config.fill_angle = getAttr(attributes, "data-fillAngle", default_config, "fillAngle", 0.0);
+        layer_config.fill_bidirectional = getAttr(attributes, "data-biDirectional", default_config, "biDirectional", 0) == 1;
+        layer_config.fill_hatch = getAttr(attributes, "data-crossHatch", default_config, "crossHatch", 0) == 1;
+        layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
@@ -4625,9 +4634,14 @@ static StyleParseMethod findStyleUtilFactoryMethod(const QString &name)
 }
 
 #ifdef MYSVG
-MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type) : 
+MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *svg_layers, MySVG::ReadType read_type, QJsonObject *default_config) : 
     xml(new QXmlStreamReader(device)), m_ownsReader(true), read_type_(read_type), waiting_title_(false)
 {
+    if (default_config) {
+      default_config_ = *default_config;
+     }else {
+      default_config_ = QJsonObject();
+    }
     g_color = Qt::black;
     init();
     qInfo() << "SVG Size: " << m_doc->viewBox().width() << "x" << m_doc->viewBox().height();

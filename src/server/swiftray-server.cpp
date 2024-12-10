@@ -248,8 +248,9 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     this->m_thumbnail = wrapped_file["thumbnail"].toString();
     this->m_rotary_mode = params_obj["rotaryMode"].toBool();
     this->m_engrave_dpi = params_obj["engraveDpi"].toInt();
+    QJsonObject default_config = params_obj["defaultConfig"].toObject();
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
-    this->m_canvas->loadSVG(svg_data_bytes);
+    this->m_canvas->loadSVG(svg_data_bytes, true, default_config);
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
   } else if (action == "convert") {
@@ -439,6 +440,7 @@ bool SwiftrayServer::startFraming() {
 
   outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
   outline_generator.setLaserPower(0.0f);
+  outline_generator.setStep(50);
   // Create Framing Job and start
   if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"))) {
     getMachine()->startJob();

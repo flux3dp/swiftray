@@ -6,6 +6,7 @@
 #include <QRegularExpression>
 #include <mutex>
 #include <thread>
+#include <queue>
 #include "liblcs/lcsApi.h"
 #include "liblcs/lcsExpr.h"
 
@@ -27,21 +28,23 @@ public:
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
+  bool executeList(int list_no);
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
-  void handleGcode(const QString &cmd_packet, bool force_pulse = false);
+  void handleGcode(const QString &cmd_packet);
   void startCommandRunner();
   void commandRunnerThread();
   void dequeueCmd(int count);
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
 
-  QStringList pending_cmds_;
+  std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false;
+  bool is_framing_ = false;
   bool is_handling_high_speed_ = false;
   bool is_threading = false;
   bool should_flush_ = false;

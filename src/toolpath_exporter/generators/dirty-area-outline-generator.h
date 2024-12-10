@@ -151,9 +151,29 @@ public:
     } else {
       str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
       str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
+      if (step_ > 0) {
+        for (int i = 1; x_min_ + i * step_ < x_max_; i++) {
+          str_stream_ << "G1" << "X" << round((x_min_ + i * step_) * 1000) / 1000 << std::endl;
+        }
+      }
       str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
+      if (step_ > 0) {
+        for (int i = 1; y_min_ + i * step_ < y_max_; i++) {
+          str_stream_ << "G1" << "Y" << round((y_min_ + i * step_) * 1000) / 1000 << std::endl;
+        }
+      }
       str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      if (step_ > 0) {
+        for (int i = 1; x_max_ - i * step_ > x_min_; i++) {
+          str_stream_ << "G1" << "X" << round((x_max_ - i * step_) * 1000) / 1000 << std::endl;
+        }
+      }
       str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
+      if (step_ > 0) {
+        for (int i = 1; y_max_ - i * step_ > y_min_; i++) {
+          str_stream_ << "G1" << "Y" << round((y_max_ - i * step_) * 1000) / 1000 << std::endl;
+        }
+      }
       str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
       str_stream_ << "G1S0" << std::endl;
     }
@@ -165,9 +185,14 @@ public:
 
   void setLaserPower(double laser_power) {laser_power_ = laser_power;}
 
+  void setStep(double step) {
+    if (step > 0) step_ = step;
+  }
+
 private:
     int machine_width_;
     int machine_height_;
+    qreal step_ = 0;
     qreal x_min_ = -1;
     qreal x_max_ = -1;
     qreal y_min_ = -1;

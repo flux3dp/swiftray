@@ -27,18 +27,35 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
  * @retval Total time required in ms
  */
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
-  double total_time = 0;
-  double move_time = 0;
+  // Controller constants
+  double z_speed = 3; // mm/s lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
+  double jump_speed = 4000; // mm/s lcs_set_jump_speed_ctrl(4000);
+  double jump_delay = 0.3; // ms lcs_set_delay_mode(true, 200, 400, 10);
+  double laser_delay = 0.2; // ms lcs_set_laser_delays(-100, 100);
+
+  double total_time = 0; // ms
+  double move_distance = 0;
   int current_line = 0;
   bool relative_mode = false;  // G90 or G91
   float last_abs_x = 0, last_abs_y = 0;
-  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500;
+  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
+  int dotting_time = 0; // us
   bool hasEnd = false;
 
   while (current_line < gcode_list.size() && !hasEnd) {
     QString line = gcode_list[current_line];
-    line = line.toUpper().section(';', 0, 0);  // Eliminate comment (;)
-    if (line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+    line = line.toUpper();
+    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)){
+      // Specific comment for High Speed Mode
+      int dots = line.mid(4).toInt();
+      total_time += dots * jump_delay; // Jump delay for each dot
+      total_time += 0.001 * dots * dotting_time; // Actual dotting time
+    } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for High Speed Mode
+      int jumps = line.mid(5).toInt();
+      total_time += jumps * jump_delay;  // Jump delay for blank parts
+    } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
+        line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
         line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
@@ -85,12 +102,14 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
           } else if (current_param == 'F') {
             f_param = val_str.toFloat();
           } else if (current_param == 'S') {
-            // ignore
+            s_param = val_str.toFloat();
+          } else if (current_param == 'T') {
+            dotting_time = val_str.toInt();
           }
 
           // The start of new param
           if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
-              c == 'S' || c == 'F') {
+              c == 'S' || c == 'F' || c == 'T') {
             // Finish a param
             current_param = c;
             val_str.clear();
@@ -101,36 +120,36 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         }
       }
 
-      Q_ASSERT_X(f_param > 0, "GCode Player", "Feedrate must be larger than 0");
-      // NOTE: F value is in unit of mm/min
       if (z_param != 0) {
-        // Z move fPulse = fabs(z_param) * 1600 pulse
-        // RunSpeed = 4800 pulse/second
-        // startSpeed = 10 pulse/second
-        // accTime = 255 ms
-
-        // TODO: Check Z speed
-        // Ingore acc time
-        move_time = 1000.0 * fabs(z_param) / 3;
-        total_time += move_time;
-      } else if (relative_mode) {
-        move_time = 1000.0 * qSqrt(qPow(x_param, 2) + qPow(y_param, 2)) / f_param * 60;
-        total_time += move_time;
-        last_abs_x += x_param;
-        last_abs_y += y_param;
+        // Note: Ingore acc time
+        total_time += 1000.0 * fabs(z_param) / z_speed;
       } else {
-        move_time = 1000.0 *
-                    qSqrt(qPow(x_param - last_abs_x, 2) +
-                          qPow(y_param - last_abs_y, 2)) /
-                    f_param * 60;
-        total_time += move_time;
-        last_abs_x = x_param;
-        last_abs_y = y_param;
+        if (relative_mode) {
+          move_distance = qSqrt(qPow(x_param, 2) + qPow(y_param, 2));
+          last_abs_x += x_param;
+          last_abs_y += y_param;
+        } else {
+          move_distance = qSqrt(qPow(x_param - last_abs_x, 2) +
+                                qPow(y_param - last_abs_y, 2));
+          last_abs_x = x_param;
+          last_abs_y = y_param;
+        }
+        if (move_distance > 0) {
+          if (s_param == 0) {
+            // jump & delay
+            total_time += 1000.0 * move_distance / jump_speed + jump_delay;
+          } else if (dotting_time == 0) {
+            // mark & delay
+            total_time += 1000.0 * move_distance / f_param * 60 + laser_delay;
+          } else {
+            // jump for dotting
+            total_time += 1000.0 * move_distance / jump_speed;
+          }
+        }
       }
     }
     current_line++;
   }
-
   return total_time;
 }
 

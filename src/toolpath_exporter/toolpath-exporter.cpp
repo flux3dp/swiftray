@@ -56,12 +56,12 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
                  * resolution_scale_;
   qInfo() << "[Export] Canvas size: " << canvas_size_;
   // Generate bitmap canvas
-  layer_bitmap_ = QPixmap(QSize(canvas_size_.width(),
-                                canvas_size_.height()));
-  layer_bitmap_.fill(Qt::white);
-
-  bitmap_dirty_area_ = QRectF();
-
+  for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::DepthMode; ++i) {
+    layer_bitmaps_.append(QPixmap(QSize(canvas_size_.width(),
+                                        canvas_size_.height())));
+    layer_bitmaps_[i].fill(Qt::white);
+    bitmap_dirty_areas_.append(QRectF());
+  }
   int processed_layer_cnt = 0;
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
@@ -132,9 +132,10 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   layer_filled_polygons_.clear();
   polygons_mutex_.unlock();
   with_image_ = false;
-  layer_painter_ = std::make_unique<QPainter>(&layer_bitmap_);
   //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
-  bitmap_dirty_area_ = QRectF();
+  for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::DepthMode; ++i) {
+    bitmap_dirty_areas_[i] = QRectF();
+  }
   current_layer_ = layer;
   if (layer->frequency() != 0) {
     // Make sure cmd list is opened
@@ -150,7 +151,6 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   for (auto &shape : layer->children()) {
     convertShape(shape);
   }
-  layer_painter_->end();
   sortPolygons();
   outputLayerGcode();
 }
@@ -184,12 +184,15 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
   global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
 }
 
+// TODO: handling depth mode
 /**
  * @brief Draw the image shape on canvas onto layer pixmap
  * @param bmp
  */
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   QTransform transform = bmp->transform() * global_transform_;
+  BitmapHandlerType type = bmp->gradient() ? BitmapHandlerType::GradientMode : BitmapHandlerType::NormalMode;
+  layer_painter_ = std::make_unique<QPainter>(&layer_bitmaps_[type]);
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
   if (bmp->gradient()) { // gradient mode
@@ -198,15 +201,16 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
     layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
   }
   layer_painter_->restore();
-  bitmap_dirty_area_ = bitmap_dirty_area_.united(global_transform_.mapRect(bmp->boundingRect()));
+  layer_painter_->end();
+  bitmap_dirty_areas_[type] = bitmap_dirty_areas_[type].united(global_transform_.mapRect(bmp->boundingRect()));
   QRectF boundary_mm = resolution_scale_transform_.mapRect(machine_work_area_mm_);
 
   // Boundary check
   if (exceed_boundary_ == false && 
-      (bitmap_dirty_area_.top() < boundary_mm.top() * canvas_mm_ratio_ || 
-      bitmap_dirty_area_.bottom() > boundary_mm.bottom() * canvas_mm_ratio_ ||
-      bitmap_dirty_area_.left() < boundary_mm.left() * canvas_mm_ratio_ || 
-      bitmap_dirty_area_.right() > boundary_mm.right() * canvas_mm_ratio_)) {
+      (bitmap_dirty_areas_[type].top() < boundary_mm.top() * canvas_mm_ratio_ || 
+      bitmap_dirty_areas_[type].bottom() > boundary_mm.bottom() * canvas_mm_ratio_ ||
+      bitmap_dirty_areas_[type].left() < boundary_mm.left() * canvas_mm_ratio_ || 
+      bitmap_dirty_areas_[type].right() > boundary_mm.right() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
   }
 }
@@ -324,7 +328,8 @@ void ToolpathExporter::sortPolygons() {
  * 
  */
 void ToolpathExporter::outputLayerGcode() {
-  outputLayerBitmapGcode();
+  outputLayerBitmapGcode(BitmapHandlerType::NormalMode);
+  outputLayerBitmapGcode(BitmapHandlerType::GradientMode);
   outputLayerFillGcode();
   outputLayerPathGcode();
 }
@@ -350,6 +355,8 @@ void ToolpathExporter::outputLayerFillGcode() {
   double fill_interval = current_layer_->fillInterval() * dpmm_;
   if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
+  bool fill_bidirectional = current_layer_->fillBidirectional();
+  int hatch_count = current_layer_->fillHatch() ? 2 : 1;
   // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
   // Get path bounds
   QRectF bounds = merged_poly.boundingRect();
@@ -359,28 +366,31 @@ void ToolpathExporter::outputLayerFillGcode() {
   double diagonal = qSqrt(bounds.width() * bounds.width() + 
                         bounds.height() * bounds.height()) * 1.1;
   qInfo() << "Diagonal: " << diagonal / dpmm_;
-  
-  // Convert angle to radians
-  double angleRad = qDegreesToRadians(fill_angle);
-  
-  // Calculate perpendicular direction for scanning
-  QPointF direction(qCos(angleRad), qSin(angleRad));
-  QPointF epsilon = direction * 0.001;
-  QPointF perpendicular(-direction.y(), direction.x());
 
-  // Calculate center point
-  QPointF center = bounds.center();
-  qInfo() << "Center Point: " << center / dpmm_;
-  
-  // Calculate start point (offset by half diagonal in perpendicular direction)
-  QPointF start = center - (perpendicular * diagonal / 2);
-  qInfo() << "Start Point: " << start / dpmm_;
-  gen_->turnOnLaser();
-  // Scan across the path
-  for (double offset = -diagonal/2; offset <= diagonal; offset += fill_interval) {
+  for (int hatch = 0; hatch < hatch_count; hatch++) {
+    // Convert angle to radians
+    double angleRad = qDegreesToRadians(fill_angle);
+
+    // Calculate perpendicular direction for scanning
+    QPointF direction(qCos(angleRad), qSin(angleRad));
+    QPointF perpendicular(-direction.y(), direction.x());
+
+    // Calculate center point
+    QPointF center = bounds.center();
+    qInfo() << "Center Point: " << center / dpmm_;
+
+    // Calculate start point (offset by half diagonal in perpendicular direction)
+    QPointF start = center - (perpendicular * diagonal / 2);
+    qInfo() << "Start Point: " << start / dpmm_;
+    gen_->turnOnLaser();
+
+    bool reverse = false;
+    // Scan across the path
+    for (double offset = -diagonal / 2; offset <= diagonal; offset += fill_interval) {
       // Calculate line start and end points
-      QPointF lineStart = start + perpendicular * offset - direction * diagonal/2;
+      QPointF lineStart = start + perpendicular * offset - direction * diagonal / 2;
       QPointF lineEnd = lineStart + direction * diagonal;
+      if (reverse) std::swap(lineStart, lineEnd);
       QLineF scanLine(lineStart, lineEnd);
       std::function<bool(const QPointF& a, const QPointF& b)> isCloser =
           [&lineStart](const QPointF& a, const QPointF& b) {
@@ -521,6 +531,9 @@ void ToolpathExporter::outputLayerFillGcode() {
         // Move to end point
         moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
+      if (fill_bidirectional) reverse = !reverse;
+    }
+    fill_angle += 90;
   }
   polygons_mutex_.unlock();
   gen_->turnOffLaser();
@@ -583,21 +596,22 @@ void ToolpathExporter::outputLayerPathGcode() {
 
 bool depthMode = false;
 
-void ToolpathExporter::outputLayerBitmapGcode() {
-  if (bitmap_dirty_area_.width() == 0) return;
+void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
+  QRectF* bitmap_dirty_area_ = &bitmap_dirty_areas_[type];
+  if (bitmap_dirty_area_->width() == 0) return;
   // Get the image of entire layer
   QImage layer_image;
   if(with_image_) {
-    if (!depthMode) {
-      layer_image = layer_bitmap_.toImage()
+    if (type != BitmapHandlerType::DepthMode) {
+      layer_image = layer_bitmaps_[type].toImage()
                         .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
                         .convertToFormat(QImage::Format_Grayscale8);
     } else {
-      layer_image = layer_bitmap_.toImage()
+      layer_image = layer_bitmaps_[type].toImage()
                         .convertToFormat(QImage::Format_Grayscale8);
     }
   } else {
-    layer_image = layer_bitmap_.toImage()
+    layer_image = layer_bitmaps_[type].toImage()
                       .convertToFormat(QImage::Format_Grayscale8);
   }
 
@@ -619,10 +633,10 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   // NOTE: Express bbox in # of dots
   //       Reserve x-direction padding in bounding box (for acceleration distance)
   const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
-  QRect bbox{QPoint{qMax(qRound(bitmap_dirty_area_.topLeft().x() - padding_mm * dpmm_), 0),
-               qMax(qRound(bitmap_dirty_area_.topLeft().y()), 0)},
-             QPoint{qMin(qRound(bitmap_dirty_area_.bottomRight().x() + padding_mm * dpmm_), canvas_size_.toSize().width() - 1),
-               qMin(qRound(bitmap_dirty_area_.bottomRight().y()), canvas_size_.toSize().height() - 1)}};
+  QRect bbox{QPoint{qMax(qRound(bitmap_dirty_area_->topLeft().x() - padding_mm * dpmm_), 0),
+               qMax(qRound(bitmap_dirty_area_->topLeft().y()), 0)},
+             QPoint{qMin(qRound(bitmap_dirty_area_->bottomRight().x() + padding_mm * dpmm_), canvas_size_.toSize().width() - 1),
+               qMin(qRound(bitmap_dirty_area_->bottomRight().y()), canvas_size_.toSize().height() - 1)}};
 
   gen_->turnOnLaserAdpatively(); // M4
 
@@ -634,15 +648,24 @@ void ToolpathExporter::outputLayerBitmapGcode() {
   gen_->useRelativePositioning();
 
   // Start raster
-  if(is_high_speed_) {
-    rasterBitmapHighSpeed(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
-  }
-  else {
-    if (!depthMode) {
-      rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
-    } else {
+  switch (type) {
+    case BitmapHandlerType::DepthMode:
       rasterBitmapDepthMode(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
-    }
+      break;
+    case BitmapHandlerType::GradientMode:
+      gen_->setDottingTime(current_layer_->dottingTime());
+      if (is_high_speed_) {
+        rasterBitmapHighSpeed(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+      } else {
+        int count = 0;
+        rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm, &count);
+        gen_->addComment(QString("DOT%1").arg(count));
+      }
+      gen_->setDottingTime(0);
+      break;
+    default:
+      rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
+      break;
   }
 
   gen_->useAbsolutePositioning();
@@ -661,7 +684,8 @@ void ToolpathExporter::outputLayerBitmapGcode() {
 bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
     QRect bbox, 
     ScanDirectionMode direction_mode, 
-    qreal padding_mm) {
+    qreal padding_mm,
+    int* count) {
 
   const int white_pixel = 255;
   int current_grayscale = white_pixel; // 0-255 from dark (black) to bright (white)
@@ -705,10 +729,13 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
       const uchar *data_ptr = layer_image.constScanLine(current_pos_sample.y());
       int dot_grayscale = data_ptr[int(current_pos_sample.x())];
       //qInfo() << dot_grayscale;
-      if (dot_grayscale < white_pixel && blank_line) {
-        blank_line = false;
+      if (dot_grayscale < white_pixel) {
+        if(blank_line) blank_line = false;
+        if(count) (*count)++;
+        data_word.set(bit_idx);
+      } else {
+        data_word.reset(bit_idx);
       }
-      dot_grayscale == white_pixel ? data_word.reset(bit_idx) : data_word.set(bit_idx);
 
       if (bit_idx == 0) {
         dot_data_list.push_back(data_word);
@@ -965,6 +992,8 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
   const int white_pixel = 255;
   bool is_emitting_laser = false;
   bool reverse_raster_dir = false;
+  int dot_count = 0;
+  int jump_count = 0;
 
   // 2-1. Prepare raster line paths
   QList<QLine> raster_lines;
@@ -1004,10 +1033,18 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
       const uchar *data_ptr = layer_image.constScanLine(current_pos_sample.y());
       int dot_grayscale = data_ptr[int(current_pos_sample.x())];
       //qInfo() << dot_grayscale;
-      if (dot_grayscale < white_pixel && blank_line) {
-        blank_line = false;
+      if (dot_grayscale < white_pixel) {
+        if (blank_line) blank_line = false;
+        if (!is_emitting_laser) is_emitting_laser = true;
+        dot_count++;
+        data_word.set(bit_idx);
+      } else {
+        if (is_emitting_laser) {
+          is_emitting_laser = false;
+          jump_count++;
+        }
+        data_word.reset(bit_idx);
       }
-      dot_grayscale == white_pixel ? data_word.reset(bit_idx) : data_word.set(bit_idx);
 
       if (bit_idx == 0) {
         dot_data_list.push_back(data_word);
@@ -1050,6 +1087,8 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
 
   // 5. Exit fast raster mode
   gen_->appendCustomCmd(std::string("D5\n"));
+  gen_->addComment(QString("DOT%1").arg(dot_count));
+  gen_->addComment(QString("JUMP%1").arg(jump_count));
 
   return true;
 }
