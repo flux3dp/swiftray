@@ -225,7 +225,30 @@ add_custom_command(TARGET swiftray_app_bundle POST_BUILD
     "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app" 
     -qmldir=${CMAKE_SOURCE_DIR}/src/windows/qml
     -verbose=2
-  COMMAND tar -C "${CMAKE_BINARY_DIR}" -Jcvf ${PROJECT_NAME}.app.tar.xz "${PROJECT_NAME}.app"
+)
+
+add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 5. Change install name"
+)
+foreach(exec_file ${APP_ADDITIONAL_EXEC_FILES})
+  # Get the file name of the executable
+  get_filename_component(file_name ${exec_file}  NAME)
+  add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Change deps path for: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/${file_name}"
+  )
+  foreach(dep_lib ${APP_ADDITIONAL_EXEC_FILES})
+    get_filename_component(dep_name ${dep_lib}  NAME)
+    add_custom_command(
+      TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND install_name_tool -change ${dep_name} "@executable_path/${dep_name}" "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/${file_name}"
+    )
+  endforeach()
+endforeach()
+
+add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 6. Zip app bundle"
+  COMMAND zip -r swiftray-${VERSION}.zip "${PROJECT_NAME}.app"
 )
 
 add_custom_target(swiftray_app_dmg)

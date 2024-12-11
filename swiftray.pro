@@ -116,6 +116,7 @@ macx{
         LIBS += -lboost_system-mt
         LIBS += -lxml2
         LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
+        LIBS += -L$$PWD/third_party/liblcs/lib/macos
     }
     LIBS += -lboost_thread-mt
     LIBS += -lboost_system-mt
