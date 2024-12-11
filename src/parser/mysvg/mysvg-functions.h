@@ -194,6 +194,7 @@ namespace MySVG {
             QSvgUse2* use_node = (QSvgUse2*)node;
             Node n;
             n.type = QSVG_USE;
+            n.is_symbol = false;
             n.node_names.push_back(use_node->linkId());
             QTransform translate = QTransform().translate(use_node->startPos().x(), use_node->startPos().y());
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
