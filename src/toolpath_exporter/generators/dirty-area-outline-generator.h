@@ -42,26 +42,6 @@ public:
 
     // 1. Handle the axis direction (convert from canvas to machine)
     apply_axis_direction(x, y);
-    // switch (machine_origin_) {
-    //   case MachineSettings::MachineParam::OriginType::RearRight:
-    //     // Canvas x axis direction is opposite to machine coordinate
-    //     x = machine_width_ - x;
-    //     break;
-    //   case MachineSettings::MachineParam::OriginType::FrontRight:
-    //     // Canvas x, y axis directions are opposite to machine coordinate
-    //     x = machine_width_ - x;
-    //     y = machine_height_ - y;
-    //     break;
-    //   case MachineSettings::MachineParam::OriginType::RearLeft:
-    //     // NORMAL canvas x, y axis directions are the same as machine coordinate
-    //     break;
-    //   case MachineSettings::MachineParam::OriginType::FrontLeft:
-    //     // Canvas y axis direction is opposite to machine coordinate
-    //     y = machine_height_ - y;
-    //     break;
-    //   default:
-    //     break;
-    // }
 
     // 2 Limit x,y position inside the work area
     if (x > machine_width_) {
