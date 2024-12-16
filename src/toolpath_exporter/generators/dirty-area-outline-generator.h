@@ -24,6 +24,11 @@ public:
     }
     machine_height_ = machine.height;
     machine_width_ = machine.width;
+    float x = 0;
+    float y = 0;
+    apply_axis_direction(x, y);
+    cur_x_ = x;
+    cur_y_ = y;
   };
 
   /**
@@ -34,31 +39,9 @@ public:
    * @param power
    */
   void moveTo(float x, float y, float speed, float power, double x_backlash) override {
-    if (power == 0) {
-      return;
-    }
 
     // 1. Handle the axis direction (convert from canvas to machine)
-    switch (machine_origin_) {
-      case MachineSettings::MachineParam::OriginType::RearRight:
-        // Canvas x axis direction is opposite to machine coordinate
-        x = machine_width_ - x;
-        break;
-      case MachineSettings::MachineParam::OriginType::FrontRight:
-        // Canvas x, y axis directions are opposite to machine coordinate
-        x = machine_width_ - x;
-        y = machine_height_ - y;
-        break;
-      case MachineSettings::MachineParam::OriginType::RearLeft:
-        // NORMAL canvas x, y axis directions are the same as machine coordinate
-        break;
-      case MachineSettings::MachineParam::OriginType::FrontLeft:
-        // Canvas y axis direction is opposite to machine coordinate
-        y = machine_height_ - y;
-        break;
-      default:
-        break;
-    }
+    apply_axis_direction(x, y);
 
     // 2 Limit x,y position inside the work area
     if (x > machine_width_) {
@@ -73,24 +56,16 @@ public:
     }
 
     // 3. Update boundary
-    if (x_min_ == -1 && x_max_ == -1) {
-      x_min_ = x;
-      x_max_ = x;
-    } else if (x < x_min_) {
-      x_min_ = x;
-    } else if (x > x_max_) {
-      x_max_ = x;
-    }
+    float origin_x = cur_x_;
+    float origin_y = cur_y_;
+    cur_x_ = x;
+    cur_y_ = y;
 
-    if (y_min_ == -1 && y_max_ == -1) {
-      y_min_ = y;
-      y_max_ = y;
-    } else if (y < y_min_) {
-      y_min_ = y;
-    } else if (y > y_max_) {
-      y_max_ = y;
+    if (power == 0) {
+      return;
     }
-
+    update_boundary(origin_x, origin_y);
+    update_boundary(x, y);
   }
 
   void setLaserPower(float power) override {
@@ -190,16 +165,61 @@ public:
   }
 
 private:
-    int machine_width_;
-    int machine_height_;
-    qreal step_ = 0;
-    qreal x_min_ = -1;
-    qreal x_max_ = -1;
-    qreal y_min_ = -1;
-    qreal y_max_ = -1;
-    MachineSettings::MachineParam::OriginType machine_origin_;
-    double travel_speed_ = 6000;
-    double laser_power_ = 2;
-    bool should_home_ = false;
-    bool rotary_mode_;
+  int machine_width_;
+  int machine_height_;
+  qreal cur_x_ = 0;
+  qreal cur_y_ = 0;
+  qreal step_ = 0;
+  qreal x_min_ = -1;
+  qreal x_max_ = -1;
+  qreal y_min_ = -1;
+  qreal y_max_ = -1;
+  MachineSettings::MachineParam::OriginType machine_origin_;
+  double travel_speed_ = 6000;
+  double laser_power_ = 2;
+  bool should_home_ = false;
+  bool rotary_mode_;
+
+  void apply_axis_direction(float &x, float &y) {
+    switch (machine_origin_) {
+      case MachineSettings::MachineParam::OriginType::RearRight:
+        // Canvas x axis direction is opposite to machine coordinate
+        x = machine_width_ - x;
+        break;
+      case MachineSettings::MachineParam::OriginType::FrontRight:
+        // Canvas x, y axis directions are opposite to machine coordinate
+        x = machine_width_ - x;
+        y = machine_height_ - y;
+        break;
+      case MachineSettings::MachineParam::OriginType::RearLeft:
+        // NORMAL canvas x, y axis directions are the same as machine coordinate
+        break;
+      case MachineSettings::MachineParam::OriginType::FrontLeft:
+        // Canvas y axis direction is opposite to machine coordinate
+        y = machine_height_ - y;
+        break;
+      default:
+        break;
+    }
+  }
+
+  void update_boundary(float x, float y) {
+    if (x_min_ == -1 && x_max_ == -1) {
+      x_min_ = x;
+      x_max_ = x;
+    } else if (x < x_min_) {
+      x_min_ = x;
+    } else if (x > x_max_) {
+      x_max_ = x;
+    }
+
+    if (y_min_ == -1 && y_max_ == -1) {
+      y_min_ = y;
+      y_max_ = y;
+    } else if (y < y_min_) {
+      y_min_ = y;
+    } else if (y > y_max_) {
+      y_max_ = y;
+    }
+  }
 };
