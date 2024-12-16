@@ -24,9 +24,11 @@ public:
     }
     machine_height_ = machine.height;
     machine_width_ = machine.width;
-    cur_x_ = 0;
-    cur_y_ = 0;
-    apply_axis_direction(cur_x_, cur_y_);
+    float x = 0;
+    float y = 0;
+    apply_axis_direction(x, y);
+    cur_x_ = x;
+    cur_y_ = y;
   };
 
   /**
