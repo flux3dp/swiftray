@@ -127,7 +127,7 @@ void JobExecutor::exec() {
   }
 
   // Check if the buffer is full
-  if (cmd_in_progress__.size() > 150000) {
+  if (cmd_in_progress__.size() > 4000) {
     if (this->exec_loop_count % 400 == 1) {
       qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress__.size() << ") is full @" << getDebugTime();
     }
@@ -154,7 +154,7 @@ void JobExecutor::exec() {
       break;
     default:
       completed_cmd_cnt_ += 1;
-      Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length()));
+      Q_EMIT progressChanged(getProgress());
       Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
       pending_cmd_.reset();
       break;
@@ -210,7 +210,7 @@ void JobExecutor::handleCmdFinish(int code) {
   }
   completed_cmd_cnt_ += 1;
   if (completed_cmd_cnt_ % 25 || cmd_in_progress__.size() < 5) {
-    Q_EMIT progressChanged(fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length()));
+    Q_EMIT progressChanged(getProgress());
     Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
   }
 }
@@ -295,7 +295,7 @@ float JobExecutor::getProgress() const {
   if (active_job_.isNull()) {
     return 0;
   }
-  return fmax(0, 100 - 100 * cmd_in_progress__.size() / active_job_->length());
+  return fmin(fmax(0, 100.0 * completed_cmd_cnt_ / active_job_->length()), 100);
 }
 
 /**
