@@ -12,6 +12,7 @@
 #include <QJsonArray>
 #include <QFile>
 #include <QSerialPortInfo>
+#include <periph/motion_controller/bsl_motion_controller.h>
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
@@ -224,6 +225,14 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     }
   } else if (action == "home") {
     // Implement homing logic
+  } else if (action == "checkButton") {
+    uint32_t io_port = lcs_read_io_port();
+    result["pressed"] = !(io_port & 0b10);
+    BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+    if (controller) {
+      result["isRunning"] = controller->isRunningLaser();
+      result["isFraming"] = controller->isFraming();
+    }
   } else {
     result["success"] = false;
     result["error"] = "Unknown action";

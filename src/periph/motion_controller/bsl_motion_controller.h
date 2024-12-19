@@ -29,6 +29,8 @@ public:
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
   bool executeList(int list_no);
+  bool isRunningLaser() { return is_running_laser_; }
+  bool isFraming() { return is_framing_; }
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
