@@ -198,7 +198,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "startFraming") {
-    result["success"] = this->startFraming();
+    QJsonArray points = params.toObject()["points"].toArray();
+    result["success"] = this->startFraming(points);
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
   } else if (action == "upload") {
@@ -419,8 +420,8 @@ QJsonArray SwiftrayServer::getDeviceList() {
   return devices;
 }
 
-bool SwiftrayServer::startFraming() {
-  qInfo() << "Starting framing job";
+bool SwiftrayServer::startFraming(QJsonArray points) {
+  qInfo() << "Starting framing job" << points;
   if (getMachine()->getJobExecutor()->getActiveJob()) {
     throw std::runtime_error("Job already running");
   }
@@ -428,25 +429,33 @@ bool SwiftrayServer::startFraming() {
     throw std::runtime_error("Machine not connected");
   }
 
-  // Generate gcode for framing
-  QTransform move_translate = QTransform();
-  auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : getMachine()->getCustomOrigin();
-  
   DirtyAreaOutlineGenerator outline_generator(getMachine()->getMachineParam(), this->m_rotary_mode);
-  Document &doc = m_canvas->document();
-  ToolpathExporter exporter(&outline_generator, 
-      doc.settings().dpmm(),
-      getMachine()->getMachineParam().travel_speed,
-      QPointF(std::get<0>(origin), std::get<1>(origin)),
-      ToolpathExporter::PaddingType::kNoPadding,
-      move_translate);
-  exporter.setSortRule(PathSort::NestedSort);
-  exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
-  exporter.convertStack(doc.layers(),  getMachine()->getMachineParam().is_high_speed_mode,  true);
-  if (exporter.isExceedingBoundary()) {
-    throw std::runtime_error("Some items aren't placed fully inside the working area.");
+  int points_size = points.size();
+  if (points_size == 0) {
+    // Generate gcode for framing by doc
+    QTransform move_translate = QTransform();
+    auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : getMachine()->getCustomOrigin();
+  
+    Document &doc = m_canvas->document();
+    ToolpathExporter exporter(&outline_generator, 
+        doc.settings().dpmm(),
+        getMachine()->getMachineParam().travel_speed,
+        QPointF(std::get<0>(origin), std::get<1>(origin)),
+        ToolpathExporter::PaddingType::kNoPadding,
+        move_translate);
+    exporter.setSortRule(PathSort::NestedSort);
+    exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
+    exporter.convertStack(doc.layers(),  getMachine()->getMachineParam().is_high_speed_mode,  true);
+    if (exporter.isExceedingBoundary()) {
+      throw std::runtime_error("Some items aren't placed fully inside the working area.");
+    }
+  } else {
+    // Generate gcode for framing by given points
+    for (int i = 0; i < points_size; i++) {
+      QJsonArray point = points[i].toArray();
+      outline_generator.update_boundary(point[0].toDouble(), point[1].toDouble());
+    }
   }
-
   outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
   outline_generator.setLaserPower(0.0f);
   outline_generator.setStep(50);
