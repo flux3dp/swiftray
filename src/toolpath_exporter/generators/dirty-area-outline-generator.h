@@ -164,6 +164,26 @@ public:
     if (step > 0) step_ = step;
   }
 
+  void update_boundary(float x, float y) {
+    if (x_min_ == -1 && x_max_ == -1) {
+      x_min_ = x;
+      x_max_ = x;
+    } else if (x < x_min_) {
+      x_min_ = x;
+    } else if (x > x_max_) {
+      x_max_ = x;
+    }
+
+    if (y_min_ == -1 && y_max_ == -1) {
+      y_min_ = y;
+      y_max_ = y;
+    } else if (y < y_min_) {
+      y_min_ = y;
+    } else if (y > y_max_) {
+      y_max_ = y;
+    }
+  }
+
 private:
   int machine_width_;
   int machine_height_;
@@ -200,26 +220,6 @@ private:
         break;
       default:
         break;
-    }
-  }
-
-  void update_boundary(float x, float y) {
-    if (x_min_ == -1 && x_max_ == -1) {
-      x_min_ = x;
-      x_max_ = x;
-    } else if (x < x_min_) {
-      x_min_ = x;
-    } else if (x > x_max_) {
-      x_max_ = x;
-    }
-
-    if (y_min_ == -1 && y_max_ == -1) {
-      y_min_ = y;
-      y_max_ = y;
-    } else if (y < y_min_) {
-      y_min_ = y;
-    } else if (y > y_max_) {
-      y_max_ = y;
     }
   }
 };
