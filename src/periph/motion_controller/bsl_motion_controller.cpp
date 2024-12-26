@@ -11,9 +11,24 @@
 #include <QApplication>
 #include <QtCore/qcoreapplication.h>
 
-#define MAX_BUFFER_LIST_SIZE 50000
+#define MAX_BUFFER_LIST_SIZE 10000
+
+// Time estimation constants
+constexpr double Z_SPEED_IN_MM = 3;
+constexpr double Z_PULSE_PER_MM = 1600;
+constexpr double Z_SPEED_IN_PULSE = Z_SPEED_IN_MM * Z_PULSE_PER_MM;
+constexpr double JUMP_SPEED = 4000;
+constexpr int32_t JUMP_DELAY_MIN = 200;
+constexpr int32_t JUMP_DELAY_MAX = 400;
+constexpr double JUMP_DELAY = (double)(JUMP_DELAY_MIN+JUMP_DELAY_MAX)/2000;
+constexpr int32_t LASER_ON_DELAY = -100;
+constexpr int32_t LASER_OFF_DELAY = 100;
+constexpr double LASER_DELAY = (double)(LASER_OFF_DELAY-LASER_ON_DELAY)/1000;
 
 int lcs_error_count = 0;
+uint32_t pos;
+BoardRunStatus status;
+ListStatus list_status;
 
 QString BSLMotionController::getErrorString(int error) {
   switch (error) {
@@ -182,7 +197,6 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
       qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - List already opened" << getDebugTime();
       if (!fixing_aready) {
         fixing_aready = true;
-        lcs_set_end_of_list();
         if(!executeList(list_no)) return ret;
       }
       ret = lcs_load_list(list_no, 0);
@@ -213,7 +227,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int current_s = 0; // Default power
     static bool is_absolute_positioning = true;
     static int list_no = 1;
-    static bool first_list = true;
     static double center_pos = 55;
     static int freq = 100; //100 khz
     static int pulse_width = 100; // 100 ns
@@ -273,8 +286,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "T") {
           dotting_time = value.toInt();
         } else if (type == "F") {
-            current_f = value.toDouble();
-            lcs_set_mark_speed_ctrl(current_f / 60.0);
+            current_f = value.toDouble() / 60;
+            lcs_set_mark_speed_ctrl(current_f);
         } else if (type == "S") {
             current_s = value.toInt();
             if (!is_handling_high_speed_) {
@@ -355,7 +368,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 laser = bits[i];
                 step_count++;
             }
-            if (completed) break;
+            if (completed || !is_running_laser_) break;
         }
         if (std::fabs(final_pos - current_pos) > 0.001) {
             x_move = round((is_absolute_positioning ? final_pos: final_pos - current_pos) * 1000) /1000;
@@ -377,31 +390,26 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           return;
       }
       is_running_laser_ = true;
-      laser_enabled = false;
       list_no = 1;
-      first_list = true;
 
       // Dump all lcs status
-      ListStatus list_status;
-      lcs_read_status((uint32_t *)&list_status);
+      getListStatus();
       if (list_status.bMainOpen || list_status.bSubOepn || list_status.bCharOpen || list_status.bBusy1 || list_status.bBusy2 || list_status.bPaused || list_status.bLoop) {
         qInfo() << "BSLM~::handleGcode() - Irregular Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
+        if (list_status.bPaused) lcs_restart_list();
       }
-      uint32_t running_pos;
-      BoardRunStatus run_status;
-      lcs_get_status((uint32_t *)&run_status, &running_pos);
-      // qInfo() << "BSLM~::handleGcode() - Ready" << run_status.bCacheReady << "Running Pos: " << running_pos << "@" << getDebugTime();
-      // Start new list
-      lcs_set_jump_speed_ctrl(4000);
+      // Control instruction
+      lcs_set_jump_speed_ctrl(JUMP_SPEED);
       lcs_set_mark_speed_ctrl(1000);
-      lcs_set_delay_mode(true, 200, 400, 10);
-      lcs_set_start_list(1);
-      lcs_set_laser_delays(-100, 100);
-      lcs_set_scanner_delays(100, 50);
-      lcs_set_laser_power(100);
+      lcs_set_delay_mode(true, JUMP_DELAY_MIN, JUMP_DELAY_MAX, 10);
       lcs_set_laser_mode(LCS_MOPA, is_framing_);
-      lcs_enable_laser();
+      startList(list_no, freq, pulse_width, current_s);
+      // List Instruction
+      lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
+      lcs_set_scanner_delays(100, 50);
+      lcs_set_laser_power(0);
       lcs_error_count = 0;
+      laser_enabled = false;
       should_swap = false;
       should_end = false;
       should_flush_ = false;
@@ -409,7 +417,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       if (last_is_z_command) {
         // Appand a dummy move command to ensure the last Z command is executed
-        lcs_set_axis_move(1, 1, z > 0, 4800.0, 10.0, 255);
+        lcs_set_axis_move(1, 1, z > 0, Z_SPEED_IN_PULSE, 10.0, 255);
       }
       should_swap = true;
       should_end = true;
@@ -448,13 +456,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
       qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
-      lcs_set_end_of_list();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
-      first_list = false;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
-      lcs_set_start_list(list_no);
+      startList(list_no, freq, pulse_width, current_s);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       this->buffer_size_ = 0;
       QThread::msleep(1);
@@ -463,22 +469,17 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     if (should_end) {
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
       lcs_disable_laser();
-      lcs_set_end_of_list();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
       QThread::msleep(2);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      lcs_set_start_list(list_no);
-      lcs_set_end_of_list();
-      // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
+      lcs_set_end_of_list(); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      lcs_set_start_list(list_no);
-      lcs_set_end_of_list();
-      // qInfo() << "BSLM~::handleGcode() - Executing EMPTY list" << list_no << "@" << getDebugTime();
+      lcs_set_end_of_list(); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
 
@@ -502,7 +503,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
+      lcs_set_axis_move(1, fabs(z) * Z_PULSE_PER_MM, z > 0, Z_SPEED_IN_PULSE, 10, 255);
+      estimated_time_ += fabs(z) * Z_SPEED_IN_MM * 1000;
       last_is_z_command = true;
       // QThread::msleep(1000);
     } else if (is_move_command) {
@@ -519,27 +521,38 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         double diff_y = target_y - y_pos_;
         if (diff_y != 0) {
           lcs_set_axis_move(0, fabs(diff_y) * 100, diff_y < 0, 3200, 1600, 255);
+          // TODO: calulate estimated time
         }
+        double distance = fabs(target_x - x_pos_);
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             if (dotting_time == 0) {
                 mark_to(0, target_x - center_pos);
+                estimated_time_ += distance / current_f * 1000 + LASER_DELAY;
             } else {
                 jump_to(0, target_x - center_pos);
+                estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
                 lcs_laser_on_list(dotting_time);
+                estimated_time_ += dotting_time / 1000;
             }
         } else {
             jump_to(0, target_x - center_pos);
+            estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
         }
       } else {
+        double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             if (dotting_time == 0) {
                 mark_to(-(target_y - center_pos), target_x - center_pos);
+                estimated_time_ += distance / current_f * 1000 + LASER_DELAY;
             } else {
                 jump_to(-(target_y - center_pos), target_x - center_pos);
+                estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
                 lcs_laser_on_list(dotting_time);
+                estimated_time_ += dotting_time / 1000;
             }
         } else {
             jump_to(-(target_y - center_pos), target_x - center_pos);
+            estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
         }
       }
       x_pos_ = target_x;
@@ -610,7 +623,10 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() - Clearing pending commands" << getDebugTime();
   lcs_set_end_of_list();
   lcs_stop_execution();
+  running_task_time_ = 0;
   this->is_running_laser_ = false;
+  getBoardStatus();
+  if (!status.bConnected) lcs_connect();
   this->cmd_list_mutex_.lock();
   std::queue<QString> new_queue;
   this->pending_cmds_.swap(new_queue);
@@ -669,13 +685,18 @@ void BSLMotionController::setScanaheadParams(double worksize, double angle, doub
   qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
 }
 
+std::mutex state_mutex_;
 BoardRunStatus BSLMotionController::getBoardStatus() {
-  BoardRunStatus status;
+  std::lock_guard<std::mutex> lock(state_mutex_);
   status.bConnected = false;
-  uint32_t pos;
   LCS2Error ret = lcs_get_status((uint32_t *)&status, &pos);
   if (ret == LCS_RES_NO_ERROR) return status;
   return status;
+}
+
+ListStatus BSLMotionController::getListStatus() {
+  lcs_read_status((uint32_t *)&list_status);
+  return list_status;
 }
 
 std::mutex reconnect_mutex_;
@@ -683,25 +704,35 @@ bool BSLMotionController::isConnected() {
   if (is_board_connected_ != getBoardStatus().bConnected) {
     is_board_connected_ = !is_board_connected_;
     if (!is_board_connected_) {
-      qInfo() << "BSLM~::isConnected() - Board disconnected" << is_framing_;
-      if(!is_running_laser_){
+      qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_ << "framing:" << is_framing_;
+      if (!is_running_laser_) {
         // Handle running thread first
-        QThread::msleep(100);
+        QThread::msleep(1000);
       }
       std::lock_guard<std::mutex> lock(reconnect_mutex_);
       is_board_connected_ = getBoardStatus().bConnected;
       if(!is_board_connected_){
-        lcs_release_card(0);
-        if(is_framing_){
-          for(int i = 0; i < 3 && !is_board_connected_; i++){
-            QThread::msleep(200);
-            qInfo() << "Try reconnecting to the board" << i;
-            is_board_connected_ = lcs_connect();
-          }
-          qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
+        // Stop execution to avoid lcs crash
+        lcs_pause_list();
+        getListStatus();
+        if (is_running_laser_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
+          // Note: Current list will be abort when lcs_assign_card
+          // Wait for the current task to finish then reconnect
+          // Add addtional 3s for starting time and tolerance
+          int remaining_time = running_task_time_ - task_timer_.elapsed() + 3000;
+          if (remaining_time > 0) QThread::msleep(remaining_time);
         }
-        if(!is_board_connected_){
-          Q_EMIT disconnected(); 
+        for (int i = 0; i < 3 && !is_board_connected_; i++) {
+          QThread::msleep(2000);
+          qInfo() << "Try reconnecting to the board" << i;
+          is_board_connected_ = lcs_connect();
+        }
+        qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
+        if (!is_board_connected_) {
+          lcs_stop_execution();
+          Q_EMIT disconnected();
+        } else if (getState() == MotionControllerState::kRun) {
+          lcs_restart_list();
         }
       }
     }
@@ -709,18 +740,43 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
+void BSLMotionController::startList(int list_no, int freq, int pulse_width, int current_s) {
+  estimated_time_ = 0;
+  lcs_set_start_list(list_no);
+  // Reset laser control in case of disconnection
+  lcs_enable_laser();
+  lcs_set_laser_pulses(1000 / freq, 0, pulse_width);
+  lcs_set_mark_speed_ctrl(current_f);
+  if (current_s > 0) lcs_set_laser_power(current_s / 10);
+}
 
-// A temparary method to avoid freezing when Promark disconnected
-// TODO: handling for normal task
 bool BSLMotionController::executeList(int list_no) {
-  bool is_connected = true;
-  if (is_framing_) {
-    is_connected = isConnected();
-  } else if (!getBoardStatus().bConnected) {
-    qWarning() << "Execute list when board is not connected";
+  lcs_set_end_of_list();
+  if(!is_framing_){
+    // Wait for last list completion
+    do {
+      QThread::msleep(100);
+      // Update status and trigger reconnect if disconnected
+      isConnected();
+      getListStatus();
+    } while (is_running_laser_ && running_task_time_ > 0 &&
+            (list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
-  if (is_connected) {
-    lcs_execute_list(list_no);
+  if (!is_running_laser_ || !status.bConnected) return false;
+  int e = lcs_execute_list(list_no);
+  if (e == LCS_BOARD_NOT_CONNECT) {
+    // Trigger reconnect
+    bool is_connected = isConnected();
+    e = lcs_execute_list(list_no);
+    if (e != LCS_RES_NO_ERROR) {
+      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
+      this->current_error_ = e;
+      return false;
+    }
   }
-  return is_connected;
+  if (task_timer_.isValid()) task_timer_.restart();
+  else task_timer_.start();
+  running_task_time_ = estimated_time_;
+  estimated_time_ = 0;
+  return true;
 }

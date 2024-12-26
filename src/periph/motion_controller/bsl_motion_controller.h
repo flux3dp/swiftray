@@ -4,6 +4,7 @@
 
 #include <QStringList>
 #include <QRegularExpression>
+#include <QElapsedTimer>
 #include <mutex>
 #include <thread>
 #include <queue>
@@ -28,7 +29,6 @@ public:
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
-  bool executeList(int list_no);
   bool isRunningLaser() { return is_running_laser_; }
   bool isFraming() { return is_framing_; }
 
@@ -42,6 +42,9 @@ private:
   void dequeueCmd(int count);
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
+  ListStatus getListStatus();
+  void startList(int list_no, int freq, int pulse_width, int current_s) {
+  bool executeList(int list_no);
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
@@ -55,10 +58,13 @@ private:
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;
-  double current_f = 6000.0; // Default speed
+  double current_f = 100.0; // Default speed, mm/s
   std::thread command_runner_thread_;
   int current_error_ = 0;
   double high_speed_step_;
   int high_speed_data_count_ = 0;
   QString high_speed_data_;
+  double estimated_time_ = 0; // Time for current writing list, ms
+  double running_task_time_ = 0; // Time for current executing list, ms
+  QElapsedTimer task_timer_;
 };

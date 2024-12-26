@@ -556,12 +556,21 @@ bool lcs_available() {
     return lcs_search_cards() != 0;
 }
 
+std::mutex connect_mutex_;
 bool lcs_connect() {
     if (!lcs_available()) {
         printf("LCS:: No laser cards found.\n");
         return false;
     }
-    
+    BoardRunStatus status;
+    uint32_t pos;
+    lcs_get_status((uint32_t*)&status, &pos);
+    if (status.bConnected) {
+        printf("LCS:: Already connected to BSL card #0");
+        return true;
+    }
+
+    std::lock_guard<std::mutex> lock(connect_mutex_);
     // Refresh the card list every time
     lcs_remove_card(0);
     lcs_assign_card(0, 0);
@@ -579,9 +588,7 @@ bool lcs_connect() {
 
     printf("LCS:: Selected BSL card #0. Getting status.\n");
     // Double Check with get_status
-    BoardRunStatus status;
-    uint32_t pos;
-    auto res = lcs_get_status((uint32_t*)&status, &pos);
+    lcs_get_status((uint32_t*)&status, &pos);
     if (!status.bConnected) {
         printf("LCS:: Failed to really connect to BSL card #0.\n");
         return false;
