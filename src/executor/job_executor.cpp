@@ -103,7 +103,8 @@ void JobExecutor::exec() {
   }
 
   if (active_job_->end()) {
-    if (!pending_cmd_ && cmd_in_progress__.empty()) {
+    if ((isGRBL && (!pending_cmd_ && cmd_in_progress__.empty())) ||
+        !isGRBL && (pending_cmd_str_.isNull() && cmd_in_progress_cnt_ == 0)) {
       if (latest_mc_state_ != MotionControllerState::kRun && latest_mc_state_ != MotionControllerState::kPaused) {
         qInfo() << "JobExecutor::exec() - completed @" << getDebugTime();
         // Clear active job
@@ -119,7 +120,7 @@ void JobExecutor::exec() {
       }
     }
     if (this->exec_loop_count % 500 == 1) {
-      qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << cmd_in_progress__.size()  << "commands @" << getDebugTime();
+      qInfo() << "JobExecutor::exec() - Job has ended, yet waiting" << (isGRBL ? cmd_in_progress__.size() : cmd_in_progress_cnt_) << "commands @" << getDebugTime();
     }
     this->exec_wait = 10;
     exec_mutex_.unlock();
@@ -127,37 +128,50 @@ void JobExecutor::exec() {
   }
 
   // Check if the buffer is full
-  if (cmd_in_progress__.size() > 4000) {
+  if ((isGRBL ? cmd_in_progress__.size() : cmd_in_progress_cnt_) > 4000) {
     if (this->exec_loop_count % 400 == 1) {
-      qInfo() << "JobExecutor::exec() - buffer (" << cmd_in_progress__.size() << ") is full @" << getDebugTime();
+      qInfo() << "JobExecutor::exec() - buffer (" << (isGRBL ? cmd_in_progress__.size() : cmd_in_progress_cnt_) << ") is full @" << getDebugTime();
     }
     this->exec_wait = 10;
     exec_mutex_.unlock();
     return;
   }
 
-  if (!pending_cmd_) {
-    pending_cmd_ = active_job_->getNextCmd();
-    if (active_job_->end() && active_job_->auto_loop) {
-      active_job_->reload();
+  if (isGRBL) {
+    if (!pending_cmd_) {
+      pending_cmd_ = active_job_->getNextCmd();
+      if (active_job_->end() && active_job_->auto_loop) {
+        active_job_->reload();
+      }
+      exec_mutex_.unlock();
     }
-    exec_mutex_.unlock();
-  }
-  OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
-  switch(exec_status) {
-    case OperationCmd::ExecStatus::kIdle:
-      pending_cmd_.reset();
-      break;
-    case OperationCmd::ExecStatus::kProcessing:
-      cmd_in_progress__.push(pending_cmd_);
-      pending_cmd_.reset();
-      break;
-    default:
-      completed_cmd_cnt_ += 1;
-      Q_EMIT progressChanged(getProgress());
-      Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
-      pending_cmd_.reset();
-      break;
+    OperationCmd::ExecStatus exec_status = pending_cmd_->execute(this, motion_controller_);
+    switch(exec_status) {
+      case OperationCmd::ExecStatus::kIdle:
+        pending_cmd_.reset();
+        break;
+      case OperationCmd::ExecStatus::kProcessing:
+        cmd_in_progress__.push(pending_cmd_);
+        pending_cmd_.reset();
+        break;
+      default:
+        completed_cmd_cnt_ += 1;
+        Q_EMIT progressChanged(getProgress());
+        Q_EMIT elapsedTimeChanged(active_job_->getElapsedTime());
+        pending_cmd_.reset();
+        break;
+    }
+  } else {
+    if (pending_cmd_str_.isNull()) {
+      pending_cmd_str_ = active_job_->getNextCmdString();
+      if (active_job_->end() && active_job_->auto_loop) {
+        active_job_->reload();
+      }
+      cmd_in_progress_cnt_++;
+      exec_mutex_.unlock();
+    }
+    motion_controller_->sendCmdPacket(this, pending_cmd_str_);
+    pending_cmd_str_.clear();
   }
 }
 
@@ -177,6 +191,7 @@ bool JobExecutor::setNewJob(QSharedPointer<MachineJob> new_job) {
     return false;
   }
   new_job->setMotionController(motion_controller_);
+  isGRBL = motion_controller_->type() != "BSL";
   pending_job_ = new_job;
   return true;
 }
@@ -194,19 +209,23 @@ void JobExecutor::handleCmdFinish(int code) {
     return;
   }
 
-  if (!cmd_in_progress__.empty()) {
-    auto front_cmd = cmd_in_progress__.front();
-    if (front_cmd != nullptr) {
-      if (code == 0) {
-        front_cmd->succeed();
+  if (isGRBL) {
+    if (!cmd_in_progress__.empty()) {
+      auto front_cmd = cmd_in_progress__.front();
+      if (front_cmd != nullptr) {
+        if (code == 0) {
+          front_cmd->succeed();
+        } else {
+          front_cmd->fail();
+        }
       } else {
-        front_cmd->fail();
+        int cmd_in_progress_size = cmd_in_progress__.size();
+        qInfo() << "JobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size;
       }
-    } else {
-      int cmd_in_progress_size = cmd_in_progress__.size();
-      qInfo() << "JobExecutor::handleCmdFinish() - front_cmd is null- cmd_in_progress_ size:" << cmd_in_progress_size;
+      cmd_in_progress__.pop();
     }
-    cmd_in_progress__.pop();
+  } else if (cmd_in_progress_cnt_>0) {
+    cmd_in_progress_cnt_--;
   }
   completed_cmd_cnt_ += 1;
   if (completed_cmd_cnt_ % 25 || cmd_in_progress__.size() < 5) {
@@ -233,9 +252,14 @@ void JobExecutor::handleStopped() {
     active_job_.reset();
   }
   // Clear pending commands
-  std::queue<std::shared_ptr<OperationCmd>> new_queue;
-  cmd_in_progress__.swap(new_queue);
-  pending_cmd_.reset();
+  if (isGRBL) {
+    std::queue<std::shared_ptr<OperationCmd>> new_queue;
+    cmd_in_progress__.swap(new_queue);
+    pending_cmd_.reset();
+  } else {
+    cmd_in_progress_cnt_ = 0;
+    pending_cmd_str_.clear();
+  }
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
   qInfo() << this << "::handleStopped()" << "cleared all commands" << getDebugTime();
@@ -261,9 +285,14 @@ void JobExecutor::handleReset() {
     active_job_.reset();
   }
   // Clear pending commands
-  std::queue<std::shared_ptr<OperationCmd>> new_queue;
-  cmd_in_progress__.swap(new_queue);
-  pending_cmd_.reset();
+  if (isGRBL) {
+    std::queue<std::shared_ptr<OperationCmd>> new_queue;
+    cmd_in_progress__.swap(new_queue);
+    pending_cmd_.reset();
+  } else {
+    cmd_in_progress_cnt_ = 0;
+    pending_cmd_str_.clear();
+  }
   changeState(State::kStopped);
   Q_EMIT progressChanged(0);
   qInfo() << this << "::handleReset()" << "cleared all commands" << getDebugTime();

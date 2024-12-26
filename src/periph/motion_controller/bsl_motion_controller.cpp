@@ -223,7 +223,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static QRegularExpressionMatchIterator i;
 
     // Skip these GCode
-    if (gcode == "\u0018" || gcode == "$I\n" || gcode == "$H\n") {
+    if (gcode == "\u0018" || gcode == "$I" || gcode == "$H") {
         return;
     }
 

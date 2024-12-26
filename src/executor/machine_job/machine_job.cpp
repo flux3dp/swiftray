@@ -461,6 +461,12 @@ std::shared_ptr<OperationCmd> MachineJob::getNextCmd() {
   return cmd;
 }
 
+QString MachineJob::getNextCmdString() {
+  if (end()) return QString();
+  auto idx = next_gcode_idx_++;
+  return gcode_list_.at(idx);
+}
+
 float MachineJob::getProgressPercent() const {
   if (gcode_list_.isEmpty()) {
     return 100;
