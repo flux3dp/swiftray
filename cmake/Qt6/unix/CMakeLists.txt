@@ -248,7 +248,7 @@ endforeach()
 
 add_custom_command(TARGET swiftray_app_bundle POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E echo "Step 6. Zip app bundle"
-  COMMAND zip -r swiftray-${VERSION}.zip "${PROJECT_NAME}.app"
+  COMMAND zip -r swiftray-${PROJECT_VERSION_STR}.zip "${PROJECT_NAME}.app"
 )
 
 add_custom_target(swiftray_app_dmg)
