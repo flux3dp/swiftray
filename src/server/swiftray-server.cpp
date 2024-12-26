@@ -220,8 +220,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "getStatus") { // The old "play report" action in Beam Studio
     result["st_id"] = getMachine()->getStatusId();
     result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
-    bool is_connected = getMachine()->isConnected();
-    if (!is_connected) {
+    BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+    if (controller && !controller->getBoardStatus().bConnected) {
       result["error"] = "DISCONNECTED";
     }
   } else if (action == "home") {

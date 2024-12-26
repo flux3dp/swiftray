@@ -17,6 +17,7 @@ public:
   explicit MachineJob(QString job_name = "Job");
 
   virtual std::shared_ptr<OperationCmd> getNextCmd();
+  QString getNextCmdString();
   virtual bool end() const;
   virtual void reload();
   virtual float getProgressPercent() const;

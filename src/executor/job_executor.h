@@ -49,9 +49,16 @@ private:
   QSharedPointer<MachineJob> last_job_;   // When finished, move active_job_ to here for replay later
 
   QTimer *exec_timer_;
+  // cmd for normal machine
   std::shared_ptr<OperationCmd> pending_cmd_;
   std::queue<std::shared_ptr<OperationCmd>> cmd_in_progress__;
+  // cmd for Promark
+  QString pending_cmd_str_;
+  int pending_cmd_id_ = -1;
+  int cmd_in_progress_cnt_ = 0;
+
   MotionControllerState latest_mc_state_;
   size_t completed_cmd_cnt_ = 0;
   bool running_{false};
+  bool isGRBL{true};
 };
