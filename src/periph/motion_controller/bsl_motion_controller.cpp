@@ -714,6 +714,7 @@ bool BSLMotionController::isConnected() {
       if(!is_board_connected_){
         // Stop execution to avoid lcs crash
         lcs_pause_list();
+        lcs_release_card(0);
         getListStatus();
         if (is_running_laser_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
           // Note: Current list will be abort when lcs_assign_card
@@ -754,23 +755,37 @@ bool BSLMotionController::executeList(int list_no) {
   lcs_set_end_of_list();
   if(!is_framing_){
     // Wait for last list completion
+    double max_waiting_time = running_task_time_ + 3000;
+    if (!task_timer_.isValid()) task_timer_.start();
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
       isConnected();
       getListStatus();
+      if (ask_timer_.elapsed() > max_waiting_time) {
+        // In case bBusy1 and bBusy2 are not updated
+        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
+        break;
+      }
     } while (is_running_laser_ && running_task_time_ > 0 &&
             (list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
   if (!is_running_laser_ || !status.bConnected) return false;
   int e = lcs_execute_list(list_no);
-  if (e == LCS_BOARD_NOT_CONNECT) {
+  if (e != LCS_RES_NO_ERROR) {
+    if (e == LCS_GENERAL_CURRENTLY_BUSY) {
+      // Sometimes happens after reconnecting
+      // Board is connected but not able to execute list
+      qInfo() << "Board connected but currently busy; force reconnecting" << getDebugTime();
+      lcs_connect(true);
+    }
     // Trigger reconnect
     bool is_connected = isConnected();
     e = lcs_execute_list(list_no);
     if (e != LCS_RES_NO_ERROR) {
       qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
       this->current_error_ = e;
+      this->stop();
       return false;
     }
   }
