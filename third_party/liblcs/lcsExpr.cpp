@@ -11,6 +11,7 @@ typedef void *HINSTANCE;
 #else
 #include <Windows.h>
 #include <cstdio>
+#include <mutex>
 #endif
 
 volatile HINSTANCE gLibLCS = NULL;
@@ -557,17 +558,19 @@ bool lcs_available() {
 }
 
 std::mutex connect_mutex_;
-bool lcs_connect() {
+bool lcs_connect(bool force) {
     if (!lcs_available()) {
         printf("LCS:: No laser cards found.\n");
         return false;
     }
     BoardRunStatus status;
     uint32_t pos;
-    lcs_get_status((uint32_t*)&status, &pos);
-    if (status.bConnected) {
-        printf("LCS:: Already connected to BSL card #0");
-        return true;
+    if (!force) {
+        lcs_get_status((uint32_t*)&status, &pos);
+        if (status.bConnected) {
+            printf("LCS:: Already connected to BSL card #0");
+            return true;
+        }
     }
 
     std::lock_guard<std::mutex> lock(connect_mutex_);

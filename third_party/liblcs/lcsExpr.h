@@ -1,3 +1,5 @@
+#pragma once
+
 // lcsdll Explicitly linked header files
 #include "public.h"
 
@@ -1794,5 +1796,5 @@ extern LCS_ETH_REMOVE_CARD lcs_eth_remove_card;
 }			//extern "C" 
 #endif
 
-bool lcs_connect();
+bool lcs_connect(bool force = false);
 bool lcs_available();
