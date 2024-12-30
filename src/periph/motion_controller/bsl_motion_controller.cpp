@@ -762,7 +762,7 @@ bool BSLMotionController::executeList(int list_no) {
       // Update status and trigger reconnect if disconnected
       isConnected();
       getListStatus();
-      if (ask_timer_.elapsed() > max_waiting_time) {
+      if (task_timer_.elapsed() > max_waiting_time) {
         // In case bBusy1 and bBusy2 are not updated
         qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
         break;
