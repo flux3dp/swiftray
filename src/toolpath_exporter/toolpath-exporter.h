@@ -99,7 +99,7 @@ private:
   double travel_speed_ = 80;      // The speed form point to point(mm/s)
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
-  QList<QPolygonF> layer_filled_polygons_; // place the filled path geometry, expressed in unit of document dot
+  QList<QList<QPolygonF>> layer_filled_polygons_; // place the filled path geometry, expressed in unit of document dot
   QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
   QSizeF canvas_size_;              // Expressed in unit of document dot.

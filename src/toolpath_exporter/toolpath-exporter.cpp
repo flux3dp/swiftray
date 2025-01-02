@@ -244,7 +244,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     polygons_mutex_.lock();
     transformed_path.setFillRule(Qt::WindingFill);
     transformed_path = transformed_path.simplified();
-    layer_filled_polygons_.append(transformed_path.toFillPolygon());
+    layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
     polygons_mutex_.unlock();
   }
   // Line shape
@@ -340,9 +340,12 @@ void ToolpathExporter::outputLayerGcode() {
 void ToolpathExporter::outputLayerFillGcode() {
   QPolygonF merged_poly;
   polygons_mutex_.lock();
-  for (auto &poly : layer_filled_polygons_) {
-    if (poly.empty()) continue;
-    merged_poly = merged_poly.united(poly);
+  for (auto &polys : layer_filled_polygons_) {
+    if (polys.empty()) continue;
+    for (const auto& poly : polys) {
+      if (poly.empty()) continue;
+      merged_poly = merged_poly.united(poly);
+    }
   }
   double width = canvas_size_.width();
   double height = canvas_size_.height();
@@ -443,19 +446,22 @@ void ToolpathExporter::outputLayerFillGcode() {
       QList<QList<QPointF>> all_intersections;
       QList<QPointF> merged_intersections;
       QList<int> indices(layer_filled_polygons_.size());
-      for (const auto& poly : layer_filled_polygons_) {
-        if (poly.empty()) continue;
+      for (const auto& polys : layer_filled_polygons_) {
+        if (polys.empty()) continue;
         QList<QPointF> intersections;
-        // Check each line segment of the polygon
-        for (int i = 0; i < poly.size(); ++i) {
-          QPointF curr = poly[i];
-          QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
-          QLineF pathSegment(curr, next);
+        for (const auto& poly : polys) {
+          if (poly.empty()) continue;
+          // Check each line segment of the polygon
+          for (int i = 0; i < poly.size(); ++i) {
+            QPointF curr = poly[i];
+            QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
+            QLineF pathSegment(curr, next);
 
-          QPointF intersection;
-          if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-            // Ignore intersections within merged path
-            intersections.append(intersection);
+            QPointF intersection;
+            if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
+              // Ignore intersections within merged path
+              intersections.append(intersection);
+            }
           }
         }
         if (intersections.size() == 0) continue;
@@ -476,7 +482,7 @@ void ToolpathExporter::outputLayerFillGcode() {
         for (int i = 0; !hasReachEnd && i < all_intersections.size(); ++i) {
           for (int j = indices[i]; !hasReachEnd && j < all_intersections[i].size(); j += 2) {
             QPointF start = all_intersections[i][j];
-            if (isCloser(start, lastOffPoint)) {
+            if (isCloser(start, lastOffPoint) || start == lastOffPoint) {
               // Handle overlapping intersections
               QPointF end = all_intersections[i][j + 1];
               if (isCloser(end, lastOffPoint)) {
