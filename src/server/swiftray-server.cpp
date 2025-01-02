@@ -199,7 +199,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement kick logic
   } else if (action == "startFraming") {
     QJsonArray points = params.toObject()["points"].toArray();
-    result["success"] = this->startFraming(points);
+    int width = params.toObject()["width"].toInt();
+    result["success"] = this->startFraming(points, width);
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
   } else if (action == "upload") {
@@ -420,8 +421,8 @@ QJsonArray SwiftrayServer::getDeviceList() {
   return devices;
 }
 
-bool SwiftrayServer::startFraming(QJsonArray points) {
-  qInfo() << "Starting framing job" << points;
+bool SwiftrayServer::startFraming(QJsonArray points, int width) {
+  qInfo() << "Starting framing job" << points << "width:" << width;
   if (getMachine()->getJobExecutor()->getActiveJob()) {
     throw std::runtime_error("Job already running");
   }
@@ -451,6 +452,7 @@ bool SwiftrayServer::startFraming(QJsonArray points) {
     }
   } else {
     // Generate gcode for framing by given points
+    if (width > 0) outline_generator.setWorkarea(QRectF(0, 0, width, width));
     for (int i = 0; i < points_size; i++) {
       QJsonArray point = points[i].toArray();
       outline_generator.update_boundary(point[0].toDouble(), point[1].toDouble());
