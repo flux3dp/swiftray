@@ -273,20 +273,25 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
     machine_param.height = workarea["height"].toInt();
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
-    if (type == "fcode") {
-      qInfo() << "Generating FCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
+    bool is_promark = params_obj["isPromark"].toBool();
+    if (!is_promark) {
+      qInfo() << "Generating Task Code... TYPE" << type << "DPI" << this->m_engrave_dpi;
       QTransform move_translate = QTransform();
       ToolpathExporterFcode exporter(move_translate, m_engrave_dpi, &params_obj, &m_thumbnail);
       bool completed = exporter.convertStack(m_canvas->document().layers(), nullptr);
       if (!completed) {
         return false;
       }
-      result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
+      if (type == "fcode") {
+        result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
+        result["timeCost"] = exporter.getTimeCost();
+        result["metadata"] = exporter.getMetadata();
+      } else {
+        result["gcode"] = QString::fromStdString(exporter.toString());
+      }
       result["fileName"] = "swiftray-conversion";
-      result["timeCost"] = exporter.getTimeCost();
-      result["metadata"] = exporter.getMetadata();
     } else {
-      qInfo() << "Generating GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
+      qInfo() << "Generating Promark GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
       bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
       bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode

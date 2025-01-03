@@ -116,27 +116,14 @@ class FCodeGenerator {
       write(s, &script_crc32);
     }
   }
-  virtual void sleep(float seconds) {
-    write_command(4, &script_crc32);
-    write(seconds * 1000, &script_crc32);
-  }
+
   virtual void home(void) { write_command(1, &script_crc32); }
 
   void pause(bool to_standby_position) {
     write_command((to_standby_position ? 5 : 6), &script_crc32);
   }
 
-  void set_toolhead_heater_temperature(float temperature, bool wait) {
-    write_command(wait ? 24 : 16, &script_crc32);
-    write(temperature, &script_crc32);
-  }
-
-  void set_toolhead_fan_speed(float strength) {
-    write_command(48, &script_crc32);
-    write(strength, &script_crc32);
-  }
-
-  void set_toolhead_pwm(float strength, bool update = false) {
+  virtual void set_toolhead_pwm(float strength, bool update = false) {
     if (update) {
       current_pwm = strength;
     }
@@ -144,21 +131,12 @@ class FCodeGenerator {
     write(strength, &script_crc32);
   }
 
-  void dwell_cmd(uint32_t milli_second) {
-    write_command(4, &script_crc32);
-    write(milli_second, &script_crc32);
-  }
-
   void set_toolhead_laser_module(uint32_t laser_type) {
     write_command(7, &script_crc32);
     write(laser_type, &script_crc32);
   }
 
-  void set_calibrate(void) {
-    write_command(8, &script_crc32);
-    write(uint32_t(1), &script_crc32);
-  }
-
+  // Gradient mode, fcode only
   void turn_on_gradient_print_mode(char resolution) {
     write_command(16, &script_crc32);
     write(uint8_t(1), &script_crc32);
@@ -191,7 +169,9 @@ class FCodeGenerator {
     write_command(16, &script_crc32);
     write(uint8_t(5), &script_crc32);
   }
+  // End of gradient mode
 
+  // Printing mode, V2 only
   void enter_printer_mode(void) {
     write_command(18, &script_crc32);
     write(uint8_t(0), &script_crc32);
@@ -254,6 +234,7 @@ class FCodeGenerator {
     }
     set_printer_packet_crc(crc16(payload));
   }
+  // End of printing mode
 
   void sync_grbl_motion(uint32_t val) {
     write_command(18, &script_crc32);
@@ -413,13 +394,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
       }
     }
     FCodeGenerator::moveto(flags, feedrate, x, y, z, a, s);
-  }
-
-  void sleep(float seconds) {
-    if (!isnan(seconds)) {
-      time_cost += seconds;
-    }
-    FCodeGenerator::sleep(seconds);
   }
 
   void home(void) {
@@ -714,12 +688,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     FCodeGenerator::moveto(flags, feedrate, x, y, z, a, s);
   }
 
-  void sleep(float seconds) {
-    if (!isnan(seconds))
-      time_cost += seconds;
-    FCodeGenerator::sleep(seconds);
-  }
-
   void home(void) override {
     current_x = current_y = current_z = 0;
     FCodeGenerator::home();
@@ -809,4 +777,84 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     write_to_all(str.toStdString().c_str(), str.size(), &post_config_crc32);
     FCodeGenerator::write((uint32_t)post_config_crc32, NULL, true);
   }
+};
+
+class FCodeGeneratorG : public FCodeGenerator {
+ private:
+  std::stringstream str_stream;
+  int script_offset;
+  // dummy metadata
+  QJsonObject metadata{};
+
+  void write(const char* buf, size_t size, unsigned long* crc32_ptr) override {}
+
+  void write(const char* buf,
+             size_t size,
+             unsigned long* crc32_ptr,
+             bool to_all) override {}
+
+  void moveto(int flags,
+              float feedrate,
+              float x,
+              float y,
+              float z,
+              float a,
+              float s) {
+    str_stream << "G1";
+    if (flags & FCodeGenerator::move_flag_F && feedrate > 0) {
+      str_stream << "F" << feedrate;
+    }
+    if (flags & FCodeGenerator::move_flag_X) {
+      str_stream << "X" << x;
+    }
+    if (flags & FCodeGenerator::move_flag_Y) {
+      str_stream << "Y" << y;
+    }
+    if (flags & FCodeGenerator::move_flag_Z) {
+      str_stream << "Z" << z;
+    }
+    if (flags & FCodeGenerator::move_flag_A) {
+      str_stream << "A" << a;
+    }
+    if (flags & FCodeGenerator::move_flag_S) {
+      str_stream << "S" << s;
+    }
+    str_stream << "\n";
+  }
+
+  void home(void) { str_stream << "$H\n"; }
+
+  void set_toolhead_pwm(float strength, bool update = false) override {
+    if (update) {
+      current_pwm = strength;
+    }
+    if (strength < 0) {
+      str_stream << "G1 U" << (int)(strength * -1000) << "\n";
+    } else if (strength < 0.001) {
+      str_stream << "G1S0\n";
+    } else {
+      str_stream << "G1V0\n";
+    }
+  }
+
+ public:
+  FCodeGeneratorG() {
+    qInfo() << "FCodeGenerator for Gcode init";
+    script_offset = str_stream.tellp();
+    if (script_offset < 0) {
+      throw std::runtime_error("NOT_SUPPORT STREAM");
+    }
+  }
+
+  ~FCodeGeneratorG() {}
+
+  std::string to_string() override { return str_stream.str(); };
+
+  size_t total_length() override {
+    return int(str_stream.tellp()) - script_offset;
+  }
+
+  float get_time_cost() override { return 0; }
+
+  QJsonObject get_metadata() override { return metadata; }
 };

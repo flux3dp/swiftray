@@ -115,7 +115,10 @@ class ToolpathExporterFcode : public QObject {
     parseParam(param);
     setDpi(dpi);
 
-    if (is_v2_) {
+    QString type = param->value("type").toString();
+    if (type == "gcode") {
+      gen = std::make_shared<FCodeGeneratorG>();
+    } else if (is_v2_) {
       if (is_rotary_task_ || with_custom_origin_) {
         gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4, with_custom_origin_);
       } else {

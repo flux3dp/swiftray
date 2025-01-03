@@ -738,6 +738,9 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
       preview_painter_->restore();
     }
     if (bmp->pwm() || is_printing_layer_) {
+      if (!config_.enable_fast_gradient) {
+        transformed_image = transformed_image.convertToFormat(QImage::Format_Mono).convertToFormat(QImage::Format_Grayscale8);
+      }
       layer_painter_->drawImage(new_dirty_area.topLeft(), transformed_image);
     } else {
       clearTransparent(&transformed_image);
