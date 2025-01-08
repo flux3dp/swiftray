@@ -1158,7 +1158,6 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     }
     qreal buffer_x;
     // Check boundary without module offset (may include job origin)
-    real_x += module_offset_.x();
     if (reverse_raster_dir) {
       buffer_x = qMax(real_x - laser_padding, 0.0);
     } else {
