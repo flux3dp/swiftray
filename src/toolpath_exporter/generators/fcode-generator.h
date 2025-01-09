@@ -802,22 +802,22 @@ class FCodeGeneratorG : public FCodeGenerator {
               float s) {
     str_stream << "G1";
     if (flags & FCodeGenerator::move_flag_F && feedrate > 0) {
-      str_stream << "F" << feedrate;
+      str_stream << " F" << feedrate;
     }
     if (flags & FCodeGenerator::move_flag_X) {
-      str_stream << "X" << x;
+      str_stream << " X" << x;
     }
     if (flags & FCodeGenerator::move_flag_Y) {
-      str_stream << "Y" << y;
+      str_stream << " Y" << y;
     }
     if (flags & FCodeGenerator::move_flag_Z) {
-      str_stream << "Z" << z;
+      str_stream << " Z" << z;
     }
     if (flags & FCodeGenerator::move_flag_A) {
-      str_stream << "A" << a;
+      str_stream << " Y" << a;
     }
     if (flags & FCodeGenerator::move_flag_S) {
-      str_stream << "S" << s;
+      str_stream << " S" << s;
     }
     str_stream << "\n";
   }
