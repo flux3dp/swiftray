@@ -608,6 +608,7 @@ void ToolpathExporterFcode::convertLaserLayer() {
   polygons_mutex_.unlock();
   is_handling_bitmap_ = false;
   layer_painter_ = std::make_unique<QPainter>(&laser_bitmap_);
+  layer_painter_->setClipRect(clip_area_);
   laser_bitmap_.fill(Qt::white);
   preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
   preview_bitmap_.fill(Qt::white);
