@@ -117,6 +117,7 @@ class ToolpathExporterFcode : public QObject {
 
     QString type = param->value("type").toString();
     if (type == "gcode") {
+      is_gcode_ = true;
       gen = std::make_shared<FCodeGeneratorG>();
     } else if (is_v2_) {
       if (is_rotary_task_ || with_custom_origin_) {
@@ -521,6 +522,7 @@ class ToolpathExporterFcode : public QObject {
   HardwareType hardware_ = HardwareType::Beambox;
   NozzleSettings nozzle_settings;
   CurveEngravingSettings curve_settings;
+  bool is_gcode_ = false;
   bool is_v2_ = false;
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;

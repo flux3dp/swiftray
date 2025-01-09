@@ -333,7 +333,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   // Step 5. Handle printing test, prespray task if needed
-  if (is_v2_ && with_print_task_ && !config_.prespray.isEmpty()) {
+  if (!is_gcode_ && is_v2_ && with_print_task_ && !config_.prespray.isEmpty()) {
     // Mock layer param for printing dpmm and module offset
     layer_module_ = 5;
     is_printing_layer_ = true;
