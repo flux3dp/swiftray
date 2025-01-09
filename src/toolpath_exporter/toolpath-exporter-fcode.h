@@ -153,8 +153,8 @@ class ToolpathExporterFcode : public QObject {
       config_.job_origin = QPointF(param["job_origin"].toArray()[0].toDouble(),
                                    param["job_origin"].toArray()[1].toDouble());
     }
-    float spinning_axis_coord = param["spin"].toDouble();
-    if (spinning_axis_coord > 0) {
+    float spinning_axis_coord = param["spin"].toDouble(-1);
+    if (spinning_axis_coord >= 0) {
       is_rotary_task_ = true;
       config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio - config_.job_origin.y();
       rotary_y_ratio_ = param["rotary_y_ratio"].toDouble(1);
