@@ -91,7 +91,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(-1);
     }
-    if (!with_custom_origin_) {
+    if (magic_number_ >= 4 && !with_custom_origin_) {
       gen_->grbl_system_cmd(0);
     }
   } else {
@@ -100,6 +100,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   gen_->set_toolhead_pwm(0, true);
   if (is_v2_) {
     travel(0, 0);
+  }
+  if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
+    if (is_v2_) {
+      gen_->sync_motion_type2(179, 128, 5.0);
+    }
+    moveZ(curve_settings.safe_height);
   }
 
   // Supporting for spinning axis
@@ -414,6 +420,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   // Step 6. Handle post-task
   if (is_v2_) {
     gen_->start_task_script_block("xMIN", "0004");
+  }
+  if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
+    moveZ(curve_settings.safe_height);
   }
   if (is_rotary_task_) {
     if (is_v2_) {
@@ -1928,7 +1937,7 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
     flags |= FCodeGenerator::move_flag_Z;
   } else if (is_3d_task_ && !is_a_mode_ && (!isnan(x) || !isnan(y))) {
     // Try to estimate z value for curve engraving
-    z = getCurveEngravingHeight();
+    z = getCurveEngravingHeight(is_travel);
     if (!isnan(z)) {
       flags |= FCodeGenerator::move_flag_Z;
     }
@@ -1939,7 +1948,13 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
   gen_->moveto(flags, feedrate, x, y, z, a, s);
 }
 
-float ToolpathExporterFcode::getCurveEngravingHeight() {
+float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
+  if (!is_handling_3d_work_) {
+    if (is_travel) {
+      return std::nanf("");
+    }
+    is_handling_3d_work_ = true;
+  }
   if (curve_x_ < curve_settings.bbox.left() ||
       curve_x_ > curve_settings.bbox.right() ||
       curve_y_ < curve_settings.bbox.top() ||
@@ -1974,7 +1989,7 @@ float ToolpathExporterFcode::getCurveEngravingHeight() {
     float w = 1 - u - v;
     z = u * z1 + v * z2 + w * z3;
   }
-  return z;
+  return qMax(z, 0.0);
 }
 
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,

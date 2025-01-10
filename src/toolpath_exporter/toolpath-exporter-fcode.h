@@ -45,11 +45,13 @@ struct CurveEngravingSettings {
   QRectF bbox;
   QPointF gap;
   QList<QVector3D> points;
+  float safe_height;
   cv::Ptr<cv::flann::Index> kdTree;
 };
 
 struct Config {
   // mm/min
+  float z_speed = 7.5; // for time estimated; bb2 = 2.33
   float min_speed = 3;
   float travel_speed = 7500; // default val = 7500 in ghost, 12000 in client
   float a_travel_speed = 2000;
@@ -115,16 +117,22 @@ class ToolpathExporterFcode : public QObject {
     parseParam(param);
     setDpi(dpi);
 
+    if (is_v2_) {
+      if (is_rotary_task_ || with_custom_origin_) {
+        magic_number_ = 4;
+      } else {
+        magic_number_ = 3;
+      }
+    } else {
+      magic_number_ = 1;
+    }
+
     QString type = param->value("type").toString();
     if (type == "gcode") {
       is_gcode_ = true;
       gen = std::make_shared<FCodeGeneratorG>();
     } else if (is_v2_) {
-      if (is_rotary_task_ || with_custom_origin_) {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 4, with_custom_origin_);
-      } else {
-        gen = std::make_shared<FCodeGeneratorV2>(thumbnail, 3, with_custom_origin_);
-      }
+      gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_, with_custom_origin_);
     } else {
       gen = std::make_shared<FCodeGeneratorV1>(thumbnail, with_custom_origin_);
     }
@@ -196,6 +204,7 @@ class ToolpathExporterFcode : public QObject {
     } else if (hardware == "fbb2") {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
+      config_.z_speed = 2.33;
       config_.fg_pwm_limit = 0;
       config_.enable_relative_z_move = true;
       default_path_acc = 1000;
@@ -271,14 +280,18 @@ class ToolpathExporterFcode : public QObject {
       qInfo() << "Set curve engraving data";
       QJsonObject bbox = curve_obj["bbox"].toObject();
       float box_left = bbox["x"].toDouble();
-      config_.workarea_clip[3] = qMax(config_.workarea_clip[3], box_left);
       float box_top = bbox["y"].toDouble();
+      if (with_custom_origin_) {
+        box_left -= config_.job_origin.x();
+        box_top -= config_.job_origin.y();
+      }
+      config_.workarea_clip[3] = qMax(config_.workarea_clip[3], box_left);
       config_.workarea_clip[0] = qMax(config_.workarea_clip[0], box_top);
       float box_width = bbox["width"].toDouble();
-      float box_right = box_left + box_width;
+      float box_right = width - box_left - box_width;
       config_.workarea_clip[1] = qMax(config_.workarea_clip[1], box_right);
       float box_height = bbox["height"].toDouble();
-      float box_bottom = box_top + box_height;
+      float box_bottom = height - box_top - box_height;
       config_.workarea_clip[2] = qMax(config_.workarea_clip[2], box_bottom);
 
       QJsonArray points = curve_obj["points"].toArray();
@@ -297,11 +310,16 @@ class ToolpathExporterFcode : public QObject {
           float x = point[0].toDouble();
           float y = point[1].toDouble();
           float z = point[2].toDouble();
+          if (with_custom_origin_) {
+            x -= config_.job_origin.x();
+            y -= config_.job_origin.y();
+          }
           curve_settings.points.append(QVector3D(x, y, z));
           point_mat.at<float>(i, 0) = x;
           point_mat.at<float>(i, 1) = y;
         }
         curve_settings.kdTree = cv::makePtr<cv::flann::Index>(point_mat, cv::flann::KDTreeIndexParams(1));
+        curve_settings.safe_height = curve_obj["safe_height"].toDouble(std::nanf(""));
       }
     }
   }
@@ -399,7 +417,7 @@ class ToolpathExporterFcode : public QObject {
     }
     gen_->set_path_acceleration(flags, x, y, z, a);
   }
-  float getCurveEngravingHeight();
+  float getCurveEngravingHeight(bool is_travel);
 
   void updateLayerParam();
   void updateOffset();
@@ -522,6 +540,7 @@ class ToolpathExporterFcode : public QObject {
   HardwareType hardware_ = HardwareType::Beambox;
   NozzleSettings nozzle_settings;
   CurveEngravingSettings curve_settings;
+  int magic_number_ = 0;
   bool is_gcode_ = false;
   bool is_v2_ = false;
   bool is_rotary_task_ = false;
@@ -561,6 +580,7 @@ class ToolpathExporterFcode : public QObject {
 
   // Updated during processing
   bool is_handling_main_work_ = false;
+  bool is_handling_3d_work_ = false;
   bool is_handling_bitmap_ = false;
   bool is_a_mode_ = false;
   bool rotary_wait_move_ = false;
