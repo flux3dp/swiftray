@@ -333,7 +333,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   // Step 5. Handle printing test, prespray task if needed
-  if (is_v2_ && with_print_task_ && !config_.prespray.isEmpty()) {
+  if (!is_gcode_ && is_v2_ && with_print_task_ && !config_.prespray.isEmpty()) {
     // Mock layer param for printing dpmm and module offset
     layer_module_ = 5;
     is_printing_layer_ = true;
@@ -608,6 +608,7 @@ void ToolpathExporterFcode::convertLaserLayer() {
   polygons_mutex_.unlock();
   is_handling_bitmap_ = false;
   layer_painter_ = std::make_unique<QPainter>(&laser_bitmap_);
+  layer_painter_->setClipRect(clip_area_);
   laser_bitmap_.fill(Qt::white);
   preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
   preview_bitmap_.fill(Qt::white);

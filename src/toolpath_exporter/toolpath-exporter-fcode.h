@@ -117,6 +117,7 @@ class ToolpathExporterFcode : public QObject {
 
     QString type = param->value("type").toString();
     if (type == "gcode") {
+      is_gcode_ = true;
       gen = std::make_shared<FCodeGeneratorG>();
     } else if (is_v2_) {
       if (is_rotary_task_ || with_custom_origin_) {
@@ -153,8 +154,8 @@ class ToolpathExporterFcode : public QObject {
       config_.job_origin = QPointF(param["job_origin"].toArray()[0].toDouble(),
                                    param["job_origin"].toArray()[1].toDouble());
     }
-    float spinning_axis_coord = param["spin"].toDouble();
-    if (spinning_axis_coord > 0) {
+    float spinning_axis_coord = param["spin"].toDouble(-1);
+    if (spinning_axis_coord >= 0) {
       is_rotary_task_ = true;
       config_.spinning_axis_coord = spinning_axis_coord / canvas_mm_ratio - config_.job_origin.y();
       rotary_y_ratio_ = param["rotary_y_ratio"].toDouble(1);
@@ -521,6 +522,7 @@ class ToolpathExporterFcode : public QObject {
   HardwareType hardware_ = HardwareType::Beambox;
   NozzleSettings nozzle_settings;
   CurveEngravingSettings curve_settings;
+  bool is_gcode_ = false;
   bool is_v2_ = false;
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
