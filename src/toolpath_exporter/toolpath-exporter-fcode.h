@@ -339,8 +339,9 @@ class ToolpathExporterFcode : public QObject {
       config_.dpmm_x = config_.dpmm_y = 20;
       config_.print_modes[0] = 'R', config_.print_modes[1] = 'H';
     } else {
-      // ultra: 1016
+      // ultra: 1016, only increase dpmm in y direction
       config_.dpmm_x = 20, config_.dpmm_y = 50;
+      config_.print_modes[0] = 'R', config_.print_modes[1] = 'H';
     }
 
     transform_laser_ = QTransform::fromScale(config_.dpmm_x / canvas_mm_ratio,
