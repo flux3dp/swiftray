@@ -1955,39 +1955,9 @@ float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
     }
     is_handling_3d_work_ = true;
   }
-  if (curve_x_ < curve_settings.bbox.left() ||
-      curve_x_ > curve_settings.bbox.right() ||
-      curve_y_ < curve_settings.bbox.top() ||
-      curve_y_ > curve_settings.bbox.bottom()) {
-    return std::nanf("");
-  }
-
-  cv::Mat query_point = (cv::Mat_<float>(1, 2) << curve_x_, curve_y_);
-  int k = 3;
-  std::vector<int> indice(k);
-  std::vector<float> distances(k);
-  cv::flann::SearchParams params(32);
-  curve_settings.kdTree->knnSearch(query_point, indice, distances, k, params);
-  QVector3D p1 = curve_settings.points[indice[0]];
-  float x1 = p1.x(), y1 = p1.y(), z1 = p1.z();
-  QVector3D p2 = curve_settings.points[indice[1]];
-  float x2 = p2.x(), y2 = p2.y(), z2 = p2.z();
-  QVector3D p3 = curve_settings.points[indice[2]];
-  float x3 = p3.x(), y3 = p3.y(), z3 = p3.z();
-
-  float denom = ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
-  float z;
-  if (denom == 0) {
-    float d1 = pow(distances[0], 0.5);
-    float d2 = pow(distances[1], 0.5);
-    z = (z1 * d2 + z2 * d1) / (d1 + d2);
-  } else {
-    float u =
-        ((y2 - y3) * (curve_x_ - x3) + (x3 - x2) * (curve_y_ - y3)) / denom;
-    float v =
-        ((y3 - y1) * (curve_x_ - x3) + (x1 - x3) * (curve_y_ - y3)) / denom;
-    float w = 1 - u - v;
-    z = u * z1 + v * z2 + w * z3;
+  float z = curve_settings.interpolator.do_evaluate(curve_x_, curve_y_);
+  if (isnan(z)) {
+    return z;
   }
   return qMax(z, 0.0);
 }

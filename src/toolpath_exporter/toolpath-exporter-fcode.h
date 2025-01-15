@@ -8,6 +8,7 @@
 #include <shape/path-shape.h>
 #include <toolpath_exporter/generators/base-generator.h>
 #include <toolpath_exporter/generators/fcode-generator.h>
+#include <toolpath_exporter/generators/interpolation.cpp>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -17,9 +18,7 @@
 #include <QPainter>
 #include <QProgressDialog>
 #include <QVector2D>
-#include <QVector3D>
 #include <bitset>
-#include <opencv2/flann.hpp>
 
 struct NozzleSettings {
   float voltage = 9.0;
@@ -44,9 +43,8 @@ struct NozzleSettings {
 struct CurveEngravingSettings {
   QRectF bbox;
   QPointF gap;
-  QList<QVector3D> points;
   float safe_height;
-  cv::Ptr<cv::flann::Index> kdTree;
+  CloughTocher2DInterpolator interpolator;
 };
 
 struct Config {
@@ -301,10 +299,10 @@ class ToolpathExporterFcode : public QObject {
         // add 0.01 to avoid clipping the boundary
         float space = 0.01;
         curve_settings.bbox = QRectF(box_left - space, box_top - space, box_width + 2 * space, box_height + 2 * space);
+        curve_settings.interpolator.set_bounding_box(box_left, box_top, box_right, box_bottom);
         QJsonArray gap = curve_obj["gap"].toArray();
         curve_settings.gap = QPointF(gap[0].toDouble(), gap[1].toDouble());
 
-        cv::Mat point_mat = cv::Mat::zeros(point_size, 2, CV_32F);
         for (int i = 0; i < point_size; i++) {
           QJsonArray point = points[i].toArray();
           float x = point[0].toDouble();
@@ -314,11 +312,9 @@ class ToolpathExporterFcode : public QObject {
             x -= config_.job_origin.x();
             y -= config_.job_origin.y();
           }
-          curve_settings.points.append(QVector3D(x, y, z));
-          point_mat.at<float>(i, 0) = x;
-          point_mat.at<float>(i, 1) = y;
+          curve_settings.interpolator.add_point(x, y, z);
         }
-        curve_settings.kdTree = cv::makePtr<cv::flann::Index>(point_mat, cv::flann::KDTreeIndexParams(1));
+        curve_settings.interpolator.setup();
         curve_settings.safe_height = curve_obj["safe_height"].toDouble(std::nanf(""));
       }
     }
