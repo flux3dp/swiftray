@@ -91,7 +91,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(-1);
     }
-    if (!with_custom_origin_) {
+    if (magic_number_ >= 4 && !with_custom_origin_) {
       gen_->grbl_system_cmd(0);
     }
   } else {
@@ -100,6 +100,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   gen_->set_toolhead_pwm(0, true);
   if (is_v2_) {
     travel(0, 0);
+  }
+  if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
+    if (is_v2_) {
+      gen_->sync_motion_type2(179, 128, 5.0);
+    }
+    moveZ(curve_settings.safe_height);
   }
 
   // Supporting for spinning axis
@@ -414,6 +420,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   // Step 6. Handle post-task
   if (is_v2_) {
     gen_->start_task_script_block("xMIN", "0004");
+  }
+  if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
+    moveZ(curve_settings.safe_height);
   }
   if (is_rotary_task_) {
     if (is_v2_) {
@@ -1928,7 +1937,7 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
     flags |= FCodeGenerator::move_flag_Z;
   } else if (is_3d_task_ && !is_a_mode_ && (!isnan(x) || !isnan(y))) {
     // Try to estimate z value for curve engraving
-    z = getCurveEngravingHeight();
+    z = getCurveEngravingHeight(is_travel);
     if (!isnan(z)) {
       flags |= FCodeGenerator::move_flag_Z;
     }
@@ -1939,42 +1948,18 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
   gen_->moveto(flags, feedrate, x, y, z, a, s);
 }
 
-float ToolpathExporterFcode::getCurveEngravingHeight() {
-  if (curve_x_ < curve_settings.bbox.left() ||
-      curve_x_ > curve_settings.bbox.right() ||
-      curve_y_ < curve_settings.bbox.top() ||
-      curve_y_ > curve_settings.bbox.bottom()) {
-    return std::nanf("");
+float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
+  if (!is_handling_3d_work_) {
+    if (is_travel) {
+      return std::nanf("");
+    }
+    is_handling_3d_work_ = true;
   }
-
-  cv::Mat query_point = (cv::Mat_<float>(1, 2) << curve_x_, curve_y_);
-  int k = 3;
-  std::vector<int> indice(k);
-  std::vector<float> distances(k);
-  cv::flann::SearchParams params(32);
-  curve_settings.kdTree->knnSearch(query_point, indice, distances, k, params);
-  QVector3D p1 = curve_settings.points[indice[0]];
-  float x1 = p1.x(), y1 = p1.y(), z1 = p1.z();
-  QVector3D p2 = curve_settings.points[indice[1]];
-  float x2 = p2.x(), y2 = p2.y(), z2 = p2.z();
-  QVector3D p3 = curve_settings.points[indice[2]];
-  float x3 = p3.x(), y3 = p3.y(), z3 = p3.z();
-
-  float denom = ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
-  float z;
-  if (denom == 0) {
-    float d1 = pow(distances[0], 0.5);
-    float d2 = pow(distances[1], 0.5);
-    z = (z1 * d2 + z2 * d1) / (d1 + d2);
-  } else {
-    float u =
-        ((y2 - y3) * (curve_x_ - x3) + (x3 - x2) * (curve_y_ - y3)) / denom;
-    float v =
-        ((y3 - y1) * (curve_x_ - x3) + (x1 - x3) * (curve_y_ - y3)) / denom;
-    float w = 1 - u - v;
-    z = u * z1 + v * z2 + w * z3;
+  float z = curve_settings.interpolator.do_evaluate(curve_x_, curve_y_);
+  if (isnan(z)) {
+    return z;
   }
-  return z;
+  return qMax(z, 0.0);
 }
 
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,

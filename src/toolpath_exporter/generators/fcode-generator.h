@@ -23,6 +23,7 @@ class FCodeGenerator {
   unsigned long script_crc32;
   float acc_x = 4000;
   float acc_y = 2000;
+  float z_speed = 7.5;
   QString time_format = "yyyy-MM-ddTHH:mm:ssZ";
   QString sw_version = QString("swiftray-%1.%2.%3")
                            .arg(VERSION_MAJOR)
@@ -88,6 +89,8 @@ class FCodeGenerator {
     acc_x = (float)x;
     acc_y = (float)y;
   }
+
+  void set_time_est_z_speed(float value) { z_speed = value; }
 
   virtual void moveto(int flags,
                       float feedrate,
@@ -387,7 +390,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
       } else if (abs(mv[2]) > 0) {
         float dist = abs(mv[2]);
         traveled += dist;
-        float tc = (dist / current_feedrate);
+        float tc = (dist / z_speed);
         if (!isnan(tc)) {
           time_cost += tc;
         }
@@ -658,32 +661,32 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     }
 
     if (has_move) {
+      float time_est = 0;
       if (abs(mv[2]) > 0) {
         float dist = abs(mv[2]);
         traveled += dist;
-        // autofocus movespeed 7.5 mm/s
-        float tc = (dist / 7.5);
-        if (!isnan(tc))
-          time_cost += tc;
-      } else {
-        double dist = sqrt(pow(mv[0], 2) + pow(mv[1], 2));
-        if (!isnan(dist) && dist > 0) {
-          traveled += dist;
-          if (current_feedrate > 0) {
-            float direction = atan2(mv[1], mv[0]);
-            float last_vel = last_feedrate * cos(direction - last_direction); // consider direction
-            float acc = acc_x;
-            if (abs(mv[1]) > 0)
-              acc = acc_y;
-            float vel = estimate_vel(last_vel, current_feedrate, acc, dist); // consider short distance
-            float tc = estimate_time(last_vel, vel, acc, dist);
-            if (!isnan(tc))
-              time_cost += tc;
-            last_feedrate = vel;
-            last_direction = direction;
-          }
+        float tc = (dist / z_speed);
+        if (!isnan(tc) && tc > 0)
+          time_est = tc;
+      }
+      double dist = sqrt(pow(mv[0], 2) + pow(mv[1], 2));
+      if (!isnan(dist) && dist > 0) {
+        traveled += dist;
+        if (current_feedrate > 0) {
+          float direction = atan2(mv[1], mv[0]);
+          float last_vel = last_feedrate * cos(direction - last_direction); // consider direction
+          float acc = acc_x;
+          if (abs(mv[1]) > 0)
+            acc = acc_y;
+          float vel = estimate_vel(last_vel, current_feedrate, acc, dist); // consider short distance
+          float tc = estimate_time(last_vel, vel, acc, dist);
+          if (!isnan(tc) && tc > time_est)
+            time_est = tc;
+          last_feedrate = vel;
+          last_direction = direction;
         }
       }
+      if (time_est > 0) time_cost += time_est;
     }
     FCodeGenerator::moveto(flags, feedrate, x, y, z, a, s);
   }
