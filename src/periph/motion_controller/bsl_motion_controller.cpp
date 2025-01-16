@@ -232,6 +232,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int pulse_width = 100; // 100 ns
     static bool last_is_z_command = false;
     static int dotting_time = 0;
+    static bool before_first_laser = true;
     static QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
 
@@ -390,6 +391,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           return;
       }
       is_running_laser_ = true;
+      current_s = 0;
       list_no = 1;
 
       // Dump all lcs status
@@ -407,9 +409,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // List Instruction
       lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
       lcs_set_scanner_delays(100, 50);
-      lcs_set_laser_power(0);
       lcs_error_count = 0;
       laser_enabled = false;
+      before_first_laser = !is_framing_;
       should_swap = false;
       should_end = false;
       should_flush_ = false;
@@ -440,9 +442,22 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b0010);
     } else if (command == "M103") {
-      is_framing_ = true;
+      if (!is_framing_) {
+        is_framing_ = true;
+        // Don't know why; but framing tasks after normal tasks without lcs_execute_list (first loop) emit white light
+        // Add a dummy lcs_execute_list
+        lcs_execute_list(list_no);
+      }
     } else if (command == "M104") {
       is_framing_ = false;
+    } else if (command == "M105") {
+      // Force reset position
+      lcs_set_start_list(list_no);
+      lcs_enable_laser();
+      jump_to(0, 0);
+      lcs_disable_laser();
+      lcs_set_end_of_list();
+      lcs_execute_list(list_no);
     } else if (!is_move_command) {
       return;
     }
@@ -464,9 +479,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       this->buffer_size_ = 0;
       QThread::msleep(1);
+      if (before_first_laser) {
+        // Last list should include a jump cmd and a set-power cmd
+        // Force wait for power and galvanometer to be stable
+        QThread::msleep(1000);
+        before_first_laser = false;
+      }
     }
 
     if (should_end) {
+      if (!is_framing_) jump_to(0, 0);
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
       lcs_disable_laser();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
@@ -558,6 +580,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       x_pos_ = target_x;
       y_pos_ = target_y;
       last_is_z_command = false;
+      if (before_first_laser) {
+        should_flush_ = true;
+      }
     }
 }
 
@@ -633,7 +658,8 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   this->cmd_list_mutex_.unlock();
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();
-  QThread::msleep(2);
+  QThread::msleep(200);
+  handleGcode("M105");
   return CmdSendResult::kOk;
 }
 
@@ -748,7 +774,7 @@ void BSLMotionController::startList(int list_no, int freq, int pulse_width, int 
   lcs_enable_laser();
   lcs_set_laser_pulses(1000 / freq, 0, pulse_width);
   lcs_set_mark_speed_ctrl(current_f);
-  if (current_s > 0) lcs_set_laser_power(current_s / 10);
+  lcs_set_laser_power(current_s / 10);
 }
 
 bool BSLMotionController::executeList(int list_no) {
