@@ -43,7 +43,7 @@ private:
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
   ListStatus getListStatus();
-  void startList(int list_no, int freq, int pulse_width, int current_s);
+  void startList(int list_no, int freq, int pulse_width, int current_s, bool disable_laser);
   bool executeList(int list_no);
 
   std::queue<QString> pending_cmds_;
