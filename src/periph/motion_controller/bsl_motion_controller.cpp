@@ -288,7 +288,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           dotting_time = value.toInt();
         } else if (type == "F") {
             current_f = value.toDouble() / 60;
-            lcs_set_mark_speed_ctrl(current_f);
+            lcs_set_mark_speed(current_f);
         } else if (type == "S") {
             current_s = value.toInt();
             if (!is_handling_high_speed_) {
@@ -766,7 +766,7 @@ void BSLMotionController::startList(int list_no, int freq, int pulse_width, int 
     lcs_enable_laser();
   }
   lcs_set_laser_pulses(1000 / freq, 0, pulse_width);
-  lcs_set_mark_speed_ctrl(current_f);
+  lcs_set_mark_speed(current_f);
   lcs_set_laser_power(current_s / 10);
 }
 
