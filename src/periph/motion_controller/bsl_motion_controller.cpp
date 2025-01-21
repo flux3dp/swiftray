@@ -295,6 +295,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 if (current_s > 0) {
                   laser_enabled = true;
                   lcs_set_laser_power(current_s / 10);  // Assuming S1000 is 100% power
+                  if (before_first_laser) {
+                    should_flush_ = true;
+                    before_first_laser = false;
+                  }
                 } else {
                   laser_enabled = false;
                 }
@@ -405,7 +409,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_delay_mode(true, JUMP_DELAY_MIN, JUMP_DELAY_MAX, 10);
       lcs_set_laser_mode(LCS_MOPA, is_framing_);
-      startList(list_no, freq, pulse_width, current_s);
+      startList(list_no, freq, pulse_width, current_s, true);
       // List Instruction
       lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
       lcs_set_scanner_delays(100, 50);
@@ -421,6 +425,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         // Appand a dummy move command to ensure the last Z command is executed
         lcs_set_axis_move(1, 1, z > 0, Z_SPEED_IN_PULSE, 10.0, 255);
       }
+      lcs_disable_laser();
       should_swap = true;
       should_end = true;
       rotary_mode = false;
@@ -442,22 +447,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b0010);
     } else if (command == "M103") {
-      if (!is_framing_) {
-        is_framing_ = true;
-        // Don't know why; but framing tasks after normal tasks without lcs_execute_list (first loop) emit white light
-        // Add a dummy lcs_execute_list
-        lcs_execute_list(list_no);
-      }
-    } else if (command == "M104") {
+              is_framing_ = true;
+            } else if (command == "M104") {
       is_framing_ = false;
     } else if (command == "M105") {
       // Force reset position
-      lcs_set_start_list(list_no);
-      lcs_enable_laser();
-      jump_to(0, 0);
-      lcs_disable_laser();
-      lcs_set_end_of_list();
-      lcs_execute_list(list_no);
+      // Control instruction
+      lcs_goto_xy(0, 0);
     } else if (!is_move_command) {
       return;
     }
@@ -475,22 +471,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if(!executeList(list_no)) return;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
-      startList(list_no, freq, pulse_width, current_s);
+      startList(list_no, freq, pulse_width, current_s, should_end);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       this->buffer_size_ = 0;
       QThread::msleep(1);
-      if (before_first_laser) {
-        // Last list should include a jump cmd and a set-power cmd
-        // Force wait for power and galvanometer to be stable
-        QThread::msleep(1000);
-        before_first_laser = false;
-      }
     }
 
     if (should_end) {
-      if (!is_framing_) jump_to(0, 0);
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
-      lcs_disable_laser();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
       QThread::msleep(2);
@@ -518,7 +506,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       is_running_laser_ = false;
       laser_enabled = false;
       should_end = false;
-      if (!is_framing_) lcs_set_laser_control(false);
+      if (!is_framing_) {
+        lcs_set_laser_control(false);
+        lcs_goto_xy(0, 0);
+      }
     }
 
     // Process move command
@@ -580,9 +571,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       x_pos_ = target_x;
       y_pos_ = target_y;
       last_is_z_command = false;
-      if (before_first_laser) {
-        should_flush_ = true;
-      }
     }
 }
 
@@ -767,11 +755,16 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
-void BSLMotionController::startList(int list_no, int freq, int pulse_width, int current_s) {
+void BSLMotionController::startList(int list_no, int freq, int pulse_width, int current_s, bool disable_laser) {
   estimated_time_ = 0;
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
-  lcs_enable_laser();
+  if (is_framing_ || disable_laser) {
+    lcs_disable_laser();
+  } else {
+    lcs_set_laser_control(true);
+    lcs_enable_laser();
+  }
   lcs_set_laser_pulses(1000 / freq, 0, pulse_width);
   lcs_set_mark_speed_ctrl(current_f);
   lcs_set_laser_power(current_s / 10);
