@@ -447,8 +447,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
       lcs_write_io_port(0b0010);
     } else if (command == "M103") {
-              is_framing_ = true;
-            } else if (command == "M104") {
+      is_framing_ = true;
+    } else if (command == "M104") {
       is_framing_ = false;
     } else if (command == "M105") {
       // Force reset position
