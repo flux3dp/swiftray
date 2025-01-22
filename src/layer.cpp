@@ -152,6 +152,10 @@ bool Layer::fillHatch() const { return fill_hatch_; }
 
 int Layer::dottingTime() const { return dotting_time_; }
 
+double Layer::wobbleStep() const { return wobble_step_; }
+
+double Layer::wobbleDiameter() const { return wobble_diameter_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -236,6 +240,8 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_bidirectional_ = config.fill_bidirectional;
   this->fill_hatch_ = config.fill_hatch;
   this->dotting_time_ = config.dotting_time;
+  this->wobble_step_ = config.wobble_step;
+  this->wobble_diameter_ = config.wobble_diameter;
 }
 
 // Clone
@@ -268,6 +274,8 @@ LayerPtr Layer::clone() {
   new_layer->fill_bidirectional_ = this->fill_bidirectional_;
   new_layer->fill_hatch_ = this->fill_hatch_;
   new_layer->dotting_time_ = this->dotting_time_;
+  new_layer->wobble_step_ = this->wobble_step_;
+  new_layer->wobble_diameter_ = this->wobble_diameter_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

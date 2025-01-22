@@ -108,6 +108,10 @@ public:
 
   int dottingTime() const;
 
+  double wobbleStep() const;
+
+  double wobbleDiameter() const;
+
   Document &document();
 
   /** Setters **/
@@ -177,6 +181,9 @@ private:
   bool fill_hatch_;
   // Promark gradient
   int dotting_time_ = 0;
+  // Promark wobble
+  double wobble_step_ = 0;
+  double wobble_diameter_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

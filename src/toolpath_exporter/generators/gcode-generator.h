@@ -202,6 +202,10 @@ public:
     str_stream_ << "T" << dotting_time << std::endl;
   }
 
+  void setWobble(double wobble_step, double wobble_diameter) override { 
+    str_stream_ << "WS" << wobble_step << "WD" << wobble_diameter << std::endl;
+  }
+
   void addComment(QString msg) override {
     str_stream_ << ";" << msg.toStdString() << std::endl;
   }

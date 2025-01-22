@@ -57,6 +57,8 @@ namespace MySVG {
         bool fill_bidirectional;
         bool fill_hatch;
         int dotting_time;
+        double wobble_step;
+        double wobble_diameter;
     };
 
     enum ReadType {

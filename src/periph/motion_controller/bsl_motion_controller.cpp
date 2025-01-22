@@ -222,18 +222,18 @@ void mark_to(double y, double x) {
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
+    static TaskSettings settings;
     static bool rotary_mode = false;
     static bool laser_enabled = false;
-    static int current_s = 0; // Default power
     static bool is_absolute_positioning = true;
     static int list_no = 1;
     static double center_pos = 55;
     static int freq = 100; //100 khz
-    static int pulse_width = 100; // 100 ns
     static bool last_is_z_command = false;
     static int dotting_time = 0;
     static bool before_first_laser = true;
-    static QRegularExpression re("([GMXYFSZDWQPT])(-?\\d+\\.?\\d*)");
+    static double wobble_k = 1;
+    static QRegularExpression re("([GMXYFSZDWQPT]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
 
     // Skip these GCode
@@ -277,24 +277,23 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             z = value.toDouble();
             is_move_command = true;
         } else if (type == "Q") {
-          freq = value.toInt();
-          int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses(duration, 0, pulse_width);
+            freq = value.toInt();
+            settings.period = 1000 / freq;
+            lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
         } else if (type == "P") {
-          pulse_width = value.toInt();
-          int duration = 1000 / freq; // freq is in khz
-          lcs_set_laser_pulses(duration, 0, pulse_width);
+            settings.pulse_width = value.toInt();
+            lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
         } else if (type == "T") {
-          dotting_time = value.toInt();
+            dotting_time = value.toInt();
         } else if (type == "F") {
-            current_f = value.toDouble() / 60;
-            lcs_set_mark_speed(current_f);
+            settings.current_f = value.toDouble() / 60;
+            lcs_set_mark_speed(settings.current_f);
         } else if (type == "S") {
-            current_s = value.toInt();
+            settings.current_s = value.toInt();
             if (!is_handling_high_speed_) {
-                if (current_s > 0) {
+                if (settings.current_s > 0) {
                   laser_enabled = true;
-                  lcs_set_laser_power(current_s / 10);  // Assuming S1000 is 100% power
+                  lcs_set_laser_power(settings.current_s / 10);  // Assuming S1000 is 100% power
                   if (before_first_laser) {
                     should_flush_ = true;
                     before_first_laser = false;
@@ -323,6 +322,20 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 is_handling_high_speed_ = true;
             }
             return;
+        } else if (type == "WS") {
+            settings.wobble_step = value.toDouble();
+        } else if (type == "WD") {
+            settings.wobble_diameter = value.toDouble();
+            if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
+                lcs_set_wobble_mode(settings.wobble_diameter,
+                                    settings.wobble_diameter,
+                                    settings.wobble_step,
+                                    WobbleType::WT_WHEEL);
+                wobble_k = M_PI * settings.wobble_diameter / settings.wobble_step + 1;
+            } else {
+                lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+                wobble_k = 1;
+            }
         }
     }
     if (is_handling_high_speed_ && is_move_command) {
@@ -336,7 +349,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         bool is_reverse = final_pos < current_pos;
         double step = is_reverse ? -high_speed_step_ : high_speed_step_;
         int step_count = 0;
-        int laser_power = current_s;
+        int laser_power = settings.current_s;
         bool laser = false;
         bool completed = false;
         double new_x, x_move;
@@ -395,7 +408,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           return;
       }
       is_running_laser_ = true;
-      current_s = 0;
+      settings.current_s = 0;
       list_no = 1;
 
       // Dump all lcs status
@@ -409,7 +422,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_mark_speed_ctrl(1000);
       lcs_set_delay_mode(true, JUMP_DELAY_MIN, JUMP_DELAY_MAX, 10);
       lcs_set_laser_mode(LCS_MOPA, is_framing_);
-      startList(list_no, freq, pulse_width, current_s, true);
+      startList(list_no, settings, true);
       // List Instruction
       lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
       lcs_set_scanner_delays(100, 50);
@@ -471,7 +484,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if(!executeList(list_no)) return;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
-      startList(list_no, freq, pulse_width, current_s, should_end);
+      startList(list_no, settings, should_end);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
       this->buffer_size_ = 0;
       QThread::msleep(1);
@@ -540,7 +553,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             if (dotting_time == 0) {
                 mark_to(0, target_x - center_pos);
-                estimated_time_ += distance / current_f * 1000 + LASER_DELAY;
+                estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
             } else {
                 jump_to(0, target_x - center_pos);
                 estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
@@ -556,7 +569,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
             if (dotting_time == 0) {
                 mark_to(-(target_y - center_pos), target_x - center_pos);
-                estimated_time_ += distance / current_f * 1000 + LASER_DELAY;
+                estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
             } else {
                 jump_to(-(target_y - center_pos), target_x - center_pos);
                 estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
@@ -755,7 +768,7 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
-void BSLMotionController::startList(int list_no, int freq, int pulse_width, int current_s, bool disable_laser) {
+void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
   estimated_time_ = 0;
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
@@ -765,9 +778,14 @@ void BSLMotionController::startList(int list_no, int freq, int pulse_width, int 
     lcs_set_laser_control(true);
     lcs_enable_laser();
   }
-  lcs_set_laser_pulses(1000 / freq, 0, pulse_width);
-  lcs_set_mark_speed(current_f);
-  lcs_set_laser_power(current_s / 10);
+  lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
+  lcs_set_mark_speed(settings.current_f);
+  lcs_set_laser_power(settings.current_s / 10);
+  if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
+    lcs_set_wobble_mode(settings.wobble_diameter, settings.wobble_diameter, settings.wobble_step, WobbleType::WT_WHEEL);
+  } else if (settings.wobble_diameter != -1) {
+    lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+  }
 }
 
 bool BSLMotionController::executeList(int list_no) {

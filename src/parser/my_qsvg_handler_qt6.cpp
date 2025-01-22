@@ -2906,6 +2906,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.fill_bidirectional = getAttr(attributes, "data-biDirectional", default_config, "biDirectional", 0) == 1;
         layer_config.fill_hatch = getAttr(attributes, "data-crossHatch", default_config, "crossHatch", 0) == 1;
         layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
+        layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
+        layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }

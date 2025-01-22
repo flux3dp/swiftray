@@ -11,6 +11,16 @@
 #include "liblcs/lcsApi.h"
 #include "liblcs/lcsExpr.h"
 
+struct TaskSettings {
+  // Reset param before start list
+  int current_s = 0;            // 0~1000
+  double current_f = 100.0;     // Default speed, mm/s
+  int period = 10;              // us
+  int pulse_width = 100;        // ns
+  double wobble_diameter = -1;  // mm
+  double wobble_step = 0;       // mm
+};
+
 class BSLMotionController : public MotionController
 {
 public:
@@ -43,7 +53,7 @@ private:
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
   ListStatus getListStatus();
-  void startList(int list_no, int freq, int pulse_width, int current_s, bool disable_laser);
+  void startList(int list_no, TaskSettings settings, bool disable_laser);
   bool executeList(int list_no);
 
   std::queue<QString> pending_cmds_;
@@ -58,7 +68,6 @@ private:
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;
-  double current_f = 100.0; // Default speed, mm/s
   std::thread command_runner_thread_;
   int current_error_ = 0;
   double high_speed_step_;
