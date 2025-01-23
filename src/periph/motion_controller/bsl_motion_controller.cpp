@@ -408,7 +408,15 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           return;
       }
       is_running_laser_ = true;
+      // Reset current settings
       settings.current_s = 0;
+      settings.current_f = 100.0;
+      settings.period = 10;
+      settings.pulse_width = 100;
+      if (settings.wobble_diameter != -1) {
+        settings.wobble_diameter = 0;
+        settings.wobble_step = 0;
+      }
       list_no = 1;
 
       // Dump all lcs status
