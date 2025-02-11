@@ -330,6 +330,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             return;
         } else if (type == "WS") {
             settings.wobble_step = value.toDouble();
+            if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
+                lcs_set_wobble_mode(settings.wobble_diameter,
+                                    settings.wobble_diameter,
+                                    settings.wobble_step,
+                                    WobbleType::WT_WHEEL);
+            } else {
+                lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+            }
         } else if (type == "WD") {
             settings.wobble_diameter = value.toDouble();
             if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
