@@ -74,6 +74,10 @@ public:
     qWarning() << "BaseGenerator::setDottingTime()" << "Promark feature not implemented"; 
   }
 
+  virtual void setWobble(double wobble_step, double wobble_diameter) { 
+    qWarning() << "BaseGenerator::setWobble()" << "Promark feature not implemented"; 
+  }
+
   virtual void addComment(QString msg) { 
     qWarning() << "BaseGenerator::addComment()" << "Promark feature not implemented"; 
   }

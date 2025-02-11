@@ -550,6 +550,11 @@ void ToolpathExporter::outputLayerFillGcode() {
  * @brief Export layer_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerPathGcode() {
+  double wobble_step = current_layer_->wobbleStep();
+  double wobble_diameter = current_layer_->wobbleDiameter();
+  if (wobble_step > 0 && wobble_diameter > 0) {
+    gen_->setWobble(wobble_step, wobble_diameter);
+  }
 
   gen_->turnOnLaser(); // M3
 
@@ -594,6 +599,9 @@ void ToolpathExporter::outputLayerPathGcode() {
   polygons_mutex_.unlock();
   // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0, 0);
   gen_->turnOffLaser();
+  if (wobble_step > 0 && wobble_diameter > 0) {
+    gen_->setWobble(0, 0);
+  }
 }
 
 /**

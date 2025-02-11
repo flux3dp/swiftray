@@ -41,11 +41,12 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
   int dotting_time = 0; // us
   bool hasEnd = false;
+  double wobble_k = 1;
 
   while (current_line < gcode_list.size() && !hasEnd) {
     QString line = gcode_list[current_line];
     line = line.toUpper();
-    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)){
+    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int dots = line.mid(4).toInt();
       total_time += dots * jump_delay; // Jump delay for each dot
@@ -54,10 +55,13 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       // Specific comment for High Speed Mode
       int jumps = line.mid(5).toInt();
       total_time += jumps * jump_delay;  // Jump delay for blank parts
+    } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for Wobble
+      wobble_k = line.mid(9).toFloat();
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
+               line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
     } else {
       QChar current_param{';'};
@@ -140,7 +144,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
             total_time += 1000.0 * move_distance / jump_speed + jump_delay;
           } else if (dotting_time == 0) {
             // mark & delay
-            total_time += 1000.0 * move_distance / f_param * 60 + laser_delay;
+            total_time += 1000.0 * move_distance * wobble_k / f_param * 60 + laser_delay;
           } else {
             // jump for dotting
             total_time += 1000.0 * move_distance / jump_speed;
