@@ -41,14 +41,12 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
   int dotting_time = 0; // us
   bool hasEnd = false;
-  double wobble_step = 0;
-  double wobble_diameter = 0;
   double wobble_k = 1;
 
   while (current_line < gcode_list.size() && !hasEnd) {
     QString line = gcode_list[current_line];
     line = line.toUpper();
-    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)){
+    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int dots = line.mid(4).toInt();
       total_time += dots * jump_delay; // Jump delay for each dot
@@ -57,15 +55,17 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       // Specific comment for High Speed Mode
       int jumps = line.mid(5).toInt();
       total_time += jumps * jump_delay;  // Jump delay for blank parts
+    } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for Wobble
+      wobble_k = line.mid(9).toFloat();
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
-        line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
+               line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
       // do nothing (FLUX's custom cmd)
     } else {
       QChar current_param{';'};
       QString val_str;
-      bool handling_wobble = false;
       line.append(' ');  // To ensure the last param is processed
       // Set default value when X/Y field is absent
       x_param = relative_mode ? 0 : last_abs_x;
@@ -97,19 +97,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
           }
 
           // Finish a param
-          if (handling_wobble) {
-            if (current_param == 'S') {
-              wobble_step = val_str.toFloat();
-            } else if (current_param == 'D') {
-              wobble_diameter = val_str.toFloat();
-              if (wobble_step > 0 && wobble_diameter > 0) {
-                wobble_k = M_PI * wobble_diameter / wobble_step + 1;
-              } else {
-                wobble_k = 1;
-              }
-              handling_wobble = false;
-            }
-          } else if (current_param == 'X') {
+          if (current_param == 'X') {
             x_param = val_str.toFloat();
           } else if (current_param == 'Y') {
             y_param = val_str.toFloat();
@@ -124,19 +112,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
           }
 
           // The start of new param
-          if (c == 'W') {
-            handling_wobble = true;
-            current_param = ';';
-            val_str.clear();
-          } else if (handling_wobble) {
-            if (c == 'S' || c == 'D') {
-              current_param = c;
-            } else {
-              // Workare cmd
-              handling_wobble = false;
-            }
-          } else if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
-                     c == 'S' || c == 'F' || c == 'T') {
+          if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
+              c == 'S' || c == 'F' || c == 'T') {
             // Finish a param
             current_param = c;
             val_str.clear();

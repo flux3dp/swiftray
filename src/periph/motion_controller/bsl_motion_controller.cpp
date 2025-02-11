@@ -247,6 +247,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
+    if (gcode.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
+        // Specific comment for Wobble
+        wobble_k = gcode.mid(9).toFloat();
+        return;
+    }
+
     i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -331,10 +337,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                                     settings.wobble_diameter,
                                     settings.wobble_step,
                                     WobbleType::WT_WHEEL);
-                wobble_k = M_PI * settings.wobble_diameter / settings.wobble_step + 1;
             } else {
                 lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
-                wobble_k = 1;
             }
         }
     }
