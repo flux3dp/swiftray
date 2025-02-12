@@ -242,8 +242,6 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     // layer_painter_->setBrush(Qt::NoBrush);
     // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
     polygons_mutex_.lock();
-    transformed_path.setFillRule(Qt::WindingFill);
-    transformed_path = transformed_path.simplified();
     layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
     polygons_mutex_.unlock();
   }
@@ -338,15 +336,25 @@ void ToolpathExporter::outputLayerGcode() {
  * @brief Export layer_filled_polygons_ for non-filled geometry
  */
 void ToolpathExporter::outputLayerFillGcode() {
-  QPolygonF merged_poly;
+  struct Path {
+    QLineF path;
+    bool isClockwise;
+  };
+  struct Intersection {
+    QPointF point;
+    bool isClockwise;
+  };
+
+  QRectF bounds;
   polygons_mutex_.lock();
   for (auto &polys : layer_filled_polygons_) {
     if (polys.empty()) continue;
     for (const auto& poly : polys) {
       if (poly.empty()) continue;
-      merged_poly = merged_poly.united(poly);
+      bounds = bounds.united(poly.boundingRect());
     }
   }
+  qInfo() << "Fill Path Bounds: " << bounds;
   double width = canvas_size_.width();
   double height = canvas_size_.height();
   QLineF left_border(0, 0, 0, height);
@@ -360,15 +368,15 @@ void ToolpathExporter::outputLayerFillGcode() {
   double fill_angle = current_layer_->fillAngle();
   bool fill_bidirectional = current_layer_->fillBidirectional();
   int hatch_count = current_layer_->fillHatch() ? 2 : 1;
-  // Draw filled path with fill_interval and fill_angle, intersecting with merged_filled_paths
-  // Get path bounds
-  QRectF bounds = merged_poly.boundingRect();
-  qInfo() << "Fill Path Bounds: " << bounds;
-  
+
   // Calculate diagonal length to ensure coverage
-  double diagonal = qSqrt(bounds.width() * bounds.width() + 
-                        bounds.height() * bounds.height()) * 1.1;
+  double diagonal = qSqrt(bounds.width() * bounds.width() +
+                          bounds.height() * bounds.height()) * 1.1;
   qInfo() << "Diagonal: " << diagonal / dpmm_;
+  if (diagonal == 0) {
+    polygons_mutex_.unlock();
+    return;
+  }
 
   for (int hatch = 0; hatch < hatch_count; hatch++) {
     // Convert angle to radians
@@ -385,6 +393,35 @@ void ToolpathExporter::outputLayerFillGcode() {
     // Calculate start point (offset by half diagonal in perpendicular direction)
     QPointF start = center - (perpendicular * diagonal / 2);
     qInfo() << "Start Point: " << start / dpmm_;
+
+    QList<QList<Path>> all_paths;
+    for (const auto& polys : layer_filled_polygons_) {
+      if (polys.empty())
+        continue;
+      QList<Path> paths;
+      for (const auto& poly : polys) {
+        if (poly.empty())
+          continue;
+        for (int i = 0; i < poly.size(); ++i) {
+          QPointF curr = poly[i];
+          QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
+          QLineF pathSegment(curr, next);
+          Path pathObj;
+          pathObj.path = pathSegment;
+          double x1 = direction.x();
+          double y1 = direction.y();
+          double x2 = next.x() - curr.x();
+          double y2 = next.y() - curr.y();
+          double dir = x1 * y2 - x2 * y1;
+          if (dir == 0) continue;
+          pathObj.isClockwise = dir < 0;
+          paths.append(pathObj);
+        }
+      }
+      if (paths.size() == 0) continue;
+      all_paths.append(paths);
+    }
+
     gen_->turnOnLaser();
 
     bool reverse = false;
@@ -399,6 +436,11 @@ void ToolpathExporter::outputLayerFillGcode() {
           [&lineStart](const QPointF& a, const QPointF& b) {
             return QLineF(lineStart, a).length() <
                    QLineF(lineStart, b).length();
+          };
+      std::function<bool(const Intersection& a, const Intersection& b)> isCloserIntersection =
+          [&lineStart](const Intersection& a, const Intersection& b) {
+            return QLineF(lineStart, a.point).length() <
+                   QLineF(lineStart, b.point).length();
           };
 
       QPointF innerStart(lineStart);
@@ -446,28 +488,42 @@ void ToolpathExporter::outputLayerFillGcode() {
       QList<QList<QPointF>> all_intersections;
       QList<QPointF> merged_intersections;
       QList<int> indices(layer_filled_polygons_.size());
-      for (const auto& polys : layer_filled_polygons_) {
-        if (polys.empty()) continue;
-        QList<QPointF> intersections;
-        for (const auto& poly : polys) {
-          if (poly.empty()) continue;
-          // Check each line segment of the polygon
-          for (int i = 0; i < poly.size(); ++i) {
-            QPointF curr = poly[i];
-            QPointF next = poly[(i + 1) % poly.size()]; // Wrap around to first point
-            QLineF pathSegment(curr, next);
-
-            QPointF intersection;
-            if (scanLine.intersects(pathSegment, &intersection) == QLineF::BoundedIntersection) {
-              // Ignore intersections within merged path
-              intersections.append(intersection);
-            }
+      for (const auto& elem : all_paths) {
+        QList<Intersection> intersections;
+        QList<QPointF> intersection_points;
+        for (const auto& path : elem) {
+          QPointF intersection;
+          if (scanLine.intersects(path.path, &intersection) == QLineF::BoundedIntersection) {
+            // Ignore intersections within merged path
+            Intersection intersectionObj;
+            intersectionObj.point = intersection;
+            intersectionObj.isClockwise = path.isClockwise;
+            intersections.append(intersectionObj);
           }
         }
         if (intersections.size() == 0) continue;
-        // Sort intersections by distance from line start, each consecutive pair is a start and end point
-        std::sort(intersections.begin(), intersections.end(), isCloser);
-        all_intersections.append(intersections);
+        // Sort intersections by distance from line start
+        std::sort(intersections.begin(), intersections.end(), isCloserIntersection);
+
+        bool is_laser_on = false;
+        int sum = 0;
+        for (int i = 0; i < intersections.size(); i += 1) {
+          Intersection intersection = intersections[i];
+          if (intersection.isClockwise) sum += 1;
+          else sum -= 1;
+          if (is_laser_on == (sum == 0)) {
+            // Current state is different from previous state
+            is_laser_on = !is_laser_on;
+            if (isCloser(intersection.point, innerStart)) {
+              intersection_points.append(innerStart);
+            } else if (isCloser(innerEnd, intersection.point)) {
+              intersection_points.append(innerEnd);
+            } else {
+              intersection_points.append(intersection.point);
+            }
+          }
+        }
+        all_intersections.append(intersection_points);
       }
 
       // Combine intersections of all polygons
@@ -544,7 +600,6 @@ void ToolpathExporter::outputLayerFillGcode() {
   polygons_mutex_.unlock();
   gen_->turnOffLaser();
 }
-
 
 /**
  * @brief Export layer_polygons_ for non-filled geometry
