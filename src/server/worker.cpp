@@ -111,7 +111,7 @@ bool Worker::handleAction(QWebSocket* socket,
       // Generate GCode
       GCodeGenerator gen(machine_param, server_->m_rotary_mode);
       QTransform move_translate = QTransform();
-      auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
+      auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
       ToolpathExporter exporter(
           (BaseGenerator*)&gen,
           server_->m_engrave_dpi / 25.4,

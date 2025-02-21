@@ -24,7 +24,9 @@ Q_SIGNALS:
   void interruptWorker();
   void sendTaskToWorker(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
 
-// Expose variables to Worker
+private:
+  QMap<QString, Machine*> machine_map_;
+  QWebSocketServer* m_server;
   Machine* m_machine;
   QString m_buffer;
   Canvas* m_canvas = nullptr;
@@ -33,12 +35,9 @@ Q_SIGNALS:
   bool m_rotary_mode;
   int m_engrave_dpi;
   double m_time_cost = 0;
-
-private:
-  QMap<QString, Machine*> machine_map_;
-  QWebSocketServer* m_server;
   QThread* workerThread;
   Worker* worker;
+  friend class Worker;
 
   void handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
   void handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port);

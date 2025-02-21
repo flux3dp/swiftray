@@ -211,9 +211,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     QString data = params.toObject()["data"].toString();
     if (data != "") {
       gcode_list_ = data.split("\n");
-      timestamp_list_ = QList<Timestamp>();
     }
-    bool job_result = getMachine()->createGCodeJob(gcode_list_, timestamp_list_);
+    bool job_result = getMachine()->createGCodeJob(gcode_list_, QList<Timestamp>());
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
   } else if (action == "sendGCode") {
