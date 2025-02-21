@@ -78,10 +78,12 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   QElapsedTimer t;
   t.start();
   Q_ASSERT_X(!layers.empty(), "ToolpathExporterFcode", "Must input at least one layer");
+  total_layer_cnt_ = layers.size();
 
-  bool canceled = false;
+  progress_ = 0;
+  dialog_ = dialog;
   if (dialog != nullptr) {
-    connect(dialog, &QProgressDialog::canceled, [&]() { canceled = true; });
+    connect(dialog, &QProgressDialog::canceled, this, &ToolpathExporterFcode::handleCancel);
   }
 
   // Step 2. Handle pre-task
@@ -153,7 +155,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   if (is_v2_) {
     gen_->end_task_script_block();
   }
-  if (canceled) {
+  if (cancelled_) {
     return false;
   }
 
@@ -174,8 +176,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   qInfo() << "preview_bitmap_" << preview_bitmap_.size();
 
   // Step 4. Handle each layer
-  int processed_layer_cnt = 0;
-  int visible_layer_cnt = 1;
+  int visible_layer_cnt = 1; // v2 task info
   int last_module;
   QString last_color;
   QString last_sub_type;
@@ -183,7 +184,14 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend();
        layer_rit++) {
     qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-    if ((*layer_rit)->isVisible() && (*layer_rit)->repeat() > 0) {
+    total_repeat_times_ = (*layer_rit)->repeat();
+    processed_repeat_times_ = 0;
+    if ((*layer_rit)->isVisible() && total_repeat_times_ > 0) {
+      if (cancelled_) {
+        return false;
+      }
+      onProgressChanged(0, true);
+
       current_layer_ = *layer_rit;
       updateLayerParam();
 
@@ -263,12 +271,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         gen_->set_toolhead_pwm(0);
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
       } else {
-        int repeat = current_layer_->repeat();
-        for (int i = 0; i < repeat; i++) {
-          if (has_focus_adjust_ && focus_step_ > 0 && i > 0) {
+        for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
+          if (has_focus_adjust_ && focus_step_ > 0 && processed_repeat_times_ > 0) {
             gen_->sync_motion_type2(184, 128, focus_step_);
           } else if (config_.enable_autofocus && layer_height > 0) {
-            double target_z = 17.0 - layer_height - config_.z_offset + i * layer_z_step;
+            double target_z = 17.0 - layer_height - config_.z_offset + processed_repeat_times_ * layer_z_step;
             target_z = round(qMax(qMin(target_z, 17.0), 0.0) * 100) / 100;
             moveZ(target_z);
           }
@@ -276,8 +283,8 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           gen_->set_toolhead_pwm(0);
         }
         moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
-        if (has_focus_adjust_ && focus_step_ > 0 && repeat > 1) {
-          float total_step = focus_step_ * (repeat - 1);
+        if (has_focus_adjust_ && focus_step_ > 0 && total_repeat_times_ > 1) {
+          float total_step = focus_step_ * (total_repeat_times_ - 1);
           gen_->sync_motion_type2(184, 128, -total_step);
         }
       }
@@ -325,16 +332,14 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       }
       visible_layer_cnt++;
     }
-    if (canceled) {
+    if (cancelled_) {
       break;
     }
-    processed_layer_cnt++;
-    if (dialog != nullptr) {
-      dialog->setValue(100 * processed_layer_cnt / layers.count());
-      QCoreApplication::processEvents();
-    }
+    total_repeat_times_ = processed_repeat_times_ = 1;
+    onProgressChanged(0, true);
+    processed_layer_cnt_++;
   }
-  if (canceled) {
+  if (cancelled_) {
     return false;
   }
 
@@ -413,7 +418,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     }
     gen_->end_task_script_block();
   }
-  if (canceled) {
+  if (cancelled_) {
     return false;
   }
 
@@ -622,21 +627,30 @@ void ToolpathExporterFcode::convertLaserLayer() {
   preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
   preview_bitmap_.fill(Qt::white);
   bitmap_dirty_area_ = QRectF();
+  element_cnt_[0] = 0, element_cnt_[1] = 0;
   // First pass: Generate path list and bitmap list and draw filled path by layer_painter_
   for (auto& shape : current_layer_->children()) {
     convertShape(shape);
   }
   // Reverse order and handle closed path
   sortPolygons();
+  if (this->cancelled_) return;
+  onProgressChanged(0.05, true);
+  total_element_cnt_ = element_cnt_[0] + element_cnt_[1] + layer_bitmaps_.size();
+
   // Part 1: Generate path fcode
   outputLayerPathFcode();
+  if (this->cancelled_) return;
+  onProgressChanged(0.05 + 0.95 * element_cnt_[0] / total_element_cnt_, true);
 
-  is_handling_bitmap_ = true;
   // Part 2: Generate filled path fcode
   outputBitmapFcode();
+  if (this->cancelled_) return;
+  onProgressChanged(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1]) / total_element_cnt_, true);
 
   // Second pass
   // Part 3: Generate bitmap fcode
+  is_handling_bitmap_ = true;
   for (auto& shape : layer_bitmaps_) {
     // Note: Bitmap list is already reversed for first-depth shapes
     // When converting group, reverse order of children and ignore paths
@@ -647,6 +661,9 @@ void ToolpathExporterFcode::convertLaserLayer() {
 }
 
 void ToolpathExporterFcode::convertPrintingLayer() {
+  // Overwrite repeat, count progress as a whole
+  processed_repeat_times_ = 0, total_repeat_times_ = 1;
+
   gen_->enter_printer_mode();
 
   float black_ratio = 1;
@@ -675,6 +692,7 @@ void ToolpathExporterFcode::convertPrintingLayer() {
   for (auto& shape : current_layer_->children()) {
     convertShape(shape);
   }
+  if (this->cancelled_) return;
 
   // Generate bitmap
   outputLayerPrintingFcode(halftone_multiplier);
@@ -803,6 +821,7 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
       preview_painter_->setBrush(Qt::NoBrush);
     }
     bitmap_dirty_area_ = bitmap_dirty_area_.united(path_bounding_rect);
+    element_cnt_[1]++;
   } else if (is_printing_layer_) {
     // Note: This is for dev convinience
     // Path in BVG input should already been converted to image
@@ -822,6 +841,7 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
     if (is_v2_) {
       preview_painter_->drawPath(transformed_path * getPreviewTransform());
     }
+    element_cnt_[0]++;
     polygons_mutex_.unlock();
   }
 }
@@ -1038,6 +1058,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample
         step = qMax(config_.fg_pwm_limit - padding_px_ * 2, 100);
       }
       for (int left = bbox.left(); left <= bbox.right(); left += step) {
+        bitmap_progress_unit_ = 0.95 * element_cnt_[1] / total_element_cnt_ / bboxes.size() / qCeil(bbox.width() / step) / bbox.height();
         int right = qMin(left + step, bbox.left() + bbox.width()) - 1;
         QRect sliced_box = QRect(bbox);
         sliced_box.setLeft(left);
@@ -1089,6 +1110,10 @@ bool ToolpathExporterFcode::rasterBitmap(const QImage& layer_image,
     if (has_move && enable_bidirection_) {
       reverse_raster_dir = !reverse_raster_dir;
     }
+    if (cancelled_) {
+      return false;
+    }
+    onProgressChanged(bitmap_progress_unit_, false);
 
     y += y_step;
   }
@@ -1427,14 +1452,19 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
   }
 
   // Slice boxes for each contour
+  int total_box = 0;
   QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, printing_slice_height);
   QList<QList<QList<int>>> sliced_boxes = {};
   for (auto bbox : bboxes) {
     sliceBox(&sliced_boxes, bbox, multipass);
+    total_box += sliced_boxes.constLast().size();
   }
+  if (this->cancelled_) return;
+  onProgressChanged(0.05, true);
 
   // Generate fcode
   int repeat = current_layer_->repeat();
+  float progress_unit = 0.9 / total_box / repeat;
   for (auto& boxes : sliced_boxes) {
     bool reverse_raster_dir = false;
     for (auto box = boxes.cbegin(); box != boxes.cend(); box++) {
@@ -1527,9 +1557,13 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
         if (enable_bidirection_) {
           reverse_raster_dir = !reverse_raster_dir;
         }
+        if (this->cancelled_) return;
+        onProgressChanged(progress_unit, false);
       }
     }
   }
+  if (this->cancelled_) return;
+  onProgressChanged(0.95, true);
 }
 
 QByteArray ToolpathExporterFcode::generateNozzleSettingPayload(
@@ -2037,4 +2071,28 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
   qInfo() << "Final contour count:" << contours.size() << "after" << safeCount << "iterations";
 
   return res;
+}
+
+void ToolpathExporterFcode::handleCancel() {
+  this->cancelled_ = true;
+}
+
+/**
+ * Update progress and emit signal if necessary
+ * Also check if the process is cancelled
+ */
+void ToolpathExporterFcode::onProgressChanged(double value, bool absolute) {
+  current_progress_ = absolute ? value : current_progress_ + value;
+  // 5% for pre-task, 5% for printing test and post-task
+  int new_progress = 5 + 90 * (processed_layer_cnt_ + (processed_repeat_times_ + current_progress_) / total_repeat_times_) / total_layer_cnt_;
+  if (new_progress > progress_) {
+    progress_ = new_progress;
+    if (dialog_ != nullptr) {
+      dialog_->setValue(progress_);
+    } else {
+      Q_EMIT progressChanged(progress_);
+    }
+  }
+  // Always call processEvents to receive the cancellation signal quickly
+  QCoreApplication::processEvents();
 }
