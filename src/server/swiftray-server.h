@@ -36,6 +36,7 @@ private:
   bool m_rotary_mode;
   int m_engrave_dpi;
   double m_time_cost = 0;
+  std::mutex canvas_mutex_;
   QThread* workerThread;
   Worker* worker;
   friend class Worker;

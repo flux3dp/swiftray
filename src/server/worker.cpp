@@ -21,6 +21,13 @@ bool Worker::handleAction(QWebSocket* socket,
                           const QString& action,
                           const QJsonValue& params) {
   QJsonObject result;
+  if (!server_->canvas_mutex_.try_lock()) {
+    result["success"] = false;
+    result["error"] = QJsonObject{{"message", "The backend is currently busy. Please try again later."}},
+    Q_EMIT sendCallbackInMain(socket, id, result);
+    QCoreApplication::processEvents();
+    return false;
+  }
   result["success"] = true;
   QString current_task = "";
   auto onProgress = [&](int prog) {
@@ -32,6 +39,7 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
   };
   auto onCancel = [&]() {
+    server_->canvas_mutex_.unlock();
     result["success"] = false;
     result["error"] = QJsonObject{{"message", "cancel"}},
     Q_EMIT sendCallbackInMain(socket, id, result);
@@ -165,5 +173,6 @@ bool Worker::handleAction(QWebSocket* socket,
 
   Q_EMIT sendCallbackInMain(socket, id, result);
   QCoreApplication::processEvents();
+  server_->canvas_mutex_.unlock();
   return true;
 }
