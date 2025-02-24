@@ -19,6 +19,7 @@ public:
 private Q_SLOTS:
   void onNewConnection();
   void processMessage(const QString& message);
+  void processBinaryMessage(const QByteArray& message);
 
 Q_SIGNALS:
   void interruptWorker();

@@ -66,6 +66,7 @@ void SwiftrayServer::onNewConnection() {
   qInfo() << "New connection from" << socket->peerAddress().toString();
   
   connect(socket, &QWebSocket::textMessageReceived, this, &SwiftrayServer::processMessage);
+  connect(socket, &QWebSocket::binaryMessageReceived, this, &SwiftrayServer::processBinaryMessage);
   connect(socket, &QWebSocket::disconnected, socket, &QWebSocket::deleteLater);
 }
 
@@ -106,6 +107,11 @@ void SwiftrayServer::processMessage(const QString& message) {
       sendCallback(socket, id, QJsonObject{{"success", false}, {"error", "Unknown error"}});
     }
   }
+}
+
+void SwiftrayServer::processBinaryMessage(const QByteArray& message) {
+  QString text = QString::fromUtf8(message);
+  processMessage(text);
 }
 
 void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {
