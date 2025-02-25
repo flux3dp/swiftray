@@ -2,11 +2,13 @@
 #include "liblcs/lcsExpr.h"
 #undef _HAS_STD_BYTE
 #include "swiftray-server.h"
+#include "worker.h"
 #include <cmath>
 #include <canvas/canvas.h>
 #include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 #include <toolpath_exporter/toolpath-exporter.h>
 #include <toolpath_exporter/toolpath-exporter-fcode.h>
+#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -26,6 +28,7 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   } else {
     qCritical() << "Failed to start Swiftray Server on port" << port;
   }
+  setupWorker();
 }
 
 Machine* SwiftrayServer::getMachine() {
@@ -61,10 +64,20 @@ Machine* SwiftrayServer::getMachine() {
 
 void SwiftrayServer::onNewConnection() {
   QWebSocket* socket = m_server->nextPendingConnection();
+  QPointer<QWebSocket> socket_ptr = socket;
   qInfo() << "New connection from" << socket->peerAddress().toString();
   
   connect(socket, &QWebSocket::textMessageReceived, this, &SwiftrayServer::processMessage);
+  connect(socket, &QWebSocket::binaryMessageReceived, this, &SwiftrayServer::processBinaryMessage);
   connect(socket, &QWebSocket::disconnected, socket, &QWebSocket::deleteLater);
+  connect(socket, &QWebSocket::disconnected, [&, socket_ptr]() {
+    if (workerThread != nullptr) {
+      // Note: socket object maybe deleted worker handling the interrupt
+      // Use QPointer to avoid accessing deleted object
+      Q_EMIT interruptWorker(socket_ptr);
+      QCoreApplication::processEvents();
+    }
+  });
 }
 
 void SwiftrayServer::processMessage(const QString& message) {
@@ -104,6 +117,11 @@ void SwiftrayServer::processMessage(const QString& message) {
       sendCallback(socket, id, QJsonObject{{"success", false}, {"error", "Unknown error"}});
     }
   }
+}
+
+void SwiftrayServer::processBinaryMessage(const QByteArray& message) {
+  QString text = QString::fromUtf8(message);
+  processMessage(text);
 }
 
 void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params) {
@@ -209,9 +227,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     QString data = params.toObject()["data"].toString();
     if (data != "") {
       gcode_list_ = data.split("\n");
-      timestamp_list_ = QList<Timestamp>();
     }
-    bool job_result = getMachine()->createGCodeJob(gcode_list_, timestamp_list_);
+    bool job_result = getMachine()->createGCodeJob(gcode_list_, QList<Timestamp>());
     qInfo() << "Job created" << job_result;
     result["success"] = job_result;
   } else if (action == "sendGCode") {
@@ -247,94 +264,16 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
   QJsonObject result;
   result["success"] = true;
 
-  if (action == "loadSVG") {
-    // Implement BVG data loading logic
-    if (m_canvas != nullptr) {
-      delete m_canvas;
+  if (action == "interrupt") {
+    if (workerThread != nullptr) {
+      QPointer<QWebSocket> socket_ptr = socket;
+      Q_EMIT interruptWorker(socket_ptr);
+      QCoreApplication::processEvents();
     }
-    QJsonObject params_obj = params.toObject();
-    QJsonObject wrapped_file = params_obj["file"].toObject();
-    QString svg_data = wrapped_file["data"].toString().toUtf8();
-    this->m_canvas = new Canvas();
-    this->m_thumbnail = wrapped_file["thumbnail"].toString();
-    this->m_rotary_mode = params_obj["rotaryMode"].toBool();
-    this->m_engrave_dpi = params_obj["engraveDpi"].toInt();
-    QJsonObject default_config = params_obj["defaultConfig"].toObject();
-    QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
-    this->m_canvas->loadSVG(svg_data_bytes, true, default_config);
-    qInfo() << "SVG data loaded" << svg_data.length();
-    result["loadedDataSize"] = svg_data_bytes.length();
-  } else if (action == "convert") {
-    // Get the parameters
-    QJsonObject params_obj = params.toObject();
-    QJsonObject workarea = params_obj["workarea"].toObject();
-    MachineSettings::MachineParam machine_param;
-    machine_param.width = workarea["width"].toInt();
-    machine_param.height = workarea["height"].toInt();
-    int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
-    QString type = params_obj["type"].toString();
-    bool is_promark = params_obj["isPromark"].toBool();
-    if (!is_promark) {
-      qInfo() << "Generating Task Code... TYPE" << type << "DPI" << this->m_engrave_dpi;
-      QTransform move_translate = QTransform();
-      ToolpathExporterFcode exporter(move_translate, m_engrave_dpi, &params_obj, &m_thumbnail);
-      bool completed = exporter.convertStack(m_canvas->document().layers(), nullptr);
-      if (!completed) {
-        return false;
-      }
-      if (type == "fcode") {
-        result["fcode"] = QString(QByteArray::fromStdString(exporter.toString()).toBase64());
-        result["timeCost"] = exporter.getTimeCost();
-        result["metadata"] = exporter.getMetadata();
-      } else {
-        result["gcode"] = QString::fromStdString(exporter.toString());
-      }
-      result["fileName"] = "swiftray-conversion";
-    } else {
-      qInfo() << "Generating Promark GCode..." << "DPI" << this->m_engrave_dpi << "ROTARY" << this->m_rotary_mode << "TRAVEL" << travel_speed;
-      bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
-      bool enable_high_speed = (m_machine == NULL || this->m_machine->getMachineParam().is_high_speed_mode) && m_canvas->hasBitmap() && use_fast_gradient;
-      // Generate GCode
-      GCodeGenerator gen(machine_param, this->m_rotary_mode);
-      QTransform move_translate = QTransform();
-      auto origin = m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : m_machine->getCustomOrigin();
-      ToolpathExporter exporter(
-          (BaseGenerator*)&gen,
-          this->m_engrave_dpi / 25.4,
-          travel_speed,
-          QPointF(std::get<0>(origin), std::get<1>(origin)),
-          ToolpathExporter::PaddingType::kNoPadding,
-          move_translate);
-      exporter.setSortRule(PathSort::NestedSort);
-      exporter.setWorkAreaSize(QRectF(0, 0, m_canvas->document().width() / 10, m_canvas->document().height() / 10));
-
-      if ( true != exporter.convertStack(m_canvas->document().layers(), enable_high_speed, true)) {
-        return false; // canceled
-      }
-      if (exporter.isExceedingBoundary()) {
-        qWarning() << "Some items aren't placed fully inside the working area.";
-      }
-      if (this->m_rotary_mode && m_canvas->calculateShapeBoundary().height() > m_canvas->document().height()) {
-        qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
-      }
-      qInfo() << "Conversion completed.";
-      m_buffer = QString::fromStdString(gen.toString());
-      // Write m_buffer to file
-      QFile file("swiftray-conversion.gcode");
-      if (file.open(QIODevice::WriteOnly)) {
-        QTextStream stream(&file);
-        stream << m_buffer;
-        file.close();
-      }
-      gcode_list_ = m_buffer.split("\n");
-      result["gcode"] = m_buffer;
-      result["fileName"] = "swiftray-conversion";
-      this->m_time_cost = MachineJob::calcTotalTime(gcode_list_)/1000;
-      result["timeCost"] = this->m_time_cost;
-      qInfo() << "GCode generation completed." << m_buffer.length() << "time estimate" << this->m_time_cost;
-      // Debugging GCode
-      if (m_buffer.length() < 3000) printf("%s", m_buffer.toStdString().c_str());
-    }
+  } else if (action == "loadSVG" || action == "convert") {
+    Q_EMIT sendTaskToWorker(socket, id, action, params);
+    QCoreApplication::processEvents();
+    return true;
   } else if (action == "loadSettings") {
     // Implement settings loading logic
   } else {
@@ -367,7 +306,20 @@ void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, c
   sendCallback(socket, id, result);
 }
 
+void SwiftrayServer::sendData(QWebSocket* socket, const QString& id, const QJsonObject& result, const QString& type) {
+  if (!socket->isValid()) return;
+  QJsonObject payload;
+  payload["id"] = id;
+  payload["result"] = result;
+  payload["type"] = type;
+  QJsonDocument doc(payload);
+  QString msg = doc.toJson(QJsonDocument::Compact);
+  socket->sendTextMessage(msg);
+  socket->flush();
+}
+
 void SwiftrayServer::sendCallback(QWebSocket* socket, const QString& id, const QJsonObject& result) {
+  if (!socket->isValid()) return;
   QJsonObject callback;
   callback["id"] = id;
   callback["result"] = result;
@@ -379,6 +331,7 @@ void SwiftrayServer::sendCallback(QWebSocket* socket, const QString& id, const Q
 }
 
 void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const QJsonObject& data) {
+  if (!socket->isValid()) return;
   QJsonObject payload;
   payload["type"] = event;
   payload["data"] = data;
@@ -426,6 +379,8 @@ QJsonArray SwiftrayServer::getDeviceList() {
   return devices;
 }
 
+// TODO: split to 'generate task' and 'start job'
+// And move generation part to worker for AreaCheck framing
 bool SwiftrayServer::startFraming(QJsonArray points, int width) {
   qInfo() << "Starting framing job" << points << "width:" << width;
   if (getMachine()->getJobExecutor()->getActiveJob()) {
@@ -472,4 +427,20 @@ bool SwiftrayServer::startFraming(QJsonArray points, int width) {
     return true;
   }
   return false;
+}
+
+void SwiftrayServer::setupWorker() {
+  if (workerThread == nullptr) {
+    qInfo() << "Setup worker thread";
+    workerThread = new QThread(this);
+    worker = new Worker(this);
+
+    connect(this, &SwiftrayServer::interruptWorker, worker, &Worker::handleInterrupt, Qt::QueuedConnection);
+    connect(this, &SwiftrayServer::sendTaskToWorker, worker, &Worker::handleAction, Qt::QueuedConnection);
+    connect(worker, &Worker::sendDataInMain, this, &SwiftrayServer::sendData, Qt::QueuedConnection);
+    connect(worker, &Worker::sendCallbackInMain, this, &SwiftrayServer::sendCallback, Qt::QueuedConnection);
+
+    worker->moveToThread(workerThread);
+    workerThread->start();
+  }
 }

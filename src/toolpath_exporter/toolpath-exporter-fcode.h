@@ -152,6 +152,12 @@ class ToolpathExporterFcode : public QObject {
   bool convertStack(const QList<LayerPtr>& layers,
                     QProgressDialog* dialog = nullptr);
 
+Q_SIGNALS:
+  void progressChanged(int value);
+
+public Q_SLOTS:
+  void handleCancel();
+
  private:
   void parseParam(const QJsonObject* paramPtr) {
     QJsonObject param = *paramPtr;
@@ -493,6 +499,8 @@ class ToolpathExporterFcode : public QObject {
                bool force_y,
                bool is_travel);
 
+  void onProgressChanged(double value, bool absolute);
+
   // white = 255 = no emit, black = 0 = emit
   const int white_val = 255;
   // for pwm, val < pwm_threshold = emit
@@ -598,4 +606,16 @@ class ToolpathExporterFcode : public QObject {
   float max_x_ = std::nanf("");
   float min_y_ = std::nanf("");
   float max_y_ = std::nanf("");
+  // Task progress
+  QProgressDialog* dialog_ = nullptr;
+  bool cancelled_ = false;
+  int total_layer_cnt_ = 1;
+  int processed_layer_cnt_ = 0;
+  int total_repeat_times_ = 1;
+  int processed_repeat_times_ = 0;
+  int element_cnt_[2] = {0, 0}; // 0 Path, 1 Filled Path (Bitmap)
+  int total_element_cnt_ = 0;
+  double bitmap_progress_unit_ = 0;
+  double current_progress_ = 0; // progress within current repeat
+  int progress_ = 0;
 };

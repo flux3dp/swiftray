@@ -24,6 +24,7 @@ public:
   int getIndex() const { return next_gcode_idx_; } 
   int length() const { return gcode_list_.length(); }
   QString getJobName() const { return job_name_; }
+  void handleCancel() { cancelled = true; }
 
   virtual Timestamp getElapsedTime() const;
   virtual Timestamp getTotalRequiredTime() const;
@@ -33,13 +34,18 @@ public:
   QPixmap getPreview() const;
   void setMotionController(QPointer<MotionController>);
 
-  static double calcTotalTime(const QStringList& gcode_list);
+  double calcTotalTime(const QStringList& gcode_list);
 
   static QList<Timestamp> calcRequiredTime(const QStringList &gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);
   static QList<Timestamp> calcRequiredTime(QStringList &&gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);
   bool auto_loop = false;
+  bool cancelled = false;
+
+Q_SIGNALS:
+  void progressChanged(int value);
+
 protected:
   QString job_name_;
   bool with_preview_ = false;

@@ -90,6 +90,8 @@ private:
 
   QImage imageBinarize(QImage src, int threshold);
 
+  void onProgressChanged(double value, bool absolute);
+
   QTransform global_transform_;
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;
@@ -122,4 +124,13 @@ private:
   bool with_image_ = false;
   bool cancelled_ = false;
   PathSort sort_rule_;
+  // ===== Calculate current progress percentage ======
+  int total_layer_cnt_ = 1;
+  int processed_layer_cnt_ = 0;
+  int total_repeat_times_ = 1;
+  int processed_repeat_times_ = 0;
+  int element_cnt_[5] = {0, 0, 0, 0, 0}; // 0 Normal Bitmap, 1 Gradient Bitmap, 2 Depth Bitmap, 3 Filled Path, 4 Unfilled Path
+  int total_element_cnt_ = 0;
+  double current_progress_ = 0; // progress within current repeat
+  int progress_ = 0;
 };

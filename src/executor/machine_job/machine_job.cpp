@@ -1,6 +1,7 @@
 #include "machine_job.h"
 
 #include <QtMath>
+#include <QCoreApplication>
 #include <QDebug>
 #include <executor/operation_cmd/gcode_cmd.h>
 
@@ -27,6 +28,7 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
  * @retval Total time required in ms
  */
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
+  cancelled = false;
   // Controller constants
   double z_speed = 3; // mm/s lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
   double jump_speed = 4000; // mm/s lcs_set_jump_speed_ctrl(4000);
@@ -42,8 +44,9 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   int dotting_time = 0; // us
   bool hasEnd = false;
   double wobble_k = 1;
+  int batch_size = qMax(1000, gcode_list.size() / 30);
 
-  while (current_line < gcode_list.size() && !hasEnd) {
+  while (current_line < gcode_list.size() && !hasEnd && !cancelled) {
     QString line = gcode_list[current_line];
     line = line.toUpper();
     if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
@@ -153,6 +156,11 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       }
     }
     current_line++;
+    if (current_line % batch_size == 0) {
+      // Use float calculation to avoid integer overflow on large gcode list
+      Q_EMIT progressChanged(100.0 * current_line / gcode_list.size());
+      QCoreApplication::processEvents();
+    }
   }
   return total_time;
 }

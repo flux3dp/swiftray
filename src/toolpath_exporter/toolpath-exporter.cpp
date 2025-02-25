@@ -28,6 +28,7 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
 bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home) {
   qInfo() << "[Export] Start converting stack with layers" << layers.count();
   is_high_speed_ = is_high_speed;
+  progress_ = 0;
   QElapsedTimer t;
   t.start();
   // Initial Setup
@@ -62,16 +63,17 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     layer_bitmaps_[i].fill(Qt::white);
     bitmap_dirty_areas_.append(QRectF());
   }
-  int processed_layer_cnt = 0;
+  processed_layer_cnt_ = 0;
+  total_layer_cnt_ = layers.size();
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-      int repeat = (*layer_rit)->repeat();
+      total_repeat_times_ = (*layer_rit)->repeat();
       float focus = (*layer_rit)->focus();
       float focus_step = (*layer_rit)->focusStep();
       float total_move = 0;
-      for (int i = 0; i < repeat; i++) {
-        if (i == 0) {
+      for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
+        if (processed_repeat_times_ == 0) {
           if (focus > 0) {
             // Make sure cmd list is opened
             gen_->turnOnLaser();
@@ -93,9 +95,9 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     if (this->cancelled_) {
       break;
     }
-    processed_layer_cnt++;
-    Q_EMIT progressChanged(100 * processed_layer_cnt / layers.count());
-    QCoreApplication::processEvents();
+    total_repeat_times_ = processed_repeat_times_ = 1;
+    onProgressChanged(0, true);
+    processed_layer_cnt_++;
   }
   
   if (this->cancelled_) {
@@ -132,6 +134,9 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   layer_filled_polygons_.clear();
   polygons_mutex_.unlock();
   with_image_ = false;
+  for (int i = 0; i < 5; i++) {
+    element_cnt_[i] = 0;
+  }
   //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::DepthMode; ++i) {
     bitmap_dirty_areas_[i] = QRectF();
@@ -152,6 +157,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
     convertShape(shape);
   }
   sortPolygons();
+  onProgressChanged(0.05, true);
   outputLayerGcode();
 }
 
@@ -191,7 +197,14 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
  */
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
   QTransform transform = bmp->transform() * global_transform_;
-  BitmapHandlerType type = bmp->gradient() ? BitmapHandlerType::GradientMode : BitmapHandlerType::NormalMode;
+  BitmapHandlerType type;
+  if (bmp->gradient()) {
+    type = BitmapHandlerType::GradientMode;
+    element_cnt_[1]++;
+  } else {
+    type = BitmapHandlerType::NormalMode;
+    element_cnt_[0]++;
+  }
   layer_painter_ = std::make_unique<QPainter>(&layer_bitmaps_[type]);
   layer_painter_->save();
   layer_painter_->setTransform(transform, false);
@@ -326,10 +339,27 @@ void ToolpathExporter::sortPolygons() {
  * 
  */
 void ToolpathExporter::outputLayerGcode() {
+  element_cnt_[3] = layer_filled_polygons_.size();
+  element_cnt_[4] = layer_polygons_.size();
+  total_element_cnt_ = 0;
+  for (int i = 0; i < 5; i++) {
+    total_element_cnt_ += element_cnt_[i];
+  }
+
   outputLayerBitmapGcode(BitmapHandlerType::NormalMode);
+  if (this->cancelled_) return;
+  onProgressChanged(0.05 + 0.95 * element_cnt_[0] / total_element_cnt_, true);
+
   outputLayerBitmapGcode(BitmapHandlerType::GradientMode);
+  if (this->cancelled_) return;
+  onProgressChanged(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1]) / total_element_cnt_, true);
+
   outputLayerFillGcode();
+  if (this->cancelled_) return;
+  onProgressChanged(0.05 + 0.95 * (total_element_cnt_ - element_cnt_[4]) / total_element_cnt_, true);
+
   outputLayerPathGcode();
+  onProgressChanged(1, true);
 }
 
 /**
@@ -378,7 +408,13 @@ void ToolpathExporter::outputLayerFillGcode() {
     return;
   }
 
+  // Report progress every 1 percent
+  float progress_unit = 0.0095 * element_cnt_[3] / total_element_cnt_;
+  int progress_batch = (hatch_count * diagonal * 1.5 / fill_interval) / 100 + 1;
+  int cnt = -1;
+
   for (int hatch = 0; hatch < hatch_count; hatch++) {
+    if (this->cancelled_) return;
     // Convert angle to radians
     double angleRad = qDegreesToRadians(fill_angle);
 
@@ -427,6 +463,12 @@ void ToolpathExporter::outputLayerFillGcode() {
     bool reverse = false;
     // Scan across the path
     for (double offset = -diagonal / 2; offset <= diagonal; offset += fill_interval) {
+      if (this->cancelled_) {
+        return;
+      }
+      if (++cnt % progress_batch == 0) {
+        onProgressChanged(progress_unit, false);
+      }
       // Calculate line start and end points
       QPointF lineStart = start + perpendicular * offset - direction * diagonal / 2;
       QPointF lineEnd = lineStart + direction * diagonal;
@@ -726,9 +768,11 @@ void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
       if (is_high_speed_) {
         rasterBitmapHighSpeed(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm);
       } else {
+        std::swap(element_cnt_[0], element_cnt_[1]);
         int count = 0;
         rasterBitmap(layer_image, bbox, ScanDirectionMode::kBidirectionMode, padding_mm, &count);
         gen_->addComment(QString("DOT%1").arg(count));
+        std::swap(element_cnt_[0], element_cnt_[1]);
       }
       gen_->setDottingTime(0);
       break;
@@ -771,8 +815,18 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
+  float progress_unit = 0.0095 * element_cnt_[0] / total_element_cnt_;
+  int progress_batch = raster_lines.size() / 100;
+  int cnt = -1;
+
   // 2-2. iterate
   for (const auto &raster_line: raster_lines) {
+    if (this->cancelled_) {
+      return false;
+    }
+    if (++cnt % progress_batch == 0) {
+      onProgressChanged(progress_unit, false);
+    }
     // Initialize
     if (raster_line.isNull()) {
       continue;
@@ -1075,8 +1129,18 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
+  float progress_unit = 0.0095 * element_cnt_[1] / total_element_cnt_;
+  int progress_batch = raster_lines.size() / 100;
+  int cnt = -1;
+
   // 2-2. iterate
   for (const auto &raster_line: raster_lines) {
+    if (this->cancelled_) {
+      return false;
+    }
+    if (++cnt % progress_batch == 0) {
+      onProgressChanged(progress_unit, false);
+    }
     // Initialize
     if (raster_line.isNull()) {
       continue;
@@ -1245,4 +1309,19 @@ inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double p
 
 void ToolpathExporter::handleCancel() {
   this->cancelled_ = true;
+}
+
+/**
+ * Update progress and emit signal if necessary
+ * Also check if the process is cancelled
+ */
+void ToolpathExporter::onProgressChanged(double value, bool absolute) {
+  current_progress_ = absolute ? value : current_progress_ + value;
+  int new_progress = 100 * (processed_layer_cnt_ + (processed_repeat_times_ + current_progress_) / total_repeat_times_) / total_layer_cnt_;
+  if (new_progress > progress_) {
+    progress_ = new_progress;
+    Q_EMIT progressChanged(progress_);
+  }
+  // Always call processEvents to receive the cancellation signal quickly
+  QCoreApplication::processEvents();
 }
