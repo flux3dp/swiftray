@@ -22,7 +22,7 @@ private Q_SLOTS:
   void processBinaryMessage(const QByteArray& message);
 
 Q_SIGNALS:
-  void interruptWorker();
+  void interruptWorker(QPointer<QWebSocket> socket_ptr);
   void sendTaskToWorker(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
 
 private:
@@ -37,7 +37,7 @@ private:
   int m_engrave_dpi;
   double m_time_cost = 0;
   std::mutex canvas_mutex_;
-  QThread* workerThread;
+  QThread* workerThread = nullptr;
   Worker* worker;
   friend class Worker;
 

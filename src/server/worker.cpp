@@ -11,9 +11,11 @@ Worker::Worker(QObject* server) {
   server_ = dynamic_cast<SwiftrayServer*>(server);
 }
 
-void Worker::handleInterrupt() {
-  Q_EMIT interruptAction();
-  QCoreApplication::processEvents();
+void Worker::handleInterrupt(QPointer<QWebSocket> socket_ptr) {
+  if (socket_ptr_.isNull() || socket_ptr_ == socket_ptr) {
+    Q_EMIT interruptAction();
+    QCoreApplication::processEvents();
+  }
 }
 
 bool Worker::handleAction(QWebSocket* socket,
@@ -28,9 +30,11 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
     return false;
   }
+  socket_ptr_ = socket;
   result["success"] = true;
   QString current_task = "";
   auto onProgress = [&](int prog) {
+    if (socket_ptr_.isNull()) return;
     Q_EMIT sendDataInMain(socket,
                           id,
                           QJsonObject{{"message", current_task},
@@ -39,6 +43,7 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
   };
   auto onCancel = [&]() {
+    if (socket_ptr_.isNull()) return;
     server_->canvas_mutex_.unlock();
     result["success"] = false;
     result["error"] = QJsonObject{{"message", "cancel"}},
@@ -171,6 +176,7 @@ bool Worker::handleAction(QWebSocket* socket,
     result["error"] = QJsonObject{{"message", "unknown action"}};
   }
 
+  if (socket_ptr_.isNull()) return false;
   Q_EMIT sendCallbackInMain(socket, id, result);
   QCoreApplication::processEvents();
   server_->canvas_mutex_.unlock();

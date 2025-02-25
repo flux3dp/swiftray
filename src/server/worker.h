@@ -13,11 +13,14 @@ class Worker : public QObject {
 
  public:
   Worker(QObject* parent);
-  void handleInterrupt();
+  void handleInterrupt(QPointer<QWebSocket> socket_ptr);
   bool handleAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
 
  Q_SIGNALS:
   void interruptAction();
   void sendDataInMain(QWebSocket* socket, const QString& id, const QJsonObject& result, const QString& type);
   void sendCallbackInMain(QWebSocket* socket, const QString& id, const QJsonObject& result);
+
+ private:
+  QPointer<QWebSocket> socket_ptr_;
 };

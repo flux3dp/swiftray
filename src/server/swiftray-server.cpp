@@ -28,6 +28,7 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   } else {
     qCritical() << "Failed to start Swiftray Server on port" << port;
   }
+  setupWorker();
 }
 
 Machine* SwiftrayServer::getMachine() {
@@ -63,11 +64,20 @@ Machine* SwiftrayServer::getMachine() {
 
 void SwiftrayServer::onNewConnection() {
   QWebSocket* socket = m_server->nextPendingConnection();
+  QPointer<QWebSocket> socket_ptr = socket;
   qInfo() << "New connection from" << socket->peerAddress().toString();
   
   connect(socket, &QWebSocket::textMessageReceived, this, &SwiftrayServer::processMessage);
   connect(socket, &QWebSocket::binaryMessageReceived, this, &SwiftrayServer::processBinaryMessage);
   connect(socket, &QWebSocket::disconnected, socket, &QWebSocket::deleteLater);
+  connect(socket, &QWebSocket::disconnected, [&, socket_ptr]() {
+    if (workerThread != nullptr) {
+      // Note: socket object maybe deleted worker handling the interrupt
+      // Use QPointer to avoid accessing deleted object
+      Q_EMIT interruptWorker(socket_ptr);
+      QCoreApplication::processEvents();
+    }
+  });
 }
 
 void SwiftrayServer::processMessage(const QString& message) {
@@ -256,11 +266,11 @@ bool SwiftrayServer::handleParserAction(QWebSocket* socket, const QString& id, c
 
   if (action == "interrupt") {
     if (workerThread != nullptr) {
-      Q_EMIT interruptWorker();
+      QPointer<QWebSocket> socket_ptr = socket;
+      Q_EMIT interruptWorker(socket_ptr);
       QCoreApplication::processEvents();
     }
   } else if (action == "loadSVG" || action == "convert") {
-    setupWorker();
     Q_EMIT sendTaskToWorker(socket, id, action, params);
     QCoreApplication::processEvents();
     return true;
@@ -297,6 +307,7 @@ void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, c
 }
 
 void SwiftrayServer::sendData(QWebSocket* socket, const QString& id, const QJsonObject& result, const QString& type) {
+  if (!socket->isValid()) return;
   QJsonObject payload;
   payload["id"] = id;
   payload["result"] = result;
@@ -308,6 +319,7 @@ void SwiftrayServer::sendData(QWebSocket* socket, const QString& id, const QJson
 }
 
 void SwiftrayServer::sendCallback(QWebSocket* socket, const QString& id, const QJsonObject& result) {
+  if (!socket->isValid()) return;
   QJsonObject callback;
   callback["id"] = id;
   callback["result"] = result;
@@ -319,6 +331,7 @@ void SwiftrayServer::sendCallback(QWebSocket* socket, const QString& id, const Q
 }
 
 void SwiftrayServer::sendEvent(QWebSocket* socket, const QString& event, const QJsonObject& data) {
+  if (!socket->isValid()) return;
   QJsonObject payload;
   payload["type"] = event;
   payload["data"] = data;
