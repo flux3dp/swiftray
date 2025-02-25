@@ -43,8 +43,8 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
   };
   auto onCancel = [&]() {
-    if (socket_ptr_.isNull()) return;
     server_->canvas_mutex_.unlock();
+    if (socket_ptr_.isNull()) return;
     result["success"] = false;
     result["error"] = QJsonObject{{"message", "cancel"}},
     Q_EMIT sendCallbackInMain(socket, id, result);
@@ -176,9 +176,9 @@ bool Worker::handleAction(QWebSocket* socket,
     result["error"] = QJsonObject{{"message", "unknown action"}};
   }
 
+  server_->canvas_mutex_.unlock();
   if (socket_ptr_.isNull()) return false;
   Q_EMIT sendCallbackInMain(socket, id, result);
   QCoreApplication::processEvents();
-  server_->canvas_mutex_.unlock();
   return true;
 }
