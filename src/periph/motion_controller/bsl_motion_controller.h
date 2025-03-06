@@ -41,6 +41,7 @@ public:
   bool isConnected() override;
   bool isRunningLaser() { return is_running_laser_; }
   bool isFraming() { return is_framing_; }
+  int getDisconnectCount() { return disconnect_count_; }
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -70,6 +71,7 @@ private:
   double current_y = 0.0;
   std::thread command_runner_thread_;
   int current_error_ = 0;
+  int disconnect_count_ = -1;
   double high_speed_step_;
   int high_speed_data_count_ = 0;
   QString high_speed_data_;

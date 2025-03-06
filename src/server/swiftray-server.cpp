@@ -239,8 +239,14 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     result["st_id"] = getMachine()->getStatusId();
     result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
     BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
-    if (controller && !controller->getBoardStatus().bConnected) {
+    if (controller) {
+      if (!controller->getBoardStatus().bConnected) {
+        result["error"] = "DISCONNECTED";
+      }
+      result["disconnection"] = controller->getDisconnectCount();
+    } else {
       result["error"] = "DISCONNECTED";
+      result["disconnection"] = -1;
     }
   } else if (action == "home") {
     // Implement homing logic

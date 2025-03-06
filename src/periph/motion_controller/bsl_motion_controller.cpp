@@ -419,6 +419,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           this->buffer_size_++; // Note: I guess this can be removed?
           return;
       }
+      if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_running_laser_ = true;
       // Reset current settings
       settings.current_s = 0;
@@ -701,6 +702,7 @@ bool BSLMotionController::detachPort() {
 bool BSLMotionController::resetState() {
   qInfo() << "BSLM~::resetState()" << getDebugTime();
   this->current_error_ = 0;
+  this->disconnect_count_ = -1;
   switch (getState()) {
     case MotionControllerState::kIdle:
       return true;
@@ -762,6 +764,7 @@ bool BSLMotionController::isConnected() {
         // Stop execution to avoid lcs crash
         lcs_pause_list();
         lcs_release_card(0);
+        this->disconnect_count_++;
         getListStatus();
         if (is_running_laser_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
           // Note: Current list will be abort when lcs_assign_card
