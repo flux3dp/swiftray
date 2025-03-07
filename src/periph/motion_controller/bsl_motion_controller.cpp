@@ -21,7 +21,7 @@ constexpr double JUMP_SPEED = 4000;
 constexpr int32_t JUMP_DELAY_MIN = 200;
 constexpr int32_t JUMP_DELAY_MAX = 400;
 constexpr double JUMP_DELAY = (double)(JUMP_DELAY_MIN+JUMP_DELAY_MAX)/2000;
-constexpr int32_t LASER_ON_DELAY = -100;
+constexpr int32_t LASER_ON_DELAY = -3000;
 constexpr int32_t LASER_OFF_DELAY = 100;
 constexpr double LASER_DELAY = (double)(LASER_OFF_DELAY-LASER_ON_DELAY)/1000;
 
