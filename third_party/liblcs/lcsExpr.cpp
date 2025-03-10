@@ -592,6 +592,8 @@ bool lcs_connect(bool force) {
     printf("LCS:: Selected BSL card #0. Getting status.\n");
     // Double Check with get_status
     lcs_get_status((uint32_t*)&status, &pos);
+    lcs_restart_list();
+    lcs_goto_xy(0, 0);
     if (!status.bConnected) {
         printf("LCS:: Failed to really connect to BSL card #0.\n");
         return false;
