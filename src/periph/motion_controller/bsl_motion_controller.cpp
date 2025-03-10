@@ -498,8 +498,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_write_io_port(0b0010);
     } else if (command == "M103") {
       is_framing_ = true;
+      is_running_laser_ = false;
     } else if (command == "M104") {
       is_framing_ = false;
+      is_running_laser_ = false;
     } else if (command == "M105") {
       // Force reset position
       // Control instruction
