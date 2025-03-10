@@ -764,11 +764,10 @@ bool BSLMotionController::isConnected() {
         lcs_release_card(0);
         this->disconnect_count_++;
         getListStatus();
-        if (is_running_laser_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
-          // Note: Current list will be abort when lcs_assign_card
+        if (is_running_laser_ && !lcs_paused_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
+          // Note: Current list will be aborted when lcs_assign_card
           // Wait for the current task to finish then reconnect
-          // Add addtional 3s for starting time and tolerance
-          int remaining_time = running_task_time_ - task_timer_.elapsed() + 3000;
+          int remaining_time = getRemainingTime();
           if (remaining_time > 0) QThread::msleep(remaining_time);
         }
         for (int i = 0; i < 3 && !is_board_connected_; i++) {
@@ -813,14 +812,12 @@ bool BSLMotionController::executeList(int list_no) {
   lcs_set_end_of_list();
   if(!is_framing_){
     // Wait for last list completion
-    double max_waiting_time = running_task_time_ + 3000;
-    if (!task_timer_.isValid()) task_timer_.start();
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
       isConnected();
       getListStatus();
-      if (task_timer_.elapsed() > max_waiting_time) {
+      if (!lcs_paused_ && getRemainingTime() < 0) {
         // In case bBusy1 and bBusy2 are not updated
         qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
         break;
@@ -847,9 +844,24 @@ bool BSLMotionController::executeList(int list_no) {
       return false;
     }
   }
-  if (task_timer_.isValid()) task_timer_.restart();
-  else task_timer_.start();
+  resetTimer();
   running_task_time_ = estimated_time_;
   estimated_time_ = 0;
   return true;
+}
+
+
+void BSLMotionController::resetTimer() {
+  if (task_timer_.isValid()) task_timer_.restart();
+  else task_timer_.start();
+}
+void BSLMotionController::pauseTimer() {
+  if (!task_timer_.isValid()) return;
+  running_task_time_ -= task_timer_.elapsed();
+  task_timer_.invalidate();
+}
+int BSLMotionController::getRemainingTime() {
+  if (!task_timer_.isValid()) resetTimer();
+  // Add addtional 3s for starting time and tolerance
+  return running_task_time_ - task_timer_.elapsed() + 3000;
 }
