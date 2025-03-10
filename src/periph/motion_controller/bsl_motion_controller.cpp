@@ -518,12 +518,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       QThread::msleep(2);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      lcs_set_end_of_list(); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      lcs_set_end_of_list(); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
 
