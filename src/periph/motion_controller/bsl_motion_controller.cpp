@@ -795,6 +795,8 @@ bool BSLMotionController::isConnected() {
         if (!is_board_connected_) {
           stop();
           Q_EMIT disconnected();
+        } else if (lcs_paused_) {
+          stop();
         } else if (getState() == MotionControllerState::kRun) {
           lcs_restart_list();
         }
