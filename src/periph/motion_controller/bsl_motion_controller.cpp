@@ -695,6 +695,8 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();
   QThread::msleep(200);
+  // Restore the state in case it is paused
+  lcs_restart_list();
   handleGcode("M105");
   return CmdSendResult::kOk;
 }
