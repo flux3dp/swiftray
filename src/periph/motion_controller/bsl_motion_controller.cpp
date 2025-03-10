@@ -94,17 +94,38 @@ void BSLMotionController::startCommandRunner() {
 
 int debug_count_bsl  = 0;
 
+void BSLMotionController::checkPauseResume() {
+  QCoreApplication::processEvents();
+  switch (this->getState()) {
+    case MotionControllerState::kPaused:
+      if (!lcs_paused_) {
+        // First loop after pause
+        lcs_pause_list();
+        pauseTimer();
+        lcs_paused_ = true;
+        qInfo() << "BSLM~::thread() - pausing";
+      }
+      break;
+    case MotionControllerState::kIdle:
+    case MotionControllerState::kRun:
+      if (lcs_paused_) {
+        // First loop after resume
+        lcs_restart_list();
+        resetTimer();
+        lcs_paused_ = false;
+        QThread::msleep(25);
+        qInfo() << "BSLM~::thread() - resuming";
+      }
+  }
+}
+
 void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLM~::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
   while (this->getState() != MotionControllerState::kQuit) {
+    checkPauseResume();
     debug_count_bsl ++;
     switch (this->getState()) {
       case MotionControllerState::kPaused:
-        if (!lcs_paused_) {
-          // First loop after pause
-          lcs_pause_list();
-          lcs_paused_ = true;
-        }
         QThread::msleep(25); 
         if (debug_count_bsl % 40 == 1) {
           qInfo() << "BSLM~::thread() - paused";
@@ -120,13 +141,6 @@ void BSLMotionController::commandRunnerThread() {
         break;
       case MotionControllerState::kIdle:
       case MotionControllerState::kRun:
-        if (lcs_paused_) { 
-          // First loop after resume
-          lcs_restart_list();
-          lcs_paused_ = false;
-          QThread::msleep(25); 
-          qInfo() << "BSLM~::thread() - resuming";
-        }
         this->cmd_list_mutex_.lock();
         if (this->pending_cmds_.empty()) {
           if (debug_count_bsl % 40 == 1) {
@@ -187,12 +201,13 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
     QThread::msleep(25);
+    checkPauseResume();
     if (lcs_paused_) {
       continue;
     }
     qInfo() << getErrorString(ret);
     ret = lcs_load_list(list_no, 0);
-      // If the list is already opened, close the list, execute it
+    // If the list is already opened, close the list, execute it
     if (ret == LCS_GENERAL_AREADY_OPENED) {
       qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - List already opened" << getDebugTime();
       if (!fixing_aready) {
@@ -367,6 +382,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         double new_x, x_move;
         std::bitset<4> bits;
         for (auto& c : high_speed_data_) {
+            checkPauseResume();
             bits = c.isDigit() ? c.unicode() - '0' : c.unicode() - 'A' + 10;
             for (int i = 3; i >= 0; i--) {
                 if (high_speed_data_count_ == step_count) {
@@ -810,20 +826,20 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
 
 bool BSLMotionController::executeList(int list_no) {
   lcs_set_end_of_list();
-  if(!is_framing_){
+  if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
       isConnected();
       getListStatus();
+      checkPauseResume();
       if (!lcs_paused_ && getRemainingTime() < 0) {
         // In case bBusy1 and bBusy2 are not updated
         qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
         break;
       }
-    } while (is_running_laser_ && running_task_time_ > 0 &&
-            (list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
+    } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
   if (!is_running_laser_ || !status.bConnected) return false;
   int e = lcs_execute_list(list_no);

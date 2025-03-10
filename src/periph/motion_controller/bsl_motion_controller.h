@@ -56,6 +56,7 @@ private:
   ListStatus getListStatus();
   void startList(int list_no, TaskSettings settings, bool disable_laser);
   bool executeList(int list_no);
+  void checkPauseResume();
   void resetTimer();
   void pauseTimer();
   int getRemainingTime();
