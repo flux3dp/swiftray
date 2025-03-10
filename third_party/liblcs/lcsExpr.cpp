@@ -13,6 +13,7 @@ typedef void *HINSTANCE;
 #include <cstdio>
 #include <mutex>
 #endif
+#include <QDebug>
 
 volatile HINSTANCE gLibLCS = NULL;
 
@@ -592,6 +593,10 @@ bool lcs_connect(bool force) {
     printf("LCS:: Selected BSL card #0. Getting status.\n");
     // Double Check with get_status
     lcs_get_status((uint32_t*)&status, &pos);
+    int e = lcs_restart_list();
+    qInfo() << "lcs_restart_list in lcs_connect: " << (e);
+    e = lcs_goto_xy(0, 0);
+    qInfo() << "lcs_goto_xy(0, 0) in lcs_connect" << e;
     if (!status.bConnected) {
         printf("LCS:: Failed to really connect to BSL card #0.\n");
         return false;

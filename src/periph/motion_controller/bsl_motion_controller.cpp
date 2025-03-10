@@ -21,7 +21,7 @@ constexpr double JUMP_SPEED = 4000;
 constexpr int32_t JUMP_DELAY_MIN = 200;
 constexpr int32_t JUMP_DELAY_MAX = 400;
 constexpr double JUMP_DELAY = (double)(JUMP_DELAY_MIN+JUMP_DELAY_MAX)/2000;
-constexpr int32_t LASER_ON_DELAY = -100;
+constexpr int32_t LASER_ON_DELAY = -3000;
 constexpr int32_t LASER_OFF_DELAY = 100;
 constexpr double LASER_DELAY = (double)(LASER_OFF_DELAY-LASER_ON_DELAY)/1000;
 
@@ -31,14 +31,9 @@ uint32_t pos;
 BoardRunStatus status;
 ListStatus list_status;
 
-LCS2Error doLcsApi(LCS2Error ret, QString cmd) {
-  if (true || ret != LCS_RES_NO_ERROR) {
-    qInfo() << "BSLM~::doLcsApi()" << cmd << ret;
-  }
-  return ret;
-}
+bool log_lock = false;
 
-QString BSLMotionController::getErrorString(int error) {
+QString getErrorString(int error) {
   switch (error) {
     case LCS_RES_NO_ERROR:
       return "";
@@ -79,6 +74,13 @@ QString BSLMotionController::getErrorString(int error) {
   }
 }
 
+LCS2Error doLcsApi(LCS2Error ret, QString cmd) {
+  if (true || ret != LCS_RES_NO_ERROR) {
+    qInfo() << "BSLM~::doLcsApi()" << cmd << getErrorString(ret);
+  }
+  return ret;
+}
+
 BSLMotionController::BSLMotionController(QObject *parent)
   : MotionController{parent}
 {
@@ -102,18 +104,39 @@ void BSLMotionController::startCommandRunner() {
 
 int debug_count_bsl  = 0;
 
+void BSLMotionController::checkPauseResume() {
+  QCoreApplication::processEvents();
+  switch (this->getState()) {
+    case MotionControllerState::kPaused:
+      if (!lcs_paused_) {
+        // First loop after pause
+        doLcsApi(lcs_pause_list(),"lcs_pause_list");
+        pauseTimer();
+        lcs_paused_ = true;
+        qInfo() << "SetStatus: Paused";
+      }
+      break;
+    case MotionControllerState::kIdle:
+    case MotionControllerState::kRun:
+      if (lcs_paused_) { 
+        // First loop after resume
+        doLcsApi(lcs_restart_list(),"lcs_restart_list");
+        resetTimer();
+        lcs_paused_ = false;
+        qInfo() << "SetStatus: Running";
+        QThread::msleep(25); 
+        qInfo() << "BSLM~::thread() - resuming";
+      }
+  }
+}
+
 void BSLMotionController::commandRunnerThread() {
   qInfo() << "BSLM~::thread() - entered @" << getDebugTime() << " - pending cmds.." << pending_cmds_.size();
   while (this->getState() != MotionControllerState::kQuit) {
+    checkPauseResume();
     debug_count_bsl ++;
     switch (this->getState()) {
       case MotionControllerState::kPaused:
-        if (!lcs_paused_) {
-          // First loop after pause
-          doLcsApi(lcs_pause_list(),"lcs_pause_list");
-          lcs_paused_ = true;
-          qInfo() << "SetStatus: Paused";
-        }
         QThread::msleep(25); 
         if (debug_count_bsl % 40 == 1) {
           qInfo() << "BSLM~::thread() - paused";
@@ -129,29 +152,21 @@ void BSLMotionController::commandRunnerThread() {
         break;
       case MotionControllerState::kIdle:
       case MotionControllerState::kRun:
-        if (lcs_paused_) { 
-          // First loop after resume
-          doLcsApi(lcs_restart_list(),"lcs_restart_list");
-          lcs_paused_ = false;
-          qInfo() << "SetStatus: Running";
-          QThread::msleep(25); 
-          qInfo() << "BSLM~::thread() - resuming";
-        }
-        qInfo() << "SetLock: try lock() in commandRunnerThread";
+        if (log_lock) qInfo() << "SetLock: try lock() in commandRunnerThread";
         this->cmd_list_mutex_.lock();
-        qInfo() << "SetLock: lock() in commandRunnerThread";
+        if (log_lock) qInfo() << "SetLock: lock() in commandRunnerThread";
         if (this->pending_cmds_.empty()) {
           if (debug_count_bsl % 40 == 1) {
             qInfo() << "BSLM~::thread() - No pending commands, wait 1s. Board Connection: " << isConnected() << "@" << getDebugTime();
             if (!isConnected()) {
               this->cmd_list_mutex_.unlock();
-              qInfo() << "SetLock: unlock() in commandRunnerThread before setState quit empty";
+              if (log_lock) qInfo() << "SetLock: unlock() in commandRunnerThread before setState quit empty";
               this->setState(MotionControllerState::kQuit); // Invalid this motion controller once the connection is lost
               break;
             }
           }
           this->cmd_list_mutex_.unlock();
-          qInfo() << "SetLock: unlock() in commandRunnerThread before setState idle";
+          if (log_lock) qInfo() << "SetLock: unlock() in commandRunnerThread before setState idle";
           this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
           QThread::msleep(25);
@@ -162,7 +177,7 @@ void BSLMotionController::commandRunnerThread() {
           bool is_connected = isConnected();
           if (!is_connected) {
             this->cmd_list_mutex_.unlock();
-            qInfo() << "SetLock: unlock() in commandRunnerThread before setState quit";
+            if (log_lock) qInfo() << "SetLock: unlock() in commandRunnerThread before setState quit";
             this->setState(MotionControllerState::kQuit);
             break;
           }
@@ -170,7 +185,7 @@ void BSLMotionController::commandRunnerThread() {
           QString cmd = this->pending_cmds_.front();
           this->pending_cmds_.pop();
           this->cmd_list_mutex_.unlock();
-          qInfo() << "SetLock: unlock() in commandRunnerThread before handleGcode";
+          if (log_lock) qInfo() << "SetLock: unlock() in commandRunnerThread before handleGcode";
           this->handleGcode(cmd);
           dequeueCmd(1);
         }
@@ -186,9 +201,9 @@ void BSLMotionController::commandRunnerThread() {
 }
 
 void BSLMotionController::dequeueCmd(int count) {
-  qInfo() << "SetLock: try lock() in dequeueCmd";
+  if (log_lock) qInfo() << "SetLock: try lock() in dequeueCmd";
   this->cmd_list_mutex_.lock();
-  qInfo() << "SetLock: lock() in dequeueCmd";
+  if (log_lock) qInfo() << "SetLock: lock() in dequeueCmd";
   for (int i = 0; i < count; i++) {
     if (!cmd_executor_queue_.isEmpty()) {
       auto exec = cmd_executor_queue_.at(0);
@@ -197,7 +212,7 @@ void BSLMotionController::dequeueCmd(int count) {
     }
   }
   this->cmd_list_mutex_.unlock();
-  qInfo() << "SetLock: unlock() in dequeueCmd";
+  if (log_lock) qInfo() << "SetLock: unlock() in dequeueCmd";
 }
 
 LCS2Error BSLMotionController::waitListAvailable(int list_no) {
@@ -206,6 +221,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
     QThread::msleep(25);
+    checkPauseResume();
     if (lcs_paused_) {
       continue;
     }
@@ -241,6 +257,7 @@ void mark_to(double y, double x) {
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
+    qInfo() << "handleGcode" << gcode;
     static TaskSettings settings;
     static bool rotary_mode = false;
     static bool laser_enabled = false;
@@ -386,6 +403,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         double new_x, x_move;
         std::bitset<4> bits;
         for (auto& c : high_speed_data_) {
+            checkPauseResume();
             bits = c.isDigit() ? c.unicode() - '0' : c.unicode() - 'A' + 10;
             for (int i = 3; i >= 0; i--) {
                 if (high_speed_data_count_ == step_count) {
@@ -505,13 +523,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       doLcsApi(lcs_write_io_port(0b0010),"lcs_write_io_port(0b0010)");
     } else if (command == "M103") {
       is_framing_ = true;
-      qInfo() << "SetConfig: Framing true";
+      qInfo() << "SetConfig: Framing true" << is_running_laser_;
+      is_running_laser_ = false;
     } else if (command == "M104") {
       is_framing_ = false;
-      qInfo() << "SetConfig: Framing false";
+      qInfo() << "SetConfig: Framing false" << is_running_laser_;
+      is_running_laser_ = false;
     } else if (command == "M105") {
       // Force reset position
       // Control instruction
+      qInfo() << "Handle M105";
       doLcsApi(lcs_goto_xy(0, 0),"lcs_goto_xy(0, 0)");
     } else if (!is_move_command) {
       return;
@@ -543,12 +564,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       QThread::msleep(2);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      doLcsApi(lcs_set_end_of_list(),"lcs_set_end_of_list"); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no); // Wait till the previous list is available.
-      doLcsApi(lcs_set_end_of_list(),"lcs_set_end_of_list"); // Send empty list
       if(!executeList(list_no)) return;
       QThread::msleep(1);
 
@@ -642,13 +661,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
  * @return false if port is busy or buffer is full
  */
 MotionController::CmdSendResult BSLMotionController::sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) {
-  qInfo() << "SetLock: try lock() in sendCmdPacket";
+  if (log_lock) qInfo() << "SetLock: try lock() in sendCmdPacket";
   this->cmd_list_mutex_.lock();
-  qInfo() << "SetLock: lock() in sendCmdPacket";
+  if (log_lock) qInfo() << "SetLock: lock() in sendCmdPacket";
   this->pending_cmds_.push(cmd_packet);
   enqueueCmdExecutor(executor);
   this->cmd_list_mutex_.unlock();
-  qInfo() << "SetLock: unlock() in sendCmdPacket";
+  if (log_lock) qInfo() << "SetLock: unlock() in sendCmdPacket";
   if (!this->command_runner_thread_.joinable()) {
     startCommandRunner();
   }
@@ -702,16 +721,18 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   this->is_running_laser_ = false;
   getBoardStatus();
   if (!status.bConnected) lcs_connect();
-  qInfo() << "SetLock: try lock() in stop";
+  if (log_lock) qInfo() << "SetLock: try lock() in stop";
   this->cmd_list_mutex_.lock();
-  qInfo() << "SetLock: lock() in stop";
+  if (log_lock) qInfo() << "SetLock: lock() in stop";
   std::queue<QString> new_queue;
   this->pending_cmds_.swap(new_queue);
   this->cmd_list_mutex_.unlock();
-  qInfo() << "SetLock: unlock() in stop";
+  if (log_lock) qInfo() << "SetLock: unlock() in stop";
   dequeueCmd(this->cmd_executor_queue_.size());
   Q_EMIT MotionController::resetDetected();
   QThread::msleep(200);
+  // Restore the state in case it is paused
+  doLcsApi(lcs_restart_list(),"lcs_restart_list");
   handleGcode("M105");
   return CmdSendResult::kOk;
 }
@@ -767,18 +788,20 @@ void BSLMotionController::setScanaheadParams(double worksize, double angle, doub
 
 std::mutex state_mutex_;
 BoardRunStatus BSLMotionController::getBoardStatus() {
-  qInfo() << "SetLock: try lock() [state] in getBoardStatus";
+  if (log_lock) qInfo() << "SetLock: try lock() [state] in getBoardStatus";
   std::lock_guard<std::mutex> lock(state_mutex_);
-  qInfo() << "SetLock: lock() [state] in getBoardStatus";
+  if (log_lock) qInfo() << "SetLock: lock() [state] in getBoardStatus";
   status.bConnected = false;
   LCS2Error ret = lcs_get_status((uint32_t *)&status, &pos);
-  qInfo() << "SetLock: auto release [state] in getBoardStatus";
+  if (log_lock) qInfo() << "SetLock: auto release [state] in getBoardStatus";
+  qInfo() << "Main status" << status.bConnected << status.bCacheReady << pos;
   if (ret == LCS_RES_NO_ERROR) return status;
   return status;
 }
 
 ListStatus BSLMotionController::getListStatus() {
   lcs_read_status((uint32_t *)&list_status);
+  qInfo() << "List status" << list_status.bBusy1 << list_status.bBusy2 << list_status.bPaused;
   return list_status;
 }
 
@@ -792,9 +815,9 @@ bool BSLMotionController::isConnected() {
         // Handle running thread first
         QThread::msleep(1000);
       }
-      qInfo() << "SetLock: try lock() [reconnect] in isConnected";
+      if (log_lock) qInfo() << "SetLock: try lock() [reconnect] in isConnected";
       std::lock_guard<std::mutex> lock(reconnect_mutex_);
-      qInfo() << "SetLock: lock() [reconnect] in isConnected";
+      if (log_lock) qInfo() << "SetLock: lock() [reconnect] in isConnected";
       is_board_connected_ = getBoardStatus().bConnected;
       if(!is_board_connected_){
         // Stop execution to avoid lcs crash
@@ -802,11 +825,10 @@ bool BSLMotionController::isConnected() {
         doLcsApi(lcs_release_card(0),"lcs_release_card");
         this->disconnect_count_++;
         getListStatus();
-        if (is_running_laser_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
-          // Note: Current list will be abort when lcs_assign_card
+        if (is_running_laser_ && !lcs_paused_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
+          // Note: Current list will be aborted when lcs_assign_card
           // Wait for the current task to finish then reconnect
-          // Add addtional 3s for starting time and tolerance
-          int remaining_time = running_task_time_ - task_timer_.elapsed() + 3000;
+          int remaining_time = getRemainingTime();
           if (remaining_time > 0) QThread::msleep(remaining_time);
         }
         for (int i = 0; i < 3 && !is_board_connected_; i++) {
@@ -820,9 +842,11 @@ bool BSLMotionController::isConnected() {
           Q_EMIT disconnected();
         } else if (getState() == MotionControllerState::kRun) {
           doLcsApi(lcs_restart_list(),"lcs_restart_list");
+        } else if (getState() == MotionControllerState::kPaused) {
+          stop();
         }
       }
-      qInfo() << "SetLock: auto release [reconnect] in isConnected";
+      if (log_lock) qInfo() << "SetLock: auto release [reconnect] in isConnected";
     }
   }
   return is_board_connected_;
@@ -850,22 +874,21 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
 
 bool BSLMotionController::executeList(int list_no) {
   doLcsApi(lcs_set_end_of_list(),"lcs_set_end_of_list");
-  if(!is_framing_){
+  if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
-    double max_waiting_time = running_task_time_ + 3000;
-    if (!task_timer_.isValid()) task_timer_.start();
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
       isConnected();
       getListStatus();
-      if (task_timer_.elapsed() > max_waiting_time) {
+      checkPauseResume();
+      qInfo() << "executeList waiting for completion" << running_task_time_ << getRemainingTime();
+      if (!lcs_paused_ && getRemainingTime() < 0) {
         // In case bBusy1 and bBusy2 are not updated
         qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
         break;
       }
-    } while (is_running_laser_ && running_task_time_ > 0 &&
-            (list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
+    } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
   if (!is_running_laser_ || !status.bConnected) return false;
   int e = doLcsApi(lcs_execute_list(list_no),"lcs_execute_list" + QString::number(list_no));
@@ -886,9 +909,25 @@ bool BSLMotionController::executeList(int list_no) {
       return false;
     }
   }
-  if (task_timer_.isValid()) task_timer_.restart();
-  else task_timer_.start();
+  resetTimer();
   running_task_time_ = estimated_time_;
+  qInfo() << "Set running_task_time_" << running_task_time_;
   estimated_time_ = 0;
   return true;
+}
+
+
+void BSLMotionController::resetTimer() {
+  if (task_timer_.isValid()) task_timer_.restart();
+  else task_timer_.start();
+}
+void BSLMotionController::pauseTimer() {
+  if (!task_timer_.isValid()) return;
+  running_task_time_ -= task_timer_.elapsed();
+  task_timer_.invalidate();
+}
+int BSLMotionController::getRemainingTime() {
+  if (!task_timer_.isValid()) resetTimer();
+  // Add addtional 3s for starting time and tolerance
+  return running_task_time_ - task_timer_.elapsed() + 3000;
 }

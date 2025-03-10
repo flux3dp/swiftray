@@ -34,7 +34,7 @@ public:
   CmdSendResult pause();
   CmdSendResult resume();
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
-  QString getCurrentError() { return this->getErrorString(current_error_); }
+  QString getCurrentError() { return ""; }
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   BoardRunStatus getBoardStatus();
@@ -47,15 +47,18 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
+  void checkPauseResume();
   void handleGcode(const QString &cmd_packet);
   void startCommandRunner();
   void commandRunnerThread();
   void dequeueCmd(int count);
   LCS2Error waitListAvailable(int list_no);
-  QString getErrorString(int error_code);
   ListStatus getListStatus();
   void startList(int list_no, TaskSettings settings, bool disable_laser);
   bool executeList(int list_no);
+  void resetTimer();
+  void pauseTimer();
+  int getRemainingTime();
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
