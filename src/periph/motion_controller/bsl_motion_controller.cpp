@@ -865,8 +865,8 @@ bool BSLMotionController::executeList(int list_no) {
       return false;
     }
   }
-  resetTimer();
   running_task_time_ = estimated_time_;
+  resetTimer();
   estimated_time_ = 0;
   return true;
 }
