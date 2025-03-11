@@ -165,7 +165,6 @@ void BSLMotionController::commandRunnerThread() {
             this->setState(MotionControllerState::kQuit);
             break;
           }
-          setState(MotionControllerState::kRun); // Set state to running if there are pending commands
           QString cmd = this->pending_cmds_.front();
           this->pending_cmds_.pop();
           this->cmd_list_mutex_.unlock();
