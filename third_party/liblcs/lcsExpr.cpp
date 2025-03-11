@@ -557,6 +557,7 @@ bool lcs_available() {
     return lcs_search_cards() != 0;
 }
 
+bool first_connect = true;
 std::mutex connect_mutex_;
 bool lcs_connect(bool force) {
     if (!lcs_available()) {
@@ -565,7 +566,7 @@ bool lcs_connect(bool force) {
     }
     BoardRunStatus status;
     uint32_t pos;
-    if (!force) {
+    if (!force && !first_connect) {
         lcs_get_status((uint32_t*)&status, &pos);
         if (status.bConnected) {
             printf("LCS:: Already connected to BSL card #0");
@@ -592,6 +593,8 @@ bool lcs_connect(bool force) {
     printf("LCS:: Selected BSL card #0. Getting status.\n");
     // Double Check with get_status
     lcs_get_status((uint32_t*)&status, &pos);
+    lcs_restart_list();
+    lcs_goto_xy(0, 0);
     if (!status.bConnected) {
         printf("LCS:: Failed to really connect to BSL card #0.\n");
         return false;
