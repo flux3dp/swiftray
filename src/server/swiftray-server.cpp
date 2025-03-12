@@ -29,6 +29,8 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
     qCritical() << "Failed to start Swiftray Server on port" << port;
   }
   setupWorker();
+  // Set env to avoid Path truncated in parsePathDataFast
+  qputenv("QT_SVG_ASSUME_TRUSTED_SOURCE", "");
 }
 
 Machine* SwiftrayServer::getMachine() {
