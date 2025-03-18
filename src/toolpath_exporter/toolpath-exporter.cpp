@@ -816,7 +816,7 @@ bool ToolpathExporter::rasterBitmap(const QImage &layer_image,
   qInfo() << "# of raster line: " << raster_lines.size();
 
   float progress_unit = 0.0095 * element_cnt_[0] / total_element_cnt_;
-  int progress_batch = raster_lines.size() / 100;
+  int progress_batch = raster_lines.size() / 100 + 1;
   int cnt = -1;
 
   // 2-2. iterate
@@ -1130,7 +1130,7 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
   qInfo() << "# of raster line: " << raster_lines.size();
 
   float progress_unit = 0.0095 * element_cnt_[1] / total_element_cnt_;
-  int progress_batch = raster_lines.size() / 100;
+  int progress_batch = raster_lines.size() / 100 + 1;
   int cnt = -1;
 
   // 2-2. iterate
