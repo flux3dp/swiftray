@@ -21,7 +21,7 @@ constexpr double JUMP_SPEED = 4000;
 constexpr int32_t JUMP_DELAY_MIN = 200;
 constexpr int32_t JUMP_DELAY_MAX = 400;
 constexpr double JUMP_DELAY = (double)(JUMP_DELAY_MIN+JUMP_DELAY_MAX)/2000;
-constexpr int32_t LASER_ON_DELAY = -3000;
+constexpr int32_t LASER_ON_DELAY = 0;
 constexpr int32_t LASER_OFF_DELAY = 100;
 constexpr double LASER_DELAY = (double)(LASER_OFF_DELAY-LASER_ON_DELAY)/1000;
 
@@ -460,7 +460,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_laser_mode(LCS_MOPA, is_framing_);
       startList(list_no, settings, true);
       // List Instruction
-      lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
+      // Force delay for the first laser
+      lcs_set_laser_delays(-3000, LASER_OFF_DELAY);
       lcs_set_scanner_delays(100, 50);
       lcs_error_count = 0;
       laser_enabled = false;
@@ -827,6 +828,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   } else if (settings.wobble_diameter != -1) {
     lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
   }
+  lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
 }
 
 bool BSLMotionController::executeList(int list_no) {
