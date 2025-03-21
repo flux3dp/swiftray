@@ -218,9 +218,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "startFraming") {
-    QJsonArray points = params.toObject()["points"].toArray();
-    int width = params.toObject()["width"].toInt();
-    result["success"] = this->startFraming(points, width);
+    result["success"] = this->startFraming(params);
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
   } else if (action == "upload") {
@@ -389,8 +387,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
 
 // TODO: split to 'generate task' and 'start job'
 // And move generation part to worker for AreaCheck framing
-bool SwiftrayServer::startFraming(QJsonArray points, int width) {
-  qInfo() << "Starting framing job" << points << "width:" << width;
+bool SwiftrayServer::startFraming(const QJsonValue& params) {
   if (getMachine()->getJobExecutor()->getActiveJob()) {
     throw std::runtime_error("Job already running");
   }
@@ -398,8 +395,12 @@ bool SwiftrayServer::startFraming(QJsonArray points, int width) {
     throw std::runtime_error("Machine not connected");
   }
 
-  DirtyAreaOutlineGenerator outline_generator(getMachine()->getMachineParam(), this->m_rotary_mode);
+  QJsonArray points = params.toObject()["points"].toArray();
   int points_size = points.size();
+  int width = params.toObject()["width"].toInt();
+  QJsonObject rotary = params.toObject()["rotaryInfo"].toObject();
+  bool rotary_mode = points_size == 0 ? this->m_rotary_mode : !rotary.empty();
+  DirtyAreaOutlineGenerator outline_generator(getMachine()->getMachineParam(), rotary_mode);
   if (points_size == 0) {
     // Generate gcode for framing by doc
     QTransform move_translate = QTransform();
@@ -411,7 +412,8 @@ bool SwiftrayServer::startFraming(QJsonArray points, int width) {
         getMachine()->getMachineParam().travel_speed,
         QPointF(std::get<0>(origin), std::get<1>(origin)),
         ToolpathExporter::PaddingType::kNoPadding,
-        move_translate);
+        move_translate,
+        true);
     exporter.setSortRule(PathSort::NestedSort);
     exporter.setWorkAreaSize(QRectF(0,0,doc.width() / 10, doc.height() / 10)); // TODO: Set machine work area in unit of mm
     exporter.convertStack(doc.layers(),  getMachine()->getMachineParam().is_high_speed_mode,  true);
@@ -425,12 +427,18 @@ bool SwiftrayServer::startFraming(QJsonArray points, int width) {
       QJsonArray point = points[i].toArray();
       outline_generator.update_boundary(point[0].toDouble(), point[1].toDouble());
     }
+    if (!rotary.empty()) {
+      outline_generator.setRotary(rotary["y"].toDouble(0), // y in mm
+                                  rotary["yRatio"].toDouble(1),
+                                  rotary["ySplit"].toDouble(0),
+                                  rotary["yOverlap"].toDouble(0));
+    }
   }
-  outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);// mm/s to mm/min
-  outline_generator.setLaserPower(0.0f);
-  outline_generator.setStep(50);
+  outline_generator.setTravelSpeed(getMachine()->getMachineParam().travel_speed);
+  outline_generator.setLaserPower(0.0);
+  outline_generator.setStep(10);
   // Create Framing Job and start
-  if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"))) {
+  if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"), !rotary_mode)) {
     getMachine()->startJob();
     return true;
   }

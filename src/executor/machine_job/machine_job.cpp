@@ -39,8 +39,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   double move_distance = 0;
   int current_line = 0;
   bool relative_mode = false;  // G90 or G91
-  float last_abs_x = 0, last_abs_y = 0;
-  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
+  float last_abs_x = 0, last_abs_y = 0, last_abs_a = 0;
+  float x_param = 0, y_param = 0, z_param = 0, a_param = 0, f_param = 7500, s_param = 0;
   int dotting_time = 0; // us
   bool hasEnd = false;
   double wobble_k = 1;
@@ -106,6 +106,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
             y_param = val_str.toFloat();
           } else if (current_param == 'Z') {
             z_param = val_str.toFloat();
+          } else if (current_param == 'A') {
+            a_param = val_str.toFloat();
           } else if (current_param == 'F') {
             f_param = val_str.toFloat();
           } else if (current_param == 'S') {
@@ -116,7 +118,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
 
           // The start of new param
           if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
-              c == 'S' || c == 'F' || c == 'T') {
+              c == 'S' || c == 'F' || c == 'T' || c == 'A') {
             // Finish a param
             current_param = c;
             val_str.clear();
@@ -131,6 +133,10 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         // Note: Ingore acc time
         total_time += 1000.0 * fabs(z_param) / z_speed;
       } else {
+        if (a_param != last_abs_a) {
+          total_time += fabs(a_param - last_abs_a) * 19.6875;
+          last_abs_a = a_param;
+        }
         if (relative_mode) {
           move_distance = qSqrt(qPow(x_param, 2) + qPow(y_param, 2));
           last_abs_x += x_param;

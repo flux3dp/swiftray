@@ -123,34 +123,10 @@ public:
     if (x_min_ == x_max_ && x_min_ == -1) {
       str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
       str_stream_ << "G1S0" << std::endl;
+    } else if (rotary_mode_ && rotary_split_ > 0) {
+      handleSplitedRotary();
     } else {
-      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-      str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl;//from % to 1/1000
-      if (step_ > 0) {
-        for (int i = 1; x_min_ + i * step_ < x_max_; i++) {
-          str_stream_ << "G1" << "X" << round((x_min_ + i * step_) * 1000) / 1000 << std::endl;
-        }
-      }
-      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-      if (step_ > 0) {
-        for (int i = 1; y_min_ + i * step_ < y_max_; i++) {
-          str_stream_ << "G1" << "Y" << round((y_min_ + i * step_) * 1000) / 1000 << std::endl;
-        }
-      }
-      str_stream_ << "G1" << "X" << round(x_max_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-      if (step_ > 0) {
-        for (int i = 1; x_max_ - i * step_ > x_min_; i++) {
-          str_stream_ << "G1" << "X" << round((x_max_ - i * step_) * 1000) / 1000 << std::endl;
-        }
-      }
-      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_max_ * 1000) / 1000 << std::endl;
-      if (step_ > 0) {
-        for (int i = 1; y_max_ - i * step_ > y_min_; i++) {
-          str_stream_ << "G1" << "Y" << round((y_max_ - i * step_) * 1000) / 1000 << std::endl;
-        }
-      }
-      str_stream_ << "G1" << "X" << round(x_min_ * 1000) / 1000 << "Y" << round(y_min_ * 1000) / 1000 << std::endl;
-      str_stream_ << "G1S0" << std::endl;
+      handleBox(x_min_, x_max_, y_min_, y_max_);
     }
     str_stream_ << "M2" << std::endl; // // Sync program flow and End the program (clear state: turn off laser, turn off coolant, ...)
     return str_stream_.str();
@@ -162,6 +138,17 @@ public:
 
   void setStep(double step) {
     if (step > 0) step_ = step;
+  }
+
+  void setRotary(double rotary_axis_coord,
+                 double rotary_y_ratio,
+                 double rotary_split,
+                 double rotary_overlap) {
+    rotary_axis_coord_ = rotary_axis_coord;
+    rotary_y_ratio_ = rotary_y_ratio;
+    rotary_split_ = rotary_split;
+    rotary_offset_ = rotary_split_ / 2;
+    rotary_overlap_ = rotary_overlap;
   }
 
   void update_boundary(float x, float y) {
@@ -199,6 +186,12 @@ private:
   double laser_power_ = 2;
   bool should_home_ = false;
   bool rotary_mode_;
+  double rotary_y_ratio_ = 1;
+  double rotary_axis_coord_ = 0;
+  double rotary_split_ = 0;
+  double rotary_offset_ = 0;
+  double rotary_overlap_ = 0;
+  int split_ = 0;
 
   void apply_axis_direction(float &x, float &y) {
     switch (machine_origin_) {
@@ -221,5 +214,62 @@ private:
       default:
         break;
     }
+  }
+
+  double getX(float x) { return std::round(x * 1000) / 1000; }
+
+  double getY(float y) {
+    float split_base = split_ * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    return std::round((y - split_base + rotary_axis_coord_) * 1000) / 1000;
+  }
+
+  double getA(int split) {
+    split_ = split;
+    float split_base = split_ * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    return std::round(split_base * rotary_y_ratio_ * 1000) / 1000;
+  }
+
+  void handleBox(double x_min, double x_max, double y_min, double y_max) {
+    str_stream_ << "G1" << "X" << getX(x_min) << "Y" << getY(y_min) << std::endl;
+    str_stream_ << "G1S" << std::to_string(laser_power_ * 10) << std::endl; // from % to 1/1000
+    if (step_ > 0) {
+      for (int i = 1; x_min + i * step_ < x_max; i++) {
+        str_stream_ << "G1" << "X" << getX(x_min + i * step_) << std::endl;
+      }
+    }
+    str_stream_ << "G1" << "X" << getX(x_max) << "Y" << getY(y_min) << std::endl;
+    if (step_ > 0) {
+      for (int i = 1; y_min + i * step_ < y_max; i++) {
+        str_stream_ << "G1" << "Y" << getY(y_min + i * step_) << std::endl;
+      }
+    }
+    str_stream_ << "G1" << "X" << getX(x_max) << "Y" << getY(y_max) << std::endl;
+    if (step_ > 0) {
+      for (int i = 1; x_max - i * step_ > x_min; i++) {
+        str_stream_ << "G1" << "X" << getX(x_max - i * step_) << std::endl;
+      }
+    }
+    str_stream_ << "G1" << "X" << getX(x_min) << "Y" << getY(y_max) << std::endl;
+    if (step_ > 0) {
+      for (int i = 1; y_max - i * step_ > y_min; i++) {
+        str_stream_ << "G1" << "Y" << getY(y_max - i * step_) << std::endl;
+      }
+    }
+    str_stream_ << "G1" << "X" << getX(x_min) << "Y" << getY(y_min) << std::endl;
+    str_stream_ << "G1S0" << std::endl;
+  }
+
+  void handleSplitedRotary() {
+    split_ = 0;
+    str_stream_ << "G1S0A" << getA(0) << std::endl;
+    for (int current_split = y_min_ / rotary_split_; current_split <= y_max_ / rotary_split_; current_split++) {
+      double y_min = std::max(current_split * rotary_split_, y_min_);
+      double y_max = std::min((current_split + 1) * rotary_split_, y_max_);
+      str_stream_ << "G1A" << getA(current_split) << std::endl;
+      handleBox(x_min_, x_max_, y_min, y_max);
+      handleBox(x_min_, x_max_, y_min, y_max);
+      handleBox(x_min_, x_max_, y_min, y_max);
+    }
+    str_stream_ << "G1A0" << std::endl;
   }
 };

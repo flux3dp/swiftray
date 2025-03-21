@@ -33,7 +33,7 @@ public:
       DepthMode, // Depth mode image
   };
 
-  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate) noexcept;
+  ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate, bool is_promark = false) noexcept;
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home);
 
@@ -92,6 +92,7 @@ private:
 
   void onProgressChanged(double value, bool absolute);
 
+  bool is_promark_ = false;
   QTransform global_transform_;
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;

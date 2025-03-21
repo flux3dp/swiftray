@@ -33,6 +33,10 @@ public:
 
   virtual void home() { NO_BASIC_IMPL }
 
+  virtual void homeRotary(bool to_offset) {
+    qWarning() << "BaseGenerator::setRotary()" << "Promark Rotary feature not implemented";
+  }
+
   // Sync motion (finish all motion command in buffer)
   virtual void syncProgramFlow() { NO_BASIC_IMPL }
 
@@ -76,6 +80,10 @@ public:
 
   virtual void setWobble(double wobble_step, double wobble_diameter) { 
     qWarning() << "BaseGenerator::setWobble()" << "Promark feature not implemented"; 
+  }
+
+  virtual void setRotary(double rotary_axis_coord, double rotary_split, double rotary_overlap) {
+    qWarning() << "BaseGenerator::setRotary()" << "Promark Rotary feature not implemented";
   }
 
   virtual void addComment(QString msg) { 

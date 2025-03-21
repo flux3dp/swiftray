@@ -10,8 +10,9 @@
 #include <cmath>
 #include <constants.h>
 
-ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate) noexcept :
- gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point)
+// TODO: Fix ToolpathExporter for non-Promark machines
+ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), is_promark_(is_promark)
 {
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
@@ -34,8 +35,8 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   // Initial Setup
   if (!gen_->isRotaryMode()) {
     gen_->disableRotary();
-    gen_->setRedLight(false);
   }
+  gen_->setRedLight(false);
   gen_->turnOffLaser(); // M5
   if(start_with_home) {
     gen_->home();
@@ -43,6 +44,11 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   gen_->useAbsolutePositioning();
   if (gen_->isRotaryMode()) {
     gen_->enableRotary();
+    if (is_promark_) {
+      // Make sure cmd list is opened
+      gen_->turnOnLaser();
+      gen_->homeRotary(true);
+    }
   }
   gen_->setWorkarea(machine_work_area_mm_);
 
@@ -99,11 +105,14 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     onProgressChanged(0, true);
     processed_layer_cnt_++;
   }
-  
+
   if (this->cancelled_) {
     return false;
   }
 
+  if (is_promark_ && gen_->isRotaryMode()) {
+    gen_->homeRotary(false);
+  }
   gen_->finishProgramFlow();
   
   if (this->cancelled_) {
@@ -111,9 +120,10 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   }
 
   // Post cmds
-  // gen_->home();
-  // No final homing for Promark
-  // moveTo(end_point_, travel_speed_, 0, 0);
+  if (!is_promark_) {
+    gen_->home();
+    moveTo(end_point_, travel_speed_, 0, 0);
+  }
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -668,7 +678,7 @@ void ToolpathExporter::outputLayerPathGcode() {
     for (QPointF &point : poly) {
       next_point_mm = point / dpmm_;
       // Divide a long line into small segments
-      if ( (next_point_mm - current_pos_mm_).manhattanLength() > 5 ) { // At most 5mm per segment
+      if (!is_promark_ && (next_point_mm - current_pos_mm_).manhattanLength() > 5) { // At most 5mm per segment
         int segments = std::max(2.0,
                            std::sqrt(std::pow(next_point_mm.x() - current_pos_mm_.x(), 2) +
                                 std::pow(next_point_mm.y() - current_pos_mm_.y(), 2)) / 5 );
@@ -688,7 +698,6 @@ void ToolpathExporter::outputLayerPathGcode() {
                current_layer_->power(),
                0);
       }
-
     }
 
     //gen_->turnOffLaser();

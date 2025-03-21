@@ -73,7 +73,7 @@ protected:
   qreal x_pos_ = 0;
   qreal y_pos_ = 0;
   qreal z_pos_ = 0;
-  //qreal a_pos_ = 0;
+  qreal a_pos_ = 0;
 
   QByteArray unprocssed_response_;
 };

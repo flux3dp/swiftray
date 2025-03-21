@@ -247,7 +247,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int dotting_time = 0;
     static bool before_first_laser = true;
     static double wobble_k = 1;
-    static QRegularExpression re("([GMXYFSZDWQPT]|WD|WS)(-?\\d+\\.?\\d*)");
+    static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
 
     // Skip these GCode
@@ -272,6 +272,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     bool is_move_command = false;
     bool should_swap = false;
     bool should_end = false;
+    double target_a = a_pos_;
     double x = is_absolute_positioning ? x_pos_ : 0;
     double y = is_absolute_positioning ? y_pos_ : 0;
     double z = 0;
@@ -287,6 +288,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             command = type + value;
         } else if (type == "M") {
             command = type + value;
+        } else if (type == "A") {
+            target_a = value.toDouble();
+            is_move_command = true;
         } else if (type == "X") {
             x = value.toDouble();
             is_move_command = true;
@@ -437,6 +441,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_running_laser_ = true;
       // Reset current settings
+      a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
       settings.period = 10;
@@ -580,42 +585,27 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           target_y = y_pos_ + y;
       }
 
-      if (rotary_mode) {
-        double diff_y = target_y - y_pos_;
-        if (diff_y != 0) {
-          lcs_set_axis_move(0, fabs(diff_y) * 100, diff_y < 0, 3200, 1600, 255);
-          // TODO: calulate estimated time
-        }
-        double distance = fabs(target_x - x_pos_);
+      double diff_a = target_a - a_pos_;
+      if (diff_a != 0) {
+        lcs_set_axis_move(0, fabs(diff_a) * 63, diff_a > 0, 3200, 1600, 255);
+        estimated_time_ += (fabs(diff_a)) * 19.6875;
+        a_pos_ = target_a;
+      }
+      double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
+      if (distance > 0) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
-            if (dotting_time == 0) {
-                mark_to(0, target_x - center_pos);
-                estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
-            } else {
-                jump_to(0, target_x - center_pos);
-                estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
-                lcs_laser_on_list(dotting_time);
-                estimated_time_ += dotting_time / 1000;
-            }
-        } else {
-            jump_to(0, target_x - center_pos);
-            estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
-        }
-      } else {
-        double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
-        if (laser_enabled && (command == "G1" || command.isEmpty())) {
-            if (dotting_time == 0) {
-                mark_to(-(target_y - center_pos), target_x - center_pos);
-                estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
-            } else {
-                jump_to(-(target_y - center_pos), target_x - center_pos);
-                estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
-                lcs_laser_on_list(dotting_time);
-                estimated_time_ += dotting_time / 1000;
-            }
-        } else {
+          if (dotting_time == 0) {
+            mark_to(-(target_y - center_pos), target_x - center_pos);
+            estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
+          } else {
             jump_to(-(target_y - center_pos), target_x - center_pos);
             estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
+            lcs_laser_on_list(dotting_time);
+            estimated_time_ += dotting_time / 1000;
+          }
+        } else {
+          jump_to(-(target_y - center_pos), target_x - center_pos);
+          estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
         }
       }
       x_pos_ = target_x;

@@ -35,7 +35,7 @@ public:
   MachineSettings::MachineParam getMachineParam() const;
   bool createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list = QList<Timestamp>());
   bool createGCodeJob(const QStringList& gcode_list, const QList<Timestamp>& timestamp_list, QPixmap preview);
-  bool createFramingJob(QStringList gcode_list);
+  bool createFramingJob(QStringList gcode_list, bool loop = false);
   bool createRotaryTestJob(QRectF bbox, char rotary_axis, qreal feedrate, double framing_power);
   bool createJoggingRelativeJob(qreal x_dist, qreal y_dist, qreal z_dist, qreal feedrate);
   bool createJoggingAbsoluteJob(std::tuple<qreal, qreal, qreal> pos, qreal feedrate);

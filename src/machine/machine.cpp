@@ -119,10 +119,11 @@ bool Machine::createGCodeJob(const QStringList& gcode_list, const QList<Timestam
  * @brief 
  * 
  * @param gcode_list 
+ * @param loop auto restart the job when finished
  * @return true 
  * @return false: no job executor exists or already running a job
  */
-bool Machine::createFramingJob(QStringList gcode_list) {
+bool Machine::createFramingJob(QStringList gcode_list, bool loop) {
   // Check state
   if (connect_state_ != ConnectionState::kConnected) {
     return false;
@@ -134,7 +135,7 @@ bool Machine::createFramingJob(QStringList gcode_list) {
   if (is_bsl) gcode_list.insert(0, "M103"); // Custom gcode indicating framing for BSL machine
   else gcode_list.append("?"); // Request for realtime status update at the end of the job
   auto job = QSharedPointer<FramingJob>::create(gcode_list);
-  if (is_bsl) job->auto_loop = true; // If it's a galvanometer machine, run loop
+  if (loop) job->auto_loop = true;
   return job_executor_ && job_executor_->setNewJob(job);
 }
 
