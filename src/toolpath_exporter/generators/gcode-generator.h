@@ -269,7 +269,7 @@ public:
       // Force a move to axis center
       str_stream_ << "G1";
       split_ = -1;
-      rotate(0, true);
+      rotate(0);
       // Force y move to axis center
       y_ = -1;
       moveY(0, true);
