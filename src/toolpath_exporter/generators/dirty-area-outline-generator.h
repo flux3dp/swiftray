@@ -219,8 +219,9 @@ private:
   double getX(float x) { return std::round(x * 1000) / 1000; }
 
   double getY(float y) {
-    float split_base = split_ * (rotary_split_ - rotary_overlap_) + rotary_offset_;
-    return std::round((y - split_base + rotary_axis_coord_) * 1000) / 1000;
+    float split_base = split_ * rotary_split_ + rotary_offset_;
+    float arg_y = y - split_base + rotary_axis_coord_;
+    return std::round(arg_y * 1000) / 1000;
   }
 
   double getA(int split) {

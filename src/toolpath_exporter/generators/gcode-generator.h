@@ -337,7 +337,7 @@ private:
     if (std::fabs(target_y - y_) < epsilon_) {
       return;
     }
-    float split_base = split_ * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    float split_base = split_ * rotary_split_ + rotary_offset_;
     float target_y_in_split_ = target_y - split_base;
     float arg_y = is_absolute ? (target_y_in_split_ + rotary_axis_coord_)
                               : (target_y_in_split_ - y_in_split_);
