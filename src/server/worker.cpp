@@ -123,6 +123,12 @@ bool Worker::handleAction(QWebSocket* socket,
       bool enable_high_speed = (server_->m_machine == NULL || server_->m_machine->getMachineParam().is_high_speed_mode) && server_->m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode
       GCodeGenerator gen(machine_param, server_->m_rotary_mode);
+      if (server_->m_rotary_mode) {
+        gen.setRotary(params_obj["spin"].toDouble(0) / 10, // spin in px
+                      params_obj["rotary_y_ratio"].toDouble(1),
+                      params_obj["rotary_split"].toDouble(0),
+                      params_obj["rotary_overlap"].toDouble(0));
+      }
       QTransform move_translate = QTransform();
       auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
       ToolpathExporter exporter(
@@ -131,7 +137,8 @@ bool Worker::handleAction(QWebSocket* socket,
           travel_speed,
           QPointF(std::get<0>(origin), std::get<1>(origin)),
           ToolpathExporter::PaddingType::kNoPadding,
-          move_translate);
+          move_translate,
+          true);
       exporter.setSortRule(PathSort::NestedSort);
       exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
 

@@ -103,56 +103,63 @@ public:
     }
 
     // 3. Separate relative mode & absolute mode
-    if (distance_modal_ == GCodeDistanceModal::kG91) { // G91: relative distance
-      if (std::fabs(x - x_) >= epsilon_ || std::fabs(y - y_) >= epsilon_) {
-        if ( motion_modal_ != GCodeMotionModal::kG01) {
-          str_stream_ << "G1";
-          motion_modal_ = GCodeMotionModal::kG01;
-        }
-      }
-      if (std::fabs(x - x_) >= epsilon_) {
-        float dist_x = round((x - x_) * move_precision_) / move_precision_;
-        str_stream_ << "X" << dist_x;
-        x_ = x_ + dist_x;
-      }
-      if (std::fabs(y - y_) >= epsilon_) {
-        float dist_y = std::round((y - y_) * move_precision_) / move_precision_;
-        str_stream_ << "Y" << dist_y;
-        y_ = y_ + dist_y;
-      }
-    } else { // G90: absolute distance
-      // Coordinate transform for different origin type
-      if (std::fabs(x - x_) < epsilon_ && std::fabs(y - y_) < epsilon_ 
-          && std::fabs(speed_ - speed) < epsilon_ && std::fabs(power_ - power) < epsilon_)
-        return;
+    if (std::fabs(x - x_) < epsilon_ && std::fabs(y - y_) < epsilon_ &&
+        std::fabs(speed_ - speed) < epsilon_ &&
+        std::fabs(power_ - power) < epsilon_)
+      return;
 
-      if ( motion_modal_ != GCodeMotionModal::kG01) {
-        str_stream_ << "G1";
-        motion_modal_ = GCodeMotionModal::kG01;
-      }
-      if (std::fabs(x - x_) >= epsilon_) {
-        str_stream_ << "X" << std::round(x * move_precision_) / move_precision_;
-        x_ = x;
-      }
-      if (std::fabs(y - y_) >= epsilon_) {
-        str_stream_ << "Y" << std::round(y * move_precision_) / move_precision_;
-        y_ = y;
-      }
+    bool is_absolute = distance_modal_ == GCodeDistanceModal::kG90;
+    int split = rotary_split_ > 0 ? y / rotary_split_ : 0;
+    float split_start = 0;
+    float split_end = rotary_split_;
+    int split_dir = 1;
+    if (split - split_ < 0) {
+      split_start = rotary_split_;
+      split_end = 0;
+      split_dir = -1;
     }
 
+    if (motion_modal_ != GCodeMotionModal::kG01) {
+      str_stream_ << "G1";
+      motion_modal_ = GCodeMotionModal::kG01;
+    }
     if (std::fabs(speed_ - speed) >= epsilon_) {
       str_stream_ << "F" << speed * 60; // mm/s to mm/min
       speed_ = speed;
     }
-
+    if (power > 0) {
+      // Handle each split separately
+      std::string resetPowerStr = "S";
+      resetPowerStr += std::to_string(int(power * 10));
+      resetPowerStr += "\n";
+      while (split_ != split) {
+        float next_y = split_ * rotary_split_ + split_end;
+        float next_x = (x - x_) * (next_y - y_) / (y - y_) + x_;
+        // Move to the end of the split and Turn on laser
+        moveX(next_x, is_absolute);
+        moveY(next_y, is_absolute);
+        str_stream_ << resetPowerStr;
+        // Move to next split (rotate) and Turn off laser
+        rotate(split_ + split_dir);
+        // Move to the start of the split
+        moveY(next_y, is_absolute);
+        str_stream_ << std::endl;
+      }
+    } else {
+      // Directly move to the target split
+      rotate(split);
+    }
+    moveX(x, is_absolute);
+    moveY(y, is_absolute);
     if (std::fabs(power_ - power) >= epsilon_) {
-      str_stream_ << "S" << power * 10; // mm/s to mm/min
+      str_stream_ << "S" << power * 10;
       power_ = power;
     }
     str_stream_ << std::endl;
   }
 
   void moveZ(float z) override {
+    // Always use relative mode for Z
     str_stream_ << "M102" << std::endl;
     str_stream_ << "Z" << std::round(z * move_precision_) / move_precision_ << std::endl;
   }
@@ -221,6 +228,17 @@ public:
     addComment(QString("WOBBLE K %1").arg(wobble_k));
   }
 
+  void setRotary(double rotary_axis_coord,
+                 double rotary_ratio,
+                 double rotary_split,
+                 double rotary_overlap) {
+    rotary_axis_coord_ = rotary_axis_coord;
+    rotary_ratio_ = rotary_ratio;
+    rotary_split_ = rotary_split;
+    rotary_offset_ = rotary_split_ / 2;
+    rotary_overlap_ = rotary_overlap;
+  }
+
   void addComment(QString msg) override {
     str_stream_ << ";" << msg.toStdString() << std::endl;
   }
@@ -244,6 +262,21 @@ public:
   void home() override {
     str_stream_ << "$H" << std::endl;
     x_ = y_ = 0;
+  }
+
+  void homeRotary(bool to_offset) override {
+    if (to_offset) {
+      // Force a move to axis center
+      str_stream_ << "G1";
+      split_ = -1;
+      rotate(0);
+      // Force y move to axis center
+      y_ = -1;
+      moveY(0, true);
+      str_stream_ << std::endl;
+    } else {
+      str_stream_ << "A0S0" << std::endl;
+    }
   }
 
   /**
@@ -282,4 +315,48 @@ private:
   MachineSettings::MachineParam::OriginType machine_origin_;
   float epsilon_ = 0.00005;
   float move_precision_ = 10000; // 10000 for Promark, 1000 for other machines
+  double rotary_ratio_ = 1;
+  double rotary_axis_coord_ = 0;  // rotary center (blue line), mm
+  double rotary_split_ = 0;    // height of each split, 0 means no splitting, mm
+  double rotary_offset_ = 0;   // center of split, mm
+  double rotary_overlap_ = 0;  // mm
+  double y_in_split_ = 0;      // relative y_ to the current split center
+  int split_ = 0;
+
+  void moveX(float target_x, bool is_absolute) {
+    if (std::fabs(target_x - x_) < epsilon_) {
+      return;
+    }
+    float arg_x = is_absolute ? target_x : target_x - x_;
+    arg_x = std::round(arg_x * move_precision_) / move_precision_;
+    str_stream_ << "X" << arg_x;
+    x_ = is_absolute ? target_x : x_ + arg_x;
+  }
+
+  void moveY(float target_y, bool is_absolute) {
+    if (std::fabs(target_y - y_) < epsilon_) {
+      return;
+    }
+    float split_base = split_ * rotary_split_ + rotary_offset_;
+    float target_y_in_split_ = target_y - split_base;
+    float arg_y = is_absolute ? (target_y_in_split_ + rotary_axis_coord_)
+                              : (target_y_in_split_ - y_in_split_);
+    arg_y = std::round(arg_y * move_precision_) / move_precision_;
+    str_stream_ << "Y" << arg_y;
+    y_ = is_absolute ? target_y : y_ + arg_y;
+    y_in_split_ = target_y_in_split_;
+  }
+
+  void rotate(int target_split) {
+    // Always use absolute mode for rotary
+    if (target_split == split_) {
+      return;
+    }
+    float arg_a = target_split * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    arg_a = std::round(arg_a * rotary_ratio_ * move_precision_) / move_precision_;
+    str_stream_ << "A" << arg_a << "S0" << std::endl;
+    power_ = 0;
+    split_ = target_split;
+    y_ = split_ * rotary_split_ + rotary_offset_ + y_in_split_;
+  }
 };

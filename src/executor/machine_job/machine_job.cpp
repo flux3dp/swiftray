@@ -1,4 +1,5 @@
 #include "machine_job.h"
+#include "constants.h"
 
 #include <QtMath>
 #include <QCoreApplication>
@@ -29,18 +30,13 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
  */
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   cancelled = false;
-  // Controller constants
-  double z_speed = 3; // mm/s lcs_set_axis_move(1, fabs(z) * 1600, z > 0, 4800, 10, 255);
-  double jump_speed = 4000; // mm/s lcs_set_jump_speed_ctrl(4000);
-  double jump_delay = 0.3; // ms lcs_set_delay_mode(true, 200, 400, 10);
-  double laser_delay = 0.2; // ms lcs_set_laser_delays(-100, 100);
 
   double total_time = 0; // ms
   double move_distance = 0;
   int current_line = 0;
   bool relative_mode = false;  // G90 or G91
-  float last_abs_x = 0, last_abs_y = 0;
-  float x_param = 0, y_param = 0, z_param = 0, f_param = 7500, s_param = 0;
+  float last_abs_x = 0, last_abs_y = 0, last_abs_a = 0;
+  float x_param = 0, y_param = 0, z_param = 0, a_param = 0, f_param = 7500, s_param = 0;
   int dotting_time = 0; // us
   bool hasEnd = false;
   double wobble_k = 1;
@@ -52,12 +48,12 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
     if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int dots = line.mid(4).toInt();
-      total_time += dots * jump_delay; // Jump delay for each dot
+      total_time += dots * PromarkJobConfig::JUMP_DELAY_MS; // Jump delay for each dot
       total_time += 0.001 * dots * dotting_time; // Actual dotting time
     } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int jumps = line.mid(5).toInt();
-      total_time += jumps * jump_delay;  // Jump delay for blank parts
+      total_time += jumps * PromarkJobConfig::JUMP_DELAY_MS;  // Jump delay for blank parts
     } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for Wobble
       wobble_k = line.mid(9).toFloat();
@@ -106,6 +102,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
             y_param = val_str.toFloat();
           } else if (current_param == 'Z') {
             z_param = val_str.toFloat();
+          } else if (current_param == 'A') {
+            a_param = val_str.toFloat();
           } else if (current_param == 'F') {
             f_param = val_str.toFloat();
           } else if (current_param == 'S') {
@@ -116,7 +114,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
 
           // The start of new param
           if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
-              c == 'S' || c == 'F' || c == 'T') {
+              c == 'S' || c == 'F' || c == 'T' || c == 'A') {
             // Finish a param
             current_param = c;
             val_str.clear();
@@ -129,8 +127,12 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
 
       if (z_param != 0) {
         // Note: Ingore acc time
-        total_time += 1000.0 * fabs(z_param) / z_speed;
+        total_time += fabs(z_param) * PromarkJobConfig::Z_MS_PER_MM;
       } else {
+        if (a_param != last_abs_a) {
+          total_time += fabs(a_param - last_abs_a) * PromarkJobConfig::A_MS_PER_MM;
+          last_abs_a = a_param;
+        }
         if (relative_mode) {
           move_distance = qSqrt(qPow(x_param, 2) + qPow(y_param, 2));
           last_abs_x += x_param;
@@ -144,13 +146,13 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         if (move_distance > 0) {
           if (s_param == 0) {
             // jump & delay
-            total_time += 1000.0 * move_distance / jump_speed + jump_delay;
+            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED + PromarkJobConfig::JUMP_DELAY_MS;
           } else if (dotting_time == 0) {
             // mark & delay
-            total_time += 1000.0 * move_distance * wobble_k / f_param * 60 + laser_delay;
+            total_time += 1000.0 * move_distance * wobble_k / f_param * 60 + PromarkJobConfig::LASER_DELAY_MS;
           } else {
             // jump for dotting
-            total_time += 1000.0 * move_distance / jump_speed;
+            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED;
           }
         }
       }
