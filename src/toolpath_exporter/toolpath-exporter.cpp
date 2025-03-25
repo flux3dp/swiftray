@@ -206,7 +206,12 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
  * @param bmp
  */
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
+  QRectF new_dirty_area = global_transform_.mapRect(bmp->boundingRect());
   QTransform transform = bmp->transform() * global_transform_;
+  QImage transformed_image =
+      bmp->sourceImage()
+          .transformed(transform, Qt::SmoothTransformation)
+          .convertToFormat(QImage::Format_ARGB32);
   BitmapHandlerType type;
   if (bmp->gradient()) {
     type = BitmapHandlerType::GradientMode;
@@ -216,16 +221,13 @@ void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
     element_cnt_[0]++;
   }
   layer_painter_ = std::make_unique<QPainter>(&layer_bitmaps_[type]);
-  layer_painter_->save();
-  layer_painter_->setTransform(transform, false);
   if (bmp->gradient()) { // gradient mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage(bmp->sourceImage()));
+    layer_painter_->drawImage(new_dirty_area.topLeft(), transformed_image);
   } else { // binarize mode
-    layer_painter_->drawPixmap(0, 0, QPixmap::fromImage( imageBinarize(bmp->sourceImage(), bmp->thrsh_brightness()) ));
+    layer_painter_->drawImage(new_dirty_area.topLeft(), imageBinarize(transformed_image, bmp->thrsh_brightness()));
   }
-  layer_painter_->restore();
   layer_painter_->end();
-  bitmap_dirty_areas_[type] = bitmap_dirty_areas_[type].united(global_transform_.mapRect(bmp->boundingRect()));
+  bitmap_dirty_areas_[type] = bitmap_dirty_areas_[type].united(new_dirty_area);
   QRectF boundary_mm = resolution_scale_transform_.mapRect(machine_work_area_mm_);
 
   // Boundary check
