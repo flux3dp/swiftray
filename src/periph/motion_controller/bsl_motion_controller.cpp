@@ -1,4 +1,5 @@
 #include "bsl_motion_controller.h"
+#include "constants.h"
 
 #include <bitset>
 #include <string>
@@ -12,18 +13,6 @@
 #include <QtCore/qcoreapplication.h>
 
 #define MAX_BUFFER_LIST_SIZE 10000
-
-// Time estimation constants
-constexpr double Z_SPEED_IN_MM = 3;
-constexpr double Z_PULSE_PER_MM = 1600;
-constexpr double Z_SPEED_IN_PULSE = Z_SPEED_IN_MM * Z_PULSE_PER_MM;
-constexpr double JUMP_SPEED = 4000;
-constexpr int32_t JUMP_DELAY_MIN = 200;
-constexpr int32_t JUMP_DELAY_MAX = 400;
-constexpr double JUMP_DELAY = (double)(JUMP_DELAY_MIN+JUMP_DELAY_MAX)/2000;
-constexpr int32_t LASER_ON_DELAY = 0;
-constexpr int32_t LASER_OFF_DELAY = 100;
-constexpr double LASER_DELAY = (double)(LASER_OFF_DELAY-LASER_ON_DELAY)/1000;
 
 int lcs_error_count = 0;
 uint32_t pos;
@@ -459,14 +448,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (list_status.bPaused) lcs_restart_list();
       }
       // Control instruction
-      lcs_set_jump_speed_ctrl(JUMP_SPEED);
+      lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
       lcs_set_mark_speed_ctrl(1000);
-      lcs_set_delay_mode(true, JUMP_DELAY_MIN, JUMP_DELAY_MAX, 10);
+      lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
       lcs_set_laser_mode(LCS_MOPA, is_framing_);
       startList(list_no, settings, true);
       // List Instruction
       // Force delay for the first laser
-      lcs_set_laser_delays(-3000, LASER_OFF_DELAY);
+      lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
       lcs_set_scanner_delays(100, 50);
       lcs_error_count = 0;
       laser_enabled = false;
@@ -478,7 +467,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       if (last_is_z_command) {
         // Appand a dummy move command to ensure the last Z command is executed
-        lcs_set_axis_move(1, 1, z > 0, Z_SPEED_IN_PULSE, 10.0, 255);
+        lcs_set_axis_move(1, 1, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255);
       }
       lcs_disable_laser();
       should_swap = true;
@@ -571,8 +560,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      lcs_set_axis_move(1, fabs(z) * Z_PULSE_PER_MM, z > 0, Z_SPEED_IN_PULSE, 10, 255);
-      estimated_time_ += fabs(z) * Z_SPEED_IN_MM * 1000;
+      lcs_set_axis_move(1, fabs(z) * PromarkJobConfig::Z_PULSE_PER_MM, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10, 255);
+      estimated_time_ += fabs(z) * PromarkJobConfig::Z_MS_PER_MM;
       last_is_z_command = true;
       // QThread::msleep(1000);
     } else if (is_move_command) {
@@ -587,8 +576,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
-        lcs_set_axis_move(0, fabs(diff_a) * 63, diff_a > 0, 3200, 1600, 255);
-        estimated_time_ += (fabs(diff_a)) * 19.6875;
+        lcs_set_axis_move(0, fabs(diff_a) * PromarkJobConfig::A_PULSE_PER_MM, diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
+        estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
         a_pos_ = target_a;
       }
       double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
@@ -596,16 +585,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
           if (dotting_time == 0) {
             mark_to(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + LASER_DELAY;
+            estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + PromarkJobConfig::LASER_DELAY_MS;
           } else {
             jump_to(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
+            estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
             lcs_laser_on_list(dotting_time);
             estimated_time_ += dotting_time / 1000;
           }
         } else {
           jump_to(-(target_y - center_pos), target_x - center_pos);
-          estimated_time_ += distance / JUMP_SPEED * 1000 + JUMP_DELAY;
+          estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
         }
       }
       x_pos_ = target_x;
@@ -818,7 +807,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   } else if (settings.wobble_diameter != -1) {
     lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
   }
-  lcs_set_laser_delays(LASER_ON_DELAY, LASER_OFF_DELAY);
+  lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
 }
 
 bool BSLMotionController::executeList(int list_no) {
