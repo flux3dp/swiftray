@@ -147,7 +147,7 @@ public:
     rotary_axis_coord_ = rotary_axis_coord;
     rotary_y_ratio_ = rotary_y_ratio;
     rotary_split_ = rotary_split;
-    rotary_offset_ = rotary_split_ / 2;
+    rotary_offset_ = rotary_axis_coord_ - rotary_split_ / 2;
     rotary_overlap_ = rotary_overlap;
   }
 
@@ -219,14 +219,13 @@ private:
   double getX(float x) { return std::round(x * 1000) / 1000; }
 
   double getY(float y) {
-    float split_base = split_ * rotary_split_ + rotary_offset_;
-    float arg_y = y - split_base + rotary_axis_coord_;
+    float arg_y = y - split_ * rotary_split_;
     return std::round(arg_y * 1000) / 1000;
   }
 
   double getA(int split) {
     split_ = split;
-    float split_base = split_ * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    float split_base = split_ * (rotary_split_ - rotary_overlap_);
     return std::round(split_base * rotary_y_ratio_ * 1000) / 1000;
   }
 
@@ -261,11 +260,11 @@ private:
   }
 
   void handleSplitedRotary() {
-    split_ = 0;
-    str_stream_ << "G1S0A" << getA(0) << std::endl;
-    for (int current_split = y_min_ / rotary_split_; current_split <= y_max_ / rotary_split_; current_split++) {
-      double y_min = std::max(current_split * rotary_split_, y_min_);
-      double y_max = std::min((current_split + 1) * rotary_split_, y_max_);
+    int current_split = std::floor((y_min_ - rotary_offset_) / rotary_split_);
+    int target_split = std::floor((y_max_ - rotary_offset_) / rotary_split_);
+    for (; current_split <= target_split; current_split++) {
+      double y_min = std::max(current_split * rotary_split_ + rotary_offset_, y_min_);
+      double y_max = std::min((current_split + 1) * rotary_split_ + rotary_offset_, y_max_);
       str_stream_ << "G1A" << getA(current_split) << std::endl;
       handleBox(x_min_, x_max_, y_min, y_max);
       handleBox(x_min_, x_max_, y_min, y_max);

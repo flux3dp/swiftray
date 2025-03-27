@@ -47,7 +47,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
     if (is_promark_) {
       // Make sure cmd list is opened
       gen_->turnOnLaser();
-      gen_->homeRotary(true);
+      gen_->homeRotary();
     }
   }
   gen_->setWorkarea(machine_work_area_mm_);
@@ -111,7 +111,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   }
 
   if (is_promark_ && gen_->isRotaryMode()) {
-    gen_->homeRotary(false);
+    gen_->homeRotary();
   }
   gen_->finishProgramFlow();
   

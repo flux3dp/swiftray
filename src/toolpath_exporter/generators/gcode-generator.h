@@ -109,7 +109,7 @@ public:
       return;
 
     bool is_absolute = distance_modal_ == GCodeDistanceModal::kG90;
-    int split = rotary_split_ > 0 ? y / rotary_split_ : 0;
+    int split = rotary_split_ > 0 ? std::floor((y - rotary_offset_) / rotary_split_) : 0;
     float split_start = 0;
     float split_end = rotary_split_;
     int split_dir = 1;
@@ -133,7 +133,7 @@ public:
       resetPowerStr += std::to_string(int(power * 10));
       resetPowerStr += "\n";
       while (split_ != split) {
-        float next_y = split_ * rotary_split_ + split_end;
+        float next_y = split_ * rotary_split_ + rotary_offset_ + split_end;
         float next_x = (x - x_) * (next_y - y_) / (y - y_) + x_;
         // Move to the end of the split and Turn on laser
         moveX(next_x, is_absolute);
@@ -235,7 +235,7 @@ public:
     rotary_axis_coord_ = rotary_axis_coord;
     rotary_ratio_ = rotary_ratio;
     rotary_split_ = rotary_split;
-    rotary_offset_ = rotary_split_ / 2;
+    rotary_offset_ = rotary_axis_coord_ - rotary_split_ / 2;
     rotary_overlap_ = rotary_overlap;
   }
 
@@ -264,19 +264,13 @@ public:
     x_ = y_ = 0;
   }
 
-  void homeRotary(bool to_offset) override {
-    if (to_offset) {
-      // Force a move to axis center
-      str_stream_ << "G1";
-      split_ = -1;
-      rotate(0);
-      // Force y move to axis center
-      y_ = -1;
-      moveY(0, true);
-      str_stream_ << std::endl;
-    } else {
-      str_stream_ << "A0S0" << std::endl;
-    }
+  void homeRotary() override {
+    rotate(0);
+    // Force y move to axis center
+    str_stream_ << "G1";
+    y_ = -1;
+    moveY(rotary_axis_coord_, true);
+    str_stream_ << std::endl;
   }
 
   /**
@@ -318,7 +312,7 @@ private:
   double rotary_ratio_ = 1;
   double rotary_axis_coord_ = 0;  // rotary center (blue line), mm
   double rotary_split_ = 0;    // height of each split, 0 means no splitting, mm
-  double rotary_offset_ = 0;   // center of split, mm
+  double rotary_offset_ = 0;   // upper bound of base split, mm
   double rotary_overlap_ = 0;  // mm
   double y_in_split_ = 0;      // relative y_ to the current split center
   int split_ = 0;
@@ -337,7 +331,7 @@ private:
     if (std::fabs(target_y - y_) < epsilon_) {
       return;
     }
-    float split_base = split_ * rotary_split_ + rotary_offset_;
+    float split_base = split_ * rotary_split_ + rotary_axis_coord_;
     float target_y_in_split_ = target_y - split_base;
     float arg_y = is_absolute ? (target_y_in_split_ + rotary_axis_coord_)
                               : (target_y_in_split_ - y_in_split_);
@@ -352,11 +346,11 @@ private:
     if (target_split == split_) {
       return;
     }
-    float arg_a = target_split * (rotary_split_ - rotary_overlap_) + rotary_offset_;
+    float arg_a = target_split * (rotary_split_ - rotary_overlap_);
     arg_a = std::round(arg_a * rotary_ratio_ * move_precision_) / move_precision_;
     str_stream_ << "A" << arg_a << "S0" << std::endl;
     power_ = 0;
     split_ = target_split;
-    y_ = split_ * rotary_split_ + rotary_offset_ + y_in_split_;
+    y_ = split_ * rotary_split_ + rotary_axis_coord_ + y_in_split_;
   }
 };
