@@ -263,8 +263,8 @@ private:
     int current_split = std::floor((y_min_ - rotary_offset_) / rotary_split_);
     int target_split = std::floor((y_max_ - rotary_offset_) / rotary_split_);
     for (; current_split <= target_split; current_split++) {
-      double y_min = std::max(current_split * rotary_split_, y_min_);
-      double y_max = std::min((current_split + 1) * rotary_split_, y_max_);
+      double y_min = std::max(current_split * rotary_split_ + rotary_offset_, y_min_);
+      double y_max = std::min((current_split + 1) * rotary_split_ + rotary_offset_, y_max_);
       str_stream_ << "G1A" << getA(current_split) << std::endl;
       handleBox(x_min_, x_max_, y_min, y_max);
       handleBox(x_min_, x_max_, y_min, y_max);
