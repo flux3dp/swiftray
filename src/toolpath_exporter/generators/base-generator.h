@@ -33,7 +33,7 @@ public:
 
   virtual void home() { NO_BASIC_IMPL }
 
-  virtual void homeRotary(bool to_offset) {
+  virtual void homeRotary() {
     qWarning() << "BaseGenerator::setRotary()" << "Promark Rotary feature not implemented";
   }
 
