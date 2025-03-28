@@ -160,16 +160,20 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   // Step 3. Init bitmap canvas
-  laser_bitmap_ =
-      QPixmap(QSize(std::ceil(work_area_mm_.width() * config_.dpmm_x),
-                    std::ceil(work_area_mm_.height() * config_.dpmm_y)));
+  laser_bitmap_ = QImage(std::ceil(work_area_mm_.width() * config_.dpmm_x),
+                         std::ceil(work_area_mm_.height() * config_.dpmm_y),
+                         QImage::Format_Grayscale8);
+  laser_bitmap_.fill(Qt::white);
   printing_bitmap_ =
-      QPixmap(QSize(std::ceil(work_area_mm_.width() * config_.dpmm_printing),
-                    std::ceil(work_area_mm_.height() * config_.dpmm_printing)));
+      QImage(std::ceil(work_area_mm_.width() * config_.dpmm_printing),
+             std::ceil(work_area_mm_.height() * config_.dpmm_printing),
+             QImage::Format_Grayscale8);
+  printing_bitmap_.fill(Qt::white);
   // Limit preview width to 500
   preview_bitmap_ =
-      QPixmap(QSize(std::round(work_area_mm_.width() * config_.dpmm_preview),
-                    std::ceil(work_area_mm_.height() * config_.dpmm_preview)));
+      QImage(std::round(work_area_mm_.width() * config_.dpmm_preview),
+             std::ceil(work_area_mm_.height() * config_.dpmm_preview),
+             QImage::Format_ARGB32);
   qInfo() << "[Canvas size]";
   qInfo() << "laser_bitmap_" << laser_bitmap_.size();
   qInfo() << "printing_bitmap_" << printing_bitmap_.size();
@@ -623,9 +627,8 @@ void ToolpathExporterFcode::convertLaserLayer() {
   is_handling_bitmap_ = false;
   layer_painter_ = std::make_unique<QPainter>(&laser_bitmap_);
   layer_painter_->setClipRect(clip_area_);
-  laser_bitmap_.fill(Qt::white);
   preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
-  preview_bitmap_.fill(Qt::white);
+  preview_bitmap_.fill(Qt::transparent);
   bitmap_dirty_area_ = QRectF();
   element_cnt_[0] = 0, element_cnt_[1] = 0;
   // First pass: Generate path list and bitmap list and draw filled path by layer_painter_
@@ -685,9 +688,8 @@ void ToolpathExporterFcode::convertPrintingLayer() {
   layer_painter_ = std::make_unique<QPainter>(&printing_bitmap_);
   // Explicitly set clip area for fm dithering
   layer_painter_->setClipRect(clip_area_);
-  printing_bitmap_.fill(Qt::white);
   preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
-  preview_bitmap_.fill(Qt::white);
+  preview_bitmap_.fill(Qt::transparent);
   bitmap_dirty_area_ = QRectF();
   for (auto& shape : current_layer_->children()) {
     convertShape(shape);
@@ -759,7 +761,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
           .transformed(transform, Qt::SmoothTransformation)
           .convertToFormat(QImage::Format_ARGB32);
   if (bmp->gradient()) {
-    if (is_v2_) {
+    if (is_v2_ && !is_gcode_) {
       preview_painter_->save();
       preview_painter_->setTransform(getPreviewTransform(), false);
       preview_painter_->drawImage(new_dirty_area.topLeft(), transformed_image);
@@ -784,7 +786,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     }
   } else {
     QImage image = imageBinarize(&transformed_image, bmp->thrsh_brightness());
-    if (is_v2_) {
+    if (is_v2_ && !is_gcode_) {
       preview_painter_->save();
       preview_painter_->setTransform(getPreviewTransform(), false);
       preview_painter_->drawImage(new_dirty_area.topLeft(), image);
@@ -814,7 +816,7 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
     layer_painter_->setBrush(Qt::black);
     layer_painter_->drawPath(transformed_path);
     layer_painter_->setBrush(Qt::NoBrush);
-    if (is_v2_) {
+    if (is_v2_ && !is_gcode_) {
       preview_painter_->setPen(Qt::NoPen);
       preview_painter_->setBrush(Qt::black);
       preview_painter_->drawPath(transformed_path * getPreviewTransform());
@@ -826,7 +828,7 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
     // Note: This is for dev convinience
     // Path in BVG input should already been converted to image
     layer_painter_->drawPath(transformed_path);
-    if (is_v2_) {
+    if (is_v2_ && !is_gcode_) {
       preview_painter_->drawPath(transformed_path * getPreviewTransform());
     }
     bitmap_dirty_area_ = bitmap_dirty_area_.united(path_bounding_rect);
@@ -838,7 +840,7 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
   } else {
     polygons_mutex_.lock();
     layer_polygons_.append(transformed_path.toSubpathPolygons());
-    if (is_v2_) {
+    if (is_v2_ && !is_gcode_) {
       preview_painter_->drawPath(transformed_path * getPreviewTransform());
     }
     element_cnt_[0]++;
@@ -1041,8 +1043,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
-    QImage layer_image = laser_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
-    QVector<QRect> bboxes = getBoundingBoxes(&layer_image, padding_px_, dpmm_y() / downsample);
+    QVector<QRect> bboxes = getBoundingBoxes(&laser_bitmap_, padding_px_, 5, dpmm_y() / downsample);
     char gradient_print_mode = 0;
     if (config_.enable_fast_gradient) {
       gradient_print_mode = pwm_engraving ? config_.print_modes[0] : config_.print_modes[1];
@@ -1063,7 +1064,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample
         QRect sliced_box = QRect(bbox);
         sliced_box.setLeft(left);
         sliced_box.setRight(right);
-        rasterBitmap(layer_image, sliced_box, pwm_engraving);
+        rasterBitmap(laser_bitmap_, sliced_box, pwm_engraving);
       }
       if (config_.enable_fast_gradient) {
         gen_->turn_off_gradient_print_mode();
@@ -1072,7 +1073,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample
   }
 
   // Clear canvas
-  laser_bitmap_.fill(Qt::white);
+  layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
   bitmap_dirty_area_ = QRectF();
 }
 
@@ -1370,7 +1371,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
     return;
   }
 
-  QImage layer_image = printing_bitmap_.toImage().convertToFormat(QImage::Format_Grayscale8);
+  QImage layer_image(printing_bitmap_);
   QImage val_table{layer_image.size(), QImage::Format_Grayscale8};
   val_table.fill(0);
   bool do_color_curve = submodule_color_ != "white";
@@ -1770,11 +1771,12 @@ void ToolpathExporterFcode::writeCatridgeTaskCode(QRect bbox) {
 }
 
 void ToolpathExporterFcode::writePreviewImage() {
-  QImage output_image = preview_bitmap_.toImage().convertToFormat(QImage::Format_ARGB32);
-  clearWhite(&output_image);
+  if (is_gcode_) return;
+  QRect dirty_area = getPreviewTransform().mapRect(bitmap_dirty_area_).toAlignedRect();
+  clearWhite(&preview_bitmap_, dirty_area);
   QByteArray byteArray;
   QBuffer buffer(&byteArray);
-  output_image.save(&buffer, "PNG");
+  preview_bitmap_.save(&buffer, "PNG");
   gen_->write_string("PREV", 4);
   gen_->write_string(byteArray.data(), byteArray.size(), true);
 }
@@ -1805,15 +1807,18 @@ QImage ToolpathExporterFcode::imageBinarize(QImage* src, int threshold) {
   return result_img;
 }
 
-void ToolpathExporterFcode::clearWhite(QImage* src) {
+void ToolpathExporterFcode::clearWhite(QImage* src, QRect dirty_area) {
   Q_ASSERT_X(src->allGray(), "ToolpathExporterFcode",
              "Input image for clearWhite() must be grayscaled");
   Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
              "Input image for clearWhite() must be Format_ARGB32");
-
-  for (int y = 0; y < src->height(); ++y) {
+  int left = qMax(dirty_area.x(), 0);
+  int right = qMin(dirty_area.x() + dirty_area.width(), src->width());
+  int top = qMax(dirty_area.y(), 0);
+  int bottom = qMin(dirty_area.y() + dirty_area.height(), src->height());
+  for (int y = top; y < bottom; ++y) {
     QRgb* ptr = (QRgb*)src->scanLine(y);
-    for (int x = 0; x < src->width(); ++x) {
+    for (int x = left; x < right; ++x) {
       int gray = qGray(ptr[x]);
       if (gray == white_val) {
         // Set alpha to 0
@@ -1999,10 +2004,20 @@ float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
                                                        int merge_offset_x,
                                                        int merge_offset_y,
-                                                       float downsample) {
+                                                       int downsample) {
   Q_ASSERT_X(src->format() == QImage::Format_Grayscale8,
              "ToolpathExporterFcode",
              "Input image for getBoundingBoxes() must be Format_Grayscale8");
+
+  QVector<QRect> res;
+  if (!config_.enable_segmentation) {
+    int b_left = std::floor(bitmap_dirty_area_.left() / downsample - 1) * downsample;
+    int b_top = std::floor(bitmap_dirty_area_.top() / downsample - 1) * downsample;
+    int b_right = std::ceil(bitmap_dirty_area_.right() / downsample + 1) * downsample;
+    int b_bottom = std::ceil(bitmap_dirty_area_.bottom() / downsample + 1) * downsample;
+    res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));
+    return res;
+  }
 
   QImage src_i = src->copy();
   src_i.invertPixels();
@@ -2015,7 +2030,7 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   if (downsample > 1) {
     cv::Mat downsampledImg;
-    cv::resize(img, downsampledImg, cv::Size(float(w) / downsample, float(h) / downsample), 0, 0, cv::INTER_CUBIC);
+    cv::resize(img, downsampledImg, cv::Size(w / downsample, h / downsample), 0, 0, cv::INTER_AREA);
     cv::findContours(downsampledImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
   } else {
     cv::findContours(img, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -2063,7 +2078,6 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
     }
   }
 
-  QVector<QRect> res;
   for (const auto& c : contours) {
     cv::Rect boundingBox = cv::boundingRect(c);
     res.append(QRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height - 2 * merge_offset_y));

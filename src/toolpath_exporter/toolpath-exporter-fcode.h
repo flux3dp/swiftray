@@ -93,6 +93,7 @@ struct Config {
   bool enable_multipass_compensation = false;
   bool enable_relative_z_move = false;
   bool enable_rotary_z_move = false;
+  bool enable_segmentation = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
@@ -240,6 +241,7 @@ public Q_SLOTS:
     config_.enable_mock_fast_gradient = param["mfg"].toBool();
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
+    config_.enable_segmentation = param["segment"].toBool(true);
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();
@@ -473,12 +475,12 @@ public Q_SLOTS:
   void writePreviewImage();
 
   QImage imageBinarize(QImage* src, int threshold);
-  void clearWhite(QImage* src);
+  void clearWhite(QImage* src, QRect dirty_area);
   void clearTransparent(QImage* src);
   QVector<QRect> getBoundingBoxes(QImage* src,
                                   int merge_offset_x = 0,
                                   int merge_offset_y = 0,
-                                  float downsample = 1);
+                                  int downsample = 1);
 
   void pause(bool to_standby_position);
   void moveZ(float z);
@@ -534,10 +536,10 @@ public Q_SLOTS:
   QList<QPolygonF> layer_polygons_;
   QList<ShapePtr> layer_bitmaps_;
   std::unique_ptr<QPainter> layer_painter_;
-  QPixmap laser_bitmap_;
-  QPixmap printing_bitmap_;
+  QImage laser_bitmap_;
+  QImage printing_bitmap_;
   std::unique_ptr<QPainter> preview_painter_;
-  QPixmap preview_bitmap_;
+  QImage preview_bitmap_;
   QRectF bitmap_dirty_area_ = QRectF(); // px according to current layer dpi
 
   // Basic config

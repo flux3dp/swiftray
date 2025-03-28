@@ -271,5 +271,7 @@ private:
       handleBox(x_min_, x_max_, y_min, y_max);
     }
     str_stream_ << "G1A0" << std::endl;
+    // Reset red light position to center
+    str_stream_ << "G1X" << machine_width_ / 2 << "Y" << machine_height_ / 2 << std::endl;
   }
 };
