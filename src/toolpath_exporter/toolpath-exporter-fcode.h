@@ -473,12 +473,12 @@ public Q_SLOTS:
   void writePreviewImage();
 
   QImage imageBinarize(QImage* src, int threshold);
-  void clearWhite(QImage* src);
+  void clearWhite(QImage* src, QRect dirty_area);
   void clearTransparent(QImage* src);
   QVector<QRect> getBoundingBoxes(QImage* src,
                                   int merge_offset_x = 0,
                                   int merge_offset_y = 0,
-                                  float downsample = 1);
+                                  int downsample = 1);
 
   void pause(bool to_standby_position);
   void moveZ(float z);
@@ -534,10 +534,10 @@ public Q_SLOTS:
   QList<QPolygonF> layer_polygons_;
   QList<ShapePtr> layer_bitmaps_;
   std::unique_ptr<QPainter> layer_painter_;
-  QPixmap laser_bitmap_;
-  QPixmap printing_bitmap_;
+  QImage laser_bitmap_;
+  QImage printing_bitmap_;
   std::unique_ptr<QPainter> preview_painter_;
-  QPixmap preview_bitmap_;
+  QImage preview_bitmap_;
   QRectF bitmap_dirty_area_ = QRectF(); // px according to current layer dpi
 
   // Basic config
