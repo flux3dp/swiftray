@@ -93,6 +93,7 @@ struct Config {
   bool enable_multipass_compensation = false;
   bool enable_relative_z_move = false;
   bool enable_rotary_z_move = false;
+  bool enable_segmentation = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
@@ -240,6 +241,7 @@ public Q_SLOTS:
     config_.enable_mock_fast_gradient = param["mfg"].toBool();
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
+    config_.enable_segmentation = param["segment"].toBool(true);
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();

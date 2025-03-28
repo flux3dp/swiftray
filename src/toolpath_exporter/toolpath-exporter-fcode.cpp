@@ -2009,6 +2009,16 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
              "ToolpathExporterFcode",
              "Input image for getBoundingBoxes() must be Format_Grayscale8");
 
+  QVector<QRect> res;
+  if (!config_.enable_segmentation) {
+    int b_left = std::floor(bitmap_dirty_area_.left() / downsample - 1) * downsample;
+    int b_top = std::floor(bitmap_dirty_area_.top() / downsample - 1) * downsample;
+    int b_right = std::ceil(bitmap_dirty_area_.right() / downsample + 1) * downsample;
+    int b_bottom = std::ceil(bitmap_dirty_area_.bottom() / downsample + 1) * downsample;
+    res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));
+    return res;
+  }
+
   QImage src_i = src->copy();
   src_i.invertPixels();
   int w = src_i.width();
@@ -2068,7 +2078,6 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
     }
   }
 
-  QVector<QRect> res;
   for (const auto& c : contours) {
     cv::Rect boundingBox = cv::boundingRect(c);
     res.append(QRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height - 2 * merge_offset_y));
