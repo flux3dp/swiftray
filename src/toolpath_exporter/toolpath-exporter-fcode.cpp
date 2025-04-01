@@ -2011,10 +2011,10 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   QVector<QRect> res;
   if (!config_.enable_segmentation) {
-    int b_left = std::floor(bitmap_dirty_area_.left() / downsample - 1) * downsample;
-    int b_top = std::floor(bitmap_dirty_area_.top() / downsample - 1) * downsample;
-    int b_right = std::ceil(bitmap_dirty_area_.right() / downsample + 1) * downsample;
-    int b_bottom = std::ceil(bitmap_dirty_area_.bottom() / downsample + 1) * downsample;
+    int b_left = qMax(int(bitmap_dirty_area_.left() - 1 - merge_offset_x), 0);
+    int b_top = qMax(int(bitmap_dirty_area_.top() - 1), 0);
+    int b_right = qMin(int(bitmap_dirty_area_.right() + 1 + merge_offset_x), src->width());
+    int b_bottom = qMin(int(bitmap_dirty_area_.bottom() + 1),  src->height());
     res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));
     return res;
   }
