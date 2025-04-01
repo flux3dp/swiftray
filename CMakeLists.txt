@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.28)
 if (WIN32)
   set(CMAKE_TOOLCHAIN_FILE "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
-project(Swiftray VERSION 1.3.7)
+project(Swiftray VERSION 1.3.8)
 
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 3)
-set(VERSION_BUILD 7)
+set(VERSION_BUILD 8)
 set(VERSION_BETA  0) #x (e.g. 0,1,2,...)
 set(VERSION_SUFFIX "") # e.g. empty("") or "-beta.x"
 set(PROJECT_VERSION_STR "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}${VERSION_SUFFIX}")
