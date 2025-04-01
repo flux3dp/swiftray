@@ -2011,11 +2011,18 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   QVector<QRect> res;
   if (!config_.enable_segmentation) {
-    int b_left = std::floor(bitmap_dirty_area_.left() / downsample - 1) * downsample;
-    int b_top = std::floor(bitmap_dirty_area_.top() / downsample - 1) * downsample;
-    int b_right = std::ceil(bitmap_dirty_area_.right() / downsample + 1) * downsample;
-    int b_bottom = std::ceil(bitmap_dirty_area_.bottom() / downsample + 1) * downsample;
-    res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));
+    int b_left = bitmap_dirty_area_.left() - 1 - merge_offset_x;
+    b_left = qMin(qMax(b_left, 0), src->width());
+    int b_top = bitmap_dirty_area_.top() - 1;
+    b_top = qMin(qMax(b_top, 0), src->height());
+    int b_right = bitmap_dirty_area_.right() + 1 + merge_offset_x;
+    b_right = qMax(qMin(b_right, src->width()), 0);
+    int b_bottom = bitmap_dirty_area_.bottom() + 1;
+    b_bottom = qMax(qMin(b_bottom, src->height()), 0);
+
+    if (b_left < b_right && b_top < b_bottom) {
+      res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));
+    }
     return res;
   }
 
@@ -2080,6 +2087,7 @@ QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
 
   for (const auto& c : contours) {
     cv::Rect boundingBox = cv::boundingRect(c);
+    qInfo() << boundingBox.x << boundingBox.y << boundingBox.x+boundingBox.width << boundingBox.y +boundingBox.height - 2 * merge_offset_y;
     res.append(QRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height - 2 * merge_offset_y));
   }
   qInfo() << "Final contour count:" << contours.size() << "after" << safeCount << "iterations";
