@@ -156,6 +156,8 @@ double Layer::wobbleStep() const { return wobble_step_; }
 
 double Layer::wobbleDiameter() const { return wobble_diameter_; }
 
+double Layer::ceZLimit() const { return ce_z_limit_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -242,6 +244,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->dotting_time_ = config.dotting_time;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
+  this->ce_z_limit_ = config.ce_z_limit;
 }
 
 // Clone
@@ -276,6 +279,7 @@ LayerPtr Layer::clone() {
   new_layer->dotting_time_ = this->dotting_time_;
   new_layer->wobble_step_ = this->wobble_step_;
   new_layer->wobble_diameter_ = this->wobble_diameter_;
+  new_layer->ce_z_limit_ = this->ce_z_limit_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

@@ -112,6 +112,8 @@ public:
 
   double wobbleDiameter() const;
 
+  double ceZLimit() const;
+
   Document &document();
 
   /** Setters **/
@@ -184,6 +186,8 @@ private:
   // Promark wobble
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
+  // curve engraving
+  double ce_z_limit_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

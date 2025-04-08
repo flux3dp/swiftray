@@ -59,6 +59,7 @@ namespace MySVG {
         int dotting_time;
         double wobble_step;
         double wobble_diameter;
+        double ce_z_limit;
     };
 
     enum ReadType {
