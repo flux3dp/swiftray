@@ -805,7 +805,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     bitmap_dirty_area_ = bitmap_dirty_area_.united(new_dirty_area);
   } else {
     bitmap_dirty_area_ = new_dirty_area;
-    outputBitmapFcode(config_.enable_pwm && bmp->pwm(), bmp->gradient() && !bmp->pwm() ? 1 : 5);
+    outputBitmapFcode(config_.enable_pwm && bmp->pwm());
   }
 }
 
@@ -1046,11 +1046,11 @@ void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
 }
 
 // Handling bitmap and filled path
-void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving, int downsample) {
+void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
-    QVector<QRect> bboxes = getBoundingBoxes(&laser_bitmap_, padding_px_, 5, dpmm_y() / downsample);
+    QVector<QRect> bboxes = getBoundingBoxes(&laser_bitmap_, padding_px_, 5, dpmm_y() / 5);
     char gradient_print_mode = 0;
     if (config_.enable_fast_gradient) {
       gradient_print_mode = pwm_engraving ? config_.print_modes[0] : config_.print_modes[1];

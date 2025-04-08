@@ -448,7 +448,7 @@ public Q_SLOTS:
   void getIntersectPoint(QLineF line, int position, QPointF* point);
   void handlePathWalk(QPointF point, bool should_emit);
 
-  void outputBitmapFcode(bool pwm_engraving = false, int downsample = 5);
+  void outputBitmapFcode(bool pwm_engraving = false);
   bool rasterBitmap(const QImage& layer_image, QRect bbox, bool pwm_engraving);
   bool rasterLine(const uchar* data_ptr,
                   int left_bound,
