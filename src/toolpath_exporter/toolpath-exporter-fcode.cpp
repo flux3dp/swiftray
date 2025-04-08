@@ -879,14 +879,19 @@ void ToolpathExporterFcode::sortPolygons() {
 }
 
 void ToolpathExporterFcode::outputLayerPathFcode() {
-  bool should_set_acc = !isnan(config_.path_acc) && is_v2_;
+  bool should_set_acc = !config_.path_acc.isEmpty() && is_v2_;
   polygons_mutex_.lock();
   for (auto& poly : layer_polygons_) {
     if (poly.empty()) {
       continue;
     }
     if (should_set_acc) {
-      setPathAcceleration(config_.path_acc, config_.path_acc);
+      setAcceleration(
+        config_.path_acc["x"].toDouble(NAN),
+        config_.path_acc["y"].toDouble(NAN),
+        config_.path_acc["z"].toDouble(NAN),
+        config_.path_acc["a"].toDouble(NAN)
+      );
     }
     setTravelSpeed(config_.path_travel_speed);
     int last_position = getPointPosition(poly.first());
@@ -1050,6 +1055,15 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
+    bool should_set_acc = !config_.fill_acc.isEmpty() && is_v2_;
+    if (should_set_acc) {
+      setAcceleration(
+        config_.fill_acc["x"].toDouble(NAN),
+        config_.fill_acc["y"].toDouble(NAN),
+        config_.fill_acc["z"].toDouble(NAN),
+        config_.fill_acc["a"].toDouble(NAN)
+      );
+    }
     QVector<QRect> bboxes = getBoundingBoxes(&laser_bitmap_, padding_px_, 5, dpmm_y() / 5);
     char gradient_print_mode = 0;
     if (config_.enable_fast_gradient) {
@@ -1076,6 +1090,11 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
       if (config_.enable_fast_gradient) {
         gen_->turn_off_gradient_print_mode();
       }
+    }
+    if (should_set_acc) {
+      // Reset fill_acc
+      gen_->sync_grbl_motion(151);
+      gen_->set_time_est_acc(config_.padding_acc);
     }
   }
 

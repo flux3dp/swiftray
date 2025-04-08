@@ -59,7 +59,6 @@ struct Config {
   float prespray_travel_speed = 7500;
   float vector_speed_constraint = 0;
   // mm^2/s
-  float path_acc = NAN;
   float padding_acc = 4000;
   // mm
   float min_engraving_padding = NAN;
@@ -103,6 +102,8 @@ struct Config {
   bool support_rotary_z_motion = false;
 
   char print_modes[2] = {0, 0};
+  QJsonObject fill_acc = {};
+  QJsonObject path_acc = {};
 };
 
 class ToolpathExporterFcode : public QObject {
@@ -186,7 +187,7 @@ public Q_SLOTS:
     int height = workarea["height"].toInt();
     QString hardware = param["hardware_name"].toString();
     float default_path_travel_speed = 7500;
-    float default_path_acc = NAN;
+    QJsonObject default_path_acc = {};
     if (hardware == "beamo") {
       hardware_ = HardwareType::beamo;
       config_.fg_pwm_limit = 1500;
@@ -203,7 +204,8 @@ public Q_SLOTS:
       config_.support_rel_z_move = true;
       config_.support_rotary_z_motion = true;
       default_path_travel_speed = 3600;
-      default_path_acc = 500;
+      default_path_acc["x"] = 500;
+      default_path_acc["y"] = 500;
       if (param.contains("prespray")) {
         QJsonArray prespray_arr = param["prespray"].toArray();
         config_.prespray =
@@ -215,7 +217,8 @@ public Q_SLOTS:
       is_v2_ = true;
       config_.z_speed = 5.16;
       config_.support_rel_z_move = true;
-      default_path_acc = 1000;
+      default_path_acc["x"] = 1000;
+      default_path_acc["y"] = 1000;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
@@ -255,7 +258,6 @@ public Q_SLOTS:
     config_.a_travel_speed = param["ats"].toDouble(2000);
     config_.path_travel_speed = param["pts"].toDouble(default_path_travel_speed);
     config_.vector_speed_constraint = param["vsl"].toDouble(0);
-    config_.path_acc = param["path_acc"].toDouble(default_path_acc);
     config_.padding_acc = param["acc"].toDouble(4000);
     config_.min_engraving_padding = param["mep"].toDouble(NAN);
     config_.min_printing_padding = param["mpp"].toDouble(NAN);
@@ -277,6 +279,12 @@ public Q_SLOTS:
     }
     if (param.contains("npw")) {
       nozzle_settings.pulse_width = param["npw"].toDouble();
+    }
+    if (param.contains("acc_override")) {
+      config_.fill_acc = param["acc_override"].toObject()["fill"].toObject();
+      config_.path_acc = param["acc_override"].toObject()["path"].toObject();
+    } else {
+      config_.path_acc = default_path_acc;
     }
 
     QJsonArray clip = param["mask"].toArray();
@@ -408,10 +416,7 @@ public Q_SLOTS:
       travel_speed_ = feedrate;
     }
   }
-  void setPathAcceleration(float x = NAN,
-                           float y = NAN,
-                           float z = NAN,
-                           float a = NAN) {
+  void setAcceleration(float x = NAN, float y = NAN, float z = NAN, float a = NAN) {
     int flags = 0;
     if (!std::isnan(x)) {
       flags |= FCodeGenerator::move_flag_X;
@@ -425,7 +430,7 @@ public Q_SLOTS:
     if (!std::isnan(a)) {
       flags |= FCodeGenerator::move_flag_A;
     }
-    gen_->set_path_acceleration(flags, x, y, z, a);
+    gen_->set_acceleration(flags, x, y, z, a);
   }
   float getCurveEngravingHeight(bool is_travel);
 

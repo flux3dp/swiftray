@@ -255,7 +255,7 @@ class FCodeGenerator {
       write(value, &script_crc32);  // Q
   }
 
-  void set_path_acceleration(int flags, float x, float y, float z, float a) {
+  void set_acceleration(int flags, float x, float y, float z, float a) {
     write_command(18, &script_crc32);
     write(uint8_t(1), &script_crc32);
     write(uint32_t(150), &script_crc32);
