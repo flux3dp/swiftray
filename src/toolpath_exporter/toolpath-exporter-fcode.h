@@ -1,3 +1,7 @@
+// Update to
+// Ghost: 3fe4630d89939d257e291c3a3e01659833e44a2c
+// Client: b1255ac0eef3770c36c0a90c2f50b53e15feaab7
+
 #pragma once
 
 #include <constants.h>
@@ -19,6 +23,7 @@
 #include <QProgressDialog>
 #include <QVector2D>
 #include <bitset>
+#include <cmath>
 
 struct NozzleSettings {
   float voltage = 9.0;
@@ -49,7 +54,7 @@ struct CurveEngravingSettings {
 
 struct Config {
   // mm/min
-  float z_speed = 7.5; // for time estimated; bb2 = 2.33
+  float z_speed = 7.5; // for time estimated; bb2 = 5.16
   float min_speed = 3;
   float travel_speed = 7500; // default val = 7500 in ghost, 12000 in client
   float a_travel_speed = 2000;
@@ -57,26 +62,31 @@ struct Config {
   float prespray_speed = 1800;
   float prespray_travel_speed = 7500;
   float vector_speed_constraint = 0;
+  float z_premove_speed = 0;
+  // mm/s
+  float curve_speed_constraint = 0;
   // mm^2/s
-  float path_acc = std::nanf("");
   float padding_acc = 4000;
   // mm
-  float min_engraving_padding = std::nanf("");
-  float min_printing_padding = std::nanf("");
+  float min_engraving_padding = NAN;
+  float min_printing_padding = NAN;
   float spinning_axis_coord = -1;
   float z_offset = 0;
   float blade_radius = 0;
   float loop_compensation = 0;
   float workarea_clip[4] = {0, 0, 0, 0}; // inward offset; top, right, bottom, left
+  float z_premove_x = 0;
+  float z_premove_y = 0;
+  float z_premove_z = 0;
   QPointF precut_at;
   QPointF diode_offset;
   QPointF job_origin;
   QMap<int, QPointF> module_offsets;
   QRectF prespray;
   // px
-  int printing_top_padding = std::nanf("");
-  int printing_bot_padding = std::nanf("");
-  int fg_pwm_limit = 1500;
+  int printing_top_padding = 0;
+  int printing_bot_padding = 0;
+  int fg_pwm_limit = 0;
   // px/mm
   float dpmm_x = 10;
   float dpmm_y = 10;
@@ -91,21 +101,37 @@ struct Config {
   bool enable_fast_gradient = false;
   bool enable_mock_fast_gradient = false;
   bool enable_multipass_compensation = false;
-  bool enable_relative_z_move = false;
   bool enable_rotary_z_move = false;
   bool enable_segmentation = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
+  // founction based on hardware
+  bool support_rel_z_move = false;
+  bool support_modules = false;
+  bool support_rotary_z_motion = false;
 
   char print_modes[2] = {0, 0};
+  QJsonObject fill_acc = {};
+  QJsonObject path_acc = {};
+};
+
+struct MoveArgs {
+  float f = NAN;
+  float x = NAN;
+  float y = NAN;
+  float z = NAN;
+  float a = NAN;
+  float s = NAN;
+  bool force_y = false;
+  bool is_travel = false;
 };
 
 class ToolpathExporterFcode : public QObject {
   Q_OBJECT
 
  public:
-  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2 };
+  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2, RF30, RF60 };
 
   ToolpathExporterFcode(QTransform move_translate,
                         int dpi,
@@ -114,6 +140,7 @@ class ToolpathExporterFcode : public QObject {
       : move_translate_(move_translate) {
     qInfo() << "ToolpathExporterFcode init";
     parseParam(param);
+    updateMovetoPipeline();
     setDpi(dpi);
 
     if (is_v2_) {
@@ -131,12 +158,15 @@ class ToolpathExporterFcode : public QObject {
       is_gcode_ = true;
       gen = std::make_shared<FCodeGeneratorG>();
     } else if (is_v2_) {
-      gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_, with_custom_origin_);
+      gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_);
     } else {
-      gen = std::make_shared<FCodeGeneratorV1>(thumbnail, with_custom_origin_);
+      gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
     }
     gen_ = gen.get();
+    gen_->add_metadata("START_WITH_HOME", with_custom_origin_ ? "0" : "1");
+    gen_->add_metadata("3D_CURVE_TASK", is_3d_task_ ? "1" : "0");
 
+    gen_->set_time_est_z_speed(config_.z_speed);
     setTravelSpeed(config_.travel_speed);
   }
 
@@ -177,50 +207,59 @@ public Q_SLOTS:
     QJsonObject workarea = param["workarea"].toObject();
     int width = workarea["width"].toInt();
     int height = workarea["height"].toInt();
-    QString hardware = param["hardware_name"].toString();
+    QString model = param["model"].toString();
     float default_path_travel_speed = 7500;
-    float default_path_acc = std::nanf("");
-    if (hardware == "beamo") {
+    QJsonObject default_path_acc = {};
+    if (model == "fbm1") {
       hardware_ = HardwareType::beamo;
-    } else if (hardware == "pro") {
+      config_.fg_pwm_limit = 1500;
+    } else if (model == "fbb1p") {
       hardware_ = HardwareType::BeamboxPro;
-    } else if (hardware == "hexa") {
+      config_.fg_pwm_limit = 1500;
+    } else if (model == "fhexa1") {
       hardware_ = HardwareType::HEXA;
-      config_.fg_pwm_limit = 0;
-      config_.enable_relative_z_move = true;
-    } else if (hardware == "ado1") {
+      config_.support_rel_z_move = true;
+    } else if (model == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
-      with_module_ = true;
-      config_.fg_pwm_limit = 0;
-      config_.enable_relative_z_move = true;
-      config_.enable_rotary_z_move = true;
-      if (is_rotary_task_) {
-        height += 378.2;
-      }
+      config_.support_modules = true;
+      config_.support_rel_z_move = true;
+      config_.support_rotary_z_motion = true;
       default_path_travel_speed = 3600;
-      default_path_acc = 500;
+      default_path_acc["x"] = 500;
+      default_path_acc["y"] = 500;
       if (param.contains("prespray")) {
         QJsonArray prespray_arr = param["prespray"].toArray();
         config_.prespray =
             QRectF(prespray_arr[0].toDouble(), prespray_arr[1].toDouble(),
                    prespray_arr[2].toDouble(), prespray_arr[3].toDouble());
       }
-    } else if (hardware == "fbb2") {
+    } else if (model == "fbb2") {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
-      config_.z_speed = 2.33;
-      config_.fg_pwm_limit = 0;
-      config_.enable_relative_z_move = true;
-      default_path_acc = 1000;
+      config_.z_speed = 5.16;
+      config_.support_rel_z_move = true;
+      config_.z_premove_speed = 140;
+      config_.z_premove_x = 0.0127;
+      config_.z_premove_y = 0.0064;
+      config_.z_premove_z = 0.0005;
+      default_path_acc["x"] = 1000;
+      default_path_acc["y"] = 1000;
+    } else if (model == "fhx2rf3") {
+      hardware_ = HardwareType::RF30;
+      is_v2_ = true;
+    } else if (model == "fhx2rf6") {
+      hardware_ = HardwareType::RF60;
+      is_v2_ = true;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
+      config_.fg_pwm_limit = 1500;
     }
     work_area_mm_ = QSizeF(width, height);
     config_.dpmm_preview = 500.0 / width;
 
-    if (with_module_) {
+    if (config_.support_modules) {
       QJsonObject offset_dict = param["mof"].toObject();
       for (QString module_key : offset_dict.keys()) {
         QJsonArray offset = offset_dict[module_key].toArray();
@@ -242,6 +281,7 @@ public Q_SLOTS:
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
     config_.enable_segmentation = param["segment"].toBool(true);
+    config_.enable_rotary_z_move = param["rotary_z_motion"].toBool() && config_.support_rotary_z_motion;
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();
@@ -250,10 +290,10 @@ public Q_SLOTS:
     config_.a_travel_speed = param["ats"].toDouble(2000);
     config_.path_travel_speed = param["pts"].toDouble(default_path_travel_speed);
     config_.vector_speed_constraint = param["vsl"].toDouble(0);
-    config_.path_acc = param["path_acc"].toDouble(default_path_acc);
+    config_.curve_speed_constraint = param["csl"].toDouble(0) / 60;
     config_.padding_acc = param["acc"].toDouble(4000);
-    config_.min_engraving_padding = param["mep"].toDouble(std::nanf(""));
-    config_.min_printing_padding = param["mpp"].toDouble(std::nanf(""));
+    config_.min_engraving_padding = param["mep"].toDouble(NAN);
+    config_.min_printing_padding = param["mpp"].toDouble(NAN);
     config_.z_offset = param["z_offset"].toDouble(0);
     config_.blade_radius = param["blade"].toDouble();
     if (config_.blade_radius > 0) {
@@ -272,6 +312,12 @@ public Q_SLOTS:
     }
     if (param.contains("npw")) {
       nozzle_settings.pulse_width = param["npw"].toDouble();
+    }
+    if (param.contains("acc_override")) {
+      config_.fill_acc = param["acc_override"].toObject()["fill"].toObject();
+      config_.path_acc = param["acc_override"].toObject()["path"].toObject();
+    } else {
+      config_.path_acc = default_path_acc;
     }
 
     QJsonArray clip = param["mask"].toArray();
@@ -323,7 +369,7 @@ public Q_SLOTS:
           curve_settings.interpolator.add_point(x, y, z);
         }
         curve_settings.interpolator.setup();
-        curve_settings.safe_height = curve_obj["safe_height"].toDouble(std::nanf(""));
+        curve_settings.safe_height = curve_obj["safe_height"].toDouble(NAN);
       }
     }
   }
@@ -392,21 +438,18 @@ public Q_SLOTS:
   qreal getYValInMM(qreal val) {
     return px2mm(val) - module_offset_.y();
   }
-  float px2mm(int px, bool is_x = false) {
+  float px2mm(float px, bool is_x = false) {
     return float(px) / (is_x ? dpmm_x() : dpmm_y());
   }
   float mm2px(float mm, bool is_x = false) {
     return mm * (is_x ? dpmm_x() : dpmm_y());
   }
-  void setTravelSpeed(float feedrate = std::nanf("")) {
+  void setTravelSpeed(float feedrate = NAN) {
     if (!std::isnan(feedrate)) {
       travel_speed_ = feedrate;
     }
   }
-  void setPathAcceleration(float x = std::nanf(""),
-                           float y = std::nanf(""),
-                           float z = std::nanf(""),
-                           float a = std::nanf("")) {
+  void setAcceleration(float x = NAN, float y = NAN, float z = NAN, float a = NAN) {
     int flags = 0;
     if (!std::isnan(x)) {
       flags |= FCodeGenerator::move_flag_X;
@@ -420,9 +463,8 @@ public Q_SLOTS:
     if (!std::isnan(a)) {
       flags |= FCodeGenerator::move_flag_A;
     }
-    gen_->set_path_acceleration(flags, x, y, z, a);
+    gen_->set_acceleration(flags, x, y, z, a);
   }
-  float getCurveEngravingHeight(bool is_travel);
 
   void updateLayerParam();
   void updateOffset();
@@ -443,7 +485,7 @@ public Q_SLOTS:
   void getIntersectPoint(QLineF line, int position, QPointF* point);
   void handlePathWalk(QPointF point, bool should_emit);
 
-  void outputBitmapFcode(bool pwm_engraving = false, int downsample = 5);
+  void outputBitmapFcode(bool pwm_engraving = false);
   bool rasterBitmap(const QImage& layer_image, QRect bbox, bool pwm_engraving);
   bool rasterLine(const uchar* data_ptr,
                   int left_bound,
@@ -483,23 +525,29 @@ public Q_SLOTS:
                                   int downsample = 1);
 
   void pause(bool to_standby_position);
+
+  // Move related functions
+  void updateMovetoPipeline();
   void moveZ(float z);
-  void travel(float x, float y, bool force_y = false, float s = std::nanf(""));
-  void travel(QPointF position, bool force_y = false, float s = std::nanf(""));
-  void moveto(float feedrate = std::nanf(""),
-              float x = std::nanf(""),
-              float y = std::nanf(""),
-              float z = std::nanf(""),
-              float s = std::nanf(""),
+  void travel(float x, float y, bool force_y = false, float s = NAN);
+  void travel(QPointF position, bool force_y = false, float s = NAN);
+  void moveto(float feedrate = NAN,
+              float x = NAN,
+              float y = NAN,
+              float z = NAN,
+              float a = NAN,
+              float s = NAN,
               bool force_y = false,
               bool is_travel = false);
-  void moveto_(float feedrate,
-               float x,
-               float y,
-               float z,
-               float s,
-               bool force_y,
-               bool is_travel);
+  void pipelineMoveto(int idx, MoveArgs args);
+  void rotaryMotionGenerator(MoveArgs args,
+                             std::function<void(MoveArgs args)> callback);
+  void curveEngravingMotionGenerator(
+      MoveArgs args,
+      std::function<void(MoveArgs args)> callback);
+  void zPremoveMotionGenerator(MoveArgs args,
+                               std::function<void(MoveArgs args)> callback);
+  void _moveto(MoveArgs args);
 
   void onProgressChanged(double value, bool absolute);
 
@@ -553,7 +601,6 @@ public Q_SLOTS:
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
   bool with_blade_ = false;
-  bool with_module_ = false;
   bool with_custom_origin_ = false;
 
   QSizeF work_area_mm_;
@@ -569,6 +616,7 @@ public Q_SLOTS:
   float layer_speed_sec_;  // mm/s
   float layer_speed_;      // mm/min
   float path_speed_;       // mm/min
+  float curve_z_limit_ = 0;
   float backlash_ = 0;
   float padding_mm_;
   int padding_px_;
@@ -597,17 +645,24 @@ public Q_SLOTS:
   float travel_speed_ = 12000;
   float rotary_y_ratio_ = 1;  // force set to 1 in post script
   QTransform global_transform_;
+  std::vector<void(ToolpathExporterFcode::*)(MoveArgs args, std::function<void(MoveArgs args)> callback)> moveto_pipeline_functions_;
   // For blade: blade position: current_xy - blade_radius * (current_vector / |current_vector|)
   QPointF current_xy_ = QPointF(0, 0); // mm position of control point (not blade)
   QVector2D current_vector_ = QVector2D(0, 0); // vector of cutting movement
   // For 3d curve
-  float curve_x_ = 0;
-  float curve_y_ = 0;
+  float curve_started_ = false;
+  float cur_x_ = 0;
+  float cur_y_ = 0;
+  float cur_z_ = 0;
+  float cur_f_ = 12000;
+  float target_f_ = NAN;
   // Metadata
-  float min_x_ = std::nanf("");
-  float max_x_ = std::nanf("");
-  float min_y_ = std::nanf("");
-  float max_y_ = std::nanf("");
+  float min_x_ = NAN;
+  float max_x_ = NAN;
+  float min_y_ = NAN;
+  float max_y_ = NAN;
+  float min_z_ = NAN;
+  float max_z_ = NAN;
   // Task progress
   QProgressDialog* dialog_ = nullptr;
   bool cancelled_ = false;

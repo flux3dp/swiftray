@@ -2908,6 +2908,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
         layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
         layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
+        layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
