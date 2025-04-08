@@ -1,3 +1,7 @@
+// Update to
+// Ghost: 3fe4630d89939d257e291c3a3e01659833e44a2c
+// Client: b1255ac0eef3770c36c0a90c2f50b53e15feaab7
+
 #pragma once
 
 #include <constants.h>
@@ -58,6 +62,7 @@ struct Config {
   float prespray_speed = 1800;
   float prespray_travel_speed = 7500;
   float vector_speed_constraint = 0;
+  float z_premove_speed = 0;
   // mm/s
   float curve_speed_constraint = 0;
   // mm^2/s
@@ -70,6 +75,9 @@ struct Config {
   float blade_radius = 0;
   float loop_compensation = 0;
   float workarea_clip[4] = {0, 0, 0, 0}; // inward offset; top, right, bottom, left
+  float z_premove_x = 0;
+  float z_premove_y = 0;
+  float z_premove_z = 0;
   QPointF precut_at;
   QPointF diode_offset;
   QPointF job_origin;
@@ -108,6 +116,17 @@ struct Config {
   QJsonObject path_acc = {};
 };
 
+struct MoveArgs {
+  float f = NAN;
+  float x = NAN;
+  float y = NAN;
+  float z = NAN;
+  float a = NAN;
+  float s = NAN;
+  bool force_y = false;
+  bool is_travel = false;
+};
+
 class ToolpathExporterFcode : public QObject {
   Q_OBJECT
 
@@ -121,6 +140,7 @@ class ToolpathExporterFcode : public QObject {
       : move_translate_(move_translate) {
     qInfo() << "ToolpathExporterFcode init";
     parseParam(param);
+    updateMovetoPipeline();
     setDpi(dpi);
 
     if (is_v2_) {
@@ -219,6 +239,10 @@ public Q_SLOTS:
       is_v2_ = true;
       config_.z_speed = 5.16;
       config_.support_rel_z_move = true;
+      config_.z_premove_speed = 140;
+      config_.z_premove_x = 0.0127;
+      config_.z_premove_y = 0.0064;
+      config_.z_premove_z = 0.0005;
       default_path_acc["x"] = 1000;
       default_path_acc["y"] = 1000;
     } else if (model == "fhx2rf3") {
@@ -441,7 +465,6 @@ public Q_SLOTS:
     }
     gen_->set_acceleration(flags, x, y, z, a);
   }
-  float getCurveEngravingHeight(bool is_travel);
 
   void updateLayerParam();
   void updateOffset();
@@ -502,6 +525,9 @@ public Q_SLOTS:
                                   int downsample = 1);
 
   void pause(bool to_standby_position);
+
+  // Move related functions
+  void updateMovetoPipeline();
   void moveZ(float z);
   void travel(float x, float y, bool force_y = false, float s = NAN);
   void travel(QPointF position, bool force_y = false, float s = NAN);
@@ -509,16 +535,19 @@ public Q_SLOTS:
               float x = NAN,
               float y = NAN,
               float z = NAN,
+              float a = NAN,
               float s = NAN,
               bool force_y = false,
               bool is_travel = false);
-  void moveto_(float feedrate,
-               float x,
-               float y,
-               float z,
-               float s,
-               bool force_y,
-               bool is_travel);
+  void pipelineMoveto(int idx, MoveArgs args);
+  void rotaryMotionGenerator(MoveArgs args,
+                             std::function<void(MoveArgs args)> callback);
+  void curveEngravingMotionGenerator(
+      MoveArgs args,
+      std::function<void(MoveArgs args)> callback);
+  void zPremoveMotionGenerator(MoveArgs args,
+                               std::function<void(MoveArgs args)> callback);
+  void _moveto(MoveArgs args);
 
   void onProgressChanged(double value, bool absolute);
 
@@ -587,6 +616,7 @@ public Q_SLOTS:
   float layer_speed_sec_;  // mm/s
   float layer_speed_;      // mm/min
   float path_speed_;       // mm/min
+  float curve_z_limit_ = 0;
   float backlash_ = 0;
   float padding_mm_;
   int padding_px_;
@@ -615,12 +645,17 @@ public Q_SLOTS:
   float travel_speed_ = 12000;
   float rotary_y_ratio_ = 1;  // force set to 1 in post script
   QTransform global_transform_;
+  std::vector<void(ToolpathExporterFcode::*)(MoveArgs args, std::function<void(MoveArgs args)> callback)> moveto_pipeline_functions_;
   // For blade: blade position: current_xy - blade_radius * (current_vector / |current_vector|)
   QPointF current_xy_ = QPointF(0, 0); // mm position of control point (not blade)
   QVector2D current_vector_ = QVector2D(0, 0); // vector of cutting movement
   // For 3d curve
-  float curve_x_ = 0;
-  float curve_y_ = 0;
+  float curve_started_ = false;
+  float cur_x_ = 0;
+  float cur_y_ = 0;
+  float cur_z_ = 0;
+  float cur_f_ = 12000;
+  float target_f_ = NAN;
   // Metadata
   float min_x_ = NAN;
   float max_x_ = NAN;

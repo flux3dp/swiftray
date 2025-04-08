@@ -107,7 +107,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     if (is_v2_) {
       gen_->sync_motion_type2(179, 128, 5.0);
     }
-    moveZ(curve_settings.safe_height);
+    if (config_.z_premove_speed){
+      moveto(config_.z_premove_speed, NAN, NAN, curve_settings.safe_height);
+    } else {
+      moveZ(curve_settings.safe_height);
+    }
   }
 
   // Supporting for spinning axis
@@ -273,7 +277,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         }
         convertPrintingLayer();
         gen_->set_toolhead_pwm(0);
-        moveto(NAN, NAN, NAN, NAN, 0);
+        moveto(NAN, NAN, NAN, NAN, NAN, 0);
       } else {
         for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
           if (has_focus_adjust_ && focus_step_ > 0 && processed_repeat_times_ > 0) {
@@ -286,7 +290,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           convertLaserLayer();
           gen_->set_toolhead_pwm(0);
         }
-        moveto(NAN, NAN, NAN, NAN, 0);
+        moveto(NAN, NAN, NAN, NAN, NAN, 0);
         if (has_focus_adjust_ && focus_step_ > 0 && total_repeat_times_ > 1) {
           float total_step = focus_step_ * (total_repeat_times_ - 1);
           gen_->sync_motion_type2(184, 128, -total_step);
@@ -391,7 +395,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     setTravelSpeed(config_.travel_speed);
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
-    moveto(config_.travel_speed, NAN, NAN, NAN, 0);
+    moveto(config_.travel_speed, NAN, NAN, NAN, NAN, 0);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(NAN, 0, true);
@@ -415,7 +419,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     setTravelSpeed(config_.travel_speed);
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
-    moveto(config_.travel_speed, NAN, NAN, NAN, 0);
+    moveto(config_.travel_speed, NAN, NAN, NAN, NAN, 0);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
       travel(NAN, 0, true);
@@ -431,7 +435,11 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     gen_->start_task_script_block("xMIN", "0004");
   }
   if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
-    moveZ(curve_settings.safe_height);
+    if (config_.z_premove_speed){
+      moveto(config_.z_premove_speed, NAN, NAN, curve_settings.safe_height);
+    } else {
+      moveZ(curve_settings.safe_height);
+    }
   }
   if (is_rotary_task_) {
     if (is_v2_) {
@@ -559,6 +567,10 @@ void ToolpathExporterFcode::updateLayerParam() {
   path_speed_ = layer_speed_;
   if (config_.vector_speed_constraint > 0 && path_speed_ > config_.vector_speed_constraint) {
     path_speed_ = config_.vector_speed_constraint;
+  }
+  if (is_3d_task_) {
+    curve_z_limit_ = current_layer_->ceZLimit();
+    updateMovetoPipeline();
   }
   // Update offset
   updateOffset();
@@ -1582,7 +1594,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
         gen_->end_printer_packet();
         gen_->set_printer_packet_px_count(pixel_count);
         real_x = getXValInMM(reverse_raster_dir ? left_x : right_x);
-        moveto(layer_speed_, real_x, real_y, NAN, 1);
+        moveto(layer_speed_, real_x, real_y, NAN, NAN, 1);
 
         if (enable_bidirection_) {
           reverse_raster_dir = !reverse_raster_dir;
@@ -1786,7 +1798,7 @@ void ToolpathExporterFcode::writeSimpleFilledTaskCode(QRect bbox,
   gen_->end_printer_packet();
   gen_->set_printer_packet_px_count(px_count);
   real_x = getXValInMM(box_x + box_w);
-  moveto(config_.prespray_speed, real_x, real_y, NAN, 1, true);
+  moveto(config_.prespray_speed, real_x, real_y, NAN, NAN, 1, true);
 }
 
 void ToolpathExporterFcode::writeCatridgeTaskCode(QRect bbox) {
@@ -1881,154 +1893,245 @@ void ToolpathExporterFcode::pause(bool to_standby_position) {
   }
 }
 
+// ======== start of move functions ========
+void ToolpathExporterFcode::updateMovetoPipeline() {
+  moveto_pipeline_functions_.clear();
+  moveto_pipeline_functions_.push_back(&ToolpathExporterFcode::rotaryMotionGenerator);
+  if (is_3d_task_) {
+    moveto_pipeline_functions_.push_back(&ToolpathExporterFcode::curveEngravingMotionGenerator);
+    if (config_.z_premove_speed && (curve_z_limit_ == 0 || curve_z_limit_ > config_.z_premove_speed)) {
+      moveto_pipeline_functions_.push_back(&ToolpathExporterFcode::zPremoveMotionGenerator);
+    }
+  }
+}
+
 void ToolpathExporterFcode::moveZ(float z) {
   moveto(NAN, NAN, NAN, z);
 }
 
 void ToolpathExporterFcode::travel(float x, float y, bool force_y, float s) {
-  moveto(NAN, x, y, NAN, s, force_y, true);
+  moveto(NAN, x, y, NAN, NAN, s, force_y, true);
 }
 
 void ToolpathExporterFcode::travel(QPointF position, bool force_y, float s) {
-  moveto(NAN, position.x(), position.y(), NAN, s, force_y, true);
+  moveto(NAN, position.x(), position.y(), NAN, NAN, s, force_y, true);
 }
 
 void ToolpathExporterFcode::moveto(float feedrate,
                                    float x,
                                    float y,
                                    float z,
+                                   float a,
                                    float s,
                                    bool force_y,
                                    bool is_travel) {
-  if (is_handling_main_work_) {
-    if (!std::isnan(x)) {
-      min_x_ = std::isnan(min_x_) ? x : qMin(min_x_, x);
-      max_x_ = std::isnan(max_x_) ? x : qMax(max_x_, x);
-    }
-    if (!std::isnan(y)) {
-      min_y_ = std::isnan(min_y_) ? y : qMin(min_y_, y);
-      max_y_ = std::isnan(max_y_) ? y : qMax(max_y_, y);
-    }
-  }
-  if (is_travel || !is_3d_task_ || !std::isnan(z) || is_a_mode_) {
-    if (rotary_wait_move_) {
-      moveto_(feedrate, x, NAN, z, s, force_y, is_travel);
-      if (disable_rotary_) {
-        moveto_(feedrate, NAN, config_.spinning_axis_coord, NAN, NAN, true, true);
-        pause(false);
-      }
-      moveto_(feedrate, NAN, rotary_y_offset_, NAN, NAN, true, true);
-      gen_->sync_motion_type2(185, 128, 0.0);
-      gen_->sync_motion_type2(179, 128, 2.0);
-      moveto_(feedrate, NAN, y, NAN, NAN, force_y, is_travel);
-      rotary_wait_move_ = false;
-    } else {
-      moveto_(feedrate, x, y, z, s, force_y, is_travel);
-    }
+  pipelineMoveto(0, {is_travel ? travel_speed_ : feedrate, x, y, z, a, s, force_y, is_travel});
+}
+
+void ToolpathExporterFcode::pipelineMoveto(int idx, MoveArgs args) {
+  if (idx >= moveto_pipeline_functions_.size()) {
+    _moveto(args);
     return;
   }
-  if (std::isnan(x) && std::isnan(y)) {
-    return moveto_(feedrate, x, y, z, s, force_y, is_travel);
-  }
-  // Handle curve engraving steps
-  float start_x = curve_x_;
-  float start_y = curve_y_;
-  float dx = std::isnan(x) ? 0 : x - start_x;
-  float dy = std::isnan(y) ? 0 : y - start_y;
-  float dist_x = abs(dx);
-  float dist_y = abs(dy);
-  float gap_x = curve_settings.gap.x();
-  float gap_y = curve_settings.gap.y();
-  if (2 * dist_x < gap_x && 2 * dist_y < gap_y) {
-    return moveto_(feedrate, x, y, z, s, force_y, is_travel);
-  }
-  int steps = qMax(int(2 * dist_x / gap_x), int(2 * dist_y / gap_y));
-  for (int i = 1; i < steps; i++) {
-    float ratio = float(i) / steps;
-    float step_x = std::isnan(x) ? x : start_x + dx * ratio;
-    float step_y = std::isnan(y) ? y : start_y + dy * ratio;
-    if (i == 1) {
-      moveto_(feedrate, step_x, step_y, z, NAN, force_y, is_travel);
-    } else {
-      moveto_(NAN, step_x, step_y, z, NAN, force_y, is_travel);
-    }
-  }
-  return moveto_(NAN, x, y, z, NAN, force_y, is_travel);
+  std::function<void(MoveArgs)> callback = [this, idx](MoveArgs args) {
+    pipelineMoveto(idx + 1, args);
+  };
+  (this->*moveto_pipeline_functions_[idx])(args, callback);
 }
 
-void ToolpathExporterFcode::moveto_(float feedrate = NAN,
-                                    float x = NAN,
-                                    float y = NAN,
-                                    float z = NAN,
-                                    float s = NAN,
-                                    bool force_y = false,
-                                    bool is_travel = false) {
-  int flags = 0;
-  float a = NAN;
-  if (is_travel) {
-    feedrate = travel_speed_;
+void ToolpathExporterFcode::rotaryMotionGenerator(
+    MoveArgs args,
+    std::function<void(MoveArgs args)> callback) {
+  // fcode v2 rotary
+  bool use_a = is_v2_ && is_a_mode_ && !args.force_y;
+  // apply rotary y ratio
+  if (!isnan(args.y) && rotary_y_ratio_ != 1) {
+    // for fcode v1: check disable_rotary_
+    // for fcode v2: check use_a
+    if (is_v2_ ? use_a : !disable_rotary_) {
+      args.y = config_.spinning_axis_coord + (args.y - config_.spinning_axis_coord) * rotary_y_ratio_;
+    }
   }
-  if (!isnan(feedrate))
-    flags |= FCodeGenerator::move_flag_F;
-  if (!isnan(x)) {
-    curve_x_ = x;
-    flags |= FCodeGenerator::move_flag_X;
+  if (!use_a) {
+    callback(args);
+    return;
   }
-  if (!isnan(y)) {
-    curve_y_ = y;
-    if (is_v2_) {
-      if (is_a_mode_ && !force_y) {
-        if (rotary_y_ratio_ != 1) {
-          y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
-        }
-        if (is_travel) {
-          gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
-                       config_.a_travel_speed, NAN, NAN,
-                       NAN, y, NAN);
-          y = NAN;
-        } else {
-          a = y;
-          y = NAN;
-          flags |= FCodeGenerator::move_flag_A;
-        }
-      } else {
-        flags |= FCodeGenerator::move_flag_Y;
-      }
+  // a-axis rotary
+  if (isnan(args.a)) {
+    args.a = args.y;
+  }
+  args.y = NAN;
+  args.force_y = false;
+  if (rotary_wait_move_) {
+    callback({args.f, args.x, NAN, args.z, NAN, args.s, args.force_y, args.is_travel});
+    args.x = NAN;
+    args.z = NAN;
+    if (disable_rotary_) {
+      callback({args.f, NAN, config_.spinning_axis_coord, NAN, NAN, NAN, args.force_y, args.is_travel});
+      pause(false);
+    }
+    callback({args.f, NAN, rotary_y_offset_, NAN, NAN, NAN, args.force_y, args.is_travel});
+    gen_->sync_motion_type2(185, 128, 0.0);
+    gen_->sync_motion_type2(179, 128, 2.0);
+    rotary_wait_move_ = false;
+  }
+  if (args.is_travel) {
+    callback({config_.a_travel_speed, NAN, NAN, NAN, args.a, NAN, args.force_y, args.is_travel});
+    args.a = NAN;
+  }
+  callback(args);
+}
+
+void ToolpathExporterFcode::curveEngravingMotionGenerator(
+    MoveArgs args,
+    std::function<void(MoveArgs args)> callback) {
+  if (!isnan(args.f)) {
+    target_f_ = args.f;
+  }
+  if ((isnan(args.x) && isnan(args.y)) || !isnan(args.z)) {
+    callback(args);
+    return;
+  }
+  if (!curve_started_) {
+    if (args.is_travel) {
+      callback(args);
+      return;
+    }
+    curve_started_ = true;
+  }
+
+  float box_left = curve_settings.bbox.left();
+  float box_right = curve_settings.bbox.right();
+  float box_top = curve_settings.bbox.top();
+  float box_bottom = curve_settings.bbox.bottom();
+  float start_x = cur_x_, start_y = cur_y_;
+  float cur_x = cur_x_, cur_y = cur_y_, cur_z = cur_z_;
+  float dist_x = fabs(isnan(args.x) ? 0 : (args.x - start_x));
+  float dist_y = fabs(isnan(args.y) ? 0 : (args.y - start_y));
+  int seg_counts = qMax(qMax(int(ceil(2 * dist_x / curve_settings.gap.x())),
+                             int(ceil(2 * dist_y / curve_settings.gap.y()))),
+                        1);
+  float step_x, step_y, dx, dy, dz, dxy, z_f, scale;
+  for (int i = 0; i < seg_counts; ++i) {
+    if (i < seg_counts - 1) {
+      float ratio = (i + 1.0) / seg_counts;
+      step_x = isnan(args.x) ? NAN : (start_x + (args.x - start_x) * ratio);
+      step_y = isnan(args.y) ? NAN : (start_y + (args.y - start_y) * ratio);
     } else {
-      if (!disable_rotary_ && rotary_y_ratio_ != 1) {
-        y = config_.spinning_axis_coord + (y - config_.spinning_axis_coord) * rotary_y_ratio_;
+      step_x = args.x;
+      step_y = args.y;
+    }
+    dx = isnan(step_x) ? 0 : (step_x - cur_x);
+    dy = isnan(step_y) ? 0 : (step_y - cur_y);
+    cur_x = isnan(step_x) ? cur_x : step_x;
+    cur_y = isnan(step_y) ? cur_y : step_y;
+    if (cur_x < box_left || cur_x > box_right || cur_y < box_top || cur_y > box_bottom) {
+      callback({target_f_, step_x, step_y, args.z, args.a, args.s, args.force_y, args.is_travel});
+      continue;
+    }
+    args.z = qMax(curve_settings.interpolator.do_evaluate(cur_x, cur_y), 0.0);
+    dxy = sqrt(dx * dx + dy * dy);
+    if (target_f_ && !isnan(cur_z) && dxy > 0) {
+      dz = fabs(args.z - cur_z);
+      z_f = target_f_ * dz / dxy;
+      if (z_f > 0) {
+        if (curve_z_limit_ > 0) {
+          scale = qMin(1.0, curve_z_limit_ / z_f);
+        } else {
+          scale = 1;
+        }
+        args.f = sqrt(target_f_ * target_f_ + z_f * z_f) * scale;
       }
-      flags |= FCodeGenerator::move_flag_Y;
+    }
+    cur_z = args.z;
+    callback({args.f, step_x, step_y, args.z, args.a, args.s, args.force_y, args.is_travel});
+  }
+  if (target_f_ != args.f) {
+    callback({target_f_, NAN, NAN, NAN, NAN, NAN, args.force_y, args.is_travel});
+  }
+}
+
+void ToolpathExporterFcode::zPremoveMotionGenerator(
+    MoveArgs args,
+    std::function<void(MoveArgs args)> callback) {
+  if (isnan(args.z)) {
+    callback(args);
+    return;
+  }
+  if (isnan(cur_z_)) {
+    gen_->sync_grbl_motion(0);
+    callback(args);
+    return;
+  }
+  float ori_f = isnan(args.f) ? cur_f_ : args.f;
+  float dz = args.z - cur_z_;
+  if (fabs(dz) > 0) {
+    float dx = isnan(args.x) ? 0 : (args.x - cur_x_);
+    float dy = isnan(args.y) ? 0 : (args.y - cur_y_);
+    float dxy = sqrt(dx * dx + dy * dy);
+    float ori_f_z = ori_f * fabs(dz) / sqrt(dxy * dxy + dz * dz);
+    if (ori_f_z > config_.z_premove_speed) {
+      float scale = config_.z_premove_z / fabs(dz);
+      if (fabs(dx) > 0) {
+        scale = qMax(scale, config_.z_premove_x / fabs(dx));
+      }
+      if (fabs(dy) > 0) {
+        scale = qMax(scale, config_.z_premove_y / fabs(dy));
+      }
+      scale = qMin(scale, 1.0);
+      float premove_x = isnan(args.x) ? NAN : (cur_x_ + dx * scale);
+      float premove_y = isnan(args.y) ? NAN : (cur_y_ + dy * scale);
+      float premove_z = cur_z_ + dz * scale;
+      callback({config_.z_premove_speed, premove_x, premove_y, premove_z, NAN, NAN, args.force_y, args.is_travel});
+      args.f = ori_f;
     }
   }
-  if (!isnan(z)) {
+  callback(args);
+}
+
+void ToolpathExporterFcode::_moveto(MoveArgs args) {
+  int flags = 0;
+  if (!isnan(args.f)) {
+    flags |= FCodeGenerator::move_flag_F;
+    cur_f_ = args.f;
+  }
+  if (!isnan(args.x)) {
+    flags |= FCodeGenerator::move_flag_X;
+    cur_x_ = args.x;
+    if (is_handling_main_work_) {
+      min_x_ = std::isnan(min_x_) ? args.x : qMin(min_x_, args.x);
+      max_x_ = std::isnan(max_x_) ? args.x : qMax(max_x_, args.x);
+    }
+  }
+  if (!isnan(args.y)) {
+    flags |= FCodeGenerator::move_flag_Y;
+    cur_y_ = args.y;
+    if (is_handling_main_work_) {
+      min_y_ = std::isnan(min_y_) ? args.y : qMin(min_y_, args.y);
+      max_y_ = std::isnan(max_y_) ? args.y : qMax(max_y_, args.y);
+    }
+  }
+  if (!isnan(args.z)) {
     flags |= FCodeGenerator::move_flag_Z;
-  } else if (is_3d_task_ && !is_a_mode_ && (!isnan(x) || !isnan(y))) {
-    // Try to estimate z value for curve engraving
-    z = getCurveEngravingHeight(is_travel);
-    if (!isnan(z)) {
-      flags |= FCodeGenerator::move_flag_Z;
+    cur_z_ = args.z != -1 ? args.z : 1; // z pos is 1 after homing
+    if (is_handling_main_work_) {
+      min_z_ = std::isnan(min_z_) ? args.z : qMin(min_z_, args.z);
+      max_z_ = std::isnan(max_z_) ? args.z : qMax(max_z_, args.z);
     }
   }
-  if (!isnan(s)) {
+  if (!isnan(args.a)) {
+    flags |= FCodeGenerator::move_flag_A;
+    if (is_handling_main_work_) {
+      min_y_ = std::isnan(min_y_) ? args.a : qMin(min_y_, args.a);
+      max_y_ = std::isnan(max_y_) ? args.a : qMax(max_y_, args.a);
+    }
+  }
+  if (!isnan(args.s)) {
     flags |= FCodeGenerator::move_flag_S;
   }
-  gen_->moveto(flags, feedrate, x, y, z, a, s);
+  gen_->moveto(flags, args.f, args.x, args.y, args.z, args.a, args.s);
 }
-
-float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
-  if (!is_handling_3d_work_) {
-    if (is_travel) {
-      return NAN;
-    }
-    is_handling_3d_work_ = true;
-  }
-  float z = curve_settings.interpolator.do_evaluate(curve_x_, curve_y_);
-  if (isnan(z)) {
-    return z;
-  }
-  return qMax(z, 0.0);
-}
+// ======== end of move functions ========
 
 QVector<QRect> ToolpathExporterFcode::getBoundingBoxes(QImage* src,
                                                        int merge_offset_x,
