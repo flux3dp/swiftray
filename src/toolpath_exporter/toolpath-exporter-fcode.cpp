@@ -205,7 +205,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         gen_->write_string("TASK", 4);
         // Write transition script
         gen_->start_task_script_block("TRAN", NULL);
-        if (with_module_) {
+        if (config_.support_modules) {
           if (is_rotary_task_ && config_.enable_rotary_z_move) {
             moveZ(1);
           }
@@ -468,7 +468,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
 }
 
 void ToolpathExporterFcode::updateLayerParam() {
-  layer_module_ = with_module_ ? current_layer_->module() : 15; // 15 = UNIVERSAL_LASER
+  layer_module_ = config_.support_modules ? current_layer_->module() : 15; // 15 = UNIVERSAL_LASER
   is_printing_layer_ = layer_module_ == 5; // 5 = PRINTER
   layer_color_ = current_layer_->color().name().toUpper();
   focus_adjust_ = current_layer_->focus();
@@ -496,7 +496,7 @@ void ToolpathExporterFcode::updateLayerParam() {
       submodule_color_ = "black";
     }
   } else {
-    has_focus_adjust_ = config_.enable_relative_z_move && (focus_adjust_ > 0 || focus_step_ > 0);
+    has_focus_adjust_ = config_.support_rel_z_move && (focus_adjust_ > 0 || focus_step_ > 0);
     enable_bidirection_ =
         !(config_.enable_diode && current_layer_->isUseDiode() &&
           config_.is_diode_one_way_engraving);
@@ -557,7 +557,7 @@ void ToolpathExporterFcode::updateLayerParam() {
 }
 
 void ToolpathExporterFcode::updateOffset() {
-  if (with_module_) {
+  if (config_.support_modules) {
     module_offset_ = config_.module_offsets[layer_module_];
   } else if (config_.enable_diode && current_layer_->isUseDiode()) {
     module_offset_ = config_.diode_offset;
@@ -569,7 +569,7 @@ void ToolpathExporterFcode::updateOffset() {
 void ToolpathExporterFcode::updateClip() {
   float layer_clip[4];
   qreal module_clip[4] = {0, 0, 0, 0};
-  if (with_module_) {
+  if (config_.support_modules) {
     if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {
       // module boundary
       switch (layer_module_) {

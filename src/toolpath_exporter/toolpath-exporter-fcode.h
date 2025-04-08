@@ -92,12 +92,15 @@ struct Config {
   bool enable_fast_gradient = false;
   bool enable_mock_fast_gradient = false;
   bool enable_multipass_compensation = false;
-  bool enable_relative_z_move = false;
   bool enable_rotary_z_move = false;
   bool enable_segmentation = false;
   bool is_one_way_printing = false;
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
+  // founction based on hardware
+  bool support_rel_z_move = false;
+  bool support_modules = false;
+  bool support_rotary_z_motion = false;
 
   char print_modes[2] = {0, 0};
 };
@@ -190,13 +193,13 @@ public Q_SLOTS:
       config_.fg_pwm_limit = 1500;
     } else if (hardware == "hexa") {
       hardware_ = HardwareType::HEXA;
-      config_.enable_relative_z_move = true;
+      config_.support_rel_z_move = true;
     } else if (hardware == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
-      with_module_ = true;
-      config_.enable_relative_z_move = true;
-      config_.enable_rotary_z_move = true;
+      config_.support_modules = true;
+      config_.support_rel_z_move = true;
+      config_.support_rotary_z_motion = true;
       default_path_travel_speed = 3600;
       default_path_acc = 500;
       if (param.contains("prespray")) {
@@ -209,7 +212,7 @@ public Q_SLOTS:
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
       config_.z_speed = 5.16;
-      config_.enable_relative_z_move = true;
+      config_.support_rel_z_move = true;
       default_path_acc = 1000;
     } else {
       // default beambox
@@ -219,7 +222,7 @@ public Q_SLOTS:
     work_area_mm_ = QSizeF(width, height);
     config_.dpmm_preview = 500.0 / width;
 
-    if (with_module_) {
+    if (config_.support_modules) {
       QJsonObject offset_dict = param["mof"].toObject();
       for (QString module_key : offset_dict.keys()) {
         QJsonArray offset = offset_dict[module_key].toArray();
@@ -241,6 +244,7 @@ public Q_SLOTS:
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
     config_.enable_segmentation = param["segment"].toBool(true);
+    config_.enable_rotary_z_move = param["rotary_z_motion"].toBool(config_.support_rotary_z_motion);
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();
@@ -552,7 +556,6 @@ public Q_SLOTS:
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
   bool with_blade_ = false;
-  bool with_module_ = false;
   bool with_custom_origin_ = false;
 
   QSizeF work_area_mm_;
