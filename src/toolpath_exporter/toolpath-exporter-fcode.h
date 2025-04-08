@@ -110,7 +110,7 @@ class ToolpathExporterFcode : public QObject {
   Q_OBJECT
 
  public:
-  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2 };
+  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2, RF30, RF60 };
 
   ToolpathExporterFcode(QTransform move_translate,
                         int dpi,
@@ -185,19 +185,19 @@ public Q_SLOTS:
     QJsonObject workarea = param["workarea"].toObject();
     int width = workarea["width"].toInt();
     int height = workarea["height"].toInt();
-    QString hardware = param["hardware_name"].toString();
+    QString model = param["model"].toString();
     float default_path_travel_speed = 7500;
     QJsonObject default_path_acc = {};
-    if (hardware == "beamo") {
+    if (model == "fbm1") {
       hardware_ = HardwareType::beamo;
       config_.fg_pwm_limit = 1500;
-    } else if (hardware == "pro") {
+    } else if (model == "fbb1p") {
       hardware_ = HardwareType::BeamboxPro;
       config_.fg_pwm_limit = 1500;
-    } else if (hardware == "hexa") {
+    } else if (model == "fhexa1") {
       hardware_ = HardwareType::HEXA;
       config_.support_rel_z_move = true;
-    } else if (hardware == "ado1") {
+    } else if (model == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
       config_.support_modules = true;
@@ -212,13 +212,19 @@ public Q_SLOTS:
             QRectF(prespray_arr[0].toDouble(), prespray_arr[1].toDouble(),
                    prespray_arr[2].toDouble(), prespray_arr[3].toDouble());
       }
-    } else if (hardware == "fbb2") {
+    } else if (model == "fbb2") {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
       config_.z_speed = 5.16;
       config_.support_rel_z_move = true;
       default_path_acc["x"] = 1000;
       default_path_acc["y"] = 1000;
+    } else if (model == "fhx2rf3") {
+      hardware_ = HardwareType::RF30;
+      is_v2_ = true;
+    } else if (model == "fhx2rf6") {
+      hardware_ = HardwareType::RF60;
+      is_v2_ = true;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
