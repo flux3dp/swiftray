@@ -19,6 +19,7 @@
 #include <QProgressDialog>
 #include <QVector2D>
 #include <bitset>
+#include <cmath>
 
 struct NozzleSettings {
   float voltage = 9.0;
@@ -58,11 +59,11 @@ struct Config {
   float prespray_travel_speed = 7500;
   float vector_speed_constraint = 0;
   // mm^2/s
-  float path_acc = std::nanf("");
+  float path_acc = NAN;
   float padding_acc = 4000;
   // mm
-  float min_engraving_padding = std::nanf("");
-  float min_printing_padding = std::nanf("");
+  float min_engraving_padding = NAN;
+  float min_printing_padding = NAN;
   float spinning_axis_coord = -1;
   float z_offset = 0;
   float blade_radius = 0;
@@ -74,8 +75,8 @@ struct Config {
   QMap<int, QPointF> module_offsets;
   QRectF prespray;
   // px
-  int printing_top_padding = std::nanf("");
-  int printing_bot_padding = std::nanf("");
+  int printing_top_padding = 0;
+  int printing_bot_padding = 0;
   int fg_pwm_limit = 1500;
   // px/mm
   float dpmm_x = 10;
@@ -179,7 +180,7 @@ public Q_SLOTS:
     int height = workarea["height"].toInt();
     QString hardware = param["hardware_name"].toString();
     float default_path_travel_speed = 7500;
-    float default_path_acc = std::nanf("");
+    float default_path_acc = NAN;
     if (hardware == "beamo") {
       hardware_ = HardwareType::beamo;
     } else if (hardware == "pro") {
@@ -252,8 +253,8 @@ public Q_SLOTS:
     config_.vector_speed_constraint = param["vsl"].toDouble(0);
     config_.path_acc = param["path_acc"].toDouble(default_path_acc);
     config_.padding_acc = param["acc"].toDouble(4000);
-    config_.min_engraving_padding = param["mep"].toDouble(std::nanf(""));
-    config_.min_printing_padding = param["mpp"].toDouble(std::nanf(""));
+    config_.min_engraving_padding = param["mep"].toDouble(NAN);
+    config_.min_printing_padding = param["mpp"].toDouble(NAN);
     config_.z_offset = param["z_offset"].toDouble(0);
     config_.blade_radius = param["blade"].toDouble();
     if (config_.blade_radius > 0) {
@@ -323,7 +324,7 @@ public Q_SLOTS:
           curve_settings.interpolator.add_point(x, y, z);
         }
         curve_settings.interpolator.setup();
-        curve_settings.safe_height = curve_obj["safe_height"].toDouble(std::nanf(""));
+        curve_settings.safe_height = curve_obj["safe_height"].toDouble(NAN);
       }
     }
   }
@@ -398,15 +399,15 @@ public Q_SLOTS:
   float mm2px(float mm, bool is_x = false) {
     return mm * (is_x ? dpmm_x() : dpmm_y());
   }
-  void setTravelSpeed(float feedrate = std::nanf("")) {
+  void setTravelSpeed(float feedrate = NAN) {
     if (!std::isnan(feedrate)) {
       travel_speed_ = feedrate;
     }
   }
-  void setPathAcceleration(float x = std::nanf(""),
-                           float y = std::nanf(""),
-                           float z = std::nanf(""),
-                           float a = std::nanf("")) {
+  void setPathAcceleration(float x = NAN,
+                           float y = NAN,
+                           float z = NAN,
+                           float a = NAN) {
     int flags = 0;
     if (!std::isnan(x)) {
       flags |= FCodeGenerator::move_flag_X;
@@ -484,13 +485,13 @@ public Q_SLOTS:
 
   void pause(bool to_standby_position);
   void moveZ(float z);
-  void travel(float x, float y, bool force_y = false, float s = std::nanf(""));
-  void travel(QPointF position, bool force_y = false, float s = std::nanf(""));
-  void moveto(float feedrate = std::nanf(""),
-              float x = std::nanf(""),
-              float y = std::nanf(""),
-              float z = std::nanf(""),
-              float s = std::nanf(""),
+  void travel(float x, float y, bool force_y = false, float s = NAN);
+  void travel(QPointF position, bool force_y = false, float s = NAN);
+  void moveto(float feedrate = NAN,
+              float x = NAN,
+              float y = NAN,
+              float z = NAN,
+              float s = NAN,
               bool force_y = false,
               bool is_travel = false);
   void moveto_(float feedrate,
@@ -604,10 +605,10 @@ public Q_SLOTS:
   float curve_x_ = 0;
   float curve_y_ = 0;
   // Metadata
-  float min_x_ = std::nanf("");
-  float max_x_ = std::nanf("");
-  float min_y_ = std::nanf("");
-  float max_y_ = std::nanf("");
+  float min_x_ = NAN;
+  float max_x_ = NAN;
+  float min_y_ = NAN;
+  float max_y_ = NAN;
   // Task progress
   QProgressDialog* dialog_ = nullptr;
   bool cancelled_ = false;

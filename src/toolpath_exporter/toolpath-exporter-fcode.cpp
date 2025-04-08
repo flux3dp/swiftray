@@ -218,9 +218,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
             tran_pos = QPointF(work_area_mm_.width() / 2, work_area_mm_.height() / 2);
           }
           if (is_rotary_task_ && config_.enable_rotary_z_move) {
-            travel(std::nanf(""), 0, true);
-            travel(tran_pos.x(), std::nanf(""), true);
-            travel(std::nanf(""), tran_pos.y(), true);
+            travel(NAN, 0, true);
+            travel(tran_pos.x(), NAN, true);
+            travel(NAN, tran_pos.y(), true);
             gen_->sync_motion_type2(179, 128, 3.0);
           } else {
             travel(tran_pos, true);
@@ -243,7 +243,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
             rotary_wait_move_ = true;
             rotary_y_offset_ = config_.spinning_axis_coord - module_offset_.y();
           } else {
-            travel(std::nanf(""), config_.spinning_axis_coord - module_offset_.y(), true);
+            travel(NAN, config_.spinning_axis_coord - module_offset_.y(), true);
           }
           module_offset_.setY(0);
         } else {
@@ -273,7 +273,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         }
         convertPrintingLayer();
         gen_->set_toolhead_pwm(0);
-        moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
+        moveto(NAN, NAN, NAN, NAN, 0);
       } else {
         for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
           if (has_focus_adjust_ && focus_step_ > 0 && processed_repeat_times_ > 0) {
@@ -286,7 +286,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           convertLaserLayer();
           gen_->set_toolhead_pwm(0);
         }
-        moveto(std::nanf(""), std::nanf(""), std::nanf(""), std::nanf(""), 0);
+        moveto(NAN, NAN, NAN, NAN, 0);
         if (has_focus_adjust_ && focus_step_ > 0 && total_repeat_times_ > 1) {
           float total_step = focus_step_ * (total_repeat_times_ - 1);
           gen_->sync_motion_type2(184, 128, -total_step);
@@ -367,8 +367,8 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     }
     setTravelSpeed(config_.prespray_travel_speed);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
-      travel(x, std::nanf(""), true, 0);
-      travel(std::nanf(""), y, true, 0);
+      travel(x, NAN, true, 0);
+      travel(NAN, y, true, 0);
       moveZ(35);
     } else {
       travel(x, y, true, 0);
@@ -391,18 +391,18 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     setTravelSpeed(config_.travel_speed);
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
-    moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
+    moveto(config_.travel_speed, NAN, NAN, NAN, 0);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
-      travel(std::nanf(""), 0, true);
+      travel(NAN, 0, true);
     }
     gen_->end_task_script_block();
     // 0002 pure prespray task
     gen_->start_task_script_block("xMIN", "0002");
     setTravelSpeed(config_.prespray_travel_speed);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
-      travel(x, std::nanf(""), true, 0);
-      travel(std::nanf(""), y, true, 0);
+      travel(x, NAN, true, 0);
+      travel(NAN, y, true, 0);
       moveZ(35);
     } else {
       travel(x, y, true, 0);
@@ -415,10 +415,10 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     setTravelSpeed(config_.travel_speed);
     gen_->wait_printer_mode_sync();
     gen_->exit_printer_mode();
-    moveto(config_.travel_speed, std::nanf(""), std::nanf(""), std::nanf(""), 0);
+    moveto(config_.travel_speed, NAN, NAN, NAN, 0);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(1);
-      travel(std::nanf(""), 0, true);
+      travel(NAN, 0, true);
     }
     gen_->end_task_script_block();
   }
@@ -438,8 +438,8 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       if (config_.enable_rotary_z_move) {
         moveZ(1);
       }
-      travel(std::nanf(""), config_.spinning_axis_coord);
-      travel(std::nanf(""), 0, true);
+      travel(NAN, config_.spinning_axis_coord);
+      travel(NAN, 0, true);
       gen_->sync_grbl_motion(36);
       is_a_mode_ = false;
       travel(0, 0);
@@ -1155,11 +1155,11 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
           // First emitting point of this line; should handle y movement
           gen_->set_toolhead_pwm(0);
           // And by adding speed+1 hack, machine will refresh the speed value
-          moveto(layer_speed_ + 1, std::nanf(""), getYValInMM(y));
+          moveto(layer_speed_ + 1, NAN, getYValInMM(y));
           moveto(layer_speed_);
         }
         current_x = x;
-        moveto(std::nanf(""),
+        moveto(NAN,
                getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
                            reverse_raster_dir, true));
         has_unfinished_move = false;
@@ -1169,7 +1169,7 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     } else if (is_emitting) {
       // Laser on -> off
       current_x = x;
-      moveto(std::nanf(""),
+      moveto(NAN,
              getXValInMM(reverse_raster_dir ? current_x + 1 : current_x,
                          reverse_raster_dir, true));
       has_unfinished_move = false;
@@ -1184,7 +1184,7 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     qreal real_x = px2mm(reverse_raster_dir ? current_x + 1 : current_x, true);
     if (has_unfinished_move) {
       qreal move_x = qMax(real_x, float(0)) - module_offset_.x();
-      moveto(std::nanf(""), move_x);
+      moveto(NAN, move_x);
     }
     if (!reverse_raster_dir)
       real_x += backlash_;
@@ -1201,7 +1201,7 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
     }
     buffer_x -= module_offset_.x();
     gen_->set_toolhead_pwm(0);
-    moveto(std::nanf(""), buffer_x);
+    moveto(NAN, buffer_x);
     return true;
   } else {
     // Blank line
@@ -1277,7 +1277,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
   }
   gen_->set_fill_end();
   gen_->set_print_line_status();
-  moveto(std::nanf(""), reverse_raster_dir ? buffer_left : buffer_right);
+  moveto(NAN, reverse_raster_dir ? buffer_left : buffer_right);
   return true;
 }
 
@@ -1355,7 +1355,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeedPwm(const uchar* data_ptr,
   }
   gen_->set_fill_end();
   gen_->set_print_line_status();
-  moveto(std::nanf(""), reverse_raster_dir ? buffer_left : buffer_right);
+  moveto(NAN, reverse_raster_dir ? buffer_left : buffer_right);
   return true;
 }
 
@@ -1553,7 +1553,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
         gen_->end_printer_packet();
         gen_->set_printer_packet_px_count(pixel_count);
         real_x = getXValInMM(reverse_raster_dir ? left_x : right_x);
-        moveto(layer_speed_, real_x, real_y, std::nanf(""), 1);
+        moveto(layer_speed_, real_x, real_y, NAN, 1);
 
         if (enable_bidirection_) {
           reverse_raster_dir = !reverse_raster_dir;
@@ -1757,7 +1757,7 @@ void ToolpathExporterFcode::writeSimpleFilledTaskCode(QRect bbox,
   gen_->end_printer_packet();
   gen_->set_printer_packet_px_count(px_count);
   real_x = getXValInMM(box_x + box_w);
-  moveto(config_.prespray_speed, real_x, real_y, std::nanf(""), 1, true);
+  moveto(config_.prespray_speed, real_x, real_y, NAN, 1, true);
 }
 
 void ToolpathExporterFcode::writeCatridgeTaskCode(QRect bbox) {
@@ -1853,15 +1853,15 @@ void ToolpathExporterFcode::pause(bool to_standby_position) {
 }
 
 void ToolpathExporterFcode::moveZ(float z) {
-  moveto(std::nanf(""), std::nanf(""), std::nanf(""), z);
+  moveto(NAN, NAN, NAN, z);
 }
 
 void ToolpathExporterFcode::travel(float x, float y, bool force_y, float s) {
-  moveto(std::nanf(""), x, y, std::nanf(""), s, force_y, true);
+  moveto(NAN, x, y, NAN, s, force_y, true);
 }
 
 void ToolpathExporterFcode::travel(QPointF position, bool force_y, float s) {
-  moveto(std::nanf(""), position.x(), position.y(), std::nanf(""), s, force_y, true);
+  moveto(NAN, position.x(), position.y(), NAN, s, force_y, true);
 }
 
 void ToolpathExporterFcode::moveto(float feedrate,
@@ -1883,15 +1883,15 @@ void ToolpathExporterFcode::moveto(float feedrate,
   }
   if (is_travel || !is_3d_task_ || !std::isnan(z) || is_a_mode_) {
     if (rotary_wait_move_) {
-      moveto_(feedrate, x, std::nanf(""), z, s, force_y, is_travel);
+      moveto_(feedrate, x, NAN, z, s, force_y, is_travel);
       if (disable_rotary_) {
-        moveto_(feedrate, std::nanf(""), config_.spinning_axis_coord, std::nanf(""), std::nanf(""), true, true);
+        moveto_(feedrate, NAN, config_.spinning_axis_coord, NAN, NAN, true, true);
         pause(false);
       }
-      moveto_(feedrate, std::nanf(""), rotary_y_offset_, std::nanf(""), std::nanf(""), true, true);
+      moveto_(feedrate, NAN, rotary_y_offset_, NAN, NAN, true, true);
       gen_->sync_motion_type2(185, 128, 0.0);
       gen_->sync_motion_type2(179, 128, 2.0);
-      moveto_(feedrate, std::nanf(""), y, std::nanf(""), std::nanf(""), force_y, is_travel);
+      moveto_(feedrate, NAN, y, NAN, NAN, force_y, is_travel);
       rotary_wait_move_ = false;
     } else {
       moveto_(feedrate, x, y, z, s, force_y, is_travel);
@@ -1919,23 +1919,23 @@ void ToolpathExporterFcode::moveto(float feedrate,
     float step_x = std::isnan(x) ? x : start_x + dx * ratio;
     float step_y = std::isnan(y) ? y : start_y + dy * ratio;
     if (i == 1) {
-      moveto_(feedrate, step_x, step_y, z, std::nanf(""), force_y, is_travel);
+      moveto_(feedrate, step_x, step_y, z, NAN, force_y, is_travel);
     } else {
-      moveto_(std::nanf(""), step_x, step_y, z, std::nanf(""), force_y, is_travel);
+      moveto_(NAN, step_x, step_y, z, NAN, force_y, is_travel);
     }
   }
-  return moveto_(std::nanf(""), x, y, z, std::nanf(""), force_y, is_travel);
+  return moveto_(NAN, x, y, z, NAN, force_y, is_travel);
 }
 
-void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
-                                    float x = std::nanf(""),
-                                    float y = std::nanf(""),
-                                    float z = std::nanf(""),
-                                    float s = std::nanf(""),
+void ToolpathExporterFcode::moveto_(float feedrate = NAN,
+                                    float x = NAN,
+                                    float y = NAN,
+                                    float z = NAN,
+                                    float s = NAN,
                                     bool force_y = false,
                                     bool is_travel = false) {
   int flags = 0;
-  float a = std::nanf("");
+  float a = NAN;
   if (is_travel) {
     feedrate = travel_speed_;
   }
@@ -1954,12 +1954,12 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
         }
         if (is_travel) {
           gen_->moveto(FCodeGenerator::move_flag_F | FCodeGenerator::move_flag_A,
-                       config_.a_travel_speed, std::nanf(""), std::nanf(""),
-                       std::nanf(""), y, std::nanf(""));
-          y = std::nanf("");
+                       config_.a_travel_speed, NAN, NAN,
+                       NAN, y, NAN);
+          y = NAN;
         } else {
           a = y;
-          y = std::nanf("");
+          y = NAN;
           flags |= FCodeGenerator::move_flag_A;
         }
       } else {
@@ -1990,7 +1990,7 @@ void ToolpathExporterFcode::moveto_(float feedrate = std::nanf(""),
 float ToolpathExporterFcode::getCurveEngravingHeight(bool is_travel) {
   if (!is_handling_3d_work_) {
     if (is_travel) {
-      return std::nanf("");
+      return NAN;
     }
     is_handling_3d_work_ = true;
   }
