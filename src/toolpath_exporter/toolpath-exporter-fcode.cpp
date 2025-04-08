@@ -511,6 +511,9 @@ void ToolpathExporterFcode::updateLayerParam() {
     min_padding = config_.min_engraving_padding;
     submodule_color_ = "None";
   }
+  if (is_3d_task_ && config_.curve_speed_constraint > 0 && layer_speed_sec_ > config_.curve_speed_constraint) {
+    layer_speed_sec_ = config_.curve_speed_constraint;
+  }
   // Update padding
   if (std::isnan(min_padding)) {
     if (hardware_ == ToolpathExporterFcode::HardwareType::Ador) {

@@ -58,6 +58,8 @@ struct Config {
   float prespray_speed = 1800;
   float prespray_travel_speed = 7500;
   float vector_speed_constraint = 0;
+  // mm/s
+  float curve_speed_constraint = 0;
   // mm^2/s
   float padding_acc = 4000;
   // mm
@@ -264,6 +266,7 @@ public Q_SLOTS:
     config_.a_travel_speed = param["ats"].toDouble(2000);
     config_.path_travel_speed = param["pts"].toDouble(default_path_travel_speed);
     config_.vector_speed_constraint = param["vsl"].toDouble(0);
+    config_.curve_speed_constraint = param["csl"].toDouble(0) / 60;
     config_.padding_acc = param["acc"].toDouble(4000);
     config_.min_engraving_padding = param["mep"].toDouble(NAN);
     config_.min_printing_padding = param["mpp"].toDouble(NAN);
