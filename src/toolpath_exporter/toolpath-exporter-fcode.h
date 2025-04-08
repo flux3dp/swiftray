@@ -50,7 +50,7 @@ struct CurveEngravingSettings {
 
 struct Config {
   // mm/min
-  float z_speed = 7.5; // for time estimated; bb2 = 2.33
+  float z_speed = 7.5; // for time estimated; bb2 = 5.16
   float min_speed = 3;
   float travel_speed = 7500; // default val = 7500 in ghost, 12000 in client
   float a_travel_speed = 2000;
@@ -77,7 +77,7 @@ struct Config {
   // px
   int printing_top_padding = 0;
   int printing_bot_padding = 0;
-  int fg_pwm_limit = 1500;
+  int fg_pwm_limit = 0;
   // px/mm
   float dpmm_x = 10;
   float dpmm_y = 10;
@@ -138,6 +138,7 @@ class ToolpathExporterFcode : public QObject {
     }
     gen_ = gen.get();
 
+    gen_->set_time_est_z_speed(config_.z_speed);
     setTravelSpeed(config_.travel_speed);
   }
 
@@ -183,22 +184,19 @@ public Q_SLOTS:
     float default_path_acc = NAN;
     if (hardware == "beamo") {
       hardware_ = HardwareType::beamo;
+      config_.fg_pwm_limit = 1500;
     } else if (hardware == "pro") {
       hardware_ = HardwareType::BeamboxPro;
+      config_.fg_pwm_limit = 1500;
     } else if (hardware == "hexa") {
       hardware_ = HardwareType::HEXA;
-      config_.fg_pwm_limit = 0;
       config_.enable_relative_z_move = true;
     } else if (hardware == "ado1") {
       hardware_ = HardwareType::Ador;
       is_v2_ = true;
       with_module_ = true;
-      config_.fg_pwm_limit = 0;
       config_.enable_relative_z_move = true;
       config_.enable_rotary_z_move = true;
-      if (is_rotary_task_) {
-        height += 378.2;
-      }
       default_path_travel_speed = 3600;
       default_path_acc = 500;
       if (param.contains("prespray")) {
@@ -210,13 +208,13 @@ public Q_SLOTS:
     } else if (hardware == "fbb2") {
       hardware_ = HardwareType::BB2;
       is_v2_ = true;
-      config_.z_speed = 2.33;
-      config_.fg_pwm_limit = 0;
+      config_.z_speed = 5.16;
       config_.enable_relative_z_move = true;
       default_path_acc = 1000;
     } else {
       // default beambox
       hardware_ = HardwareType::Beambox;
+      config_.fg_pwm_limit = 1500;
     }
     work_area_mm_ = QSizeF(width, height);
     config_.dpmm_preview = 500.0 / width;
