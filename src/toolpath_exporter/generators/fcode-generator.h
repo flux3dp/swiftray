@@ -414,7 +414,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
 
   unsigned long write_metadata() {
     unsigned long crc_val = 0;
-    // Write metadata from export first
+    // Write metadata from exporter first
     for (auto it = metadata.begin(); it != metadata.end(); ++it) {
       write_metadata_(it.key(), it.value().toString(), &crc_val);
     }
