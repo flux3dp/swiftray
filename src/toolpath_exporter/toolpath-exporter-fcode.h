@@ -281,7 +281,7 @@ public Q_SLOTS:
     config_.enable_pwm = !param["no_pwm"].toBool();
     config_.enable_multipass_compensation = param["mpc"].toBool();
     config_.enable_segmentation = param["segment"].toBool(true);
-    config_.enable_rotary_z_move = param["rotary_z_motion"].toBool(config_.support_rotary_z_motion);
+    config_.enable_rotary_z_move = param["rotary_z_motion"].toBool() && config_.support_rotary_z_motion;
     config_.is_one_way_printing = param["owp"].toBool();
     config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
     config_.is_reverse_engraving = param["rev"].toBool();
