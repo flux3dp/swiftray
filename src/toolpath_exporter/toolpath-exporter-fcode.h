@@ -414,7 +414,7 @@ public Q_SLOTS:
   qreal getYValInMM(qreal val) {
     return px2mm(val) - module_offset_.y();
   }
-  float px2mm(int px, bool is_x = false) {
+  float px2mm(float px, bool is_x = false) {
     return float(px) / (is_x ? dpmm_x() : dpmm_y());
   }
   float mm2px(float mm, bool is_x = false) {
