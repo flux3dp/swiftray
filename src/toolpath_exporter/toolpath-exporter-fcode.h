@@ -135,11 +135,13 @@ class ToolpathExporterFcode : public QObject {
       is_gcode_ = true;
       gen = std::make_shared<FCodeGeneratorG>();
     } else if (is_v2_) {
-      gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_, with_custom_origin_);
+      gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_);
     } else {
-      gen = std::make_shared<FCodeGeneratorV1>(thumbnail, with_custom_origin_);
+      gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
     }
     gen_ = gen.get();
+    gen_->add_metadata("START_WITH_HOME", with_custom_origin_ ? "0" : "1");
+    gen_->add_metadata("3D_CURVE_TASK", is_3d_task_ ? "1" : "0");
 
     gen_->set_time_est_z_speed(config_.z_speed);
     setTravelSpeed(config_.travel_speed);
@@ -610,6 +612,8 @@ public Q_SLOTS:
   float max_x_ = NAN;
   float min_y_ = NAN;
   float max_y_ = NAN;
+  float min_z_ = NAN;
+  float max_z_ = NAN;
   // Task progress
   QProgressDialog* dialog_ = nullptr;
   bool cancelled_ = false;

@@ -452,6 +452,13 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   } else {
     travel(0, 0);
   }
+  // write_boundary_to_metadata
+  if (!std::isnan(min_x_)) gen_->add_metadata("min_x", QString::number(min_x_, 'f', 2));
+  if (!std::isnan(max_x_)) gen_->add_metadata("max_x", QString::number(max_x_, 'f', 2));
+  if (!std::isnan(min_y_)) gen_->add_metadata("min_y", QString::number(min_y_, 'f', 2));
+  if (!std::isnan(max_y_)) gen_->add_metadata("max_y", QString::number(max_y_, 'f', 2));
+  if (!std::isnan(min_z_)) gen_->add_metadata("min_z", QString::number(min_z_, 'f', 2));
+  if (!std::isnan(max_z_)) gen_->add_metadata("max_z", QString::number(max_z_, 'f', 2));
   if (is_v2_) {
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       gen_->sync_motion_type2(185, 128, 0.0);
@@ -459,10 +466,10 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       gen_->sync_motion_type2(179, 128, 3.0);
     }
     gen_->end_task_script_block();
-    gen_->end_content(min_x_, max_x_, min_y_, max_y_);
+    gen_->end_content();
     gen_->write_post_config(post_config);
   }
-  gen_->terminated(min_x_, max_x_, min_y_, max_y_);
+  gen_->terminated();
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }

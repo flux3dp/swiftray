@@ -84,6 +84,7 @@ class FCodeGenerator {
   virtual size_t total_length() = 0;
   virtual float get_time_cost() = 0;
   virtual QJsonObject get_metadata() = 0;
+  virtual void add_metadata(QString key, QString value) = 0;
 
   void set_time_est_acc(uint32_t x, uint32_t y = 2000) {
     acc_x = (float)x;
@@ -286,9 +287,9 @@ class FCodeGenerator {
   void grbl_system_cmd(uint8_t cmd) { one_seg_custom_cmd(22, cmd); }
 
   // v1 only
-  virtual void terminated(float min_x, float max_x, float min_y, float max_y) {};
+  virtual void terminated() {};
   // v2 only
-  virtual void end_content(float min_x, float max_x, float min_y, float max_y) {}
+  virtual void end_content() {}
   virtual void write_post_config(const QJsonArray post_config) {}
   virtual void append_anchor(uint32_t value) {}
   virtual void write_string(const char* s,
@@ -315,7 +316,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   double traveled;
   double time_cost;
   const QString* thumbnail;
-  bool start_with_home;
 
   void write(const char* buf, size_t size, unsigned long* crc32_ptr) override {
     stream->write(buf, size);
@@ -412,28 +412,23 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     write("\x00", 1, crc_ptr);
   }
 
-  unsigned long write_metadata(float min_x, float max_x, float min_y, float max_y) {
+  unsigned long write_metadata() {
     unsigned long crc_val = 0;
+    // Write metadata from export first
+    for (auto it = metadata.begin(); it != metadata.end(); ++it) {
+      write_metadata_(it.key(), it.value().toString(), &crc_val);
+    }
     write_metadata_("VERSION", "1", &crc_val);
     write_metadata_("HEAD_TYPE", "LASER", &crc_val);
     write_metadata_("TIME_COST", QString::number(time_cost, 'f', 2), &crc_val);
     write_metadata_("TRAVEL_DIST", QString::number(traveled, 'f', 2), &crc_val);
-    if (!std::isnan(min_x))
-      write_metadata_("min_x", QString::number(min_x, 'f', 2), &crc_val);
-    if (!std::isnan(max_x))
-      write_metadata_("max_x", QString::number(max_x, 'f', 2), &crc_val);
-    if (!std::isnan(min_y))
-      write_metadata_("min_y", QString::number(min_y, 'f', 2), &crc_val);
-    if (!std::isnan(max_y))
-      write_metadata_("max_y", QString::number(max_y, 'f', 2), &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
-    write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
     return crc_val;
   }
 
  public:
-  FCodeGeneratorV1(const QString* canvas_thumbnail, bool with_custom_origin) : thumbnail(canvas_thumbnail) {
+  FCodeGeneratorV1(const QString* canvas_thumbnail) : thumbnail(canvas_thumbnail) {
     qInfo() << "FCodeGenerator V1 init";
     stream = new std::stringstream();
     created_at = QDateTime::currentDateTime();
@@ -442,7 +437,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     current_x = current_y = current_z = 0;
     traveled = time_cost = 0;
     script_crc32 = 0;
-    start_with_home = !with_custom_origin;
 
     write_magic_number(1);
     script_offset = stream->tellp();
@@ -467,7 +461,11 @@ class FCodeGeneratorV1 : public FCodeGenerator {
 
   QJsonObject get_metadata() override { return metadata; }
 
-  void terminated(float min_x, float max_x, float min_y, float max_y) override {
+  void add_metadata(QString key, QString value) override {
+    metadata.insert(key, value);
+  }
+
+  void terminated() override {
     uint32_t u32value;
 
     // Write script size and CRC32
@@ -482,7 +480,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
     int metadata_offset = stream->tellp();
     int metadata_end_offset;
     write("\x00\x00\x00\x00", 4, NULL);
-    unsigned long metadata_crc32 = write_metadata(min_x, max_x, min_y, max_y);
+    unsigned long metadata_crc32 = write_metadata();
     metadata_end_offset = stream->tellp();
     stream->seekp(metadata_offset, stream->beg);
     u32value = metadata_end_offset - metadata_offset - 4;
@@ -522,7 +520,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   double traveled;
   double time_cost;
   const QString* thumbnail;
-  bool start_with_home;
 
   // Ignore crc32_ptr; will be calculated when copying to fc_stream
   void write(const char* buf, size_t size, unsigned long* crc32_ptr) override {
@@ -548,7 +545,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   }
 
  public:
-  FCodeGeneratorV2(const QString* canvas_thumbnail, int magic_number, bool with_custom_origin)
+  FCodeGeneratorV2(const QString* canvas_thumbnail, int magic_number)
       : thumbnail(canvas_thumbnail) {
     qInfo() << "FCodeGenerator V2 init";
     created_at = QDateTime::currentDateTime();
@@ -559,7 +556,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
     current_x = current_y = current_z = 0;
     traveled = time_cost = 0;
     script_crc32 = 0;
-    start_with_home = !with_custom_origin;
 
     start = fc_stream->tellp();
     write_magic_number(magic_number);
@@ -579,6 +575,10 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   float get_time_cost() override { return time_cost; }
 
   QJsonObject get_metadata() override { return metadata; }
+
+  void add_metadata(QString key, QString value) override {
+    metadata.insert(key, value);
+  }
 
   void write_string(const char* s,
                     size_t length,
@@ -714,34 +714,29 @@ class FCodeGeneratorV2 : public FCodeGenerator {
       write_to_all(",", 1, crc32_ptr);
   }
 
-  unsigned long write_metadata(float min_x, float max_x, float min_y, float max_y) {
+  unsigned long write_metadata() {
     unsigned long crc_val = 0;
     write_to_all("{", 1, &crc_val);
+    // Write metadata from exporter first
+    for (auto it = metadata.begin(); it != metadata.end(); ++it) {
+      write_metadata_(it.key(), it.value().toString(), &crc_val);
+    }
     write_metadata_("version", "2", &crc_val);
     write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
     write_metadata_("SOFTWARE", sw_version, &crc_val);
-    write_metadata_("START_WITH_HOME", start_with_home ? "1" : "0", &crc_val);
-    if (!std::isnan(min_x))
-      write_metadata_("min_x", QString::number(min_x, 'f', 2), &crc_val);
-    if (!std::isnan(max_x))
-      write_metadata_("max_x", QString::number(max_x, 'f', 2), &crc_val);
-    if (!std::isnan(min_y))
-      write_metadata_("min_y", QString::number(min_y, 'f', 2), &crc_val);
-    if (!std::isnan(max_y))
-      write_metadata_("max_y", QString::number(max_y, 'f', 2), &crc_val);
     write_metadata_("travel_dist", QString::number(traveled, 'f', 2), &crc_val, false);
     write_metadata_("time_cost", QString::number(time_cost, 'f', 2), &crc_val, false, false);
     write_to_all("}", 1, &crc_val);
     return crc_val;
   }
 
-  void end_content(float min_x, float max_x, float min_y, float max_y) override {
+  void end_content() override {
     // Write metadata
     uint32_t u32value;
     write_to_all("FILE", 4, NULL);
     int metadata_start_pos = fc_stream->tellp();
     write_to_all("\x00\x00\x00\x00", 4, NULL);
-    unsigned long metadata_crc32 = write_metadata(min_x, max_x, min_y, max_y);
+    unsigned long metadata_crc32 = write_metadata();
     int metadata_end_pos = fc_stream->tellp();
     fc_stream->seekp(metadata_start_pos, fc_stream->beg);
     u32value = metadata_end_pos - metadata_start_pos - 4;
@@ -860,4 +855,6 @@ class FCodeGeneratorG : public FCodeGenerator {
   float get_time_cost() override { return 0; }
 
   QJsonObject get_metadata() override { return metadata; }
+
+  void add_metadata(QString key, QString value) override {}
 };
