@@ -3816,9 +3816,14 @@ static QSvgNode *createPathNode(QSvgNode *parent,
                                 MyQSvgHandler *handler)
 {
     QStringView data = attributes.value(QLatin1String("d"));
+    QString fillRule = attributes.value(QLatin1String("fill-rule")).toString().toLower();
 
     QPainterPath qpath;
-    qpath.setFillRule(Qt::WindingFill);
+    if (fillRule == "evenodd") {
+        qpath.setFillRule(Qt::OddEvenFill);
+    } else {
+        qpath.setFillRule(Qt::WindingFill);
+    }
     if (!parsePathDataFast(data, qpath, !handler->trustedSourceMode()))
         qCWarning(lcSvgHandler, "Invalid path data; path truncated.");
 

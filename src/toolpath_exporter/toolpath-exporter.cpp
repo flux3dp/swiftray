@@ -267,7 +267,10 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     // layer_painter_->setBrush(Qt::NoBrush);
     // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
     polygons_mutex_.lock();
-    layer_filled_polygons_.append(transformed_path.toSubpathPolygons());
+    FilledPath filled_path;
+    filled_path.isEvenOdd = path->path().fillRule() == Qt::OddEvenFill;
+    filled_path.polys = transformed_path.toSubpathPolygons();
+    layer_filled_polygons_.append(filled_path);
     polygons_mutex_.unlock();
   }
   // Line shape
@@ -382,6 +385,10 @@ void ToolpathExporter::outputLayerFillGcode() {
     QLineF path;
     bool isClockwise;
   };
+  struct PathGroup {
+    QList<Path> paths;
+    bool isEvenOdd;
+  };
   struct Intersection {
     QPointF point;
     bool isClockwise;
@@ -389,9 +396,9 @@ void ToolpathExporter::outputLayerFillGcode() {
 
   QRectF bounds;
   polygons_mutex_.lock();
-  for (auto &polys : layer_filled_polygons_) {
-    if (polys.empty()) continue;
-    for (const auto& poly : polys) {
+  for (auto &paths : layer_filled_polygons_) {
+    if (paths.polys.empty()) continue;
+    for (const auto& poly : paths.polys) {
       if (poly.empty()) continue;
       bounds = bounds.united(poly.boundingRect());
     }
@@ -442,12 +449,12 @@ void ToolpathExporter::outputLayerFillGcode() {
     QPointF start = center - (perpendicular * diagonal / 2);
     qInfo() << "Start Point: " << start / dpmm_;
 
-    QList<QList<Path>> all_paths;
-    for (const auto& polys : layer_filled_polygons_) {
-      if (polys.empty())
+    QList<PathGroup> all_paths;
+    for (const auto& paths : layer_filled_polygons_) {
+      if (paths.polys.empty())
         continue;
-      QList<Path> paths;
-      for (const auto& poly : polys) {
+      PathGroup pathGroup;
+      for (const auto& poly : paths.polys) {
         if (poly.empty())
           continue;
         for (int i = 0; i < poly.size(); ++i) {
@@ -463,11 +470,12 @@ void ToolpathExporter::outputLayerFillGcode() {
           double dir = x1 * y2 - x2 * y1;
           if (dir == 0) continue;
           pathObj.isClockwise = dir < 0;
-          paths.append(pathObj);
+          pathGroup.paths.append(pathObj);
         }
       }
-      if (paths.size() == 0) continue;
-      all_paths.append(paths);
+      if (pathGroup.paths.size() == 0) continue;
+      pathGroup.isEvenOdd = paths.isEvenOdd;
+      all_paths.append(pathGroup);
     }
 
     gen_->turnOnLaser();
@@ -545,7 +553,7 @@ void ToolpathExporter::outputLayerFillGcode() {
       for (const auto& elem : all_paths) {
         QList<Intersection> intersections;
         QList<QPointF> intersection_points;
-        for (const auto& path : elem) {
+        for (const auto& path : elem.paths) {
           QPointF intersection;
           if (scanLine.intersects(path.path, &intersection) == QLineF::BoundedIntersection) {
             // Ignore intersections within merged path
@@ -565,7 +573,8 @@ void ToolpathExporter::outputLayerFillGcode() {
           Intersection intersection = intersections[i];
           if (intersection.isClockwise) sum += 1;
           else sum -= 1;
-          if (is_laser_on == (sum == 0)) {
+          bool should_laser_off = elem.isEvenOdd ? sum % 2 == 0 : sum == 0;
+          if (is_laser_on == should_laser_off) {
             // Current state is different from previous state
             is_laser_on = !is_laser_on;
             if (isCloser(intersection.point, innerStart)) {
