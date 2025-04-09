@@ -226,7 +226,6 @@ void mark_to(double y, double x) {
 
 void BSLMotionController::handleGcode(const QString &gcode) {
     static TaskSettings settings;
-    static bool rotary_mode = false;
     static bool laser_enabled = false;
     static bool is_absolute_positioning = true;
     static int list_no = 1;
@@ -472,7 +471,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_disable_laser();
       should_swap = true;
       should_end = true;
-      rotary_mode = false;
+      settings.rotary_mode = false;
+      lcs_write_io_port_mask_list(0b01, 0b11);
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
     } else if (command == "M99" ) {
@@ -482,14 +482,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (sn[0] != '\0') {
         Q_EMIT configUpdate("serial", sn);
       }
-    } else if (command == "M100") { 
-      rotary_mode = false;
+    } else if (command == "M100") {
+      // Rotary io: 1st port, 1 -> off, 0 -> on
+      settings.rotary_mode = false;
+      lcs_write_io_port_mask(0b1, 0b1);  // Control instruction
     } else if (command == "M101") {
-      rotary_mode = true;
-      lcs_write_io_port(0b0);
+      settings.rotary_mode = true;
+      lcs_write_io_port_mask_list(0b0, 0b1);
     } else if (command == "M102") {
-      qInfo() << "Enable OUT1/OUT2"; // Required for moving Z axis
-      lcs_write_io_port(0b0010);
+      // Z axis io: 2nd port, 1 -> on, 0 -> off
+      lcs_write_io_port_mask_list(0b10, 0b10);
     } else if (command == "M103") {
       is_framing_ = true;
       is_running_laser_ = false;
@@ -497,9 +499,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       is_framing_ = false;
       is_running_laser_ = false;
     } else if (command == "M105") {
-      // Force reset position
       // Control instruction
+      // Force reset position
       lcs_goto_xy(0, 0);
+      // Loose motor
+      lcs_write_io_port_mask(0b01, 0b11);
     } else if (!is_move_command) {
       return;
     }
@@ -808,6 +812,9 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
     lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
   }
   lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
+  if (settings.rotary_mode) {
+    lcs_write_io_port_mask_list(0b0, 0b1);
+  }
 }
 
 bool BSLMotionController::executeList(int list_no) {

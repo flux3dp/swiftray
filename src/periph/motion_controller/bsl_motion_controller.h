@@ -19,6 +19,7 @@ struct TaskSettings {
   int pulse_width = 100;        // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
+  bool rotary_mode = false;
 };
 
 class BSLMotionController : public MotionController
