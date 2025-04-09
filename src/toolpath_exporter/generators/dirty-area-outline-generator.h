@@ -115,6 +115,7 @@ public:
       str_stream_ << "$H" << std::endl; // TODO: Ignore homing cmd? (otherwise, it's time consuming)
     }
 
+    str_stream_ << (rotary_mode_ ? "M101" : "M100") << std::endl;
     str_stream_ << "G90" << std::endl;
     str_stream_ << "G1F" << std::to_string(travel_speed_) << std::endl;
     str_stream_ << "G1S0" << std::endl;

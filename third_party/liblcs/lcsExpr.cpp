@@ -595,6 +595,8 @@ bool lcs_connect(bool force) {
     lcs_get_status((uint32_t*)&status, &pos);
     lcs_restart_list();
     lcs_goto_xy(0, 0);
+    // Set z axis and rotary off
+    lcs_write_io_port_mask(0b01, 0b11);
     if (!status.bConnected) {
         printf("LCS:: Failed to really connect to BSL card #0.\n");
         return false;
