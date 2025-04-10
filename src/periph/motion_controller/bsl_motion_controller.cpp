@@ -132,28 +132,28 @@ void BSLMotionController::commandRunnerThread() {
       case MotionControllerState::kRun:
         this->cmd_list_mutex_.lock();
         if (this->pending_cmds_.empty()) {
+          this->cmd_list_mutex_.unlock();
           if (debug_count_bsl % 40 == 1) {
             qInfo() << "BSLM~::thread() - No pending commands, wait 1s. Board Connection: " << isConnected() << "@" << getDebugTime();
             if (!isConnected()) {
-              this->cmd_list_mutex_.unlock();
               this->setState(MotionControllerState::kQuit); // Invalid this motion controller once the connection is lost
               break;
             }
           }
-          this->cmd_list_mutex_.unlock();
           this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
           QThread::msleep(25);
         } else {
+          this->cmd_list_mutex_.unlock();
           if (debug_count_bsl % 1000 == 1) {
             qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
           }
           bool is_connected = isConnected();
           if (!is_connected) {
-            this->cmd_list_mutex_.unlock();
             this->setState(MotionControllerState::kQuit);
             break;
           }
+          this->cmd_list_mutex_.lock();
           QString cmd = this->pending_cmds_.front();
           this->pending_cmds_.pop();
           this->cmd_list_mutex_.unlock();
@@ -639,8 +639,7 @@ void BSLMotionController::respReceived(QString resp) {
 // TODO:BSL
 void BSLMotionController::attachPortBSL() {
   qInfo() << "MotionController::attachPortBSL()";
-  // Actually do nothing..
-  setState(MotionControllerState::kIdle);
+  setState(lcs_connect() ? MotionControllerState::kIdle : MotionControllerState::kQuit);
 }
 
 MotionController::CmdSendResult BSLMotionController::pause() {
@@ -751,42 +750,40 @@ ListStatus BSLMotionController::getListStatus() {
 
 std::mutex reconnect_mutex_;
 bool BSLMotionController::isConnected() {
-  if (is_board_connected_ != getBoardStatus().bConnected) {
-    is_board_connected_ = !is_board_connected_;
-    if (!is_board_connected_) {
-      qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_ << "framing:" << is_framing_;
-      if (!is_running_laser_) {
-        // Handle running thread first
-        QThread::msleep(1000);
+  is_board_connected_ = getBoardStatus().bConnected;
+  if (!is_board_connected_) {
+    qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_ << "framing:" << is_framing_;
+    if (!is_running_laser_) {
+      // Handle running thread first
+      QThread::msleep(1000);
+    }
+    std::lock_guard<std::mutex> lock(reconnect_mutex_);
+    is_board_connected_ = getBoardStatus().bConnected;
+    if(!is_board_connected_){
+      // Stop execution to avoid lcs crash
+      lcs_pause_list();
+      lcs_release_card(0);
+      this->disconnect_count_++;
+      getListStatus();
+      if (is_running_laser_ && !lcs_paused_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
+        // Note: Current list will be aborted when lcs_assign_card
+        // Wait for the current task to finish then reconnect
+        int remaining_time = getRemainingTime();
+        if (remaining_time > 0) QThread::msleep(remaining_time);
       }
-      std::lock_guard<std::mutex> lock(reconnect_mutex_);
-      is_board_connected_ = getBoardStatus().bConnected;
-      if(!is_board_connected_){
-        // Stop execution to avoid lcs crash
-        lcs_pause_list();
-        lcs_release_card(0);
-        this->disconnect_count_++;
-        getListStatus();
-        if (is_running_laser_ && !lcs_paused_ && !is_framing_ && running_task_time_ > 0 && task_timer_.isValid()) {
-          // Note: Current list will be aborted when lcs_assign_card
-          // Wait for the current task to finish then reconnect
-          int remaining_time = getRemainingTime();
-          if (remaining_time > 0) QThread::msleep(remaining_time);
-        }
-        for (int i = 0; i < 3 && !is_board_connected_; i++) {
-          QThread::msleep(2000);
-          qInfo() << "Try reconnecting to the board" << i;
-          is_board_connected_ = lcs_connect();
-        }
-        qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
-        if (!is_board_connected_) {
-          stop();
-          Q_EMIT disconnected();
-        } else if (lcs_paused_) {
-          stop();
-        } else if (getState() == MotionControllerState::kRun) {
-          lcs_restart_list();
-        }
+      for (int i = 0; i < 3 && !is_board_connected_; i++) {
+        QThread::msleep(2000);
+        qInfo() << "Try reconnecting to the board" << i;
+        is_board_connected_ = lcs_connect();
+      }
+      qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
+      if (!is_board_connected_) {
+        stop();
+        Q_EMIT disconnected();
+      } else if (lcs_paused_) {
+        stop();
+      } else if (getState() == MotionControllerState::kRun) {
+        lcs_restart_list();
       }
     }
   }
