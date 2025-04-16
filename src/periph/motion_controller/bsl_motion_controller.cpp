@@ -13,6 +13,7 @@
 #include <QtCore/qcoreapplication.h>
 
 #define MAX_BUFFER_LIST_SIZE 10000
+#define MAX_BUFFER_LIST_TIME 30000
 
 int lcs_error_count = 0;
 uint32_t pos;
@@ -509,8 +510,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     }
 
     this->buffer_size_++;
-    
-    if (this->buffer_size_ >= MAX_BUFFER_LIST_SIZE) {
+
+    if (this->buffer_size_ >= MAX_BUFFER_LIST_SIZE || estimated_time_ >= MAX_BUFFER_LIST_TIME) {
         should_swap = true;
     }
 
