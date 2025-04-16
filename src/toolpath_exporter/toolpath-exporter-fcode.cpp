@@ -209,7 +209,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
         gen_->write_string("TASK", 4);
         // Write transition script
         gen_->start_task_script_block("TRAN", NULL);
-        if (config_.support_modules) {
+        if (!is_gcode_ && config_.support_modules) {
           if (is_rotary_task_ && config_.enable_rotary_z_move) {
             moveZ(1);
           }
