@@ -894,7 +894,7 @@ void ToolpathExporterFcode::sortPolygons() {
 }
 
 void ToolpathExporterFcode::outputLayerPathFcode() {
-  bool should_set_acc = !config_.path_acc.isEmpty() && is_v2_;
+  bool should_set_acc = !config_.path_acc.isEmpty();
   polygons_mutex_.lock();
   for (auto& poly : layer_polygons_) {
     if (poly.empty()) {
@@ -1070,7 +1070,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
   if (bitmap_dirty_area_.width() == 0) {
     qInfo() << "Skip: empty bitmap";
   } else {
-    bool should_set_acc = !config_.fill_acc.isEmpty() && is_v2_;
+    bool should_set_acc = !config_.fill_acc.isEmpty();
     if (should_set_acc) {
       setAcceleration(
         config_.fill_acc["x"].toDouble(NAN),
