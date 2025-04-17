@@ -260,16 +260,18 @@ class FCodeGenerator {
     write(uint8_t(1), &script_crc32);
     write(uint32_t(150), &script_crc32);
     write_command(flags, &script_crc32);
-    if (flags & move_flag_X)
+    if (flags & move_flag_X) {
       write(x, &script_crc32);
-    if (flags & move_flag_Y)
+      acc_x = x;
+    }
+    if (flags & move_flag_Y) {
       write(y, &script_crc32);
+      acc_y = y;
+    }
     if (flags & move_flag_Z)
       write(z, &script_crc32);
     if (flags & move_flag_A)
       write(a, &script_crc32);
-    acc_x = x;
-    acc_y = y;
   }
 
   void flux_custom_cmd(uint32_t val) {
