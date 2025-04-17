@@ -430,6 +430,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_running_laser_ = true;
       // Reset current settings
+      dotting_time = 0;
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
@@ -438,6 +439,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
         settings.wobble_step = 0;
+        wobble_k = 1;
       }
       list_no = 1;
 
@@ -459,6 +461,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_set_scanner_delays(100, 50);
       lcs_error_count = 0;
       laser_enabled = false;
+      last_is_z_command = false;
       before_first_laser = !is_framing_;
       should_swap = false;
       should_end = false;
