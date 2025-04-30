@@ -35,9 +35,14 @@ public:
   CmdSendResult pause();
   CmdSendResult resume();
   CmdSendResult sendCmdPacket(QPointer<Executor> executor, QString cmd_packet) override;
-  QString getCurrentError() { return this->getErrorString(current_error_); }
+  QString getCurrentError() { 
+    if (!current_custom_error_.isNull()) return current_custom_error_;
+    if (current_error_ != LCS_RES_NO_ERROR) return this->getErrorString(current_error_);
+    return QString();
+  }
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
   bool isRunningLaser() { return is_running_laser_; }
@@ -73,11 +78,13 @@ private:
   bool lcs_paused_ = false;
   bool is_board_connected_ = false;
   bool is_handling_reconnection_ = false;
+  bool should_check_door_ = false;
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;
   std::thread command_runner_thread_;
   int current_error_ = 0;
+  QString current_custom_error_ = QString();
   int disconnect_count_ = -1;
   double high_speed_step_;
   int high_speed_data_count_ = 0;

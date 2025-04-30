@@ -85,27 +85,45 @@ void BSLMotionController::startCommandRunner() {
 int debug_count_bsl  = 0;
 
 void BSLMotionController::checkPauseResume() {
+  isConnected();
   QCoreApplication::processEvents();
+  bool should_do_pause = false;
+  bool should_do_resume = false;
   switch (this->getState()) {
     case MotionControllerState::kPaused:
       if (!lcs_paused_) {
         // First loop after pause
-        lcs_pause_list();
-        pauseTimer();
-        lcs_paused_ = true;
-        qInfo() << "BSLM~::thread() - pausing";
+        should_do_pause = true;
       }
       break;
     case MotionControllerState::kIdle:
     case MotionControllerState::kRun:
       if (lcs_paused_) {
         // First loop after resume
-        lcs_restart_list();
-        resetTimer();
-        lcs_paused_ = false;
-        QThread::msleep(25);
-        qInfo() << "BSLM~::thread() - resuming";
+        should_do_resume = true;
       }
+  }
+  if (should_check_door_ && is_running_laser_ && !is_framing_ && (should_do_resume || !lcs_paused_)) {
+    // Check door status
+    uint32_t io_port = lcs_read_io_port();
+    if (io_port & 0b1) {
+      qInfo() << "BSLM~::thread() - door opened, pause task";
+      should_do_pause = true;
+      this->setState(MotionControllerState::kPaused);
+      current_custom_error_ = "HARDWARE_ERROR,DOOR_OPENED";
+    }
+  }
+  if (should_do_pause) {
+    lcs_pause_list();
+    pauseTimer();
+    lcs_paused_ = true;
+    qInfo() << "BSLM~::thread() - pausing";
+  } else if (should_do_resume) {
+    lcs_restart_list();
+    resetTimer();
+    lcs_paused_ = false;
+    QThread::msleep(25);
+    qInfo() << "BSLM~::thread() - resuming";
   }
 }
 
@@ -126,7 +144,7 @@ void BSLMotionController::commandRunnerThread() {
         QThread::msleep(25); 
         break;
       case MotionControllerState::kAlarm:
-        if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Alarm State" << getErrorString(current_error_);
+        if (debug_count_bsl % 40 == 1) qInfo() << "BSLM~::thread() - Alarm State" << getCurrentError();
         QThread::msleep(25); 
         break;
       case MotionControllerState::kIdle:
@@ -208,6 +226,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
     if (lcs_error_count ++ > 100) {
       qWarning() << "BSLM~::waitListAvailable(" << list_no << ") - Error count exceeded 100" << getDebugTime();
       this->current_error_ = ret;
+      this->current_custom_error_ = "Failed to load list";
       this->stop();
       break;
     }
@@ -658,13 +677,15 @@ MotionController::CmdSendResult BSLMotionController::resume() {
   if (std::this_thread::get_id() == command_runner_thread_.get_id()) {
     throw std::runtime_error("BSLM~::pause() - This function should not be called within the command runner thread");
   }
+  // Clear door error
+  current_custom_error_.clear();
   setState(MotionControllerState::kRun);
   return CmdSendResult::kOk;
 }
 
 MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() @" << getDebugTime();
-  if (this->current_error_) {
+  if (!getCurrentError().isNull()) {
     this->setState(MotionControllerState::kAlarm);
   } else {
     this->setState(MotionControllerState::kSleep);
@@ -684,6 +705,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   Q_EMIT MotionController::resetDetected();
   QThread::msleep(200);
   // Restore the state in case it is paused
+  lcs_paused_ = false;
   lcs_restart_list();
   handleGcode("M105");
   return CmdSendResult::kOk;
@@ -706,6 +728,7 @@ bool BSLMotionController::detachPort() {
 bool BSLMotionController::resetState() {
   qInfo() << "BSLM~::resetState()" << getDebugTime();
   this->current_error_ = 0;
+  this->current_custom_error_.clear();
   this->disconnect_count_ = -1;
   switch (getState()) {
     case MotionControllerState::kIdle:
@@ -784,6 +807,7 @@ bool BSLMotionController::isConnected() {
       is_handling_reconnection_ = false;
       qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
       if (!is_board_connected_) {
+        this->current_custom_error_ = "DISCONNECTED";
         stop();
         Q_EMIT disconnected();
       } else if (lcs_paused_) {
@@ -852,6 +876,7 @@ bool BSLMotionController::executeList(int list_no) {
     if (e != LCS_RES_NO_ERROR) {
       qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
       this->current_error_ = e;
+      this->current_custom_error_ = "Failed to execute list";
       this->stop();
       return false;
     }
