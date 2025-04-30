@@ -224,12 +224,18 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "upload") {
     // Implement file upload logic
     qInfo() << "File uploaded";
-    QString data = params.toObject()["data"].toString();
+    auto obj = params.toObject();
+    QString data = obj["data"].toString();
     if (data != "") {
       gcode_list_ = data.split("\n");
     }
     bool job_result = getMachine()->createGCodeJob(gcode_list_, QList<Timestamp>());
     qInfo() << "Job created" << job_result;
+    if (obj.contains("checkDoor")) {
+      bool check_door = obj["checkDoor"].toBool();
+      BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+      controller->setCheckDoor(check_door);
+    }
     result["success"] = job_result;
   } else if (action == "sendGCode") {
     QString gcode = params.toObject()["gcode"].toString();
@@ -242,9 +248,25 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     if (controller) {
       if (!controller->getBoardStatus().bConnected) {
         result["error"] = "DISCONNECTED";
+        if (controller->isHandlingReconnection()) {
+          result["st_id"] = 516;
+        }
+      } else {
+        QString error = controller->getCurrentError();
+        QStringList errors = error.split(",");
+        if (errors.size() > 1) {
+          QJsonArray errorArray;
+          for(const QString& error : errors) {
+            errorArray.append(error);
+          }
+          result["error"] = errorArray;
+        } else {
+          result["error"] = error;
+        }
       }
       result["disconnection"] = controller->getDisconnectCount();
     } else {
+      result["st_id"] = 128;
       result["error"] = "DISCONNECTED";
       result["disconnection"] = -1;
     }
@@ -438,6 +460,8 @@ bool SwiftrayServer::startFraming(const QJsonValue& params) {
   outline_generator.setLaserPower(0.0);
   outline_generator.setStep(10);
   // Create Framing Job and start
+  BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+  controller->setCheckDoor(false);
   if (getMachine()->createFramingJob(QString::fromStdString(outline_generator.toString()).split("\n"), !rotary_mode)) {
     getMachine()->startJob();
     return true;
