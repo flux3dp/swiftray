@@ -765,6 +765,7 @@ bool BSLMotionController::isConnected() {
     is_board_connected_ = getBoardStatus().bConnected;
     if(!is_board_connected_){
       // Stop execution to avoid lcs crash
+      is_handling_reconnection_ = true;
       lcs_pause_list();
       lcs_release_card(0);
       this->disconnect_count_++;
@@ -780,6 +781,7 @@ bool BSLMotionController::isConnected() {
         qInfo() << "Try reconnecting to the board" << i;
         is_board_connected_ = lcs_connect();
       }
+      is_handling_reconnection_ = false;
       qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
       if (!is_board_connected_) {
         stop();

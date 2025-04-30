@@ -42,6 +42,7 @@ public:
   bool isConnected() override;
   bool isRunningLaser() { return is_running_laser_; }
   bool isFraming() { return is_framing_; }
+  bool isHandlingReconnection() { return is_handling_reconnection_; }
   int getDisconnectCount() { return disconnect_count_; }
 
 public Q_SLOTS:
@@ -71,6 +72,7 @@ private:
   bool should_flush_ = false;
   bool lcs_paused_ = false;
   bool is_board_connected_ = false;
+  bool is_handling_reconnection_ = false;
   int buffer_size_ = 0;
   double current_x = 0.0;
   double current_y = 0.0;

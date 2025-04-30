@@ -242,9 +242,13 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     if (controller) {
       if (!controller->getBoardStatus().bConnected) {
         result["error"] = "DISCONNECTED";
+        if (controller->isHandlingReconnection()) {
+          result["st_id"] = 516;
+        }
       }
       result["disconnection"] = controller->getDisconnectCount();
     } else {
+      result["st_id"] = 128;
       result["error"] = "DISCONNECTED";
       result["disconnection"] = -1;
     }
