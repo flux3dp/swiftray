@@ -730,21 +730,6 @@ bool depthMode = false;
 void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
   QRectF* bitmap_dirty_area_ = &bitmap_dirty_areas_[type];
   if (bitmap_dirty_area_->width() == 0) return;
-  // Get the image of entire layer
-  QImage layer_image;
-  if(with_image_) {
-    if (type != BitmapHandlerType::DepthMode) {
-      layer_image = layer_bitmaps_[type].toImage()
-                        .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
-                        .convertToFormat(QImage::Format_Grayscale8);
-    } else {
-      layer_image = layer_bitmaps_[type].toImage()
-                        .convertToFormat(QImage::Format_Grayscale8);
-    }
-  } else {
-    layer_image = layer_bitmaps_[type].toImage()
-                      .convertToFormat(QImage::Format_Grayscale8);
-  }
 
   qreal padding_mm;
   qreal accelerate = 4000; // mm/s^2
@@ -768,6 +753,26 @@ void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
                qMax(qRound(bitmap_dirty_area_->topLeft().y()), 0)},
              QPoint{qMin(qRound(bitmap_dirty_area_->bottomRight().x() + padding_mm * dpmm_), canvas_size_.toSize().width() - 1),
                qMin(qRound(bitmap_dirty_area_->bottomRight().y()), canvas_size_.toSize().height() - 1)}};
+  if (bbox.width() <= 0 || bbox.height() <= 0) {
+    // Skip if completely outside of work area
+    return;
+  }
+
+  // Get the image of entire layer
+  QImage layer_image;
+  if(with_image_) {
+    if (type != BitmapHandlerType::DepthMode) {
+      layer_image = layer_bitmaps_[type].toImage()
+                        .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
+                        .convertToFormat(QImage::Format_Grayscale8);
+    } else {
+      layer_image = layer_bitmaps_[type].toImage()
+                        .convertToFormat(QImage::Format_Grayscale8);
+    }
+  } else {
+    layer_image = layer_bitmaps_[type].toImage()
+                      .convertToFormat(QImage::Format_Grayscale8);
+  }
 
   gen_->turnOnLaserAdpatively(); // M4
 
