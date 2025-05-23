@@ -141,6 +141,8 @@ bool Worker::handleAction(QWebSocket* socket,
           true);
       exporter.setSortRule(PathSort::NestedSort);
       exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
+      if (type == "contour") exporter.handleContour();
+      if (params_obj.contains("mask")) exporter.setShouldClipWorkarea(true);
 
       current_task = "Generating Task Code...";
       onProgress(0);

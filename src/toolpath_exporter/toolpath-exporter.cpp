@@ -10,6 +10,9 @@
 #include <cmath>
 #include <constants.h>
 
+static const int CLIP_FLAG_START = 0b01;
+static const int CLIP_FLAG_END = 0b10;
+
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), is_promark_(is_promark)
@@ -36,7 +39,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   if (!gen_->isRotaryMode()) {
     gen_->disableRotary();
   }
-  gen_->setRedLight(false);
+  gen_->setRedLight(is_contour_);
   gen_->turnOffLaser(); // M5
   if(start_with_home) {
     gen_->home();
@@ -61,11 +64,18 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   canvas_size_ = QSizeF((first_layer->document()).width(), 
                         (first_layer->document()).height())
                  * resolution_scale_;
+  canvas_width_ = canvas_size_.width();
+  canvas_height_ = canvas_size_.height();
+  double eps = 1e-4;
+  canvas_clip_path_.addRect(eps, eps, canvas_width_ - eps * 2, canvas_height_ - eps * 2);
+  left_border_ = QLineF(0, 0, 0, canvas_height_);
+  top_border_ = QLineF(0, 0, canvas_width_, 0);
+  right_border_ = QLineF(canvas_width_, 0, canvas_width_, canvas_height_);
+  bottom_border_ = QLineF(0, canvas_height_, canvas_width_, canvas_height_);
   qInfo() << "[Export] Canvas size: " << canvas_size_;
   // Generate bitmap canvas
   for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::DepthMode; ++i) {
-    layer_bitmaps_.append(QPixmap(QSize(canvas_size_.width(),
-                                        canvas_size_.height())));
+    layer_bitmaps_.append(QPixmap(QSize(canvas_width_, canvas_height_)));
     layer_bitmaps_[i].fill(Qt::white);
     bitmap_dirty_areas_.append(QRectF());
   }
@@ -74,9 +84,9 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-      total_repeat_times_ = (*layer_rit)->repeat();
-      float focus = (*layer_rit)->focus();
-      float focus_step = (*layer_rit)->focusStep();
+      total_repeat_times_ = is_contour_ ? 1 : (*layer_rit)->repeat();
+      float focus = is_contour_ ? 0 : (*layer_rit)->focus();
+      float focus_step = is_contour_ ? 0 : (*layer_rit)->focusStep();
       float total_move = 0;
       for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
         if (processed_repeat_times_ == 0) {
@@ -152,12 +162,12 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
     bitmap_dirty_areas_[i] = QRectF();
   }
   current_layer_ = layer;
-  if (layer->frequency() != 0) {
+  if (!is_contour_ && layer->frequency() != 0) {
     // Make sure cmd list is opened
     gen_->turnOnLaser();
     gen_->setFrequency(layer->frequency());
   }
-  if (layer->pulseWidth() != 0) {
+  if (!is_contour_ && layer->pulseWidth() != 0) {
     // Make sure cmd list is opened
     gen_->turnOnLaser();
     gen_->setPulseWidth(layer->pulseWidth());
@@ -206,6 +216,15 @@ void ToolpathExporter::convertGroup(const GroupShape *group) {
  * @param bmp
  */
 void ToolpathExporter::convertBitmap(const BitmapShape *bmp) {
+  if (is_contour_) {
+    polygons_mutex_.lock();
+    QPainterPath transformed_bbox;
+    transformed_bbox.addPolygon(bmp->rotatedBBox());
+    transformed_bbox = transformed_bbox.intersected(canvas_clip_path_);
+    layer_polygons_.append(transformed_bbox.toSubpathPolygons());
+    polygons_mutex_.unlock();
+    return;
+  }
   QRectF new_dirty_area = global_transform_.mapRect(bmp->boundingRect());
   QTransform transform = bmp->transform() * global_transform_;
   QImage transformed_image =
@@ -259,19 +278,32 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
       current_layer_->type() == Layer::Type::FillLine) {
-    // TODO (Fix overlapping fills inside a single layer)
-    // TODO (Consider CacheStack as a primary painter for layers?)
-    // layer_painter_->setPen(Qt::NoPen); // Otherwise, the border would occupy at least 1 pixel
-    // layer_painter_->setBrush(Qt::black);
-    // layer_painter_->drawPath(transformed_path);
-    // layer_painter_->setBrush(Qt::NoBrush);
-    // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
-    polygons_mutex_.lock();
-    FilledPath filled_path;
-    filled_path.isEvenOdd = path->path().fillRule() == Qt::OddEvenFill;
-    filled_path.polys = transformed_path.toSubpathPolygons();
-    layer_filled_polygons_.append(filled_path);
-    polygons_mutex_.unlock();
+    if (is_contour_) {
+      polygons_mutex_.lock();
+      transformed_path = transformed_path.intersected(canvas_clip_path_);
+      QList<QPolygonF> polys = transformed_path.toSubpathPolygons();
+      for (QPolygonF& poly : polys) {
+        if (!poly.isEmpty() && poly.first() != poly.last()) {
+          poly.append(poly.first());
+        }
+      }
+      layer_polygons_.append(polys);
+      polygons_mutex_.unlock();
+    } else {
+      // TODO (Fix overlapping fills inside a single layer)
+      // TODO (Consider CacheStack as a primary painter for layers?)
+      // layer_painter_->setPen(Qt::NoPen); // Otherwise, the border would occupy at least 1 pixel
+      // layer_painter_->setBrush(Qt::black);
+      // layer_painter_->drawPath(transformed_path);
+      // layer_painter_->setBrush(Qt::NoBrush);
+      // bitmap_dirty_area_ = bitmap_dirty_area_.united(transformed_path.boundingRect());
+      polygons_mutex_.lock();
+      FilledPath filled_path;
+      filled_path.isEvenOdd = path->path().fillRule() == Qt::OddEvenFill;
+      filled_path.polys = transformed_path.toSubpathPolygons();
+      layer_filled_polygons_.append(filled_path);
+      polygons_mutex_.unlock();
+    }
   }
   // Line shape
   if ((!path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
@@ -507,44 +539,7 @@ void ToolpathExporter::outputLayerFillGcode() {
 
       QPointF innerStart(lineStart);
       QPointF innerEnd(lineEnd);
-      double x1 = innerStart.x();
-      double y1 = innerStart.y();
-      bool is_p1_outside = (x1 < 0 || x1 > width || y1 < 0 || y1 > height);
-      if (is_p1_outside) {
-        bool ok = false;
-        if (x1 < 0) {
-          ok = scanLine.intersects(left_border, &innerStart) == QLineF::BoundedIntersection;
-        } else if (x1 > width) {
-          ok = scanLine.intersects(right_border, &innerStart) == QLineF::BoundedIntersection;
-        }
-        if (!ok) {
-          if (y1 < 0) {
-            ok = scanLine.intersects(top_border, &innerStart) == QLineF::BoundedIntersection;
-          } else {
-            ok = scanLine.intersects(bottom_border, &innerStart) == QLineF::BoundedIntersection;
-          }
-          if (!ok) continue;
-        }
-      }
-      double x2 = innerEnd.x();
-      double y2 = innerEnd.y();
-      bool is_p2_outside = (x2 < 0 || x2 > width || y2 < 0 || y2 > height);
-      if (is_p2_outside) {
-        bool ok = false;
-        if (x2 < 0) {
-          ok = scanLine.intersects(left_border, &innerEnd) == QLineF::BoundedIntersection;
-        } else if (x2 > width) {
-          ok = scanLine.intersects(right_border, &innerEnd) == QLineF::BoundedIntersection;
-        }
-        if (!ok) {
-          if (y2 < 0) {
-            ok = scanLine.intersects(top_border, &innerEnd) == QLineF::BoundedIntersection;
-          } else {
-            ok = scanLine.intersects(bottom_border, &innerEnd) == QLineF::BoundedIntersection;
-          }
-          if (!ok) continue;
-        }
-      }
+      if (clipWorkarea(&innerStart, &innerEnd, true) == -1) continue;
 
       // Get intersections with path
       QList<QList<QPointF>> all_intersections;
@@ -670,24 +665,38 @@ void ToolpathExporter::outputLayerFillGcode() {
 void ToolpathExporter::outputLayerPathGcode() {
   double wobble_step = current_layer_->wobbleStep();
   double wobble_diameter = current_layer_->wobbleDiameter();
-  if (wobble_step > 0 && wobble_diameter > 0) {
+  if (!is_contour_ && wobble_step > 0 && wobble_diameter > 0) {
     gen_->setWobble(wobble_step, wobble_diameter);
   }
 
   gen_->turnOnLaser(); // M3
+  float layer_speed = is_contour_ ? travel_speed_ : current_layer_->speed();
+  float layer_power = is_contour_ ? 0 : current_layer_->power();
 
   // NOTE: Should convert points from canvas unit to mm
   polygons_mutex_.lock();
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
 
-    QPointF next_point_mm = poly.first() / dpmm_;
-    moveTo(next_point_mm,
-           travel_speed_,
-           0, 0);
+    int clip_res;
+    bool is_first = true;
+    QPointF last_point = poly.first();
+    QPointF next_point;
+    QPointF next_point_mm;
 
     for (QPointF &point : poly) {
-      next_point_mm = point / dpmm_;
+      next_point = point;
+      clip_res = clipWorkarea(&last_point, &next_point, false);
+      if (clip_res == -1) {
+        last_point = point;
+        continue;
+      }
+      if (is_first || (clip_res & CLIP_FLAG_START)) {
+        // Travel to start point or Clipped point(out -> in)
+        is_first = false;
+        moveTo(last_point / dpmm_, travel_speed_, 0, 0);
+      }
+      next_point_mm = next_point / dpmm_;
       // Divide a long line into small segments
       if (!is_promark_ && (next_point_mm - current_pos_mm_).manhattanLength() > 5) { // At most 5mm per segment
         int segments = std::max(2.0,
@@ -698,17 +707,16 @@ void ToolpathExporter::outputLayerPathGcode() {
           interpolate_points << (i * next_point_mm + (segments - i) * current_pos_mm_) / float(segments);
         }
         for (const QPointF &interpolate_point : interpolate_points) {
-          moveTo(interpolate_point,
-                 current_layer_->speed(),
-                 current_layer_->power(),
-                 0);
+          moveTo(interpolate_point, layer_speed, layer_power, 0);
         }
       } else {
-        moveTo(next_point_mm,
-               current_layer_->speed(),
-               current_layer_->power(),
-               0);
+        moveTo(next_point_mm, layer_speed, layer_power, 0);
       }
+      if (clip_res & CLIP_FLAG_END) {
+        // Turn off laser at Clipped point(in -> out)
+        moveTo(next_point_mm, travel_speed_, 0, 0);
+      }
+      last_point = point;
     }
 
     //gen_->turnOffLaser();
@@ -1320,6 +1328,62 @@ QImage ToolpathExporter::imageBinarize(QImage src, int threshold) {
     }
   }
   return result_img;
+}
+
+int ToolpathExporter::clipWorkarea(QPointF* start, QPointF* end, bool force) {
+  int clip_result = 0;
+  if (!force && !should_clip_workarea_) {
+    return clip_result;
+  }
+  QLineF scanLine(*start, *end);
+  bool ok = false;
+  double x1 = start->x();
+  double y1 = start->y();
+  bool is_p1_outside = (x1 < 0 || x1 > canvas_width_ || y1 < 0 || y1 > canvas_height_);
+  if (is_p1_outside) {
+    clip_result |= CLIP_FLAG_START;
+    if (x1 < 0) {
+      ok = scanLine.intersects(left_border_, start) == QLineF::BoundedIntersection;
+    } else if (x1 > canvas_width_) {
+      ok = scanLine.intersects(right_border_, start) == QLineF::BoundedIntersection;
+    }
+    if (!ok) {
+      if (y1 < 0) {
+        ok = scanLine.intersects(top_border_, start) == QLineF::BoundedIntersection;
+      } else {
+        ok = scanLine.intersects(bottom_border_, start) == QLineF::BoundedIntersection;
+      }
+      if (!ok) {
+        start->setX(x1);
+        start->setY(y1);
+        return -1;
+      }
+    }
+  }
+  double x2 = end->x();
+  double y2 = end->y();
+  bool is_p2_outside = (x2 < 0 || x2 > canvas_width_ || y2 < 0 || y2 > canvas_height_);
+  if (is_p2_outside) {
+    clip_result |= CLIP_FLAG_END;
+    if (x2 < 0) {
+      ok = scanLine.intersects(left_border_, end) == QLineF::BoundedIntersection;
+    } else if (x2 > canvas_width_) {
+      ok = scanLine.intersects(right_border_, end) == QLineF::BoundedIntersection;
+    }
+    if (!ok) {
+      if (y2 < 0) {
+        ok = scanLine.intersects(top_border_, end) == QLineF::BoundedIntersection;
+      } else {
+        ok = scanLine.intersects(bottom_border_, end) == QLineF::BoundedIntersection;
+      }
+      if (!ok) {
+        end->setX(x2);
+        end->setY(y2);
+        return -1;
+      }
+    }
+  }
+  return clip_result;
 }
 
 inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power, double x_backlash) {

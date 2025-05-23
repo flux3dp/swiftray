@@ -48,6 +48,10 @@ public:
 
   void setSortRule(PathSort sort_rule) { sort_rule_ = sort_rule; }
 
+  void setShouldClipWorkarea(bool should_clip_workarea) { should_clip_workarea_ = should_clip_workarea; }
+
+  void handleContour() { is_contour_ = true; }
+
   enum class ScanDirectionMode {
       kBidirectionMode,
       kUnidirectionMode
@@ -95,9 +99,12 @@ private:
 
   QImage imageBinarize(QImage src, int threshold);
 
+  int clipWorkarea(QPointF* start, QPointF* end, bool force);
+
   void onProgressChanged(double value, bool absolute);
 
   bool is_promark_ = false;
+  bool is_contour_ = false;
   QTransform global_transform_;
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;
@@ -111,6 +118,13 @@ private:
   QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
   QSizeF canvas_size_;              // Expressed in unit of document dot.
+  QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
+  double canvas_width_;
+  double canvas_height_;
+  QLineF left_border_;
+  QLineF top_border_;
+  QLineF right_border_;
+  QLineF bottom_border_;
   // === The followings depend on canvas resolution ===
   const qreal canvas_mm_ratio_ = 10.0; // Currently 10 units in canvas = 1 mm in real world
                                        // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_mm_)
@@ -125,6 +139,7 @@ private:
   qreal fixed_padding_mm_ = 10;
   QPointF end_point_;
   // ==================================================
+  bool should_clip_workarea_ = false;
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
   bool with_image_ = false;
