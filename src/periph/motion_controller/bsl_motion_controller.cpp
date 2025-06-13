@@ -824,12 +824,8 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   estimated_time_ = 0;
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
-  if (is_framing_ || disable_laser) {
-    lcs_disable_laser();
-  } else {
-    lcs_set_laser_control(true);
-    lcs_enable_laser();
-  }
+  lcs_set_laser_control(true);
+  lcs_enable_laser();
   lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
   lcs_set_mark_speed(settings.current_f);
   lcs_set_laser_power(settings.current_s / 10);
