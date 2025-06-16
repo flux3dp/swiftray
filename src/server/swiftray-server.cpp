@@ -30,7 +30,7 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   }
   setupWorker();
   // Set env to avoid Path truncated in parsePathDataFast
-  qputenv("QT_SVG_ASSUME_TRUSTED_SOURCE", "");
+  qputenv("QT_SVG_ASSUME_TRUSTED_SOURCE", "1");
 }
 
 Machine* SwiftrayServer::getMachine() {
