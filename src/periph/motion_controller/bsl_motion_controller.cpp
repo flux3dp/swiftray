@@ -449,6 +449,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       }
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_running_laser_ = true;
+      current_error_ = 0;
+      current_custom_error_.clear();
       // Reset current settings
       dotting_time = 0;
       a_pos_ = 0;
