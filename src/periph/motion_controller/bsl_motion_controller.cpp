@@ -203,13 +203,14 @@ void BSLMotionController::dequeueCmd(int count) {
 }
 
 LCS2Error BSLMotionController::waitListAvailable(int list_no) {
-  // qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
+  qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
   LCS2Error ret = lcs_load_list(list_no, 0);
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
     QThread::msleep(25);
     checkPauseResume();
     if (lcs_paused_) {
+      qInfo() << "BSLM~::waitList - Paused while waitListAvailable!";
       continue;
     }
     qInfo() << getErrorString(ret);
@@ -767,6 +768,7 @@ BoardRunStatus BSLMotionController::getBoardStatus() {
   status.bConnected = false;
   LCS2Error ret = lcs_get_status((uint32_t *)&status, &pos);
   if (ret == LCS_RES_NO_ERROR) return status;
+  qInfo() << "BSLM~::getBoardStatus() - bConnected" << status.bConnected << "Error" << getErrorString(ret);
   return status;
 }
 
@@ -797,7 +799,10 @@ bool BSLMotionController::isConnected() {
         // Note: Current list will be aborted when lcs_assign_card
         // Wait for the current task to finish then reconnect
         int remaining_time = getRemainingTime();
-        if (remaining_time > 0) QThread::msleep(remaining_time);
+        if (remaining_time > 0) {
+          qInfo() << "BSLM~::isConnected() - Waiting for current task to finish" << remaining_time;
+          QThread::msleep(remaining_time);
+        }
       }
       for (int i = 0; i < 3 && !is_board_connected_; i++) {
         QThread::msleep(2000);
@@ -841,9 +846,11 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
 }
 
 bool BSLMotionController::executeList(int list_no) {
+  qInfo() << "BSLM~::executeList(" << list_no << "), task time:" << running_task_time_;
   lcs_set_end_of_list();
   if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
+    int count = 0;
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
@@ -855,10 +862,15 @@ bool BSLMotionController::executeList(int list_no) {
         qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
         break;
       }
+      if (++count % 10 == 0) {
+        qInfo() << "BSLM~::executeList() - Waiting for previous list..." << "paused" << lcs_paused_ << "list paused" << list_status.bPaused << "busy1" << list_status.bBusy1 << "busy2" << list_status.bBusy2;
+      }
     } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
   if (!is_running_laser_ || !status.bConnected) return false;
+  qInfo() << "BSLM~::executeList() - 1st try to execute list" << list_no << "@" << getDebugTime();
   int e = lcs_execute_list(list_no);
+  qInfo() << "BSLM~::executeList() - Result of 1st try" << getErrorString(e) << "@" << getDebugTime();
   if (e != LCS_RES_NO_ERROR) {
     if (e == LCS_GENERAL_CURRENTLY_BUSY) {
       // Sometimes happens after reconnecting
@@ -867,8 +879,11 @@ bool BSLMotionController::executeList(int list_no) {
       lcs_connect(true);
     }
     // Trigger reconnect
+    qInfo() << "BSLM~::executeList() - Check connection before 2nd try" << "@" << getDebugTime();
     bool is_connected = isConnected();
+    qInfo() << "BSLM~::executeList() - 2nd try to execute list" << list_no << is_connected << "@" << getDebugTime();
     e = lcs_execute_list(list_no);
+    qInfo() << "BSLM~::executeList() - Result of 2nd try" << getErrorString(e) << "@" << getDebugTime();
     if (e != LCS_RES_NO_ERROR) {
       qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
       this->current_error_ = e;
@@ -878,6 +893,7 @@ bool BSLMotionController::executeList(int list_no) {
     }
   }
   running_task_time_ = estimated_time_;
+  qInfo() << "BSLM~::executeList() - Start executing new list, task time:" << running_task_time_;
   resetTimer();
   estimated_time_ = 0;
   return true;
