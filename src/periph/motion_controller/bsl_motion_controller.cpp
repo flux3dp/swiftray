@@ -469,6 +469,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       getListStatus();
       if (list_status.bMainOpen || list_status.bSubOepn || list_status.bCharOpen || list_status.bBusy1 || list_status.bBusy2 || list_status.bPaused || list_status.bLoop) {
         qInfo() << "BSLM~::handleGcode() - Irregular Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
+        if (list_status.bMainOpen) {
+          lcs_set_end_of_list();
+          lcs_stop_execution();
+        }
         if (list_status.bPaused) lcs_restart_list();
       }
       // Control instruction
