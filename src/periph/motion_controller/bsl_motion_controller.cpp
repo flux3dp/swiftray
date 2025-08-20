@@ -310,8 +310,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             z = value.toDouble();
             is_move_command = true;
         } else if (type == "Q") {
-            freq = value.toInt();
-            settings.period = 1000 / freq;
+            freq = value.toDouble();
+            settings.period = 1000.0 / freq;
             lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
         } else if (type == "P") {
             settings.pulse_width = value.toInt();
@@ -455,7 +455,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
-      settings.period = 10;
+      settings.period = 10.0;
       settings.pulse_width = 100;
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
@@ -500,7 +500,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         // Appand a dummy move command to ensure the last Z command is executed
         lcs_set_axis_move(1, 1, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255);
       }
-      lcs_disable_laser();
+      lcs_disable_laser(0);
       should_swap = true;
       should_end = true;
       settings.rotary_mode = false;
@@ -839,7 +839,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   lcs_set_laser_control(true);
-  lcs_enable_laser();
+  lcs_enable_laser(0);
   lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
   lcs_set_mark_speed(settings.current_f);
   lcs_set_laser_power(settings.current_s / 10);

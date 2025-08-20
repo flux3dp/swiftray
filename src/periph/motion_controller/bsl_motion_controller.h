@@ -15,7 +15,7 @@ struct TaskSettings {
   // Reset param before start list
   int current_s = 0;            // 0~1000
   double current_f = 100.0;     // Default speed, mm/s
-  int period = 10;              // us
+  double period = 10.0;         // us
   int pulse_width = 100;        // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
