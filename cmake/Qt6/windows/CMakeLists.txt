@@ -134,11 +134,7 @@ if (WINSPARKLE_FOUND)
 endif()
 
 # ==== Add LCS library DLLS ====
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x64/release")
-else()
-    set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x86/release")
-endif()
+set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x64/release")
 
 file(GLOB LCS_DLLS "${LCS_LIB_DIR}/*.dll")
 list(APPEND THIRD_PARTY_DLLS ${LCS_DLLS})
