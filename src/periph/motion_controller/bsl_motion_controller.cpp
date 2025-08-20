@@ -624,7 +624,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             jump_to(-(target_y - center_pos), target_x - center_pos);
             estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
             lcs_laser_on_list(dotting_time);
-            estimated_time_ += dotting_time / 1000;
+            estimated_time_ += dotting_time / 1000.0;
           }
         } else {
           jump_to(-(target_y - center_pos), target_x - center_pos);
