@@ -20,6 +20,24 @@ uint32_t pos;
 BoardRunStatus status;
 ListStatus list_status;
 
+struct CorrectionParams {
+  double scaleX = 100;
+  double scaleY = 100;
+  double bucketX = 1;
+  double bucketY = 1;
+  double paralleX = 1;
+  double paralleY = 1;
+  double trapeX = 1;
+  double trapeY = 1;
+} correction_params;
+
+struct ScanaheadParams {
+  double worksize = 150;
+  double angle = 0;
+  double xOffset = 0;
+  double yOffset = 0;
+} scanahead_params;
+
 QString BSLMotionController::getErrorString(int error) {
   switch (error) {
     case LCS_RES_NO_ERROR:
@@ -762,11 +780,13 @@ bool BSLMotionController::resetState() {
 }
 
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  correction_params = {scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY};
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
 }
 
 void BSLMotionController::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+  scanahead_params = {worksize, angle, xOffset, yOffset};
   LCS2Error ret = lcs_set_scanahead_params(worksize, false, false, false, angle, xOffset, yOffset);
   qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
 }
@@ -824,10 +844,14 @@ bool BSLMotionController::isConnected() {
         this->current_custom_error_ = "DISCONNECTED";
         stop();
         Q_EMIT disconnected();
-      } else if (lcs_paused_) {
-        stop();
-      } else if (getState() == MotionControllerState::kRun) {
-        lcs_restart_list();
+      } else {
+        setScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
+        setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY);
+        if (lcs_paused_) {
+          stop();
+        } else if (getState() == MotionControllerState::kRun) {
+          lcs_restart_list();
+        }
       }
     }
   }
