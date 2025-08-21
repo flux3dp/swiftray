@@ -84,7 +84,10 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
-      total_repeat_times_ = is_contour_ ? 1 : (*layer_rit)->repeat();
+      total_repeat_times_ = (*layer_rit)->repeat();
+      if (is_contour_ && total_repeat_times_ > 1) {
+        total_repeat_times_ = 1;
+      }
       float focus = is_contour_ ? 0 : (*layer_rit)->focus();
       float focus_step = is_contour_ ? 0 : (*layer_rit)->focusStep();
       float total_move = 0;
