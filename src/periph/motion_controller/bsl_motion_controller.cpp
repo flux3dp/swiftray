@@ -546,7 +546,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
-      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
+      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "and time" << running_task_time_ << "@" << getDebugTime();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
       list_no = list_no == 1 ? 2 : 1;
@@ -853,7 +853,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
 }
 
 bool BSLMotionController::executeList(int list_no) {
-  qInfo() << "BSLM~::executeList(" << list_no << "), task time:" << running_task_time_;
+  qInfo() << "BSLM~::executeList(" << list_no << ") @" << getDebugTime();
   lcs_set_end_of_list();
   if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
@@ -866,7 +866,7 @@ bool BSLMotionController::executeList(int list_no) {
       checkPauseResume();
       if (!lcs_paused_ && getRemainingTime() < 0) {
         // In case bBusy1 and bBusy2 are not updated
-        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
+        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion @" << getDebugTime();
         break;
       }
       if (++count % 10 == 0) {
