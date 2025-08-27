@@ -610,9 +610,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
-        lcs_set_axis_move(0, fabs(diff_a) * PromarkJobConfig::A_PULSE_PER_MM, diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
+        double real_steps = round(diff_a * PromarkJobConfig::A_PULSE_PER_MM);
+        lcs_set_axis_move(0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
         estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
-        a_pos_ = target_a;
+        a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
       }
       double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
       if (distance > 0) {
