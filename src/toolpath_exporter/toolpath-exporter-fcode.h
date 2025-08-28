@@ -245,7 +245,7 @@ public Q_SLOTS:
       config_.z_premove_z = 0.0005;
       default_path_acc["x"] = 1000;
       default_path_acc["y"] = 1000;
-    } else if (model == "fhx2rf" || model == "fhx2rf3" || model == "fhx2rf4" || model == "fhx2rf6" || model == "fhx2rf7") {
+    } else if (model.startsWith("fhx2rf")) {
       hardware_ = HardwareType::RF;
       is_v2_ = true;
     } else {
