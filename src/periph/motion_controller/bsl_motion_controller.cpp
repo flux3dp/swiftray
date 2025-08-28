@@ -159,7 +159,6 @@ void BSLMotionController::commandRunnerThread() {
               break;
             }
           }
-          this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
           QThread::msleep(25);
         } else {
@@ -215,12 +214,13 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
     }
     qInfo() << getErrorString(ret);
     ret = lcs_load_list(list_no, 0);
-    // If the list is already opened, close the list, execute it
+    // If the list is already opened, close the list
     if (ret == LCS_GENERAL_AREADY_OPENED) {
       qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - List already opened" << getDebugTime();
       if (!fixing_aready) {
         fixing_aready = true;
-        if(!executeList(list_no)) return ret;
+        lcs_set_start_list(list_no);
+        lcs_set_end_of_list();
       }
       ret = lcs_load_list(list_no, 0);
     }
@@ -383,7 +383,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         // Fix start position to the nearest step
         double start_pos = round(x_pos_ / high_speed_step_) * high_speed_step_;
         double current_pos = x_pos_;
-        // Note: is_absolute_positioning should be false according to ToolpathExporter
         double final_pos = is_absolute_positioning ? x : x + x_pos_;
         bool is_reverse = final_pos < current_pos;
         double step = is_reverse ? -high_speed_step_ : high_speed_step_;
@@ -470,8 +469,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (list_status.bMainOpen || list_status.bSubOepn || list_status.bCharOpen || list_status.bBusy1 || list_status.bBusy2 || list_status.bPaused || list_status.bLoop) {
         qInfo() << "BSLM~::handleGcode() - Irregular Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
         if (list_status.bMainOpen) {
-          lcs_set_end_of_list();
           lcs_stop_execution();
+          lcs_set_start_list(1);
+          lcs_set_end_of_list();
+          lcs_set_start_list(2);
+          lcs_set_end_of_list();
         }
         if (list_status.bPaused) lcs_restart_list();
       }
