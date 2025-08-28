@@ -2850,9 +2850,13 @@ int getAttr(const QXmlStreamAttributes& attributes,
             QJsonObject *default_config,
             const QString& key_name,
             int defaultVal) {
-    if (attributes.hasAttribute(attr_name))
-        return attributes.value(attr_name).toInt();
-    return default_config->value(key_name).toInt(defaultVal);
+    double val = 0;
+    if (attributes.hasAttribute(attr_name)) {
+        val = attributes.value(attr_name).toDouble();
+    } else {
+        val = default_config->value(key_name).toDouble(defaultVal);
+    }
+    return qRound(val);
 }
 
 double getAttr(const QXmlStreamAttributes& attributes,

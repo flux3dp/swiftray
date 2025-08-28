@@ -159,7 +159,6 @@ void BSLMotionController::commandRunnerThread() {
               break;
             }
           }
-          this->should_flush_ = this->buffer_size_ > 0;
           setState(MotionControllerState::kIdle); // Set state to idle if there are no pending commands
           QThread::msleep(25);
         } else {
@@ -203,23 +202,25 @@ void BSLMotionController::dequeueCmd(int count) {
 }
 
 LCS2Error BSLMotionController::waitListAvailable(int list_no) {
-  // qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
+  qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
   LCS2Error ret = lcs_load_list(list_no, 0);
   bool fixing_aready = false;
   while (ret != LCS_RES_NO_ERROR) {
     QThread::msleep(25);
     checkPauseResume();
     if (lcs_paused_) {
+      qInfo() << "BSLM~::waitList - Paused while waitListAvailable!";
       continue;
     }
     qInfo() << getErrorString(ret);
     ret = lcs_load_list(list_no, 0);
-    // If the list is already opened, close the list, execute it
+    // If the list is already opened, close the list
     if (ret == LCS_GENERAL_AREADY_OPENED) {
       qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - List already opened" << getDebugTime();
       if (!fixing_aready) {
         fixing_aready = true;
-        if(!executeList(list_no)) return ret;
+        lcs_set_start_list(list_no);
+        lcs_set_end_of_list();
       }
       ret = lcs_load_list(list_no, 0);
     }
@@ -382,7 +383,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         // Fix start position to the nearest step
         double start_pos = round(x_pos_ / high_speed_step_) * high_speed_step_;
         double current_pos = x_pos_;
-        // Note: is_absolute_positioning should be false according to ToolpathExporter
         double final_pos = is_absolute_positioning ? x : x + x_pos_;
         bool is_reverse = final_pos < current_pos;
         double step = is_reverse ? -high_speed_step_ : high_speed_step_;
@@ -448,6 +448,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       }
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_running_laser_ = true;
+      current_error_ = 0;
+      current_custom_error_.clear();
       // Reset current settings
       dotting_time = 0;
       a_pos_ = 0;
@@ -466,6 +468,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       getListStatus();
       if (list_status.bMainOpen || list_status.bSubOepn || list_status.bCharOpen || list_status.bBusy1 || list_status.bBusy2 || list_status.bPaused || list_status.bLoop) {
         qInfo() << "BSLM~::handleGcode() - Irregular Status: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
+        if (list_status.bMainOpen) {
+          lcs_stop_execution();
+          lcs_set_start_list(1);
+          lcs_set_end_of_list();
+          lcs_set_start_list(2);
+          lcs_set_end_of_list();
+        }
         if (list_status.bPaused) lcs_restart_list();
       }
       // Control instruction
@@ -539,7 +548,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
-      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "@" << getDebugTime();
+      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "and time" << running_task_time_ << "@" << getDebugTime();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
       list_no = list_no == 1 ? 2 : 1;
@@ -603,9 +612,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
-        lcs_set_axis_move(0, fabs(diff_a) * PromarkJobConfig::A_PULSE_PER_MM, diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
+        double real_steps = round(diff_a * PromarkJobConfig::A_PULSE_PER_MM);
+        lcs_set_axis_move(0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
         estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
-        a_pos_ = target_a;
+        a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
       }
       double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
       if (distance > 0) {
@@ -617,7 +627,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             jump_to(-(target_y - center_pos), target_x - center_pos);
             estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
             lcs_laser_on_list(dotting_time);
-            estimated_time_ += dotting_time / 1000;
+            estimated_time_ += dotting_time / 1000.0;
           }
         } else {
           jump_to(-(target_y - center_pos), target_x - center_pos);
@@ -767,6 +777,7 @@ BoardRunStatus BSLMotionController::getBoardStatus() {
   status.bConnected = false;
   LCS2Error ret = lcs_get_status((uint32_t *)&status, &pos);
   if (ret == LCS_RES_NO_ERROR) return status;
+  qInfo() << "BSLM~::getBoardStatus() - bConnected" << status.bConnected << "Error" << getErrorString(ret);
   return status;
 }
 
@@ -797,7 +808,10 @@ bool BSLMotionController::isConnected() {
         // Note: Current list will be aborted when lcs_assign_card
         // Wait for the current task to finish then reconnect
         int remaining_time = getRemainingTime();
-        if (remaining_time > 0) QThread::msleep(remaining_time);
+        if (remaining_time > 0) {
+          qInfo() << "BSLM~::isConnected() - Waiting for current task to finish" << remaining_time;
+          QThread::msleep(remaining_time);
+        }
       }
       for (int i = 0; i < 3 && !is_board_connected_; i++) {
         QThread::msleep(2000);
@@ -841,9 +855,11 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
 }
 
 bool BSLMotionController::executeList(int list_no) {
+  qInfo() << "BSLM~::executeList(" << list_no << ") @" << getDebugTime();
   lcs_set_end_of_list();
   if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
+    int count = 0;
     do {
       QThread::msleep(100);
       // Update status and trigger reconnect if disconnected
@@ -852,14 +868,19 @@ bool BSLMotionController::executeList(int list_no) {
       checkPauseResume();
       if (!lcs_paused_ && getRemainingTime() < 0) {
         // In case bBusy1 and bBusy2 are not updated
-        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion" << getDebugTime();
+        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion @" << getDebugTime();
         break;
+      }
+      if (++count % 10 == 0) {
+        qInfo() << "BSLM~::executeList() - Waiting for previous list..." << "paused" << lcs_paused_ << "list paused" << list_status.bPaused << "busy1" << list_status.bBusy1 << "busy2" << list_status.bBusy2;
       }
     } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
   }
   if (!is_running_laser_ || !status.bConnected) return false;
+  qInfo() << "BSLM~::executeList() - 1st try to execute list" << list_no << "@" << getDebugTime();
   int e = lcs_execute_list(list_no);
   if (e != LCS_RES_NO_ERROR) {
+    qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
     if (e == LCS_GENERAL_CURRENTLY_BUSY) {
       // Sometimes happens after reconnecting
       // Board is connected but not able to execute list
@@ -867,10 +888,12 @@ bool BSLMotionController::executeList(int list_no) {
       lcs_connect(true);
     }
     // Trigger reconnect
+    qInfo() << "BSLM~::executeList() - Check connection before 2nd try" << "@" << getDebugTime();
     bool is_connected = isConnected();
+    qInfo() << "BSLM~::executeList() - 2nd try to execute list" << list_no << is_connected << "@" << getDebugTime();
     e = lcs_execute_list(list_no);
     if (e != LCS_RES_NO_ERROR) {
-      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
+      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
       this->current_error_ = e;
       this->current_custom_error_ = "Failed to execute list";
       this->stop();
@@ -878,6 +901,7 @@ bool BSLMotionController::executeList(int list_no) {
     }
   }
   running_task_time_ = estimated_time_;
+  qInfo() << "BSLM~::executeList() - Start executing new list, task time:" << running_task_time_;
   resetTimer();
   estimated_time_ = 0;
   return true;

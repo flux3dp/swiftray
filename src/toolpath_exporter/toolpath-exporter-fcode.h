@@ -131,7 +131,7 @@ class ToolpathExporterFcode : public QObject {
   Q_OBJECT
 
  public:
-  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2, RF30, RF60 };
+  enum class HardwareType { beamo, Beambox, BeamboxPro, HEXA, Ador, BB2, RF };
 
   ToolpathExporterFcode(QTransform move_translate,
                         int dpi,
@@ -245,11 +245,8 @@ public Q_SLOTS:
       config_.z_premove_z = 0.0005;
       default_path_acc["x"] = 1000;
       default_path_acc["y"] = 1000;
-    } else if (model == "fhx2rf3") {
-      hardware_ = HardwareType::RF30;
-      is_v2_ = true;
-    } else if (model == "fhx2rf6") {
-      hardware_ = HardwareType::RF60;
+    } else if (model.startsWith("fhx2rf")) {
+      hardware_ = HardwareType::RF;
       is_v2_ = true;
     } else {
       // default beambox

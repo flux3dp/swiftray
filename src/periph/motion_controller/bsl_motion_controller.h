@@ -80,8 +80,6 @@ private:
   bool is_handling_reconnection_ = false;
   bool should_check_door_ = false;
   int buffer_size_ = 0;
-  double current_x = 0.0;
-  double current_y = 0.0;
   std::thread command_runner_thread_;
   int current_error_ = 0;
   QString current_custom_error_ = QString();

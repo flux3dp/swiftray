@@ -24,7 +24,7 @@ TARGET = Swiftray
 
 VERSION_MAJOR = 1
 VERSION_MINOR = 3
-VERSION_BUILD = 12
+VERSION_BUILD = 13
 VERSION_BETA = 0
 VERSION_SUFFIX = "" # empty string or "-beta.X"
 VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}$${VERSION_SUFFIX}
@@ -96,7 +96,7 @@ macx{
         LIBS += -L"/opt/homebrew/opt/poppler/lib"
         LIBS += -L"/opt/homebrew/opt/cairo/lib"
         LIBS += -L"/opt/homebrew/opt/potrace/lib"
-    } lese {
+    } else {
         # Mac Intel
         _BOOST_PATH = "/usr/local/opt/boost/"
         LIBS += -L"/usr/lib"
@@ -385,7 +385,7 @@ macx{
   QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
   
   BUNDLE_ADDITIONAL_EXEC_FILES.files += $$PWD/third_party/sentry-native/install/bin/crashpad_handler \
-                                        $$files($$PWD/third_party/liblcs/lib/*.dylib)
+                                        $$files($$PWD/third_party/liblcs/lib/macos/*.dylib)
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }
