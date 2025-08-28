@@ -879,8 +879,8 @@ bool BSLMotionController::executeList(int list_no) {
   if (!is_running_laser_ || !status.bConnected) return false;
   qInfo() << "BSLM~::executeList() - 1st try to execute list" << list_no << "@" << getDebugTime();
   int e = lcs_execute_list(list_no);
-  qInfo() << "BSLM~::executeList() - Result of 1st try" << getErrorString(e) << "@" << getDebugTime();
   if (e != LCS_RES_NO_ERROR) {
+    qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
     if (e == LCS_GENERAL_CURRENTLY_BUSY) {
       // Sometimes happens after reconnecting
       // Board is connected but not able to execute list
@@ -892,9 +892,8 @@ bool BSLMotionController::executeList(int list_no) {
     bool is_connected = isConnected();
     qInfo() << "BSLM~::executeList() - 2nd try to execute list" << list_no << is_connected << "@" << getDebugTime();
     e = lcs_execute_list(list_no);
-    qInfo() << "BSLM~::executeList() - Result of 2nd try" << getErrorString(e) << "@" << getDebugTime();
     if (e != LCS_RES_NO_ERROR) {
-      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e);
+      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
       this->current_error_ = e;
       this->current_custom_error_ = "Failed to execute list";
       this->stop();
