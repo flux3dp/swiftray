@@ -510,6 +510,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           lcs_set_end_of_list();
         }
         if (list_status.bPaused) lcs_restart_list();
+        getListStatus();
+        qInfo() << "BSLM~::handleGcode() - Status after Fix: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
       }
       setUpTaskCtrl();
       startList(list_no, settings, true);
@@ -728,10 +730,8 @@ MotionController::CmdSendResult BSLMotionController::stop() {
     this->setState(MotionControllerState::kSleep);
   }
   qInfo() << "BSLM~::stop() - Clearing pending commands" << getDebugTime();
-  if (status.bConnected) {
-    lcs_set_end_of_list();
-    lcs_stop_execution();
-  }
+  lcs_set_end_of_list();
+  lcs_stop_execution();
   running_task_time_ = 0;
   this->is_running_laser_ = false;
   getBoardStatus();
