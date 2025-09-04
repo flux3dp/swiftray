@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bsl_list_manager.h"
 #include "motion_controller.h"
 
 #include <QStringList>
@@ -13,10 +14,10 @@
 
 struct TaskSettings {
   // Reset param before start list
-  int current_s = 0;            // 0~1000
+  unsigned char current_s = 0;  // 0~100
   double current_f = 100.0;     // Default speed, mm/s
-  int period = 10;              // us
-  int pulse_width = 100;        // ns
+  double period = 10.0;         // us
+  uint16_t pulse_width = 100;   // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
   bool rotary_mode = false;
@@ -24,6 +25,7 @@ struct TaskSettings {
 
 class BSLMotionController : public MotionController
 {
+  friend class BSLListManager;
 public:
   BSLMotionController(QObject *parent = nullptr);
   ~BSLMotionController();
@@ -67,6 +69,10 @@ private:
   void resetTimer();
   void pauseTimer();
   int getRemainingTime();
+  void jumpTo(double y, double x);
+  void markTo(double y, double x);
+  void setUpTaskCtrl();
+  void setUpTaskList();
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
@@ -79,7 +85,6 @@ private:
   bool is_board_connected_ = false;
   bool is_handling_reconnection_ = false;
   bool should_check_door_ = false;
-  int buffer_size_ = 0;
   std::thread command_runner_thread_;
   int current_error_ = 0;
   QString current_custom_error_ = QString();
@@ -90,4 +95,5 @@ private:
   double estimated_time_ = 0; // Time for current writing list, ms
   double running_task_time_ = 0; // Time for current executing list, ms
   QElapsedTimer task_timer_;
+  BSLListManager list_manager_{this};
 };

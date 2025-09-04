@@ -1,15 +1,12 @@
-#ifndef LCSAPI_PUBLIC
+﻿#ifndef LCSAPI_PUBLIC
 #define LCSAPI_PUBLIC
 
 #include <stdint.h>
 
 #if defined(LCSDLL_EXPORTS)
-#	if defined(__unix__)
+#	if defined(__unix__) || defined(__APPLE__)
 #		define LCS_IMPORT __attribute__ ((visibility("default")))
 #		define LCS_API  __attribute__ ((stdcall))
-#   elif defined(__APPLE__)
-#		define LCS_IMPORT __attribute__ ((visibility("default")))
-#		define LCS_API
 #	elif defined(_WIN32)
 #		define LCS_IMPORT __declspec(dllexport)
 #		define LCS_API
@@ -18,12 +15,9 @@
 #		define LCS_API  __attribute__ ((stdcall))
 #	endif
 #else
-#	if defined(__unix__)
+#	if defined(__unix__) || defined(__APPLE__)
 #		define LCS_IMPORT
 #		define LCS_API   __attribute__ ((stdcall))
-#   elif defined(__APPLE__)
-#		define LCS_IMPORT
-#		define LCS_API
 #	elif defined(_WIN32)
 #		define LCS_IMPORT __declspec(dllimport)
 #		define LCS_API
@@ -57,6 +51,7 @@ enum LCS2Error
 	LCS_GENERAL_NOT_INITIALIZED = 0x00230000,
 	LCS_GENERAL_NOT_OPENED = 0x00230004,
 	LCS_GENERAL_AREADY_OPENED = 0x00240000,
+	LCS_GENERAL_AREADY_EXIST = 0x00240001,
 
 	LCS_BOARD_NOT_CONNECT = 0x00300002,
 };

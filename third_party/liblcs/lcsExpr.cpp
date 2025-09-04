@@ -1,4 +1,4 @@
-#include "lcsExpr.h"
+﻿#include "lcsExpr.h"
 
 #ifndef _WIN32
 #include <string>
@@ -95,22 +95,26 @@ LCS_READ_IO_PORT lcs_read_io_port;
 LCS_N_READ_IO_PORT lcs_n_read_io_port;
 LCS_GET_IO_STATUS lcs_get_io_status;
 LCS_N_GET_IO_STATUS lcs_n_get_io_status;
-LCS_WRITE_DA_X lcs_write_da_x;
-LCS_N_WRITE_DA_X lcs_n_write_da_x;
+//LCS_WRITE_DA_X lcs_write_da_x;
+//LCS_N_WRITE_DA_X lcs_n_write_da_x;
 //LCS_WRITE_DA_1 lcs_write_da_1;
 //LCS_N_WRITE_DA_1 lcs_n_write_da_1;
 //LCS_WRITE_DA_2 lcs_write_da_2;
 //LCS_N_WRITE_DA_2 lcs_n_write_da_2;
 LCS_WRITE_IO_PORT lcs_write_io_port;
 LCS_N_WRITE_IO_PORT lcs_n_write_io_port;
+
+LCS_IF_COND lcs_if_cond;
+LCS_N_IF_COND lcs_n_if_cond;
+
 LCS_DISABLE_LASER lcs_disable_laser;
 LCS_N_DISABLE_LASER lcs_n_disable_laser;
 LCS_ENABLE_LASER lcs_enable_laser;
 LCS_N_ENABLE_LASER lcs_n_enable_laser;
-LCS_SET_STANDBY lcs_set_standby;
-LCS_N_SET_STANDBY lcs_n_set_standby;
-LCS_GET_STANDBY lcs_get_standby;
-LCS_N_GET_STANDBY lcs_n_get_standby;
+//LCS_SET_STANDBY lcs_set_standby;
+//LCS_N_SET_STANDBY lcs_n_set_standby;
+//LCS_GET_STANDBY lcs_get_standby;
+//LCS_N_GET_STANDBY lcs_n_get_standby;
 LCS_SET_LASER_PULSES_CTRL lcs_set_laser_pulses_ctrl;
 LCS_N_SET_LASER_PULSES_CTRL lcs_n_set_laser_pulses_ctrl;
 LCS_SET_FIRSTPULSE_KILLER lcs_set_firstpulse_killer;
@@ -209,6 +213,13 @@ LCS_SET_MANUAL_CORRECTION_PARAMS lcs_set_manual_correction_params;
 LCS_N_SET_MANUAL_CORRECTION_PARAMS lcs_n_set_manual_correction_params;
 LCS_SET_SCANAHEAD_PARAMS lcs_set_scanahead_params;
 LCS_N_SET_SCANAHEAD_PARAMS lcs_n_set_scanahead_params;
+LCS_SET_GRIDCOR_PARAMS lcs_set_gridcor_params;
+LCS_N_SET_GRIDCOR_PARAMS lcs_n_set_gridcor_params;
+LCS_SET_GRIDCOR_LAYER lcs_set_gridcor_layer;
+LCS_N_SET_GRIDCOR_LAYER lcs_n_set_gridcor_layer;
+LCS_SAVE_CORRECTION_FILE lcs_save_correction_file;
+LCS_N_SAVE_CORRECTION_FILE lcs_n_save_correction_file;
+
 LCS_CLEAR_MARK_COUNT lcs_clear_mark_count;
 LCS_N_CLEAR_MARK_COUNT lcs_n_clear_mark_count;
 LCS_GET_MARK_COUNT lcs_get_mark_count;
@@ -229,6 +240,14 @@ LCS_SET_AXIS_TOZERO lcs_set_axis_tozero;
 LCS_N_SET_AXIS_TOZERO lcs_n_set_axis_tozero;
 LCS_GET_AXIS_STATUS lcs_get_axis_status;
 LCS_N_GET_AXIS_STATUS lcs_n_get_axis_status;
+
+LCS_SET_SKY_WRITING_MODE lcs_set_sky_writing_mode;
+LCS_N_SET_SKY_WRITING_MODE lcs_n_set_sky_writing_mode;
+LCS_SET_SKY_WRITING_LIMIT lcs_set_sky_writing_limit;
+LCS_N_SET_SKY_WRITING_LIMIT lcs_n_set_sky_writing_limit;
+LCS_SET_SKY_WRITING_PARA_LIST lcs_set_sky_writing_para_list;
+LCS_N_SET_SKY_WRITING_PARA_LIST lcs_n_set_sky_writing_para_list;
+
 LCS_ETH_SET_SEARCH_CARDS_TIMEOUT lcs_eth_set_search_cards_timeout;
 LCS_ETH_COUNT_CARDS lcs_eth_count_cards;
 LCS_ETH_SEARCH_CARDS lcs_eth_search_cards;
@@ -264,6 +283,10 @@ long LCS2open(void) {
 #else
     gLibLCS = LoadLibraryA("lcs2dllx64.DLL");
 #endif // !defined(_WIN64)
+    if (!gLibLCS) {
+        DWORD dwErr = GetLastError();
+        dwErr = dwErr;
+    }
 #elif defined(__APPLE__)
     gLibLCS = dlopen("liblcs2dll.dylib", RTLD_NOW | RTLD_LOCAL);
 
@@ -365,22 +388,24 @@ long LCS2open(void) {
     lcs_n_read_io_port = (LCS_N_READ_IO_PORT)GetProcAddress(gLibLCS, "n_read_io_port");
     lcs_get_io_status = (LCS_GET_IO_STATUS)GetProcAddress(gLibLCS, "get_io_status");
     lcs_n_get_io_status = (LCS_N_GET_IO_STATUS)GetProcAddress(gLibLCS, "n_get_io_status");
-    lcs_write_da_x = (LCS_WRITE_DA_X)GetProcAddress(gLibLCS, "write_da_x");
-    lcs_n_write_da_x = (LCS_N_WRITE_DA_X)GetProcAddress(gLibLCS, "n_write_da_x");
+    //	 lcs_write_da_x = (LCS_WRITE_DA_X)GetProcAddress(gLibLCS, "write_da_x");
+    //	 lcs_n_write_da_x = (LCS_N_WRITE_DA_X)GetProcAddress(gLibLCS, "n_write_da_x");
     //	 lcs_write_da_1 = (LCS_WRITE_DA_1)GetProcAddress(gLibLCS, "write_da_1");
     //	 lcs_n_write_da_1 = (LCS_N_WRITE_DA_1)GetProcAddress(gLibLCS, "n_write_da_1");
     //	 lcs_write_da_2 = (LCS_WRITE_DA_2)GetProcAddress(gLibLCS, "write_da_2");
     //	 lcs_n_write_da_2 = (LCS_N_WRITE_DA_2)GetProcAddress(gLibLCS, "n_write_da_2");
     lcs_write_io_port = (LCS_WRITE_IO_PORT)GetProcAddress(gLibLCS, "write_io_port");
     lcs_n_write_io_port = (LCS_N_WRITE_IO_PORT)GetProcAddress(gLibLCS, "n_write_io_port");
+    lcs_if_cond = (LCS_IF_COND)GetProcAddress(gLibLCS, "if_cond");
+    lcs_n_if_cond = (LCS_N_IF_COND)GetProcAddress(gLibLCS, "n_if_cond");
     lcs_disable_laser = (LCS_DISABLE_LASER)GetProcAddress(gLibLCS, "disable_laser");
     lcs_n_disable_laser = (LCS_N_DISABLE_LASER)GetProcAddress(gLibLCS, "n_disable_laser");
     lcs_enable_laser = (LCS_ENABLE_LASER)GetProcAddress(gLibLCS, "enable_laser");
     lcs_n_enable_laser = (LCS_N_ENABLE_LASER)GetProcAddress(gLibLCS, "n_enable_laser");
-    lcs_set_standby = (LCS_SET_STANDBY)GetProcAddress(gLibLCS, "set_standby");
-    lcs_n_set_standby = (LCS_N_SET_STANDBY)GetProcAddress(gLibLCS, "n_set_standby");
-    lcs_get_standby = (LCS_GET_STANDBY)GetProcAddress(gLibLCS, "get_standby");
-    lcs_n_get_standby = (LCS_N_GET_STANDBY)GetProcAddress(gLibLCS, "n_get_standby");
+    //	 lcs_set_standby = (LCS_SET_STANDBY)GetProcAddress(gLibLCS, "set_standby");
+    //	 lcs_n_set_standby = (LCS_N_SET_STANDBY)GetProcAddress(gLibLCS, "n_set_standby");
+    //	 lcs_get_standby = (LCS_GET_STANDBY)GetProcAddress(gLibLCS, "get_standby");
+    //	 lcs_n_get_standby = (LCS_N_GET_STANDBY)GetProcAddress(gLibLCS, "n_get_standby");
     lcs_set_laser_pulses_ctrl = (LCS_SET_LASER_PULSES_CTRL)GetProcAddress(gLibLCS, "set_laser_pulses_ctrl");
     lcs_n_set_laser_pulses_ctrl = (LCS_N_SET_LASER_PULSES_CTRL)GetProcAddress(gLibLCS, "n_set_laser_pulses_ctrl");
     lcs_set_firstpulse_killer = (LCS_SET_FIRSTPULSE_KILLER)GetProcAddress(gLibLCS, "set_firstpulse_killer");
@@ -479,6 +504,12 @@ long LCS2open(void) {
     lcs_n_set_manual_correction_params = (LCS_N_SET_MANUAL_CORRECTION_PARAMS)GetProcAddress(gLibLCS, "n_set_manual_correction_params");
     lcs_set_scanahead_params = (LCS_SET_SCANAHEAD_PARAMS)GetProcAddress(gLibLCS, "set_scanahead_params");
     lcs_n_set_scanahead_params = (LCS_N_SET_SCANAHEAD_PARAMS)GetProcAddress(gLibLCS, "n_set_scanahead_params");
+    lcs_set_gridcor_params = (LCS_SET_GRIDCOR_PARAMS)GetProcAddress(gLibLCS, "set_gridcor_params");
+    lcs_n_set_gridcor_params = (LCS_N_SET_GRIDCOR_PARAMS)GetProcAddress(gLibLCS, "n_set_gridcor_params");
+    lcs_set_gridcor_layer = (LCS_SET_GRIDCOR_LAYER)GetProcAddress(gLibLCS, "set_gridcor_layer");
+    lcs_n_set_gridcor_layer = (LCS_N_SET_GRIDCOR_LAYER)GetProcAddress(gLibLCS, "n_set_gridcor_layer");
+    lcs_save_correction_file = (LCS_SAVE_CORRECTION_FILE)GetProcAddress(gLibLCS, "save_correction_file");
+    lcs_n_save_correction_file = (LCS_N_SAVE_CORRECTION_FILE)GetProcAddress(gLibLCS, "n_save_correction_file");
     lcs_clear_mark_count = (LCS_CLEAR_MARK_COUNT)GetProcAddress(gLibLCS, "clear_mark_count");
     lcs_n_clear_mark_count = (LCS_N_CLEAR_MARK_COUNT)GetProcAddress(gLibLCS, "n_clear_mark_count");
     lcs_get_mark_count = (LCS_GET_MARK_COUNT)GetProcAddress(gLibLCS, "get_mark_count");
@@ -499,6 +530,12 @@ long LCS2open(void) {
     lcs_n_set_axis_tozero = (LCS_N_SET_AXIS_TOZERO)GetProcAddress(gLibLCS, "n_set_axis_tozero");
     lcs_get_axis_status = (LCS_GET_AXIS_STATUS)GetProcAddress(gLibLCS, "get_axis_status");
     lcs_n_get_axis_status = (LCS_N_GET_AXIS_STATUS)GetProcAddress(gLibLCS, "n_get_axis_status");
+    lcs_set_sky_writing_mode = (LCS_SET_SKY_WRITING_MODE)GetProcAddress(gLibLCS, "set_sky_writing_mode");
+    lcs_n_set_sky_writing_mode = (LCS_N_SET_SKY_WRITING_MODE)GetProcAddress(gLibLCS, "n_set_sky_writing_mode");
+    lcs_set_sky_writing_limit = (LCS_SET_SKY_WRITING_LIMIT)GetProcAddress(gLibLCS, "set_sky_writing_limit");
+    lcs_n_set_sky_writing_limit = (LCS_N_SET_SKY_WRITING_LIMIT)GetProcAddress(gLibLCS, "n_set_sky_writing_limit");
+    lcs_set_sky_writing_para_list = (LCS_SET_SKY_WRITING_PARA_LIST)GetProcAddress(gLibLCS, "set_sky_writing_para_list");
+    lcs_n_set_sky_writing_para_list = (LCS_N_SET_SKY_WRITING_PARA_LIST)GetProcAddress(gLibLCS, "n_set_sky_writing_para_list");
     lcs_eth_set_search_cards_timeout = (LCS_ETH_SET_SEARCH_CARDS_TIMEOUT)GetProcAddress(gLibLCS, "eth_set_search_cards_timeout");
     lcs_eth_count_cards = (LCS_ETH_COUNT_CARDS)GetProcAddress(gLibLCS, "eth_count_cards");
     lcs_eth_search_cards = (LCS_ETH_SEARCH_CARDS)GetProcAddress(gLibLCS, "eth_search_cards");

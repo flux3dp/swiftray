@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // lcsdll Explicitly linked header files
 #include "public.h"
@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 #ifdef _WIN32
+#include <windows.h>
 #if !defined(ULONG_PTR)         //  usually defined in <BaseTsd.h>
 #if !defined(_WIN64)
 #define ULONG_PTR UINT
@@ -582,25 +583,6 @@ extern LCS_GET_IO_STATUS lcs_get_io_status;
 typedef uint32_t (LCS_API *LCS_N_GET_IO_STATUS)(const uint32_t CardNo);
 extern LCS_N_GET_IO_STATUS lcs_n_get_io_status;
 /**
- * @brief Set DA value
- * @note Control instruction
- * @param x DA port selection, range 1,2
- * @param Value DA percentage range 0~100
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_WRITE_DA_X)(const uint32_t x, const uint32_t Value);
-extern LCS_WRITE_DA_X lcs_write_da_x;
-/**
- * @brief Set DA value
- * @note Control instruction
- * @param CardNo Board ID
- * @param x DA port selection, range 1,2
- * @param Value  DA percentage range 0~100
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_N_WRITE_DA_X)(const uint32_t CardNo, const uint32_t x, const uint32_t Value);
-extern LCS_N_WRITE_DA_X lcs_n_write_da_x;
-/**
  * @brief Set output port level
  * @note Control instruction
  * @param Value The IO port level from low to high represents ports 0~31 respectively.
@@ -617,100 +599,85 @@ extern LCS_WRITE_IO_PORT lcs_write_io_port;
  */
 typedef LCS2Error (LCS_API *LCS_N_WRITE_IO_PORT)(const uint32_t CardNo, const uint32_t Value);
 extern LCS_N_WRITE_IO_PORT lcs_n_write_io_port;
+
+/**
+* @brief Wait for the specified IO to become low before continuing execution, otherwise it will remain blocked
+* @note List Instruction
+* @param uIndex IO port serial number, range 0~7
+* @return Error code
+*/
+typedef LCS2Error(LCS_API *LCS_IF_COND)(const uint8_t uIndex);
+extern LCS_IF_COND lcs_if_cond;
+
+/**
+* @brief Wait for the specified IO to become low before continuing execution, otherwise it will remain blocked
+* @note List Instruction
+* @param CardNo Board ID
+* @param uIndex IO port serial number, range 0~7
+* @return Error code
+*/
+typedef LCS2Error(LCS_API *LCS_N_IF_COND)(const uint32_t CardNo, const uint8_t uIndex);
+extern LCS_N_IF_COND lcs_n_if_cond;
 //////////////////////////////////////Light control
 /**
  * @brief Turn off laser MO
  * @note List Instruction
+ * @param time MO delay time, unit:us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_DISABLE_LASER)(void);
+typedef LCS2Error (LCS_API *LCS_DISABLE_LASER)(const uint32_t time);
 extern LCS_DISABLE_LASER lcs_disable_laser;
 /**
  * @brief Turn off laser MO
  * @note List Instruction
  * @param CardNo Board ID
+ * @param time MO delay time, unit:us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_N_DISABLE_LASER)(const uint32_t CardNo);
+typedef LCS2Error (LCS_API *LCS_N_DISABLE_LASER)(const uint32_t CardNo, const uint32_t time);
 extern LCS_N_DISABLE_LASER lcs_n_disable_laser;
 /**
  * @brief Turn On Laser MO
  * @note List Instruction
+ * @param time MO delay time, unit:us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_ENABLE_LASER)(void);
+typedef LCS2Error (LCS_API *LCS_ENABLE_LASER)(const uint32_t time);
 extern LCS_ENABLE_LASER lcs_enable_laser;
 /**
  * @brief Turn On Laser MO
  * @note List Instruction
  * @param CardNo Board ID
+ * @param time MO delay time, unit:us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_N_ENABLE_LASER)(const uint32_t CardNo);
+typedef LCS2Error (LCS_API *LCS_N_ENABLE_LASER)(const uint32_t CardNo, const uint32_t time);
 extern LCS_N_ENABLE_LASER lcs_n_enable_laser;
-/**
- * @brief Set pre ionization cycle and pulse width
- * @note Control instruction
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_SET_STANDBY)(const uint32_t Period, const uint32_t PulseLength);
-extern LCS_SET_STANDBY lcs_set_standby;
-/**
- * @brief Set pre ionization cycle and pulse width
- * @note Control instruction
- * @param CardNo Board ID
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_N_SET_STANDBY)(const uint32_t CardNo, const uint32_t Period, const uint32_t PulseLength);
-extern LCS_N_SET_STANDBY lcs_n_set_standby;
-/**
- * @brief Get pre-ionization period and pulse width
- * @note Control instruction
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_GET_STANDBY)(uint32_t* Period, uint32_t* PulseLength);
-extern LCS_GET_STANDBY lcs_get_standby;
-/**
- * @brief Get pre-ionization period and pulse width
- * @note Control instruction
- * @param CardNo Board ID
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
- * @return Error code
- */
-typedef LCS2Error (LCS_API *LCS_N_GET_STANDBY)(const uint32_t CardNo, uint32_t* Period, uint32_t* PulseLength);
-extern LCS_N_GET_STANDBY lcs_n_get_standby;
 /**
  * @brief Set the light cycle and pulse width
  * @note Control instruction
- * @param Period Period unit:us
- * @param PulseLength Pulse width unit:us
- * @param mopaPulse mopa Pulse width unit ns
+ * @param Period Period unit:us, range:0.021~1365us
+ * @param PulseLength Pulse width, unit:us, range:0.021~1365
+ * @param mopaPulse mopa Pulse width, unit:ns, range: 1~65535
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_SET_LASER_PULSES_CTRL)(const uint32_t Period, const uint32_t PulseLength, const uint16_t mopaPulse);
+typedef LCS2Error (LCS_API *LCS_SET_LASER_PULSES_CTRL)(const double Period, const double PulseLength, const uint16_t mopaPulse);
 extern LCS_SET_LASER_PULSES_CTRL lcs_set_laser_pulses_ctrl;
 /**
  * @brief Set the light cycle and pulse width
  * @note Control instruction
  * @param CardNo Board ID
- * @param Period Period unit:us
- * @param PulseLength Pulse width unit:us
- * @param mopaPulse mopa Pulse width unit ns
+ * @param Period Period unit:us, range:0.021~1365us
+ * @param PulseLength Pulse width, unit:us, range:0.021~1365
+ * @param mopaPulse mopa Pulse width, unit:ns, range: 1~65535
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_N_SET_LASER_PULSES_CTRL)(const uint32_t CardNo, const uint32_t Period, const uint32_t PulseLength, const uint16_t mopaPulse);
+typedef LCS2Error (LCS_API *LCS_N_SET_LASER_PULSES_CTRL)(const uint32_t CardNo, const double Period, const double PulseLength, const uint16_t mopaPulse);
 extern LCS_N_SET_LASER_PULSES_CTRL lcs_n_set_laser_pulses_ctrl;
 /**
  * @brief Set the first pulse suppression time for YAG and UV
  * @note Control instruction
- * @param Length Suppression time unit:us range:0~15000us
+ * @param Length Suppression time, unit:us range:0~15000us
  * @return Error code
  */
 typedef LCS2Error (LCS_API *LCS_SET_FIRSTPULSE_KILLER)(const uint32_t Length);
@@ -719,7 +686,7 @@ extern LCS_SET_FIRSTPULSE_KILLER lcs_set_firstpulse_killer;
  * @brief Set the first pulse suppression time for YAG and UV
  * @note Control instruction
  * @param CardNo Board ID
- * @param Length  Suppression time unit:us range:0~15000us
+ * @param Length  Suppression time, unit:us range:0~15000us
  * @return Error code
  */
 typedef LCS2Error (LCS_API *LCS_N_SET_FIRSTPULSE_KILLER)(const uint32_t CardNo, const uint32_t Length);
@@ -727,7 +694,7 @@ extern LCS_N_SET_FIRSTPULSE_KILLER lcs_n_set_firstpulse_killer;
 /**
  * @brief Set on hysteresis
  * @note Control instruction
- * @param Delay Lag time unit:us range:0~512us
+ * @param Delay Lag time, unit:us, range:0~512us
  * @return Error code
  */
 typedef LCS2Error (LCS_API *LCS_SET_QSWITCH_DELAY)(const int32_t Delay);
@@ -736,7 +703,7 @@ extern LCS_SET_QSWITCH_DELAY lcs_set_qswitch_delay;
  * @brief Set on hysteresis
  * @note Control instruction
  * @param CardNo Board ID
- * @param Delay Lag time unit:us range:0~512us
+ * @param Delay Lag time, unit:us, range:0~512us
  * @return Error code
  */
 typedef LCS2Error (LCS_API *LCS_N_SET_QSWITCH_DELAY)(const uint32_t CardNo, const int32_t Delay);
@@ -1157,42 +1124,42 @@ extern LCS_N_SET_LASER_DELAYS lcs_n_set_laser_delays;
 /**
  * @brief Set pre ionization cycle and pulse width
  * @note List Instruction
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
+ * @param Period Period unit:us, range:0.021~1365us
+ * @param PulseLength Pulse width unit:us, range:0.021~1365us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_SET_STANDBY_LIST)(const uint32_t Period, const uint32_t PulseLength);
+typedef LCS2Error (LCS_API *LCS_SET_STANDBY_LIST)(const double Period, const uint32_t PulseLength);
 extern LCS_SET_STANDBY_LIST lcs_set_standby_list;
 /**
  * @brief Set pre ionization cycle and pulse width
  * @note List Instruction
  * @param CardNo Board ID
- * @param Period Period unit:us range:1~1365us
- * @param PulseLength Pulse width unit:us range:1~1000us
+ * @param Period Period unit:us, range:0.021~1365us
+ * @param PulseLength Pulse width unit:us, range:0.021~1365us
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_N_SET_STANDBY_LIST)(const uint32_t CardNo, const uint32_t Period, const uint32_t PulseLength);
+typedef LCS2Error (LCS_API *LCS_N_SET_STANDBY_LIST)(const uint32_t CardNo, const double Period, const uint32_t PulseLength);
 extern LCS_N_SET_STANDBY_LIST lcs_n_set_standby_list;
 /**
 * @brief Set pwm cycle and pulse width
 * @note List Instruction
-* @param Period Period unit us
-* @param PulseLength Pulse width unit us
-* @param mopaPulse mopa Pulse width unit ns
+* @param Period Period unit us, range:0.021~1365
+* @param PulseLength Pulse width, unit:us, range:0.021~1365
+* @param mopaPulse mopa Pulse width, unit:ns, range: 1~65535
 * @return Error code
 */
-typedef LCS2Error (LCS_API *LCS_SET_LASER_PULSES)(const uint32_t Period, const uint32_t PulseLength, const uint16_t mopaPulse);
+typedef LCS2Error (LCS_API *LCS_SET_LASER_PULSES)(const double Period, const double PulseLength, const uint16_t mopaPulse);
 extern LCS_SET_LASER_PULSES lcs_set_laser_pulses;
 /**
 * @brief Set pwm cycle and pulse width
 * @note List Instruction
 * @param CardNo Board ID
-* @param Period Period unit us
-* @param PulseLength Pulse width unit us
-* @param mopaPulse mopa Pulse width unit ns
+* @param Period Period unit us, range:0.021~1365
+* @param PulseLength Pulse width, unit:us, range:0.021~1365
+* @param mopaPulse mopa Pulse width, unit:ns, range: 1~65535
 * @return Error code
 */
-typedef LCS2Error (LCS_API *LCS_N_SET_LASER_PULSES)(const uint32_t CardNo, const uint32_t Period, const uint32_t PulseLength, const uint16_t mopaPulse);
+typedef LCS2Error (LCS_API *LCS_N_SET_LASER_PULSES)(const uint32_t CardNo, const double Period, const double PulseLength, const uint16_t mopaPulse);
 extern LCS_N_SET_LASER_PULSES lcs_n_set_laser_pulses;
 /**
  * @brief Set the first pulse suppression time for YAG and UV
@@ -1433,21 +1400,21 @@ extern LCS_N_SET_SCANNER_DELAYS lcs_n_set_scanner_delays;
 /**
  * @brief Load calibration file
  * @note Control instruction
- * @param FileName Correct the full path of the file
- * @param bEnable Whether to enable calibration file
+ * @param FileName Correct the full path of the file[utf8]
+ * @param type 1:Static correction 2:Grid correction
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_LOAD_CORRECTION_FILE)(const char* FileName, const bool bEnable);
+typedef LCS2Error (LCS_API *LCS_LOAD_CORRECTION_FILE)(const char* FileName, const int32_t type);
 extern LCS_LOAD_CORRECTION_FILE lcs_load_correction_file;
 /**
  * @brief Load calibration file
  * @note Control instruction
  * @param CardNo Board ID
- * @param FileName Correct the full path of the file
- * @param bEnable Whether to enable correction files
+ * @param FileName Correct the full path of the file[utf8]
+ * @param type 1:Static correction 2:Grid correction
  * @return Error code
  */
-typedef LCS2Error (LCS_API *LCS_N_LOAD_CORRECTION_FILE)(const uint32_t CardNo, const char* FileName, const bool bEnable);
+typedef LCS2Error (LCS_API *LCS_N_LOAD_CORRECTION_FILE)(const uint32_t CardNo, const char* FileName, const int32_t type);
 extern LCS_N_LOAD_CORRECTION_FILE lcs_n_load_correction_file;
 /**
  * @brief Enable galvanometer correction parameter file
@@ -1528,6 +1495,82 @@ extern LCS_SET_SCANAHEAD_PARAMS lcs_set_scanahead_params;
  */
 typedef LCS2Error (LCS_API *LCS_N_SET_SCANAHEAD_PARAMS)(const uint32_t CardNo, double fWorkSize, bool bXyFlip, bool bXInvert, bool bYInvert, double angle, double x_offset, double y_offset);
 extern LCS_N_SET_SCANAHEAD_PARAMS lcs_n_set_scanahead_params;
+
+/**
+* @brief Set grid correction parameters
+* @note Control instruction
+* @param fGalvoSize Galvanometer area size,unit:mm
+* @param nResolution Mirror resolution, unit pixel, typical value 65535
+* @param bXyFlip xy interchange
+* @param bXInvert x reverse
+* @param bYInvert y reverse
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_SET_GRIDCOR_PARAMS)(double fGalvoSize, int32_t nResolution, bool bXyFlip, bool bXInvert, bool bYInvert);
+extern LCS_SET_GRIDCOR_PARAMS lcs_set_gridcor_params;
+
+/**
+* @brief Set grid correction parameters
+* @note Control instruction
+* @param CardNo Board ID
+* @param fGalvoSize Galvanometer area size,unit:mm
+* @param nResolution Mirror resolution, unit pixel, typical value 65535
+* @param bXyFlip xy interchange
+* @param bXInvert x reverse
+* @param bYInvert y reverse
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_N_SET_GRIDCOR_PARAMS)(const uint32_t CardNo, double fGalvoSize, int32_t nResolution, bool bXyFlip, bool bXInvert, bool bYInvert);
+extern LCS_N_SET_GRIDCOR_PARAMS lcs_n_set_gridcor_params;
+
+/**
+* @brief Set grid correction layer parameters
+* @note Control instruction
+* @param nSize Number of grid points, typical values 3, 5, 9, 17, 33, 65
+* @param fXposLL X Theoretical coordinate array
+* @param fYposLL Y Theoretical coordinate array
+* @param fXposSJ X Actual coordinate array
+* @param fYposSJ Y Actual coordinate array
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_SET_GRIDCOR_LAYER)(int32_t nSize, double* fXposLL, double* fYposLL, double* fXposSJ, double* fYposSJ);
+extern LCS_SET_GRIDCOR_LAYER lcs_set_gridcor_layer;
+
+/**
+* @brief Set grid correction layer parameters
+* @note Control instruction
+* @param CardNo Board ID
+* @param nSize Number of grid points, typical values 3, 5, 9, 17, 33, 65
+* @param fXposLL X Theoretical coordinate array
+* @param fYposLL Y Theoretical coordinate array
+* @param fXposSJ X Actual coordinate array
+* @param fYposSJ Y Actual coordinate array
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_N_SET_GRIDCOR_LAYER)(const uint32_t CardNo, int32_t nSize, double* fXposLL, double* fYposLL, double* fXposSJ, double* fYposSJ);
+extern LCS_N_SET_GRIDCOR_LAYER lcs_n_set_gridcor_layer;
+
+/**
+* @brief Save calibration file
+* @note Control instruction
+* @param FileName Correct the full path of the file[utf8]
+* @param type 1:Static correction 2:Grid correction
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_SAVE_CORRECTION_FILE)(const char* FileName, const int32_t type);
+extern LCS_SAVE_CORRECTION_FILE lcs_save_correction_file;
+
+/**
+* @brief Save calibration file
+* @note Control instruction
+* @param CardNo Board ID
+* @param FileName Correct the full path of the file[utf8]
+* @param type 1:Static correction 2:Grid correction
+* @return Error code
+*/
+typedef LCS2Error (LCS_API *LCS_N_SAVE_CORRECTION_FILE)(const uint32_t CardNo, const char* FileName, const int32_t type);
+extern LCS_N_SAVE_CORRECTION_FILE lcs_n_save_correction_file;
+
 /**
  * @brief Clear marking count
  * @note Control instruction
@@ -1669,6 +1712,65 @@ extern LCS_GET_AXIS_STATUS lcs_get_axis_status;
 */
 typedef LCS2Error (LCS_API* LCS_N_GET_AXIS_STATUS)(const uint32_t CardNo, uint32_t* Status, uint32_t* PosX, uint32_t* PosY);
 extern LCS_N_GET_AXIS_STATUS lcs_n_get_axis_status;
+
+/**
+* @brief set sky writting mode
+* @note Control instruction
+* @param mode 0:close 1:not supported 2: not supported 3: mode 3
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_SET_SKY_WRITING_MODE)(uint32_t mode);
+extern LCS_SET_SKY_WRITING_MODE lcs_set_sky_writing_mode;
+
+/**
+* @brief set sky writting mode
+* @note Control instruction
+* @param CardNo Board ID
+* @param mode 0:close 1:not supported 2: not supported 3: mode 3
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_N_SET_SKY_WRITING_MODE)(const uint32_t CardNo, uint32_t mode);
+extern LCS_N_SET_SKY_WRITING_MODE lcs_n_set_sky_writing_mode;
+/**
+* @brief set sky writting limit angle
+* @note Control instruction
+* @param angle When less than the angle enable: Range 0~180
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_SET_SKY_WRITING_LIMIT)(float angle);
+extern LCS_SET_SKY_WRITING_LIMIT lcs_set_sky_writing_limit;
+/**
+* @brief set sky writting limit angle
+* @note Control instruction
+* @param CardNo Board ID
+* @param angle When less than the angle enable: Range 0~180
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_N_SET_SKY_WRITING_LIMIT)(const uint32_t CardNo, float angle);
+extern LCS_N_SET_SKY_WRITING_LIMIT lcs_n_set_sky_writing_limit;
+/**
+* @brief set sky writting parameter
+* @note List instruction
+* @param timeLag Open light lag,Range: 0~512us
+* @param laserOnShift Open light delay,unit:us
+* @param prevTime Import line length,unit:us
+* @param postTime Export line length,unit:us
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_SET_SKY_WRITING_PARA_LIST)(int32_t timeLag, int32_t laserOnShift, uint32_t prevTime, uint32_t postTime);
+extern LCS_SET_SKY_WRITING_PARA_LIST lcs_set_sky_writing_para_list;
+/**
+* @brief set sky writting parameter
+* @note List instruction
+* @param CardNo Board ID
+* @param timeLag Open light lag,Range: 0~512us
+* @param laserOnShift Open light delay,unit:us
+* @param prevTime Import line length,unit:us
+* @param postTime Export line length,unit:us
+* @return Error code
+*/
+typedef LCS2Error (LCS_API* LCS_N_SET_SKY_WRITING_PARA_LIST)(const uint32_t CardNo, int32_t timeLag, int32_t laserOnShift, uint32_t prevTime, uint32_t postTime);
+extern LCS_N_SET_SKY_WRITING_PARA_LIST lcs_n_set_sky_writing_para_list;
 /////////////////////////////////////////////The following is the API related to the network port card//////////////////////////////////////////////////////////////////////
 /**
  * @brief Set card search timeout

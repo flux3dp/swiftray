@@ -1,3 +1,4 @@
+#include "bsl_list_manager.h"
 #include "bsl_motion_controller.h"
 #include "constants.h"
 
@@ -19,6 +20,24 @@ int lcs_error_count = 0;
 uint32_t pos;
 BoardRunStatus status;
 ListStatus list_status;
+
+struct CorrectionParams {
+  double scaleX = 100;
+  double scaleY = 100;
+  double bucketX = 1;
+  double bucketY = 1;
+  double paralleX = 1;
+  double paralleY = 1;
+  double trapeX = 1;
+  double trapeY = 1;
+} correction_params;
+
+struct ScanaheadParams {
+  double worksize = 150;
+  double angle = 0;
+  double xOffset = 0;
+  double yOffset = 0;
+} scanahead_params;
 
 QString BSLMotionController::getErrorString(int error) {
   switch (error) {
@@ -235,14 +254,28 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   return ret;
 }
 
-void jump_to(double y, double x) {
+void BSLMotionController::jumpTo(double y, double x) {
   // If xy is inverted swap x, y
-  lcs_jump_abs(y, x);
+  list_manager_.call(ListApiType::Jump, y, x);
 }
 
-void mark_to(double y, double x) {
+void BSLMotionController::markTo(double y, double x) {
   // If xy is inverted, swap x, y
-  lcs_mark_abs(y, x);
+  list_manager_.call(ListApiType::Mark, y, x);
+}
+
+void BSLMotionController::setUpTaskCtrl() {
+  lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
+  lcs_set_mark_speed_ctrl(1000);
+  lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
+  lcs_set_laser_mode(LCS_MOPA, is_framing_);
+}
+
+void BSLMotionController::setUpTaskList() {
+  lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
+  lcs_set_scanner_delays(100, 50);
+  lcs_set_laser_control(true);
+  lcs_enable_laser(0);
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
@@ -253,7 +286,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static double center_pos = 55;
     static int freq = 100; //100 khz
     static bool last_is_z_command = false;
-    static int dotting_time = 0;
+    static uint32_t dotting_time = 0;
     static bool before_first_laser = true;
     static double wobble_k = 1;
     static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
@@ -310,23 +343,23 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             z = value.toDouble();
             is_move_command = true;
         } else if (type == "Q") {
-            freq = value.toInt();
-            settings.period = 1000 / freq;
-            lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
+            freq = value.toDouble();
+            settings.period = 1000.0 / freq;
+            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
         } else if (type == "P") {
             settings.pulse_width = value.toInt();
-            lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
         } else if (type == "T") {
             dotting_time = value.toInt();
         } else if (type == "F") {
             settings.current_f = value.toDouble() / 60;
-            lcs_set_mark_speed(settings.current_f);
+            list_manager_.call(ListApiType::SetSpeed, settings.current_f);
         } else if (type == "S") {
-            settings.current_s = value.toInt();
+            settings.current_s = value.toInt() / 10;
             if (!is_handling_high_speed_) {
                 if (settings.current_s > 0) {
                   laser_enabled = true;
-                  lcs_set_laser_power(settings.current_s / 10);  // Assuming S1000 is 100% power
+                  list_manager_.call(ListApiType::SetPower, settings.current_s);
                   if (before_first_laser) {
                     should_flush_ = true;
                     before_first_laser = false;
@@ -358,22 +391,24 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "WS") {
             settings.wobble_step = value.toDouble();
             if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
-                lcs_set_wobble_mode(settings.wobble_diameter,
+                list_manager_.call(ListApiType::SetWobble,
+                                    settings.wobble_diameter,
                                     settings.wobble_diameter,
                                     settings.wobble_step,
                                     WobbleType::WT_WHEEL);
             } else {
-                lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+                list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
             }
         } else if (type == "WD") {
             settings.wobble_diameter = value.toDouble();
             if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
-                lcs_set_wobble_mode(settings.wobble_diameter,
+                list_manager_.call(ListApiType::SetWobble,
+                                    settings.wobble_diameter,
                                     settings.wobble_diameter,
                                     settings.wobble_step,
                                     WobbleType::WT_WHEEL);
             } else {
-                lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+                list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
             }
         }
     }
@@ -387,7 +422,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         bool is_reverse = final_pos < current_pos;
         double step = is_reverse ? -high_speed_step_ : high_speed_step_;
         int step_count = 0;
-        int laser_power = settings.current_s;
+        int laser_power = settings.current_s * 10;
         bool laser = false;
         bool completed = false;
         double new_x, x_move;
@@ -443,7 +478,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M3M4: Laser Session Started" << getDebugTime();
       if (is_running_laser_) {
           qInfo() << "BSLM~::handleGcode() - M3M4: Laser already started" << getDebugTime();
-          this->buffer_size_++; // Note: I guess this can be removed?
           return;
       }
       if (disconnect_count_ == -1) disconnect_count_ = 0;
@@ -455,7 +489,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
-      settings.period = 10;
+      settings.period = 10.0;
       settings.pulse_width = 100;
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
@@ -476,17 +510,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           lcs_set_end_of_list();
         }
         if (list_status.bPaused) lcs_restart_list();
+        getListStatus();
+        qInfo() << "BSLM~::handleGcode() - Status after Fix: " << list_status.bMainOpen << list_status.bSubOepn << list_status.bCharOpen << list_status.bLoop << list_status.bPaused << list_status.bBusy1 << list_status.bBusy2 << "@" << getDebugTime();
       }
-      // Control instruction
-      lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
-      lcs_set_mark_speed_ctrl(1000);
-      lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
-      lcs_set_laser_mode(LCS_MOPA, is_framing_);
+      setUpTaskCtrl();
       startList(list_no, settings, true);
       // List Instruction
       // Force delay for the first laser
       lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
-      lcs_set_scanner_delays(100, 50);
       lcs_error_count = 0;
       laser_enabled = false;
       last_is_z_command = false;
@@ -498,13 +529,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
       if (last_is_z_command) {
         // Appand a dummy move command to ensure the last Z command is executed
-        lcs_set_axis_move(1, 1, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255);
+        list_manager_.call(ListApiType::MoveAxis, 1, 1.0, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
       }
-      lcs_disable_laser();
+      list_manager_.call(ListApiType::DisableLaser, 0u);
       should_swap = true;
       should_end = true;
       settings.rotary_mode = false;
-      lcs_write_io_port_mask_list(0b01, 0b11);
+      list_manager_.call(ListApiType::SetIo, 0b01u, 0b11u);
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
     } else if (command == "M99" ) {
@@ -520,10 +551,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_write_io_port_mask(0b1, 0b1);  // Control instruction
     } else if (command == "M101") {
       settings.rotary_mode = true;
-      lcs_write_io_port_mask_list(0b0, 0b1);
+      list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
     } else if (command == "M102") {
       // Z axis io: 2nd port, 1 -> on, 0 -> off
-      lcs_write_io_port_mask_list(0b10, 0b10);
+      list_manager_.call(ListApiType::SetIo, 0b10u, 0b10u);
     } else if (command == "M103") {
       is_framing_ = true;
       is_running_laser_ = false;
@@ -540,22 +571,19 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       return;
     }
 
-    this->buffer_size_++;
-
-    if (this->buffer_size_ >= MAX_BUFFER_LIST_SIZE || estimated_time_ >= MAX_BUFFER_LIST_TIME) {
+    if (list_manager_.bufferSize() >= MAX_BUFFER_LIST_SIZE || estimated_time_ >= MAX_BUFFER_LIST_TIME) {
         should_swap = true;
     }
 
     if (should_swap || is_running_laser_ && should_flush_) {
       should_flush_ = should_swap = false;
-      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << this->buffer_size_ << "and time" << running_task_time_ << "@" << getDebugTime();
+      qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << list_manager_.bufferSize() << "and time" << running_task_time_ << "@" << getDebugTime();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
       startList(list_no, settings, should_end);
       qInfo("BSLM~::handleGcode() - Swap new list %d", list_no);
-      this->buffer_size_ = 0;
       QThread::msleep(1);
     }
 
@@ -596,7 +624,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      lcs_set_axis_move(1, fabs(z) * PromarkJobConfig::Z_PULSE_PER_MM, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10, 255);
+      list_manager_.call(ListApiType::MoveAxis, 1, fabs(z) * PromarkJobConfig::Z_PULSE_PER_MM, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
       estimated_time_ += fabs(z) * PromarkJobConfig::Z_MS_PER_MM;
       last_is_z_command = true;
       // QThread::msleep(1000);
@@ -613,7 +641,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
         double real_steps = round(diff_a * PromarkJobConfig::A_PULSE_PER_MM);
-        lcs_set_axis_move(0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600, 255);
+        list_manager_.call(ListApiType::MoveAxis, 0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600.0, 255u);
         estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
         a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
       }
@@ -621,16 +649,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (distance > 0) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
           if (dotting_time == 0) {
-            mark_to(-(target_y - center_pos), target_x - center_pos);
+            markTo(-(target_y - center_pos), target_x - center_pos);
             estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + PromarkJobConfig::LASER_DELAY_MS;
           } else {
-            jump_to(-(target_y - center_pos), target_x - center_pos);
+            jumpTo(-(target_y - center_pos), target_x - center_pos);
             estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
-            lcs_laser_on_list(dotting_time);
+            list_manager_.call(ListApiType::LaserPulse, dotting_time);
             estimated_time_ += dotting_time / 1000.0;
           }
         } else {
-          jump_to(-(target_y - center_pos), target_x - center_pos);
+          jumpTo(-(target_y - center_pos), target_x - center_pos);
           estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
         }
       }
@@ -695,6 +723,7 @@ MotionController::CmdSendResult BSLMotionController::resume() {
 
 MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() @" << getDebugTime();
+  list_manager_.resetBackup();
   if (!getCurrentError().isNull()) {
     this->setState(MotionControllerState::kAlarm);
   } else {
@@ -762,11 +791,13 @@ bool BSLMotionController::resetState() {
 }
 
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+  correction_params = {scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY};
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
 }
 
 void BSLMotionController::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+  scanahead_params = {worksize, angle, xOffset, yOffset};
   LCS2Error ret = lcs_set_scanahead_params(worksize, false, false, false, angle, xOffset, yOffset);
   qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
 }
@@ -819,16 +850,23 @@ bool BSLMotionController::isConnected() {
         is_board_connected_ = lcs_connect();
       }
       is_handling_reconnection_ = false;
-      qInfo() << "Try reconnecting to the board - done" << is_board_connected_;
+      qInfo() << "Try reconnecting to the board - done" << is_board_connected_ << is_running_laser_ << int(getState());
       if (!is_board_connected_) {
         this->current_custom_error_ = "DISCONNECTED";
         stop();
         Q_EMIT disconnected();
-      } else if (lcs_paused_) {
-        stop();
-      } else if (getState() == MotionControllerState::kRun) {
-        lcs_restart_list();
+      } else {
+        this->current_error_ = 0;
+        this->current_custom_error_.clear();
+        setScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
+        setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY);
+        if (lcs_paused_) {
+          stop();
+        }
       }
+    }
+    if (is_board_connected_) {
+      this->list_manager_.redoBackup();
     }
   }
   return is_board_connected_;
@@ -836,27 +874,26 @@ bool BSLMotionController::isConnected() {
 
 void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
   estimated_time_ = 0;
+  list_manager_.resetBackup(list_no, this);
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
-  lcs_set_laser_control(true);
-  lcs_enable_laser();
-  lcs_set_laser_pulses(settings.period, 0, settings.pulse_width);
-  lcs_set_mark_speed(settings.current_f);
-  lcs_set_laser_power(settings.current_s / 10);
+  setUpTaskList();
+  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+  list_manager_.call(ListApiType::SetSpeed, settings.current_f);
+  list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
-    lcs_set_wobble_mode(settings.wobble_diameter, settings.wobble_diameter, settings.wobble_step, WobbleType::WT_WHEEL);
+    list_manager_.call(ListApiType::SetWobble, settings.wobble_diameter, settings.wobble_diameter, settings.wobble_step, WobbleType::WT_WHEEL);
   } else if (settings.wobble_diameter != -1) {
-    lcs_set_wobble_mode(0, 0, 0, WobbleType::WT_DISABLE);
+    list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
   }
-  lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
   if (settings.rotary_mode) {
-    lcs_write_io_port_mask_list(0b0, 0b1);
+    list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
   }
 }
 
 bool BSLMotionController::executeList(int list_no) {
   qInfo() << "BSLM~::executeList(" << list_no << ") @" << getDebugTime();
-  lcs_set_end_of_list();
+  list_manager_.call(ListApiType::EndOfList);
   if(!is_framing_ && running_task_time_ > 0){
     // Wait for last list completion
     int count = 0;
@@ -904,6 +941,7 @@ bool BSLMotionController::executeList(int list_no) {
   qInfo() << "BSLM~::executeList() - Start executing new list, task time:" << running_task_time_;
   resetTimer();
   estimated_time_ = 0;
+  list_manager_.resetBackup();
   return true;
 }
 

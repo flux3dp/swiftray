@@ -7,6 +7,7 @@ target_sources(motion_controller PRIVATE
   motion_controller_factory.cpp
   grbl_motion_controller.cpp
   bsl_motion_controller.cpp
+  bsl_list_manager.cpp
 )
 
 target_link_libraries(motion_controller PRIVATE Qt::Core)
