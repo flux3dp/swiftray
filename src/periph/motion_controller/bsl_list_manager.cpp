@@ -193,7 +193,7 @@ int BSLListManager::doApiCall(ListApiCall call) {
   }
 
   if (error != LCS_RES_NO_ERROR) {
-    if (controller_->is_running_laser_) {
+    if (controller_->is_running_laser_ && backup_list_no_ > 0) {
       QString apiName = getApiName(call.type);
       QString argStr = formatArgs(call.args, call.type);
       qInfo() << "[LCS API Result]" << apiName << "(" << argStr << ") failed with error:" << controller_->getErrorString(error);
