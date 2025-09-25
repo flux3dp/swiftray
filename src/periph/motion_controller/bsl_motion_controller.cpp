@@ -510,6 +510,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           lcs_set_end_of_list();
           lcs_set_start_list(2);
           lcs_set_end_of_list();
+          QThread::msleep(100);
         }
         if (list_status.bPaused) lcs_restart_list();
         getListStatus();
