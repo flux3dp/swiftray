@@ -252,7 +252,9 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
     BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
     if (controller) {
-      result["prog"] = controller->getProgressByTime();
+      if (!controller->isFraming()) {
+        result["prog"] = controller->getProgressByTime();
+      }
       if (!controller->getBoardStatus().bConnected) {
         result["error"] = "DISCONNECTED";
         if (controller->isHandlingReconnection()) {
