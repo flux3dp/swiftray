@@ -287,7 +287,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int freq = 100; //100 khz
     static bool last_is_z_command = false;
     static uint32_t dotting_time = 0;
-    static bool before_first_laser = true;
     static double wobble_k = 1;
     static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
@@ -360,9 +359,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 if (settings.current_s > 0) {
                   laser_enabled = true;
                   list_manager_.call(ListApiType::SetPower, settings.current_s);
-                  if (before_first_laser) {
+                  if (before_first_laser_) {
                     should_flush_ = true;
-                    before_first_laser = false;
                   }
                 } else {
                   laser_enabled = false;
@@ -481,7 +479,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           return;
       }
       if (disconnect_count_ == -1) disconnect_count_ = 0;
+      is_preparing_first_list_ = true;
       is_running_laser_ = true;
+      completed_task_time_ = 0;
+      estimated_time_ = 0;
+      running_task_time_ = 0;
       current_error_ = 0;
       current_custom_error_.clear();
       // Reset current settings
@@ -508,6 +510,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           lcs_set_end_of_list();
           lcs_set_start_list(2);
           lcs_set_end_of_list();
+          QThread::msleep(100);
         }
         if (list_status.bPaused) lcs_restart_list();
         getListStatus();
@@ -521,7 +524,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_error_count = 0;
       laser_enabled = false;
       last_is_z_command = false;
-      before_first_laser = !is_framing_;
+      before_first_laser_ = !is_framing_;
       should_swap = false;
       should_end = false;
       should_flush_ = false;
@@ -732,8 +735,12 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() - Clearing pending commands" << getDebugTime();
   lcs_set_end_of_list();
   lcs_stop_execution();
+  total_task_time_ = 0;
+  completed_task_time_ = 0;
+  estimated_time_ = 0;
   running_task_time_ = 0;
   this->is_running_laser_ = false;
+  this->is_preparing_first_list_ = false;
   getBoardStatus();
   if (!status.bConnected) lcs_connect();
   this->cmd_list_mutex_.lock();
@@ -937,6 +944,12 @@ bool BSLMotionController::executeList(int list_no) {
       return false;
     }
   }
+  if (before_first_laser_) {
+    before_first_laser_ = false;
+  } else {
+    is_preparing_first_list_ = false;
+  }
+  completed_task_time_ += running_task_time_;
   running_task_time_ = estimated_time_;
   qInfo() << "BSLM~::executeList() - Start executing new list, task time:" << running_task_time_;
   resetTimer();
@@ -952,11 +965,22 @@ void BSLMotionController::resetTimer() {
 }
 void BSLMotionController::pauseTimer() {
   if (!task_timer_.isValid()) return;
-  running_task_time_ -= task_timer_.elapsed();
+  int passed = task_timer_.elapsed();
   task_timer_.invalidate();
+  running_task_time_ -= passed;
+  completed_task_time_ += passed;
 }
 int BSLMotionController::getRemainingTime() {
   if (!task_timer_.isValid()) resetTimer();
   // Add addtional 3s for starting time and tolerance
   return running_task_time_ - task_timer_.elapsed() + 3000;
+}
+
+double BSLMotionController::getProgressByTime() {
+  if (pending_cmds_.size() == 0 || total_task_time_ <= 0) return 0;
+  double completed_list_time_ = 0;
+  if (task_timer_.isValid()) {
+    completed_list_time_ = qMin(double(task_timer_.elapsed()), running_task_time_);
+  }
+  return (completed_task_time_ + completed_list_time_) / total_task_time_;
 }

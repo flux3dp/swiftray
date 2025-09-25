@@ -45,12 +45,15 @@ public:
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
+  void setTaskTime(double time) { total_task_time_ = time; }
   BoardRunStatus getBoardStatus();
   bool isConnected() override;
   bool isRunningLaser() { return is_running_laser_; }
   bool isFraming() { return is_framing_; }
   bool isHandlingReconnection() { return is_handling_reconnection_; }
+  bool isPreparingFirstList() { return is_preparing_first_list_; }
   int getDisconnectCount() { return disconnect_count_; }
+  double getProgressByTime();
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -84,6 +87,8 @@ private:
   bool lcs_paused_ = false;
   bool is_board_connected_ = false;
   bool is_handling_reconnection_ = false;
+  bool is_preparing_first_list_ = false;
+  bool before_first_laser_ = true;
   bool should_check_door_ = false;
   std::thread command_runner_thread_;
   int current_error_ = 0;
@@ -92,6 +97,8 @@ private:
   double high_speed_step_;
   int high_speed_data_count_ = 0;
   QString high_speed_data_;
+  double total_task_time_ = 0; // Time for the whole job, ms
+  double completed_task_time_ = 0; // Time for completed list + time before current list paused, ms
   double estimated_time_ = 0; // Time for current writing list, ms
   double running_task_time_ = 0; // Time for current executing list, ms
   QElapsedTimer task_timer_;
