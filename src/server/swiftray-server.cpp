@@ -157,6 +157,11 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     }
   } else if (action == "start") {
     qInfo() << "Server::Starting job";
+    double taskTime = params.toObject()["taskTime"].toDouble();
+    if (taskTime > 0) {
+      BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+      controller->setTaskTime(taskTime * 1000);
+    }
     getMachine()->startJob();
   } else if (action == "pause") {
     getMachine()->pauseJob();
@@ -231,9 +236,10 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     }
     bool job_result = getMachine()->createGCodeJob(gcode_list_, QList<Timestamp>());
     qInfo() << "Job created" << job_result;
+    BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+    controller->setTaskTime(0);
     if (obj.contains("checkDoor")) {
       bool check_door = obj["checkDoor"].toBool();
-      BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
       controller->setCheckDoor(check_door);
     }
     result["success"] = job_result;
@@ -246,12 +252,16 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
     BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
     if (controller) {
+      result["prog"] = controller->getProgressByTime();
       if (!controller->getBoardStatus().bConnected) {
         result["error"] = "DISCONNECTED";
         if (controller->isHandlingReconnection()) {
           result["st_id"] = 516;
         }
       } else {
+        if (controller->isPreparingFirstList()) {
+          result["st_id"] = 1;
+        }
         QString error = controller->getCurrentError();
         QStringList errors = error.split(",");
         if (errors.size() > 1) {
@@ -465,6 +475,7 @@ bool SwiftrayServer::startFraming(const QJsonValue& params) {
   }
   // Create Framing Job and start
   BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+  controller->setTaskTime(0);
   controller->setCheckDoor(false);
   if (getMachine()->createFramingJob(framing_code.split("\n"), !rotary_mode)) {
     getMachine()->startJob();
