@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QJsonObject>
 #include <executor/machine_job/machine_job.h>
+#include <toolpath_exporter/convex-hull-exporter.h>
 #include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include <toolpath_exporter/toolpath-exporter.h>
 
@@ -131,31 +132,50 @@ bool Worker::handleAction(QWebSocket* socket,
       }
       QTransform move_translate = QTransform();
       auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
-      ToolpathExporter exporter(
-          (BaseGenerator*)&gen,
-          server_->m_engrave_dpi / 25.4,
-          travel_speed,
-          QPointF(std::get<0>(origin), std::get<1>(origin)),
-          ToolpathExporter::PaddingType::kNoPadding,
-          move_translate,
-          true);
-      exporter.setSortRule(PathSort::NestedSort);
-      exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
-      if (type == "contour") exporter.handleContour();
-      if (params_obj.contains("mask")) exporter.setShouldClipWorkarea(true);
+      if (type == "hull") {
+        ConvexHullExporter exporter((BaseGenerator*)&gen);
+        exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
 
-      current_task = "Generating Task Code...";
-      onProgress(0);
-      connect(this, &Worker::interruptAction, &exporter, &ToolpathExporter::handleCancel, Qt::QueuedConnection);
-      connect(&exporter, &ToolpathExporter::progressChanged, onProgress);
-      if (true != exporter.convertStack(server_->m_canvas->document().layers(), enable_high_speed, true)) {
-        onCancel();
-        return false; // canceled
-      }
-      disconnect(&exporter);
-      exporter.disconnect();
-      if (exporter.isExceedingBoundary()) {
-        qWarning() << "Some items aren't placed fully inside the working area.";
+        current_task = "Generating Hull Task Code...";
+        onProgress(0);
+        connect(this, &Worker::interruptAction, &exporter, &ConvexHullExporter::handleCancel, Qt::QueuedConnection);
+        connect(&exporter, &ConvexHullExporter::progressChanged, onProgress);
+        if (true != exporter.convertStack(server_->m_canvas->document().layers())) {
+          onCancel();
+          return false; // canceled
+        }
+        disconnect(&exporter);
+        exporter.disconnect();
+        if (exporter.isExceedingBoundary()) {
+          qWarning() << "Some items aren't placed fully inside the working area.";
+        }
+      } else {
+        ToolpathExporter exporter(
+            (BaseGenerator*)&gen,
+            server_->m_engrave_dpi / 25.4,
+            travel_speed,
+            QPointF(std::get<0>(origin), std::get<1>(origin)),
+            ToolpathExporter::PaddingType::kNoPadding,
+            move_translate,
+            true);
+        exporter.setSortRule(PathSort::NestedSort);
+        exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
+        if (type == "contour") exporter.handleContour();
+        if (params_obj.contains("mask")) exporter.setShouldClipWorkarea(true);
+
+        current_task = "Generating Task Code...";
+        onProgress(0);
+        connect(this, &Worker::interruptAction, &exporter, &ToolpathExporter::handleCancel, Qt::QueuedConnection);
+        connect(&exporter, &ToolpathExporter::progressChanged, onProgress);
+        if (true != exporter.convertStack(server_->m_canvas->document().layers(), enable_high_speed, true)) {
+          onCancel();
+          return false; // canceled
+        }
+        disconnect(&exporter);
+        exporter.disconnect();
+        if (exporter.isExceedingBoundary()) {
+          qWarning() << "Some items aren't placed fully inside the working area.";
+        }
       }
       if (server_->m_rotary_mode && server_->m_canvas->calculateShapeBoundary().height() > server_->m_canvas->document().height()) {
         qInfo() << "Rotary mode is enabled, but the height of the design is larger than the working area.";
