@@ -13,12 +13,6 @@
 #include <opencv2/imgproc.hpp>
 #include "toolpath-utils.h"
 
-struct Path {
-  QPolygonF hull;
-  double top;
-  double left;
-};
-
 /**
  * Convert layers convex hull of each elements
  * and export a framing gcode task for Promark
@@ -59,7 +53,7 @@ class ConvexHullExporter : public QObject {
   cv::Mat machine_work_area_mat_;
   int repeat_ = 3;  // repeat time for each hull
 
-  QList<Path> paths_;
+  QList<QPolygonF> hulls_;
   bool exceed_boundary_ = false;
   bool cancelled_ = false;
   // ===== Calculate current progress percentage ======

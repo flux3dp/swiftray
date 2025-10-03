@@ -83,7 +83,7 @@ bool ConvexHullExporter::convertStack(const QList<LayerPtr>& layers) {
 void ConvexHullExporter::convertLayer(const LayerPtr& layer) {
   current_transform_ = global_transform_;
   polygons_mutex_.lock();
-  paths_.clear();
+  hulls_.clear();
   polygons_mutex_.unlock();
 
   QPolygonF element_path_;
@@ -91,16 +91,12 @@ void ConvexHullExporter::convertLayer(const LayerPtr& layer) {
   for (auto& shape : layer->children()) {
     element_path_ = convertShape(shape);
     if (!element_path_.isEmpty()) {
-      Path path;
-      path.hull = computeConvexHull(element_path_);
-      if (path.hull.isEmpty()) {
+      QPolygonF hull = computeConvexHull(element_path_);
+      if (hull.isEmpty()) {
         continue;
       }
-      QPointF top_left = path.hull.boundingRect().topLeft();
-      path.top = top_left.y();
-      path.left = top_left.x();
       polygons_mutex_.lock();
-      paths_.append(path);
+      hulls_.append(hull);
       polygons_mutex_.unlock();
     }
 
@@ -150,18 +146,16 @@ QPolygonF ConvexHullExporter::convertPath(const PathShape* path) {
 
 void ConvexHullExporter::outputLayerGcode() {
   int i = 0;
-  double element_progress = 0.9 / paths_.size();
+  double element_progress = 0.9 / hulls_.size();
 
   polygons_mutex_.lock();
-  for (auto& path : paths_) {
-    if (!path.hull.isEmpty()) {
-      for (i = 0; i < repeat_; i++) {
-        for (QPointF& point : path.hull) {
-          moveTo(point);
-        }
+  for (auto& hull : hulls_) {
+    for (i = 0; i < repeat_; i++) {
+      for (QPointF& point : hull) {
+        moveTo(point);
       }
-      moveTo(path.hull.first());
     }
+    moveTo(hull.first());
     if (this->cancelled_) {
       break;
     }
