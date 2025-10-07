@@ -152,3 +152,29 @@ std::tuple<vector<ByteArray32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
 
   return std::make_tuple(grayscale_array, trim_start_idx, trim_end_idx);
 }
+
+cv::Mat QPolygonToMat(const QPolygonF& poly) {
+  cv::Mat mat(poly.size(), 1, CV_32FC2);
+  for (int i = 0; i < poly.size(); ++i) {
+    mat.at<cv::Point2f>(i, 0) = cv::Point2f(poly[i].x(), poly[i].y());
+  }
+  return mat;
+}
+
+QPolygon MatIToQPolygon(const cv::Mat& mat) {
+  QPolygon poly;
+  for (int i = 0; i < mat.rows; ++i) {
+    cv::Point2i pt = mat.at<cv::Point2i>(i, 0);
+    poly << QPoint(pt.x, pt.y);
+  }
+  return poly;
+}
+
+QPolygonF MatFToQPolygon(const cv::Mat& mat) {
+  QPolygonF poly;
+  for (int i = 0; i < mat.rows; ++i) {
+    cv::Point2f pt = mat.at<cv::Point2f>(i, 0);
+    poly << QPointF(pt.x, pt.y);
+  }
+  return poly;
+}
