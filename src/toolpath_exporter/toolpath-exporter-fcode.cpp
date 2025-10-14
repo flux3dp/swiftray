@@ -1185,7 +1185,7 @@ bool ToolpathExporterFcode::rasterLine(const uchar* data_ptr,
       break;
     }
 
-    if (data_ptr[x] < white_val) {
+    if (data_ptr[x] < WHITE_PIXEL) {
       if (is_emitting) {
         // Consecutive emitting points
         current_x = x;
@@ -1263,7 +1263,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
 
   // Find the left-most emitting point
   for (; left <= right_bound; left++) {
-    if (data_ptr[left] < white_val) {
+    if (data_ptr[left] < WHITE_PIXEL) {
       break;
     }
   }
@@ -1273,7 +1273,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
   }
   // Find the right-most emitting point
   for (; right >= left; right--) {
-    if (data_ptr[right] < white_val) {
+    if (data_ptr[right] < WHITE_PIXEL) {
       break;
     }
   }
@@ -1290,7 +1290,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
 
   if (reverse_raster_dir) {
     for (int x = right; x >= left; x--) {
-      if (data_ptr[x] < white_val) {
+      if (data_ptr[x] < WHITE_PIXEL) {
         current_val |= 1 << bit_id;
       }
       bit_id -= 1;
@@ -1302,7 +1302,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeed(const uchar* data_ptr,
     }
   } else {
     for (int x = left; x <= right; x++) {
-      if (data_ptr[x] < white_val) {
+      if (data_ptr[x] < WHITE_PIXEL) {
         current_val |= 1 << bit_id;
       }
       bit_id -= 1;
@@ -1363,7 +1363,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeedPwm(const uchar* data_ptr,
   if (reverse_raster_dir) {
     for (int x = right; x >= left; x--) {
       if (x >= left_bound && x <= right_bound && data_ptr[x] < pwm_threshold) {
-        val = std::round(white_val - data_ptr[x] * pwm_scale_);
+        val = std::round(WHITE_PIXEL - data_ptr[x] * pwm_scale_);
       } else {
         val = 0;
       }
@@ -1378,7 +1378,7 @@ bool ToolpathExporterFcode::rasterLineHighSpeedPwm(const uchar* data_ptr,
   } else {
     for (int x = left; x <= right; x++) {
       if (x >= left_bound && x <= right_bound && data_ptr[x] < pwm_threshold) {
-        val = std::round(white_val - data_ptr[x] * pwm_scale_);
+        val = std::round(WHITE_PIXEL - data_ptr[x] * pwm_scale_);
       } else {
         val = 0;
       }
@@ -1437,7 +1437,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
   for (int y = bbox_top; y <= bbox_bottom; y++) {
     uchar* data_ptr = layer_image.scanLine(y);
     for (int x = bbox_left; x <= bbox_right; x++) {
-      int inv_val = white_val - data_ptr[x];
+      int inv_val = WHITE_PIXEL - data_ptr[x];
       if (inv_val == 0) {
         // Skip white pixels
         continue;
@@ -1452,22 +1452,22 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
       // Halftone
       if (do_am) {
         float dot_size =
-            am_dot_r * (pow(float(inv_val) / white_val, halftone_smoother) *
+            am_dot_r * (pow(float(inv_val) / WHITE_PIXEL, halftone_smoother) *
                         halftone_multiplier * 1.414);
         float dx = positiveMod((x * am_cos - y * am_sin + am_dot_r), am_dot_d) - am_dot_r;
         float dy = positiveMod((x * am_sin + y * am_cos + am_dot_r), am_dot_d) - am_dot_r;
         float d = pow(pow(dx, 2) + pow(dy, 2), 0.5);
         if (d <= dot_size) {
-          inv_val = white_val;
+          inv_val = WHITE_PIXEL;
         } else {
           inv_val = 0;
         }
       } else {
-        inv_val = qMin(int(pow(float(inv_val) / white_val, halftone_smoother) *
-                           halftone_multiplier * white_val),
-                       white_val);
+        inv_val = qMin(int(pow(float(inv_val) / WHITE_PIXEL, halftone_smoother) *
+                           halftone_multiplier * WHITE_PIXEL),
+                       WHITE_PIXEL);
       }
-      data_ptr[x] = (uchar)(white_val - inv_val);
+      data_ptr[x] = (uchar)(WHITE_PIXEL - inv_val);
     }
   }
   if (!do_am) {
@@ -1482,7 +1482,7 @@ void ToolpathExporterFcode::outputLayerPrintingFcode(float halftone_multiplier) 
     const uchar* data_ptr = layer_image.constScanLine(y);
     uchar* val_ptr = val_table.scanLine(y);
     for (int x = bbox_left; x < bbox_right; x++) {
-      uchar val = data_ptr[x] == white_val ? 0 : 0b10000000;
+      uchar val = data_ptr[x] == WHITE_PIXEL ? 0 : 0b10000000;
       uchar prev_val = last_val_ptr[x];
       if ((prev_val | val) == 0) {
         // All 9 involving pixels are white; keep val = 0
@@ -1822,32 +1822,6 @@ void ToolpathExporterFcode::writePreviewImage() {
   gen_->write_string(byteArray.data(), byteArray.size(), true);
 }
 
-QImage ToolpathExporterFcode::imageBinarize(QImage* src, int threshold) {
-  Q_ASSERT_X(src->allGray(), "ToolpathExporterFcode",
-             "Input image for imageBinarize() must be grayscaled");
-  Q_ASSERT_X(src->format() == QImage::Format_ARGB32 ||
-             src->format() == QImage::Format_ARGB32_Premultiplied,
-             "ToolpathExporterFcode",
-             "Input image for imageBinarize() must be Format_ARGB32");
-
-  QImage result_img{src->width(), src->height(), QImage::Format_Grayscale8};
-  int black = 0;
-  for (int y = 0; y < src->height(); ++y) {
-    const QRgb* data_ptr = (QRgb*)src->constScanLine(y);
-    uchar* result_ptr = result_img.scanLine(y);
-    for (int x = 0; x < src->width(); ++x) {
-      int alpha = qAlpha(data_ptr[x]);
-      if (alpha == 0) {
-        result_ptr[x] = white_val;
-      } else {
-        int gray = qGray(data_ptr[x]);
-        result_ptr[x] = gray <= threshold ? black : white_val;
-      }
-    }
-  }
-  return result_img;
-}
-
 void ToolpathExporterFcode::clearWhite(QImage* src, QRect dirty_area) {
   Q_ASSERT_X(src->allGray(), "ToolpathExporterFcode",
              "Input image for clearWhite() must be grayscaled");
@@ -1861,7 +1835,7 @@ void ToolpathExporterFcode::clearWhite(QImage* src, QRect dirty_area) {
     QRgb* ptr = (QRgb*)src->scanLine(y);
     for (int x = left; x < right; ++x) {
       int gray = qGray(ptr[x]);
-      if (gray == white_val) {
+      if (gray == WHITE_PIXEL) {
         // Set alpha to 0
         ptr[x] = 0;
       }

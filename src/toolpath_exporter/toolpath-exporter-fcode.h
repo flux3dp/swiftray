@@ -24,6 +24,7 @@
 #include <QVector2D>
 #include <bitset>
 #include <cmath>
+#include "toolpath-utils.h"
 
 struct NozzleSettings {
   float voltage = 9.0;
@@ -513,7 +514,6 @@ public Q_SLOTS:
 
   void writePreviewImage();
 
-  QImage imageBinarize(QImage* src, int threshold);
   void clearWhite(QImage* src, QRect dirty_area);
   void clearTransparent(QImage* src);
   QVector<QRect> getBoundingBoxes(QImage* src,
@@ -548,8 +548,6 @@ public Q_SLOTS:
 
   void onProgressChanged(double value, bool absolute);
 
-  // white = 255 = no emit, black = 0 = emit
-  const int white_val = 255;
   // for pwm, val < pwm_threshold = emit
   const int pwm_threshold = 254;
   const float canvas_mm_ratio = 10.0;

@@ -59,6 +59,8 @@ QRectF g_bbox;
 bool g_gradient = true;
 int g_threshold = 128;
 bool g_pwm = false;
+int g_pass = 0;
+double g_zstep = 0;
 
 #endif
 
@@ -2963,6 +2965,8 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     g_gradient = attributes.value("data-shading").toString() == "true";
     g_threshold = attributes.value("data-threshold").toInt();
     g_pwm = attributes.value("data-pwm").toInt() == 1;
+    g_pass = attributes.value("data-pass").toInt();
+    g_zstep = attributes.value("data-zstep").toDouble();
     qreal nx = toDouble(x);
     qreal ny = toDouble(y);
     MyQSvgHandler::LengthType type;
@@ -4683,6 +4687,8 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             bitmap_shape->setGradient(data_list_[i].gradient);
             bitmap_shape->setThrshBrightness(data_list_[i].threshold);
             bitmap_shape->setPwm(data_list_[i].pwm);
+            bitmap_shape->setDepthPass(data_list_[i].depthPass);
+            bitmap_shape->setDepthZStep(data_list_[i].depthZStep);
         } else if(data_list_[i].type == QSVG_USE) {
             // Skip use nodes since we have already processed them
             continue;
@@ -5097,7 +5103,7 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm, g_pass, g_zstep);
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

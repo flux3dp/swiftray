@@ -138,7 +138,8 @@ namespace MySVG {
 
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
-                          double g_scale, QColor &g_color, QImage &g_image, QRectF g_bbox = QRectF(),  bool g_gradient = true, int g_threshold = 128, bool g_pwm = false) {
+                          double g_scale, QColor &g_color, QImage &g_image, QRectF g_bbox = QRectF(),
+                          bool g_gradient = true, int g_threshold = 128, bool g_pwm = false, int g_pass = 0, double g_zstep = 0) {
         qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
@@ -189,6 +190,8 @@ namespace MySVG {
             n.gradient = g_gradient;
             n.threshold = g_threshold;
             n.pwm = g_pwm;
+            n.depthPass = g_pass;
+            n.depthZStep = g_zstep;
             nodes.push_back(n);
         } else if(node->type() == QSVG_USE) {
             QSvgUse2* use_node = (QSvgUse2*)node;

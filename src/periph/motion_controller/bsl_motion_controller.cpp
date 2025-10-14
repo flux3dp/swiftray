@@ -488,6 +488,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       current_custom_error_.clear();
       // Reset current settings
       dotting_time = 0;
+      x_pos_ = 0;
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
@@ -627,8 +628,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     if (z != 0) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
-      list_manager_.call(ListApiType::MoveAxis, 1, fabs(z) * PromarkJobConfig::Z_PULSE_PER_MM, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
+      z -= z_pos_; // Fix the difference between last move and target
+      double real_steps = round(z * PromarkJobConfig::Z_PULSE_PER_MM);
+      list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
       estimated_time_ += fabs(z) * PromarkJobConfig::Z_MS_PER_MM;
+      z_pos_ = real_steps / PromarkJobConfig::Z_PULSE_PER_MM - z; // Keep the difference between actual move and cmd target
       last_is_z_command = true;
       // QThread::msleep(1000);
     } else if (is_move_command) {

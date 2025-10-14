@@ -25,6 +25,8 @@ namespace MySVG {
         bool gradient;
         int threshold;
         bool pwm;
+        int depthPass;
+        double depthZStep;
     };
 
     struct BeamLayerConfig {

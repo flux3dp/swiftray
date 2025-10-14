@@ -153,6 +153,88 @@ std::tuple<vector<ByteArray32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
   return std::make_tuple(grayscale_array, trim_start_idx, trim_end_idx);
 }
 
+/**
+ * @param src must be Format_ARGB32 or Format_ARGB32_Premultiplied grayscaled image
+ * @param threshold
+ * @return binarized Format_Grayscale8 QImage, transparent pixels are set to WHITE_PIXEL
+ */
+QImage imageBinarize(QImage* src, int threshold) {
+  Q_ASSERT_X(src->allGray(), "toolpath-utils", "Input image for imageBinarize() must be grayscaled");
+  Q_ASSERT_X(src->format() == QImage::Format_ARGB32 ||
+             src->format() == QImage::Format_ARGB32_Premultiplied,
+             "toolpath-utils",
+             "Input image for imageBinarize() must be Format_ARGB32");
+
+  QImage result_img{src->width(), src->height(), QImage::Format_Grayscale8};
+  for (int y = 0; y < src->height(); ++y) {
+    const QRgb* data_ptr = (QRgb*)src->constScanLine(y);
+    uchar* result_ptr = result_img.scanLine(y);
+    for (int x = 0; x < src->width(); ++x) {
+      int alpha = qAlpha(data_ptr[x]);
+      if (alpha == 0) {
+        result_ptr[x] = WHITE_PIXEL;
+      } else {
+        int gray = qGray(data_ptr[x]);
+        result_ptr[x] = gray <= threshold ? BLACK_PIXEL : WHITE_PIXEL;
+      }
+    }
+  }
+  return result_img;
+}
+
+template<typename T>
+QImage _transpose(QImage* img) {
+  QImage result(img->height(), img->width(), img->format());
+  for (int y = 0; y < img->height(); ++y) {
+    const T* srcLine = reinterpret_cast<const T*>(img->constScanLine(y));
+    for (int x = 0; x < img->width(); ++x) {
+      T* dstLine = reinterpret_cast<T*>(result.scanLine(x));
+      dstLine[y] = srcLine[x];
+    }
+  }
+
+  return result;
+}
+
+QImage imageTranspose(QImage* img) {
+  switch (img->format()) {
+    case QImage::Format_ARGB32_Premultiplied:
+    case QImage::Format_ARGB32:
+    case QImage::Format_RGB32:
+      return _transpose<QRgb>(img);
+    case QImage::Format_Grayscale8:
+      return _transpose<uchar>(img);
+    default:
+      Q_ASSERT_X(false, "toolpath-utils", "Input image for transpose() must be Format_ARGB32 or Format_Grayscale8");
+      return QImage();
+  }
+}
+
+bool findMinMaxPixel(QImage* img, int* min_pixel, int* max_pixel) {
+  Q_ASSERT_X(img->allGray(), "toolpath-utils", "Input image for findMinMaxPixel() must be grayscaled");
+  Q_ASSERT_X(img->format() == QImage::Format_ARGB32 ||
+             img->format() == QImage::Format_ARGB32_Premultiplied,
+             "toolpath-utils",
+             "Input image for findMinMaxPixel() must be Format_ARGB32");
+
+  int min_p = 256;
+  int max_p = 0;
+  for (int y = 0; y < img->height(); ++y) {
+    const QRgb* data_ptr = (QRgb*)img->constScanLine(y);
+    for (int x = 0; x < img->width(); ++x) {
+      if (qAlpha(data_ptr[x]) != 0) {
+        int gray = qGray(data_ptr[x]);
+        if (gray < min_p) min_p = gray;
+        if (gray > max_p) max_p = gray;
+      }
+    }
+  }
+  if (min_p == 256) return false;
+  if (min_pixel) *min_pixel = min_p;
+  if (max_pixel) *max_pixel = max_p;
+  return true;
+}
+
 cv::Mat QPolygonToMat(const QPolygonF& poly) {
   cv::Mat mat(poly.size(), 1, CV_32FC2);
   for (int i = 0; i < poly.size(); ++i) {
