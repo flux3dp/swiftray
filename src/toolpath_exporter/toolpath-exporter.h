@@ -35,7 +35,7 @@ public:
   enum BitmapHandlerType {
       NormalMode, // Binary image
       GradientMode, // Gradient image
-      DepthMode, // Depth mode image
+      PwmMode, // Depth mode image for non-Promark machines; this is not supported in current version
   };
 
   ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding, QTransform move_translate, bool is_promark = false) noexcept;
@@ -70,7 +70,7 @@ private:
 
   void convertGroup(const GroupShape *group);
 
-  void convertBitmap(const BitmapShape *bmp);
+  void convertBitmap(BitmapShape *bmp);
 
   void convertPath(const PathShape *path);
 
@@ -88,16 +88,16 @@ private:
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
   int calculatePWMPower(unsigned char grayscale);
   bool rasterBitmap(const QImage &layer_image, QRect bbox,
-                    ScanDirectionMode direction_mode, qreal padding_mm, int* count = nullptr);
-  bool rasterBitmapDepthMode(const QImage &layer_image, QRect bbox,
+                    ScanDirectionMode direction_mode, qreal padding_mm, int* count = nullptr,
+                    QPointF offset = QPointF(), bool should_transpose = false);
+  bool rasterBitmapPwmMode(const QImage &layer_image, QRect bbox,
                     ScanDirectionMode direction_mode, qreal padding_mm);
   bool rasterLine(const QLineF& path, const std::vector<std::array<unsigned char, 32>>& data);
-  bool rasterLine(const QLineF& path, const std::vector<std::bitset<32>>& data);
+  bool rasterLine(const QLineF& path, const std::vector<std::bitset<32>>& data, bool should_transpose = false);
   bool rasterBitmapHighSpeed(const QImage &layer_image, QRect bbox,
                              ScanDirectionMode direction_mode, qreal padding_mm);
   bool rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data);
-
-  QImage imageBinarize(QImage src, int threshold);
+  bool rasterBitmapDepthMode(ScanDirectionMode direction_mode, qreal padding_mm);
 
   int clipWorkarea(QPointF* start, QPointF* end, bool force);
 
@@ -116,6 +116,7 @@ private:
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
   QList<FilledPath> layer_filled_polygons_; // place the filled path geometry, expressed in unit of document dot
   QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
+  QList<BitmapShape*> depth_mode_bitmaps_; // bitmap shapes for Promark depth mode
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
@@ -150,7 +151,7 @@ private:
   int processed_layer_cnt_ = 0;
   int total_repeat_times_ = 1;
   int processed_repeat_times_ = 0;
-  int element_cnt_[5] = {0, 0, 0, 0, 0}; // 0 Normal Bitmap, 1 Gradient Bitmap, 2 Depth Bitmap, 3 Filled Path, 4 Unfilled Path
+  int element_cnt_[5] = {0, 0, 0, 0, 0}; // 0 Normal Bitmap, 1 Gradient Bitmap, 2 Depth Bitmap(Promark), 3 Filled Path, 4 Unfilled Path
   int total_element_cnt_ = 0;
   double current_progress_ = 0; // progress within current repeat
   int progress_ = 0;

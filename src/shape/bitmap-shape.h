@@ -35,6 +35,10 @@ public:
   int thrsh_brightness() const { return thrsh_brightness_; }
   void setPwm(bool pwm) { pwm_ = pwm; }
   bool pwm() const { return pwm_; }
+  void setDepthPass(int pass) { depth_pass_ = pass; }
+  int depthPass() const { return depth_pass_; }
+  void setDepthZStep(double zstep) { depth_zstep_ = zstep; }
+  double depthZStep() const { return depth_zstep_; }
 
   friend class DocumentSerializer;
 
@@ -49,4 +53,7 @@ private:
   bool gradient_ = true; // gradient or binarized
   int thrsh_brightness_ = 128; // threshold value for binarization
   bool pwm_ = false; // pwm
+  // Promark depth mode
+  int depth_pass_ = 0;
+  double depth_zstep_ = 0;
 };
