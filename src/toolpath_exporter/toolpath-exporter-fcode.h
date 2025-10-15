@@ -380,6 +380,10 @@ public Q_SLOTS:
       config_.print_modes[0] = 'R', config_.print_modes[1] = 'H';
     }
 
+    // Calculate length in y px
+    path_utils_.setLengthRatio(config_.dpmm_x / config_.dpmm_y, 1);
+    path_utils_.setLoopCompensation(config_.loop_compensation * config_.dpmm_y);
+
     transform_laser_ = QTransform::fromScale(config_.dpmm_x / canvas_mm_ratio,
                                              config_.dpmm_y / canvas_mm_ratio);
     transform_printing_ =
@@ -464,11 +468,7 @@ public Q_SLOTS:
   void convertBitmap(const BitmapShape* bmp);
   void convertPath(const PathShape* path);
 
-  void sortPolygons();
-
   void outputLayerPathFcode();
-  int getPointPosition(QPointF point);
-  void getIntersectPoint(QLineF line, int position, QPointF* point);
   void handlePathWalk(QPointF point, bool should_emit);
 
   void outputBitmapFcode(bool pwm_engraving = false);
@@ -584,6 +584,7 @@ public Q_SLOTS:
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
   bool with_custom_origin_ = false;
+  PathUtils path_utils_;
 
   QSizeF work_area_mm_;
   QTransform transform_laser_;
@@ -613,7 +614,6 @@ public Q_SLOTS:
   QString layer_color_;
   QString submodule_color_ = "None";
   QRect clip_area_;         // px;
-  QLineF border_lines_[4];  // px; top, right, bottom, left
 
   // Updated during processing
   bool is_handling_main_work_ = false;

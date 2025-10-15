@@ -10,9 +10,6 @@
 #include <cmath>
 #include <constants.h>
 
-static const int CLIP_FLAG_START = 0b01;
-static const int CLIP_FLAG_END = 0b10;
-
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), is_promark_(is_promark)
@@ -375,6 +372,10 @@ void nestedSort(QList<QPolygonF> &array) {
 }
 
 void ToolpathExporter::sortPolygons() {
+  if (is_promark_) {
+    path_utils_.sortAndPreprocessPolygons(layer_polygons_);
+    return;
+  }
   switch (sort_rule_)
   {
   case MergeSort:
@@ -555,7 +556,7 @@ void ToolpathExporter::outputLayerFillGcode() {
 
       QPointF innerStart(lineStart);
       QPointF innerEnd(lineEnd);
-      if (clipWorkarea(&innerStart, &innerEnd, true) == -1) continue;
+      if (path_utils_.clipWorkarea(&innerStart, &innerEnd) == -1) continue;
 
       // Get intersections with path
       QList<QList<QPointF>> all_intersections;
@@ -694,25 +695,11 @@ void ToolpathExporter::outputLayerPathGcode() {
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
 
-    int clip_res;
-    bool is_first = true;
-    QPointF last_point = poly.first();
-    QPointF next_point;
     QPointF next_point_mm;
 
+    moveTo(poly.first() / dpmm_, travel_speed_, 0, 0);
     for (QPointF &point : poly) {
-      next_point = point;
-      clip_res = clipWorkarea(&last_point, &next_point, false);
-      if (clip_res == -1) {
-        last_point = point;
-        continue;
-      }
-      if (is_first || (clip_res & CLIP_FLAG_START)) {
-        // Travel to start point or Clipped point(out -> in)
-        is_first = false;
-        moveTo(last_point / dpmm_, travel_speed_, 0, 0);
-      }
-      next_point_mm = next_point / dpmm_;
+      next_point_mm = point / dpmm_;
       // Divide a long line into small segments
       if (!is_promark_ && (next_point_mm - current_pos_mm_).manhattanLength() > 5) { // At most 5mm per segment
         int segments = std::max(2.0,
@@ -728,12 +715,8 @@ void ToolpathExporter::outputLayerPathGcode() {
       } else {
         moveTo(next_point_mm, layer_speed, layer_power, 0);
       }
-      if (clip_res & CLIP_FLAG_END) {
-        // Turn off laser at Clipped point(in -> out)
-        moveTo(next_point_mm, travel_speed_, 0, 0);
-      }
-      last_point = point;
     }
+    moveTo(poly.last() / dpmm_, travel_speed_, 0, 0);
 
     //gen_->turnOffLaser();
   }
@@ -1397,62 +1380,6 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
   gen_->useAbsolutePositioning();
   gen_->turnOffLaser();
   return true;
-}
-
-int ToolpathExporter::clipWorkarea(QPointF* start, QPointF* end, bool force) {
-  int clip_result = 0;
-  if (!force && !should_clip_workarea_) {
-    return clip_result;
-  }
-  QLineF scanLine(*start, *end);
-  bool ok = false;
-  double x1 = start->x();
-  double y1 = start->y();
-  bool is_p1_outside = (x1 < 0 || x1 > canvas_width_ || y1 < 0 || y1 > canvas_height_);
-  if (is_p1_outside) {
-    clip_result |= CLIP_FLAG_START;
-    if (x1 < 0) {
-      ok = scanLine.intersects(left_border_, start) == QLineF::BoundedIntersection;
-    } else if (x1 > canvas_width_) {
-      ok = scanLine.intersects(right_border_, start) == QLineF::BoundedIntersection;
-    }
-    if (!ok) {
-      if (y1 < 0) {
-        ok = scanLine.intersects(top_border_, start) == QLineF::BoundedIntersection;
-      } else {
-        ok = scanLine.intersects(bottom_border_, start) == QLineF::BoundedIntersection;
-      }
-      if (!ok) {
-        start->setX(x1);
-        start->setY(y1);
-        return -1;
-      }
-    }
-  }
-  double x2 = end->x();
-  double y2 = end->y();
-  bool is_p2_outside = (x2 < 0 || x2 > canvas_width_ || y2 < 0 || y2 > canvas_height_);
-  if (is_p2_outside) {
-    clip_result |= CLIP_FLAG_END;
-    if (x2 < 0) {
-      ok = scanLine.intersects(left_border_, end) == QLineF::BoundedIntersection;
-    } else if (x2 > canvas_width_) {
-      ok = scanLine.intersects(right_border_, end) == QLineF::BoundedIntersection;
-    }
-    if (!ok) {
-      if (y2 < 0) {
-        ok = scanLine.intersects(top_border_, end) == QLineF::BoundedIntersection;
-      } else {
-        ok = scanLine.intersects(bottom_border_, end) == QLineF::BoundedIntersection;
-      }
-      if (!ok) {
-        end->setX(x2);
-        end->setY(y2);
-        return -1;
-      }
-    }
-  }
-  return clip_result;
 }
 
 inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power, double x_backlash) {
