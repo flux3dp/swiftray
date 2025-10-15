@@ -22,19 +22,6 @@ float positiveMod(float n, float m) {
   return val;
 }
 
-float getAngle(QVector2D v1, QVector2D v2) {
-  int direction_sign = v1.x() * v2.y() - v1.y() * v2.x() < 0 ? -1 : 1;
-  float cos_val = QVector2D::dotProduct(v1, v2) / (v1.length() * v2.length());
-  return direction_sign * acos(qMax(qMin(cos_val, float(1.0)), float(-1.0)));
-}
-
-QPointF getBladeCompensation(QPointF position,
-                             QVector2D vector,
-                             float radius = 0.6) {
-  float r = radius / vector.length();
-  return (QVector2D(position) + vector * r).toPointF();
-}
-
 QString convertUnicode(const QString s) {
   QString result;
   for (int i = 0; i < s.size(); i++) {
@@ -46,30 +33,6 @@ QString convertUnicode(const QString s) {
     }
   }
   return result;
-}
-
-bool isIntersectWithCenter(int position1, int position2) {
-  // 0 1 2
-  // 3 4 5
-  // 6 7 8
-  if (position1 == 4 || position2 == 4) {
-    return true;
-  } else if (position1 == position2) {
-    return false;
-  } else if (position1 == 1 || position1 == 7) {
-    return abs(position1 - position2) != 1;
-  } else if (position1 == 3 || position1 == 5) {
-    return abs(position1 - position2) != 3;
-  } else if (position1 == 0) {
-    return position2 == 5 || position2 == 7 || position2 == 8;
-  } else if (position1 == 2) {
-    return position2 == 3 || position2 == 6 || position2 == 7;
-  } else if (position1 == 6) {
-    return position2 == 1 || position2 == 2 || position2 == 5;
-  } else {
-    // position1 == 8
-    return position2 == 0 || position2 == 1 || position2 == 3;
-  }
 }
 
 bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
@@ -141,19 +104,6 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   gen_->set_time_est_acc(config_.padding_acc);
-
-  // precut
-  if (config_.enable_precut) {
-    current_vector_ = QVector2D(1, 0);
-    QPointF precut_dest_xy = (QVector2D(config_.precut_at) + current_vector_).toPointF();
-    travel(config_.precut_at);
-    gen_->set_toolhead_pwm(100);
-    QPointF new_dest = getBladeCompensation(precut_dest_xy, current_vector_,
-                                            config_.blade_radius);
-    moveto(800, new_dest.x(), new_dest.y());
-    current_xy_ = precut_dest_xy;
-    gen_->set_toolhead_pwm(0, true);
-  }
 
   // End of pre-task script
   if (is_v2_) {
@@ -634,10 +584,7 @@ void ToolpathExporterFcode::updateClip() {
   float clip_bottom = mm2px(work_area_mm_.height() - layer_clip[2]) - 1;
   float clip_left = mm2px(layer_clip[3], true);
   clip_area_ = QRect(QPoint(clip_left, clip_top), QPoint(clip_right, clip_bottom));
-  border_lines_[0] = QLineF(clip_left, clip_top, clip_right, clip_top);
-  border_lines_[1] = QLineF(clip_right, clip_top, clip_right, clip_bottom);
-  border_lines_[2] = QLineF(clip_left, clip_bottom, clip_right, clip_bottom);
-  border_lines_[3] = QLineF(clip_left, clip_top, clip_left, clip_bottom);
+  path_utils_.setClipRect(clip_top, clip_right, clip_bottom, clip_left);
 }
 
 void ToolpathExporterFcode::convertLaserLayer() {
@@ -657,8 +604,7 @@ void ToolpathExporterFcode::convertLaserLayer() {
   for (auto& shape : current_layer_->children()) {
     convertShape(shape);
   }
-  // Reverse order and handle closed path
-  sortPolygons();
+  path_utils_.sortAndPreprocessPolygons(layer_polygons_);
   if (this->cancelled_) return;
   onProgressChanged(0.05, true);
   total_element_cnt_ = element_cnt_[0] + element_cnt_[1] + layer_bitmaps_.size();
@@ -870,29 +816,6 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
   }
 }
 
-// Complexity: O(n^2)
-void ToolpathExporterFcode::sortPolygons() {
-  QList<QPolygonF> sort_result;
-  QVector2D unit(1 / dpmm_x(), 1 / dpmm_y());
-  for (const auto& polygon : layer_polygons_) {
-    // Insert from the beginning (reverse order)
-    int insert_idx = 0;
-    float d = (QVector2D(polygon.first() - polygon.last()) * unit).length();
-    if (d <= config_.loop_compensation) {
-      // Handle closed path
-      for (int idx = sort_result.size() - 1; idx >= 0; idx--) {
-        if (polygon.boundingRect().contains(sort_result[idx].boundingRect())) {
-          // Move current polygon after smaller one
-          insert_idx = idx + 1;
-          break;
-        }
-      }
-    }
-    sort_result.insert(insert_idx, polygon);
-  }
-  layer_polygons_ = sort_result;
-}
-
 void ToolpathExporterFcode::outputLayerPathFcode() {
   bool should_set_acc = !config_.path_acc.isEmpty();
   polygons_mutex_.lock();
@@ -909,49 +832,11 @@ void ToolpathExporterFcode::outputLayerPathFcode() {
       );
     }
     setTravelSpeed(config_.path_travel_speed);
-    int last_position = getPointPosition(poly.first());
-    if (last_position == 4) {
-      handlePathWalk(poly.first(), false);
-    }
-    QPointF* last_point = nullptr;
+    handlePathWalk(poly.first(), false);
     for (QPointF& point : poly) {
-      int position = getPointPosition(point);
-      QPointF intersection;
-      if (position == 4) {
-        if (last_position != 4) {
-          // From outside to inside
-          // Handle additional intersection point first and start laser
-          QLineF current_line(*last_point, point);
-          getIntersectPoint(current_line, last_position, &intersection);
-          handlePathWalk(intersection, false);
-          handlePathWalk(intersection, true);
-        }
-        // Normal walk
-        handlePathWalk(point, true);
-      } else if (last_position == 4) {
-        // From inside to outside
-        // Clip current point and stop laser
-        QLineF current_line(*last_point, point);
-        getIntersectPoint(current_line, position, &intersection);
-        handlePathWalk(intersection, true);
-        handlePathWalk(intersection, false);
-      } else if (isIntersectWithCenter(last_position, position)) {
-        // From one side to another side
-        // Need to handle two intersection points
-        QLineF current_line(*last_point, point);
-        getIntersectPoint(current_line, last_position, &intersection);
-        handlePathWalk(intersection, false);
-        handlePathWalk(intersection, true);
-        getIntersectPoint(current_line, position, &intersection);
-        handlePathWalk(intersection, true);
-        handlePathWalk(intersection, false);
-      }
-      last_point = &point;
-      last_position = position;
+      handlePathWalk(point, true);
     }
-    if (last_position == 4) {
-      handlePathWalk(*last_point, false);
-    }
+    handlePathWalk(poly.last(), false);
     setTravelSpeed(config_.travel_speed);
     // Reset path_acc
     if (should_set_acc) {
@@ -962,103 +847,13 @@ void ToolpathExporterFcode::outputLayerPathFcode() {
   polygons_mutex_.unlock();
 }
 
-int ToolpathExporterFcode::getPointPosition(QPointF point) {
-  int position = 4;
-  if (point.x() < clip_area_.left()) {
-    position -= 1;
-  } else if (point.x() > clip_area_.right()) {
-    position += 1;
-  }
-  if (point.y() < clip_area_.top()) {
-    position -= 3;
-  } else if (point.y() > clip_area_.bottom()) {
-    position += 3;
-  }
-  return position;
-}
-
-void ToolpathExporterFcode::getIntersectPoint(QLineF line,
-                                              int position,
-                                              QPointF* point) {
-  QLineF::IntersectionType type;
-  switch (position) {
-    case 0:
-      type = line.intersects(border_lines_[0], point);
-      if (type != QLineF::BoundedIntersection) {
-        line.intersects(border_lines_[3], point);
-      }
-      break;
-    case 1:
-      line.intersects(border_lines_[0], point);
-      break;
-    case 2:
-      type = line.intersects(border_lines_[0], point);
-      if (type != QLineF::BoundedIntersection) {
-        line.intersects(border_lines_[1], point);
-      }
-      break;
-    case 3:
-      line.intersects(border_lines_[3], point);
-      break;
-    case 5:
-      line.intersects(border_lines_[1], point);
-      break;
-    case 6:
-      type = line.intersects(border_lines_[2], point);
-      if (type != QLineF::BoundedIntersection) {
-        line.intersects(border_lines_[3], point);
-      }
-      break;
-    case 7:
-      line.intersects(border_lines_[2], point);
-      break;
-    case 8:
-      type = line.intersects(border_lines_[2], point);
-      if (type != QLineF::BoundedIntersection) {
-        line.intersects(border_lines_[1], point);
-      }
-      break;
-    default:
-      break;
-  }
-}
-
 void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
   QPointF next_point_mm = getPointInMM(point);
-  if (with_blade_) {
-    QVector2D target_vector(next_point_mm - current_xy_);
-    if (!target_vector.isNull()) {
-      if (!current_vector_.isNull()) {
-        float angle = getAngle(current_vector_, target_vector);
-        while (abs(angle) > 0.01) {
-          int dir = angle > 0 ? 1 : -1;
-          float rotate_angle = dir * qMin(abs(angle), float(0.1));
-          QVector2D rotated_vector(current_vector_.x() * cos(rotate_angle) -
-                                       current_vector_.y() * sin(rotate_angle),
-                                   current_vector_.x() * sin(rotate_angle) +
-                                       current_vector_.y() * cos(rotate_angle));
-          rotated_vector.normalize();
-          rotated_vector *= config_.blade_radius;
-          moveto(300, current_xy_.x() + rotated_vector.x(),
-                 current_xy_.y() + rotated_vector.y());
-          angle = getAngle(rotated_vector, target_vector);
-        }
-      }
-      if (gen_->current_pwm != 0) {
-        current_vector_ = target_vector;
-      }
-    }
-  }
-  if (with_blade_ && !current_vector_.isNull()) {
-    next_point_mm = getBladeCompensation(next_point_mm, current_vector_,
-                                         config_.blade_radius);
-    moveto(path_speed_, next_point_mm.x(), next_point_mm.y());
-  } else if (should_emit) {
+  if (should_emit) {
     moveto(path_speed_, next_point_mm.x(), next_point_mm.y());
   } else {
     travel(next_point_mm);
   }
-  current_xy_ = next_point_mm;
   float target_power = should_emit ? 100 : 0;
   if (gen_->current_pwm != target_power) {
     gen_->set_toolhead_pwm(target_power, true);

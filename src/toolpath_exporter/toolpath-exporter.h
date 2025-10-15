@@ -42,13 +42,16 @@ public:
 
   bool convertStack(const QList<LayerPtr> &layers, bool is_high_speed, bool start_with_home);
 
-  void setWorkAreaSize(QRectF work_area) { machine_work_area_mm_ = work_area; }
+  void setWorkAreaSize(QRectF work_area) {
+    machine_work_area_mm_ = work_area; 
+    path_utils_.setClipRect(work_area.top() * dpmm_, work_area.right() * dpmm_, work_area.bottom() * dpmm_, work_area.left() * dpmm_);
+  }
 
   bool isExceedingBoundary() { return exceed_boundary_; }
 
   void setSortRule(PathSort sort_rule) { sort_rule_ = sort_rule; }
 
-  void setShouldClipWorkarea(bool should_clip_workarea) { should_clip_workarea_ = should_clip_workarea; }
+  void setLoopCompensation(qreal compensation) { path_utils_.setLoopCompensation(compensation / canvas_mm_ratio_ * dpmm_); }
 
   void handleContour() { is_contour_ = true; }
 
@@ -99,7 +102,6 @@ private:
   bool rasterLineHighSpeed(const QLineF& path, const std::vector<std::bitset<32>>& data);
   bool rasterBitmapDepthMode(ScanDirectionMode direction_mode, qreal padding_mm);
 
-  int clipWorkarea(QPointF* start, QPointF* end, bool force);
 
   void onProgressChanged(double value, bool absolute);
 
@@ -140,12 +142,12 @@ private:
   qreal fixed_padding_mm_ = 10;
   QPointF end_point_;
   // ==================================================
-  bool should_clip_workarea_ = false;
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
   bool with_image_ = false;
   bool cancelled_ = false;
   PathSort sort_rule_;
+  PathUtils path_utils_;
   // ===== Calculate current progress percentage ======
   int total_layer_cnt_ = 1;
   int processed_layer_cnt_ = 0;

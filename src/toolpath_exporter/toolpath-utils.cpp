@@ -1,6 +1,7 @@
 #include "toolpath-utils.h"
 #include <algorithm>
 #include <QtMath>
+#include <cmath>
 
 using namespace std;
 /**
@@ -259,4 +260,235 @@ QPolygonF MatFToQPolygon(const cv::Mat& mat) {
     poly << QPointF(pt.x, pt.y);
   }
   return poly;
+}
+
+bool polygonContainsPolygon(const QPolygonF& outer, const QPolygonF& inner) {
+  for (const QPointF& p : inner) {
+    if (!outer.containsPoint(p, Qt::WindingFill)) return false;
+  }
+  return true;
+}
+
+void sortByBoundingRect(QList<QPolygonF>& polys) {
+  std::sort(polys.begin(), polys.end(),
+    [](const QPolygonF& a, const QPolygonF& b) {
+      QRectF bbox_a = a.boundingRect();
+      QRectF bbox_b = b.boundingRect();
+      return bbox_a.width() * bbox_a.height() > bbox_b.width() * bbox_b.height();
+    });
+}
+
+void traverse(QList<QPolygonF>& polys, const NestedPolygonF& node) {
+  for (const auto& child : node.children) {
+    traverse(polys, child);
+  }
+  if (!node.polygon.isEmpty()) {
+    polys.push_back(node.polygon);
+  }
+}
+
+// ================ PathUtils =================
+double PathUtils::getLength(QPointF& start, QPointF& end) {
+  double dx = (end.x() - start.x()) * length_ratio_x_;
+  double dy = (end.y() - start.y()) * length_ratio_y_;
+  return std::sqrt(dx * dx + dy * dy);
+}
+
+void PathUtils::loopCompensate(QPolygonF& poly) {
+  if (!should_compensate_ || !poly.isClosed()) return;
+
+  QPointF curr, next;
+  double lineLength;
+  double distance = loop_compensation_;
+  int ptsSize = poly.size();
+  for (int i = 1; i < ptsSize && distance >= 0.0001; ++i) {
+    curr = poly[i - 1];
+    next = poly[i];
+    lineLength = getLength(curr, next);
+    if (lineLength > distance) {
+      poly << QLineF(curr, next).pointAt(distance / lineLength);
+      break;
+    } else {
+      poly << next;
+      distance -= lineLength;
+    }
+  }
+}
+
+int PathUtils::clipWorkarea(QPointF* start, QPointF* end) {
+  int clip_result = 0;
+  QLineF scanLine(*start, *end);
+  bool ok = false;
+  double x1 = start->x();
+  double y1 = start->y();
+  bool is_p1_outside = (x1 < left_x_ || x1 > right_x_ || y1 < top_y_ || y1 > bottom_y_);
+  if (is_p1_outside) {
+    clip_result |= CLIP_FLAG_START;
+    if (x1 < left_x_) {
+      ok = scanLine.intersects(left_border_, start) == QLineF::BoundedIntersection;
+    } else if (x1 > right_x_) {
+      ok = scanLine.intersects(right_border_, start) == QLineF::BoundedIntersection;
+    }
+    if (!ok) {
+      if (y1 < top_y_) {
+        ok = scanLine.intersects(top_border_, start) == QLineF::BoundedIntersection;
+      } else {
+        ok = scanLine.intersects(bottom_border_, start) == QLineF::BoundedIntersection;
+      }
+      if (!ok) {
+        start->setX(x1);
+        start->setY(y1);
+        return -1;
+      }
+    }
+  }
+
+  ok = false;
+  double x2 = end->x();
+  double y2 = end->y();
+  bool is_p2_outside = (x2 < left_x_ || x2 > right_x_ || y2 < top_y_ || y2 > bottom_y_);
+  if (is_p2_outside) {
+    clip_result |= CLIP_FLAG_END;
+    if (x2 < left_x_) {
+      ok = scanLine.intersects(left_border_, end) == QLineF::BoundedIntersection;
+    } else if (x2 > right_x_) {
+      ok = scanLine.intersects(right_border_, end) == QLineF::BoundedIntersection;
+    }
+    if (!ok) {
+      if (y2 < top_y_) {
+        ok = scanLine.intersects(top_border_, end) == QLineF::BoundedIntersection;
+      } else {
+        ok = scanLine.intersects(bottom_border_, end) == QLineF::BoundedIntersection;
+      }
+      if (!ok) {
+        end->setX(x2);
+        end->setY(y2);
+        return -1;
+      }
+    }
+  }
+  return clip_result;
+}
+
+void PathUtils::preprocessPath(QList<NestedPolygonF>& polys) {
+  int original_size = polys.size();
+  for (int p = 0; p < original_size; ++p) {
+    QPolygonF poly = polys[p].polygon;
+    if (poly.isEmpty()) continue;
+
+    QPolygonF clipped_poly;
+    bool is_first = true;
+    for (int i = 1; i < poly.size(); ++i) {
+      QPointF curr = poly[i - 1];
+      QPointF next = poly[i];
+      int clip_result = clipWorkarea(&curr, &next);
+      if (clip_result == -1) continue;
+      if (clipped_poly.isEmpty()) {
+        clipped_poly << curr;
+      }
+      clipped_poly << next;
+      if ((clip_result & CLIP_FLAG_END) || (i == poly.size() - 1)) {
+        if (should_compensate_) {
+          loopCompensate(clipped_poly);
+        }
+        if (is_first) {
+          polys[p].polygon = std::move(clipped_poly);
+          is_first = false;
+        } else {
+          NestedPolygonF clipped_item = {std::move(clipped_poly), {}};
+          polys.push_back(std::move(clipped_item));
+        }
+      }
+    }
+    if (is_first) {
+      // All points are outside workarea
+      polys.removeAt(p);
+      --p;
+      --original_size;
+    }
+  }
+}
+
+void PathUtils::sortByDistance(QList<NestedPolygonF>& polys) {
+  QList<NestedPolygonF> sorted_polys;
+  if (polys.empty()) return;
+
+  preprocessPath(polys);
+
+  auto currentIter = polys.begin();
+  bool needReverse = false;
+  auto minIter = polys.end();
+  float minDist;
+  float d;
+  QPointF currentEnd;
+  while (currentIter < polys.end()) {
+    if (needReverse) {
+      std::reverse(currentIter->polygon.begin(), currentIter->polygon.end());
+    }
+    sorted_polys.push_back(std::move(*currentIter));
+    currentEnd = sorted_polys.back().polygon.last();
+    polys.erase(currentIter);
+    minDist = NAN;
+    minIter = polys.begin();
+
+    for (auto it = polys.begin(); it != polys.end(); ++it) {
+      d = getLength(currentEnd, it->polygon.first());
+      if (std::isnan(minDist) || d < minDist) {
+        minDist = d;
+        minIter = it;
+        needReverse = false;
+      }
+
+      d = getLength(currentEnd, it->polygon.last());
+      if (d < minDist) {
+        minDist = d;
+        minIter = it;
+        needReverse = true;
+      }
+    }
+    currentIter = minIter;
+  }
+
+  polys = std::move(sorted_polys);
+}
+
+void PathUtils::findChildren(QList<QPolygonF>& polys, NestedPolygonF& parent, int index) {
+  if (polys.empty()) return;
+
+  for (; index < polys.size();) {
+    if (polygonContainsPolygon(parent.polygon, polys[index])) {
+      NestedPolygonF child;
+      child.polygon = polys[index];
+      parent.children.push_back(std::move(child));
+      polys.removeAt(index);
+      findChildren(polys, parent.children.back(), index);
+    } else {
+      ++index;
+    }
+  }
+  sortByDistance(parent.children);
+}
+
+/**
+ * Sort polygons by nested containment relationship
+ * Clip polygons to the working area
+ * Add loop compensation if needed
+ * Optimize travel distance in same containment level
+ */
+void PathUtils::sortAndPreprocessPolygons(QList<QPolygonF>& polys) {
+  NestedPolygonF root;
+  // Sort by bounding rect for some containment relationship hints
+  sortByBoundingRect(polys);
+
+  while (!polys.isEmpty()) {
+    NestedPolygonF front;
+    front.polygon = polys.front();
+    polys.pop_front();
+    findChildren(polys, front, 0);
+    root.children.push_back(std::move(front));
+  }
+
+  sortByDistance(root.children);
+  polys.clear();
+  traverse(polys, root);
 }

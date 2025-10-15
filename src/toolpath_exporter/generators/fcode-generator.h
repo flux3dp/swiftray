@@ -805,19 +805,19 @@ class FCodeGeneratorG : public FCodeGenerator {
       str_stream << " F" << feedrate;
     }
     if (flags & FCodeGenerator::move_flag_X) {
-      str_stream << " X" << x;
+      str_stream << " X" << std::round(x * 1000) / 1000;
     }
     if (flags & FCodeGenerator::move_flag_Y) {
-      str_stream << " Y" << y;
+      str_stream << " Y" << std::round(y * 1000) / 1000;
     }
     if (flags & FCodeGenerator::move_flag_Z) {
-      str_stream << " Z" << z;
+      str_stream << " Z" << std::round(z * 1000) / 1000;
     }
     if (flags & FCodeGenerator::move_flag_A) {
-      str_stream << " Y" << a;
+      str_stream << " Y" << std::round(a * 1000) / 1000;
     }
     if (flags & FCodeGenerator::move_flag_S) {
-      str_stream << " S" << s;
+      str_stream << " S" << std::round(s * 1000) / 1000;
     }
     str_stream << "\n";
   }
