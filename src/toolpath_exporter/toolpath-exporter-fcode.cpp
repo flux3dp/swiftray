@@ -22,19 +22,6 @@ float positiveMod(float n, float m) {
   return val;
 }
 
-float getAngle(QVector2D v1, QVector2D v2) {
-  int direction_sign = v1.x() * v2.y() - v1.y() * v2.x() < 0 ? -1 : 1;
-  float cos_val = QVector2D::dotProduct(v1, v2) / (v1.length() * v2.length());
-  return direction_sign * acos(qMax(qMin(cos_val, float(1.0)), float(-1.0)));
-}
-
-QPointF getBladeCompensation(QPointF position,
-                             QVector2D vector,
-                             float radius = 0.6) {
-  float r = radius / vector.length();
-  return (QVector2D(position) + vector * r).toPointF();
-}
-
 QString convertUnicode(const QString s) {
   QString result;
   for (int i = 0; i < s.size(); i++) {
@@ -141,19 +128,6 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   gen_->set_time_est_acc(config_.padding_acc);
-
-  // precut
-  if (config_.enable_precut) {
-    current_vector_ = QVector2D(1, 0);
-    QPointF precut_dest_xy = (QVector2D(config_.precut_at) + current_vector_).toPointF();
-    travel(config_.precut_at);
-    gen_->set_toolhead_pwm(100);
-    QPointF new_dest = getBladeCompensation(precut_dest_xy, current_vector_,
-                                            config_.blade_radius);
-    moveto(800, new_dest.x(), new_dest.y());
-    current_xy_ = precut_dest_xy;
-    gen_->set_toolhead_pwm(0, true);
-  }
 
   // End of pre-task script
   if (is_v2_) {
@@ -1025,40 +999,11 @@ void ToolpathExporterFcode::getIntersectPoint(QLineF line,
 
 void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
   QPointF next_point_mm = getPointInMM(point);
-  if (with_blade_) {
-    QVector2D target_vector(next_point_mm - current_xy_);
-    if (!target_vector.isNull()) {
-      if (!current_vector_.isNull()) {
-        float angle = getAngle(current_vector_, target_vector);
-        while (abs(angle) > 0.01) {
-          int dir = angle > 0 ? 1 : -1;
-          float rotate_angle = dir * qMin(abs(angle), float(0.1));
-          QVector2D rotated_vector(current_vector_.x() * cos(rotate_angle) -
-                                       current_vector_.y() * sin(rotate_angle),
-                                   current_vector_.x() * sin(rotate_angle) +
-                                       current_vector_.y() * cos(rotate_angle));
-          rotated_vector.normalize();
-          rotated_vector *= config_.blade_radius;
-          moveto(300, current_xy_.x() + rotated_vector.x(),
-                 current_xy_.y() + rotated_vector.y());
-          angle = getAngle(rotated_vector, target_vector);
-        }
-      }
-      if (gen_->current_pwm != 0) {
-        current_vector_ = target_vector;
-      }
-    }
-  }
-  if (with_blade_ && !current_vector_.isNull()) {
-    next_point_mm = getBladeCompensation(next_point_mm, current_vector_,
-                                         config_.blade_radius);
-    moveto(path_speed_, next_point_mm.x(), next_point_mm.y());
-  } else if (should_emit) {
+  if (should_emit) {
     moveto(path_speed_, next_point_mm.x(), next_point_mm.y());
   } else {
     travel(next_point_mm);
   }
-  current_xy_ = next_point_mm;
   float target_power = should_emit ? 100 : 0;
   if (gen_->current_pwm != target_power) {
     gen_->set_toolhead_pwm(target_power, true);

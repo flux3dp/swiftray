@@ -73,13 +73,11 @@ struct Config {
   float min_printing_padding = NAN;
   float spinning_axis_coord = -1;
   float z_offset = 0;
-  float blade_radius = 0;
   float loop_compensation = 0;
   float workarea_clip[4] = {0, 0, 0, 0}; // inward offset; top, right, bottom, left
   float z_premove_x = 0;
   float z_premove_y = 0;
   float z_premove_z = 0;
-  QPointF precut_at;
   QPointF diode_offset;
   QPointF job_origin;
   QMap<int, QPointF> module_offsets;
@@ -95,7 +93,6 @@ struct Config {
   float dpmm_preview;
   // fountion on/off
   bool enable_pwm = true;
-  bool enable_precut = false;
   bool enable_diode = false;
   bool enable_autofocus = false;
   bool enable_custom_backlash = false;
@@ -293,15 +290,6 @@ public Q_SLOTS:
     config_.min_engraving_padding = param["mep"].toDouble(NAN);
     config_.min_printing_padding = param["mpp"].toDouble(NAN);
     config_.z_offset = param["z_offset"].toDouble(0);
-    config_.blade_radius = param["blade"].toDouble();
-    if (config_.blade_radius > 0) {
-      with_blade_ = true;
-      if (param.contains("precut")) {
-        config_.enable_precut = true;
-        config_.precut_at = QPointF(param["precut"].toArray()[0].toDouble(),
-                                    param["precut"].toArray()[1].toDouble());
-      }
-    }
     config_.loop_compensation = param["loop_compensation"].toDouble() / canvas_mm_ratio;
     config_.printing_top_padding = param["ptp"].toInt(10);
     config_.printing_bot_padding = param["pbp"].toInt(10);
@@ -595,7 +583,6 @@ public Q_SLOTS:
   bool is_v2_ = false;
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
-  bool with_blade_ = false;
   bool with_custom_origin_ = false;
 
   QSizeF work_area_mm_;
@@ -641,9 +628,6 @@ public Q_SLOTS:
   float rotary_y_ratio_ = 1;  // force set to 1 in post script
   QTransform global_transform_;
   std::vector<void(ToolpathExporterFcode::*)(MoveArgs args, std::function<void(MoveArgs args)> callback)> moveto_pipeline_functions_;
-  // For blade: blade position: current_xy - blade_radius * (current_vector / |current_vector|)
-  QPointF current_xy_ = QPointF(0, 0); // mm position of control point (not blade)
-  QVector2D current_vector_ = QVector2D(0, 0); // vector of cutting movement
   // For 3d curve
   float curve_started_ = false;
   float cur_x_ = 0;
