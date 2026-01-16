@@ -1,0 +1,22 @@
+{
+	"BUILD_DIR" : "/Users/estherfu/Desktop/swiftray/Swiftray_autogen",
+	"CMAKE_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CMAKE_CURRENT_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CMAKE_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CROSS_CONFIG" : false,
+	"GENERATOR" : "Unix Makefiles",
+	"INCLUDE_DIR" : "/Users/estherfu/Desktop/swiftray/Swiftray_autogen/include",
+	"INPUTS" : [ "/Users/estherfu/Desktop/swiftray/resources/pem/dsa_pub.pem" ],
+	"LOCK_FILE" : "/Users/estherfu/Desktop/swiftray/CMakeFiles/Swiftray_autogen.dir/AutoRcc_sparkle_EWIEGA46WW_Lock.lock",
+	"MULTI_CONFIG" : false,
+	"OPTIONS" : [ "--no-zstd", "-name", "sparkle" ],
+	"OUTPUT_CHECKSUM" : "EWIEGA46WW",
+	"OUTPUT_NAME" : "qrc_sparkle.cpp",
+	"RCC_EXECUTABLE" : "/Users/estherfu/Qt6/6.7.2/macos/./libexec/rcc",
+	"RCC_LIST_OPTIONS" : [ "--list" ],
+	"SETTINGS_FILE" : "/Users/estherfu/Desktop/swiftray/CMakeFiles/Swiftray_autogen.dir/AutoRcc_sparkle_EWIEGA46WW_Used.txt",
+	"SOURCE" : "/Users/estherfu/Desktop/swiftray/sparkle.qrc",
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

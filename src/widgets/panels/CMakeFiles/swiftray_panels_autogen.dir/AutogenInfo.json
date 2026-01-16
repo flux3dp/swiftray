@@ -1,0 +1,238 @@
+{
+	"BUILD_DIR" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/swiftray_panels_autogen",
+	"CMAKE_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CMAKE_CURRENT_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels",
+	"CMAKE_EXECUTABLE" : "/opt/homebrew/Cellar/cmake/3.30.2/bin/cmake",
+	"CMAKE_LIST_FILES" : [ "/Users/estherfu/Desktop/swiftray/src/widgets/panels/CMakeLists.txt" ],
+	"CMAKE_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/swiftray_panels_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "swiftray_panels_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/doc-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_doc-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/font-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_font-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/image-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_image-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/jogging-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_jogging-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/laser-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_laser-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/layer-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_layer-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/layer-params-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_layer-params-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/spooler-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_spooler-panel.cpp",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/transform-panel.h",
+			"MU",
+			"EWIEGA46WW/moc_transform-panel.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/swiftray_panels_autogen/include",
+	"MOC_COMPILATION_FILE" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/swiftray_panels_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"ENABLE_SENTRY=ad81ff6a57274de58ba17f6520240929@o28957.ingest.us.sentry.io/6586888",
+		"QT6",
+		"QT_CORE_LIB",
+		"QT_GUI_LIB",
+		"QT_NETWORK_LIB",
+		"QT_NO_DEBUG",
+		"QT_NO_KEYWORDS",
+		"QT_OPENGLWIDGETS_LIB",
+		"QT_OPENGL_LIB",
+		"QT_QMLBUILTINS_LIB",
+		"QT_QMLINTEGRATION_LIB",
+		"QT_QMLMODELS_LIB",
+		"QT_QML_LIB",
+		"QT_QUICKCONTROLS2_LIB",
+		"QT_QUICKWIDGETS_LIB",
+		"QT_QUICK_LIB",
+		"QT_SERIALPORT_LIB",
+		"QT_WEBSOCKETS_LIB",
+		"QT_WIDGETS_LIB"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/Users/estherfu/Desktop/swiftray/third_party",
+		"/Users/estherfu/Desktop/swiftray/third_party/sentry-native/install/include",
+		"/Users/estherfu/Desktop/swiftray/src",
+		"/Users/estherfu/Desktop/swiftray",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework/Versions/A/Headers/6.7.2/QtGui",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework/Versions/A/Headers/6.7.2/QtCore",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtDBus.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtDBus.framework/Versions/A/Headers/6.7.2/QtDBus",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSvg.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSvg.framework/Versions/A/Headers/6.7.2/QtSvg",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework/Versions/A/Headers/6.7.2/QtWidgets",
+		"/opt/homebrew/Cellar/opencv/4.10.0_19/include/opencv4",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/mkspecs/macx-clang",
+		"/Users/estherfu/Qt6/6.7.2/macos/include",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSerialPort.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSerialPort.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtOpenGLWidgets.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtOpenGLWidgets.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtOpenGL.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtOpenGL.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuick.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuick.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQml.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQml.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/include/QtQmlIntegration",
+		"/Users/estherfu/Qt6/6.7.2/macos/include/QtQmlBuiltins",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtNetwork.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtNetwork.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQmlModels.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQmlModels.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuickWidgets.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuickWidgets.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuickControls2.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtQuickControls2.framework",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWebSockets.framework/Headers",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWebSockets.framework",
+		"/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1",
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include",
+		"/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include",
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT",
+		"Q_GADGET_EXPORT",
+		"Q_ENUM_NS"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++",
+		"-std=c++17",
+		"-dM",
+		"-E",
+		"-c",
+		"/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/swiftray_panels_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 8,
+	"PARSE_CACHE_FILE" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/CMakeFiles/swiftray_panels_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/Users/estherfu/Qt6/6.7.2/macos/./libexec/moc",
+	"QT_UIC_EXECUTABLE" : "/Users/estherfu/Qt6/6.7.2/macos/./libexec/uic",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 7,
+	"SETTINGS_FILE" : "/Users/estherfu/Desktop/swiftray/src/widgets/panels/CMakeFiles/swiftray_panels_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/doc-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/font-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/image-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/jogging-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/laser-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/layer-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/layer-params-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/spooler-panel.cpp",
+			"MU",
+			null
+		],
+		[
+			"/Users/estherfu/Desktop/swiftray/src/widgets/panels/transform-panel.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

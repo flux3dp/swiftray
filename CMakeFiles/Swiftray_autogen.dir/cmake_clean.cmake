@@ -1,0 +1,10 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/Swiftray_autogen"
+  "Swiftray_autogen/mocs_compilation.cpp"
+  "Swiftray_autogen/timestamp"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang )
+  include(CMakeFiles/Swiftray_autogen.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

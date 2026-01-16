@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libclipper.a CMakeFiles/clipper.dir/clipper_autogen/mocs_compilation.cpp.o CMakeFiles/clipper.dir/clipper.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libclipper.a

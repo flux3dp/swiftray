@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libpdf2svg.a CMakeFiles/pdf2svg.dir/pdf2svg_autogen/mocs_compilation.cpp.o CMakeFiles/pdf2svg.dir/pdf2svg.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libpdf2svg.a
