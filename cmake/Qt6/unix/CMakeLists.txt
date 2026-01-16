@@ -1,7 +1,8 @@
 set(MIN_MACOS_VERSION 13.0)
 
 # QT Base Settings
-set(QT_ROOT_DIR "/Users/jasonshiao/Qt/6.7.2/macos")
+set(QT_ROOT_DIR "/Users/estherfu/Qt6/6.7.2/macos")
+#set(QTDIR "${QT_ROOT_DIR}")
 set(CMAKE_PREFIX_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
 set(CMAKE_FRAMEWORK_PATH "${QT_ROOT_DIR}" CACHE PATH "Path to Qt installation")
 
@@ -138,9 +139,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   if(ENABLE_SENTRY)
     add_custom_command(
       TARGET ${MACOSX_DEBUG_TARGET} POST_BUILD 
-      COMMAND ${CMAKE_COMMAND} -E echo "Exporting dSYM information"
+      COMMAND ${CMAKE_COMMAND} -E echo "Exporting dSYM information for ${CMAKE_OSX_ARCHITECTURES}"
       COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}>
       COMMAND sentry-cli debug-files upload -o flux3dp -p swiftray "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/MacOS/Swiftray.dSYM"
+      COMMAND ${CMAKE_COMMAND} -E echo "Uploaded ${CMAKE_OSX_ARCHITECTURES} debug symbols to Sentry"
     )
   endif()
 else()
@@ -245,6 +247,11 @@ foreach(exec_file ${APP_ADDITIONAL_EXEC_FILES})
     )
   endforeach()
 endforeach()
+
+add_custom_command(TARGET swiftray_app_bundle POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "Step 6. Ad-hoc codesign"
+  COMMAND codesign --deep --force --sign - "${PROJECT_NAME}.app"
+)
 
 # add_custom_command(TARGET swiftray_app_bundle POST_BUILD
 #   COMMAND ${CMAKE_COMMAND} -E echo "Step 6. Zip app bundle"
