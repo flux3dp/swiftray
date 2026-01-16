@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libliblcs.a CMakeFiles/liblcs.dir/liblcs_autogen/mocs_compilation.cpp.o CMakeFiles/liblcs.dir/lcsExpr.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libliblcs.a
