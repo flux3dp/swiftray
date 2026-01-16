@@ -82,13 +82,24 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(MACOSX_HIDE_APP 0)
   set(MACOSX_DEBUG_TARGET ${PROJECT_NAME}) # Use ${PROJECT_NAME} to always generate dSYM, use "swiftray_app_bundle" to only generate dSYM in release build
   # Add LCS libaries into the app bundle
-  file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    message(STATUS "Using liblcs for Apple Silicon (arm64)")
+    file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos_arm64/*.dylib")
+  else()
+    message(STATUS "Using liblcs for  Intel (x86_64)")
+    file(GLOB APP_ADDITIONAL_EXEC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/macos/*.dylib")
+  endif()
 
   list(APPEND APP_ADDITIONAL_EXEC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/bin/crashpad_handler)
   set(APP_FRAMEWORK_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
     ${SPARKLE_LIBRARIES}
   )
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+  list(APPEND APP_FRAMEWORK_FILES
+    /opt/homebrew/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib
+  )
+  endif()
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/pem/dsa_pub.pem
