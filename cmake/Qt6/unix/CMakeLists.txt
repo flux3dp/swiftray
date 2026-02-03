@@ -96,9 +96,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${SPARKLE_LIBRARIES}
   )
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-  list(APPEND APP_FRAMEWORK_FILES
-    /opt/homebrew/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib
-  )
+    list(APPEND APP_FRAMEWORK_FILES
+      /opt/homebrew/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib
+    )
   endif()
   set(APP_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/images/icon.icns
