@@ -78,7 +78,6 @@ public:
   double minPower() const;
   bool isOneWayEngraving() const;
   int module() const;
-  int uv() const;
   int ink() const;
   double printingSpeed() const;
   int multipass() const;
@@ -172,7 +171,6 @@ private:
   bool is_one_way_engraving_ = false;
   int module_ = 15;
   // Printing
-  int uv_ = 0;
   int ink_ = 3;
   double printing_speed_ = 60;
   int multipass_ = 1;

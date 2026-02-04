@@ -64,7 +64,6 @@ bool Worker::handleAction(QWebSocket* socket,
     server_->m_canvas = new Canvas();
     server_->m_thumbnail = wrapped_file["thumbnail"].toString();
     server_->m_rotary_mode = params_obj["rotaryMode"].toBool();
-    server_->m_engrave_dpi = params_obj["engraveDpi"].toInt();
     QJsonObject default_config = params_obj["defaultConfig"].toObject();
     QByteArray svg_data_bytes = QByteArray::fromStdString(svg_data.toStdString());
     server_->m_canvas->loadSVG(svg_data_bytes, true, default_config);
@@ -81,9 +80,8 @@ bool Worker::handleAction(QWebSocket* socket,
     QString type = params_obj["type"].toString();
     bool is_promark = params_obj["isPromark"].toBool();
     if (!is_promark) {
-      qInfo() << "Generating Task Code... TYPE" << type << "DPI" << server_->m_engrave_dpi;
-      QTransform move_translate = QTransform();
-      ToolpathExporterFcode exporter(move_translate, server_->m_engrave_dpi, &params_obj, &server_->m_thumbnail);
+      qInfo() << "Generating Task Code... TYPE" << type;
+      ToolpathExporterFcode exporter(&params_obj, &server_->m_thumbnail);
       current_task = type == "gcode" ? "Generating Task Path..." : "Generating Task Code...";
       onProgress(0);
       connect(this, &Worker::interruptAction, &exporter, &ToolpathExporterFcode::handleCancel, Qt::QueuedConnection);
@@ -119,7 +117,7 @@ bool Worker::handleAction(QWebSocket* socket,
       }
       result["fileName"] = "swiftray-conversion";
     } else {
-      qInfo() << "Generating Promark GCode..." << "DPI" << server_->m_engrave_dpi << "ROTARY" << server_->m_rotary_mode << "TRAVEL" << travel_speed;
+      qInfo() << "Generating Promark GCode..." << "ROTARY" << server_->m_rotary_mode << "TRAVEL" << travel_speed;
       bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
       bool enable_high_speed = (server_->m_machine == NULL || server_->m_machine->getMachineParam().is_high_speed_mode) && server_->m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode
@@ -152,7 +150,7 @@ bool Worker::handleAction(QWebSocket* socket,
       } else {
         ToolpathExporter exporter(
             (BaseGenerator*)&gen,
-            server_->m_engrave_dpi / 25.4,
+            10, // Use 10 DPMM for hardcoded bvg without layer dpmm
             travel_speed,
             QPointF(std::get<0>(origin), std::get<1>(origin)),
             ToolpathExporter::PaddingType::kNoPadding,

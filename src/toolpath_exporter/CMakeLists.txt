@@ -3,4 +3,16 @@ target_sources(Swiftray PRIVATE
   toolpath-exporter-fcode.cpp
   toolpath-exporter.cpp
   toolpath-utils.cpp
+  factories/base-factory.cpp
+  factories/factory-utils.cpp
+  factories/laser-path.cpp
+  factories/laser.cpp
+  factories/printer-4c.cpp
+  factories/printer.cpp
+  factories/uv.cpp
+  factories/workspace.cpp
+  generators/fcode-generator.cpp
+  macros/beamo2.cpp
+  macros/prespray.cpp
+  macros/uv1.cpp
 )
