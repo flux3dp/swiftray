@@ -2890,21 +2890,23 @@ static QSvgNode *createGNode(QSvgNode *parent,
         QJsonObject *default_config = &(handler->default_config_);
         layer_config.speed = getAttr(attributes, "data-speed", default_config, "speed", 20.0);
         layer_config.power = getAttr(attributes, "data-strength", default_config, "power", 15.0);
-        layer_config.module = getAttr(attributes, "data-module", default_config, "module", 1);
         layer_config.repeat = getAttr(attributes, "data-repeat", default_config, "repeat", 1);
         layer_config.height = getAttr(attributes, "data-height", default_config, "height", 0.0);
         layer_config.z_step = getAttr(attributes, "data-zstep", default_config, "zStep", 0.0);
         layer_config.diode = getAttr(attributes, "data-diode", default_config, "diode", 0);
-        layer_config.multipass = getAttr(attributes, "data-multipass", default_config, "multipass", 1);
         layer_config.backlash = getAttr(attributes, "data-backlash", default_config, "backlash", 0.0);
+
+        layer_config.min_power = getAttr(attributes, "data-minPower", default_config, "minPower", 0);
+        layer_config.module = getAttr(attributes, "data-module", default_config, "module", 1);
         layer_config.uv = getAttr(attributes, "data-uv", default_config, "uv", 0);
+        layer_config.ink = getAttr(attributes, "data-ink", default_config, "ink", 3);
+        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", default_config, "printingSpeed", 60.0);
+        layer_config.multipass = getAttr(attributes, "data-multipass", default_config, "multipass", 1);
         layer_config.halftone = getAttr(attributes, "data-halftone", default_config, "halftone", 1);
         layer_config.printing_strength = getAttr(attributes, "data-printingStrength", default_config, "printingStrength", 100.0);
         layer_config.focus = getAttr(attributes, "data-focus", default_config, "focus", 0.0);
         layer_config.focus_step = getAttr(attributes, "data-focusStep", default_config, "focusStep", 0.0);
-        layer_config.min_power = getAttr(attributes, "data-minPower", default_config, "minPower", 0);
-        layer_config.ink = getAttr(attributes, "data-ink", default_config, "ink", 3);
-        layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", default_config, "printingSpeed", 60.0);
+        layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.frequency = getAttr(attributes, "data-frequency", default_config, "frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", default_config, "pulseWidth", 0);
         layer_config.fill_interval = getAttr(attributes, "data-fillInterval", default_config, "fillInterval", 0.0);
@@ -2914,7 +2916,6 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
         layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
         layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
-        layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }

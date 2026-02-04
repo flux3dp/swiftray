@@ -83,3 +83,7 @@ class PathUtils {
   QLineF bottom_border_;
   QLineF left_border_;
 };
+
+QByteArray generate_nozzle_setting_payload(int saturation,
+                                           float voltage = NAN,
+                                           float pulse_width = NAN);

@@ -74,45 +74,28 @@ public:
 
   double targetHeight() const;
 
-  int module() const;
-
-  float focus() const;
-
-  float focusStep() const;
-
-  float printingStrength() const;
-
-  double printingSpeed() const;
-
-  int uv() const;
-
-  int halftone() const;
-
-  int multipass() const;
-
-  int ink() const;
-
+  // BS
   double minPower() const;
-
-  int frequency() const;
-  
-  int pulseWidth() const;
-
-  double fillInterval() const;
-
-  double fillAngle() const;
-
-  bool fillBidirectional() const;
-
-  bool fillHatch() const;
-
-  int dottingTime() const;
-
-  double wobbleStep() const;
-
-  double wobbleDiameter() const;
-
+  int module() const;
+  int uv() const;
+  int ink() const;
+  double printingSpeed() const;
+  int multipass() const;
+  int halftone() const;
+  float printingStrength() const;
+  float focus() const;
+  float focusStep() const;
   double ceZLimit() const;
+  int frequency() const;
+  int pulseWidth() const;
+  double fillInterval() const;
+  double fillAngle() const;
+  bool fillBidirectional() const;
+  bool fillHatch() const;
+  int dottingTime() const;
+  double wobbleStep() const;
+  double wobbleDiameter() const;
+  // end BS
 
   Document &document();
 
@@ -160,34 +143,29 @@ private:
   int parameter_index_;
 
   /** BS properties **/
+  double min_power_ = 0;
   int module_ = 0;
-  // new config method for target_height_ and step_height_
+  // Printing
+  int uv_ = 0;
+  int ink_ = 3;
+  double printing_speed_ = 60;
+  int multipass_ = 1;
+  int halftone_ = 1;
+  float printing_strength_ = 100;
+  // Height / Curve Engraving
   float focus_ = -2;
   float focus_step_ = -2;
-  // printing
-  float printing_strength_ = 100;
-  double printing_speed_ = 60;
-  int uv_ = 0;
-  int halftone_ = 1;
-  int multipass_ = 1;
-  int ink_ = 3;
-  // pwm
-  double min_power_ = 0;
-  // fiber
+  double ce_z_limit_ = 0;
+  // Promark
   int frequency_ = 0;
   int pulse_width_ = 0;
-  // filling
   double fill_interval_;
   double fill_angle_;
   bool fill_bidirectional_;
   bool fill_hatch_;
-  // Promark gradient
   int dotting_time_ = 0;
-  // Promark wobble
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
-  // curve engraving
-  double ce_z_limit_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

@@ -41,27 +41,27 @@ namespace MySVG {
         float z_step;
         int diode;
         float backlash;
-        int uv;
+
+        double min_power;
         int module;
+        int uv;
+        int ink;
+        double printing_speed;
+        int multipass;
+        int halftone;
+        float printing_strength;
         float focus;
         float focus_step;
-        float printing_strength;
-        double printing_speed;
-        int uv_;
-        int halftone;
-        int multipass;
-        int ink;
-        double min_power;
-        int frequency; //khz
-        int pulse_width; //ns
-        double fill_interval; //mm
-        double fill_angle; //deg
+        double ce_z_limit;
+        int frequency;
+        int pulse_width;
+        double fill_interval;
+        double fill_angle;
         bool fill_bidirectional;
         bool fill_hatch;
         int dotting_time;
         double wobble_step;
         double wobble_diameter;
-        double ce_z_limit;
     };
 
     enum ReadType {

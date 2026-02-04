@@ -76,6 +76,8 @@ const QColor &Layer::color() const { return color_; }
 
 QList<ShapePtr> &Layer::children() { return children_; }
 
+Layer::Type Layer::type() const { return type_; }
+
 int Layer::repeat() const {
   return repeat_;
 }
@@ -116,27 +118,27 @@ double Layer::stepHeight() const { return step_height_; }
 
 double Layer::targetHeight() const { return target_height_; }
 
+double Layer::minPower() const { return min_power_; }
+
 int Layer::module() const { return module_; }
+
+int Layer::uv() const { return uv_; }
+
+int Layer::ink() const { return ink_; }
+
+double Layer::printingSpeed() const { return printing_speed_; }
+
+int Layer::multipass() const { return multipass_; }
+
+int Layer::halftone() const { return halftone_; }
+
+float Layer::printingStrength() const { return printing_strength_; }
 
 float Layer::focus() const { return focus_; }
 
 float Layer::focusStep() const { return focus_step_; }
 
-float Layer::printingStrength() const { return printing_strength_; }
-
-double Layer::printingSpeed() const { return printing_speed_; }
-
-int Layer::uv() const { return uv_; }
-
-int Layer::halftone() const { return halftone_; }
-
-int Layer::multipass() const { return multipass_; }
-
-int Layer::ink() const { return ink_; }
-
-double Layer::minPower() const { return min_power_; }
-
-Layer::Type Layer::type() const { return type_; }
+double Layer::ceZLimit() const { return ce_z_limit_; }
 
 int Layer::frequency() const { return frequency_; }
 
@@ -155,8 +157,6 @@ int Layer::dottingTime() const { return dotting_time_; }
 double Layer::wobbleStep() const { return wobble_step_; }
 
 double Layer::wobbleDiameter() const { return wobble_diameter_; }
-
-double Layer::ceZLimit() const { return ce_z_limit_; }
 
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
@@ -220,21 +220,22 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->speed_ = config.speed;
   this->power_ = config.power;
   this->color_ = config.color;
-  this->module_ = config.module;
   this->repeat_ = config.repeat;
   this->target_height_ = config.height;
   this->step_height_ = config.z_step;
   this->use_diode_ = config.diode;
-  this->multipass_ = config.multipass;
   this->x_backlash_ = config.backlash;
-  this->uv_ = config.uv;
+
+  this->min_power_ = config.min_power;
+  this->module_ = config.module;
+  this->ink_ = config.ink;
+  this->printing_speed_ = config.printing_speed;
+  this->multipass_ = config.multipass;
   this->halftone_ = config.halftone;
   this->printing_strength_ = config.printing_strength;
   this->focus_ = config.focus;
   this->focus_step_ = config.focus_step;
-  this->min_power_ = config.min_power;
-  this->ink_ = config.ink;
-  this->printing_speed_ = config.printing_speed;
+  this->ce_z_limit_ = config.ce_z_limit;
   this->frequency_ = config.frequency;
   this->pulse_width_ = config.pulse_width;
   this->fill_interval_ = config.fill_interval;
@@ -244,7 +245,6 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->dotting_time_ = config.dotting_time;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
-  this->ce_z_limit_ = config.ce_z_limit;
 }
 
 // Clone
@@ -262,24 +262,6 @@ LayerPtr Layer::clone() {
   new_layer->use_diode_ = this->use_diode_;
   new_layer->multipass_ = this->multipass_;
   new_layer->x_backlash_ = this->x_backlash_;
-  new_layer->uv_ = this->uv_;
-  new_layer->halftone_ = this->halftone_;
-  new_layer->printing_strength_ = this->printing_strength_;
-  new_layer->focus_ = this->focus_;
-  new_layer->focus_step_ = this->focus_step_;
-  new_layer->min_power_ = this->min_power_;
-  new_layer->ink_ = this->ink_;
-  new_layer->printing_speed_ = this->printing_speed_;
-  new_layer->frequency_ = this->frequency_;
-  new_layer->pulse_width_ = this->pulse_width_;
-  new_layer->fill_interval_ = this->fill_interval_;
-  new_layer->fill_angle_ = this->fill_angle_;
-  new_layer->fill_bidirectional_ = this->fill_bidirectional_;
-  new_layer->fill_hatch_ = this->fill_hatch_;
-  new_layer->dotting_time_ = this->dotting_time_;
-  new_layer->wobble_step_ = this->wobble_step_;
-  new_layer->wobble_diameter_ = this->wobble_diameter_;
-  new_layer->ce_z_limit_ = this->ce_z_limit_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

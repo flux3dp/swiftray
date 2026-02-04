@@ -492,3 +492,32 @@ void PathUtils::sortAndPreprocessPolygons(QList<QPolygonF>& polys) {
   polys.clear();
   traverse(polys, root);
 }
+
+QByteArray generate_nozzle_setting_payload(int saturation,
+                                           float voltage,
+                                           float pulse_width) {
+  QByteArray payload;
+  /*
+  if (use_default) {
+    payload.append((const char*)(&nozzle_settings.voltage_default), 4);
+    payload.append((const char*)(&nozzle_settings.pulse_width_default), 4);
+  } else {
+    payload.append((const char*)(&nozzle_settings.voltage), 4);
+    payload.append((const char*)(&nozzle_settings.pulse_width), 4);
+  }
+  payload.append((const char*)(&saturation), 4);
+  payload.append((const char*)(&nozzle_settings.DPI), 4);
+  payload.append((const char*)(&nozzle_settings.ink_catridge_count), 4);
+  payload.append((const char*)(&nozzle_settings.ink_type), 4);
+  payload.append((const char*)(&nozzle_settings.nozzle_select), 4);
+  payload.append((const char*)(&nozzle_settings.spray_time), 4);
+  payload.append((const char*)(&nozzle_settings.ink_exchange), 4);
+  payload.append((const char*)(&nozzle_settings.h_gap_ink1_ink2), 4);
+  payload.append((const char*)(&nozzle_settings.v_gap_ink1_ink2), 4);
+  payload.append((const char*)(&nozzle_settings.h_gap_ink2_ink3), 4);
+  payload.append((const char*)(&nozzle_settings.v_gap_ink2_ink3), 4);
+  payload.append((const char*)(&nozzle_settings.h_gap_ink3_ink4), 4);
+  payload.append((const char*)(&nozzle_settings.v_gap_ink3_ink4), 4);
+  */
+  return payload;
+}
