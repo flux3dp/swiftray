@@ -1,4 +1,5 @@
 #include <toolpath_exporter/toolpath-exporter.h>
+#include "toolpath-exporter-constants.h"
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QVector2D>
@@ -12,12 +13,33 @@
 
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
- gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), is_promark_(is_promark)
-{
+ gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
+
+void ToolpathExporter::setDpmm(qreal dpmm) {
+  if (dpmm == dpmm_ || dpmm <= 0) return;
+  bool need_bigger_canvas = dpmm > dpmm_;
+  dpmm_ = dpmm;
+  setLoopCompensation(compensation_mm_);
+  setWorkAreaSize(machine_work_area_mm_);
   resolution_scale_ = dpmm_ / canvas_mm_ratio_;
   resolution_scale_transform_ = QTransform::fromScale(resolution_scale_, resolution_scale_);
-  move_translate_ = move_translate;
-  global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
+  global_transform_ = move_translate_ * resolution_scale_transform_;
+  canvas_width_ = machine_work_area_mm_.width() * dpmm_;
+  canvas_height_ = machine_work_area_mm_.height() * dpmm_;
+  canvas_size_ = QSizeF(canvas_width_, canvas_height_);
+  double eps = 1e-4;
+  canvas_clip_path_.clear();
+  canvas_clip_path_.addRect(eps, eps, canvas_width_ - eps * 2, canvas_height_ - eps * 2);
+  qInfo() << "Layer dpmm: " << dpmm_ << "Canvas size: " << canvas_size_;
+  if (need_bigger_canvas) {
+    layer_bitmaps_.clear();
+    bitmap_dirty_areas_.clear();
+    for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::PwmMode; ++i) {
+      layer_bitmaps_.append(QPixmap(QSize(canvas_width_, canvas_height_)));
+      layer_bitmaps_[i].fill(Qt::white);
+      bitmap_dirty_areas_.append(QRectF());
+    }
+  }
 }
 
 /**
@@ -58,24 +80,11 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   LayerPtr first_layer = layers.at(0);
   qInfo() << "[Export] First layer: " << first_layer->name() << " " << first_layer.get(); 
   qInfo() << "[Export] Document: " << &first_layer->document();
-  canvas_size_ = QSizeF((first_layer->document()).width(), 
-                        (first_layer->document()).height())
-                 * resolution_scale_;
-  canvas_width_ = canvas_size_.width();
-  canvas_height_ = canvas_size_.height();
-  double eps = 1e-4;
-  canvas_clip_path_.addRect(eps, eps, canvas_width_ - eps * 2, canvas_height_ - eps * 2);
-  left_border_ = QLineF(0, 0, 0, canvas_height_);
-  top_border_ = QLineF(0, 0, canvas_width_, 0);
-  right_border_ = QLineF(canvas_width_, 0, canvas_width_, canvas_height_);
-  bottom_border_ = QLineF(0, canvas_height_, canvas_width_, canvas_height_);
-  qInfo() << "[Export] Canvas size: " << canvas_size_;
-  // Generate bitmap canvas
-  for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::PwmMode; ++i) {
-    layer_bitmaps_.append(QPixmap(QSize(canvas_width_, canvas_height_)));
-    layer_bitmaps_[i].fill(Qt::white);
-    bitmap_dirty_areas_.append(QRectF());
-  }
+  // Setup dpmm with compensation_mm_ & machine_work_area_mm_
+  qreal default_dpmm = dpmm_;
+  dpmm_ = 0;
+  setDpmm(default_dpmm);
+
   processed_layer_cnt_ = 0;
   total_layer_cnt_ = layers.size();
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
@@ -88,6 +97,20 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
       float focus = is_contour_ ? 0 : (*layer_rit)->focus();
       float focus_step = is_contour_ ? 0 : (*layer_rit)->focusStep();
       float total_move = 0;
+      LayerPtr current_layer_ = *layer_rit;
+      LayerPtr current_layer_2_ = nullptr;
+      layer_rit++;
+      if (layer_rit != layers.crend() &&
+          current_layer_->type() == Layer::Type::Line &&
+          (*layer_rit)->type() != Layer::Type::Line &&
+          current_layer_->name() + "-filled" == (*layer_rit)->name()) {
+        // Swiftray create two layers for line + filled path, handle them together
+        current_layer_2_ = *layer_rit;
+        qInfo() << "[Export] Handle layers together" << current_layer_->name() << current_layer_2_->name();
+      } else {
+        layer_rit--;
+        current_layer_2_ = nullptr;
+      }
       for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
         if (processed_repeat_times_ == 0) {
           if (focus > 0) {
@@ -102,7 +125,10 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
           gen_->moveZ(-focus_step);
           total_move += focus_step;
         }
-        convertLayer((*layer_rit));
+        convertLayer(current_layer_);
+        if (current_layer_2_) {
+          convertLayer(current_layer_2_);
+        }
       }
       if (total_move > 0) {
         gen_->moveZ(total_move);
@@ -147,6 +173,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
  */
 void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   // Reset context states for the layer
+  setDpmm(layer->dpmm());
   // TODO (Use layer_painter to manage transform over different sub objects)
   global_transform_ = QTransform() * move_translate_ * resolution_scale_transform_;
   polygons_mutex_.lock();
@@ -453,12 +480,6 @@ void ToolpathExporter::outputLayerFillGcode() {
     }
   }
   qInfo() << "Fill Path Bounds: " << bounds;
-  double width = canvas_size_.width();
-  double height = canvas_size_.height();
-  QLineF left_border(0, 0, 0, height);
-  QLineF top_border(0, 0, width, 0);
-  QLineF right_border(width, 0, width, canvas_size_.height());
-  QLineF bottom_border(0, height, width, height);
   qInfo() << "DPMM: " << dpmm_;
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;

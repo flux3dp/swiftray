@@ -236,6 +236,9 @@ SOURCES += \
     $$files(src/connection/*.cpp) \
     $$files(src/connection/QAsyncSerial/*.cpp) \
     $$files(src/toolpath_exporter/*.cpp) \
+    $$files(src/toolpath_exporter/factories/*.cpp) \
+    $$files(src/toolpath_exporter/generators/*.cpp) \
+    $$files(src/toolpath_exporter/macros/*.cpp) \
     $$files(src/settings/*.cpp) \
     $$files(src/shape/*.cpp) \
     $$files(src/widgets/*.cpp) \

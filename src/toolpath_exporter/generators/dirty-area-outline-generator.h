@@ -144,7 +144,7 @@ public:
   void setRotary(double rotary_axis_coord,
                  double rotary_y_ratio,
                  double rotary_split,
-                 double rotary_overlap) {
+                 double rotary_overlap) override {
     rotary_axis_coord_ = rotary_axis_coord;
     rotary_y_ratio_ = rotary_y_ratio;
     rotary_split_ = rotary_split;

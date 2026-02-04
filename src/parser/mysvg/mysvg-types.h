@@ -41,27 +41,51 @@ namespace MySVG {
         float z_step;
         int diode;
         float backlash;
-        int uv;
+
+        double min_power;
+        bool is_one_way_engraving;
         int module;
+        int ink;
+        double printing_speed;
+        int multipass;
+        int halftone;
+        double am_density;
+        float printing_strength;
+        double c_ratio;
+        double m_ratio;
+        double y_ratio;
+        double k_ratio;
+        float smooth;
+        QString raw_am_angle_map;
+        QString raw_color_curves_map;
+        int refresh_interval;
+        int refresh_threshold;
+        int nozzle_mode;
+        double nozzle_offset_x;
+        double nozzle_offset_y;
         float focus;
         float focus_step;
-        float printing_strength;
-        double printing_speed;
-        int uv_;
-        int halftone;
-        int multipass;
-        int ink;
-        double min_power;
-        int frequency; //khz
-        int pulse_width; //ns
-        double fill_interval; //mm
-        double fill_angle; //deg
+        double ce_z_limit;
+        int interpolation;
+        double right_padding;
+        int uv_printing_repeat;
+        int uv_curing_after;
+        int uv_curing_repeat;
+        int uv_strength;
+        int uv_x_step;
+        int frequency;
+        int pulse_width;
+        double fill_interval;
+        double fill_angle;
         bool fill_bidirectional;
         bool fill_hatch;
         int dotting_time;
         double wobble_step;
         double wobble_diameter;
-        double ce_z_limit;
+        int air_assist;
+        QString raw_bbox;
+        int laser_delay;
+        int dpmm;
     };
 
     enum ReadType {
