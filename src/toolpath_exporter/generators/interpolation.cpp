@@ -8,12 +8,12 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QList>
 #include <QMutex>
 #include <QPainter>
 #include <QProgressDialog>
 #include <QVector2D>
 #include <QVector3D>
+#include <QVector>
 #include <bitset>
 #include <cmath>
 #include <opencv2/flann.hpp>
@@ -30,11 +30,11 @@ class Triangle {
   int point_indices[3];
   // indices for vertex in neighboring triangulation; -1 means no neighbor
   // e.g. triangle_neighbors[0], point_indices[1], point_indices[2] is another triangulation
-  int triangle_neighbors[3] = {-1, -1, -1}; 
+  int triangle_neighbors[3] = {-1, -1, -1};
 
   Triangle(cv::Vec6f t,
            QMap<QString, int>* index_map,
-           QList<QSet<int>>* vertex_neighbors_set) {
+           QVector<QSet<int>>* vertex_neighbors_set) {
     for (int i = 0; i < 3; i++) {
       cv::Point2f p(t[2 * i], t[2 * i + 1]);
       this->points.push_back(p);
@@ -50,7 +50,7 @@ class Triangle {
     }
   }
 
-  void update_neighbors(QList<QSet<int>>* vertex_neighbors_set) {
+  void update_neighbors(QVector<QSet<int>>* vertex_neighbors_set) {
     for (int i = 0; i < 2; i++) {
       for (int j = i + 1; j < 3; j++) {
         int k = 3 - i - j;
@@ -82,9 +82,9 @@ class CloughTocher2DInterpolator {
   std::vector<double> values;
   QMap<QString, int> index_map;
   cv::Subdiv2D subdiv;
-  QList<QList<int>> vertex_neighbors;
-  QList<double> grad;
-  QList<Triangle> triangles;
+  QVector<QVector<int>> vertex_neighbors;
+  QVector<double> grad;
+  QVector<Triangle> triangles;
 
   void set_bounding_box(int left, int top, int right, int bottom) {
     min_x = left;
@@ -108,17 +108,17 @@ class CloughTocher2DInterpolator {
 
   void setup() {
     std::vector<cv::Vec6f> triangleList;
-    QList<QSet<int>> vertex_neighbors_sets(points.size());
+    QVector<QSet<int>> vertex_neighbors_sets(points.size());
     subdiv.initDelaunay(cv::Rect(min_x - 1, min_y - 1, max_x - min_x + 2, max_y - min_y + 2));
     subdiv.insert(points);
     subdiv.getTriangleList(triangleList);
-    for (const auto t : triangleList) {
+    for (const auto& t : triangleList) {
       triangles.push_back(Triangle(t, &index_map, &vertex_neighbors_sets));
     }
-    for (auto t : triangles) {
+    for (auto& t : triangles) {
       t.update_neighbors(&vertex_neighbors_sets);
     }
-    for (const auto vertex_neighbors_set : vertex_neighbors_sets) {
+    for (const auto& vertex_neighbors_set : vertex_neighbors_sets) {
       vertex_neighbors.push_back(vertex_neighbors_set.values());
     }
     grad.resize(points.size() * 2);
@@ -170,7 +170,7 @@ class CloughTocher2DInterpolator {
    * @param y: output, shape (npoints, 2) Derivatives [F_x, F_y] at the vertices
    * @return: true if converged, false if maxiter reached without convergence
    */
-  bool _estimate_gradients_2d_global(QList<double>* y) {
+  bool _estimate_gradients_2d_global(QVector<double>* y) {
     double Q[2 * 2] = {0};
     double s[2] = {0};
     double r[2];

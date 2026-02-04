@@ -120,9 +120,9 @@ double Layer::targetHeight() const { return target_height_; }
 
 double Layer::minPower() const { return min_power_; }
 
-int Layer::module() const { return module_; }
+bool Layer::isOneWayEngraving() const { return is_one_way_engraving_; }
 
-int Layer::uv() const { return uv_; }
+int Layer::module() const { return module_; }
 
 int Layer::ink() const { return ink_; }
 
@@ -132,13 +132,53 @@ int Layer::multipass() const { return multipass_; }
 
 int Layer::halftone() const { return halftone_; }
 
+double Layer::amDensity() const { return am_density_; }
+
 float Layer::printingStrength() const { return printing_strength_; }
+
+double Layer::cRatio() const { return c_ratio_; }
+
+double Layer::mRatio() const { return m_ratio_; }
+
+double Layer::yRatio() const { return y_ratio_; }
+
+double Layer::kRatio() const { return k_ratio_; }
+
+float Layer::smooth() const { return smooth_; }
+
+const QString& Layer::rawAmAngleMap() const { return raw_am_angle_map_; }
+
+const QString& Layer::rawColorCurvesMap() const { return raw_color_curves_map_; }
+
+int Layer::refreshInterval() const { return refresh_interval_; }
+
+int Layer::refreshThreshold() const { return refresh_threshold_; }
+
+int Layer::nozzleMode() const { return nozzle_mode_; }
+
+double Layer::nozzleOffsetX() const { return nozzle_offset_x_; }
+
+double Layer::nozzleOffsetY() const { return nozzle_offset_y_; }
 
 float Layer::focus() const { return focus_; }
 
 float Layer::focusStep() const { return focus_step_; }
 
 double Layer::ceZLimit() const { return ce_z_limit_; }
+
+int Layer::interpolation() const { return interpolation_; }
+
+double Layer::rightPadding() const { return right_padding_; }
+
+int Layer::uvPrintingRepeat() const { return uv_printing_repeat_; }
+
+int Layer::uvCuringAfter() const { return uv_curing_after_; }
+
+int Layer::uvCuringRepeat() const { return uv_curing_repeat_; }
+
+int Layer::uvStrength() const { return uv_strength_; }
+
+int Layer::uvXStep() const { return uv_x_step_; }
 
 int Layer::frequency() const { return frequency_; }
 
@@ -157,6 +197,14 @@ int Layer::dottingTime() const { return dotting_time_; }
 double Layer::wobbleStep() const { return wobble_step_; }
 
 double Layer::wobbleDiameter() const { return wobble_diameter_; }
+
+int Layer::airAssist() const { return air_assist_; }
+
+const QString& Layer::rawBBox() const { return raw_bbox_; }
+
+int Layer::laserDelay() const { return laser_delay_; }
+
+int Layer::dpmm() const { return dpmm_; }
 
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
@@ -227,15 +275,36 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->x_backlash_ = config.backlash;
 
   this->min_power_ = config.min_power;
+  this->is_one_way_engraving_ = config.is_one_way_engraving;
   this->module_ = config.module;
   this->ink_ = config.ink;
   this->printing_speed_ = config.printing_speed;
   this->multipass_ = config.multipass;
   this->halftone_ = config.halftone;
+  this->am_density_ = config.am_density;
   this->printing_strength_ = config.printing_strength;
+  this->c_ratio_ = config.c_ratio;
+  this->m_ratio_ = config.m_ratio;
+  this->y_ratio_ = config.y_ratio;
+  this->k_ratio_ = config.k_ratio;
+  this->smooth_ = config.smooth;
+  this->raw_am_angle_map_ = config.raw_am_angle_map;
+  this->raw_color_curves_map_ = config.raw_color_curves_map;
+  this->refresh_interval_ = config.refresh_interval;
+  this->refresh_threshold_ = config.refresh_threshold;
+  this->nozzle_mode_ = config.nozzle_mode;
+  this->nozzle_offset_x_ = config.nozzle_offset_x;
+  this->nozzle_offset_y_ = config.nozzle_offset_y;
   this->focus_ = config.focus;
   this->focus_step_ = config.focus_step;
   this->ce_z_limit_ = config.ce_z_limit;
+  this->interpolation_ = config.interpolation;
+  this->right_padding_ = config.right_padding;
+  this->uv_printing_repeat_ = config.uv_printing_repeat;
+  this->uv_curing_after_ = config.uv_curing_after;
+  this->uv_curing_repeat_ = config.uv_curing_repeat;
+  this->uv_strength_ = config.uv_strength;
+  this->uv_x_step_ = config.uv_x_step;
   this->frequency_ = config.frequency;
   this->pulse_width_ = config.pulse_width;
   this->fill_interval_ = config.fill_interval;
@@ -245,6 +314,10 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->dotting_time_ = config.dotting_time;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
+  this->air_assist_ = config.air_assist;
+  this->raw_bbox_ = config.raw_bbox;
+  this->laser_delay_ = config.laser_delay;
+  this->dpmm_ = config.dpmm;
 }
 
 // Clone

@@ -2897,16 +2897,36 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.backlash = getAttr(attributes, "data-backlash", default_config, "backlash", 0.0);
 
         layer_config.min_power = getAttr(attributes, "data-minPower", default_config, "minPower", 0);
+        layer_config.is_one_way_engraving = attributes.value("data-owe").toString() == "1"; // Additional manual feature
         layer_config.module = getAttr(attributes, "data-module", default_config, "module", 1);
-        layer_config.uv = getAttr(attributes, "data-uv", default_config, "uv", 0);
         layer_config.ink = getAttr(attributes, "data-ink", default_config, "ink", 3);
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", default_config, "printingSpeed", 60.0);
         layer_config.multipass = getAttr(attributes, "data-multipass", default_config, "multipass", 1);
         layer_config.halftone = getAttr(attributes, "data-halftone", default_config, "halftone", 1);
+        layer_config.am_density = getAttr(attributes, "data-amDensity", default_config, "am_density", 2.0);
         layer_config.printing_strength = getAttr(attributes, "data-printingStrength", default_config, "printingStrength", 100.0);
+        layer_config.c_ratio = getAttr(attributes, "data-cRatio", default_config, "c_ratio", 100.0);
+        layer_config.m_ratio = getAttr(attributes, "data-mRatio", default_config, "m_ratio", 100.0);
+        layer_config.y_ratio = getAttr(attributes, "data-yRatio", default_config, "y_ratio", 100.0);
+        layer_config.k_ratio = getAttr(attributes, "data-kRatio", default_config, "k_ratio", 100.0);
+        layer_config.smooth = getAttr(attributes, "data-smooth", default_config, "smooth", 1.0);
+        layer_config.raw_am_angle_map = attributes.value("data-amAngleMap").toString();
+        layer_config.raw_color_curves_map = attributes.value("data-colorCurvesMap").toString();
+        layer_config.refresh_interval = getAttr(attributes, "data-refreshInterval", default_config, "refresh_interval", 0);
+        layer_config.refresh_threshold = getAttr(attributes, "data-refreshThreshold", default_config, "refresh_threshold", 0);
+        layer_config.nozzle_mode = getAttr(attributes, "data-nozzleMode", default_config, "nozzle_mode", 0);
+        layer_config.nozzle_offset_x = getAttr(attributes, "data-nozzleOffsetX", default_config, "nozzle_offset_x", 0.0);
+        layer_config.nozzle_offset_y = getAttr(attributes, "data-nozzleOffsetY", default_config, "nozzle_offset_y", 0.0);
         layer_config.focus = getAttr(attributes, "data-focus", default_config, "focus", 0.0);
         layer_config.focus_step = getAttr(attributes, "data-focusStep", default_config, "focusStep", 0.0);
         layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
+        layer_config.interpolation = getAttr(attributes, "data-interpolation", default_config, "interpolation", 1);
+        layer_config.right_padding = getAttr(attributes, "data-rightPadding", default_config, "right_padding", 0.0);
+        layer_config.uv_printing_repeat = getAttr(attributes, "data-uvPrintingRepeat", default_config, "uv_printing_repeat", 1);
+        layer_config.uv_curing_after = getAttr(attributes, "data-uvCuringAfter", default_config, "uv_curing_after", 0);
+        layer_config.uv_curing_repeat = getAttr(attributes, "data-uvCuringRepeat", default_config, "uv_curing_repeat", 1);
+        layer_config.uv_strength = getAttr(attributes, "data-uvStrength", default_config, "uv_strength", 25);
+        layer_config.uv_x_step = getAttr(attributes, "data-xStep", default_config, "x_step", 1);
         layer_config.frequency = getAttr(attributes, "data-frequency", default_config, "frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", default_config, "pulseWidth", 0);
         layer_config.fill_interval = getAttr(attributes, "data-fillInterval", default_config, "fillInterval", 0.0);
@@ -2916,6 +2936,10 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
         layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
         layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
+        layer_config.air_assist = getAttr(attributes, "data-airAssist", default_config, "air_assist", 100);
+        layer_config.raw_bbox = attributes.value("data-bbox").toString();
+        layer_config.laser_delay = getAttr(attributes, "data-delay", default_config, "delay", 0);
+        layer_config.dpmm = getAttr(attributes, "data-dpmm", default_config, "dpmm", 0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
@@ -2968,6 +2992,15 @@ static QSvgNode *createImageNode(QSvgNode *parent,
     g_pwm = attributes.value("data-pwm").toInt() == 1;
     g_pass = attributes.value("data-pass").toInt();
     g_zstep = attributes.value("data-zstep").toDouble();
+    if (attributes.hasAttribute("data-color")) {
+        QString colorStr = attributes.value("data-color").toString();
+        int c = 0, m = 0, y = 0, k = 0;
+        if (colorStr == "c") c = 255;
+        else if (colorStr == "m") m = 255;
+        else if (colorStr == "y") y = 255;
+        else if (colorStr == "k") k = 255;
+        g_color = QColor::fromCmyk(c, m, y, k);
+    }
     qreal nx = toDouble(x);
     qreal ny = toDouble(y);
     MyQSvgHandler::LengthType type;
@@ -4690,6 +4723,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             bitmap_shape->setPwm(data_list_[i].pwm);
             bitmap_shape->setDepthPass(data_list_[i].depthPass);
             bitmap_shape->setDepthZStep(data_list_[i].depthZStep);
+            bitmap_shape->setColor(data_list_[i].color);
         } else if(data_list_[i].type == QSVG_USE) {
             // Skip use nodes since we have already processed them
             continue;

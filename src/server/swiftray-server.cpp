@@ -21,7 +21,6 @@ SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   this->m_server = new QWebSocketServer("Swiftray Server", QWebSocketServer::NonSecureMode, this);
 
   m_machine = nullptr;
-  this->m_engrave_dpi = 512;
   if (m_server->listen(QHostAddress::LocalHost, port)) {
     qInfo() << "Swiftray Server listening on port" << port;
     connect(m_server, &QWebSocketServer::newConnection, this, &SwiftrayServer::onNewConnection);

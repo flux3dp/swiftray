@@ -1,24 +1,26 @@
 #include "factory-utils.h"
-#include "toolpath_exporter/toolpath-utils.h"
+#include "toolpath_exporter/toolpath-exporter-constants.h"
 #include <QDebug>
 #include <opencv2/opencv.hpp>
 
 QVector<QRect> get_bounding_boxes(QImage* src,
-                                  int merge_offset_x,
+                                  QRectF dirty_area,
+                                  int merge_offset_l,
+                                  int merge_offset_r,
                                   int merge_offset_y,
+                                  bool enable_segmentation,
                                   int downsample) {
   Q_ASSERT_X(src->format() == QImage::Format_Grayscale8, "ToolpathExporter",
              "Input image for get_bounding_boxes() must be Format_Grayscale8");
-  /*
   QVector<QRect> res;
-  if (!config_.enable_segmentation) {
-    int b_left = bitmap_dirty_area_.left() - 1 - merge_offset_x;
+  if (!enable_segmentation) {
+    int b_left = dirty_area.left() - 1 - merge_offset_l;
     b_left = qMin(qMax(b_left, 0), src->width());
-    int b_top = bitmap_dirty_area_.top() - 1;
+    int b_top = dirty_area.top() - 1;
     b_top = qMin(qMax(b_top, 0), src->height());
-    int b_right = bitmap_dirty_area_.right() + 1 + merge_offset_x;
+    int b_right = dirty_area.right() + 1 + merge_offset_r;
     b_right = qMax(qMin(b_right, src->width()), 0);
-    int b_bottom = bitmap_dirty_area_.bottom() + 1;
+    int b_bottom = dirty_area.bottom() + 1;
     b_bottom = qMax(qMin(b_bottom, src->height()), 0);
 
     if (b_left < b_right && b_top < b_bottom) {
@@ -63,8 +65,8 @@ QVector<QRect> get_bounding_boxes(QImage* src,
 
     // Add merge offset padding
     // Note: y is already offseted by adding extra height to emptyImg
-    cv::Point start(x - merge_offset_x, y);
-    cv::Point end(x + w + merge_offset_x - 1, y + h + 2 * merge_offset_y - 1);
+    cv::Point start(x - merge_offset_l, y);
+    cv::Point end(x + w + merge_offset_r - 1, y + h + 2 * merge_offset_y - 1);
     cv::rectangle(emptyImg, start, end, cv::Scalar(255), cv::FILLED);
   }
   cv::findContours(emptyImg, contours, cv::RETR_EXTERNAL,
@@ -72,8 +74,9 @@ QVector<QRect> get_bounding_boxes(QImage* src,
 
   int lastContourCount = contours.size();
   int safeCount = 0;
+  qInfo() << "Start iterations with contour count:" << lastContourCount;
   // Merge all contours
-  while (true) {
+  while (lastContourCount > 1) {
     for (const auto& c : contours) {
       cv::rectangle(emptyImg, cv::boundingRect(c), cv::Scalar(255), cv::FILLED);
     }
@@ -86,23 +89,21 @@ QVector<QRect> get_bounding_boxes(QImage* src,
     lastContourCount = contours.size();
     safeCount++;
     if (safeCount > 10) {
+      qWarning() << "get_bounding_boxes: safeCount > 10";
       break;
     }
   }
 
   for (const auto& c : contours) {
     cv::Rect boundingBox = cv::boundingRect(c);
-    qInfo() << boundingBox.x << boundingBox.y
-            << boundingBox.x + boundingBox.width
-            << boundingBox.y + boundingBox.height - 2 * merge_offset_y;
     res.append(QRect(boundingBox.x, boundingBox.y, boundingBox.width,
                      boundingBox.height - 2 * merge_offset_y));
+    qDebug() << res.last();
   }
   qInfo() << "Final contour count:" << contours.size() << "after" << safeCount
           << "iterations";
 
   return res;
-  */
 }
 
 float positiveMod(float n, float m) {
@@ -114,32 +115,32 @@ float positiveMod(float n, float m) {
 }
 
 int apply_color_curve(int inv_val, QVector<int>& color_curve) {
-  int k = 64;
-  int q = inv_val / k;
-  int r = inv_val % k;
-  return int(float(color_curve[q] * (k - r) + color_curve[q + 1] * r) / k);
+  int q = inv_val / 64;
+  int r = inv_val % 64;
+  return int((color_curve[q] * (64 - r) + color_curve[q + 1] * r) / 64.0);
 }
 
 int am_halftone(int inv_val,
                 int x,
                 int y,
-                double am_cos,
-                double am_sin,
-                double am_dot_r,
-                double am_dot_d,
-                double halftone_smoother,
-                double halftone_multiplier) {
-  float dot_size = am_dot_r * (pow(float(inv_val) / WHITE_PIXEL, halftone_smoother) * halftone_multiplier * 1.414);
-  float dx = positiveMod((x * am_cos - y * am_sin + am_dot_r), am_dot_d) - am_dot_r;
-  float dy = positiveMod((x * am_sin + y * am_cos + am_dot_r), am_dot_d) - am_dot_r;
-  float d = pow(pow(dx, 2) + pow(dy, 2), 0.5);
+                double c,
+                double s,
+                double dot_radius,
+                double dot_spacing,
+                double smoother,
+                double multiplier) {
+  if (inv_val == BLACK_PIXEL) return BLACK_PIXEL;
+  double dot_size = dot_radius * (pow(inv_val / 255.0, smoother) * multiplier * 1.414);
+  double dx = positiveMod((x * c - y * s + dot_radius), dot_spacing) - dot_radius;
+  double dy = positiveMod((x * s + y * c + dot_radius), dot_spacing) - dot_radius;
+  double d = pow(pow(dx, 2) + pow(dy, 2), 0.5);
   if (d <= dot_size) {
     return WHITE_PIXEL;
   } else {
-    return 0;
+    return BLACK_PIXEL;
   }
 }
 
-int fm_halftone(int inv_val, double halftone_smoother, double halftone_multiplier) {
-  return qMin(int(pow(float(inv_val) / WHITE_PIXEL, halftone_smoother) * halftone_multiplier * WHITE_PIXEL), WHITE_PIXEL);
+int fm_halftone(int inv_val, double smoother, double multiplier) {
+  return qMin(int(255 * pow(inv_val / 255.0, smoother) * multiplier), WHITE_PIXEL);
 }
