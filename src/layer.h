@@ -76,16 +76,37 @@ public:
 
   // BS
   double minPower() const;
+  bool isOneWayEngraving() const;
   int module() const;
   int uv() const;
   int ink() const;
   double printingSpeed() const;
   int multipass() const;
   int halftone() const;
+  double amDensity() const;
   float printingStrength() const;
+  double cRatio() const;
+  double mRatio() const;
+  double yRatio() const;
+  double kRatio() const;
+  float smooth() const;
+  const QString& rawAmAngleMap() const;
+  const QString& rawColorCurvesMap() const;
+  int refreshInterval() const;
+  int refreshThreshold() const;
+  int nozzleMode() const;
+  double nozzleOffsetX() const;
+  double nozzleOffsetY() const;
   float focus() const;
   float focusStep() const;
   double ceZLimit() const;
+  int interpolation() const;
+  double rightPadding() const;
+  int uvPrintingRepeat() const;
+  int uvCuringAfter() const;
+  int uvCuringRepeat() const;
+  int uvStrength() const;
+  int uvXStep() const;
   int frequency() const;
   int pulseWidth() const;
   double fillInterval() const;
@@ -95,6 +116,10 @@ public:
   int dottingTime() const;
   double wobbleStep() const;
   double wobbleDiameter() const;
+  int airAssist() const;
+  const QString& rawBBox() const;
+  int laserDelay() const;
+  int dpmm() const;
   // end BS
 
   Document &document();
@@ -144,18 +169,40 @@ private:
 
   /** BS properties **/
   double min_power_ = 0;
-  int module_ = 0;
+  bool is_one_way_engraving_ = false;
+  int module_ = 15;
   // Printing
   int uv_ = 0;
   int ink_ = 3;
   double printing_speed_ = 60;
   int multipass_ = 1;
   int halftone_ = 1;
+  double am_density_ = 2;
   float printing_strength_ = 100;
+  double c_ratio_ = 100;
+  double m_ratio_ = 100;
+  double y_ratio_ = 100;
+  double k_ratio_ = 100;
+  float smooth_ = 1;
+  QString raw_am_angle_map_;
+  QString raw_color_curves_map_;
+  int refresh_interval_ = 0;
+  int refresh_threshold_ = 0;
+  int nozzle_mode_ = 0;
+  double nozzle_offset_x_ = 0;
+  double nozzle_offset_y_ = 0;
   // Height / Curve Engraving
   float focus_ = -2;
   float focus_step_ = -2;
   double ce_z_limit_ = 0;
+  // UV configs
+  int interpolation_ = 1;
+  double right_padding_ = 0;
+  int uv_printing_repeat_ = 1;
+  int uv_curing_after_ = 0;
+  int uv_curing_repeat_ = 1;
+  int uv_strength_ = 25;
+  int uv_x_step_ = 1;
   // Promark
   int frequency_ = 0;
   int pulse_width_ = 0;
@@ -166,6 +213,11 @@ private:
   int dotting_time_ = 0;
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
+  // other
+  int air_assist_ = 100;
+  QString raw_bbox_;
+  int laser_delay_ = 0;
+  int dpmm_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

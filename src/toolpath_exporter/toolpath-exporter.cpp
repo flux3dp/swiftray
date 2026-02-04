@@ -1,4 +1,5 @@
-#include <toolpath_exporter/toolpath-exporter.h>
+#include "toolpath-exporter.h"
+#include "toolpath-exporter-constants.h"
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QVector2D>

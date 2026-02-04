@@ -39,6 +39,8 @@ public:
   int depthPass() const { return depth_pass_; }
   void setDepthZStep(double zstep) { depth_zstep_ = zstep; }
   double depthZStep() const { return depth_zstep_; }
+  void setColor(QColor color) { color_ = color; }
+  QColor color() const { return color_; }
 
   friend class DocumentSerializer;
 
@@ -53,6 +55,7 @@ private:
   bool gradient_ = true; // gradient or binarized
   int thrsh_brightness_ = 128; // threshold value for binarization
   bool pwm_ = false; // pwm
+  QColor color_; // image color for BS 4c layers
   // Promark depth mode
   int depth_pass_ = 0;
   double depth_zstep_ = 0;

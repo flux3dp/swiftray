@@ -1,5 +1,6 @@
+#include "toolpath-exporter-fcode.h"
+#include "toolpath-exporter-constants.h"
 #include <constants.h>
-#include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include <windows/image-sharpen-dialog.h>
 #include <QBuffer>
 #include <QCoreApplication>
@@ -50,34 +51,30 @@ ToolpathExporterFcode::ToolpathExporterFcode(QTransform move_translate,
   QString type = param->value("type").toString();
   if (type == "gcode") {
     is_gcode_ = true;
-    gen = std::make_shared<FCodeGeneratorG>();
-  } else if (is_v2_) {
-    gen = std::make_shared<FCodeGeneratorV2>(thumbnail, magic_number_);
+    proc.init(-1, nullptr);
   } else {
-    gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
+    proc.init(magic_number_, thumbnail);
   }
-  gen_ = gen.get();
-  gen_->add_metadata("START_WITH_HOME", with_custom_origin_ ? "0" : "1");
-  gen_->add_metadata("3D_CURVE_TASK", is_3d_task_ ? "1" : "0");
-
-  gen_->set_time_est_z_speed(config_.z_speed);
-  setTravelSpeed(config_.travel_speed);
+  proc.add_metadata("START_WITH_HOME", with_custom_origin_ ? "0" : "1");
+  proc.add_metadata("3D_CURVE_TASK", is_3d_task_ ? "1" : "0");
+  proc.set_time_est_z_speed(config_.z_speed);
+  proc.set_travel_speed(config_.travel_speed);
 }
 
 std::string ToolpathExporterFcode::toString() {
-  return gen_->to_string();
+  return proc.to_string();
 };
 
 void ToolpathExporterFcode::save(QDataStream* out) {
-  out->writeRawData(toString().c_str(), gen_->total_length());
+  out->writeRawData(toString().c_str(), proc.total_length());
 }
 
 float ToolpathExporterFcode::getTimeCost() {
-  return gen_->get_time_cost();
+  return proc.get_time_cost();
 }
 
 QJsonObject ToolpathExporterFcode::getMetadata() {
-  return gen_->get_metadata();
+  return proc.get_metadata();
 }
 
 void ToolpathExporterFcode::parseParam(const QJsonObject* paramPtr) {
@@ -231,24 +228,24 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
 
   // Step 2. Handle pre-task
   if (is_v2_) {
-    gen_->start_task_script_block("xMIN", "0003");
-    gen_->miscellaneous_cmd(1);
+    proc.start_task_script_block("xMIN", "0003");
+    proc.miscellaneous_cmd(1);
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
       moveZ(-1);
     }
     if (magic_number_ >= 4 && !with_custom_origin_) {
-      gen_->grbl_system_cmd(0);
+      proc.grbl_system_cmd(0);
     }
   } else {
-    gen_->home();
+    proc.home();
   }
-  gen_->set_toolhead_pwm(0, true);
+  proc.set_toolhead_pwm(0);
   if (is_v2_) {
     travel(0, 0);
   }
   if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
     if (is_v2_) {
-      gen_->sync_motion_type2(179, 128, 5.0);
+      proc.sync_motion_type2(179, 5.0);
     }
     if (config_.z_premove_speed){
       moveto(config_.z_premove_speed, NAN, NAN, curve_settings.safe_height);
@@ -280,14 +277,14 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   pause(true);
 
   if (is_v2_) {
-    gen_->miscellaneous_cmd(0);
+    proc.miscellaneous_cmd(0);
   }
 
-  gen_->set_time_est_acc(config_.padding_acc);
+  proc.set_time_est_acc(config_.padding_acc);
 
   // End of pre-task script
   if (is_v2_) {
-    gen_->end_task_script_block();
+    proc.end_task_script_block();
   }
   if (cancelled_) {
     return false;
@@ -336,9 +333,9 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       float layer_height = current_layer_->targetHeight();
       float layer_z_step = current_layer_->stepHeight();
       if (is_v2_) {
-        gen_->write_string("TASK", 4);
+        proc.write_string("TASK", 4);
         // Write transition script
-        gen_->start_task_script_block("TRAN", NULL);
+        proc.start_task_script_block("TRAN", nullptr);
         if (!is_gcode_ && config_.support_modules) {
           if (is_rotary_task_ && config_.enable_rotary_z_move) {
             moveZ(1);
@@ -355,23 +352,23 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
             travel(NAN, 0, true);
             travel(tran_pos.x(), NAN, true);
             travel(NAN, tran_pos.y(), true);
-            gen_->sync_motion_type2(179, 128, 3.0);
+            proc.sync_motion_type2(179, 3.0);
           } else {
             travel(tran_pos, true);
           }
-          gen_->sync_grbl_motion(0);
-          gen_->flux_custom_cmd(168);
-          gen_->flux_custom_cmd(174);
-          gen_->user_selection_cmd(0);
+          proc.sync_grbl_motion(0);
+          proc.flux_custom_cmd(168);
+          proc.flux_custom_cmd(174);
+          proc.user_selection_cmd(0);
           if (!with_custom_origin_) {
-            gen_->grbl_system_cmd(0);
+            proc.grbl_system_cmd(0);
           }
-          gen_->sync_grbl_motion(0);
-          gen_->miscellaneous_cmd(0);
+          proc.sync_grbl_motion(0);
+          proc.miscellaneous_cmd(0);
         }
-        gen_->end_task_script_block();
+        proc.end_task_script_block();
         // Write main script
-        gen_->start_task_script_block("MAIN", NULL);
+        proc.start_task_script_block("MAIN", nullptr);
         if (is_rotary_task_) {
           if (config_.enable_rotary_z_move) {
             rotary_wait_move_ = true;
@@ -381,24 +378,24 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           }
           module_offset_.setY(0);
         } else {
-          gen_->sync_motion_type2(179, 128, 2.0);
+          proc.sync_motion_type2(179, 2.0);
         }
-        gen_->sync_grbl_motion(0);
-        gen_->miscellaneous_cmd(1);
+        proc.sync_grbl_motion(0);
+        proc.miscellaneous_cmd(1);
       }
       if (config_.enable_diode) {
-        gen_->set_toolhead_laser_module(current_layer_->isUseDiode());
+        proc.set_toolhead_laser_module(current_layer_->isUseDiode());
       }
       if (with_custom_origin_) {
         module_offset_ += config_.job_origin;
       }
       if (has_focus_adjust_ && focus_adjust_ > 0) {
-        gen_->sync_motion_type2(184, 128, focus_adjust_);
+        proc.sync_motion_type2(184, focus_adjust_);
       } else if (config_.enable_autofocus && !did_home_z_ && layer_height > 0) {
         moveZ(-1);
         did_home_z_ = true;
       }
-      gen_->set_toolhead_pwm(-current_layer_->power() / 100);
+      proc.set_toolhead_pwm(-current_layer_->power() / 100);
 
       is_handling_main_work_ = true;
       if (is_printing_layer_) {
@@ -406,32 +403,32 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
           with_print_task_ = true;
         }
         convertPrintingLayer();
-        gen_->set_toolhead_pwm(0);
+        proc.set_toolhead_pwm(0);
         moveto(NAN, NAN, NAN, NAN, NAN, 0);
       } else {
         for (processed_repeat_times_ = 0; processed_repeat_times_ < total_repeat_times_; processed_repeat_times_++) {
           if (has_focus_adjust_ && focus_step_ > 0 && processed_repeat_times_ > 0) {
-            gen_->sync_motion_type2(184, 128, focus_step_);
+            proc.sync_motion_type2(184, focus_step_);
           } else if (config_.enable_autofocus && layer_height > 0) {
             double target_z = 17.0 - layer_height - config_.z_offset + processed_repeat_times_ * layer_z_step;
             target_z = round(qMax(qMin(target_z, 17.0), 0.0) * 100) / 100;
             moveZ(target_z);
           }
           convertLaserLayer();
-          gen_->set_toolhead_pwm(0);
+          proc.set_toolhead_pwm(0);
         }
         moveto(NAN, NAN, NAN, NAN, NAN, 0);
         if (has_focus_adjust_ && focus_step_ > 0 && total_repeat_times_ > 1) {
           float total_step = focus_step_ * (total_repeat_times_ - 1);
-          gen_->sync_motion_type2(184, 128, -total_step);
+          proc.sync_motion_type2(184, -total_step);
         }
       }
       is_handling_main_work_ = false;
       if (has_focus_adjust_ && focus_adjust_ > 0) {
-        gen_->sync_motion_type2(184, 128, -focus_adjust_);
+        proc.sync_motion_type2(184, -focus_adjust_);
       }
       if (is_v2_) {
-        gen_->end_task_script_block();
+        proc.end_task_script_block();
         // Write task info
         QString submodule_type = "None";
         if (is_printing_layer_) {
@@ -445,7 +442,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
                                                 {"type", submodule_type},
                                                 {"color", submodule_color_},
                                             }}};
-        gen_->write_task_info(task_info);
+        proc.write_task_info(task_info);
         writePreviewImage();
         // Update post script
         bool need_transition = false;
@@ -491,7 +488,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
 
   // Step 6. Handle post-task
   if (is_v2_) {
-    gen_->start_task_script_block("xMIN", "0004");
+    proc.start_task_script_block("xMIN", "0004");
   }
   if (is_3d_task_ && !isnan(curve_settings.safe_height)) {
     if (config_.z_premove_speed){
@@ -507,7 +504,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       }
       travel(NAN, config_.spinning_axis_coord);
       travel(NAN, 0, true);
-      gen_->sync_grbl_motion(36);
+      proc.sync_grbl_motion(36);
       is_a_mode_ = false;
       travel(0, 0);
     } else {
@@ -519,24 +516,18 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   } else {
     travel(0, 0);
   }
-  // write_boundary_to_metadata
-  if (!std::isnan(min_x_)) gen_->add_metadata("min_x", QString::number(min_x_, 'f', 2));
-  if (!std::isnan(max_x_)) gen_->add_metadata("max_x", QString::number(max_x_, 'f', 2));
-  if (!std::isnan(min_y_)) gen_->add_metadata("min_y", QString::number(min_y_, 'f', 2));
-  if (!std::isnan(max_y_)) gen_->add_metadata("max_y", QString::number(max_y_, 'f', 2));
-  if (!std::isnan(min_z_)) gen_->add_metadata("min_z", QString::number(min_z_, 'f', 2));
-  if (!std::isnan(max_z_)) gen_->add_metadata("max_z", QString::number(max_z_, 'f', 2));
+  proc.write_boundary_to_metadata();
   if (is_v2_) {
     if (is_rotary_task_ && config_.enable_rotary_z_move) {
-      gen_->sync_motion_type2(185, 128, 0.0);
+      proc.sync_motion_type2(185, 0.0);
     } else {
-      gen_->sync_motion_type2(179, 128, 3.0);
+      proc.sync_motion_type2(179, 3.0);
     }
-    gen_->end_task_script_block();
-    gen_->end_content();
-    gen_->write_post_config(post_config);
+    proc.end_task_script_block();
+    proc.end_content();
+    proc.write_post_config(post_config);
   }
-  gen_->terminated();
+  proc.terminated();
   qInfo() << "[Export] Took " << t.elapsed() << " milliseconds";
   return true;
 }
@@ -607,42 +598,7 @@ void ToolpathExporterFcode::convertPrintingLayer() {
   // Overwrite repeat, count progress as a whole
   processed_repeat_times_ = 0, total_repeat_times_ = 1;
 
-  gen_->enter_printer_mode();
-
-  float black_ratio = 1;
-  if (config_.enable_multipass_compensation) {
-    float ink = float(current_layer_->ink());
-    int multipass = current_layer_->multipass();
-    int actual_saturation = qMin(int(std::ceil(ink / multipass)), 9);
-    black_ratio = qMin(ink / multipass / actual_saturation, float(1.0));
-  }
-  float halftone_multiplier = current_layer_->printingStrength() / 100 * black_ratio;
-
-  QByteArray nozzle_settings_payload = generateNozzleSettingPayload();
-  gen_->start_printer_packet(17);
-  gen_->write_printer_packet(nozzle_settings_payload);
-  gen_->end_printer_packet();
-
-  // Add image
-  setTransform();
-  layer_painter_ = std::make_unique<QPainter>(&printing_bitmap_);
-  // Explicitly set clip area for fm dithering
-  layer_painter_->setClipRect(clip_area_);
-  preview_painter_ = std::make_unique<QPainter>(&preview_bitmap_);
-  preview_bitmap_.fill(Qt::transparent);
-  bitmap_dirty_area_ = QRectF();
-  for (auto& shape : current_layer_->children()) {
-    convertShape(shape);
-  }
-  if (this->cancelled_) return;
-
-  // Generate bitmap
-  outputLayerPrintingFcode(halftone_multiplier);
-
-  layer_painter_->end();
-  preview_painter_->end();
-
-  gen_->exit_printer_mode();
+  // deprecated
 }
 
 bool ToolpathExporterFcode::convertShape(const ShapePtr& shape,
@@ -812,24 +768,15 @@ void ToolpathExporterFcode::outputLayerPathFcode() {
     setTravelSpeed(config_.travel_speed);
     // Reset path_acc
     if (should_set_acc) {
-      gen_->sync_grbl_motion(151);
-      gen_->set_time_est_acc(config_.padding_acc);
+      proc.sync_grbl_motion(151);
+      proc.set_time_est_acc(config_.padding_acc);
     }
   }
   polygons_mutex_.unlock();
 }
 
 void ToolpathExporterFcode::handlePathWalk(QPointF point, bool should_emit) {
-  QPointF next_point_mm = getPointInMM(point);
-  if (should_emit) {
-    moveto(path_speed_, next_point_mm.x(), next_point_mm.y());
-  } else {
-    travel(next_point_mm);
-  }
-  float target_power = should_emit ? 100 : 0;
-  if (gen_->current_pwm != target_power) {
-    gen_->set_toolhead_pwm(target_power, true);
-  }
+  // deprecated
 }
 
 // Handling bitmap and filled path
@@ -853,7 +800,7 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
     }
     for (auto bbox : bboxes) {
       if (gradient_print_mode != 0) {
-        gen_->turn_on_gradient_print_mode(gradient_print_mode);
+        proc.turn_on_gradient_print_mode(gradient_print_mode);
       }
       QPointF start = getPointInMM(bbox.topLeft());
       travel(start);
@@ -870,13 +817,13 @@ void ToolpathExporterFcode::outputBitmapFcode(bool pwm_engraving) {
         rasterBitmap(laser_bitmap_, sliced_box, pwm_engraving);
       }
       if (config_.enable_fast_gradient) {
-        gen_->turn_off_gradient_print_mode();
+        proc.turn_off_gradient_print_mode();
       }
     }
     if (should_set_acc) {
       // Reset fill_acc
-      gen_->sync_grbl_motion(151);
-      gen_->set_time_est_acc(config_.padding_acc);
+      proc.sync_grbl_motion(151);
+      proc.set_time_est_acc(config_.padding_acc);
     }
   }
 
@@ -951,8 +898,8 @@ void ToolpathExporterFcode::writePreviewImage() {
   QByteArray byteArray;
   QBuffer buffer(&byteArray);
   preview_bitmap_.save(&buffer, "PNG");
-  gen_->write_string("PREV", 4);
-  gen_->write_string(byteArray.data(), byteArray.size(), true);
+  proc.write_string("PREV", 4);
+  proc.write_string(byteArray.data(), byteArray.size(), true);
 }
 
 void ToolpathExporterFcode::clearWhite(QImage* src, QRect dirty_area) {
@@ -994,7 +941,7 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
 }
 
 void ToolpathExporterFcode::pause(bool to_standby_position) {
-  gen_->pause(to_standby_position);
+  proc.pause(to_standby_position);
   if (!to_standby_position) {
     disable_rotary_ = to_standby_position;
   }

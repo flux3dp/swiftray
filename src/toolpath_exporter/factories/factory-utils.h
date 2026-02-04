@@ -5,8 +5,11 @@
 #include <QVector>
 
 QVector<QRect> get_bounding_boxes(QImage* src,
-                                  int merge_offset_x,
+                                  QRectF dirty_area,
+                                  int merge_offset_l,
+                                  int merge_offset_r,
                                   int merge_offset_y,
+                                  bool enable_segmentation,
                                   int downsample = 1);
 
 // ========= halftone utils =========
@@ -15,10 +18,10 @@ int apply_color_curve(int inv_val, QVector<int>& color_curve);
 int am_halftone(int inv_val,
                 int x,
                 int y,
-                double am_cos,
-                double am_sin,
-                double am_dot_r,
-                double am_dot_d,
-                double halftone_smoother,
-                double halftone_multiplier);
-int fm_halftone(int inv_val, double halftone_smoother, double halftone_multiplier);
+                double c,
+                double s,
+                double dot_radius,
+                double dot_spacing,
+                double smoother,
+                double multiplier);
+int fm_halftone(int inv_val, double smoother, double multiplier);

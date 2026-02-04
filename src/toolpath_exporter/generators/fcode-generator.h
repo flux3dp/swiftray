@@ -1,13 +1,30 @@
 #pragma once
 
 #include "config.h"
+#include "interpolation.cpp"
+#include "toolpath_exporter/toolpath-exporter-types.h"
 #include <QJsonArray>
 #include <QJsonObject>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
+#include <QRectF>
 #include <vector>
+
+#define FORWARD_TO_GENERATOR(FUNC)                           \
+  template <typename... Args>                                \
+  auto FUNC(Args&&... args)                                  \
+      -> decltype(gen_->FUNC(std::forward<Args>(args)...)) { \
+    return gen_->FUNC(std::forward<Args>(args)...);          \
+  }
+
+struct CurveEngravingData {
+  QRectF bbox;
+  QPointF gap;
+  float safe_height;
+  CloughTocher2DInterpolator interpolator;
+
+  bool started = false;
+  double z_speed_limit = 0;
+  double target_feedrate = 0;
+};
 
 struct NamedArgs {
   float f = NAN;
@@ -32,6 +49,7 @@ class FCodeGenerator {
   float acc_x = 4000;
   float acc_y = 2000;
   float z_speed = 7.5;
+  QJsonObject metadata{};
 
   virtual void write(const char* buf,
                      size_t size,
@@ -49,19 +67,21 @@ class FCodeGenerator {
   void write_magic_number(int magic_number);
 
  public:
-  static const int move_flag_S = 1;
-  static const int move_flag_A = 4;
-  static const int move_flag_Z = 8;
-  static const int move_flag_Y = 16;
-  static const int move_flag_X = 32;
-  static const int move_flag_F = 64;
-  float current_pwm = 0;
+  static const int FLAG_S = 1;
+  static const int FLAG_A = 4;
+  static const int FLAG_Z = 8;
+  static const int FLAG_Y = 16;
+  static const int FLAG_X = 32;
+  static const int FLAG_F = 64;
+  static const int FLAG_Q = 128;
+
+  virtual ~FCodeGenerator() = default;
 
   virtual std::string to_string() = 0;
   virtual size_t total_length() = 0;
   virtual float get_time_cost() = 0;
-  virtual QJsonObject get_metadata() = 0;
-  virtual void add_metadata(QString key, QString value) = 0;
+  QJsonObject get_metadata();
+  void add_metadata(const QString& key, const QJsonValue& value);
 
   void set_time_est_acc(uint32_t x, uint32_t y = 2000);
   void set_time_est_z_speed(float value);
@@ -73,8 +93,9 @@ class FCodeGenerator {
                       float a,
                       float s);
   virtual void home(void);
+  virtual void sleep(float seconds);
   void pause(bool to_standby_position);
-  virtual void set_toolhead_pwm(float strength, bool update = false);
+  virtual void set_toolhead_pwm(float strength);
   void set_toolhead_laser_module(uint32_t laser_type);
   // Gradient mode, fcode only
   void turn_on_gradient_print_mode(char resolution);
@@ -88,30 +109,32 @@ class FCodeGenerator {
   void enter_printer_mode(void);
   void wait_printer_mode_sync(void);
   void exit_printer_mode(void);
-  void set_printer_packet_length(uint32_t length);
-  void start_printer_packet_payload(void);
+  void set_printer_packet_length(uint32_t length, bool is_4c = false);
+  void start_printer_packet_payload(bool is_4c = false);
   void add_printer_packet_payload(uint8_t byte);
-  void set_printer_packet_crc(uint16_t val);
-  void start_printer_packet(uint8_t packet_type);
-  void end_printer_packet(void);
+  void set_printer_packet_crc(uint16_t val, bool is_4c = false);
+  void start_printer_packet(uint8_t packet_type, bool is_4c = false);
+  void end_printer_packet(bool is_4c = false);
   void set_printer_packet_px_count(uint32_t count);
-  void write_printer_packet(QByteArray payload);
   // End of printing mode
   void sync_grbl_motion(uint32_t val);
-  void sync_motion_type2(uint32_t cmd, int field, float value);
-  void set_acceleration(int flags, float x, float y, float z, float a);
+  void sync_motion_type2(uint32_t cmd, int flags, float q);
+  void m137_cmd_type1(uint32_t cmd,
+                      int flags,
+                      float f,
+                      float x,
+                      float y,
+                      float z,
+                      float a,
+                      float s);
   void flux_custom_cmd(uint32_t val);
   void one_seg_custom_cmd(int type, uint8_t cmd);
-  void user_selection_cmd(uint8_t cmd) { one_seg_custom_cmd(20, cmd); }
-  void miscellaneous_cmd(uint8_t cmd) { one_seg_custom_cmd(21, cmd); }
-  void grbl_system_cmd(uint8_t cmd) { one_seg_custom_cmd(22, cmd); }
 
   // v1 only
   virtual void terminated() {};
   // v2 only
   virtual void end_content() {}
-  virtual void write_post_config(const QJsonArray post_config) {}
-  virtual void append_anchor(uint32_t value) {}
+  virtual void write_post_config(const char* s, size_t length) {}
   virtual void write_string(const char* s,
                             size_t length,
                             bool write_length = false) {}
@@ -119,7 +142,6 @@ class FCodeGenerator {
                                        const char* proc_id) {}
   virtual void write_task_info(QJsonObject task_info) {}
   virtual void end_task_script_block(void) {}
-  virtual void append_comment(const char* message, size_t length) {}
 };
 
 class FCodeGeneratorV1 : public FCodeGenerator {
@@ -129,9 +151,9 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   // for estimating time_cost
   float last_feedrate;
   float last_direction;
+  float last_acc;
   float current_feedrate, current_x, current_y, current_z;
   // metadata
-  QJsonObject metadata{};
   QDateTime created_at;
   double traveled;
   double time_cost;
@@ -150,6 +172,7 @@ class FCodeGeneratorV1 : public FCodeGenerator {
               float a,
               float s) override;
   void home(void) override;
+  void sleep(float seconds) override;
   void write_metadata_(QString key, QString value, unsigned long* crc_ptr);
   unsigned long write_metadata();
 
@@ -160,8 +183,6 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   std::string to_string() override;
   size_t total_length() override;
   float get_time_cost() override;
-  QJsonObject get_metadata() override;
-  void add_metadata(QString key, QString value) override;
   void terminated() override;
 };
 
@@ -177,9 +198,9 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   // for estimating time_cost
   float last_feedrate;
   float last_direction;
+  float last_acc;
   float current_feedrate, current_x, current_y, current_z;
   // metadata
-  QJsonObject metadata{};
   QDateTime created_at;
   double traveled;
   double time_cost;
@@ -198,8 +219,6 @@ class FCodeGeneratorV2 : public FCodeGenerator {
   std::string to_string() override;
   size_t total_length() override;
   float get_time_cost() override;
-  QJsonObject get_metadata() override;
-  void add_metadata(QString key, QString value) override;
   void write_string(const char* s,
                     size_t length,
                     bool write_length = false) override;
@@ -215,6 +234,7 @@ class FCodeGeneratorV2 : public FCodeGenerator {
               float a,
               float s) override;
   void home(void) override;
+  void sleep(float seconds) override;
   void write_metadata_(QString key,
                        QString value,
                        unsigned long* crc32_ptr,
@@ -222,11 +242,12 @@ class FCodeGeneratorV2 : public FCodeGenerator {
                        bool has_next = true);
   unsigned long write_metadata();
   void end_content() override;
-  void write_post_config(const QJsonArray post_config) override;
+  void write_post_config(const char* s, size_t length) override;
 };
 
 class FCodeGeneratorG : public FCodeGenerator {
  private:
+  const float move_precision = 10000;
   std::stringstream str_stream;
   int script_offset;
   // dummy metadata
@@ -245,7 +266,7 @@ class FCodeGeneratorG : public FCodeGenerator {
               float a,
               float s) override;
   void home(void) override;
-  void set_toolhead_pwm(float strength, bool update = false) override;
+  void set_toolhead_pwm(float strength) override;
 
  public:
   FCodeGeneratorG();
@@ -253,8 +274,6 @@ class FCodeGeneratorG : public FCodeGenerator {
   std::string to_string() override;
   size_t total_length() override;
   float get_time_cost() override;
-  QJsonObject get_metadata() override;
-  void add_metadata(QString key, QString value) override;
 };
 
 using MoveCallback = std::function<void(NamedArgs args)>;
@@ -264,7 +283,54 @@ class ToolpathProcessor {
   std::shared_ptr<FCodeGenerator> gen;
   FCodeGenerator* gen_;
 
+  bool is_a_mode_ = false;
+  bool is_main_task_ = false;
+  bool rotary_wait_move_ = false;
+  bool rotary_enabled_ = false;
+  float rotary_y_ = 0;
+  float rotary_y_offset_ = 0;
+  float rotary_y_ratio_ = 1;
+  bool support_a_mode_ = false;
+  float travel_speed_ = 12000;
+  float a_travel_speed_ = 2000;
+
+  std::vector<void (ToolpathProcessor::*)(NamedArgs args,
+                                          MoveCallback callback)>
+      moveto_pipeline_functions_;
+
+  // For 3d curve
+  float cur_x_ = 0;
+  float cur_y_ = 0;
+  float cur_z_ = NAN;
+  float cur_f_ = 12000;
+
+  // Boundary Metadata
+  float min_x_ = NAN;
+  float max_x_ = NAN;
+  float min_y_ = NAN;
+  float max_y_ = NAN;
+  float min_z_ = NAN;
+  float max_z_ = NAN;
+
  public:
+  std::unique_ptr<CurveEngravingData> curve_engraving_data;
+  ZPremoveData z_premove_;
+
+  void init(int magic_number, const QString* thumbnail);
+  void clear_curve_engraving_data();
+  bool set_curve_engraving_data(const QJsonObject& curve_obj,
+                                const QPointF& job_origin,
+                                QSizeF work_area_size,
+                                InwardRect& workarea_clip);
+  void set_curve_engraving_data_by_key(QString& key, double value);
+  void set_z_premove(ZPremoveData data);
+  void set_a_mode(bool a_mode);
+  void set_is_main_task(bool is_main_task);
+  void set_rotary_axis(float rotary_y);
+  void set_rotary_y_ratio(float ratio);
+  void set_travel_speed(float feedrate = NAN, bool a_axis = false);
+  float get_travel_speed(bool a_axis = false);
+  void set_rotary_wait_move(bool wait, float y);
   void update_moveto_pipeline();
   void pipeline_moveto(int idx, NamedArgs args);
   void moveto(float feedrate = NAN,
@@ -275,9 +341,61 @@ class ToolpathProcessor {
               float s = NAN,
               bool force_y = false,
               bool is_travel = false);
+  void moveto(NamedArgs args);
   void rotary_motion_generator(NamedArgs args, MoveCallback callback);
   void curve_engraving_motion_generator(NamedArgs args, MoveCallback callback);
   void z_premove_motion_generator(NamedArgs args, MoveCallback callback);
   void _moveto(NamedArgs args);
+  void pause(bool to_standby_position);
+  void home();
+  void m137_cmd_type1(unsigned cmd, NamedArgs args);
+  void sync_motion_type2(unsigned cmd, float q = NAN);
+  void set_acceleration_override(float x = NAN,
+                                 float y = NAN,
+                                 float z = NAN,
+                                 float a = NAN);
+  void user_selection_cmd(unsigned cmd);
+  void miscellaneous_cmd(unsigned cmd);
+  void grbl_system_cmd(unsigned cmd);
+  void write_post_config(const QJsonArray& post_config);
   void write_boundary_to_metadata();
+  void write_printer_packet(int printer_packet_type,
+                            QByteArray payload,
+                            bool should_wait = false,
+                            bool is_4c = false);
+
+  FORWARD_TO_GENERATOR(get_time_cost)
+  FORWARD_TO_GENERATOR(sleep)
+  FORWARD_TO_GENERATOR(set_toolhead_pwm)
+  FORWARD_TO_GENERATOR(set_toolhead_laser_module)
+  FORWARD_TO_GENERATOR(turn_on_gradient_print_mode)
+  FORWARD_TO_GENERATOR(turn_off_gradient_print_mode)
+  FORWARD_TO_GENERATOR(set_line_pixels)
+  FORWARD_TO_GENERATOR(fill_32_pixels)
+  FORWARD_TO_GENERATOR(set_time_est_acc)
+  FORWARD_TO_GENERATOR(set_time_est_z_speed)
+  FORWARD_TO_GENERATOR(set_fill_end)
+  FORWARD_TO_GENERATOR(set_print_line_status)
+  FORWARD_TO_GENERATOR(enter_printer_mode)
+  FORWARD_TO_GENERATOR(wait_printer_mode_sync)
+  FORWARD_TO_GENERATOR(exit_printer_mode)
+  FORWARD_TO_GENERATOR(start_printer_packet)
+  FORWARD_TO_GENERATOR(end_printer_packet)
+  FORWARD_TO_GENERATOR(set_printer_packet_px_count)
+  FORWARD_TO_GENERATOR(set_printer_packet_length)
+  FORWARD_TO_GENERATOR(start_printer_packet_payload)
+  FORWARD_TO_GENERATOR(add_printer_packet_payload)
+  FORWARD_TO_GENERATOR(set_printer_packet_crc)
+  FORWARD_TO_GENERATOR(sync_grbl_motion)
+  FORWARD_TO_GENERATOR(flux_custom_cmd)
+  FORWARD_TO_GENERATOR(end_content)
+  FORWARD_TO_GENERATOR(add_metadata)
+  FORWARD_TO_GENERATOR(write_string)
+  FORWARD_TO_GENERATOR(start_task_script_block)
+  FORWARD_TO_GENERATOR(end_task_script_block)
+  FORWARD_TO_GENERATOR(terminated)
+  FORWARD_TO_GENERATOR(write_task_info)
+  FORWARD_TO_GENERATOR(to_string)
+  FORWARD_TO_GENERATOR(total_length)
+  FORWARD_TO_GENERATOR(get_metadata)
 };

@@ -110,11 +110,9 @@ public:
 
     bool is_absolute = distance_modal_ == GCodeDistanceModal::kG90;
     int split = rotary_split_ > 0 ? std::floor((y - rotary_offset_) / rotary_split_) : 0;
-    float split_start = 0;
     float split_end = rotary_split_;
     int split_dir = 1;
     if (split - split_ < 0) {
-      split_start = rotary_split_;
       split_end = 0;
       split_dir = -1;
     }
@@ -231,7 +229,7 @@ public:
   void setRotary(double rotary_axis_coord,
                  double rotary_ratio,
                  double rotary_split,
-                 double rotary_overlap) {
+                 double rotary_overlap) override {
     rotary_axis_coord_ = rotary_axis_coord;
     rotary_ratio_ = rotary_ratio;
     rotary_split_ = rotary_split;

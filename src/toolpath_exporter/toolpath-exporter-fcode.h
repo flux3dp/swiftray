@@ -26,26 +26,6 @@
 #include <cmath>
 #include "toolpath-utils.h"
 
-struct NozzleSettings {
-  float voltage = 9.0;
-  float voltage_default = 9.0;
-  float pulse_width = 2.0;
-  float pulse_width_default = 2.0;
-  int saturation = 3;
-  int DPI = 600;
-  int ink_catridge_count = 1;
-  int ink_type = 0;
-  int nozzle_select = 0;
-  int spray_time = 0;
-  int ink_exchange = 0;
-  int h_gap_ink1_ink2 = 0;
-  int v_gap_ink1_ink2 = 0;
-  int h_gap_ink2_ink3 = 0;
-  int v_gap_ink2_ink3 = 0;
-  int h_gap_ink3_ink4 = 0;
-  int v_gap_ink3_ink4 = 0;
-};
-
 struct CurveEngravingSettings {
   QRectF bbox;
   QPointF gap;
@@ -193,20 +173,7 @@ public Q_SLOTS:
     }
   }
   void setAcceleration(float x = NAN, float y = NAN, float z = NAN, float a = NAN) {
-    int flags = 0;
-    if (!std::isnan(x)) {
-      flags |= FCodeGenerator::move_flag_X;
-    }
-    if (!std::isnan(y)) {
-      flags |= FCodeGenerator::move_flag_Y;
-    }
-    if (!std::isnan(z)) {
-      flags |= FCodeGenerator::move_flag_Z;
-    }
-    if (!std::isnan(a)) {
-      flags |= FCodeGenerator::move_flag_A;
-    }
-    gen_->set_acceleration(flags, x, y, z, a);
+    // deprecated
   }
 
   void updateLayerParam();
@@ -312,6 +279,7 @@ public Q_SLOTS:
       {"yellow", {0, 12, 37, 143, 255}},
       {"black", {0, 15, 47, 79, 255}}};
 
+  ToolpathProcessor proc;
   std::shared_ptr<FCodeGenerator> gen;
   FCodeGenerator* gen_;
 
