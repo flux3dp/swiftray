@@ -3,6 +3,7 @@
 LaserPathFactory::LaserPathFactory(const FactoryKwargs& kwargs) noexcept
     : BaseFactory(kwargs) {
   qInfo() << "LaserPathFactory created";
+  path_utils.setClipRect(clip_rect.top(), clip_rect.right(), clip_rect.bottom(), clip_rect.left());
 }
 
 void LaserPathFactory::set_loop_compensation(double val) {

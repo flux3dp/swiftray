@@ -124,8 +124,6 @@ bool Layer::isOneWayEngraving() const { return is_one_way_engraving_; }
 
 int Layer::module() const { return module_; }
 
-int Layer::uv() const { return uv_; }
-
 int Layer::ink() const { return ink_; }
 
 double Layer::printingSpeed() const { return printing_speed_; }

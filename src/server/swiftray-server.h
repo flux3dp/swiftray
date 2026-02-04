@@ -34,7 +34,6 @@ private:
   QString m_thumbnail;
   QStringList gcode_list_;
   bool m_rotary_mode;
-  int m_engrave_dpi;
   double m_time_cost = 0;
   std::mutex canvas_mutex_;
   QThread* workerThread = nullptr;

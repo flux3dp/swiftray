@@ -51,7 +51,10 @@ public:
 
   void setSortRule(PathSort sort_rule) { sort_rule_ = sort_rule; }
 
-  void setLoopCompensation(qreal compensation) { path_utils_.setLoopCompensation(compensation / canvas_mm_ratio_ * dpmm_); }
+  void setLoopCompensation(qreal compensation) {
+    compensation_mm_ = compensation;
+    path_utils_.setLoopCompensation(compensation / canvas_mm_ratio_ * dpmm_);
+  }
 
   void handleContour() { is_contour_ = true; }
 
@@ -67,6 +70,8 @@ public Q_SLOTS:
   void handleCancel();
  
 private:
+  void setDpmm(qreal dpmm);
+
   void convertLayer(const LayerPtr &layer);
 
   void convertShape(const ShapePtr &shape);
@@ -112,7 +117,7 @@ private:
   std::unique_ptr<QPainter> layer_painter_;
   BaseGenerator *gen_;
   // === The followings depend on DPI settings of document ===
-  qreal dpmm_ = 10;               // The DPMM settings of document
+  qreal dpmm_ = 0;                // The DPMM settings of document
   double travel_speed_ = 80;      // The speed form point to point(mm/s)
   QMutex polygons_mutex_;
   QList<QPolygonF> layer_polygons_; // place the unfilled path geometry, expressed in unit of document dot
@@ -124,10 +129,6 @@ private:
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;
   double canvas_height_;
-  QLineF left_border_;
-  QLineF top_border_;
-  QLineF right_border_;
-  QLineF bottom_border_;
   // === The followings depend on canvas resolution ===
   const qreal canvas_mm_ratio_ = 10.0; // Currently 10 units in canvas = 1 mm in real world
                                        // TBD: Calculate this ratio by (canvas_size_ / machine_work_area_mm_)
@@ -141,6 +142,7 @@ private:
   PaddingType padding_type_ = PaddingType::kNoPadding;
   qreal fixed_padding_mm_ = 10;
   QPointF end_point_;
+  qreal compensation_mm_ = 0;
   // ==================================================
   bool is_high_speed_ = false;
   bool exceed_boundary_ = false; // Whether source objects exceeding the work area
