@@ -10,13 +10,12 @@ void generate_prespray_code(ToolpathProcessor& proc,
   if (params.has_job_origin) {
     offset += params.job_origin;
   }
-  FactoryKwargs kwargs = {
-      .proc = &proc,
-      .clip_rect_mm = params.clip_rect_mm,
-      .work_area_mm = params.work_area_mm,
-      .offset = offset,
-      .workspaces = params.workspaces,
-  };
+  FactoryKwargs kwargs;
+  kwargs.proc = &proc;
+  kwargs.clip_rect_mm = params.clip_rect_mm;
+  kwargs.work_area_mm = params.work_area_mm;
+  kwargs.offset = offset;
+  kwargs.workspaces = params.workspaces;
   std::unique_ptr<BaseBitmapFactory> factory =
       is_4c ? std::make_unique<PrinterBitmapFactory4C>(kwargs)
             : std::make_unique<PrinterBitmapFactory>(kwargs);
@@ -32,14 +31,14 @@ void generate_prespray_code(ToolpathProcessor& proc,
   float orig_travel_speed = proc.get_travel_speed();
   proc.set_travel_speed(params.travel_speed);
   if (params.is_rotary_task && params.rotary_z_motion) {
-    proc.moveto({.x = move_x, .s = 0, .force_y = true, .is_travel = true});
-    proc.moveto({.y = move_y, .s = 0, .force_y = true, .is_travel = true});
+    proc.moveto(NamedArgs().rx(move_x).rs(0).set_force_y().set_is_travel());
+    proc.moveto(NamedArgs().ry(move_y).rs(0).set_force_y().set_is_travel());
   } else {
-    proc.moveto({.x = move_x, .y = move_y, .s = 0, .force_y = true, .is_travel = true});
+    proc.moveto(NamedArgs().rx(move_x).ry(move_y).rs(0).set_force_y().set_is_travel());
   }
   if (params.is_rotary_task && params.rotary_z_motion) {
     // rotary prespray height
-    proc.moveto({.z = 35});
+    proc.moveto(NamedArgs().rz(35));
   }
   if (params.should_enter_printer_mode) {
     proc.enter_printer_mode();
@@ -74,11 +73,11 @@ void generate_prespray_code(ToolpathProcessor& proc,
   if (params.should_enter_printer_mode) {
     proc.exit_printer_mode();
   }
-  proc.moveto({.s = 0});
+  proc.moveto(NamedArgs().rs(0));
   if (params.is_rotary_task && params.rotary_z_motion) {
-    proc.moveto({.z = 1});
-    proc.moveto({.y = 0, .force_y = true, .is_travel = true});
+    proc.moveto(NamedArgs().rz(1));
+    proc.moveto(NamedArgs().ry(0).set_force_y().set_is_travel());
   }
-  proc.moveto({.f = orig_travel_speed});
+  proc.moveto(NamedArgs().rf(orig_travel_speed));
   proc.set_travel_speed(orig_travel_speed);
 }

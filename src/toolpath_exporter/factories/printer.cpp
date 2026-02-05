@@ -175,7 +175,7 @@ void PrinterBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   onProgressChanged(0.05, true);
 
   // Generate fcode
-  NamedArgs args_s0{.s = 0};
+  NamedArgs args_s0 = NamedArgs().rs(0);
   float progress_unit = 0.9 / total_block / kwargs.repeat;
   bool reverse_x = false;
   bool no_cache = true;
@@ -530,18 +530,20 @@ void PrinterBitmapFactory::write_data_to_proc(const SlicedBox& box,
   int end_x = reverse_x ? pixel_x : (pixel_x + w);
   QPointF real_pos =
       pixel_to_actual_position(start_x, pixel_y, nozzle_mode, reverse_x);
-  proc->moveto({.x = real_pos.x(),
-                .y = real_pos.y(),
-                .s = 0,
-                .force_y = force_y,
-                .is_travel = true});
+  proc->moveto(NamedArgs()
+                   .rx(real_pos.x())
+                   .ry(real_pos.y())
+                   .rs(0)
+                   .set_force_y(force_y)
+                   .set_is_travel());
   write_payload(nozzle_mode, payload);
   proc->set_printer_packet_px_count(px_count);
   real_pos = pixel_to_actual_position(end_x, pixel_y, nozzle_mode, reverse_x);
-  proc->moveto({.x = real_pos.x(),
-                .y = real_pos.y(),
-                .s = 1,
-                .f = speed,
-                .force_y = force_y});
-  proc->moveto({.s = 0});
+  proc->moveto(NamedArgs()
+                   .rx(real_pos.x())
+                   .ry(real_pos.y())
+                   .rs(1)
+                   .rf(speed)
+                   .set_force_y(force_y));
+  proc->moveto(NamedArgs().rs(0));
 }

@@ -109,13 +109,13 @@ struct SupportInfo {
 };
 
 struct HardwareProfile {
-  int fcode_version = 1;
   double width = 0.0;
   double length = 0.0;
-  // for time estimation
-  double z_speed = 7.5;
   // max data width(px) for fast gradient in pwm mode
   int fg_pwm_limit = 0;
+  int fcode_version = 1;
+  // for time estimation
+  double z_speed = 7.5;
   // limit for high res engraving and fast gradient
   int max_pixel_per_mm_x = 20;
   // position when changing module without job origin

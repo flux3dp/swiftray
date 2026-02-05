@@ -35,6 +35,16 @@ struct NamedArgs {
   float s = NAN;
   bool force_y = false;
   bool is_travel = false;
+
+  // For chaining initialization
+  NamedArgs& rf(float v) { f = v; return *this; }
+  NamedArgs& rx(qreal v) { x = v; return *this; }
+  NamedArgs& ry(qreal v) { y = v; return *this; }
+  NamedArgs& rz(float v) { z = v; return *this; }
+  NamedArgs& ra(float v) { a = v; return *this; }
+  NamedArgs& rs(float v) { s = v; return *this; }
+  NamedArgs& set_force_y(bool v = true) { force_y = v; return *this; }
+  NamedArgs& set_is_travel(bool v = true) { is_travel = v; return *this; }
 };
 
 class FCodeGenerator {
