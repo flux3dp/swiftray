@@ -15,119 +15,75 @@ constexpr int CLIP_FLAG_END = 0b10;
 
 const QMap<HardwareType, HardwareProfile> HW_PROFILE = {
   {HardwareType::beamo, {
-    .width = 300,
-    .length = 210,
-    .fg_pwm_limit = 1500
+    300, 210, 1500
   }},
   {HardwareType::Beambox, {
-    .width = 400,
-    .length = 375,
-    .fg_pwm_limit = 1500
+    400, 375, 1500
   }},
   {HardwareType::BeamboxPro, {
-    .width = 600,
-    .length = 375,
-    .fg_pwm_limit = 1500
+    600, 375, 1500
   }},
   {HardwareType::HEXA, {
-    .width = 740,
-    .length = 410,
-    .fg_pwm_limit = 1875
+    740, 410, 1875
   }},
   {HardwareType::Ador, {
-    .fcode_version = 2,
-    .width = 430,
-    .length = 320,
-    .tran_pos = QPointF(215, 150),
-    .z_speed = 7.5,
-    .fg_pwm_limit = 2150
+    430, 320, 2150, 2, 7.5, 20, QPointF(215, 150)
   }},
   {HardwareType::BB2, {
-    .fcode_version = 2,
-    .width = 600,
-    .length = 375,
-    .z_speed = 5.16,
-    .fg_pwm_limit = 2150
+    600, 375, 2150, 2, 5.16
   }},
   {HardwareType::BM2, {
-    .fcode_version = 2,
-    .width = 360,
-    .length = 240,
-    .home_position = QPointF(0, 30)
+    360, 240, 0, 2, 7.5, 20, {}, QPointF(0, 30)
   }},
   {HardwareType::RF, {
-    .fcode_version = 2,
-    .width = 740,
-    .length = 410,
-    .max_pixel_per_mm_x = 39,
-    .fg_pwm_limit = 7300
+    740, 410, 7300, 2, 7.5, 39
   }},
   {HardwareType::UV, {
-    .fcode_version = 2,
-    .width = 300,
-    .length = 215,
-    .reverse_4c = true
+    300, 215, 0, 2, 7.5, 20, {}, {}, true
   }}
 };
 
 const QMap<HardwareType, AccelerationData> PATH_ACCELERATION_DATA = {
   {HardwareType::Ador, {
-    .is_valid = true,
-    .x = 500,
-    .y = 500
+    true, 500, 500
   }},
   {HardwareType::BB2, {
-    .is_valid = true,
-    .x = 1000,
-    .y = 1000
+    true, 1000, 1000
   }}
 };
 
 const QMap<CollisionRegions, RegionData> REGIONS = {
   {CollisionRegions::FBM2_SLIDING_TABLE, {
-    .type = RegionType::PRINTER,
-    .points = {{0, 180}, {130, 180}, {130, 240}, {0, 240}}
+    RegionType::PRINTER,
+    {{0, 180}, {130, 180}, {130, 240}, {0, 240}}
   }}
 };
 
 const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
   {HardwareType::HEXA, {
-    .REL_Z_MOVE = true
+    true
   }},
   {HardwareType::Ador, {
-    .REL_Z_MOVE = true,
-    .MODULES = true,
-    .ROTARY_Z_MOTION = true,
-    .MODULE_TRANSITION = true
+    true, true, true, true
   }},
   {HardwareType::BB2, {
-    .REL_Z_MOVE = true
+    true
   }},
   {HardwareType::BM2, {
-    .REL_Z_MOVE = true,
-    .MODULES = true,
-    .ROTARY_Z_MOTION = true,
-    .PRINTING_SCRIPTS = true,
-    .MODULE_CHECK_METADATA = true
+    true, true, true, false, true, true
   }},
   {HardwareType::RF, {
-    .LASER_DELAY = true
+    false, false, false, false, false, false, true
   }},
   {HardwareType::UV, {
-    .MODULES = true,
-    .PRINTING_SCRIPTS = true,
-    .MODULE_CHECK_METADATA = true
+    false, true, false, false, true, true
   }}
 };
 
 // Pre-move z axis in curve engraving to avoid motor out of step
 const QMap<HardwareType, ZPremoveData> Z_PREMOVE_DATA = {
   {HardwareType::BB2, {
-    .is_valid = true,
-    .x = 0.0127,
-    .y = 0.0064,
-    .z = 0.0005,
-    .speed = 140
+    true, 0.0127, 0.0064, 0.0005, 140
   }}
 };
 

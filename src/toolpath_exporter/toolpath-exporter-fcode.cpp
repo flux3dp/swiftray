@@ -283,7 +283,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       proc.sync_motion_type2(179, 5.0);
     }
     if (!isnan(proc.curve_engraving_data->safe_height)) {
-      NamedArgs args = {.z = proc.curve_engraving_data->safe_height};
+      NamedArgs args = NamedArgs().rz(proc.curve_engraving_data->safe_height);
       if (proc.z_premove_.speed) {
         args.f = proc.z_premove_.speed;
       }
@@ -296,16 +296,16 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     proc.set_travel_speed(config_.a_travel_speed, true);
     if (is_v2_) {
       if (!config_.enable_rotary_z_move) {
-        proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm + 1, .is_travel = true, .force_y = true});
-        proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm - 1, .is_travel = true, .force_y = true});
-        proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm, .is_travel = true, .force_y = true});
+        proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm + 1).set_is_travel().set_force_y());
+        proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm - 1).set_is_travel().set_force_y());
+        proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm).set_is_travel().set_force_y());
         proc.pause(false);
       }
       proc.set_a_mode(true);
     } else {
-      proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm + 1, .is_travel = true});
-      proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm - 1, .is_travel = true});
-      proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm, .is_travel = true});
+      proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm + 1).set_is_travel());
+      proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm - 1).set_is_travel());
+      proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm).set_is_travel());
       // Set rotary mode in beambox-firmware
       proc.pause(false);
     }
@@ -411,7 +411,7 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
     proc.start_task_script_block("xMIN", "0004");
   }
   if (is_3d_task_ && !isnan(proc.curve_engraving_data->safe_height)) {
-    NamedArgs args = {.z = proc.curve_engraving_data->safe_height};
+    NamedArgs args = NamedArgs().rz(proc.curve_engraving_data->safe_height);
     if (proc.z_premove_.speed) {
       args.f = proc.z_premove_.speed;
     }
@@ -422,15 +422,15 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   if (is_rotary_task_) {
     if (is_v2_) {
       if (config_.enable_rotary_z_move) {
-        proc.moveto({.z = 1});
+        proc.moveto(NamedArgs().rz(1));
       }
-      proc.moveto({.y = config_.spinning_axis_coord_mm, .is_travel = true});
-      proc.moveto({.y = config_.home_pos.y(), .is_travel = true, .force_y = true});
+      proc.moveto(NamedArgs().ry(config_.spinning_axis_coord_mm).set_is_travel());
+      proc.moveto(NamedArgs().ry(config_.home_pos.y()).set_is_travel().set_force_y());
       proc.sync_grbl_motion(36);
       proc.set_a_mode(false);
       backToHome();
     } else {
-      proc.moveto({.x = 0, .y = config_.spinning_axis_coord_mm, .is_travel = true});
+      proc.moveto(NamedArgs().rx(0).ry(config_.spinning_axis_coord_mm).set_is_travel());
     }
     if (config_.rotary_y_ratio != 1) {
       proc.set_rotary_y_ratio(1);
@@ -509,7 +509,7 @@ void ToolpathExporterFcode::convertLayer() {
     if (support_info.MODULES) {
       if (support_info.MODULE_TRANSITION) {
         if (is_rotary_task_ && config_.enable_rotary_z_move) {
-          proc.moveto({.z = 1});
+          proc.moveto(NamedArgs().rz(1));
         }
         QPointF tran_pos;
         if (has_job_origin_) {
@@ -520,11 +520,11 @@ void ToolpathExporterFcode::convertLayer() {
           tran_pos = QPointF(hw_profile.width / 2, hw_profile.length / 2);
         }
         if (is_rotary_task_ && config_.enable_rotary_z_move) {
-          proc.moveto({.y = config_.home_pos.y(), .is_travel = true, .force_y = true});
-          proc.moveto({.x = tran_pos.x(), .is_travel = true, .force_y = true});
-          proc.moveto({.y = tran_pos.y(), .is_travel = true, .force_y = true});
+          proc.moveto(NamedArgs().ry(config_.home_pos.y()).set_is_travel().set_force_y());
+          proc.moveto(NamedArgs().rx(tran_pos.x()).set_is_travel().set_force_y());
+          proc.moveto(NamedArgs().ry(tran_pos.y()).set_is_travel().set_force_y());
         } else {
-          proc.moveto({.x = tran_pos.x(), .y = tran_pos.y(), .is_travel = true, .force_y = true});
+          proc.moveto(NamedArgs().rx(tran_pos.x()).ry(tran_pos.y()).set_is_travel().set_force_y());
           proc.sync_motion_type2(179, 3.0);
         }
       }
@@ -559,9 +559,10 @@ void ToolpathExporterFcode::convertLayer() {
       if (config_.enable_rotary_z_move) {
         proc.set_rotary_wait_move(true, config_.spinning_axis_coord_mm - layer_offset_.y());
       } else {
-        proc.moveto({.y = config_.spinning_axis_coord_mm - layer_offset_.y(),
-                     .is_travel = true,
-                     .force_y = true});
+        proc.moveto(NamedArgs()
+                        .ry(config_.spinning_axis_coord_mm - layer_offset_.y())
+                        .set_is_travel()
+                        .set_force_y());
       }
       layer_offset_.setY(0);
     } else {
@@ -622,12 +623,12 @@ void ToolpathExporterFcode::convertLayer() {
       } else if (config_.enable_autofocus && layer_height > 0) {
         float target_z = 17.0 - layer_height - config_.z_offset + r * z_step;
         target_z = round(qMax(0.0f, qMin(17.0f, target_z)) * 100) / 100;
-        proc.moveto({.z = target_z});
+        proc.moveto(NamedArgs().rz(target_z));
       }
       convertLaserLayer();
       proc.set_toolhead_pwm(0);
     }
-    proc.moveto({.s = 0});
+    proc.moveto(NamedArgs().rs(0));
     if (has_focus_adjust && focus_step > 0 && layer_repeat_ > 1) {
       float total_moved = (layer_repeat_ - 1) * focus_step;
       proc.sync_motion_type2(184, -total_moved);
@@ -711,21 +712,21 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
     kernel_.release();
   }
 
-  FactoryKwargs kwargs = {
-      .workspaces = &workspaces_,
-      .proc = &proc,
-      .offset = layer_offset_,
-      .pixel_per_mm = dpmm_y,
-      .work_area_mm = work_area_mm_,
-      .clip_rect_mm = layer_clip_,
-      .onProgressChanged = [this](double v,
-                                  bool a) { this->onProgressChanged(v, a); },
-      .split_bbox = config_.enable_segmentation,
-      .one_way = current_layer_->isOneWayEngraving() ||
-                 (config_.enable_diode && current_layer_->isUseDiode() &&
-                  config_.is_diode_one_way_engraving),
-      .fg_pwm_limit = hw_profile.fg_pwm_limit,
+  FactoryKwargs kwargs;
+  kwargs.workspaces = &workspaces_;
+  kwargs.proc = &proc;
+  kwargs.offset = layer_offset_;
+  kwargs.pixel_per_mm = dpmm_y;
+  kwargs.work_area_mm = work_area_mm_;
+  kwargs.clip_rect_mm = layer_clip_;
+  kwargs.onProgressChanged = [this](double v, bool a) {
+    this->onProgressChanged(v, a);
   };
+  kwargs.split_bbox = config_.enable_segmentation;
+  kwargs.one_way = current_layer_->isOneWayEngraving() ||
+                   (config_.enable_diode && current_layer_->isUseDiode() &&
+                    config_.is_diode_one_way_engraving);
+  kwargs.fg_pwm_limit = hw_profile.fg_pwm_limit;
 
   // Note: convert path without dpmm_x
   laser_path_factory_ = std::make_unique<LaserPathFactory>(kwargs);
@@ -848,16 +849,16 @@ void ToolpathExporterFcode::outputBitmapFcode() {
                            ? get_default_min_padding(hardware_, layer_module_, config_.expected_module)
                            : config_.min_engraving_padding;
 
-  factory->generate_task_code(GenerateTaskKwargs{
-      .support_fast_gradient = config_.enable_fast_gradient,
-      .reverse_y = config_.is_reverse_engraving,
-      .speed = layer_speed_,
-      .acc = padding_acc,
-      .mock_fast_gradient = config_.enable_mock_fast_gradient,
-      .min_padding = min_padding,
-      .backlash = layer_backlash_,
-      .pwm_scale = layer_pwm_scale_,
-  });
+  GenerateTaskKwargs task_kwargs;
+  task_kwargs.support_fast_gradient = config_.enable_fast_gradient;
+  task_kwargs.reverse_y = config_.is_reverse_engraving;
+  task_kwargs.speed = layer_speed_;
+  task_kwargs.acc = padding_acc;
+  task_kwargs.mock_fast_gradient = config_.enable_mock_fast_gradient;
+  task_kwargs.min_padding = min_padding;
+  task_kwargs.backlash = layer_backlash_;
+  task_kwargs.pwm_scale = layer_pwm_scale_;
+  factory->generate_task_code(task_kwargs);
 
   if (acc_overridden) {
     // Reset fill_acc
@@ -874,25 +875,26 @@ void ToolpathExporterFcode::convertPrintingLayer() {
   processed_repeat_times_ = 0, total_repeat_times_ = 1;
 
   // Initialize Factory
-  HalftoneParams halftone_params = {.smoother = current_layer_->smooth()};
+  HalftoneParams halftone_params;
+  halftone_params.smoother = current_layer_->smooth();
   int halftone = current_layer_->halftone();
   if (halftone > 1) {
     halftone = 2;
     halftone_params.density = current_layer_->amDensity();
   }
-  FactoryKwargs kwargs = {
-      .workspaces = &workspaces_,
-      .work_area_mm = work_area_mm_,
-      .clip_rect_mm = layer_clip_,
-      .proc = &proc,
-      .onProgressChanged = [this](double v,
-                                  bool a) { this->onProgressChanged(v, a); },
-      .offset = layer_offset_,
-      .one_way = config_.is_one_way_printing,
-      .halftone = halftone,
-      .halftone_params = &halftone_params,
-      .split_bbox = config_.enable_segmentation,
+  FactoryKwargs kwargs;
+  kwargs.workspaces = &workspaces_;
+  kwargs.work_area_mm = work_area_mm_;
+  kwargs.clip_rect_mm = layer_clip_;
+  kwargs.proc = &proc;
+  kwargs.onProgressChanged = [this](double v, bool a) {
+    this->onProgressChanged(v, a);
   };
+  kwargs.offset = layer_offset_;
+  kwargs.one_way = config_.is_one_way_printing;
+  kwargs.halftone = halftone;
+  kwargs.halftone_params = &halftone_params;
+  kwargs.split_bbox = config_.enable_segmentation;
   if (is_printing_layer_) {
     prespray_module_ = layer_module_;
     if (layer_module_ == LayerModule::PRINTER_4C) {
@@ -1003,18 +1005,19 @@ void ToolpathExporterFcode::convertPrintingLayer() {
     min_padding = get_default_min_padding(hardware_, layer_module_, config_.expected_module);
   }
 
-  factory_->generate_task_code(
-      GenerateTaskKwargs{.reverse_y = config_.is_reverse_engraving,
-                         .multipass = multipass,
-                         .black_ratio = black_ratio,
-                         .repeat = layer_repeat_,
-                         .speed = layer_speed_,
-                         .acc = config_.padding_acc,
-                         .min_padding = min_padding,
-                         .min_padding_right = right_padding});
+  GenerateTaskKwargs printing_kwargs;
+  printing_kwargs.reverse_y = config_.is_reverse_engraving;
+  printing_kwargs.multipass = multipass;
+  printing_kwargs.black_ratio = black_ratio;
+  printing_kwargs.repeat = layer_repeat_;
+  printing_kwargs.speed = layer_speed_;
+  printing_kwargs.acc = config_.padding_acc;
+  printing_kwargs.min_padding = min_padding;
+  printing_kwargs.min_padding_right = right_padding;
+  factory_->generate_task_code(printing_kwargs);
   proc.exit_printer_mode();
   proc.set_toolhead_pwm(0);
-  proc.moveto({.s = 0});
+  proc.moveto(NamedArgs().rs(0));
 }
 
 void ToolpathExporterFcode::outputPrintingTestFcode() {
@@ -1057,39 +1060,37 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
         proc.grbl_system_cmd(0);
       }
       InwardRect clip_rect = getClipRect(InwardRect(), offset, prespray_module_);
-      generate_prespray_code(
-          proc, {
-                    .work_area_mm = work_area_mm_,
-                    .module = prespray_module_,
-                    .prespray = config_.prespray,
-                    .clip_rect_mm = clip_rect,
-                    .module_offsets = config_.module_offsets,
-                    .travel_speed = config_.travel_speed,
-                    .do_test = true,
-                    .has_job_origin = has_job_origin_,
-                    .job_origin = config_.job_origin,
-                    .is_rotary_task = is_rotary_task_,
-                    .rotary_z_motion = config_.enable_rotary_z_move,
-                    .reverse_4c = hw_profile.reverse_4c,
-                });
+      PresprayParams prespray_params_test;
+      prespray_params_test.work_area_mm = work_area_mm_;
+      prespray_params_test.module = prespray_module_;
+      prespray_params_test.prespray = config_.prespray;
+      prespray_params_test.clip_rect_mm = clip_rect;
+      prespray_params_test.module_offsets = config_.module_offsets;
+      prespray_params_test.travel_speed = config_.travel_speed;
+      prespray_params_test.do_test = true;
+      prespray_params_test.has_job_origin = has_job_origin_;
+      prespray_params_test.job_origin = config_.job_origin;
+      prespray_params_test.is_rotary_task = is_rotary_task_;
+      prespray_params_test.rotary_z_motion = config_.enable_rotary_z_move;
+      prespray_params_test.reverse_4c = hw_profile.reverse_4c;
+      generate_prespray_code(proc, prespray_params_test);
       proc.end_task_script_block();
       // 0002 pure prespray task
       proc.start_task_script_block("xMIN", "0002");
-      generate_prespray_code(
-          proc, {
-                    .work_area_mm = work_area_mm_,
-                    .module = prespray_module_,
-                    .prespray = config_.prespray,
-                    .clip_rect_mm = clip_rect,
-                    .module_offsets = config_.module_offsets,
-                    .travel_speed = config_.travel_speed,
-                    .do_test = false,
-                    .has_job_origin = has_job_origin_,
-                    .job_origin = config_.job_origin,
-                    .is_rotary_task = is_rotary_task_,
-                    .rotary_z_motion = config_.enable_rotary_z_move,
-                    .reverse_4c = hw_profile.reverse_4c,
-                });
+      PresprayParams prespray_params_pure;
+      prespray_params_pure.work_area_mm = work_area_mm_;
+      prespray_params_pure.module = prespray_module_;
+      prespray_params_pure.prespray = config_.prespray;
+      prespray_params_pure.clip_rect_mm = clip_rect;
+      prespray_params_pure.module_offsets = config_.module_offsets;
+      prespray_params_pure.travel_speed = config_.travel_speed;
+      prespray_params_pure.do_test = false;
+      prespray_params_pure.has_job_origin = has_job_origin_;
+      prespray_params_pure.job_origin = config_.job_origin;
+      prespray_params_pure.is_rotary_task = is_rotary_task_;
+      prespray_params_pure.rotary_z_motion = config_.enable_rotary_z_move;
+      prespray_params_pure.reverse_4c = hw_profile.reverse_4c;
+      generate_prespray_code(proc, prespray_params_pure);
       proc.end_task_script_block();
     }
   }
@@ -1276,13 +1277,14 @@ void ToolpathExporterFcode::dilateBinaryBitmap(QImage* image) {
 }
 
 void ToolpathExporterFcode::homeZAxis() {
-  proc.moveto({.z = -1});
+  proc.moveto(NamedArgs().rz(-1));
 }
 
 void ToolpathExporterFcode::backToHome() {
-  proc.moveto({.x = config_.home_pos.x(),
-               .y = config_.home_pos.y(),
-               .is_travel = true});
+  proc.moveto(NamedArgs()
+                  .rx(config_.home_pos.x())
+                  .ry(config_.home_pos.y())
+                  .set_is_travel());
 }
 
 void ToolpathExporterFcode::handleCancel() {

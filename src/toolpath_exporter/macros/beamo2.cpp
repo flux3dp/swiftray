@@ -69,19 +69,19 @@ void Beamo2Macros::reset_table(float feedrate,
                                bool is_y_first) {
   float z = z_magnet;
   if (is_y_first) {
-    proc->moveto({.y = safe_y(), .f = travel_speed, .is_travel = true});
-    proc->moveto({.x = magnet_x(), .f = travel_speed, .is_travel = true});
+    proc->moveto(NamedArgs().ry(safe_y()).rf(travel_speed).set_is_travel());
+    proc->moveto(NamedArgs().rx(magnet_x()).rf(travel_speed).set_is_travel());
   } else {
-    proc->moveto({.x = magnet_x(), .y = safe_y(), .f = travel_speed, .is_travel = true});
+    proc->moveto(NamedArgs().rx(magnet_x()).ry(safe_y()).rf(travel_speed).set_is_travel());
   }
   proc->sync_grbl_motion(0);
-  proc->moveto({.z = z, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(z).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
-  proc->moveto({.y = y_max, .f = feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().ry(y_max).rf(feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   if (should_avoid_magnet) {
-    proc->moveto({.x = magnet_x() + 50, .f = travel_speed, .is_travel = true});
-    proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});
+    proc->moveto(NamedArgs().rx(magnet_x() + 50).rf(travel_speed).set_is_travel());
+    proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
     proc->sync_grbl_motion(0);
   }
 }
@@ -92,14 +92,15 @@ void Beamo2Macros::go_to_standby_pos(float feedrate,
   if (home_first) {
     // Move to home position first to avoid player position mismatch
     QPointF home_pos = HW_PROFILE[HardwareType::BM2].home_position;
-    proc->moveto({.x = home_pos.x(),
-                  .y = home_pos.y(),
-                  .f = travel_speed,
-                  .is_travel = true});
+    proc->moveto(NamedArgs()
+                     .rx(home_pos.x())
+                     .ry(home_pos.y())
+                     .rf(travel_speed)
+                     .set_is_travel());
     proc->sync_grbl_motion(0);
     proc->grbl_system_cmd(0);  // $H
   }
-  proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   if (should_reset_table) {
     reset_table(feedrate, false);
@@ -108,11 +109,11 @@ void Beamo2Macros::go_to_standby_pos(float feedrate,
 
 void Beamo2Macros::extend_table(float z, float travel_speed) {
   z = z_magnet;
-  proc->moveto({.y = y_max - 5, .f = travel_speed, .is_travel = true});
-  proc->moveto({.x = magnet_x(), .f = travel_speed, .is_travel = true});
+  proc->moveto(NamedArgs().ry(y_max - 5).rf(travel_speed).set_is_travel());
+  proc->moveto(NamedArgs().rx(magnet_x()).rf(travel_speed).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.05);
-  proc->moveto({.z = z, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(z).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.05);
 
@@ -121,11 +122,11 @@ void Beamo2Macros::extend_table(float z, float travel_speed) {
                                           {y_max - 2, 1500},
                                           {y_max, 200}};
   for (const auto& move : y_moves) {
-    proc->moveto({.y = move.first, .f = move.second, .is_travel = true});
+    proc->moveto(NamedArgs().ry(move.first).rf(move.second).set_is_travel());
     proc->sync_grbl_motion(0);
   }
   proc->sleep(0.5);
-  proc->moveto({.y = safe_y(), .f = 4800, .is_travel = true});
+  proc->moveto(NamedArgs().ry(safe_y()).rf(4800).set_is_travel());
   proc->sleep(0.1);
 }
 
@@ -135,14 +136,14 @@ void Beamo2Macros::set_printer_lid(bool is_lid_on,
   float x = lid_x();
   float y = y_lid;
   float z = is_lid_on ? (z_table + 1.5) : (z_table + 0.3);
-  proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});  // could be z=-1
+  proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());  // could be z=-1
   proc->sync_grbl_motion(0);
   proc->sleep(0.3);
-  proc->moveto({.x = x, .f = travel_speed, .is_travel = true});
-  proc->moveto({.y = y, .f = travel_speed, .is_travel = true});
+  proc->moveto(NamedArgs().rx(x).rf(travel_speed).set_is_travel());
+  proc->moveto(NamedArgs().ry(y).rf(travel_speed).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.2);
-  proc->moveto({.z = z, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(z).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
 
   if (delta > 0) {
@@ -155,23 +156,23 @@ void Beamo2Macros::set_printer_lid(bool is_lid_on,
       if (pos.second > y_max) {
         continue;
       }
-      proc->moveto({.x = pos.first, .y = pos.second, .f = feedrate, .is_travel = true});
+      proc->moveto(NamedArgs().rx(pos.first).ry(pos.second).rf(feedrate).set_is_travel());
       proc->sleep(0.1);
     }
   }
 
   if (!is_lid_on) {
-    proc->moveto({.y = safe_y(), .f = 800, .is_travel = true});
+    proc->moveto(NamedArgs().ry(safe_y()).rf(800).set_is_travel());
   } else {
-    proc->moveto({.x = x, .f = 1000, .is_travel = true});
+    proc->moveto(NamedArgs().rx(x).rf(1000).set_is_travel());
     proc->sync_grbl_motion(0);
     proc->sleep(0.5);
   }
 
-  proc->moveto({.z = 0, .f = is_lid_on ? 1000 : z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(0).rf(is_lid_on ? 1000 : z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   if (is_lid_on) {
-    proc->moveto({.y = safe_y(), .f = travel_speed, .is_travel = true});
+    proc->moveto(NamedArgs().ry(safe_y()).rf(travel_speed).set_is_travel());
   }
   proc->user_selection_cmd(1);
 }
@@ -180,19 +181,22 @@ void Beamo2Macros::clean_printer(float feedrate, int repeat) {
   float start_x = x_left + 125;
   float end_x = start_x - 50;
   float y = y_max - 1;
-  proc->moveto({.x = start_x, .y = y, .f = travel_speed, .is_travel = true});
+  proc->moveto(NamedArgs().rx(start_x).ry(y).rf(travel_speed).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.1);
-  proc->moveto({.z = brush_z(), .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(brush_z()).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.1);
   for (int i = 0; i < repeat - 1; i++) {
-    proc->moveto({.y = (i % 2 == 1) ? (y + 3) : y, .f = feedrate, .is_travel = true});
-    proc->moveto({.x = end_x, .f = feedrate, .is_travel = true});
-    proc->moveto({.x = start_x, .f = feedrate, .is_travel = true});
+    proc->moveto(NamedArgs()
+                     .ry((i % 2 == 1) ? (y + 3) : y)
+                     .rf(feedrate)
+                     .set_is_travel());
+    proc->moveto(NamedArgs().rx(end_x).rf(feedrate).set_is_travel());
+    proc->moveto(NamedArgs().rx(start_x).rf(feedrate).set_is_travel());
   }
-  proc->moveto({.y = y, .f = feedrate, .is_travel = true});
-  proc->moveto({.x = end_x, .f = feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().ry(y).rf(feedrate).set_is_travel());
+  proc->moveto(NamedArgs().rx(end_x).rf(feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
 }
 
@@ -200,29 +204,28 @@ void Beamo2Macros::prespray(float travel_speed,
                             float task_speed,
                             bool should_enter_printer_mode) {
   float start_x = x_left + 40;
-  proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.1);
   HardwareProfile hw_profile = HW_PROFILE[HardwareType::BM2];
-  generate_prespray_code(
-      *proc, {
-                 .work_area_mm = QSizeF(hw_profile.width, hw_profile.length),
-                 .module = LayerModule::PRINTER_4C,
-                 .prespray = QRectF(start_x, y_max - 1, 20, 12.7),
-                 .travel_speed = travel_speed,
-                 .task_speed = task_speed,
-                 .repeat = 6,
-                 .reverse_first = true,
-                 .should_enter_printer_mode = should_enter_printer_mode,
-                 .nozzle_mode = NozzleMode::BOTH,
-                 .reverse_4c = hw_profile.reverse_4c,
-             });
-  proc->moveto({.x = start_x + 24, .f = travel_speed, .is_travel = true});
+  PresprayParams prespray_params;
+  prespray_params.work_area_mm = QSizeF(hw_profile.width, hw_profile.length);
+  prespray_params.module = LayerModule::PRINTER_4C;
+  prespray_params.prespray = QRectF(start_x, y_max - 1, 20, 12.7);
+  prespray_params.travel_speed = travel_speed;
+  prespray_params.task_speed = task_speed;
+  prespray_params.repeat = 6;
+  prespray_params.reverse_first = true;
+  prespray_params.should_enter_printer_mode = should_enter_printer_mode;
+  prespray_params.nozzle_mode = NozzleMode::BOTH;
+  prespray_params.reverse_4c = hw_profile.reverse_4c;
+  generate_prespray_code(*proc, prespray_params);
+  proc->moveto(NamedArgs().rx(start_x + 24).rf(travel_speed).set_is_travel());
 }
 
 void Beamo2Macros::post_table_motion() {
-  proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});
-  proc->moveto({.x = 5, .y = 5, .f = travel_speed, .is_travel = true});
+  proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
+  proc->moveto(NamedArgs().rx(5).ry(5).rf(travel_speed).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->grbl_system_cmd(0);
   proc->sync_motion_type2(185, 0);
@@ -252,12 +255,12 @@ QPointF Beamo2Macros::move_to_refresh_position() {
   if (should_retract_table) {
     extend_table();
   }
-  proc->moveto({.z = 0, .f = z_feedrate, .is_travel = true});
+  proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
   proc->sleep(0.1);
   float x = x_left + 60;
   float y = y_max - 1;
-  proc->moveto({.x = x, .y = y, .s = 0, .force_y = true, .is_travel = true});
+  proc->moveto(NamedArgs().rx(x).ry(y).rs(0).set_force_y().set_is_travel());
   return QPointF(x, y);
 }
 

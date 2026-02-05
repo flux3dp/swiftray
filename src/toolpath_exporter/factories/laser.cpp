@@ -154,9 +154,8 @@ bool LaserBitmapFactory::fg_iterate_x_pwm(const uchar* data,
     left_x += backlash;
     right_x += backlash;
   }
-  proc->moveto({.x = reverse ? right_x : left_x, .y = y, .is_travel = true});
-  proc->moveto({.x = reverse ? right_x : left_x,
-                .y = y});  // for 3d curve, move z to start position
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y).set_is_travel());
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y));  // for 3d curve, move z to start position
   proc->set_line_pixels(pixel_number);
 
   // 32 bits data, 8 bits per pixel (0~255)
@@ -184,7 +183,7 @@ bool LaserBitmapFactory::fg_iterate_x_pwm(const uchar* data,
   }
   proc->set_fill_end();
   proc->set_print_line_status();
-  proc->moveto({.x = reverse ? left_x : right_x, .f = speed});
+  proc->moveto(NamedArgs().rx(reverse ? left_x : right_x).rf(speed));
   return true;
 }
 
@@ -221,9 +220,8 @@ bool LaserBitmapFactory::fg_iterate_x(const uchar* data,
     left_x += backlash;
     right_x += backlash;
   }
-  proc->moveto({.x = reverse ? right_x : left_x, .y = y, .is_travel = true});
-  proc->moveto({.x = reverse ? right_x : left_x,
-                .y = y});  // for 3d curve, move z to start position
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y).set_is_travel());
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y));  // for 3d curve, move z to start position
   proc->set_line_pixels(pixel_number);
 
   // 32 bits data, 1 bit per pixel (0 or 1)
@@ -247,7 +245,7 @@ bool LaserBitmapFactory::fg_iterate_x(const uchar* data,
   }
   proc->set_fill_end();
   proc->set_print_line_status();
-  proc->moveto({.x = reverse ? left_x : right_x, .f = speed});
+  proc->moveto(NamedArgs().rx(reverse ? left_x : right_x).rf(speed));
   return true;
 }
 
@@ -276,7 +274,7 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
         if (!reverse) {
           real_x += backlash;
         }
-        proc->moveto({.x = real_x});
+        proc->moveto(NamedArgs().rx(real_x));
         proc->set_toolhead_pwm(0);
       }
     } else {
@@ -285,8 +283,8 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
         if (!has_moved_y) {
           // First emitting point of this line; should handle y movement
           proc->set_toolhead_pwm(0);
-          proc->moveto({.y = y, .is_travel = true});
-          proc->moveto({.f = speed});
+          proc->moveto(NamedArgs().ry(y).set_is_travel());
+          proc->moveto(NamedArgs().rf(speed));
           has_moved_y = true;
         }
         is_emitting = true;
@@ -298,7 +296,7 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
         if (!reverse) {
           real_x += backlash;
         }
-        proc->moveto({.x = real_x});
+        proc->moveto(NamedArgs().rx(real_x));
         proc->set_toolhead_pwm(100);
       } else {
         // Consecutive emitting points
@@ -315,7 +313,7 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
       real_x += backlash;
     }
     if (!has_moved_x) {
-      proc->moveto({.x = move_x});
+      proc->moveto(NamedArgs().rx(move_x));
     }
     float laser_padding = mock_fast_gradient ? padding_dist : 25;
     float buffer_x;
@@ -325,7 +323,7 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
       buffer_x = qMax(real_x - laser_padding, 0.0f) - offset.x();
     }
     proc->set_toolhead_pwm(0);
-    proc->moveto({.x = buffer_x});
+    proc->moveto(NamedArgs().rx(buffer_x));
   }
   return current_x >= 0;
 }

@@ -135,7 +135,7 @@ void UVBitmapFactory::write_payload(NozzleMode printer_packet_type,
   } else {
     // error
   }
-  proc->m137_cmd_type1(1, {.f = 0, .s = float(pixel_size)});
+  proc->m137_cmd_type1(1, NamedArgs().rf(0).rs(float(pixel_size)));
   proc->write_printer_packet(packet_type, payload, !is_4c, is_4c);
 }
 
@@ -186,9 +186,9 @@ void UVBitmapFactory::uv_cure_rows(QVector<RowBoxes> rows, float speed) {
     if (reverse_x) {
       std::swap(start_pos, end_pos);
     }
-    proc->moveto({.x = start_pos.x(), .y = start_pos.y(), .is_travel = true});
+    proc->moveto(NamedArgs().rx(start_pos.x()).ry(start_pos.y()).set_is_travel());
     write_uv_light_strength(uv_light_strength);
-    proc->moveto({.x = end_pos.x(), .y = end_pos.y(), .f = speed});
+    proc->moveto(NamedArgs().rx(end_pos.x()).ry(end_pos.y()).rf(speed));
     proc->sync_grbl_motion(0);
     write_uv_light_strength(0);
     reverse_x = !reverse_x;
@@ -219,7 +219,7 @@ void UVBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
 
   // Generate fcode
   QVector<RowBoxes> uv_curing_rows;
-  NamedArgs args_s0{.s = 0};
+  NamedArgs args_s0 = NamedArgs().rs(0);
   bool reverse_x = false;
   bool no_cache = true;
   for (int r = 0; r < kwargs.repeat; r++) {

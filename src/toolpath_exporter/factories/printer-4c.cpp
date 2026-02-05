@@ -288,12 +288,12 @@ void PrinterBitmapFactory4C::refresh_ink(int repeat, double block_width_mm) {
     float x = NAN;
     if (!use_macros_refresh) {
       x = refresh_x_mm - offset.x();
-      proc->moveto({.x = x, .s = 0, .is_travel = true});
+      proc->moveto(NamedArgs().rx(x).rs(0).set_is_travel());
     } else if (hasattr(macros, MacroFunc::move_to_refresh_position)) {
       QPointF pos = macros->move_to_refresh_position();
       x = pos.x();
       proc->moveto(
-          {.x = x, .y = pos.y(), .s = 0, .force_y = true, .is_travel = true});
+          NamedArgs().rx(x).ry(pos.y()).rs(0).set_force_y().set_is_travel());
     }
     if (!isnan(x)) {
       float end_x = x + (block_width + 1) * pixel_size;
@@ -328,30 +328,30 @@ void PrinterBitmapFactory4C::refresh_ink(int repeat, double block_width_mm) {
         for (int i = 0; i < repeat; i++) {
           write_payload(NozzleMode::LEFT, payload);
           if (!is_going_back) {
-            proc->moveto({.x = end_x, .s = 1, .f = 1800});
+            proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
           } else {
-            proc->moveto({.x = x, .s = 1, .f = 1800});
+            proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
           }
           proc->wait_printer_mode_sync();
           is_going_back = !is_going_back;
         }
       }
-      proc->moveto({.s = 0});
+      proc->moveto(NamedArgs().rs(0));
       if (nozzle_mode_ == NozzleMode::BOTH ||
           nozzle_mode_ == NozzleMode::RIGHT) {
         QByteArray payload = generate_payload(right_data, block_width);
         for (int i = 0; i < repeat; i++) {
           write_payload(NozzleMode::RIGHT, payload);
           if (!is_going_back) {
-            proc->moveto({.x = end_x, .s = 1, .f = 1800});
+            proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
           } else {
-            proc->moveto({.x = x, .s = 1, .f = 1800});
+            proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
           }
           proc->wait_printer_mode_sync();
           is_going_back = !is_going_back;
         }
       }
-      proc->moveto({.x = x, .s = 0, .is_travel = true});
+      proc->moveto(NamedArgs().rx(x).rs(0).set_is_travel());
       proc->wait_printer_mode_sync();
       if (use_macros_refresh &&
           hasattr(macros, MacroFunc::post_refresh_motion)) {
@@ -547,7 +547,7 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
   double start_padding = padding_dist_l;
   double end_padding = padding_dist_r;
   bool no_cache = true;
-  NamedArgs args_s0{.s = 0};
+  NamedArgs args_s0 = NamedArgs().rs(0);
   for (int r = 0; r < kwargs.repeat; r++) {
     for (BlockBoxes& block : blocks) {
       bool reverse_x = false;
@@ -608,7 +608,7 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
         proc->moveto(args_s0);
         if (!isnan(final_x) && end_padding > 0) {
           float padded_x = get_padded_x(final_x, false, reverse_x, end_padding);
-          proc->moveto({.x = padded_x, .f = kwargs.speed, .is_travel = true});
+          proc->moveto(NamedArgs().rx(padded_x).rf(kwargs.speed).set_is_travel());
         }
         if (is_row_printed) {
           row_counts += 1;
@@ -661,18 +661,20 @@ double PrinterBitmapFactory4C::write_data_to_proc_4c(
     real_pos =
         pixel_to_actual_position(start_x, pixel_y, nozzle_mode, reverse_x);
     if (padding > 0) {
-      proc->moveto({.x = get_padded_x(real_pos.x(), true, reverse_x, padding),
-                    .y = real_pos.y(),
-                    .s = 0,
-                    .force_y = force_y,
-                    .is_travel = true});
-      proc->moveto({.x = real_pos.x(), .f = speed, .is_travel = true});
+      proc->moveto(NamedArgs()
+                       .rx(get_padded_x(real_pos.x(), true, reverse_x, padding))
+                       .ry(real_pos.y())
+                       .rs(0)
+                       .set_force_y(force_y)
+                       .set_is_travel());
+      proc->moveto(NamedArgs().rx(real_pos.x()).rf(speed).set_is_travel());
     } else {
-      proc->moveto({.x = real_pos.x(),
-                    .y = real_pos.y(),
-                    .s = 0,
-                    .force_y = force_y,
-                    .is_travel = true});
+      proc->moveto(NamedArgs()
+                       .rx(real_pos.x())
+                       .ry(real_pos.y())
+                       .rs(0)
+                       .set_force_y(force_y)
+                       .set_is_travel());
     }
   }
   if (should_adjust_height) {
@@ -681,14 +683,15 @@ double PrinterBitmapFactory4C::write_data_to_proc_4c(
   }
   write_payload(nozzle_mode, payload);
   real_pos = pixel_to_actual_position(end_x, pixel_y, nozzle_mode, reverse_x);
-  proc->moveto({.x = real_pos.x(),
-                .y = real_pos.y(),
-                .s = 1,
-                .f = speed,
-                .force_y = force_y});
+  proc->moveto(NamedArgs()
+                   .rx(real_pos.x())
+                   .ry(real_pos.y())
+                   .rs(1)
+                   .rf(speed)
+                   .set_force_y(force_y));
   if (is_end) {
     proc->wait_printer_mode_sync();
-    proc->moveto({.s = 0});
+    proc->moveto(NamedArgs().rs(0));
   }
 
   return real_pos.x();
