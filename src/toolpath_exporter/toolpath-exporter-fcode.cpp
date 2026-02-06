@@ -647,7 +647,7 @@ void ToolpathExporterFcode::convertLayer() {
     QJsonObject submodule{{"color", "None"}};
     QString submodule_type = "None";
     if (layer_module_ == LayerModule::PRINTER) {
-      QString submodule_type = "Solvent";
+      submodule_type = "Solvent";
       submodule["color"] = COLOR_NAME_MAP.value(layer_color_, "black");
     }
     submodule["type"] = submodule_type;

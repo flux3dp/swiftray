@@ -479,9 +479,9 @@ PacketData PrinterBitmapFactory::create_image_packet_data(
     }
     if (column_count > 0) {
       if (min_data_idx < 0) {
-        min_data_idx = c;
+        min_data_idx = i;
       }
-      max_data_idx = c;
+      max_data_idx = i;
       px_count += column_count;
     }
     payload_data.append(column_payload);
