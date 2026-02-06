@@ -5084,6 +5084,13 @@ bool MyQSvgHandler::startElement(const QString &localName,
                 cssStyleLookup(node, this, m_selector);
 #endif
                 parseStyle(node, attributes, this);
+                if (localName == QLatin1String("line")) {
+                    // Force clear fill for line element
+                    auto fillStyle = node->styleProperty(QSvgStyleProperty::FILL);
+                    if (fillStyle) {
+                        ((QSvgFillStyle*)fillStyle)->setBrush(QBrush(Qt::NoBrush));
+                    }
+                }
                 if (node->type() == QSvgNode::Text || node->type() == QSvgNode::Textarea) {
                     static_cast<QSvgText *>(node)->setWhitespaceMode(m_whitespaceMode.top());
                 } else if (node->type() == QSvgNode::Tspan) {
