@@ -677,8 +677,11 @@ unsigned long FCodeGeneratorV2::write_metadata() {
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
     // Note: REQUIRED_HEADTYPE and FORBIDDEN_HEADTYPE must be number without
     // quotes
-    write_metadata_(it.key(), it.value().toString(), &crc_val,
-                    !it.value().isDouble());
+    if (it.value().isDouble()) {
+      write_metadata_(it.key(), QString::number(it.value().toInt()), &crc_val, false);
+    } else {
+      write_metadata_(it.key(), it.value().toString(), &crc_val);
+    }
   }
   write_metadata_("version", "2", &crc_val);
   write_metadata_("CREATED_AT", created_at.toString(time_format), &crc_val);
