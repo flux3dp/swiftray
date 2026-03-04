@@ -838,7 +838,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   } else if (hardware_ == HardwareType::RF) {
     if (layer_speed_ > 500 * 60 && layer_speed_ <= 1200 * 60) {
       // 2.5G
-      proc.set_acceleration_override(25000, 25000, config_.z_acc, NAN);
+      proc.set_acceleration_override(25000, 2000, config_.z_acc, NAN);
       padding_acc = 25000;
       proc.set_time_est_acc(padding_acc);
       acc_overridden = true;
