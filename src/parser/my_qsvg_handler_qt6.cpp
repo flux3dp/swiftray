@@ -1063,7 +1063,9 @@ static void parseBrush(QSvgNode *node,
         }
 
         //fill attribute handling
-        if ((!attributes.fill.isEmpty()) && (attributes.fill != QT_INHERIT) ) {
+        if (attributes.fill.isEmpty()) {
+            prop->setBrush(QBrush(QColor(Qt::black)));
+        } else if (attributes.fill != QT_INHERIT) {
             if (attributes.fill.size() > 3 && attributes.fill.mid(0, 3) == QLatin1String("url")) {
                 QString value = attributes.fill.mid(3, attributes.fill.size() - 3).toString();
                 QSvgStyleProperty *style = styleFromUrl(node, value);
@@ -1084,6 +1086,10 @@ static void parseBrush(QSvgNode *node,
                 prop->setBrush(QBrush(Qt::NoBrush));
             }
         }
+        node->appendStyleProperty(prop, attributes.id);
+    } else if (node->type() == QSVG_PATH) {
+        QSvgFillStyle *prop = new QSvgFillStyle;
+        prop->setBrush(QBrush(QColor(Qt::black)));
         node->appendStyleProperty(prop, attributes.id);
     }
 }
@@ -1233,7 +1239,9 @@ static void parsePen(QSvgNode *node,
         QSvgStrokeStyle *prop = new QSvgStrokeStyle;
 
         //stroke attribute handling
-        if ((!attributes.stroke.isEmpty()) && (attributes.stroke != QT_INHERIT) ) {
+        if (attributes.stroke.isEmpty()) {
+            prop->setStroke(QBrush(Qt::NoBrush));
+        } else if (attributes.stroke != QT_INHERIT) {
             if (attributes.stroke.size() > 3 && attributes.stroke.mid(0, 3) == QLatin1String("url")) {
                  QString value = attributes.stroke.mid(3, attributes.stroke.size() - 3).toString();
                     QSvgStyleProperty *style = styleFromUrl(node, value);
@@ -1316,6 +1324,10 @@ static void parsePen(QSvgNode *node,
         if (!attributes.strokeOpacity.isEmpty() && attributes.strokeOpacity != QT_INHERIT)
             prop->setOpacity(qMin(qreal(1.0), qMax(qreal(0.0), toDouble(attributes.strokeOpacity))));
 
+        node->appendStyleProperty(prop, attributes.id);
+    } else if (node->type() == QSVG_PATH) {
+        QSvgStrokeStyle *prop = new QSvgStrokeStyle;
+        prop->setStroke(QBrush(Qt::NoBrush));
         node->appendStyleProperty(prop, attributes.id);
     }
 }
