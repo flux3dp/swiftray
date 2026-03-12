@@ -580,10 +580,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     }
 
     if (should_swap || is_running_laser_ && should_flush_) {
-      should_flush_ = should_swap = false;
       qInfo() << "BSLM~::handleGcode() - Flushing buffer with size" << list_manager_.bufferSize() << "and time" << running_task_time_ << "@" << getDebugTime();
       qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
+      should_flush_ = should_swap = false;
       list_no = list_no == 1 ? 2 : 1;
       waitListAvailable(list_no);
       startList(list_no, settings, should_end);
@@ -949,8 +949,11 @@ bool BSLMotionController::executeList(int list_no) {
     }
   }
   if (before_first_laser_) {
+    // Set before_first_laser_ to false after any execution
     before_first_laser_ = false;
-  } else {
+  }
+  if (is_preparing_first_list_ && !should_flush_) {
+    // Set is_preparing_first_list_ to false after an execution that is not triggered by should_flush(before_first_laser_)
     is_preparing_first_list_ = false;
   }
   completed_task_time_ += running_task_time_;

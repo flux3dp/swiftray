@@ -247,7 +247,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     Executor* executor = getMachine()->getConsoleExecutor().data();
     getMachine()->getMotionController()->sendCmdPacket(executor, gcode);
   } else if (action == "getStatus") { // The old "play report" action in Beam Studio
-    result["st_id"] = getMachine()->getStatusId();
+    int status_id = getMachine()->getStatusId();
+    result["st_id"] = status_id;
     result["prog"] = getMachine()->getJobExecutor()->getProgress() * 0.01f;
     BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
     if (controller) {
@@ -260,7 +261,7 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
           result["st_id"] = 516;
         }
       } else {
-        if (controller->isPreparingFirstList()) {
+        if (controller->isPreparingFirstList() && status_id == 16) {
           result["st_id"] = 1;
         }
         QString error = controller->getCurrentError();
