@@ -77,6 +77,9 @@
     #define QSVG_TSPAN QSvgNode::TSPAN
 #endif
 
+// Using 248 as max white threshold, check client BitmapImage class
+#define MAX_BITMAP_THRESHOLD 248
+
 
 namespace MySVG {
     void processUse(QList<Node> &nodes, Node use_node) {
@@ -164,8 +167,26 @@ namespace MySVG {
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
             n.trans = trans * tmp_scale;
             auto fillStyle = node->styleProperty(QSvgStyleProperty::FILL);
-            n.fill = fillStyle && ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
+            n.fill = fillStyle &&
+                    ((QSvgFillStyle*)fillStyle)->fillOpacity() != 0 &&
+                    ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
             n.color = g_color;
+            if (n.fill) {
+                if (qGray(((QSvgFillStyle*)fillStyle)->qbrush().color().rgba()) > MAX_BITMAP_THRESHOLD) {
+                    // Note: use fill instead g_color in case fill and stroke have different color
+                    qInfo() << "Path has white fill, skip element";
+                    return;
+                }
+            } else {
+                auto strokeStyle = node->styleProperty(QSvgStyleProperty::STROKE);
+                if (!strokeStyle ||
+                    ((QSvgStrokeStyle*)strokeStyle)->stroke().brush().style() == Qt::NoBrush ||
+                    ((QSvgStrokeStyle*)strokeStyle)->stroke().width() == 0 ||
+                    !((QSvgStrokeStyle*)strokeStyle)->stroke().color().isValid()) {
+                    qInfo() << "Path has no valid stroke, skip element";
+                    return;
+                }
+            }
             n.visible = getNodeVisible(node);
             nodes.push_back(n);
         } else if(node->type() == QSVG_IMAGE) {
@@ -188,7 +209,7 @@ namespace MySVG {
             n.color = g_color;
             n.visible = getNodeVisible(node);
             n.gradient = g_gradient;
-            n.threshold = g_threshold;
+            n.threshold = qMin(g_threshold, MAX_BITMAP_THRESHOLD);
             n.pwm = g_pwm;
             n.depthPass = g_pass;
             n.depthZStep = g_zstep;
