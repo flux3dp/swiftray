@@ -790,11 +790,13 @@ InwardRect get_boundary(HardwareType hw_type, LayerModule layer_module) {
 
 double get_default_min_padding(HardwareType hw_type,
                                LayerModule layer_module,
-                               MachineModules machine_module) {
+                               MachineModules machine_module,
+                               bool is_high_quality) {
+  double value = is_high_quality ? 10 : 0;
   double hardware_padding = HARDWARE_MIN_PADDING.value(hw_type, 0);
-  double machine_module_padding =
-      MACHINE_MODULE_MIN_PADDING.value(machine_module, 0);
-  double value = qMax(hardware_padding, machine_module_padding);
+  value = qMax(value, hardware_padding);
+  double machine_module_padding = MACHINE_MODULE_MIN_PADDING.value(machine_module, 0);
+  value = qMax(value, machine_module_padding);
   if (!SUPPORT_INFO.value(hw_type).MODULES) {
     return value;
   }

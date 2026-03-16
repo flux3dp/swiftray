@@ -140,6 +140,7 @@ class ToolpathExporterFcode : public QObject {
   float layer_path_speed_;  // mm/min
   float layer_backlash_ = 0;
   float layer_pwm_scale_ = 1;
+  bool layer_is_high_quality_ = false;
   LayerModule layer_module_;
   bool is_laser_layer_ = false;
   bool is_printing_layer_ = false;

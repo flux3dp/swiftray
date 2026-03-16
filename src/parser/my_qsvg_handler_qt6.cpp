@@ -2952,6 +2952,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.raw_bbox = attributes.value("data-bbox").toString();
         layer_config.laser_delay = getAttr(attributes, "data-delay", default_config, "delay", 0);
         layer_config.dpmm = getAttr(attributes, "data-dpmm", default_config, "dpmm", 0);
+        layer_config.is_high_quality = getAttr(attributes, "data-highQuality", default_config, "highQuality", 0) == 1;
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }

@@ -132,8 +132,6 @@ struct AccelerationData {
   double a = NAN;
 
   void updateFromJson(const QJsonObject& obj) {
-    if (obj.isEmpty())
-      return;
     is_valid = true;
     x = obj["x"].toDouble(NAN);
     y = obj["y"].toDouble(NAN);
