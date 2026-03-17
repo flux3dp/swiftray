@@ -97,6 +97,7 @@ InwardRect get_boundary(HardwareType hw_type, LayerModule layer_module);
 double get_default_min_padding(
     HardwareType hw_type,
     LayerModule layer_module,
-    MachineModules machine_module = MachineModules::NONE);
+    MachineModules machine_module = MachineModules::NONE,
+    bool is_high_quality = false);
 
 double get_padding_dist(double min_padding, float speed, float acc);

@@ -86,6 +86,7 @@ namespace MySVG {
         QString raw_bbox;
         int laser_delay;
         int dpmm;
+        bool is_high_quality;
     };
 
     enum ReadType {

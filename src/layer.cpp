@@ -206,6 +206,8 @@ int Layer::laserDelay() const { return laser_delay_; }
 
 int Layer::dpmm() const { return dpmm_; }
 
+bool Layer::isHighQuality() const { return is_high_quality_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -318,6 +320,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->raw_bbox_ = config.raw_bbox;
   this->laser_delay_ = config.laser_delay;
   this->dpmm_ = config.dpmm;
+  this->is_high_quality_ = config.is_high_quality;
 }
 
 // Clone

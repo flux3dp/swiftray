@@ -179,8 +179,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
 
   if (param.contains("acc_override")) {
     QJsonObject acc_obj = param["acc_override"].toObject();
-    config_.fill_acc.updateFromJson(acc_obj["fill"].toObject());
-    config_.path_acc.updateFromJson(acc_obj["path"].toObject());
+    if (acc_obj.contains("fill")) {
+      config_.fill_acc.updateFromJson(acc_obj["fill"].toObject());
+    }
+    if (acc_obj.contains("path")) {
+      config_.path_acc.updateFromJson(acc_obj["path"].toObject());
+    }
   } else if (PATH_ACCELERATION_DATA.contains(hardware_)) {
     config_.path_acc = PATH_ACCELERATION_DATA[hardware_];
   }
@@ -700,6 +704,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   separately
   */
 
+  layer_is_high_quality_ = current_layer_->isHighQuality() && hardware_ == HardwareType::RF;
   int dpmm_y = current_layer_->dpmm() > 0 ? current_layer_->dpmm()
                                           : 10;  // fallback to medium
   int dpmm_x = qMin(dpmm_y, hw_profile.max_pixel_per_mm_x);
@@ -800,15 +805,21 @@ void ToolpathExporterFcode::outputLayerPathFcode() {
   if (laser_path_factory_->get_size() == 0) {
     return;
   }
-  if (config_.path_acc.is_valid) {
-    proc.set_acceleration_override(config_.path_acc.x, config_.path_acc.y,
-                                   config_.z_acc, config_.path_acc.a);
+  AccelerationData acc_override_object = config_.path_acc;
+  if (!isnan(config_.z_acc)) {
+    acc_override_object.is_valid = true;
+    acc_override_object.z = config_.z_acc;
+  }
+  if (acc_override_object.is_valid) {
+    qInfo() << "Set path acc" << acc_override_object.x << acc_override_object.y << acc_override_object.z << acc_override_object.a;
+    proc.set_acceleration_override(acc_override_object.x, acc_override_object.y,
+                                   acc_override_object.z, acc_override_object.a);
   }
   proc.set_travel_speed(config_.path_travel_speed);
   laser_path_factory_->generate_task_code(layer_path_speed_);
   proc.set_travel_speed(config_.travel_speed);
   // Reset path_acc
-  if (config_.path_acc.is_valid) {
+  if (acc_override_object.is_valid) {
     proc.sync_grbl_motion(151);
     proc.set_time_est_acc(config_.padding_acc);
   }
@@ -825,28 +836,39 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   if (workspace->get_dirty_area().isEmpty()) {
     return;
   }
-  bool acc_overridden = false;
   float padding_acc = config_.padding_acc;
+  AccelerationData acc_override_object;
   if (config_.fill_acc.is_valid) {
-    proc.set_acceleration_override(config_.fill_acc.x, config_.fill_acc.y,
-                                   config_.z_acc, config_.fill_acc.a);
-    if (!isnan(config_.fill_acc.x)) {
-      padding_acc = config_.fill_acc.x;
-      proc.set_time_est_acc(padding_acc);
-    }
-    acc_overridden = true;
+    acc_override_object = config_.fill_acc;
   } else if (hardware_ == HardwareType::RF) {
-    if (layer_speed_ > 500 * 60 && layer_speed_ <= 1200 * 60) {
+    if (layer_is_high_quality_) {
+      // 0.8G
+      acc_override_object.is_valid = true;
+      acc_override_object.x = 8000;
+      acc_override_object.y = 2000;
+    } else if (layer_speed_ > 500 * 60 && layer_speed_ <= 1200 * 60) {
       // 2.5G
-      proc.set_acceleration_override(25000, 2000, config_.z_acc, NAN);
-      padding_acc = 25000;
+      acc_override_object.is_valid = true;
+      acc_override_object.x = 25000;
+      acc_override_object.y = 2000;
+    }
+  }
+  if (!isnan(config_.z_acc)) {
+    acc_override_object.is_valid = true;
+    acc_override_object.z = config_.z_acc;
+  }
+  if (acc_override_object.is_valid) {
+    qInfo() << "Set fill acc" << acc_override_object.x << acc_override_object.y << acc_override_object.z << acc_override_object.a;
+    proc.set_acceleration_override(acc_override_object.x, acc_override_object.y,
+                                   acc_override_object.z, acc_override_object.a);
+    if (!isnan(acc_override_object.x)) {
+      padding_acc = acc_override_object.x;
       proc.set_time_est_acc(padding_acc);
-      acc_overridden = true;
     }
   }
 
   double min_padding = isnan(config_.min_engraving_padding)
-                           ? get_default_min_padding(hardware_, layer_module_, config_.expected_module)
+                           ? get_default_min_padding(hardware_, layer_module_, config_.expected_module, layer_is_high_quality_)
                            : config_.min_engraving_padding;
 
   GenerateTaskKwargs task_kwargs;
@@ -860,7 +882,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   task_kwargs.pwm_scale = layer_pwm_scale_;
   factory->generate_task_code(task_kwargs);
 
-  if (acc_overridden) {
+  if (acc_override_object.is_valid) {
     // Reset fill_acc
     proc.sync_grbl_motion(151);
     proc.set_time_est_acc(config_.padding_acc);

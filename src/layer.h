@@ -119,6 +119,7 @@ public:
   const QString& rawBBox() const;
   int laserDelay() const;
   int dpmm() const;
+  bool isHighQuality() const;
   // end BS
 
   Document &document();
@@ -216,6 +217,7 @@ private:
   QString raw_bbox_;
   int laser_delay_ = 0;
   int dpmm_ = 0;
+  bool is_high_quality_ = false;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;
