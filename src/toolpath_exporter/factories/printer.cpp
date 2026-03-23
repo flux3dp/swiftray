@@ -114,13 +114,13 @@ void PrinterBitmapFactory::generate_image_for_task(double black_ratio) {
     am_dot_d = am_dot_r * 2;
   }
 
-  QImage src_bitmap = workspace->bitmap;
+  QImage* src_bitmap = workspace->get_bitmap();
   bitmap = QImage(work_area, QImage::Format_Grayscale8);
   bitmap.fill(Qt::white);
   // Preprocess image
   for (int y = bbox_top; y <= bbox_bottom; y++) {
     uchar* data_ptr = bitmap.scanLine(y);
-    uchar* src_data_ptr = src_bitmap.scanLine(y);
+    uchar* src_data_ptr = src_bitmap->scanLine(y);
     for (int x = bbox_left; x <= bbox_right; x++) {
       int inv_val = WHITE_PIXEL - src_data_ptr[x];
       if (inv_val == 0) {

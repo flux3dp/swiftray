@@ -262,7 +262,8 @@ void ToolpathExporter::convertBitmap(BitmapShape *bmp) {
   }
   QImage transformed_image =
       bmp->sourceImage()
-          .transformed(transform, Qt::SmoothTransformation)
+          .transformed(transform, bmp->gradient() ? Qt::SmoothTransformation
+                                                  : Qt::FastTransformation)
           .convertToFormat(QImage::Format_ARGB32);
   BitmapHandlerType type;
   if (bmp->gradient()) {
@@ -1404,12 +1405,12 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
 }
 
 inline void ToolpathExporter::moveTo(QPointF&& dest, double speed, double power, double x_backlash) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
+  gen_->moveTo(dest.x(), dest.y(), speed, power, enable_custom_backlash_ ? x_backlash : 0);
   current_pos_mm_ = dest;
 }
 
 inline void ToolpathExporter::moveTo(const QPointF& dest, double speed, double power, double x_backlash) {
-  gen_->moveTo(dest.x(), dest.y(), speed, power, x_backlash);
+  gen_->moveTo(dest.x(), dest.y(), speed, power, enable_custom_backlash_ ? x_backlash : 0);
   current_pos_mm_ = dest;
 }
 

@@ -479,8 +479,9 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
       am_sin = sin(rad);
     }
 
+    QImage* src_bitmap = workspace->get_bitmap();
     for (int y = bbox_top; y <= bbox_bottom; y++) {
-      uchar* data_ptr = workspace->bitmap.scanLine(y);
+      uchar* data_ptr = src_bitmap->scanLine(y);
       for (int x = bbox_left; x <= bbox_right; x++) {
         int inv_val = WHITE_PIXEL - data_ptr[x];
         if (inv_val == 0) {
@@ -502,8 +503,8 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
       }
     }
     if (!do_am) {
-      workspace->bitmap.convertTo(QImage::Format_Mono, Qt::DiffuseDither);
-      workspace->bitmap.convertTo(QImage::Format_Grayscale8);
+      src_bitmap->convertTo(QImage::Format_Mono, Qt::DiffuseDither);
+      src_bitmap->convertTo(QImage::Format_Grayscale8);
     }
   }
 
@@ -516,9 +517,10 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
       continue;
     }
     uchar bit = 1 << (color_size - i - 1);
+    QImage* src_bitmap = workspace->get_bitmap();
     for (int y = bbox_top; y <= bbox_bottom; y++) {
       uchar* data_ptr = bitmap.scanLine(y);
-      uchar* src_data_ptr = workspace->bitmap.scanLine(y);
+      uchar* src_data_ptr = src_bitmap->scanLine(y);
       for (int x = bbox_left; x <= bbox_right; x++) {
         if (src_data_ptr[x] != WHITE_PIXEL)
           data_ptr[x] -= bit;
