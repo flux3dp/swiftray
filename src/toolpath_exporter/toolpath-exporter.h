@@ -56,6 +56,8 @@ public:
     path_utils_.setLoopCompensation(compensation / canvas_mm_ratio_ * dpmm_);
   }
 
+  void setEnableCustomBacklash(bool enable) { enable_custom_backlash_ = enable; }
+
   void handleContour() { is_contour_ = true; }
 
   enum class ScanDirectionMode {
@@ -112,6 +114,7 @@ private:
 
   bool is_promark_ = false;
   bool is_contour_ = false;
+  bool enable_custom_backlash_ = true;
   QTransform global_transform_;
   LayerPtr current_layer_;
   std::unique_ptr<QPainter> layer_painter_;

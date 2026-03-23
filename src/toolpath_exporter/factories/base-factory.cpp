@@ -37,6 +37,9 @@ BaseBitmapFactory::BaseBitmapFactory(const FactoryKwargs& kwargs) noexcept
     workspaces = new QVector<std::shared_ptr<Workspace>>();
     use_own_workspaces = true;
   }
+  // Note: Use pixel_per_mm for both x and y during drawing and bitmap conversion and pixel_per_mm_x for x after drawing
+  // work_area and clip_rect is recalculated to use pixel_per_mm in Workspace
+  transform = QTransform::fromScale(pixel_per_mm, pixel_per_mm);
   work_area = QSize(std::ceil(work_area_mm.width() * pixel_per_mm_x),
                     std::ceil(work_area_mm.height() * pixel_per_mm));
   pixel_size = 1 / pixel_per_mm;
@@ -83,7 +86,7 @@ std::shared_ptr<Workspace> BaseBitmapFactory::get_workspace(int index,
   }
   auto& workspace = workspaces->at(index);
   if (need_setup && !is_workspace_valid(index)) {
-    workspace->set_size(work_area.width(), work_area.height());
+    workspace->set_size(work_area.width(), work_area.height(), pixel_per_mm_x, pixel_per_mm);
     setup_clip_rect(workspace);
     if (is_valid.size() <= index) {
       is_valid.resize(index + 1);

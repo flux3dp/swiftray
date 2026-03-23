@@ -760,7 +760,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   // converting
   auto workspace = laser_filled_factory_->get_workspace();
   if (!workspace->get_dirty_area().isEmpty()) {
-    dilateBinaryBitmap(&(workspace->bitmap));
+    dilateBinaryBitmap(workspace->get_bitmap());
   }
 
   if (this->cancelled_)
@@ -1186,7 +1186,8 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
   transform = bmp->transform() * transform;
   QImage transformed_image =
       bmp->sourceImage()
-          .transformed(transform, Qt::SmoothTransformation)
+          .transformed(transform, bmp->gradient() ? Qt::SmoothTransformation
+                                                  : Qt::FastTransformation)
           .convertToFormat(QImage::Format_ARGB32);
   if (bmp->gradient()) {
     if (!is_laser_layer_) {

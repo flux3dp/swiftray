@@ -174,6 +174,9 @@ QImage imageBinarize(QImage* src, int threshold) {
         result_ptr[x] = WHITE_PIXEL;
       } else {
         int gray = qGray(data_ptr[x]);
+        if (alpha != 255) {
+          gray = ceil((alpha * gray + (255 - alpha) * WHITE_PIXEL) / 255.0);
+        }
         result_ptr[x] = gray <= threshold ? BLACK_PIXEL : WHITE_PIXEL;
       }
     }
@@ -204,6 +207,9 @@ void imageBinarizeARGB32(QImage* src, int threshold) {
         data_ptr[x] = white;
       } else {
         int gray = qGray(data_ptr[x]);
+        if (alpha != 255) {
+          gray = ceil((alpha * gray + (255 - alpha) * WHITE_PIXEL) / 255.0);
+        }
         data_ptr[x] = gray <= threshold ? black : white;
       }
     }

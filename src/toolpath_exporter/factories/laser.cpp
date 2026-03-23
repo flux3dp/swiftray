@@ -27,7 +27,7 @@ void LaserBitmapFactory::add_filled_path(QPainterPath& path,
 
 QVector<QRect> LaserBitmapFactory::get_iteration_data(int padding_pixel) {
   auto workspace = get_workspace();
-  return get_bounding_boxes(&(workspace->bitmap), workspace->get_dirty_area(),
+  return get_bounding_boxes(workspace->get_bitmap(), workspace->get_dirty_area(),
                             padding_pixel, padding_pixel, 5, split_bbox,
                             pixel_per_mm / 5);
 }
@@ -85,6 +85,7 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   int yy, i;
   double real_y;
   bool engraved;
+  QImage* src_bitmap = workspace->get_bitmap();
   for (auto bbox : bboxes) {
     reverse_x = false;
     if (!bbox.isValid()) {
@@ -103,7 +104,7 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
         i = kwargs.reverse_y ? (y + h - 1 - yy) : (y + yy);
         real_y = pixel_to_actual_position(left, i).y();
         real_y = std::round((real_y - offset.y()) * 100) / 100.0;
-        engraved = (this->*method)(workspace->bitmap.constScanLine(i),
+        engraved = (this->*method)(src_bitmap->constScanLine(i),
                                    left,   // inclusive
                                    right,  // exclusive
                                    real_y, reverse_x);

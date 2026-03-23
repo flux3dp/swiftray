@@ -160,6 +160,7 @@ bool Worker::handleAction(QWebSocket* socket,
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
         if (type == "contour") exporter.handleContour();
         else exporter.setLoopCompensation(params_obj["loop_compensation"].toDouble());
+        exporter.setEnableCustomBacklash(params_obj["cbl"].toBool());
 
         current_task = "Generating Task Code...";
         onProgress(0);
