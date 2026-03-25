@@ -894,6 +894,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
     list_manager_.call(ListApiType::SetWobble, settings.wobble_diameter, settings.wobble_diameter, settings.wobble_step, WobbleType::WT_WHEEL);
+    list_manager_.setupWobblePosition();
   } else if (settings.wobble_diameter != -1) {
     list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
   }
