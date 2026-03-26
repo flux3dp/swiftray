@@ -288,7 +288,7 @@ GAPathResult solvePolygonOrderGA(
         break;
       }
       checkpointCost = bestCost;
-      nextCheckpointMs = elapsed + 1;
+      nextCheckpointMs = elapsed + 1000;
     }
 
     // Find current generation's best for elitism
