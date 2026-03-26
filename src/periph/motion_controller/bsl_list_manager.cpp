@@ -99,6 +99,13 @@ void BSLListManager::redoBackup() {
   qInfo() << "Finished redoing backup API calls";
 }
 
+void BSLListManager::setupWobblePosition() {
+  // If we set wobble mode, jump to start position and end list without marking,
+  // current SDK will reset laser position to (0, 0).
+  // So always jump to current position again in new list if wobble mode is set
+  call(ListApiType::Jump, x_, y_);
+}
+
 void BSLListManager::call(ListApiType type, Params args) {
   if (!controller_->is_running_laser_) return;
   ListApiCall call(type, args);

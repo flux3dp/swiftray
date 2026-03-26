@@ -49,6 +49,7 @@ class BSLListManager {
   BSLListManager(BSLMotionController* controller): controller_(controller) {}
   void resetBackup(int list_no = -1, BSLMotionController* controller = nullptr);
   void redoBackup();
+  void setupWobblePosition();
   int bufferSize() { return api_calls_.size(); }
   void call(ListApiType type, Params args);
 
