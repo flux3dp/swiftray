@@ -210,7 +210,7 @@ GAPathResult solvePolygonOrderGA(
   const int POP = params.population_size;
   const double CX = params.crossover_rate;
   const double MUT = params.mutation_rate;
-  const int MAXG = params.max_generations;
+  const int MAXG = std::min(std::max(params.max_generations, n * 100), int(1e6));
   const QPointF& depot = params.depot;
 
   // Build greedy solution to seed one individual
