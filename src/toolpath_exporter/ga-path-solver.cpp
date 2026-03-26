@@ -230,6 +230,9 @@ GAPathResult solvePolygonOrderGA(
   double bestCost = 1e15;
   std::vector<bool> bestDirs;
   int stale = 0;
+  int staleSinceTribulation = 0;
+  double checkpointCost = 1e15;
+  qint64 nextCheckpointMs = 500;
 
   std::uniform_real_distribution<double> realDist(0.0, 1.0);
 
@@ -252,19 +255,40 @@ GAPathResult solvePolygonOrderGA(
         bestDirs = allDirs[i];
         improved = true;
         stale = 0;
+        staleSinceTribulation = 0;
       }
     }
-    if (!improved) stale++;
+    if (!improved) {
+      stale++;
+      staleSinceTribulation++;
+    }
 
     if (gen % 50 == 0 || improved) {
       qDebug() << "[GA] gen=" << gen << ", best=" << bestCost
                << ", stale=" << stale << ", elapsed=" << timer.elapsed() << "ms";
     }
 
-    // Early termination
+    // Early termination: stale generations
     if (stale > POP * 3) {
-      qDebug() << "[GA] Early termination at gen=" << gen << ", stale=" << stale;
+      qDebug() << "[GA] Early termination (stale) at gen=" << gen << ", stale=" << stale;
       break;
+    }
+
+    // Early termination: <0.5% improvement per 500ms interval
+    qint64 elapsed = timer.elapsed();
+    if (elapsed >= nextCheckpointMs) {
+      double improvementPct = (checkpointCost > 0 && checkpointCost < 1e15)
+          ? (1.0 - bestCost / checkpointCost) * 100.0
+          : 100.0;
+      qDebug() << "[GA] Checkpoint at" << elapsed << "ms: best=" << bestCost
+               << ", prev=" << checkpointCost << ", improvement=" << improvementPct << "%";
+      if (checkpointCost < 1e15 && improvementPct < 0.5) {
+        qDebug() << "[GA] Early termination (convergence) at gen=" << gen
+                 << ", improvement=" << improvementPct << "% < 0.5%";
+        break;
+      }
+      checkpointCost = bestCost;
+      nextCheckpointMs = elapsed + 500;
     }
 
     // Find current generation's best for elitism
@@ -290,12 +314,12 @@ GAPathResult solvePolygonOrderGA(
       np.push_back(std::move(ch));
     }
 
-    // Tribulation: refresh bottom half when stale
-    if (stale > static_cast<int>(POP * 1.5)) {
+    // Tribulation: refresh bottom half when stale since last tribulation
+    if (staleSinceTribulation > static_cast<int>(POP * 1.5)) {
       for (int i = POP / 2; i < POP; i++) {
         np[i] = randPerm(n, rng);
       }
-      stale = 0;
+      staleSinceTribulation = 0;
     }
 
     pop = std::move(np);
