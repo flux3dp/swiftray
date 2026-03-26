@@ -1,5 +1,6 @@
 #include "toolpath-utils.h"
 #include "toolpath-exporter-constants.h"
+#include "ga-path-solver.h"
 #include <QDebug>
 #include <opencv2/imgproc.hpp>
 
@@ -455,43 +456,31 @@ void PathUtils::preprocessPath(QVector<NestedPolygonF>& polys) {
 }
 
 void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys) {
-  QVector<NestedPolygonF> sorted_polys;
   if (polys.empty()) return;
 
   preprocessPath(polys);
 
-  auto currentIter = polys.begin();
-  bool needReverse = false;
-  auto minIter = polys.end();
-  float minDist;
-  float d;
-  QPointF currentEnd;
-  while (currentIter < polys.end()) {
-    if (needReverse) {
-      std::reverse(currentIter->polygon.begin(), currentIter->polygon.end());
-    }
-    sorted_polys.push_back(std::move(*currentIter));
-    currentEnd = sorted_polys.back().polygon.last();
-    polys.erase(currentIter);
-    minDist = NAN;
-    minIter = polys.begin();
+  const int n = polys.size();
 
-    for (auto it = polys.begin(); it != polys.end(); ++it) {
-      d = getLength(currentEnd, it->polygon.first());
-      if (std::isnan(minDist) || d < minDist) {
-        minDist = d;
-        minIter = it;
-        needReverse = false;
-      }
+  // Extract endpoints for each polygon
+  std::vector<std::pair<QPointF, QPointF>> endpoints;
+  endpoints.reserve(n);
+  for (const auto& np : polys) {
+    endpoints.emplace_back(np.polygon.first(), np.polygon.last());
+  }
 
-      d = getLength(currentEnd, it->polygon.last());
-      if (d < minDist) {
-        minDist = d;
-        minIter = it;
-        needReverse = true;
-      }
+  // Solve with GA (falls back to greedy for small n)
+  GAPathResult result = solvePolygonOrderGA(endpoints);
+
+  // Reorder and reverse polys based on result
+  QVector<NestedPolygonF> sorted_polys;
+  sorted_polys.reserve(n);
+  for (int i = 0; i < n; i++) {
+    int idx = result.order[i];
+    if (result.reversed[i]) {
+      std::reverse(polys[idx].polygon.begin(), polys[idx].polygon.end());
     }
-    currentIter = minIter;
+    sorted_polys.push_back(std::move(polys[idx]));
   }
 
   polys = std::move(sorted_polys);
