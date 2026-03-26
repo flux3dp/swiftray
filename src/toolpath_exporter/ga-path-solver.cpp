@@ -269,7 +269,7 @@ GAPathResult solvePolygonOrderGA(
     }
 
     // Early termination: stale generations
-    if (stale > POP * 3) {
+    if (stale > POP * 7) {
       qDebug() << "[GA] Early termination (stale) at gen=" << gen << ", stale=" << stale;
       break;
     }
@@ -282,13 +282,13 @@ GAPathResult solvePolygonOrderGA(
           : 100.0;
       qDebug() << "[GA] Checkpoint at" << elapsed << "ms: best=" << bestCost
                << ", prev=" << checkpointCost << ", improvement=" << improvementPct << "%";
-      if (checkpointCost < 1e15 && improvementPct < 0.5) {
+      if (checkpointCost < 1e15 && improvementPct < 1) {
         qDebug() << "[GA] Early termination (convergence) at gen=" << gen
-                 << ", improvement=" << improvementPct << "% < 0.5%";
+                 << ", improvement=" << improvementPct << "% < 1%";
         break;
       }
       checkpointCost = bestCost;
-      nextCheckpointMs = elapsed + 500;
+      nextCheckpointMs = elapsed + 1;
     }
 
     // Find current generation's best for elitism

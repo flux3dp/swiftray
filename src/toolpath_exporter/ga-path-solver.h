@@ -4,9 +4,9 @@
 #include <vector>
 
 struct GAPathParams {
-  int population_size = 100;
+  int population_size = 80;
   double crossover_rate = 0.85;
-  double mutation_rate = 0.15;
+  double mutation_rate = 0.1;
   int max_generations = 2000;
   QPointF depot{0.0, 0.0};
 };
