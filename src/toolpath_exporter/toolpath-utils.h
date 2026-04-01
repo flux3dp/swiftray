@@ -50,11 +50,11 @@ class PathUtils {
     left_border_ = QLineF(left_x_, bottom_y_, left_x_, top_y_);
   }
   int clipWorkarea(QPointF* start, QPointF* end);
-  void sortAndPreprocessPolygons(QVector<QPolygonF>& polys);
+  void sortAndPreprocessPolygons(QVector<QPolygonF>& polys, bool use_ga = true);
 
  private:
-  void findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index);
-  void sortByDistance(QVector<NestedPolygonF>& polys);
+  void findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index, bool use_ga);
+  void sortByDistance(QVector<NestedPolygonF>& polys, bool use_ga);
   void preprocessPath(QVector<NestedPolygonF>& polys);
   void loopCompensate(QPolygonF& poly);
   double getLength(QPointF& start, QPointF& end);

@@ -23,7 +23,7 @@ void LaserPathFactory::preprocess() {
   if (preprocessed) {
     return;
   }
-  path_utils.sortAndPreprocessPolygons(polygons);
+  path_utils.sortAndPreprocessPolygons(polygons, use_ga_);
   auto convert = [this](QPointF pt) -> QPointF {
     return pt / pixel_per_mm - offset;
   };

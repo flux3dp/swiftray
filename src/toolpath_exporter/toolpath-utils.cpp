@@ -455,7 +455,7 @@ void PathUtils::preprocessPath(QVector<NestedPolygonF>& polys) {
   }
 }
 
-void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys) {
+void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys, bool use_ga) {
   if (polys.empty()) return;
 
   preprocessPath(polys);
@@ -469,8 +469,10 @@ void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys) {
     endpoints.emplace_back(np.polygon.first(), np.polygon.last());
   }
 
-  // Solve with GA (falls back to greedy for small n)
-  GAPathResult result = solvePolygonOrderGA(endpoints);
+  // Solve ordering
+  GAPathResult result = use_ga
+      ? solvePolygonOrderGA(endpoints)
+      : solvePolygonOrderGreedy(endpoints);
 
   // Reorder and reverse polys based on result
   QVector<NestedPolygonF> sorted_polys;
@@ -486,7 +488,7 @@ void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys) {
   polys = std::move(sorted_polys);
 }
 
-void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index) {
+void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index, bool use_ga) {
   if (polys.empty()) return;
 
   for (; index < polys.size();) {
@@ -495,12 +497,12 @@ void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, 
       child.polygon = polys[index];
       parent.children.push_back(std::move(child));
       polys.removeAt(index);
-      findChildren(polys, parent.children.back(), index);
+      findChildren(polys, parent.children.back(), index, use_ga);
     } else {
       ++index;
     }
   }
-  sortByDistance(parent.children);
+  sortByDistance(parent.children, use_ga);
 }
 
 /**
@@ -509,7 +511,7 @@ void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, 
  * Add loop compensation if needed
  * Optimize travel distance in same containment level
  */
-void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys) {
+void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys, bool use_ga) {
   NestedPolygonF root;
   // Sort by bounding rect for some containment relationship hints
   sortByBoundingRect(polys);
@@ -518,11 +520,11 @@ void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys) {
     NestedPolygonF front;
     front.polygon = polys.front();
     polys.pop_front();
-    findChildren(polys, front, 0);
+    findChildren(polys, front, 0, use_ga);
     root.children.push_back(std::move(front));
   }
 
-  sortByDistance(root.children);
+  sortByDistance(root.children, use_ga);
   polys.clear();
   traverse(polys, root);
 }

@@ -18,6 +18,10 @@ struct GAPathResult {
   double total_deadhead = 0.0;
 };
 
+GAPathResult solvePolygonOrderGreedy(
+    const std::vector<std::pair<QPointF, QPointF>>& endpoints,
+    const QPointF& depot = QPointF{0.0, 0.0});
+
 GAPathResult solvePolygonOrderGA(
     const std::vector<std::pair<QPointF, QPointF>>& endpoints,
     const GAPathParams& params = GAPathParams{});

@@ -176,6 +176,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.nozzle_voltage = param["nv"].toDouble(NAN);
   config_.nozzle_pulse_width = param["npw"].toDouble(NAN);
   config_.expected_module = MachineModules(param["expected_module"].toInt(0));
+  config_.use_ga_reorder = param["use_ga_reorder"].toBool(true);
 
   if (param.contains("acc_override")) {
     QJsonObject acc_obj = param["acc_override"].toObject();
@@ -736,6 +737,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   // Note: convert path without dpmm_x
   laser_path_factory_ = std::make_unique<LaserPathFactory>(kwargs);
   laser_path_factory_->set_loop_compensation(config_.loop_compensation);
+  laser_path_factory_->set_use_ga(config_.use_ga_reorder);
   kwargs.pixel_per_mm_x = dpmm_x;
   factory_ = std::make_unique<LaserBitmapFactory>(kwargs);
   laser_filled_factory_ = std::make_unique<LaserBitmapFactory>(kwargs);

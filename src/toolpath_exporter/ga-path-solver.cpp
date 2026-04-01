@@ -6,13 +6,13 @@
 #include <numeric>
 #include <random>
 
-namespace {
-
-inline double euclidean(const QPointF& a, const QPointF& b) {
+static inline double euclidean(const QPointF& a, const QPointF& b) {
   double dx = a.x() - b.x();
   double dy = a.y() - b.y();
   return std::sqrt(dx * dx + dy * dy);
 }
+
+namespace {
 
 struct EvalResult {
   double deadhead;
@@ -152,9 +152,11 @@ int tournamentSelect(const std::vector<double>& costs, std::mt19937& rng, int k 
   return best;
 }
 
-// Greedy nearest-neighbor solver (also used to seed one GA individual)
-GAPathResult solveGreedy(const std::vector<std::pair<QPointF, QPointF>>& ep,
-                         const QPointF& depot) {
+}  // namespace
+
+GAPathResult solvePolygonOrderGreedy(
+    const std::vector<std::pair<QPointF, QPointF>>& ep,
+    const QPointF& depot) {
   const int n = static_cast<int>(ep.size());
   GAPathResult result;
   result.order.reserve(n);
@@ -193,8 +195,6 @@ GAPathResult solveGreedy(const std::vector<std::pair<QPointF, QPointF>>& ep,
   return result;
 }
 
-}  // namespace
-
 GAPathResult solvePolygonOrderGA(
     const std::vector<std::pair<QPointF, QPointF>>& endpoints,
     const GAPathParams& params) {
@@ -206,7 +206,7 @@ GAPathResult solvePolygonOrderGA(
 
   // For small inputs, just use greedy
   if (n < 4) {
-    auto result = solveGreedy(endpoints, params.depot);
+    auto result = solvePolygonOrderGreedy(endpoints, params.depot);
     qDebug() << "[GA] n=" << n << "(<4, greedy fallback), deadhead=" << result.total_deadhead
              << ", time=" << timer.elapsed() << "ms";
     return result;
@@ -222,7 +222,7 @@ GAPathResult solvePolygonOrderGA(
   const QPointF& depot = params.depot;
 
   // Build greedy solution to seed one individual
-  GAPathResult greedyResult = solveGreedy(endpoints, depot);
+  GAPathResult greedyResult = solvePolygonOrderGreedy(endpoints, depot);
   qDebug() << "[GA] n=" << n << ", greedy seed deadhead=" << greedyResult.total_deadhead;
   // Convert greedy order to a permutation
   Perm greedySeed = Perm(greedyResult.order.begin(), greedyResult.order.end());
