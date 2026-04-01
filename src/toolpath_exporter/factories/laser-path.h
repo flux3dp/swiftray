@@ -9,6 +9,7 @@ class LaserPathFactory : public BaseFactory {
   double loop_compensation_mm;
   QVector<QPolygonF> polygons;  // px when adding, mm after preprocess
   bool preprocessed = false;
+  bool use_ga_ = true;
   float current_pwm = 0;
   float speed;
 
@@ -19,6 +20,7 @@ class LaserPathFactory : public BaseFactory {
   LaserPathFactory(const FactoryKwargs& kwargs) noexcept;
 
   void set_loop_compensation(double val);
+  void set_use_ga(bool use_ga) { use_ga_ = use_ga; }
   void add_path(const QPainterPath& path);
   int get_size();
   void generate_task_code(float path_speed);

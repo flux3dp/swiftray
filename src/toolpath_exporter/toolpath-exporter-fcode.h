@@ -82,6 +82,7 @@ struct Config {
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
   bool skip_prespray = false;
+  bool use_ga_reorder = true;
   // other
   MachineModules expected_module = MachineModules::NONE;
   float rotary_y_ratio = 1;

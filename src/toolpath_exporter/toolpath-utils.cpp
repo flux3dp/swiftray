@@ -1,5 +1,6 @@
 #include "toolpath-utils.h"
 #include "toolpath-exporter-constants.h"
+#include "ga-path-solver.h"
 #include <QDebug>
 #include <opencv2/imgproc.hpp>
 
@@ -454,50 +455,40 @@ void PathUtils::preprocessPath(QVector<NestedPolygonF>& polys) {
   }
 }
 
-void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys) {
-  QVector<NestedPolygonF> sorted_polys;
+void PathUtils::sortByDistance(QVector<NestedPolygonF>& polys, bool use_ga) {
   if (polys.empty()) return;
 
   preprocessPath(polys);
 
-  auto currentIter = polys.begin();
-  bool needReverse = false;
-  auto minIter = polys.end();
-  float minDist;
-  float d;
-  QPointF currentEnd;
-  while (currentIter < polys.end()) {
-    if (needReverse) {
-      std::reverse(currentIter->polygon.begin(), currentIter->polygon.end());
-    }
-    sorted_polys.push_back(std::move(*currentIter));
-    currentEnd = sorted_polys.back().polygon.last();
-    polys.erase(currentIter);
-    minDist = NAN;
-    minIter = polys.begin();
+  const int n = polys.size();
 
-    for (auto it = polys.begin(); it != polys.end(); ++it) {
-      d = getLength(currentEnd, it->polygon.first());
-      if (std::isnan(minDist) || d < minDist) {
-        minDist = d;
-        minIter = it;
-        needReverse = false;
-      }
+  // Extract endpoints for each polygon
+  std::vector<std::pair<QPointF, QPointF>> endpoints;
+  endpoints.reserve(n);
+  for (const auto& np : polys) {
+    endpoints.emplace_back(np.polygon.first(), np.polygon.last());
+  }
 
-      d = getLength(currentEnd, it->polygon.last());
-      if (d < minDist) {
-        minDist = d;
-        minIter = it;
-        needReverse = true;
-      }
+  // Solve ordering
+  GAPathResult result = use_ga
+      ? solvePolygonOrderGA(endpoints)
+      : solvePolygonOrderGreedy(endpoints);
+
+  // Reorder and reverse polys based on result
+  QVector<NestedPolygonF> sorted_polys;
+  sorted_polys.reserve(n);
+  for (int i = 0; i < n; i++) {
+    int idx = result.order[i];
+    if (result.reversed[i]) {
+      std::reverse(polys[idx].polygon.begin(), polys[idx].polygon.end());
     }
-    currentIter = minIter;
+    sorted_polys.push_back(std::move(polys[idx]));
   }
 
   polys = std::move(sorted_polys);
 }
 
-void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index) {
+void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, int index, bool use_ga) {
   if (polys.empty()) return;
 
   for (; index < polys.size();) {
@@ -506,12 +497,12 @@ void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, 
       child.polygon = polys[index];
       parent.children.push_back(std::move(child));
       polys.removeAt(index);
-      findChildren(polys, parent.children.back(), index);
+      findChildren(polys, parent.children.back(), index, use_ga);
     } else {
       ++index;
     }
   }
-  sortByDistance(parent.children);
+  sortByDistance(parent.children, use_ga);
 }
 
 /**
@@ -520,7 +511,7 @@ void PathUtils::findChildren(QVector<QPolygonF>& polys, NestedPolygonF& parent, 
  * Add loop compensation if needed
  * Optimize travel distance in same containment level
  */
-void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys) {
+void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys, bool use_ga) {
   NestedPolygonF root;
   // Sort by bounding rect for some containment relationship hints
   sortByBoundingRect(polys);
@@ -529,11 +520,11 @@ void PathUtils::sortAndPreprocessPolygons(QVector<QPolygonF>& polys) {
     NestedPolygonF front;
     front.polygon = polys.front();
     polys.pop_front();
-    findChildren(polys, front, 0);
+    findChildren(polys, front, 0, use_ga);
     root.children.push_back(std::move(front));
   }
 
-  sortByDistance(root.children);
+  sortByDistance(root.children, use_ga);
   polys.clear();
   traverse(polys, root);
 }

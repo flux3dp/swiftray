@@ -1,5 +1,6 @@
 target_sources(Swiftray PRIVATE
   convex-hull-exporter.cpp
+  ga-path-solver.cpp
   toolpath-exporter-fcode.cpp
   toolpath-exporter.cpp
   toolpath-utils.cpp
