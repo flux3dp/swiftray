@@ -187,7 +187,7 @@ GAPathResult solvePolygonOrderGreedy(
 
     visited[minIdx] = true;
     result.order.push_back(minIdx);
-    result.reversed[minIdx] = minRev;
+    result.reversed[step] = minRev;
     current = minRev ? ep[minIdx].first : ep[minIdx].second;
     result.total_deadhead += minDist;
   }
@@ -277,6 +277,10 @@ GAPathResult solvePolygonOrderGA(
     // Early termination: <1% improvement per 1000ms interval
     qint64 elapsed = timer.elapsed();
     if (elapsed >= nextCheckpointMs) {
+      double improvementPct = (checkpointCost > 0 && checkpointCost < 1e15)
+          ? (1.0 - bestCost / checkpointCost) * 100.0
+          : 100.0;
+
       if (checkpointCost < 1e15 && improvementPct < 1) {
         qDebug() << "[GA] Early termination (convergence) at gen=" << gen
                  << ", improvement=" << improvementPct << "% < 1%";
