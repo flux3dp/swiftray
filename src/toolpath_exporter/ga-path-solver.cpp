@@ -207,8 +207,6 @@ GAPathResult solvePolygonOrderGA(
   // For small inputs, just use greedy
   if (n < 4) {
     auto result = solvePolygonOrderGreedy(endpoints, params.depot);
-    qDebug() << "[GA] n=" << n << "(<4, greedy fallback), deadhead=" << result.total_deadhead
-             << ", time=" << timer.elapsed() << "ms";
     return result;
   }
 
@@ -223,7 +221,6 @@ GAPathResult solvePolygonOrderGA(
 
   // Build greedy solution to seed one individual
   GAPathResult greedyResult = solvePolygonOrderGreedy(endpoints, depot);
-  qDebug() << "[GA] n=" << n << ", greedy seed deadhead=" << greedyResult.total_deadhead;
   // Convert greedy order to a permutation
   Perm greedySeed = Perm(greedyResult.order.begin(), greedyResult.order.end());
 
