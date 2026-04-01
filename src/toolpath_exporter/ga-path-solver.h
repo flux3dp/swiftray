@@ -9,6 +9,7 @@ struct GAPathParams {
   double mutation_rate = 0.2;
   int max_generations = 2000;
   QPointF depot{0.0, 0.0};
+  int seed = 8964;  // -1 = non-deterministic, >= 0 = fixed seed for reproducibility
 };
 
 struct GAPathResult {

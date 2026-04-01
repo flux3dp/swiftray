@@ -165,15 +165,22 @@ GAPathResult solveGreedy(const std::vector<std::pair<QPointF, QPointF>>& ep,
 
   for (int step = 0; step < n; step++) {
     double minDist = 1e15;
+    double minYDist = 1e15;
     int minIdx = -1;
     bool minRev = false;
 
     for (int i = 0; i < n; i++) {
       if (visited[i]) continue;
       double d0 = euclidean(current, ep[i].first);
-      if (d0 < minDist) { minDist = d0; minIdx = i; minRev = false; }
+      double yd0 = std::abs(current.y() - ep[i].first.y());
+      if (d0 < minDist || (d0 == minDist && yd0 < minYDist)) {
+        minDist = d0; minIdx = i; minRev = false; minYDist = yd0;
+      }
       double d1 = euclidean(current, ep[i].second);
-      if (d1 < minDist) { minDist = d1; minIdx = i; minRev = true; }
+      double yd1 = std::abs(current.y() - ep[i].second.y());
+      if (d1 < minDist || (d1 == minDist && yd1 < minYDist)) {
+        minDist = d1; minIdx = i; minRev = true; minYDist = yd1;
+      }
     }
 
     visited[minIdx] = true;
@@ -205,7 +212,8 @@ GAPathResult solvePolygonOrderGA(
     return result;
   }
 
-  thread_local std::mt19937 rng{std::random_device{}()};
+  std::mt19937 rng(params.seed >= 0 ? static_cast<unsigned>(params.seed)
+                                     : std::random_device{}());
 
   const int POP = params.population_size;
   const double CX = params.crossover_rate;
@@ -263,18 +271,13 @@ GAPathResult solvePolygonOrderGA(
       staleSinceTribulation++;
     }
 
-    if (gen % 50 == 0 || improved) {
-      qDebug() << "[GA] gen=" << gen << ", best=" << bestCost
-               << ", stale=" << stale << ", elapsed=" << timer.elapsed() << "ms";
-    }
-
     // Early termination: stale generations
-    if (stale > POP * 7) {
+    if (stale > MAXG / 10) {
       qDebug() << "[GA] Early termination (stale) at gen=" << gen << ", stale=" << stale;
       break;
     }
 
-    // Early termination: <0.5% improvement per 500ms interval
+    // Early termination: <1% improvement per 1000ms interval
     qint64 elapsed = timer.elapsed();
     if (elapsed >= nextCheckpointMs) {
       double improvementPct = (checkpointCost > 0 && checkpointCost < 1e15)
