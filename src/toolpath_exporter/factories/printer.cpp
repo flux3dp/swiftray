@@ -151,12 +151,10 @@ void PrinterBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   if (kwargs.repeat == 0 || workspaces->isEmpty()) {
     return;
   }
-  double min_padding_left = qMax(kwargs.min_padding_left, kwargs.min_padding);
-  double min_padding_right = qMax(kwargs.min_padding_right, kwargs.min_padding);
-  int padding_left = get_padding_pixels(
-      get_padding_dist(min_padding_left, kwargs.speed / 60, kwargs.acc));
-  int padding_right = get_padding_pixels(
-      get_padding_dist(min_padding_right, kwargs.speed / 60, kwargs.acc));
+  double padding_dist_left = qMax(kwargs.padding_dist_left, kwargs.padding_dist);
+  double padding_dist_right = qMax(kwargs.padding_dist_right, kwargs.padding_dist);
+  int padding_left = get_padding_pixels(padding_dist_left);
+  int padding_right = get_padding_pixels(padding_dist_right);
   generate_image_for_task(kwargs.black_ratio);
   prepare_table();
 

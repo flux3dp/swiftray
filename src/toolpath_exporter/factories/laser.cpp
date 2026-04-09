@@ -61,7 +61,7 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   backlash = kwargs.backlash;
   pwm_scale = kwargs.pwm_scale;
   mock_fast_gradient = kwargs.mock_fast_gradient;
-  padding_dist = get_padding_dist(kwargs.min_padding, kwargs.speed / 60, kwargs.acc);
+  padding_dist = kwargs.padding_dist;
   padding_px = get_padding_pixels(padding_dist);
 
   QVector<QRect> bboxes = get_iteration_data(padding_px);

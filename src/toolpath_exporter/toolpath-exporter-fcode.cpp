@@ -877,9 +877,9 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   task_kwargs.support_fast_gradient = config_.enable_fast_gradient;
   task_kwargs.reverse_y = config_.is_reverse_engraving;
   task_kwargs.speed = layer_speed_;
-  task_kwargs.acc = padding_acc;
   task_kwargs.mock_fast_gradient = config_.enable_mock_fast_gradient;
-  task_kwargs.min_padding = min_padding;
+  task_kwargs.padding_dist =
+      get_padding_dist(min_padding, layer_speed_ / 60, padding_acc);
   task_kwargs.backlash = layer_backlash_;
   task_kwargs.pwm_scale = layer_pwm_scale_;
   factory->generate_task_code(task_kwargs);
@@ -1035,9 +1035,10 @@ void ToolpathExporterFcode::convertPrintingLayer() {
   printing_kwargs.black_ratio = black_ratio;
   printing_kwargs.repeat = layer_repeat_;
   printing_kwargs.speed = layer_speed_;
-  printing_kwargs.acc = config_.padding_acc;
-  printing_kwargs.min_padding = min_padding;
-  printing_kwargs.min_padding_right = right_padding;
+  printing_kwargs.padding_dist =
+      get_padding_dist(min_padding, layer_speed_ / 60, config_.padding_acc);
+  printing_kwargs.padding_dist_right =
+      get_padding_dist(right_padding, layer_speed_ / 60, config_.padding_acc);
   factory_->generate_task_code(printing_kwargs);
   proc.exit_printer_mode();
   proc.set_toolhead_pwm(0);
