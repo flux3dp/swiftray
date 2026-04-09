@@ -438,12 +438,8 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
   if (!bitmap_dirty_area.isValid()) {
     return;
   }
-  double min_padding_left = qMax(kwargs.min_padding_left, kwargs.min_padding);
-  double min_padding_right = qMax(kwargs.min_padding_right, kwargs.min_padding);
-  double padding_dist_l =
-      get_padding_dist(min_padding_left, kwargs.speed / 60, kwargs.acc);
-  double padding_dist_r =
-      get_padding_dist(min_padding_right, kwargs.speed / 60, kwargs.acc);
+  double padding_dist_l = qMax(kwargs.padding_dist_left, kwargs.padding_dist);
+  double padding_dist_r = qMax(kwargs.padding_dist_right, kwargs.padding_dist);
   int padding_pixels_l = get_padding_pixels(padding_dist_l);
   int padding_pixels_r = get_padding_pixels(padding_dist_r);
 

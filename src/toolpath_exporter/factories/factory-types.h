@@ -44,8 +44,7 @@ struct FactoryKwargs {
 struct GenerateTaskKwargs {
   bool reverse_y = false;
   float speed = 12000;
-  float acc = 4000;
-  double min_padding = 10;
+  double padding_dist = 10;
   bool support_fast_gradient = false;
   bool mock_fast_gradient = false;
   double pwm_scale = 1;
@@ -53,8 +52,8 @@ struct GenerateTaskKwargs {
   int multipass = 1;
   double black_ratio = 1.0;
   int repeat = 1;
-  double min_padding_left = 0;
-  double min_padding_right = 0;
+  double padding_dist_left = 0;
+  double padding_dist_right = 0;
 };
 
 struct PacketData {
