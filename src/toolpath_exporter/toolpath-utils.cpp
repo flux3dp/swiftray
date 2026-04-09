@@ -2,7 +2,9 @@
 #include "toolpath-exporter-constants.h"
 #include "ga-path-solver.h"
 #include <QDebug>
+#include <cmath>
 #include <opencv2/imgproc.hpp>
+#include <optional>
 
 /**
  * @brief Remove the suffix and prefix zeros
@@ -808,4 +810,79 @@ double get_default_min_padding(HardwareType hw_type,
  */
 double get_padding_dist(double min_padding, float speed, float acc) {
   return qMax((pow(speed, 2)) / (2.0 * acc), qMax(min_padding, 0.0));
+}
+
+namespace {
+struct SCurveParameters {
+  double a0;
+  double a_max;
+  double jerk;
+};
+
+// Returns s-curve motion parameters for the given hardware/speed, or
+// std::nullopt if the hardware does not support s-curve.
+// Mirrors fluxclient/hw_profile/s_curve.py::get_s_curve_parameters.
+std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
+                                                       float speed) {
+  if (hw_type == HardwareType::RF) {
+    if (speed < 1000 * 60) {
+      return SCurveParameters{10000, 30000, 800000};
+    } else if (speed < 1600 * 60) {
+      return SCurveParameters{0, 30000, 800000};
+    } else if (speed < 1900 * 60) {
+      return SCurveParameters{0, 15000, 800000};
+    }
+    return SCurveParameters{0, 15000, 400000};
+  }
+  return std::nullopt;
+}
+}  // namespace
+
+double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
+  auto params = get_s_curve_parameters(hw_type, speed);
+  if (!params.has_value()) {
+    return NAN;
+  }
+  const double v_target = speed / 60.0;
+  const double a0 = params->a0;
+  const double a_max = params->a_max;
+  const double jerk = params->jerk;
+
+  // Phase 1: accel ramps a0 -> a_max
+  const double t1 = (a_max - a0) / jerk;
+  const double dv1 = a0 * t1 + 0.5 * jerk * t1 * t1;
+
+  // Phase 3: accel ramps a_max -> a0
+  const double t3 = (a_max - a0) / jerk;
+  const double dv3 = a_max * t3 - 0.5 * jerk * t3 * t3;
+
+  const double dv_jerk = dv1 + dv3;
+
+  if (dv_jerk >= (v_target - v0)) {
+    // Triangular S-curve: a_peak < a_max
+    const double a_peak_sq = jerk * (v_target - v0) + a0 * a0;
+    const double a_peak = sqrt(a_peak_sq);
+
+    const double t1_tri = (a_peak - a0) / jerk;
+    const double s1 = v0 * t1_tri + 0.5 * a0 * t1_tri * t1_tri +
+                      (1.0 / 6.0) * jerk * t1_tri * t1_tri * t1_tri;
+    const double v1 = v0 + a0 * t1_tri + 0.5 * jerk * t1_tri * t1_tri;
+
+    const double t3_tri = (a_peak - a0) / jerk;
+    const double s3 = v1 * t3_tri + 0.5 * a_peak * t3_tri * t3_tri -
+                      (1.0 / 6.0) * jerk * t3_tri * t3_tri * t3_tri;
+    return s1 + s3;
+  }
+
+  // Full S-curve: reaches a_max
+  const double t2 = (v_target - v0 - dv_jerk) / a_max;
+
+  const double s1 =
+      v0 * t1 + 0.5 * a0 * t1 * t1 + (1.0 / 6.0) * jerk * t1 * t1 * t1;
+  const double v1 = v0 + dv1;
+  const double s2 = v1 * t2 + 0.5 * a_max * t2 * t2;
+  const double v2 = v1 + a_max * t2;
+  const double s3 = v2 * t3 + 0.5 * a_max * t3 * t3 -
+                    (1.0 / 6.0) * jerk * t3 * t3 * t3;
+  return s1 + s2 + s3;
 }

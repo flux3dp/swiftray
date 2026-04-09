@@ -177,6 +177,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.nozzle_pulse_width = param["npw"].toDouble(NAN);
   config_.expected_module = MachineModules(param["expected_module"].toInt(0));
   config_.use_ga_reorder = param["use_ga_reorder"].toBool(true);
+  config_.enable_s_curve = param["s_curve"].toBool(false);
 
   if (param.contains("acc_override")) {
     QJsonObject acc_obj = param["acc_override"].toObject();
@@ -873,13 +874,24 @@ void ToolpathExporterFcode::outputBitmapFcode() {
                            ? get_default_min_padding(hardware_, layer_module_, config_.expected_module, layer_is_high_quality_)
                            : config_.min_engraving_padding;
 
+  double padding_dist =
+      get_padding_dist(min_padding, layer_speed_ / 60, padding_acc);
+  double s_curve_padding = NAN;
+  if (config_.enable_s_curve) {
+    s_curve_padding = get_s_curve_padding_dist(hardware_, layer_speed_);
+    if (!isnan(s_curve_padding)) {
+      qInfo() << "Enable S-Curve with padding distance:" << s_curve_padding << "mm";
+      padding_dist = s_curve_padding;
+      proc.sync_motion_type2(156, 1);
+    }
+  }
+
   GenerateTaskKwargs task_kwargs;
   task_kwargs.support_fast_gradient = config_.enable_fast_gradient;
   task_kwargs.reverse_y = config_.is_reverse_engraving;
   task_kwargs.speed = layer_speed_;
   task_kwargs.mock_fast_gradient = config_.enable_mock_fast_gradient;
-  task_kwargs.padding_dist =
-      get_padding_dist(min_padding, layer_speed_ / 60, padding_acc);
+  task_kwargs.padding_dist = padding_dist;
   task_kwargs.backlash = layer_backlash_;
   task_kwargs.pwm_scale = layer_pwm_scale_;
   factory->generate_task_code(task_kwargs);
@@ -888,6 +900,9 @@ void ToolpathExporterFcode::outputBitmapFcode() {
     // Reset fill_acc
     proc.sync_grbl_motion(151);
     proc.set_time_est_acc(config_.padding_acc);
+  }
+  if (!isnan(s_curve_padding)) {
+    proc.sync_motion_type2(156);
   }
 }
 

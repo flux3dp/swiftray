@@ -101,3 +101,14 @@ double get_default_min_padding(
     bool is_high_quality = false);
 
 double get_padding_dist(double min_padding, float speed, float acc);
+
+/**
+ * Compute the S-curve acceleration padding distance for the given hardware
+ * and target speed. Returns NaN if the hardware does not support s-curve.
+ *
+ * @param hw_type hardware type
+ * @param speed in mm/min (target velocity)
+ * @param v0 initial velocity in mm/s (defaults to 0)
+ * @return padding distance in mm, or NaN if unsupported
+ */
+double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0 = 0);
