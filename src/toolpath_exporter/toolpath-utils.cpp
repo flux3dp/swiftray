@@ -833,6 +833,8 @@ std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
       return SCurveParameters{0, 15000, 800000};
     }
     return SCurveParameters{0, 15000, 400000};
+  } else if (hw_type == HardwareType::BB2) {
+    return SCurveParameters{8000, 20000, 300000};
   }
   return std::nullopt;
 }
