@@ -614,7 +614,7 @@ void ToolpathExporterFcode::convertLayer() {
     if (support_info.LASER_DELAY) {
       int laser_delay = current_layer_->laserDelay();
       if (laser_delay == 0) {
-        laser_delay = get_laser_delay(hardware_, config_.watt);
+        laser_delay = get_laser_delay(hardware_, config_.watt, layer_speed_ / 60.0);
       }
       if (laser_delay > 0) {
         proc.sync_motion_type2(153, laser_delay);
@@ -878,7 +878,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
       get_padding_dist(min_padding, layer_speed_ / 60, padding_acc);
   double s_curve_padding = NAN;
   if (config_.enable_s_curve) {
-    s_curve_padding = get_s_curve_padding_dist(hardware_, layer_speed_);
+    s_curve_padding = get_s_curve_padding_dist(hardware_, layer_speed_ / 60.0);
     if (!isnan(s_curve_padding)) {
       qInfo() << "Enable S-Curve with padding distance:" << s_curve_padding << "mm";
       padding_dist = s_curve_padding;
