@@ -717,11 +717,13 @@ double get_backlash_compensation(HardwareType hw_type,
 /**
  * @return laser delay in ms
  */
-int get_laser_delay(HardwareType hw_type, int watt) {
+float get_laser_delay(HardwareType hw_type, int watt, float speed) {
   if (hw_type == HardwareType::RF) {
     if (watt == 30)
       return 1500;
-    return 1390;
+    // 80W
+    if (speed < 200) return 1755;
+    return 1851.15 - 0.50678 * speed + 1.3978e-4 * pow(speed, 2);
   }
   return 0;
 }
@@ -825,11 +827,11 @@ struct SCurveParameters {
 std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
                                                        float speed) {
   if (hw_type == HardwareType::RF) {
-    if (speed < 1000 * 60) {
+    if (speed < 1000) {
       return SCurveParameters{10000, 30000, 800000};
-    } else if (speed < 1600 * 60) {
+    } else if (speed < 1600) {
       return SCurveParameters{0, 30000, 800000};
-    } else if (speed < 1900 * 60) {
+    } else if (speed < 1900) {
       return SCurveParameters{0, 15000, 800000};
     }
     return SCurveParameters{0, 15000, 400000};
@@ -845,7 +847,7 @@ double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
   if (!params.has_value()) {
     return NAN;
   }
-  const double v_target = speed / 60.0;
+  const double v_target = speed;
   const double a0 = params->a0;
   const double a_max = params->a_max;
   const double jerk = params->jerk;

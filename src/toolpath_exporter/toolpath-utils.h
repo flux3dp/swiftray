@@ -89,7 +89,7 @@ double get_backlash_compensation(
     HardwareType hw_type,
     double speed,
     MachineModules machine_module = MachineModules::NONE);
-int get_laser_delay(HardwareType hw_type, int watt);
+float get_laser_delay(HardwareType hw_type, int watt, float speed);
 bool is_printing_module(LayerModule module);
 bool is_uv_module(LayerModule module);
 PrintingColor get_color(QString hex_color);
@@ -107,7 +107,7 @@ double get_padding_dist(double min_padding, float speed, float acc);
  * and target speed. Returns NaN if the hardware does not support s-curve.
  *
  * @param hw_type hardware type
- * @param speed in mm/min (target velocity)
+ * @param speed in mm/s (target velocity)
  * @param v0 initial velocity in mm/s (defaults to 0)
  * @return padding distance in mm, or NaN if unsupported
  */
