@@ -814,13 +814,6 @@ double get_padding_dist(double min_padding, float speed, float acc) {
   return qMax((pow(speed, 2)) / (2.0 * acc), qMax(min_padding, 0.0));
 }
 
-namespace {
-struct SCurveParameters {
-  double a0;
-  double a_max;
-  double jerk;
-};
-
 // Returns s-curve motion parameters for the given hardware/speed, or
 // std::nullopt if the hardware does not support s-curve.
 // Mirrors fluxclient/hw_profile/s_curve.py::get_s_curve_parameters.
@@ -840,7 +833,6 @@ std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
   }
   return std::nullopt;
 }
-}  // namespace
 
 double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
   auto params = get_s_curve_parameters(hw_type, speed);

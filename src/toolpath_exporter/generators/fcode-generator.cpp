@@ -56,6 +56,16 @@ void FCodeGenerator::set_time_est_z_speed(float value) {
   z_speed = value;
 }
 
+void FCodeGenerator::set_s_curve_params(float a0, float a_max, float jerk) {
+  s_curve_a0 = a0;
+  s_curve_a_max = a_max;
+  s_curve_jerk = jerk;
+}
+
+void FCodeGenerator::set_s_curve_enabled(bool enabled) {
+  s_curve_enabled = enabled;
+}
+
 void FCodeGenerator::moveto(int flags,
                             float feedrate,
                             float x,
@@ -353,10 +363,17 @@ void FCodeGeneratorV1::moveto(int flags,
         float acc = (abs(mv[0]) / acc_x) > (abs(mv[1]) / acc_y) ? acc_x : acc_y;
         if (last_acc == 0)
           last_acc = acc;
-        float vel = estimate_vel(last_vel_t, current_feedrate, acc,
-                                 dist);  // consider short distance
-        float tc = estimate_time(last_feedrate, last_vel_n, last_vel_t, vel,
-                                 last_acc, acc, dist);
+        float vel;
+        float tc;
+        if (s_curve_enabled && mv[1] == 0) {
+          tc = estimate_time_s_curve(current_feedrate, s_curve_a0, s_curve_a_max, s_curve_jerk, dist);
+          vel = 0;
+        } else {
+          vel = estimate_vel(last_vel_t, current_feedrate, acc,
+                             dist);  // consider short distance
+          tc = estimate_time(last_feedrate, last_vel_n, last_vel_t, vel,
+                             last_acc, acc, dist);
+        }
         if (!isnan(tc))
           time_cost += tc;
         last_feedrate = vel;
@@ -623,9 +640,16 @@ void FCodeGeneratorV2::moveto(int flags,
         float acc = (abs(mv[0]) / acc_x) > (abs(mv[1]) / acc_y) ? acc_x : acc_y;
         if (last_acc == 0)
           last_acc = acc;
-        float vel = estimate_vel(last_vel_t, current_feedrate, acc, dist);
-        float res = estimate_time(last_feedrate, last_vel_n, last_vel_t, vel,
-                                  last_acc, acc, dist);
+        float vel;
+        float res;
+        if (s_curve_enabled && mv[1] == 0) {
+          res = estimate_time_s_curve(current_feedrate, s_curve_a0, s_curve_a_max, s_curve_jerk, dist);
+          vel = 0;
+        } else {
+          vel = estimate_vel(last_vel_t, current_feedrate, acc, dist);
+          res = estimate_time(last_feedrate, last_vel_n, last_vel_t, vel,
+                              last_acc, acc, dist);
+        }
         if (!isnan(res) && res > time_est)
           time_est = res;
         last_feedrate = vel;
