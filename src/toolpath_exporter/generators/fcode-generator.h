@@ -59,6 +59,10 @@ class FCodeGenerator {
   float acc_x = 4000;
   float acc_y = 2000;
   float z_speed = 7.5;
+  bool s_curve_enabled = false;
+  float s_curve_a0 = 0;
+  float s_curve_a_max = 0;
+  float s_curve_jerk = 0;
   QJsonObject metadata{};
 
   virtual void write(const char* buf,
@@ -95,6 +99,8 @@ class FCodeGenerator {
 
   void set_time_est_acc(uint32_t x, uint32_t y = 2000);
   void set_time_est_z_speed(float value);
+  void set_s_curve_params(float a0, float a_max, float jerk);
+  void set_s_curve_enabled(bool enabled);
   virtual void moveto(int flags,
                       float feedrate,
                       float x,
@@ -384,6 +390,8 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(fill_32_pixels)
   FORWARD_TO_GENERATOR(set_time_est_acc)
   FORWARD_TO_GENERATOR(set_time_est_z_speed)
+  FORWARD_TO_GENERATOR(set_s_curve_params)
+  FORWARD_TO_GENERATOR(set_s_curve_enabled)
   FORWARD_TO_GENERATOR(set_fill_end)
   FORWARD_TO_GENERATOR(set_print_line_status)
   FORWARD_TO_GENERATOR(enter_printer_mode)

@@ -883,6 +883,11 @@ void ToolpathExporterFcode::outputBitmapFcode() {
       qInfo() << "Enable S-Curve with padding distance:" << s_curve_padding << "mm";
       padding_dist = s_curve_padding;
       proc.sync_motion_type2(156, 1);
+      auto s_curve_params = get_s_curve_parameters(hardware_, layer_speed_ / 60.0);
+      if (s_curve_params) {
+        proc.set_s_curve_params(s_curve_params->a0, s_curve_params->a_max, s_curve_params->jerk);
+        proc.set_s_curve_enabled(true);
+      }
     }
   }
 
@@ -903,6 +908,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   }
   if (!isnan(s_curve_padding)) {
     proc.sync_motion_type2(156);
+    proc.set_s_curve_enabled(false);
   }
 }
 

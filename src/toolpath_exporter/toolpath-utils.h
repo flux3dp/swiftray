@@ -8,6 +8,7 @@
 #include <opencv2/core.hpp>
 #include <array>
 #include <bitset>
+#include <optional>
 #include <vector>
 
 std::tuple<std::vector<Bitset32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
@@ -101,6 +102,15 @@ double get_default_min_padding(
     bool is_high_quality = false);
 
 double get_padding_dist(double min_padding, float speed, float acc);
+
+struct SCurveParameters {
+  double a0;
+  double a_max;
+  double jerk;
+};
+
+std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
+                                                       float speed);
 
 /**
  * Compute the S-curve acceleration padding distance for the given hardware
