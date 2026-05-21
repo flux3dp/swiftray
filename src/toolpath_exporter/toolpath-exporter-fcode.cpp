@@ -711,10 +711,11 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
                                           : 10;  // fallback to medium
   int dpmm_x = qMin(dpmm_y, hw_profile.max_pixel_per_mm_x);
 
-  int kernel_size = dpmm_y >= 10 ? std::round(2 * config_.engraving_erode * dpmm_y) + 1 : 0;
-  if (kernel_size > 1) {
+  int kernel_size_y = dpmm_y >= 10 ? std::round(2 * config_.engraving_erode * dpmm_y) + 1 : 0;
+  if (kernel_size_y > 1) {
+    int kernel_size_x = dpmm_x >= 10 ? std::round(2 * config_.engraving_erode * dpmm_x) + 1 : 1;
     kernel_ = cv::getStructuringElement(cv::MORPH_ELLIPSE,
-                                        cv::Size(kernel_size, kernel_size));
+                                        cv::Size(kernel_size_x, kernel_size_y));
   } else {
     kernel_.release();
   }
