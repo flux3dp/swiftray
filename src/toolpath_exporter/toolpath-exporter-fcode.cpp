@@ -1213,6 +1213,9 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
           .transformed(transform, bmp->gradient() ? Qt::SmoothTransformation
                                                   : Qt::FastTransformation)
           .convertToFormat(QImage::Format_ARGB32);
+  // Note: width and height of new_dirty_area could be floating point, use transformed_image's width and height instead to prevent rounding issue
+  new_dirty_area.setWidth(transformed_image.width());
+  new_dirty_area.setHeight(transformed_image.height());
   if (bmp->gradient()) {
     if (!is_laser_layer_) {
       if (layer_module_ == LayerModule::PRINTER_4C) {
