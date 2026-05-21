@@ -1303,13 +1303,15 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
   Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
              "Input image for clearTransparent() must be Format_ARGB32");
 
-  QRgb white = 0xFFFFFFFF;
   for (int y = 0; y < src->height(); ++y) {
     QRgb* ptr = (QRgb*)src->scanLine(y);
     for (int x = 0; x < src->width(); ++x) {
-      if (qAlpha(ptr[x]) == 0) {
-        ptr[x] = white;
-      }
+      int alpha = qAlpha(ptr[x]);
+      if (alpha == 255) continue;
+      // composite with white background
+      int gray = qGray(ptr[x]);
+      int blended = (gray * alpha + 255 * (255 - alpha)) / 255;
+      ptr[x] = qRgba(blended, blended, blended, 255);
     }
   }
 }
