@@ -711,10 +711,12 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
                                           : 10;  // fallback to medium
   int dpmm_x = qMin(dpmm_y, hw_profile.max_pixel_per_mm_x);
 
-  int kernel_size = dpmm_y >= 10 ? std::round(2 * config_.engraving_erode * dpmm_y) + 1 : 0;
-  if (kernel_size > 1) {
+  // use y to determine auto shrink or not because dpmm_y >= dpmm_x
+  int kernel_size_y = dpmm_y >= 10 ? std::round(2 * config_.engraving_erode * dpmm_y) + 1 : 0;
+  if (kernel_size_y > 1) {
+    int kernel_size_x = dpmm_x >= 10 ? std::round(2 * config_.engraving_erode * dpmm_x) + 1 : 1;
     kernel_ = cv::getStructuringElement(cv::MORPH_ELLIPSE,
-                                        cv::Size(kernel_size, kernel_size));
+                                        cv::Size(kernel_size_x, kernel_size_y));
   } else {
     kernel_.release();
   }
@@ -1213,6 +1215,9 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
           .transformed(transform, bmp->gradient() ? Qt::SmoothTransformation
                                                   : Qt::FastTransformation)
           .convertToFormat(QImage::Format_ARGB32);
+  // Note: width and height of new_dirty_area could be floating point, use transformed_image's width and height instead to prevent rounding issue
+  new_dirty_area.setWidth(transformed_image.width());
+  new_dirty_area.setHeight(transformed_image.height());
   if (bmp->gradient()) {
     if (!is_laser_layer_) {
       if (layer_module_ == LayerModule::PRINTER_4C) {
@@ -1303,13 +1308,15 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
   Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
              "Input image for clearTransparent() must be Format_ARGB32");
 
-  QRgb white = 0xFFFFFFFF;
   for (int y = 0; y < src->height(); ++y) {
     QRgb* ptr = (QRgb*)src->scanLine(y);
     for (int x = 0; x < src->width(); ++x) {
-      if (qAlpha(ptr[x]) == 0) {
-        ptr[x] = white;
-      }
+      int alpha = qAlpha(ptr[x]);
+      if (alpha == 255) continue;
+      // composite with white background
+      int gray = qGray(ptr[x]);
+      int blended = (gray * alpha + 255 * (255 - alpha)) / 255;
+      ptr[x] = qRgba(blended, blended, blended, 255);
     }
   }
 }
