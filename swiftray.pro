@@ -103,8 +103,6 @@ macx{
         LIBS += -L"/usr/local/opt/libxml2/lib"
         LIBS += -L"/usr/local/opt/opencv/lib"
     }
-    LIBS += -lboost_thread-mt
-    LIBS += -lboost_system-mt
     LIBS += -lopencv_core
     LIBS += -lopencv_imgproc
     LIBS += -lopencv_flann
@@ -115,7 +113,6 @@ macx{
     LIBS += -lpoppler-glib
     LIBS += -lpoppler
     LIBS += -lcairo
-    LIBS += -L$$PWD/third_party/sentry-native/install/lib -lsentry
 }
 
 unix:!macx{
@@ -160,7 +157,6 @@ macx{
     INCLUDEPATH += /usr/local/include
     INCLUDEPATH += "$${_BOOST_PATH}/include/"
     INCLUDEPATH += /usr/local/opt/icu4c/include
-    INCLUDEPATH += $$PWD/third_party/sentry-native/install/include
     contains(QMAKE_HOST.arch, arm64) {
         # Mac M1
        INCLUDEPATH += /opt/homebrew/opt/libxml2/include/libxml2/
@@ -383,12 +379,10 @@ QML_IMPORT_PATH = src/windows \
 
 macx{
   # Copy additional files to bundle
-  BUNDLE_FRAMEWORKS_FILES.files += $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
   BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
   QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
   
-  BUNDLE_ADDITIONAL_EXEC_FILES.files += $$PWD/third_party/sentry-native/install/bin/crashpad_handler \
-                                        $$files($$PWD/third_party/liblcs/lib/macos/*.dylib)
+  BUNDLE_ADDITIONAL_EXEC_FILES.files += $$files($$PWD/third_party/liblcs/lib/macos/*.dylib)
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
 }

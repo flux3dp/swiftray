@@ -156,6 +156,7 @@ bool Worker::handleAction(QWebSocket* socket,
             ToolpathExporter::PaddingType::kNoPadding,
             move_translate,
             true);
+        exporter.parseParam(params_obj);
         exporter.setSortRule(PathSort::NestedSort);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
         if (type == "contour") exporter.handleContour();

@@ -110,6 +110,7 @@ public:
   int uvXStep() const;
   int frequency() const;
   int pulseWidth() const;
+  double qPulseWidth() const;
   double fillInterval() const;
   double fillAngle() const;
   bool fillBidirectional() const;
@@ -214,6 +215,7 @@ private:
   // Promark
   int frequency_ = 0;
   int pulse_width_ = 0;
+  double q_pulse_width_ = 0;
   double fill_interval_;
   double fill_angle_;
   bool fill_bidirectional_;

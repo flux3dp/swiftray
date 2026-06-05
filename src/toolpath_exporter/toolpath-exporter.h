@@ -65,6 +65,9 @@ public:
       kUnidirectionMode
   };
 
+  // 
+  void parseParam(QJsonObject param);
+
 Q_SIGNALS:
   void progressChanged(int value);
 

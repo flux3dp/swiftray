@@ -15,6 +15,45 @@
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
 
+void ToolpathExporter::parseParam(QJsonObject param) {
+  qInfo() << "Parsing parameters from JSON object:" << param;
+  gen_->addComment("CONFIG RESET");
+  if (param.contains("model")) {
+    QString model = param["model"].toString();
+    if (model.endsWith("uv")) {
+      gen_->addComment("CONFIG UV=1");
+    }
+  }
+  if (param.contains("jump_speed")) {
+    double jump_speed = param["jump_speed"].toDouble();
+    gen_->addComment(QString("CONFIG JUMP_SPEED=%1").arg(jump_speed));
+  }
+  if (param.contains("laser_on_delay")) {
+    int laser_on_delay = param["laser_on_delay"].toInt();
+    gen_->addComment(QString("CONFIG LASER_ON_DELAY=%1").arg(laser_on_delay));
+  }
+  if (param.contains("laser_off_delay")) {
+    uint32_t laser_off_delay = param["laser_off_delay"].toInt();
+    gen_->addComment(QString("CONFIG LASER_OFF_DELAY=%1").arg(laser_off_delay));
+  }
+  if (param.contains("marking_delay")) {
+    uint32_t marking_delay = param["marking_delay"].toInt();
+    gen_->addComment(QString("CONFIG MARKING_DELAY=%1").arg(marking_delay));
+  }
+  if (param.contains("corner_delay")) {
+    uint32_t corner_delay = param["corner_delay"].toInt();
+    gen_->addComment(QString("CONFIG CORNER_DELAY=%1").arg(corner_delay));
+  }
+  if (param.contains("jump_delay_min")) {
+    uint32_t jump_delay_min = param["jump_delay_min"].toInt();
+    gen_->addComment(QString("CONFIG JUMP_DELAY_MIN=%1").arg(jump_delay_min));
+  }
+  if (param.contains("jump_delay_max")) {
+    uint32_t jump_delay_max = param["jump_delay_max"].toInt();
+    gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
+  }
+}
+
 void ToolpathExporter::setDpmm(qreal dpmm) {
   if (dpmm == dpmm_ || dpmm <= 0) return;
   bool need_bigger_canvas = dpmm > dpmm_;
@@ -198,6 +237,11 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
     // Make sure cmd list is opened
     gen_->turnOnLaser();
     gen_->setPulseWidth(layer->pulseWidth());
+  }
+  if (!is_contour_ && layer->qPulseWidth() != 0) {
+    // Make sure cmd list is opened
+    gen_->turnOnLaser();
+    gen_->setQPulseWidth(layer->qPulseWidth());
   }
   // Iterate through all shapes in the layer
   for (auto &shape : layer->children()) {

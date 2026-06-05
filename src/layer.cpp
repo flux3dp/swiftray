@@ -188,6 +188,8 @@ int Layer::frequency() const { return frequency_; }
 
 int Layer::pulseWidth() const { return pulse_width_; }
 
+double Layer::qPulseWidth() const { return q_pulse_width_; }
+
 double Layer::fillInterval() const { return fill_interval_; }
 
 double Layer::fillAngle() const { return fill_angle_; }
@@ -323,6 +325,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->uv_x_step_ = config.uv_x_step;
   this->frequency_ = config.frequency;
   this->pulse_width_ = config.pulse_width;
+  this->q_pulse_width_ = config.q_pulse_width;
   this->fill_interval_ = config.fill_interval;
   this->fill_angle_ = config.fill_angle;
   this->fill_bidirectional_ = config.fill_bidirectional;

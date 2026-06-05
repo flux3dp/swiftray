@@ -2943,6 +2943,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.uv_x_step = getAttr(attributes, "data-xStep", default_config, "x_step", 1);
         layer_config.frequency = getAttr(attributes, "data-frequency", default_config, "frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", default_config, "pulseWidth", 0);
+        layer_config.q_pulse_width = getAttr(attributes, "data-qPulseWidth", default_config, "qPulseWidth", 0.0);
         layer_config.fill_interval = getAttr(attributes, "data-fillInterval", default_config, "fillInterval", 0.0);
         layer_config.fill_angle = getAttr(attributes, "data-fillAngle", default_config, "fillAngle", 0.0);
         layer_config.fill_bidirectional = getAttr(attributes, "data-biDirectional", default_config, "biDirectional", 0) == 1;

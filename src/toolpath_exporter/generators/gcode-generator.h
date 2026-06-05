@@ -203,6 +203,10 @@ public:
     str_stream_ << "P" << pulse_width << std::endl;
   }
 
+  void setQPulseWidth(double q_pulse_width) { 
+    str_stream_ << "B" << q_pulse_width << std::endl;
+  }
+
   void setDottingTime(int dotting_time) override { 
     str_stream_ << "T" << dotting_time << std::endl;
   }

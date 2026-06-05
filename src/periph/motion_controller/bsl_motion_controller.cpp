@@ -265,15 +265,15 @@ void BSLMotionController::markTo(double y, double x) {
 }
 
 void BSLMotionController::setUpTaskCtrl() {
-  lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
+  lcs_set_jump_speed_ctrl(jump_speed_);
   lcs_set_mark_speed_ctrl(1000);
-  lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
-  lcs_set_laser_mode(LCS_MOPA, is_framing_);
+  lcs_set_delay_mode(true, jump_delay_min_, jump_delay_max_, 10);
+  lcs_set_laser_mode(is_uv_task_ ? LCS_UV : LCS_MOPA, is_framing_);
 }
 
 void BSLMotionController::setUpTaskList() {
-  lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
-  lcs_set_scanner_delays(100, 50);
+  lcs_set_laser_delays(laser_on_delay_, laser_off_delay_);
+  lcs_set_scanner_delays(marking_delay_, corner_delay_);
   lcs_set_laser_control(true);
   lcs_enable_laser(0);
 }
@@ -290,6 +290,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static double wobble_k = 1;
     static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
+    static double last_x = 0;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I" || gcode == "$H") {
@@ -300,6 +301,41 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
       // qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
       return;
+    }
+
+    if (gcode.startsWith(";CONFIG ", Qt::CaseSensitivity::CaseInsensitive)) {
+      // pattern: ;CONFIG KEY=VALUE or ;CONFIG RESET
+      QString config_str = gcode.mid(8).trimmed();
+      if (config_str.compare("RESET", Qt::CaseSensitivity::CaseInsensitive) == 0) {
+        resetConfig();
+        qInfo() << "BSLM~::handleGcode() - Config reset to defaults";
+      } else {
+        QStringList key_value = config_str.split('=');
+        if (key_value.size() == 2) {
+          QString key = key_value[0].trimmed();
+          QString value = key_value[1].trimmed();
+          qInfo() << "BSLM~::handleGcode() - Config update: " << key << " = " << value;
+          if (key == "JUMP_SPEED") {
+            jump_speed_ = value.toDouble();
+          } else if (key == "LASER_ON_DELAY") {
+            laser_on_delay_ = value.toInt();
+          } else if (key == "LASER_OFF_DELAY") {
+            laser_off_delay_ = value.toInt();
+          } else if (key == "MARKING_DELAY") {
+            marking_delay_ = value.toInt();
+          } else if (key == "CORNER_DELAY") {
+            corner_delay_ = value.toInt();
+          } else if (key == "JUMP_DELAY_MIN") {
+            jump_delay_min_ = value.toInt();
+          } else if (key == "JUMP_DELAY_MAX") {
+            jump_delay_max_ = value.toInt();
+          } else if (key == "UV") {
+            is_uv_task_ = value.toInt() != 0;
+          }
+          qInfo() << "BSLM~::handleGcode() - Config updated: is_uv_task_" << is_uv_task_ << " jump_speed_ " << jump_speed_ << " laser_on_delay_ " << laser_on_delay_ << " laser_off_delay_ " << laser_off_delay_
+                  << " marking_delay_ " << marking_delay_ << " corner_delay_ " << corner_delay_ << " jump_delay_min_ " << jump_delay_min_ << " jump_delay_max_ " << jump_delay_max_;;
+        }
+      }
     }
 
     if (gcode.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
@@ -350,10 +386,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "Q") {
             freq = value.toDouble();
             settings.period = 1000.0 / freq;
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
         } else if (type == "P") {
             settings.pulse_width = value.toInt();
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+        } else if (type == "B") {
+            if (is_uv_task_) {
+              settings.q_pulse_width = value.toDouble();
+              qInfo() << "BSLM~::handleGcode() - Set Q Pulse Width: " << settings.q_pulse_width;
+              list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+            }
         } else if (type == "T") {
             dotting_time = value.toInt();
         } else if (type == "F") {
@@ -895,7 +937,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+  list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
   list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {

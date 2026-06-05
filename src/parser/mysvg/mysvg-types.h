@@ -78,6 +78,7 @@ namespace MySVG {
         int uv_x_step;
         int frequency;
         int pulse_width;
+        double q_pulse_width;
         double fill_interval;
         double fill_angle;
         bool fill_bidirectional;

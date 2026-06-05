@@ -74,6 +74,10 @@ public:
     qWarning() << "BaseGenerator::setPulseWidth()" << "Promark feature not implemented"; 
   }
 
+  virtual void setQPulseWidth(double q_pulse_width) { 
+    qWarning() << "BaseGenerator::setQPulseWidth()" << "Promark feature not implemented"; 
+  }
+
   virtual void setDottingTime(int dotting_time) { 
     qWarning() << "BaseGenerator::setDottingTime()" << "Promark feature not implemented"; 
   }

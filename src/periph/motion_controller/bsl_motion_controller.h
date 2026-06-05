@@ -14,9 +14,11 @@
 
 struct TaskSettings {
   // Reset param before start list
+  LCS2LaserType laser_type = LCS2LaserType::LCS_MOPA;
   unsigned char current_s = 0;  // 0~100
   double current_f = 100.0;     // Default speed, mm/s
   double period = 10.0;         // us
+  double q_pulse_width = 0.0;   // us
   uint16_t pulse_width = 100;   // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
@@ -54,6 +56,17 @@ public:
   bool isPreparingFirstList() { return is_preparing_first_list_; }
   int getDisconnectCount() { return disconnect_count_; }
   double getProgressByTime();
+  // 
+  void resetConfig() {
+    is_uv_task_ = false;
+    jump_speed_ = PromarkJobConfig::JUMP_SPEED;
+    laser_on_delay_ = PromarkJobConfig::LASER_ON_DELAY;
+    laser_off_delay_ = PromarkJobConfig::LASER_OFF_DELAY;
+    marking_delay_ = 100;
+    corner_delay_ = 50;
+    jump_delay_min_ = PromarkJobConfig::JUMP_DELAY_MIN;
+    jump_delay_max_ = PromarkJobConfig::JUMP_DELAY_MAX;
+  }
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -103,4 +116,13 @@ private:
   double running_task_time_ = 0; // Time for current executing list, ms
   QElapsedTimer task_timer_;
   BSLListManager list_manager_{this};
+  // 
+  bool is_uv_task_ = false;
+  double jump_speed_ = PromarkJobConfig::JUMP_SPEED;
+  uint32_t laser_on_delay_ = PromarkJobConfig::LASER_ON_DELAY;
+  uint32_t laser_off_delay_ = PromarkJobConfig::LASER_OFF_DELAY;
+  uint32_t marking_delay_ = 100;
+  uint32_t corner_delay_ = 50;
+  uint32_t jump_delay_min_ = PromarkJobConfig::JUMP_DELAY_MIN;
+  uint32_t jump_delay_max_ = PromarkJobConfig::JUMP_DELAY_MAX;
 };
