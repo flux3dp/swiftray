@@ -288,7 +288,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static bool last_is_z_command = false;
     static uint32_t dotting_time = 0;
     static double wobble_k = 1;
-    static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
+    static QRegularExpression re("([GMXYFSZDWQPTAB]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
     static double last_x = 0;
 
