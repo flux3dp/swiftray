@@ -18,11 +18,9 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
 void ToolpathExporter::parseParam(QJsonObject param) {
   qInfo() << "Parsing parameters from JSON object:" << param;
   gen_->addComment("CONFIG RESET");
-  if (param.contains("model")) {
-    QString model = param["model"].toString();
-    if (model.endsWith("uv")) {
-      gen_->addComment("CONFIG UV=1");
-    }
+  if (param.contains("is_uv_light")) {
+    int is_uv_light = param["is_uv_light"].toInt();
+    gen_->addComment(QString("CONFIG UV=%1").arg(is_uv_light));
   }
   if (param.contains("jump_speed")) {
     double jump_speed = param["jump_speed"].toDouble();
