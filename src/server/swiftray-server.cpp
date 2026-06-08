@@ -9,6 +9,7 @@
 #include <toolpath_exporter/toolpath-exporter.h>
 #include <toolpath_exporter/toolpath-exporter-fcode.h>
 #include <QCoreApplication>
+#include <QCryptographicHash>                                                                                                                                                                             
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -392,21 +393,30 @@ bool serialPortAvailable() {
   return false;
 }
 
+QString hashSerialNumber(const QString& serialNumber) {
+  QByteArray hash = QCryptographicHash::hash(serialNumber.toUtf8(),
+                                             QCryptographicHash::Sha256);
+  return QString(hash.toHex());
+}
+
 QJsonArray SwiftrayServer::getDeviceList() {
   QJsonArray devices;
   if (lcs_available()) {
     int st_id = 0;
     float st_prog = 0.0f;
     QString sn = "ABC123";
+    QString hashed_sn = "";
     if (this->m_machine != nullptr) {
       st_id = this->m_machine->getStatusId();
       sn = this->m_machine->getConfig("serial");
+      hashed_sn = hashSerialNumber(sn);
       st_prog = this->m_machine->getJobExecutor()->getProgress() * 0.01f;
     }
     devices.append(QJsonObject{
       {"uuid", "dcf5c788-8635-4ffc-9706-3519d9e8fa7d"},
       {"name", "Promark"},
       {"serial", sn},
+      {"hashed_serial", hashed_sn},
       {"st_id", st_id},
       {"st_prog", st_prog},
       {"version", "5.0.0"},
