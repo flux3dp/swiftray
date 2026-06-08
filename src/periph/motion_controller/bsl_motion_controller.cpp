@@ -265,17 +265,43 @@ void BSLMotionController::markTo(double y, double x) {
 }
 
 void BSLMotionController::setUpTaskCtrl() {
-  lcs_set_jump_speed_ctrl(jump_speed_);
-  lcs_set_mark_speed_ctrl(1000);
-  lcs_set_delay_mode(true, jump_delay_min_, jump_delay_max_, 10);
-  lcs_set_laser_mode(is_uv_task_ ? LCS_UV : LCS_MOPA, is_framing_);
+  int error;
+  error = lcs_set_jump_speed_ctrl(jump_speed_);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_jump_speed_ctrl " << getErrorString(error) << jump_speed_;
+  }
+  error = lcs_set_mark_speed_ctrl(1000);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_mark_speed_ctrl " << getErrorString(error);
+  }
+  error = lcs_set_delay_mode(true, jump_delay_min_, jump_delay_max_, 10);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_delay_mode " << getErrorString(error) << jump_delay_min_ << jump_delay_max_;
+  }
+  error = lcs_set_laser_mode(is_uv_task_ ? LCS_UV : LCS_MOPA, is_framing_);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << is_uv_task_ << is_framing_;
+  }
 }
 
 void BSLMotionController::setUpTaskList() {
-  lcs_set_laser_delays(laser_on_delay_, laser_off_delay_);
-  lcs_set_scanner_delays(marking_delay_, corner_delay_);
-  lcs_set_laser_control(true);
-  lcs_enable_laser(0);
+  int error;
+  error = lcs_set_laser_delays(laser_on_delay_, laser_off_delay_);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_laser_delays " << getErrorString(error) << laser_on_delay_ << laser_off_delay_;
+  }
+  error = lcs_set_scanner_delays(marking_delay_, corner_delay_);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_scanner_delays " << getErrorString(error) << marking_delay_ << corner_delay_;
+  }
+  error = lcs_set_laser_control(true);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_laser_control " << getErrorString(error);
+  }
+  error = lcs_enable_laser(0);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_enable_laser " << getErrorString(error);
+  }
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
@@ -569,7 +595,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       startList(list_no, settings, true);
       // List Instruction
       // Force delay for the first laser
-      lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
+      int errr__rr;
+      errr__rr = lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
+      if (errr__rr != LCS_RES_NO_ERROR) {
+        qWarning() << "BSLM~::handleGcode() - lcs_set_laser_delays " << getErrorString(errr__rr) << -3000 << PromarkJobConfig::LASER_OFF_DELAY;
+      }
       lcs_error_count = 0;
       laser_enabled = false;
       last_is_z_command = false;
