@@ -567,7 +567,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       settings.current_s = 0;
       settings.current_f = 100.0;
       settings.period = 10.0;
-      settings.q_pulse_width = 0.0;
+      settings.q_pulse_width = is_uv_task_ ? 1.0 : 0.0;
       settings.pulse_width = 100;
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
