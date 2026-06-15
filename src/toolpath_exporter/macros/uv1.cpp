@@ -50,7 +50,7 @@ QPointF UV1Macros::move_to_refresh_position() {
   return QPointF(x, y);
 }
 
-void UV1Macros::test_cartridge() {
+void UV1Macros::test_cartridge(int prespray_times) {
   prespray();
   back_to_home();
 }

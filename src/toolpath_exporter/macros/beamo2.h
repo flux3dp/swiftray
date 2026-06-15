@@ -20,7 +20,8 @@ class Beamo2Macros : public BaseMacros {
 
   void prespray(float travel_speed = 7500,
                 float task_speed = 900,
-                bool should_enter_printer_mode = true);
+                bool should_enter_printer_mode = true,
+                int repeat = 3);
   void set_printer_lid(bool is_lid_on = true,
                        float delta = 0.5,
                        float feedrate = 1000);
@@ -45,7 +46,7 @@ class Beamo2Macros : public BaseMacros {
   void put_back_printer_lid() override;
   QPointF move_to_refresh_position() override;
   void post_refresh_motion() override;
-  void test_cartridge() override;
+  void test_cartridge(int prespray_times = 3) override;
   void reset_table(float feedrate = 4800,
                    bool should_avoid_magnet = true,
                    bool is_y_first = false) override;

@@ -156,6 +156,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
   config_.is_reverse_engraving = param["rev"].toBool();
   config_.skip_prespray = param["skip_prespray"].toBool();
+  config_.prespray_times = param["prespray_times"].toInt(3);
   config_.min_speed = param["min_speed"].toDouble(3);
   config_.travel_speed = param["ts"].toDouble(7500);
   config_.a_travel_speed = param["ats"].toDouble(2000);
@@ -1104,7 +1105,8 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
       // 0002: pure prespray task
       if (!config_.skip_prespray && hasattr(macros, MacroFunc::test_cartridge)) {
         proc.start_task_script_block("xMIN", "0002");
-        macros->test_cartridge();
+        qInfo() << "Prespray" << config_.prespray_times << "times";
+        macros->test_cartridge(config_.prespray_times);
         proc.end_task_script_block();
       }
       // 0005: task before printing

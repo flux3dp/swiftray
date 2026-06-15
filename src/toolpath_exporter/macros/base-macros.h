@@ -42,7 +42,7 @@ class BaseMacros {
   virtual void put_back_printer_lid() {}
   virtual QPointF move_to_refresh_position() { return QPointF(); }
   virtual void post_refresh_motion() {}
-  virtual void test_cartridge() {}
+  virtual void test_cartridge(int prespray_times = 3) {}
   virtual void reset_table(float feedrate = 4800,
                            bool should_avoid_magnet = true,
                            bool is_y_first = false) {}
