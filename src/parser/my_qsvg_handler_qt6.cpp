@@ -2953,6 +2953,10 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.laser_delay = getAttr(attributes, "data-delay", default_config, "delay", 0);
         layer_config.dpmm = getAttr(attributes, "data-dpmm", default_config, "dpmm", 0);
         layer_config.is_high_quality = getAttr(attributes, "data-highQuality", default_config, "highQuality", 0) == 1;
+        layer_config.s_curve_enable = getAttr(attributes, "data-scEnable", default_config, "scEnable", 0) == 1;
+        layer_config.s_curve_a0 = getAttr(attributes, "data-scA0", default_config, "scA0", 0.0);
+        layer_config.s_curve_a_max = getAttr(attributes, "data-scAMax", default_config, "scAMax", 0.0);
+        layer_config.s_curve_jerk = getAttr(attributes, "data-scJerk", default_config, "scJerk", 0.0);
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }

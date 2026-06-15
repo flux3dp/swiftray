@@ -208,6 +208,14 @@ int Layer::dpmm() const { return dpmm_; }
 
 bool Layer::isHighQuality() const { return is_high_quality_; }
 
+bool Layer::sCurveEnable() const { return s_curve_enable_; }
+
+float Layer::sCurveA0() const { return s_curve_a0_; }
+
+float Layer::sCurveAMax() const { return s_curve_a_max_; }
+
+float Layer::sCurveJerk() const { return s_curve_jerk_; }
+
 Document &Layer::document() {
   Q_ASSERT_X(document_ != nullptr,
              "Layer",
@@ -321,6 +329,10 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->laser_delay_ = config.laser_delay;
   this->dpmm_ = config.dpmm;
   this->is_high_quality_ = config.is_high_quality;
+  this->s_curve_enable_ = config.s_curve_enable;
+  this->s_curve_a0_ = config.s_curve_a0;
+  this->s_curve_a_max_ = config.s_curve_a_max;
+  this->s_curve_jerk_ = config.s_curve_jerk;
 }
 
 // Clone
@@ -338,6 +350,11 @@ LayerPtr Layer::clone() {
   new_layer->use_diode_ = this->use_diode_;
   new_layer->multipass_ = this->multipass_;
   new_layer->x_backlash_ = this->x_backlash_;
+  new_layer->is_high_quality_ = this->is_high_quality_;
+  new_layer->s_curve_enable_ = this->s_curve_enable_;
+  new_layer->s_curve_a0_ = this->s_curve_a0_;
+  new_layer->s_curve_a_max_ = this->s_curve_a_max_;
+  new_layer->s_curve_jerk_ = this->s_curve_jerk_;
   children_mutex_.lock();
   for (auto &shape : children_) {
     new_layer->addShape(shape->clone());

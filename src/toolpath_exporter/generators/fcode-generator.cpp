@@ -1262,6 +1262,14 @@ void ToolpathProcessor::sync_motion_type2(unsigned cmd, float q) {
   gen_->sync_motion_type2(cmd, flags, q);
 }
 
+void ToolpathProcessor::set_s_curve_params(float a0, float a_max, float jerk) {
+  // Emit s-curve motion parameters to the machine before enabling s-curve.
+  sync_motion_type2(154, jerk);
+  sync_motion_type2(155, a_max);
+  sync_motion_type2(157, a0);
+  gen_->set_s_curve_params(a0, a_max, jerk);
+}
+
 void ToolpathProcessor::set_acceleration_override(float x,
                                                   float y,
                                                   float z,

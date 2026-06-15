@@ -370,6 +370,7 @@ class ToolpathProcessor {
                                  float y = NAN,
                                  float z = NAN,
                                  float a = NAN);
+  void set_s_curve_params(float a0, float a_max, float jerk);
   void user_selection_cmd(unsigned cmd);
   void miscellaneous_cmd(unsigned cmd);
   void grbl_system_cmd(unsigned cmd);
@@ -390,7 +391,6 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(fill_32_pixels)
   FORWARD_TO_GENERATOR(set_time_est_acc)
   FORWARD_TO_GENERATOR(set_time_est_z_speed)
-  FORWARD_TO_GENERATOR(set_s_curve_params)
   FORWARD_TO_GENERATOR(set_s_curve_enabled)
   FORWARD_TO_GENERATOR(set_fill_end)
   FORWARD_TO_GENERATOR(set_print_line_status)

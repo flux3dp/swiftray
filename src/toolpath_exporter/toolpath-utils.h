@@ -110,7 +110,22 @@ struct SCurveParameters {
 };
 
 std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
-                                                       float speed);
+                                                       float speed,
+                                                       bool is_high_quality = false);
+
+/**
+ * Compute the S-curve acceleration padding distance from explicit motion
+ * parameters (independent of hardware lookup).
+ *
+ * @param v_target target velocity in mm/s
+ * @param a0 initial acceleration in mm/s^2
+ * @param a_max max acceleration in mm/s^2
+ * @param jerk jerk in mm/s^3
+ * @param v0 initial velocity in mm/s (defaults to 0)
+ * @return padding distance in mm
+ */
+double calculate_s_curve_padding_dist(double v_target, double a0, double a_max,
+                                      double jerk, double v0 = 0);
 
 /**
  * Compute the S-curve acceleration padding distance for the given hardware

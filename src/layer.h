@@ -120,6 +120,10 @@ public:
   int laserDelay() const;
   int dpmm() const;
   bool isHighQuality() const;
+  bool sCurveEnable() const;
+  float sCurveA0() const;
+  float sCurveAMax() const;
+  float sCurveJerk() const;
   // end BS
 
   Document &document();
@@ -218,6 +222,10 @@ private:
   int laser_delay_ = 0;
   int dpmm_ = 0;
   bool is_high_quality_ = false;
+  bool s_curve_enable_ = false;
+  float s_curve_a0_ = 0;
+  float s_curve_a_max_ = 0;
+  float s_curve_jerk_ = 0;
 };
 
 typedef std::shared_ptr<Layer> LayerPtr;

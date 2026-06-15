@@ -87,6 +87,10 @@ namespace MySVG {
         int laser_delay;
         int dpmm;
         bool is_high_quality;
+        bool s_curve_enable;
+        float s_curve_a0;
+        float s_curve_a_max;
+        float s_curve_jerk;
     };
 
     enum ReadType {
