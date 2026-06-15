@@ -12,7 +12,8 @@ Beamo2Macros::Beamo2Macros(ToolpathProcessor* proc, float travel_speed)
                        MacroFunc::put_back_printer_lid,
                        MacroFunc::move_to_refresh_position,
                        MacroFunc::post_refresh_motion,
-                       MacroFunc::test_cartridge};
+                       MacroFunc::test_cartridge,
+                       MacroFunc::reset_table};
 }
 
 void Beamo2Macros::set_ref_position(float x_left,
@@ -202,7 +203,8 @@ void Beamo2Macros::clean_printer(float feedrate, int repeat) {
 
 void Beamo2Macros::prespray(float travel_speed,
                             float task_speed,
-                            bool should_enter_printer_mode) {
+                            bool should_enter_printer_mode,
+                            int repeat) {
   float start_x = x_left + 40;
   proc->moveto(NamedArgs().rz(0).rf(z_feedrate).set_is_travel());
   proc->sync_grbl_motion(0);
@@ -214,7 +216,8 @@ void Beamo2Macros::prespray(float travel_speed,
   prespray_params.prespray = QRectF(start_x, y_max - 1, 20, 12.7);
   prespray_params.travel_speed = travel_speed;
   prespray_params.task_speed = task_speed;
-  prespray_params.repeat = 6;
+  // back and forth, for one repeat. so repeat=repeat*2 for actual moves.
+  prespray_params.repeat = repeat * 2;
   prespray_params.reverse_first = true;
   prespray_params.should_enter_printer_mode = should_enter_printer_mode;
   prespray_params.nozzle_mode = NozzleMode::BOTH;
@@ -271,8 +274,8 @@ void Beamo2Macros::post_refresh_motion() {
   proc->set_is_main_task(true);
 }
 
-void Beamo2Macros::test_cartridge() {
-  prespray();
+void Beamo2Macros::test_cartridge(int prespray_times) {
+  prespray(7500, 900, true, prespray_times);
   if (should_retract_table) {
     reset_table();
   }

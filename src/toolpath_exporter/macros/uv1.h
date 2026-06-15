@@ -17,5 +17,5 @@ class UV1Macros : public BaseMacros {
   UV1Macros(ToolpathProcessor* proc, float travel_speed = 7500);
 
   QPointF move_to_refresh_position() override;
-  void test_cartridge() override;
+  void test_cartridge(int prespray_times = 3) override;
 };

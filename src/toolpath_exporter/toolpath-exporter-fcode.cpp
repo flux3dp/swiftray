@@ -156,6 +156,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
   config_.is_reverse_engraving = param["rev"].toBool();
   config_.skip_prespray = param["skip_prespray"].toBool();
+  config_.prespray_times = param["prespray_times"].toInt(3);
   config_.min_speed = param["min_speed"].toDouble(3);
   config_.travel_speed = param["ts"].toDouble(7500);
   config_.a_travel_speed = param["ats"].toDouble(2000);
@@ -842,6 +843,36 @@ void ToolpathExporterFcode::outputBitmapFcode() {
     return;
   }
   float padding_acc = config_.padding_acc;
+
+  // Resolve s-curve parameters for this layer. When a manual override is
+  // provided (a_max/jerk > 0) use it, otherwise fall back to the hardware
+  // defaults. s_curve_a is used to override the fill acceleration on x.
+  std::optional<SCurveParameters> s_curve_params;
+  double s_curve_padding = NAN;
+  double s_curve_a = NAN;
+  if (config_.enable_s_curve && current_layer_->sCurveEnable()) {
+    if (current_layer_->sCurveAMax() > 0 && current_layer_->sCurveJerk() > 0) {
+      s_curve_params = SCurveParameters{current_layer_->sCurveA0(),
+                                        current_layer_->sCurveAMax(),
+                                        current_layer_->sCurveJerk()};
+    } else {
+      s_curve_params = get_s_curve_parameters(hardware_, layer_speed_ / 60.0,
+                                              layer_is_high_quality_);
+    }
+    if (s_curve_params) {
+      s_curve_padding = calculate_s_curve_padding_dist(
+          layer_speed_ / 60.0, s_curve_params->a0, s_curve_params->a_max,
+          s_curve_params->jerk);
+      if (s_curve_padding > 0) {
+        s_curve_a = floor(pow(layer_speed_ / 60.0, 2) / (2.0 * s_curve_padding));
+      }
+      qInfo() << "Enable S-Curve a0:" << s_curve_params->a0
+              << "a_max:" << s_curve_params->a_max
+              << "jerk:" << s_curve_params->jerk << "a:" << s_curve_a
+              << "padding:" << s_curve_padding << "mm";
+    }
+  }
+
   AccelerationData acc_override_object;
   if (config_.fill_acc.is_valid) {
     acc_override_object = config_.fill_acc;
@@ -862,6 +893,11 @@ void ToolpathExporterFcode::outputBitmapFcode() {
     acc_override_object.is_valid = true;
     acc_override_object.z = config_.z_acc;
   }
+  // Override fill acc-x for s-curve
+  if (s_curve_params) {
+    acc_override_object.is_valid = true;
+    acc_override_object.x = s_curve_a;
+  }
   if (acc_override_object.is_valid) {
     qInfo() << "Set fill acc" << acc_override_object.x << acc_override_object.y << acc_override_object.z << acc_override_object.a;
     proc.set_acceleration_override(acc_override_object.x, acc_override_object.y,
@@ -878,19 +914,13 @@ void ToolpathExporterFcode::outputBitmapFcode() {
 
   double padding_dist =
       get_padding_dist(min_padding, layer_speed_ / 60, padding_acc);
-  double s_curve_padding = NAN;
-  if (config_.enable_s_curve) {
-    s_curve_padding = get_s_curve_padding_dist(hardware_, layer_speed_ / 60.0);
-    if (!isnan(s_curve_padding)) {
-      qInfo() << "Enable S-Curve with padding distance:" << s_curve_padding << "mm";
-      padding_dist = s_curve_padding;
-      proc.sync_motion_type2(156, 1);
-      auto s_curve_params = get_s_curve_parameters(hardware_, layer_speed_ / 60.0);
-      if (s_curve_params) {
-        proc.set_s_curve_params(s_curve_params->a0, s_curve_params->a_max, s_curve_params->jerk);
-        proc.set_s_curve_enabled(true);
-      }
-    }
+  if (s_curve_params) {
+    padding_dist = s_curve_padding;
+    qInfo() << "Turn on s-curve";
+    // Emits motion params 154/155/157; enable is implied by the params.
+    proc.set_s_curve_params(s_curve_params->a0, s_curve_params->a_max,
+                            s_curve_params->jerk);
+    proc.set_s_curve_enabled(true);
   }
 
   GenerateTaskKwargs task_kwargs;
@@ -908,7 +938,8 @@ void ToolpathExporterFcode::outputBitmapFcode() {
     proc.sync_grbl_motion(151);
     proc.set_time_est_acc(config_.padding_acc);
   }
-  if (!isnan(s_curve_padding)) {
+  if (s_curve_params) {
+    qInfo() << "Turn off s-curve";
     proc.sync_motion_type2(156);
     proc.set_s_curve_enabled(false);
   }
@@ -1074,7 +1105,8 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
       // 0002: pure prespray task
       if (!config_.skip_prespray && hasattr(macros, MacroFunc::test_cartridge)) {
         proc.start_task_script_block("xMIN", "0002");
-        macros->test_cartridge();
+        qInfo() << "Prespray" << config_.prespray_times << "times";
+        macros->test_cartridge(config_.prespray_times);
         proc.end_task_script_block();
       }
       // 0005: task before printing
@@ -1096,6 +1128,13 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
         if (hasattr(macros, MacroFunc::extend_table)) {
           macros->extend_table();
         }
+        proc.end_task_script_block();
+      }
+      // 0008: pure reset table
+      if (hasattr(macros, MacroFunc::reset_table)) {
+        proc.start_task_script_block("xMIN", "0008");
+        macros->reset_table();
+        macros->post_table_motion();
         proc.end_task_script_block();
       }
     }

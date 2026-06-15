@@ -818,32 +818,23 @@ double get_padding_dist(double min_padding, float speed, float acc) {
 // std::nullopt if the hardware does not support s-curve.
 // Mirrors fluxclient/hw_profile/s_curve.py::get_s_curve_parameters.
 std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
-                                                       float speed) {
+                                                       float speed,
+                                                       bool is_high_quality) {
   if (hw_type == HardwareType::RF) {
-    if (speed < 1000) {
-      return SCurveParameters{10000, 30000, 800000};
-    } else if (speed < 1600) {
-      return SCurveParameters{0, 30000, 800000};
-    } else if (speed < 1900) {
-      return SCurveParameters{0, 15000, 800000};
+    if (speed < 1525) {
+      return SCurveParameters{0, is_high_quality ? 21000.0 : 30000.0, 800000};
+    } else if (speed < 1800) {
+      return SCurveParameters{0, is_high_quality ? 10500.0 : 15000.0, 800000};
     }
-    return SCurveParameters{0, 15000, 400000};
+    return SCurveParameters{0, is_high_quality ? 10500.0 : 15000.0, 400000};
   } else if (hw_type == HardwareType::BB2) {
     return SCurveParameters{8000, 20000, 300000};
   }
   return std::nullopt;
 }
 
-double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
-  auto params = get_s_curve_parameters(hw_type, speed);
-  if (!params.has_value()) {
-    return NAN;
-  }
-  const double v_target = speed;
-  const double a0 = params->a0;
-  const double a_max = params->a_max;
-  const double jerk = params->jerk;
-
+double calculate_s_curve_padding_dist(double v_target, double a0, double a_max,
+                                      double jerk, double v0) {
   // Phase 1: accel ramps a0 -> a_max
   const double t1 = (a_max - a0) / jerk;
   const double dv1 = a0 * t1 + 0.5 * jerk * t1 * t1;
@@ -881,4 +872,13 @@ double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
   const double s3 = v2 * t3 + 0.5 * a_max * t3 * t3 -
                     (1.0 / 6.0) * jerk * t3 * t3 * t3;
   return s1 + s2 + s3;
+}
+
+double get_s_curve_padding_dist(HardwareType hw_type, float speed, double v0) {
+  auto params = get_s_curve_parameters(hw_type, speed);
+  if (!params.has_value()) {
+    return NAN;
+  }
+  return calculate_s_curve_padding_dist(speed, params->a0, params->a_max,
+                                        params->jerk, v0);
 }
