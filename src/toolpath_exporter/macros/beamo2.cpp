@@ -12,7 +12,8 @@ Beamo2Macros::Beamo2Macros(ToolpathProcessor* proc, float travel_speed)
                        MacroFunc::put_back_printer_lid,
                        MacroFunc::move_to_refresh_position,
                        MacroFunc::post_refresh_motion,
-                       MacroFunc::test_cartridge};
+                       MacroFunc::test_cartridge,
+                       MacroFunc::reset_table};
 }
 
 void Beamo2Macros::set_ref_position(float x_left,

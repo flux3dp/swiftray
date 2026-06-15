@@ -11,7 +11,8 @@ enum MacroFunc {
   put_back_printer_lid,
   move_to_refresh_position,
   post_refresh_motion,
-  test_cartridge
+  test_cartridge,
+  reset_table
 };
 
 class BaseMacros {
@@ -42,6 +43,10 @@ class BaseMacros {
   virtual QPointF move_to_refresh_position() { return QPointF(); }
   virtual void post_refresh_motion() {}
   virtual void test_cartridge() {}
+  virtual void reset_table(float feedrate = 4800,
+                           bool should_avoid_magnet = true,
+                           bool is_y_first = false) {}
+  virtual void post_table_motion() {}
 };
 
 // Note: implemented_funcs needs to be updated correctly in derived classes

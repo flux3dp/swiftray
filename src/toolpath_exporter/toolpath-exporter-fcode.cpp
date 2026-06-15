@@ -1128,6 +1128,13 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
         }
         proc.end_task_script_block();
       }
+      // 0008: pure reset table
+      if (hasattr(macros, MacroFunc::reset_table)) {
+        proc.start_task_script_block("xMIN", "0008");
+        macros->reset_table();
+        macros->post_table_motion();
+        proc.end_task_script_block();
+      }
     }
   } else {
     // printing test, prespray task
