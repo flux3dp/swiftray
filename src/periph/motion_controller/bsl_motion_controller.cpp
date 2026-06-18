@@ -412,15 +412,15 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "Q") {
             freq = value.toDouble();
             settings.period = 1000.0 / freq;
-            list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, is_uv_task_ ? settings.q_pulse_width : 0, settings.pulse_width);
         } else if (type == "P") {
             settings.pulse_width = value.toInt();
-            list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, is_uv_task_ ? settings.q_pulse_width : 0, settings.pulse_width);
         } else if (type == "B") {
             if (is_uv_task_) {
               settings.q_pulse_width = value.toDouble();
               qInfo() << "BSLM~::handleGcode() - Set Q Pulse Width: " << settings.q_pulse_width;
-              list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+              list_manager_.call(ListApiType::SetPulses, settings.period, is_uv_task_ ? settings.q_pulse_width : 0, settings.pulse_width);
             }
         } else if (type == "T") {
             dotting_time = value.toInt();
@@ -968,7 +968,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
+  list_manager_.call(ListApiType::SetPulses, settings.period, is_uv_task_ ? settings.q_pulse_width : 0, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
   list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
