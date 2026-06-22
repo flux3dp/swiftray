@@ -162,7 +162,11 @@ double Layer::nozzleOffsetY() const { return nozzle_offset_y_; }
 
 float Layer::focus() const { return focus_; }
 
+bool Layer::focusRev() const { return focus_rev_; }
+
 float Layer::focusStep() const { return focus_step_; }
+
+bool Layer::focusStepRev() const { return focus_step_rev_; }
 
 double Layer::ceZLimit() const { return ce_z_limit_; }
 
@@ -312,7 +316,9 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->nozzle_offset_x_ = config.nozzle_offset_x;
   this->nozzle_offset_y_ = config.nozzle_offset_y;
   this->focus_ = config.focus;
+  this->focus_rev_ = config.focus_rev;
   this->focus_step_ = config.focus_step;
+  this->focus_step_rev_ = config.focus_step_rev;
   this->ce_z_limit_ = config.ce_z_limit;
   this->interpolation_ = config.interpolation;
   this->right_padding_ = config.right_padding;

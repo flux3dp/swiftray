@@ -97,7 +97,9 @@ public:
   double nozzleOffsetX() const;
   double nozzleOffsetY() const;
   float focus() const;
+  bool focusRev() const;
   float focusStep() const;
+  bool focusStepRev() const;
   double ceZLimit() const;
   int interpolation() const;
   double rightPadding() const;
@@ -199,7 +201,9 @@ private:
   double nozzle_offset_y_ = 0;
   // Height / Curve Engraving
   float focus_ = -2;
+  bool focus_rev_ = false;
   float focus_step_ = -2;
+  bool focus_step_rev_ = false;
   double ce_z_limit_ = 0;
   // UV configs
   int interpolation_ = 1;

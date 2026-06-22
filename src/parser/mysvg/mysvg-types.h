@@ -64,7 +64,9 @@ namespace MySVG {
         double nozzle_offset_x;
         double nozzle_offset_y;
         float focus;
+        bool focus_rev;
         float focus_step;
+        bool focus_step_rev;
         double ce_z_limit;
         int interpolation;
         double right_padding;

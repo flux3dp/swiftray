@@ -2930,7 +2930,9 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.nozzle_offset_x = getAttr(attributes, "data-nozzleOffsetX", default_config, "nozzle_offset_x", 0.0);
         layer_config.nozzle_offset_y = getAttr(attributes, "data-nozzleOffsetY", default_config, "nozzle_offset_y", 0.0);
         layer_config.focus = getAttr(attributes, "data-focus", default_config, "focus", 0.0);
+        layer_config.focus_rev = getAttr(attributes, "data-focusRev", default_config, "focusRev", 0) == 1;
         layer_config.focus_step = getAttr(attributes, "data-focusStep", default_config, "focusStep", 0.0);
+        layer_config.focus_step_rev = getAttr(attributes, "data-focusStepRev", default_config, "focusStepRev", 0) == 1;
         layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.interpolation = getAttr(attributes, "data-interpolation", default_config, "interpolation", 1);
         layer_config.right_padding = getAttr(attributes, "data-rightPadding", default_config, "right_padding", 0.0);

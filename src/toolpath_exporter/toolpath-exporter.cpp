@@ -132,7 +132,9 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
         total_repeat_times_ = 1;
       }
       float focus = is_contour_ ? 0 : (*layer_rit)->focus();
+      int focus_dir = (*layer_rit)->focusRev() ? -1 : 1;
       float focus_step = is_contour_ ? 0 : (*layer_rit)->focusStep();
+      int focus_step_dir = (*layer_rit)->focusStepRev() ? -1 : 1;
       float total_move = 0;
       LayerPtr current_layer_ = *layer_rit;
       LayerPtr current_layer_2_ = nullptr;
@@ -153,21 +155,21 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
           if (focus > 0) {
             // Make sure cmd list is opened
             gen_->turnOnLaser();
-            gen_->moveZ(-focus);
-            total_move += focus;
+            gen_->moveZ(-focus * focus_dir);
+            total_move += focus * focus_dir;
           }
         } else if (focus_step > 0) {
           // Make sure cmd list is opened
           gen_->turnOnLaser();
-          gen_->moveZ(-focus_step);
-          total_move += focus_step;
+          gen_->moveZ(-focus_step * focus_step_dir);
+          total_move += focus_step * focus_step_dir;
         }
         convertLayer(current_layer_);
         if (current_layer_2_) {
           convertLayer(current_layer_2_);
         }
       }
-      if (total_move > 0) {
+      if (total_move != 0) {
         gen_->moveZ(total_move);
       }
     }
