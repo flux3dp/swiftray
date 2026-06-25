@@ -308,6 +308,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         return;
     }
 
+    if (gcode.startsWith(";PIXEL SIZE ", Qt::CaseSensitivity::CaseInsensitive)) {
+        // Specific comment for Pixel Size
+        high_speed_step_ = gcode.mid(12).toFloat();
+        return;
+    }
+
     i = re.globalMatch(gcode);
 
     bool is_move_command = false;
@@ -372,7 +378,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "D") {
             if (value == "0") {
                 QChar resolution = gcode.at(3);
-                if (resolution == 'U') high_speed_step_ = 0.025;
+                if (resolution == 'U') high_speed_step_ = 0.02;
                 else if (resolution == 'H') high_speed_step_ = 0.05;
                 else if (resolution == 'L') high_speed_step_ = 0.2;
                 else high_speed_step_ = 0.1;

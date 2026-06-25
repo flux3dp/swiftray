@@ -1162,12 +1162,14 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
     qreal padding_mm) {
 
   // 1. Enter fast raster mode
+  qreal pixel_size = 1/dpmm_;
   gen_->appendCustomCmd(std::string("D0R") +
-        std::string(1/dpmm_ >= 0.2 ? "L" :
-                    1/dpmm_ >= 0.1 ? "M" :
-                    1/dpmm_ >= 0.05 ? "H" : "U") +
+        std::string(pixel_size >= 0.2 ? "L" :
+                    pixel_size >= 0.1 ? "M" :
+                    pixel_size >= 0.05 ? "H" : "U") +
        std::string("\n")
    );
+  gen_->addComment(QString("PIXEL SIZE %1").arg(pixel_size));
 
   // 2. Parsing bitmap data and generate command for each raster line
   bool is_emitting_laser = false;
