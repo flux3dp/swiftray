@@ -940,7 +940,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
   }
   if (s_curve_params) {
     qInfo() << "Turn off s-curve";
-    proc.sync_motion_type2(156);
+    proc.sync_grbl_motion(156);
     proc.set_s_curve_enabled(false);
   }
 }
