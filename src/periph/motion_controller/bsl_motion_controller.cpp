@@ -268,7 +268,7 @@ void BSLMotionController::setUpTaskCtrl() {
   lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
   lcs_set_mark_speed_ctrl(1000);
   lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
-  lcs_set_laser_mode(LCS_MOPA, is_framing_);
+  lcs_set_laser_mode(LCS_CO2, false);
 }
 
 void BSLMotionController::setUpTaskList() {
