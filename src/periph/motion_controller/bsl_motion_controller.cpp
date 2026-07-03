@@ -337,8 +337,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "M") {
             command = type + value;
         } else if (type == "A") {
-            target_a = value.toDouble();
-            is_move_command = true;
+            // target_a = value.toDouble();
+            // is_move_command = true;
         } else if (type == "X") {
             x = value.toDouble();
             is_move_command = true;
@@ -557,12 +557,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         Q_EMIT configUpdate("serial", sn);
       }
     } else if (command == "M100") {
-      // Rotary io: 1st port, 1 -> off, 0 -> on
-      settings.rotary_mode = false;
-      lcs_write_io_port_mask(0b1, 0b1);  // Control instruction
+      // // Rotary io: 1st port, 1 -> off, 0 -> on
+      // settings.rotary_mode = false;
+      // lcs_write_io_port_mask(0b1, 0b1);  // Control instruction
     } else if (command == "M101") {
-      settings.rotary_mode = true;
-      list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
+      // settings.rotary_mode = true;
+      // list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
     } else if (command == "M102") {
       // Z axis io: 2nd port, 1 -> on, 0 -> off
       list_manager_.call(ListApiType::SetIo, 0b10u, 0b10u);
@@ -577,7 +577,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // Force reset position
       lcs_goto_xy(0, 0);
       // Loose motor
-      lcs_write_io_port_mask(0b01, 0b11);
+      lcs_write_io_port_mask(0b00, 0b11);
     } else if (!is_move_command) {
       return;
     }
@@ -914,9 +914,9 @@ void BSLMotionController::startList(int list_no, TaskSettings &settings, bool di
   } else if (settings.wobble_diameter != -1) {
     list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
   }
-  if (settings.rotary_mode) {
-    list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
-  }
+  // if (settings.rotary_mode) {
+  //   list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
+  // }
 }
 
 bool BSLMotionController::executeList(int list_no) {
