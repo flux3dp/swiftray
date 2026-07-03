@@ -16,6 +16,13 @@
 #define MAX_BUFFER_LIST_SIZE 10000
 #define MAX_BUFFER_LIST_TIME 30000
 
+#define PORT_OUT1_MASK 0
+#define PORT_OUT1_HIGH (0b1u << PORT_OUT1_MASK)
+#define PORT_OUT1_LOW 0b0u
+#define PORT_Z_MASK 1
+#define PORT_Z_ON (0b1u << PORT_Z_MASK)
+#define PORT_Z_OFF 0b0u
+
 int lcs_error_count = 0;
 uint32_t pos;
 BoardRunStatus status;
@@ -272,6 +279,7 @@ void BSLMotionController::setUpTaskCtrl() {
 }
 
 void BSLMotionController::setUpTaskList() {
+  list_manager_.call(ListApiType::SetIo, PORT_OUT1_HIGH, PORT_OUT1_MASK);
   lcs_set_standby_list(100, 1);
   lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
   lcs_set_scanner_delays(100, 50);
@@ -546,7 +554,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       should_swap = true;
       should_end = true;
       settings.rotary_mode = false;
-      list_manager_.call(ListApiType::SetIo, 0b01u, 0b11u);
+      list_manager_.call(ListApiType::SetIo, PORT_OUT1_LOW | PORT_Z_OFF, PORT_OUT1_MASK | PORT_Z_MASK);
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
     } else if (command == "M99" ) {
@@ -565,7 +573,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
     } else if (command == "M102") {
       // Z axis io: 2nd port, 1 -> on, 0 -> off
-      list_manager_.call(ListApiType::SetIo, 0b10u, 0b10u);
+      list_manager_.call(ListApiType::SetIo, PORT_Z_ON, PORT_Z_MASK);
     } else if (command == "M103") {
       is_framing_ = true;
       is_running_laser_ = false;
@@ -577,7 +585,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // Force reset position
       lcs_goto_xy(0, 0);
       // Loose motor
-      lcs_write_io_port_mask(0b00, 0b11);
+      lcs_write_io_port_mask(PORT_OUT1_LOW | PORT_Z_OFF, PORT_OUT1_MASK | PORT_Z_MASK);
     } else if (!is_move_command) {
       return;
     }
