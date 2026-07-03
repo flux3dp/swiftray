@@ -349,12 +349,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             z = value.toDouble();
             is_move_command = true;
         } else if (type == "Q") {
-            freq = value.toDouble();
-            settings.period = 1000.0 / freq;
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            // freq = value.toDouble();
+            // settings.period = 1000.0 / freq;
+            // list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
         } else if (type == "P") {
-            settings.pulse_width = value.toInt();
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            // settings.pulse_width = value.toInt();
+            // list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
         } else if (type == "T") {
             dotting_time = value.toInt();
         } else if (type == "F") {
@@ -365,7 +365,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             if (!is_handling_high_speed_) {
                 if (settings.current_s > 0) {
                   laser_enabled = true;
-                  list_manager_.call(ListApiType::SetPower, settings.current_s);
+                  setCo2Power(settings);
                   if (before_first_laser_) {
                     should_flush_ = true;
                   }
@@ -499,8 +499,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
-      settings.period = 10.0;
-      settings.pulse_width = 100;
+      settings.period = 100.0;
+      settings.pulse_width = qMax(1.0, settings.period * settings.current_s / 100);
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
         settings.wobble_step = 0;
@@ -820,6 +820,14 @@ void BSLMotionController::setScanaheadParams(double worksize, double angle, doub
   qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
 }
 
+void BSLMotionController::setCo2Power(TaskSettings &settings) {
+  qInfo() << "BSLM~::setCo2Power() - Setting CO2 Power" << settings.current_s;
+  list_manager_.call(ListApiType::SetPower, settings.current_s);
+  settings.pulse_width = qMax(1.0, settings.period * settings.current_s / 100);
+  qInfo() << "BSLM~::setCo2Power() - Setting CO2 Pulse Width" << settings.pulse_width;
+  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+}
+
 std::mutex state_mutex_;
 BoardRunStatus BSLMotionController::getBoardStatus() {
   std::lock_guard<std::mutex> lock(state_mutex_);
@@ -890,15 +898,16 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
-void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
+void BSLMotionController::startList(int list_no, TaskSettings &settings, bool disable_laser) {
   estimated_time_ = 0;
   list_manager_.resetBackup(list_no, this);
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+  setCo2Power(settings);
+  // list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
-  list_manager_.call(ListApiType::SetPower, settings.current_s);
+  // list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {
     list_manager_.call(ListApiType::SetWobble, settings.wobble_diameter, settings.wobble_diameter, settings.wobble_step, WobbleType::WT_WHEEL);
     list_manager_.setupWobblePosition();

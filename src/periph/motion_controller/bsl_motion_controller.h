@@ -16,8 +16,8 @@ struct TaskSettings {
   // Reset param before start list
   unsigned char current_s = 0;  // 0~100
   double current_f = 100.0;     // Default speed, mm/s
-  double period = 10.0;         // us
-  uint16_t pulse_width = 100;   // ns
+  double period = 100.0;        // us
+  uint16_t pulse_width = 10;    // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
   bool rotary_mode = false;
@@ -66,7 +66,8 @@ private:
   LCS2Error waitListAvailable(int list_no);
   QString getErrorString(int error_code);
   ListStatus getListStatus();
-  void startList(int list_no, TaskSettings settings, bool disable_laser);
+  void startList(int list_no, TaskSettings &settings, bool disable_laser);
+  void setCo2Power(TaskSettings &settings);
   bool executeList(int list_no);
   void checkPauseResume();
   void resetTimer();
