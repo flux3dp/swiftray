@@ -272,6 +272,7 @@ void BSLMotionController::setUpTaskCtrl() {
 }
 
 void BSLMotionController::setUpTaskList() {
+  lcs_set_standby_list(100, 1);
   lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
   lcs_set_scanner_delays(100, 50);
   lcs_set_laser_control(true);
