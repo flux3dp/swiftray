@@ -508,7 +508,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       settings.current_s = 0;
       settings.current_f = 100.0;
       settings.period = 100.0;
-      settings.pulse_width = qMax(1.0, settings.period * settings.current_s / 100);
+      settings.q_pulse_width = 0.021;
+      settings.pulse_width = 1;
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
         settings.wobble_step = 0;
@@ -831,9 +832,9 @@ void BSLMotionController::setScanaheadParams(double worksize, double angle, doub
 void BSLMotionController::setCo2Power(TaskSettings &settings) {
   qInfo() << "BSLM~::setCo2Power() - Setting CO2 Power" << settings.current_s;
   list_manager_.call(ListApiType::SetPower, settings.current_s);
-  settings.pulse_width = qMax(1.0, settings.period * settings.current_s / 100);
-  qInfo() << "BSLM~::setCo2Power() - Setting CO2 Pulse Width" << settings.pulse_width;
-  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+  settings.q_pulse_width = qMax(0.021, settings.period * settings.current_s / 100);
+  qInfo() << "BSLM~::setCo2Power() - Setting CO2 Pulse Width" << settings.q_pulse_width << "with period" << settings.period << "and mopa pulse" << settings.pulse_width;
+  list_manager_.call(ListApiType::SetPulses, settings.period, settings.q_pulse_width, settings.pulse_width);
 }
 
 std::mutex state_mutex_;

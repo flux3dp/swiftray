@@ -17,7 +17,8 @@ struct TaskSettings {
   unsigned char current_s = 0;  // 0~100
   double current_f = 100.0;     // Default speed, mm/s
   double period = 100.0;        // us
-  uint16_t pulse_width = 10;    // ns
+  double q_pulse_width = 0.021; // us
+  uint16_t pulse_width = 1;     // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
   bool rotary_mode = false;
