@@ -16,12 +16,20 @@
 #define MAX_BUFFER_LIST_SIZE 10000
 #define MAX_BUFFER_LIST_TIME 30000
 
-#define PORT_OUT1_MASK 0
-#define PORT_OUT1_HIGH (0b1u << PORT_OUT1_MASK)
+#define USE_OUT1 0
+
+#define PORT_OUT1_BIT 0
+#define PORT_OUT1_MASK (0b1u << PORT_OUT1_BIT)
+#define PORT_OUT1_HIGH ((USE_OUT1 & 0b1u) << PORT_OUT1_BIT)
 #define PORT_OUT1_LOW 0b0u
-#define PORT_Z_MASK 1
-#define PORT_Z_ON (0b1u << PORT_Z_MASK)
+#define PORT_Z_BIT 1
+#define PORT_Z_MASK (0b1u << PORT_Z_BIT)
+#define PORT_Z_ON (0b1u << PORT_Z_BIT)
 #define PORT_Z_OFF 0b0u
+#define PORT_A_BIT 0
+#define PORT_A_MASK (0b1u << PORT_A_BIT)
+#define PORT_A_ON 0b0u
+#define PORT_A_OFF ((!USE_OUT1 & 0b1u) << PORT_A_BIT)
 
 int lcs_error_count = 0;
 uint32_t pos;
@@ -279,7 +287,11 @@ void BSLMotionController::setUpTaskCtrl() {
 }
 
 void BSLMotionController::setUpTaskList() {
+#if USE_OUT1
+  // OUT1 shares IO port bit 0 with the A axis. Only drive OUT1 when USE_OUT1 is
+  // enabled, otherwise leave bit 0 for the A axis to control.
   list_manager_.call(ListApiType::SetIo, PORT_OUT1_HIGH, PORT_OUT1_MASK);
+#endif
   lcs_set_standby_list(100, 1);
   lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
   lcs_set_scanner_delays(100, 50);
@@ -345,8 +357,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "M") {
             command = type + value;
         } else if (type == "A") {
-            // target_a = value.toDouble();
-            // is_move_command = true;
+            target_a = value.toDouble();
+            is_move_command = true;
         } else if (type == "X") {
             x = value.toDouble();
             is_move_command = true;
@@ -555,7 +567,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       should_swap = true;
       should_end = true;
       settings.rotary_mode = false;
-      list_manager_.call(ListApiType::SetIo, PORT_OUT1_LOW | PORT_Z_OFF, PORT_OUT1_MASK | PORT_Z_MASK);
+      list_manager_.call(ListApiType::SetIo, PORT_OUT1_LOW | PORT_Z_OFF | PORT_A_OFF, PORT_OUT1_MASK | PORT_Z_MASK | PORT_A_MASK);
     } else if (command == "M5") {
       qInfo() << "Turn Off Laser";
     } else if (command == "M99" ) {
@@ -566,12 +578,12 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         Q_EMIT configUpdate("serial", sn);
       }
     } else if (command == "M100") {
-      // // Rotary io: 1st port, 1 -> off, 0 -> on
-      // settings.rotary_mode = false;
-      // lcs_write_io_port_mask(0b1, 0b1);  // Control instruction
+      // Rotary io: 1st port, 1 -> off, 0 -> on
+      settings.rotary_mode = false;
+      lcs_write_io_port_mask(PORT_A_OFF, PORT_A_MASK);  // Control instruction
     } else if (command == "M101") {
-      // settings.rotary_mode = true;
-      // list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
+      settings.rotary_mode = true;
+      list_manager_.call(ListApiType::SetIo, PORT_A_ON, PORT_A_MASK);
     } else if (command == "M102") {
       // Z axis io: 2nd port, 1 -> on, 0 -> off
       list_manager_.call(ListApiType::SetIo, PORT_Z_ON, PORT_Z_MASK);
@@ -586,7 +598,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // Force reset position
       lcs_goto_xy(0, 0);
       // Loose motor
-      lcs_write_io_port_mask(PORT_OUT1_LOW | PORT_Z_OFF, PORT_OUT1_MASK | PORT_Z_MASK);
+      lcs_write_io_port_mask(PORT_OUT1_LOW | PORT_Z_OFF | PORT_A_OFF, PORT_OUT1_MASK | PORT_Z_MASK | PORT_A_MASK);
     } else if (!is_move_command) {
       return;
     }
@@ -646,6 +658,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
       z -= z_pos_; // Fix the difference between last move and target
       double real_steps = round(z * PromarkJobConfig::Z_PULSE_PER_MM);
+      qInfo() << "BSLM~::handleGcode() - Z Axis" << z << "mm ->" << real_steps << "steps";
       list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
       estimated_time_ += fabs(z) * PromarkJobConfig::Z_MS_PER_MM;
       z_pos_ = real_steps / PromarkJobConfig::Z_PULSE_PER_MM - z; // Keep the difference between actual move and cmd target
@@ -664,6 +677,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
         double real_steps = round(diff_a * PromarkJobConfig::A_PULSE_PER_MM);
+        qInfo() << "BSLM~::handleGcode() - A Axis" << diff_a << "mm ->" << real_steps << "steps";
         list_manager_.call(ListApiType::MoveAxis, 0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600.0, 255u);
         estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
         a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
@@ -923,9 +937,9 @@ void BSLMotionController::startList(int list_no, TaskSettings &settings, bool di
   } else if (settings.wobble_diameter != -1) {
     list_manager_.call(ListApiType::SetWobble, 0.0, 0.0, 0.0, WobbleType::WT_DISABLE);
   }
-  // if (settings.rotary_mode) {
-  //   list_manager_.call(ListApiType::SetIo, 0b0u, 0b1u);
-  // }
+  if (settings.rotary_mode) {
+    list_manager_.call(ListApiType::SetIo, PORT_A_ON, PORT_A_MASK);
+  }
 }
 
 bool BSLMotionController::executeList(int list_no) {
