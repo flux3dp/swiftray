@@ -5,6 +5,7 @@
 #include <settings/machine-settings.h>
 #include <cmath>
 #include <QDebug>
+#include "estimate_time.cpp"
 
 /*
 Basic GCode Generator for Grbl like machines.
@@ -209,20 +210,7 @@ public:
 
   void setWobble(double wobble_step, double wobble_diameter) override {
     str_stream_ << "WS" << wobble_step << "WD" << wobble_diameter << std::endl;
-    // Estimate wobble time multiplier (not accurate)
-    double wobble_k = 1;
-    if (wobble_step > 0 && wobble_diameter > 0) {
-      wobble_k = M_PI * wobble_diameter / wobble_step + 1;
-      if (wobble_step <= 0.1) {
-        if (wobble_diameter <= 0.1) {
-          wobble_k *= 2.5;
-        } else if (wobble_diameter <= 0.2) {
-          wobble_k *= wobble_step <= 0.01 ? 1.27 : 1.2;
-        } else {
-          wobble_k *= 1.05;
-        }
-      }
-    }
+    double wobble_k = calculate_wobble_k(wobble_step, wobble_diameter);
     addComment(QString("WOBBLE K %1").arg(wobble_k));
   }
 

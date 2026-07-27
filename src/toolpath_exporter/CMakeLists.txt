@@ -6,7 +6,9 @@ target_sources(Swiftray PRIVATE
   toolpath-utils.cpp
   factories/base-factory.cpp
   factories/factory-utils.cpp
+  factories/fluence-emitter.cpp
   factories/laser-path.cpp
+  factories/laser-path-filled.cpp
   factories/laser.cpp
   factories/printer-4c.cpp
   factories/printer.cpp

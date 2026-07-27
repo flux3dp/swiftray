@@ -2,10 +2,12 @@
 
 #include "factory-types.h"
 #include "workspace.h"
+#include "fluence-emitter.h"
 #include "toolpath_exporter/generators/fcode-generator.h"
 #include "toolpath_exporter/macros/base-macros.h"
 #include <QImage>
 #include <QVector>
+#include <functional>
 
 class BaseFactory {
  protected:
@@ -19,10 +21,48 @@ class BaseFactory {
   QTransform transform;  // px
   QRect clip_rect;       // px
 
+  // Galvo block emission: when non-empty, the task is emitted one block at a
+  // time, using the block regions (mm) resolved by the exporter (the same
+  // blocks_ used for paths, incl. the single-block case). block_start_cb_(i) and
+  // block_end_cb_() wrap each emitted block (enter/exit Promark mode + head move
+  // via ToolpathExporterFcode::startPromarkTask/endPromarkTask). Empty => emit
+  // the whole task in one pass.
+  QVector<QRectF> block_regions_mm_;
+  std::function<void(int)> block_start_cb_;
+  std::function<void()> block_end_cb_;
+
+  // Dev fluence / CO2-tube compensation (see FluenceEmitter). Off by default
+  // (FluenceStrategy::Baseline) unless the exporter enables it.
+  FluenceEmitter fluence_;
+  double fluence_power_pct_ = 100;  // tube setpoint for the ramp model
+
  public:
   BaseFactory(const FactoryKwargs& kwargs) noexcept;
   void handleCancel();
   QTransform get_transform();
+
+  // Configure the dev fluence handler (values owned by the exporter). power is
+  // the tube setpoint; the nominal speed is taken from the generate call.
+  void set_fluence_config(const FluenceConfig& config) {
+    fluence_.set_config(config);
+  }
+  void set_fluence_power(double power_pct) { fluence_power_pct_ = power_pct; }
+
+  // Emit the task one block at a time using the exporter's resolved blocks
+  // (`regions_mm`, mm). block_start(i)/block_end() wrap each block. Pass an empty
+  // list (or call clear_blocks()) to emit the whole task in one pass.
+  void set_blocks(const QVector<QRectF>& regions_mm,
+                  std::function<void(int)> block_start,
+                  std::function<void()> block_end) {
+    block_regions_mm_ = regions_mm;
+    block_start_cb_ = std::move(block_start);
+    block_end_cb_ = std::move(block_end);
+  }
+  void clear_blocks() {
+    block_regions_mm_.clear();
+    block_start_cb_ = nullptr;
+    block_end_cb_ = nullptr;
+  }
 };
 
 class BaseBitmapFactory : public BaseFactory {
@@ -36,6 +76,7 @@ class BaseBitmapFactory : public BaseFactory {
   bool split_bbox = false;
   QSize work_area;
   QSizeF work_area_mm;
+  QSizeF block_size_;  // mm; kept for FactoryKwargs compatibility (unused)
   double pixel_size;
   double pixel_size_x;
 

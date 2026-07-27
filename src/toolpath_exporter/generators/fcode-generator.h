@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRectF>
+#include <initializer_list>
 #include <vector>
 
 #define FORWARD_TO_GENERATOR(FUNC)                           \
@@ -73,6 +74,7 @@ class FCodeGenerator {
                      unsigned long* crc32_ptr,
                      bool to_all) = 0;
   void write(float value, unsigned long* crc32);
+  void write(double value, unsigned long* crc32);
   void write(uint32_t value, unsigned long* crc32, bool to_all = false);
   void write(uint16_t value, unsigned long* crc32);
   void write(uint8_t value, unsigned long* crc32);
@@ -145,6 +147,36 @@ class FCodeGenerator {
                       float s);
   void flux_custom_cmd(uint32_t val);
   void one_seg_custom_cmd(int type, uint8_t cmd);
+  // Promark mode, V2 only
+  // BSL (galvo/Promark) command payload. Keeps the outer command byte 23 and
+  // encodes the data like the reference galvo-command format: uint16 opcode
+  // (LE), uint8 param count, then each param as a float64 (LE).
+  void write_bsl_command(uint16_t opcode, std::initializer_list<double> params);
+  void enter_promark_mode(void); // TODO: check rotary, red light
+  void set_promark_block_center(float x, float y);
+  void set_promark_pulse(float period, float pulse_length, uint16_t mopa_pulse);
+  void set_promark_dotting_time(int dotting_time);
+  void set_promark_wobble(float step, float diameter); // with wobble k
+  void overwrite_promark_gradient_resolution(float resolution);
+  void exit_promark_mode(void);
+  void start_promark_task(void);
+  // Grouped Promark setup commands (opcodes 8/9/10), matching the execution
+  // end's Promark API call groups. 8/9 map to direct lcs_set_* calls; 10's axis
+  // ratios are saved on the execution end for MoveAxis + time estimation.
+  void set_promark_motion_ctrl(double jump_speed,
+                               double mark_speed,
+                               int jump_delay_min,
+                               int jump_delay_max,
+                               int jump_delay_limit);
+  void set_promark_laser_scanner_delays(int laser_on_delay,
+                                        int laser_off_delay,
+                                        int scanner_mark_delay,
+                                        int scanner_polygon_delay);
+  void set_promark_axis_config(double z_pulse_per_mm,
+                               double z_pulse_per_sec,
+                               double a_pulse_per_mm,
+                               double a_pulse_per_sec);
+  // End of Promark mode
 
   // v1 only
   virtual void terminated() {};
@@ -406,6 +438,17 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(set_printer_packet_crc)
   FORWARD_TO_GENERATOR(sync_grbl_motion)
   FORWARD_TO_GENERATOR(flux_custom_cmd)
+  FORWARD_TO_GENERATOR(enter_promark_mode)
+  FORWARD_TO_GENERATOR(set_promark_block_center)
+  FORWARD_TO_GENERATOR(set_promark_pulse)
+  FORWARD_TO_GENERATOR(set_promark_dotting_time)
+  FORWARD_TO_GENERATOR(set_promark_wobble)
+  FORWARD_TO_GENERATOR(overwrite_promark_gradient_resolution)
+  FORWARD_TO_GENERATOR(exit_promark_mode)
+  FORWARD_TO_GENERATOR(start_promark_task)
+  FORWARD_TO_GENERATOR(set_promark_motion_ctrl)
+  FORWARD_TO_GENERATOR(set_promark_laser_scanner_delays)
+  FORWARD_TO_GENERATOR(set_promark_axis_config)
   FORWARD_TO_GENERATOR(end_content)
   FORWARD_TO_GENERATOR(add_metadata)
   FORWARD_TO_GENERATOR(write_string)

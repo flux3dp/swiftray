@@ -39,6 +39,7 @@ struct FactoryKwargs {
   QPointF offset;
   bool split_bbox = false;
   int fg_pwm_limit = 0;
+  QSizeF block_size;  // mm; when non-empty, raster is split into block-sized boxes
 };
 
 struct GenerateTaskKwargs {

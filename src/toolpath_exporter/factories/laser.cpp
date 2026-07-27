@@ -25,11 +25,65 @@ void LaserBitmapFactory::add_filled_path(QPainterPath& path,
   get_workspace(index, true)->add_filled_path(path, bbox);
 }
 
-QVector<QRect> LaserBitmapFactory::get_iteration_data(int padding_pixel) {
+// FIXME: padding arg not used
+// Whole-raster iteration boxes (non-block path). Block-split tasks instead use
+// the exporter's blocks via set_blocks()/generate_task_code().
+QVector<QRect> LaserBitmapFactory::get_iteration_data(int padding_pixel,
+                                                      bool reverse_y) {
   auto workspace = get_workspace();
-  return get_bounding_boxes(workspace->get_bitmap(), workspace->get_dirty_area(),
-                            padding_pixel, padding_pixel, 5, split_bbox,
-                            pixel_per_mm / 5);
+  QVector<QRect> boxes =
+      get_bounding_boxes(workspace->get_bitmap(), workspace->get_dirty_area(),
+                         padding_px, padding_px, 5, split_bbox, pixel_per_mm / 5);
+  qInfo() << "boxes" << boxes;
+  // Ordering (previously done by the caller): engrave from the far side first
+  // when !reverse_y. This reverses only the Y (band) order.
+  qInfo() << "reverse_y" << reverse_y;
+  if (!reverse_y) {
+    std::reverse(boxes.begin(), boxes.end());
+  }
+  return boxes;
+}
+
+QRect LaserBitmapFactory::block_region_to_px(const QRectF& region_mm) const {
+  // Round both edges the same way so that adjacent blocks (which share a mm
+  // border) tile the pixel grid with no gap and no overlap.
+  int px_l = std::lround(region_mm.left() * pixel_per_mm_x);
+  int px_r = std::lround(region_mm.right() * pixel_per_mm_x);
+  int px_t = std::lround(region_mm.top() * pixel_per_mm);
+  int px_b = std::lround(region_mm.bottom() * pixel_per_mm);
+  return QRect(px_l, px_t, px_r - px_l, px_b - px_t);
+}
+
+void LaserBitmapFactory::iterate_region(const QRect& region,
+                                        bool reverse_y,
+                                        ScanMethod method,
+                                        QImage* src_bitmap,
+                                        int pass) {
+  if (!region.isValid()) {
+    return;
+  }
+  // Cross-pass: alternate the serpentine phase per pass so runs reverse
+  // direction between passes (residual lead-in deficits land on opposite ends).
+  bool reverse_x = (pass & 1) != 0;
+  int x = region.x(), y = region.y(), w = region.width(), h = region.height();
+  int step = pwm_engraving && fg_pwm_limit
+                 ? std::max(fg_pwm_limit - padding_px * 2, 100)
+                 : w;
+  for (int left = x; left < x + w; left += step) {
+    int right = std::min(left + step, x + w);
+    for (int yy = 0; yy < h; yy++) {
+      int i = reverse_y ? (y + h - 1 - yy) : (y + yy);
+      double real_y = pixel_to_actual_position(left, i).y();
+      real_y = std::round((real_y - offset.y()) * 100) / 100.0;
+      bool engraved = (this->*method)(src_bitmap->constScanLine(i),
+                                      left,   // inclusive
+                                      right,  // exclusive
+                                      real_y, reverse_x);
+      if (engraved && !one_way) {
+        reverse_x = !reverse_x;
+      }
+    }
+  }
 }
 
 void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
@@ -64,11 +118,7 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   padding_dist = kwargs.padding_dist;
   padding_px = get_padding_pixels(padding_dist);
 
-  QVector<QRect> bboxes = get_iteration_data(padding_px);
-  if (!kwargs.reverse_y) {
-    std::reverse(bboxes.begin(), bboxes.end());
-  }
-  bool (LaserBitmapFactory::*method)(const uchar*, int, int, float, bool) = nullptr;
+  ScanMethod method = nullptr;
   if (kwargs.support_fast_gradient) {
     if (pwm_engraving) {
       method = &LaserBitmapFactory::fg_iterate_x_pwm;
@@ -78,40 +128,44 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   } else {
     method = &LaserBitmapFactory::iterate_x;
   }
-
-  bool reverse_x;
-  int x, y, w, h;
-  int step, left, right;
-  int yy, i;
-  double real_y;
-  bool engraved;
   QImage* src_bitmap = workspace->get_bitmap();
-  for (auto bbox : bboxes) {
-    reverse_x = false;
-    if (!bbox.isValid()) {
-      continue;
+
+  // Dev fluence handler runs on the plain (non-fast-gradient) raster path only.
+  fluence_.set_run_params(fluence_power_pct_, speed);
+  // Cross-pass repeats each block N times with alternating run direction; the
+  // tube envelope is tracked continuously across the passes (reset per block).
+  const int passes = fluence_.active() ? fluence_.cross_pass() : 1;
+  auto emit_region = [&](const QRect& region) {
+    fluence_.begin_block();  // reset the tube envelope per block/tile
+    for (int pass = 0; pass < passes; pass++) {
+      iterate_region(region, kwargs.reverse_y, method, src_bitmap, pass);
     }
-    x = bbox.x();
-    y = bbox.y();
-    w = bbox.width();
-    h = bbox.height();
-    step = pwm_engraving && fg_pwm_limit
-               ? std::max(fg_pwm_limit - padding_px * 2, 100)
-               : w;
-    for (left = x; left < x + w; left += step) {
-      right = std::min(left + step, x + w);
-      for (yy = 0; yy < h; yy++) {
-        i = kwargs.reverse_y ? (y + h - 1 - yy) : (y + yy);
-        real_y = pixel_to_actual_position(left, i).y();
-        real_y = std::round((real_y - offset.y()) * 100) / 100.0;
-        engraved = (this->*method)(src_bitmap->constScanLine(i),
-                                   left,   // inclusive
-                                   right,  // exclusive
-                                   real_y, reverse_x);
-        if (engraved && !one_way) {
-          reverse_x = !reverse_x;
-        }
+  };
+
+  if (!block_regions_mm_.isEmpty()) {
+    // Block-split task: emit one block at a time using the exporter's blocks
+    // (the same blocks_ used for paths, or a single block when the layer fits
+    // the galvo field). Only blocks that overlap the dirty area are emitted,
+    // each wrapped by the start/end callbacks (enter/exit Promark mode).
+    QRect dirty = workspace->get_dirty_area().toAlignedRect();
+    for (int bi = 0; bi < block_regions_mm_.size(); bi++) {
+      QRect region = block_region_to_px(block_regions_mm_[bi]).intersected(dirty);
+      if (region.isEmpty()) {
+        continue;  // no content in this block
       }
+      if (block_start_cb_) {
+        block_start_cb_(bi);
+      }
+      emit_region(region);
+      if (block_end_cb_) {
+        block_end_cb_();
+      }
+    }
+  } else {
+    // Whole-raster task: get_iteration_data() applies far-side-first ordering.
+    QVector<QRect> bboxes = get_iteration_data(padding_px, kwargs.reverse_y);
+    for (const QRect& bbox : bboxes) {
+      emit_region(bbox);
     }
   }
   if (kwargs.support_fast_gradient) {
@@ -250,11 +304,59 @@ bool LaserBitmapFactory::fg_iterate_x(const uchar* data,
   return true;
 }
 
+bool LaserBitmapFactory::iterate_x_fluence(const uchar* data,
+                                           int l,
+                                           int r,
+                                           float y,
+                                           bool reverse) {
+  // Detect contiguous dark pixel runs and hand each to the fluence emitter,
+  // which owns laser gating + ramp-compensating speed segmentation. The emitter
+  // works in machine mm, so convert pixel edges the same way iterate_x does
+  // (clamp >=0, subtract offset, add backlash on forward scans).
+  auto edge_to_machine = [&](int edge_px) -> double {
+    float v = pixel_size_x * edge_px;
+    v = qMax(v, 0.0f) - offset.x();
+    if (!reverse) {
+      v += backlash;
+    }
+    return v;
+  };
+  QVector<QPair<int, int>> spans;  // inclusive [c0, c1] dark column ranges
+  int start = -1;
+  for (int c = l; c < r; c++) {
+    if (data[c] < WHITE_PIXEL) {
+      if (start < 0) start = c;
+    } else if (start >= 0) {
+      spans.append({start, c - 1});
+      start = -1;
+    }
+  }
+  if (start >= 0) spans.append({start, r - 1});
+  if (spans.isEmpty()) {
+    return false;
+  }
+  if (reverse) std::reverse(spans.begin(), spans.end());
+  for (const QPair<int, int>& s : spans) {
+    // Run spans the outer edges of the dark pixel range, in traverse direction.
+    double left = edge_to_machine(s.first);
+    double right = edge_to_machine(s.second + 1);
+    if (reverse) {
+      fluence_.emit_run(QPointF(right, y), QPointF(left, y));
+    } else {
+      fluence_.emit_run(QPointF(left, y), QPointF(right, y));
+    }
+  }
+  return true;
+}
+
 bool LaserBitmapFactory::iterate_x(const uchar* data,
                                    int l,
                                    int r,
                                    float y,
                                    bool reverse) {
+  if (fluence_.active()) {
+    return iterate_x_fluence(data, l, r, y, reverse);
+  }
   bool is_emitting = false;      // current_laser_val
   bool should_emitting = false;  // laser_value
   bool has_moved_x = false, has_moved_y = false;

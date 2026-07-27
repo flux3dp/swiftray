@@ -8,6 +8,7 @@
 #include "toolpath-exporter-constants.h"
 #include "toolpath_exporter/factories/base-factory.h"
 #include "toolpath_exporter/factories/laser-path.h"
+#include "toolpath_exporter/factories/laser-path-filled.h"
 #include "toolpath_exporter/generators/fcode-generator.h"
 #include "toolpath_exporter/macros/base-macros.h"
 #include "layer.h"
@@ -91,6 +92,12 @@ struct Config {
   float nozzle_voltage = NAN;
   float nozzle_pulse_width = NAN;
   int watt = 0;
+  // mm. Work area is split into blocks of this size for galvo (Promark) tasks.
+  QSizeF block_size = QSizeF(0, 0);
+  // mm. Galvo addressable field; always larger than block_size. When a layer's
+  // dirty area fits within this field the task is emitted in one shot, without
+  // splitting into blocks (the galvo covers it from a single head position).
+  QSizeF galvo_size = QSizeF(0, 0);
 };
 
 class ToolpathExporterFcode : public QObject {
@@ -117,22 +124,52 @@ class ToolpathExporterFcode : public QObject {
   std::unique_ptr<BaseBitmapFactory> factory_;
   std::unique_ptr<BaseBitmapFactory> laser_filled_factory_;  // Use another factory to keep filled path data
   std::unique_ptr<LaserPathFactory> laser_path_factory_;
+  // Promark only: vector hatch-fill for filled paths (see LaserPathFilledFactory).
+  std::unique_ptr<LaserPathFilledFactory> laser_filled_path_factory_;
   QVector<std::shared_ptr<Workspace>> workspaces_ = {};
   QVector<ShapePtr> laser_bitmaps_;
 
   // Basic config
   Config config_;
+  // Dev-only fluence / CO2-tube compensation config (from the laser-phy-
+  // simulator). Deliberately kept out of Config; the values are set in the
+  // constructor and pushed to the laser factories in preprocessLaserLayer().
+  FluenceConfig dev_fluence_;
   HardwareType hardware_ = HardwareType::Beambox;
   HardwareProfile hw_profile;
   SupportInfo support_info;
   std::shared_ptr<BaseMacros> macros;
   int magic_number_ = 0;
   bool is_v2_ = false;
+  // Promark (galvo) machines emit vector hatch fills for filled paths instead
+  // of rasterizing them (see LaserPathFilledFactory / convertPath).
+  bool is_promark_ = false;
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
   bool has_job_origin_ = false;
   bool has_printing_task_ = false;
   QSizeF work_area_mm_;
+  // One head position in the galvo block grid. The head is moved to head_pos and
+  // the galvo addresses the field around it; head_block is the sub-region this
+  // head is responsible for (adjacent head_blocks tile the work area with no
+  // overlap). block is head_block after applying module offsets.
+  struct Block {
+    QPointF head_pos;   // mm, where the head is moved to (centre of head_block)
+    QRectF head_block;  // mm, region this head is responsible for
+    QRectF block;       // mm, head_block after applying module offsets
+    QRectF block_px;    // px, kept for now (may be unused)
+    int row_index = 0;  // grid row, for serpentine ordering across rows
+    int col_index = 0;  // grid column
+  };
+  // Work area subdivided into blocks of Config::block_size (mm). Empty when
+  // block splitting is disabled (empty block_size).
+  QVector<Block> blocks_;
+  // Per-layer: true when the layer's dirty area fits the galvo field, so the
+  // layer is emitted as a single block instead of iterating the grid.
+  bool single_block_ = false;
+  // Per-layer: combined dirty area of the current laser layer's content (mm),
+  // accumulated while shapes are converted in preprocessLaserLayer().
+  QRectF layer_dirty_area_mm_;
   QTransform transform_base_ = QTransform::fromScale(1.0 / CANVAS_MM_RATIO, 1.0 / CANVAS_MM_RATIO);
 
   // Updated for each layer
@@ -179,6 +216,7 @@ class ToolpathExporterFcode : public QObject {
   int progress_ = 0;
 
   void parseParam(const QJsonObject& paramPtr);
+  void splitWorkarea();
   void setTransform(QTransform transform = QTransform());
   InwardRect getClipRect(InwardRect current, QPointF offset, LayerModule module, bool rotary = false);
   void onProgressChanged(double value, bool absolute);
@@ -186,9 +224,21 @@ class ToolpathExporterFcode : public QObject {
   void convertLayer();
   void preprocessLaserLayer();
   void convertLaserLayer();
-  void outputLayerPathFcode();
+  void outputLayerPathFcode(const Block* block = nullptr);
+  // True when `size` (mm) fits within the galvo field (Config::galvo_size).
+  bool fitsInGalvo(const QSizeF& size) const;
+  // Build a single block centred on `dirty_area_mm` (galvo one-shot emission).
+  Block makeSingleBlock(const QRectF& dirty_area_mm) const;
   void outputBitmapFcode();
   void convertPrintingLayer();
+  // Block-split laser task (Config::block_size). The layer is drawn and
+  // pre-processed once on the full work area (single workspace); each block is
+  // then emitted as an isolated task from a sub-region of that workspace, in the
+  // order: for each subtype (path/filled/bitmap) -> for each block, with the
+  // head repositioned (initial move) at the start of each block.
+  void startPromarkTask(const Block& block);
+  void endPromarkTask();
+  void emitLaserBlocks();
   // Sub task / block
   void outputPrintingTestFcode();
   void writePreviewImage();

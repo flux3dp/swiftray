@@ -10,6 +10,10 @@ void FCodeGenerator::write(float value, unsigned long* crc32) {
   write((const char*)&value, 4, crc32);
 }
 
+void FCodeGenerator::write(double value, unsigned long* crc32) {
+  write((const char*)&value, 8, crc32);
+}
+
 // to_all: to full fcode or to task content, v2 only
 void FCodeGenerator::write(uint32_t value, unsigned long* crc32, bool to_all) {
   write((const char*)&value, sizeof(uint32_t), crc32, to_all);
@@ -268,6 +272,91 @@ void FCodeGenerator::flux_custom_cmd(uint32_t val) {
 void FCodeGenerator::one_seg_custom_cmd(int type, uint8_t cmd) {
   write_command(type, &script_crc32);
   write(cmd, &script_crc32);
+}
+
+void FCodeGenerator::write_bsl_command(uint16_t opcode,
+                                       std::initializer_list<double> params) {
+  write_command(23, &script_crc32);
+  write(opcode, &script_crc32);                    // uint16 opcode (LE)
+  write(uint8_t(params.size()), &script_crc32);    // param count
+  for (double p : params) {
+    write(p, &script_crc32);                       // float64 (LE)
+  }
+}
+
+void FCodeGenerator::enter_promark_mode(void) {
+  qInfo() << "enter_promark_mode() called";
+  write_bsl_command(0, {});
+}
+
+void FCodeGenerator::set_promark_block_center(float x, float y) {
+  qInfo() << "set_promark_block_center() called with x:" << x << "y:" << y;
+  write_bsl_command(1, {x, y});
+}
+
+void FCodeGenerator::set_promark_pulse(float period, float pulse_length, uint16_t mopa_pulse) {
+  qInfo() << "set_promark_pulse() called with period:" << period << "pulse_length:" << pulse_length << "mopa_pulse:" << mopa_pulse;
+  write_bsl_command(2, {period, pulse_length, double(mopa_pulse)});
+}
+
+void FCodeGenerator::set_promark_dotting_time(int dotting_time) {
+  qInfo() << "set_promark_dotting_time() called with dotting_time:" << dotting_time;
+  write_bsl_command(3, {double(dotting_time)});
+}
+
+void FCodeGenerator::set_promark_wobble(float step, float diameter) {
+  qInfo() << "set_promark_wobble() called with step:" << step << "diameter:" << diameter;
+  float wobble_k = calculate_wobble_k(step, diameter);
+  qInfo() << "Calculated wobble_k:" << wobble_k;
+  write_bsl_command(4, {step, diameter, wobble_k});
+}
+
+void FCodeGenerator::overwrite_promark_gradient_resolution(float resolution) {
+  qInfo() << "overwrite_promark_gradient_resolution() called with resolution:" << resolution;
+  write_bsl_command(5, {resolution});
+}
+
+void FCodeGenerator::exit_promark_mode(void) {
+  qInfo() << "exit_promark_mode() called";
+  write_bsl_command(6, {});
+}
+
+void FCodeGenerator::start_promark_task(void) {
+  qInfo() << "start_promark_task() called";
+  write_bsl_command(7, {});
+}
+
+void FCodeGenerator::set_promark_motion_ctrl(double jump_speed,
+                                             double mark_speed,
+                                             int jump_delay_min,
+                                             int jump_delay_max,
+                                             int jump_delay_limit) {
+  qInfo() << "set_promark_motion_ctrl() jump_speed:" << jump_speed
+          << "mark_speed:" << mark_speed << "jump_delay:" << jump_delay_min
+          << jump_delay_max << jump_delay_limit;
+  write_bsl_command(8, {jump_speed, mark_speed, double(jump_delay_min),
+                        double(jump_delay_max), double(jump_delay_limit)});
+}
+
+void FCodeGenerator::set_promark_laser_scanner_delays(int laser_on_delay,
+                                                      int laser_off_delay,
+                                                      int scanner_mark_delay,
+                                                      int scanner_polygon_delay) {
+  qInfo() << "set_promark_laser_scanner_delays() laser:" << laser_on_delay
+          << laser_off_delay << "scanner:" << scanner_mark_delay
+          << scanner_polygon_delay;
+  write_bsl_command(9, {double(laser_on_delay), double(laser_off_delay),
+                        double(scanner_mark_delay), double(scanner_polygon_delay)});
+}
+
+void FCodeGenerator::set_promark_axis_config(double z_pulse_per_mm,
+                                             double z_pulse_per_sec,
+                                             double a_pulse_per_mm,
+                                             double a_pulse_per_sec) {
+  qInfo() << "set_promark_axis_config() z:" << z_pulse_per_mm << z_pulse_per_sec
+          << "a:" << a_pulse_per_mm << a_pulse_per_sec;
+  write_bsl_command(10, {z_pulse_per_mm, z_pulse_per_sec, a_pulse_per_mm,
+                         a_pulse_per_sec});
 }
 
 // ==================== FCodeGeneratorV1 ====================

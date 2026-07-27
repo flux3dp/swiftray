@@ -103,3 +103,21 @@ static float estimate_time(float last_speed, float last_vel_n, float last_vel_t,
   // NOTE: the de-acceleration of last_vel_t may need to be combined with de-acceleration for last_vel_n
   return last_vel_n / (2 * last_acc) + powf(last_vel_t - vel, 2) / (2 * last_acc * last_vel_t) + dist / vel;
 }
+
+static double calculate_wobble_k(double wobble_step, double wobble_diameter) {
+  // Estimate wobble time multiplier (not accurate)
+  double wobble_k = 1;
+  if (wobble_step > 0 && wobble_diameter > 0) {
+    wobble_k = M_PI * wobble_diameter / wobble_step + 1;
+    if (wobble_step <= 0.1) {
+      if (wobble_diameter <= 0.1) {
+        wobble_k *= 2.5;
+      } else if (wobble_diameter <= 0.2) {
+        wobble_k *= wobble_step <= 0.01 ? 1.27 : 1.2;
+      } else {
+        wobble_k *= 1.05;
+      }
+    }
+  }
+  return wobble_k;
+}

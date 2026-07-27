@@ -1,4 +1,8 @@
 #include "laser-path.h"
+#include <QLineF>
+#include <cmath>
+
+
 
 LaserPathFactory::LaserPathFactory(const FactoryKwargs& kwargs) noexcept
     : BaseFactory(kwargs) {
@@ -33,6 +37,25 @@ void LaserPathFactory::preprocess() {
   preprocessed = true;
 }
 
+void LaserPathFactory::set_block_clip(const QRectF& block) {
+  // Convert into px
+  block_clip_ = QRectF(block.left() * pixel_per_mm_x, block.top() * pixel_per_mm,
+                       block.width() * pixel_per_mm_x, block.height() * pixel_per_mm);
+  block_clip_ = block_clip_.intersected(clip_rect);
+  has_block_clip_ = true;
+  // Merge block area with clip area
+  path_utils.setClipRect(block_clip_.top(), block_clip_.right(), block_clip_.bottom(), block_clip_.left());
+  if (preprocessed) {
+    // Restore the original polygons for block processing.
+    polygons = polygons_backup;
+    preprocessed = false;
+  } else {
+    // First block, save a copy (QT copy-on-write) of the original polygons for later restoration.
+    polygons_backup = polygons;
+  }
+  preprocess();
+}
+
 void LaserPathFactory::generate_task_code(float path_speed) {
   speed = path_speed;
   current_pwm = 0;
@@ -44,6 +67,7 @@ void LaserPathFactory::generate_task_code(float path_speed) {
     walk_path(poly.first(), false);
     for (QPointF& point : poly) {
       walk_path(point, true);
+      qInfo() << "Walked to" << point << "in block" << block_clip_;
     }
     walk_path(poly.last(), false);
   }

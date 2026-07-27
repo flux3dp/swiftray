@@ -16,6 +16,7 @@ BaseFactory::BaseFactory(const FactoryKwargs& kwargs) noexcept
   clip_rect.setBottom(
       (kwargs.work_area_mm.height() - kwargs.clip_rect_mm.bottom) *
       pixel_per_mm);
+  fluence_.set_processor(proc);
 }
 
 void BaseFactory::handleCancel() {
@@ -30,7 +31,8 @@ BaseBitmapFactory::BaseBitmapFactory(const FactoryKwargs& kwargs) noexcept
     : BaseFactory(kwargs),
       one_way(kwargs.one_way),
       split_bbox(kwargs.split_bbox),
-      work_area_mm(kwargs.work_area_mm) {
+      work_area_mm(kwargs.work_area_mm),
+      block_size_(kwargs.block_size) {
   if (kwargs.workspaces) {
     workspaces = kwargs.workspaces;
   } else {
