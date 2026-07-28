@@ -326,37 +326,45 @@ void FCodeGenerator::start_promark_task(void) {
   write_bsl_command(7, {});
 }
 
-void FCodeGenerator::set_promark_motion_ctrl(double jump_speed,
-                                             double mark_speed,
-                                             int jump_delay_min,
-                                             int jump_delay_max,
-                                             int jump_delay_limit) {
-  qInfo() << "set_promark_motion_ctrl() jump_speed:" << jump_speed
-          << "mark_speed:" << mark_speed << "jump_delay:" << jump_delay_min
+void FCodeGenerator::set_promark_jump_speed_ctrl(double jump_speed) {
+  qInfo() << "set_promark_jump_speed_ctrl() jump_speed:" << jump_speed;
+  write_bsl_command(8, {jump_speed});
+}
+
+void FCodeGenerator::set_promark_mark_speed_ctrl(double mark_speed) {
+  qInfo() << "set_promark_mark_speed_ctrl() mark_speed:" << mark_speed;
+  write_bsl_command(9, {mark_speed});
+}
+
+void FCodeGenerator::set_promark_delay_mode(int jump_delay_min,
+                                            int jump_delay_max,
+                                            int jump_delay_limit) {
+  qInfo() << "set_promark_delay_mode() jump_delay:" << jump_delay_min
           << jump_delay_max << jump_delay_limit;
-  write_bsl_command(8, {jump_speed, mark_speed, double(jump_delay_min),
-                        double(jump_delay_max), double(jump_delay_limit)});
+  write_bsl_command(
+      10, {double(jump_delay_min), double(jump_delay_max), double(jump_delay_limit)});
 }
 
-void FCodeGenerator::set_promark_laser_scanner_delays(int laser_on_delay,
-                                                      int laser_off_delay,
-                                                      int scanner_mark_delay,
-                                                      int scanner_polygon_delay) {
-  qInfo() << "set_promark_laser_scanner_delays() laser:" << laser_on_delay
-          << laser_off_delay << "scanner:" << scanner_mark_delay
+void FCodeGenerator::set_promark_laser_delays(int laser_on_delay,
+                                              int laser_off_delay) {
+  qInfo() << "set_promark_laser_delays() laser:" << laser_on_delay
+          << laser_off_delay;
+  write_bsl_command(11, {double(laser_on_delay), double(laser_off_delay)});
+}
+
+void FCodeGenerator::set_promark_scanner_delays(int scanner_mark_delay,
+                                                int scanner_polygon_delay) {
+  qInfo() << "set_promark_scanner_delays() scanner:" << scanner_mark_delay
           << scanner_polygon_delay;
-  write_bsl_command(9, {double(laser_on_delay), double(laser_off_delay),
-                        double(scanner_mark_delay), double(scanner_polygon_delay)});
+  write_bsl_command(12, {double(scanner_mark_delay), double(scanner_polygon_delay)});
 }
 
-void FCodeGenerator::set_promark_axis_config(double z_pulse_per_mm,
-                                             double z_pulse_per_sec,
-                                             double a_pulse_per_mm,
-                                             double a_pulse_per_sec) {
-  qInfo() << "set_promark_axis_config() z:" << z_pulse_per_mm << z_pulse_per_sec
-          << "a:" << a_pulse_per_mm << a_pulse_per_sec;
-  write_bsl_command(10, {z_pulse_per_mm, z_pulse_per_sec, a_pulse_per_mm,
-                         a_pulse_per_sec});
+void FCodeGenerator::set_promark_axis_config(int axis,
+                                             double pulse_per_mm,
+                                             double pulse_per_sec) {
+  qInfo() << "set_promark_axis_config() axis:" << axis << "ppm:" << pulse_per_mm
+          << "pps:" << pulse_per_sec;
+  write_bsl_command(13, {double(axis), pulse_per_mm, pulse_per_sec});
 }
 
 // ==================== FCodeGeneratorV1 ====================

@@ -143,6 +143,8 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   };
 
   if (!block_regions_mm_.isEmpty()) {
+    padding_dist = 0;
+    padding_px = 0;
     // Block-split task: emit one block at a time using the exporter's blocks
     // (the same blocks_ used for paths, or a single block when the layer fits
     // the galvo field). Only blocks that overlap the dirty area are emitted,
@@ -354,7 +356,7 @@ bool LaserBitmapFactory::iterate_x(const uchar* data,
                                    int r,
                                    float y,
                                    bool reverse) {
-  if (fluence_.active()) {
+  if (fluence_.active() && !mock_fast_gradient) {
     return iterate_x_fluence(data, l, r, y, reverse);
   }
   bool is_emitting = false;      // current_laser_val

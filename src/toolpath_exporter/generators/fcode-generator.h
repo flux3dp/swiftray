@@ -160,22 +160,21 @@ class FCodeGenerator {
   void overwrite_promark_gradient_resolution(float resolution);
   void exit_promark_mode(void);
   void start_promark_task(void);
-  // Grouped Promark setup commands (opcodes 8/9/10), matching the execution
-  // end's Promark API call groups. 8/9 map to direct lcs_set_* calls; 10's axis
-  // ratios are saved on the execution end for MoveAxis + time estimation.
-  void set_promark_motion_ctrl(double jump_speed,
-                               double mark_speed,
-                               int jump_delay_min,
-                               int jump_delay_max,
-                               int jump_delay_limit);
-  void set_promark_laser_scanner_delays(int laser_on_delay,
-                                        int laser_off_delay,
-                                        int scanner_mark_delay,
-                                        int scanner_polygon_delay);
-  void set_promark_axis_config(double z_pulse_per_mm,
-                               double z_pulse_per_sec,
-                               double a_pulse_per_mm,
-                               double a_pulse_per_sec);
+  // Promark setup commands (opcodes 8-13), one per execution-end lcs API call.
+  void set_promark_jump_speed_ctrl(double jump_speed);   // 8  -> lcs_set_jump_speed_ctrl
+  void set_promark_mark_speed_ctrl(double mark_speed);   // 9  -> lcs_set_mark_speed_ctrl
+  void set_promark_delay_mode(int jump_delay_min,        // 10 -> lcs_set_delay_mode
+                              int jump_delay_max,
+                              int jump_delay_limit);
+  void set_promark_laser_delays(int laser_on_delay,      // 11 -> lcs_set_laser_delays
+                                int laser_off_delay);
+  void set_promark_scanner_delays(int scanner_mark_delay,  // 12 -> lcs_set_scanner_delays
+                                  int scanner_polygon_delay);
+  // 13: axis pulse ratios, saved on the execution end (no API call). axis: 0 = A,
+  // 1 = Z (matches the MoveAxis index). Send once per axis.
+  void set_promark_axis_config(int axis,
+                               double pulse_per_mm,
+                               double pulse_per_sec);
   // End of Promark mode
 
   // v1 only
@@ -446,8 +445,11 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(overwrite_promark_gradient_resolution)
   FORWARD_TO_GENERATOR(exit_promark_mode)
   FORWARD_TO_GENERATOR(start_promark_task)
-  FORWARD_TO_GENERATOR(set_promark_motion_ctrl)
-  FORWARD_TO_GENERATOR(set_promark_laser_scanner_delays)
+  FORWARD_TO_GENERATOR(set_promark_jump_speed_ctrl)
+  FORWARD_TO_GENERATOR(set_promark_mark_speed_ctrl)
+  FORWARD_TO_GENERATOR(set_promark_delay_mode)
+  FORWARD_TO_GENERATOR(set_promark_laser_delays)
+  FORWARD_TO_GENERATOR(set_promark_scanner_delays)
   FORWARD_TO_GENERATOR(set_promark_axis_config)
   FORWARD_TO_GENERATOR(end_content)
   FORWARD_TO_GENERATOR(add_metadata)

@@ -289,7 +289,15 @@ LaserPathFilledFactory::split_into_blocks(const QVector<FillSegment>& segments,
   for (const FillSegment& seg : segments) {
     QRectF seg_box = QRectF(seg.start, seg.end).normalized();
     for (int i = 0; i < block_regions_mm_.size(); i++) {
-      if (!block_regions_mm_[i].intersects(seg_box)) continue;
+      // Inclusive AABB overlap: QRectF::intersects() needs a positive-area
+      // intersection, so a horizontal (seg_box height 0) or vertical (width 0)
+      // segment would be wrongly rejected. This edge-inclusive test is correct
+      // for degenerate boxes; clipSegmentToRect() then does the exact clip.
+      const QRectF& r = block_regions_mm_[i];
+      if (seg_box.left() > r.right() || seg_box.right() < r.left() ||
+          seg_box.top() > r.bottom() || seg_box.bottom() < r.top()) {
+        continue;
+      }
       QPointF a = seg.start, b = seg.end;
       if (clipSegmentToRect(a, b, block_regions_mm_[i])) {
         blocks[i].segments.append({a, b});

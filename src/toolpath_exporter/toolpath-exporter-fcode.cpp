@@ -35,41 +35,6 @@ ToolpathExporterFcode::ToolpathExporterFcode(
     const QString* thumbnail) noexcept {
   qInfo() << "ToolpathExporterFcode init";
 
-  // ---- Dev fluence / CO2-tube compensation config -------------------------
-  // Ported from the laser-phy-simulator (tools/generate-fcode.ts `Options`
-  // defaults + src/core/types.ts `DEFAULT_MACHINE`). These are developer knobs
-  // for pre-compensating the tube's power-envelope ramp; edit here to tune. The
-  // defaults keep the handler OFF (FluenceStrategy::Baseline) so emission is
-  // unchanged until a strategy/lever is enabled.
-  dev_fluence_.physics.laser_ramp_up_s = 0.00068;   // laserRampUpS
-  dev_fluence_.physics.laser_ramp_down_s = 0.0001;  // laserRampDownS
-  // Promark hardware config (formerly PromarkJobConfig in src/constants.h), now
-  // dynamically adjustable and pushed to the execution end as {23,8/9/10} cmds.
-  dev_fluence_.baseline.jump_speed_mm_s = 4000;     // JUMP_SPEED
-  dev_fluence_.baseline.mark_speed_ctrl = 1000;
-  dev_fluence_.baseline.jump_delay_min = 200;       // JUMP_DELAY_MIN
-  dev_fluence_.baseline.jump_delay_max = 400;       // JUMP_DELAY_MAX
-  dev_fluence_.baseline.jump_delay_limit = 10;
-  dev_fluence_.baseline.laser_on_delay_us = -100;   // LASER_ON_DELAY
-  dev_fluence_.baseline.laser_off_delay_us = 100;   // LASER_OFF_DELAY
-  dev_fluence_.baseline.scanner_mark_delay_us = 100;
-  dev_fluence_.baseline.scanner_polygon_delay_us = 50;
-  dev_fluence_.baseline.z_pulse_per_mm = 1600;      // Z_PULSE_PER_MM
-  dev_fluence_.baseline.z_pulse_per_sec = 4800;     // Z_PULSE_PER_SEC
-  dev_fluence_.baseline.a_pulse_per_mm = 63;        // A_PULSE_PER_MM
-  dev_fluence_.baseline.a_pulse_per_sec = 3200;     // A_PULSE_PER_SEC
-  dev_fluence_.optimization.strategy = FluenceStrategy::Baseline;  // --strategy
-  dev_fluence_.optimization.adaptive = false;    // --adaptive-speed
-  dev_fluence_.optimization.carryover = false;   // --carryover-aware
-  dev_fluence_.optimization.tail_comp = false;   // --tail-comp
-  dev_fluence_.optimization.edge_ext = false;    // --edge-ext
-  dev_fluence_.optimization.edge_ext_mm = 0.0;   // mm (dev free value)
-  dev_fluence_.optimization.cross_pass = 1;      // --cross-pass
-  dev_fluence_.optimization.ramp_steps = 3;      // --ramp-steps
-  dev_fluence_.optimization.comp_down = false;   // --comp-down
-  dev_fluence_.list.galvo_list_capacity = 8192;  // galvoListCapacity
-  // -------------------------------------------------------------------------
-
   parseParam(*param);
 
   if (is_v2_) {
@@ -273,6 +238,59 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     }
     config_.z_acc = param["curve_engraving"].toObject()["acceleration"].toDouble(NAN);
   }
+
+
+  // ---- Dev fluence / CO2-tube compensation config -------------------------
+  // Ported from the laser-phy-simulator (tools/generate-fcode.ts `Options`
+  // defaults + src/core/types.ts `DEFAULT_MACHINE`). These are developer knobs
+  // for pre-compensating the tube's power-envelope ramp; edit here to tune. The
+  // defaults keep the handler OFF (FluenceStrategy::Baseline) so emission is
+  // unchanged until a strategy/lever is enabled.
+  dev_fluence_.physics.laser_ramp_up_s = param["laser_ramp_up_s"].toDouble(0.00068);   // laserRampUpS
+  dev_fluence_.physics.laser_ramp_down_s = param["laser_ramp_down_s"].toDouble(0.0001);  // laserRampDownS
+  // Promark hardware config (formerly PromarkJobConfig in src/constants.h), now
+  // dynamically adjustable and pushed to the execution end as {23,8/9/10} cmds.
+  dev_fluence_.baseline.jump_speed_mm_s = param["jump_speed_mm_s"].toDouble(4000);     // JUMP_SPEED
+  dev_fluence_.baseline.mark_speed_ctrl = param["mark_speed_ctrl"].toDouble(1000);
+  dev_fluence_.baseline.jump_delay_min = param["jump_delay_min"].toDouble(200);       // JUMP_DELAY_MIN
+  dev_fluence_.baseline.jump_delay_max = param["jump_delay_max"].toDouble(400);       // JUMP_DELAY_MAX
+  dev_fluence_.baseline.jump_delay_limit = param["jump_delay_limit"].toDouble(10);
+  dev_fluence_.baseline.laser_on_delay_us = param["laser_on_delay_us"].toDouble(-100);   // LASER_ON_DELAY
+  dev_fluence_.baseline.laser_off_delay_us = param["laser_off_delay_us"].toDouble(100);   // LASER_OFF_DELAY
+  dev_fluence_.baseline.scanner_mark_delay_us = param["scanner_mark_delay_us"].toDouble(100);
+  dev_fluence_.baseline.scanner_polygon_delay_us = param["scanner_polygon_delay_us"].toDouble(50);
+  dev_fluence_.baseline.z_pulse_per_mm = param["z_pulse_per_mm"].toDouble(1600);      // Z_PULSE_PER_MM
+  dev_fluence_.baseline.z_pulse_per_sec = param["z_pulse_per_sec"].toDouble(4800);     // Z_PULSE_PER_SEC
+  dev_fluence_.baseline.a_pulse_per_mm = param["a_pulse_per_mm"].toDouble(63);        // A_PULSE_PER_MM
+  dev_fluence_.baseline.a_pulse_per_sec = param["a_pulse_per_sec"].toDouble(3200);     // A_PULSE_PER_SEC
+  QString strategy_str = param["strategy"].toString();
+  if (strategy_str == "RampComp") {
+    dev_fluence_.optimization.strategy = FluenceStrategy::RampComp;
+  } else if (strategy_str == "Optimized") {
+    dev_fluence_.optimization.strategy = FluenceStrategy::Optimized;
+  } else {
+    dev_fluence_.optimization.strategy = FluenceStrategy::Baseline;
+  }
+  dev_fluence_.optimization.adaptive = param["adaptive"].toBool(false);    // --adaptive-speed
+  dev_fluence_.optimization.carryover = param["carryover"].toBool(false);   // --carryover-aware
+  dev_fluence_.optimization.tail_comp = param["tail_comp"].toBool(false);   // --tail-comp
+  dev_fluence_.optimization.edge_ext = param["edge_ext"].toBool(false);    // --edge-ext
+  dev_fluence_.optimization.edge_ext_mm = param["edge_ext_mm"].toDouble(0.0);   // mm (dev free value)
+  dev_fluence_.optimization.cross_pass = param["cross_pass"].toInt(1);      // --cross-pass
+  dev_fluence_.optimization.ramp_steps = param["ramp_steps"].toInt(3);      // --ramp-steps
+  dev_fluence_.optimization.comp_down = param["comp_down"].toBool(false);   // --comp-down
+  dev_fluence_.list.galvo_list_capacity = 8192;  // galvoListCapacity
+  bool segmented = dev_fluence_.optimization.adaptive ||
+    dev_fluence_.optimization.strategy == FluenceStrategy::RampComp;
+  if (segmented) {
+    qInfo() << "Force off delay due to segmented mode";
+    dev_fluence_.baseline.laser_on_delay_us = 0;
+    dev_fluence_.baseline.laser_off_delay_us = 0;
+    dev_fluence_.baseline.scanner_mark_delay_us = 0;
+    dev_fluence_.baseline.scanner_polygon_delay_us = 0;
+  }
+  // -------------------------------------------------------------------------
+
 }
 
 void ToolpathExporterFcode::splitWorkarea() {
@@ -971,7 +989,7 @@ void ToolpathExporterFcode::convertLaserLayer() {
   // Part 2: Generate filled path fcode
   if (is_promark_) {
     // No blocks set: the factory emits the fill as a single pass.
-    laser_filled_path_factory_->generate_task_code(layer_path_speed_);
+    laser_filled_path_factory_->generate_task_code(layer_speed_);
   } else {
     outputBitmapFcode();
   }
@@ -1004,14 +1022,15 @@ void ToolpathExporterFcode::startPromarkTask(const Block& block) {
   // execution end's API call groups. 8/9 map to direct lcs_set_* calls, 10's
   // axis ratios are saved on the execution end for MoveAxis + time estimation.
   const FluenceBaselineConfig& bsl = dev_fluence_.baseline;
-  proc.set_promark_motion_ctrl(bsl.jump_speed_mm_s, bsl.mark_speed_ctrl,
-                               bsl.jump_delay_min, bsl.jump_delay_max,
-                               bsl.jump_delay_limit);
-  proc.set_promark_laser_scanner_delays(
-      bsl.laser_on_delay_us, bsl.laser_off_delay_us, bsl.scanner_mark_delay_us,
-      bsl.scanner_polygon_delay_us);
-  proc.set_promark_axis_config(bsl.z_pulse_per_mm, bsl.z_pulse_per_sec,
-                               bsl.a_pulse_per_mm, bsl.a_pulse_per_sec);
+  proc.set_promark_jump_speed_ctrl(bsl.jump_speed_mm_s);
+  // proc.set_promark_mark_speed_ctrl(bsl.mark_speed_ctrl);
+  proc.set_promark_delay_mode(bsl.jump_delay_min, bsl.jump_delay_max,
+                              bsl.jump_delay_limit);
+  proc.set_promark_laser_delays(bsl.laser_on_delay_us, bsl.laser_off_delay_us);
+  proc.set_promark_scanner_delays(bsl.scanner_mark_delay_us,
+                                  bsl.scanner_polygon_delay_us);
+  proc.set_promark_axis_config(1, bsl.z_pulse_per_mm, bsl.z_pulse_per_sec);  // Z
+  proc.set_promark_axis_config(0, bsl.a_pulse_per_mm, bsl.a_pulse_per_sec);  // A
   proc.set_promark_block_center(block.head_pos.x() - layer_offset_.x(),
                                 block.head_pos.y() - layer_offset_.y());
   proc.set_promark_pulse(current_layer_->frequency(), 1, current_layer_->pulseWidth());
@@ -1082,7 +1101,7 @@ void ToolpathExporterFcode::emitLaserBlocks() {
   // emitted block-by-block by the bitmap factory (set_blocks above).
   convert_target_ = ConvertTarget::NON_BITMAP;
   if (is_promark_) {
-    laser_filled_path_factory_->generate_task_code(layer_path_speed_);
+    laser_filled_path_factory_->generate_task_code(layer_speed_);
   } else {
     outputBitmapFcode();
   }
@@ -1610,7 +1629,22 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     factory_->set_pwm_engraving(config_.enable_pwm && bmp->pwm());
     // In block mode the factory emits this bitmap block-by-block, using the
     // block list from set_blocks() (see emitLaserBlocks()).
+    bool enable_fast_gradient = config_.enable_fast_gradient;
+    bool enable_mock_fast_gradient = config_.enable_mock_fast_gradient;
+    if (is_promark_) {
+      if (bmp->gradient()) {
+        proc.set_promark_dotting_time(current_layer_->dottingTime());
+      } else {
+        config_.enable_fast_gradient = false;
+        config_.enable_mock_fast_gradient = false;
+      }
+    }
     outputBitmapFcode();
+    if (is_promark_) {
+      proc.set_promark_dotting_time(0);
+      config_.enable_fast_gradient = enable_fast_gradient;
+      config_.enable_mock_fast_gradient = enable_mock_fast_gradient;
+    }
     factory_->get_workspace()->invalidate();
   }
 }
