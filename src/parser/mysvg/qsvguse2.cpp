@@ -29,7 +29,8 @@ Q_LOGGING_CATEGORY(lcSvgDraw, "qt.svg.draw")
 QSvgUse2::QSvgUse2(const QPointF &start, QSvgNode *parent, QSvgNode *node)
     : QSvgNode(parent), m_link(node), m_start(start), m_recursing(false)
 {
-    m_linkId = node->nodeId();
+    if (m_link)
+        m_linkId = m_link->nodeId();
 }
 
 void QSvgUse2::drawCommand(QPainter *p, QSvgExtraStates &states)
