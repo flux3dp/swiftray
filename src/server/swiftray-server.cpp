@@ -333,7 +333,7 @@ void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, c
   if (action == "getInfo") {
     QJsonObject info;
     info["swiftrayVersion"] = QString("%1.%2.%3").arg(VERSION_MAJOR).arg(VERSION_MINOR).arg(VERSION_BUILD);
-    info["devVersion"] = "3";
+    info["devVersion"] = "4";
     info["qtVersion"] = QT_VERSION_STR;
     info["os"] = QSysInfo::prettyProductName();
     info["cpuArchitecture"] = QSysInfo::currentCpuArchitecture();
