@@ -4,9 +4,18 @@
 void Workspace::setup_canvas() {
   if (bitmap_ready) return;
   if (bitmap.width() >= canvas_width && bitmap.height() >= canvas_height) {
-    // Clear old content
+    // Clear old content.
+    // fillRect() rasterizes without antialiasing, so it only paints pixels whose
+    // *center* falls inside the rect. Passing the fractional dirty area directly
+    // would therefore leave the partially covered edge pixels untouched, even
+    // though drawImage()/drawPath() did write to them. Snap outward to whole
+    // pixels instead, and pass a QRect so no float rounding happens again here.
     QPainter painter(&bitmap);
-    painter.fillRect(bitmap_dirty_area, Qt::white);
+    QRect clear_rect = bitmap_dirty_area
+                           .toAlignedRect()  // smallest whole-pixel rect containing the dirty area
+                           .adjusted(-1, -1, 1, 1)  // margin: drawn content can exceed the recorded bbox by a pixel
+                           .intersected(bitmap.rect());  // stay inside the image
+    painter.fillRect(clear_rect, Qt::white);
   } else {
     // Create new bitmap
     bitmap = QImage(canvas_width, canvas_height, QImage::Format_Grayscale8);
