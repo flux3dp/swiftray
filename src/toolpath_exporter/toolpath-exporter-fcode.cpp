@@ -1019,11 +1019,12 @@ void ToolpathExporterFcode::startPromarkTask(const Block& block) {
                   .set_is_travel());
   proc.enter_promark_mode();
   // Push the (dynamically adjustable) Promark hardware config, grouped by the
-  // execution end's API call groups. 8/9 map to direct lcs_set_* calls, 10's
-  // axis ratios are saved on the execution end for MoveAxis + time estimation.
+  // execution end's API call groups. These must come AFTER enter_promark_mode:
+  // 8/9 are list commands and would be dropped with no list open. 13's axis
+  // ratios are saved on the execution end for MoveAxis + time estimation.
   const FluenceBaselineConfig& bsl = dev_fluence_.baseline;
-  proc.set_promark_jump_speed_ctrl(bsl.jump_speed_mm_s);
-  // proc.set_promark_mark_speed_ctrl(bsl.mark_speed_ctrl);
+  proc.set_promark_jump_speed(bsl.jump_speed_mm_s);
+  // proc.set_promark_mark_speed(bsl.mark_speed_ctrl);
   proc.set_promark_delay_mode(bsl.jump_delay_min, bsl.jump_delay_max,
                               bsl.jump_delay_limit);
   proc.set_promark_laser_delays(bsl.laser_on_delay_us, bsl.laser_off_delay_us);
@@ -1033,7 +1034,24 @@ void ToolpathExporterFcode::startPromarkTask(const Block& block) {
   proc.set_promark_axis_config(0, bsl.a_pulse_per_mm, bsl.a_pulse_per_sec);  // A
   proc.set_promark_block_center(block.head_pos.x() - layer_offset_.x(),
                                 block.head_pos.y() - layer_offset_.y());
-  proc.set_promark_pulse(current_layer_->frequency(), 1, current_layer_->pulseWidth());
+  // {23,2} takes (period us, pulse_length us, mopa pulse ns) -- the three
+  // arguments of lcs_set_laser_pulses. The layer stores a FREQUENCY in kHz, so
+  // it has to be converted here: the GCode path emits "Q<frequency>" and the
+  // execution end converts (period = 1000 / freq), but the binary path stores
+  // the value straight into settings.period, so passing the raw frequency made
+  // a kHz number be read as a microsecond period.
+  //
+  // frequency 0 means "not configured for promark" -- the GCode path guards its
+  // Q/P words the same way (ToolpathExporter::preprocessLaserLayer), so skip the
+  // command entirely and let the execution end keep its own defaults rather than
+  // dividing by zero.
+  const int freq_khz = current_layer_->frequency();
+  if (freq_khz > 0) {
+    proc.set_promark_pulse(1000.0 / freq_khz, 1, current_layer_->pulseWidth());
+  } else {
+    qWarning() << "[Export] Layer frequency is 0; skipping set_promark_pulse"
+               << "(execution end keeps its default pulse settings)";
+  }
   // TODO: if with wobble set wobble
   // TODO: add a sync_motion?
   qInfo() << "[Export] Move to block" << block.head_block << "head"

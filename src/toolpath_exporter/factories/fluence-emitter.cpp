@@ -71,9 +71,10 @@ void FluenceEmitter::travel_to(const QPointF& p) {
 
 void FluenceEmitter::travel_at(const QPointF& p, double v_mm_s) {
   // Gate-off jump at speed v. On the galvo the jump speed comes from
-  // lcs_set_jump_speed_ctrl (driven by the {23,8} jump-speed command), NOT from
-  // a per-move feed, so set the jump speed and then jump.
-  proc_->set_promark_jump_speed_ctrl(std::max(v_mm_s, 1e-6));
+  // lcs_set_jump_speed (driven by the {23,8} jump-speed command), NOT from a
+  // per-move feed, so set the jump speed and then jump. {23,8} is a list
+  // command, so it sequences correctly with the jump that follows it.
+  proc_->set_promark_jump_speed(std::max(v_mm_s, 1e-6));
   set_pwm(0);
   proc_->moveto(NamedArgs().rx(p.x()).ry(p.y()).set_is_travel());
 }

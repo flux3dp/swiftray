@@ -31,14 +31,19 @@ struct LaserPhysicsConfig {
 // PromarkJobConfig values (swiftray src/constants.h), now dynamically adjustable
 // and pushed to the execution end as {23} Promark commands. Grouped by the
 // Promark API call that consumes them:
-//   * motion ctrl        -> lcs_set_jump_speed_ctrl / _mark_speed_ctrl / _delay_mode
+//   * speed (list cmds)   -> lcs_set_jump_speed / lcs_set_mark_speed
+//   * motion ctrl         -> lcs_set_delay_mode
 //   * laser/scanner delay -> lcs_set_laser_delays / lcs_set_scanner_delays
 //   * axis config         -> saved on the execution end for MoveAxis + timing
 struct FluenceBaselineConfig {
+  // --- speed: {23,8} / {23,9}, list commands issued after enter_promark_mode ---
+  double jump_speed_mm_s = 4000;   // lcs_set_jump_speed (also the fluence
+                                   // emitter's jump/travel speed, re-sent per travel)
+  // NOTE: the field name keeps its "_ctrl" suffix because it is also the
+  // persisted settings key ("mark_speed_ctrl"); only the opcode function was
+  // renamed. Maps to lcs_set_mark_speed.
+  double mark_speed_ctrl = 1000;
   // --- motion ctrl (setUpTaskCtrl) ---
-  double jump_speed_mm_s = 4000;   // lcs_set_jump_speed_ctrl (also the fluence
-                                   // emitter's jump/travel speed)
-  double mark_speed_ctrl = 1000;   // lcs_set_mark_speed_ctrl
   int jump_delay_min = 200;        // lcs_set_delay_mode min (us)
   int jump_delay_max = 400;        // lcs_set_delay_mode max (us)
   int jump_delay_limit = 10;       // lcs_set_delay_mode limit

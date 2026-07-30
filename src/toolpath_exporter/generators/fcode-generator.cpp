@@ -294,8 +294,10 @@ void FCodeGenerator::set_promark_block_center(float x, float y) {
   write_bsl_command(1, {x, y});
 }
 
+// period: MICROSECONDS, not a frequency -- convert at the call site
+// (period_us = 1000 / frequency_kHz). See set_promark_pulse() in the header.
 void FCodeGenerator::set_promark_pulse(float period, float pulse_length, uint16_t mopa_pulse) {
-  qInfo() << "set_promark_pulse() called with period:" << period << "pulse_length:" << pulse_length << "mopa_pulse:" << mopa_pulse;
+  qInfo() << "set_promark_pulse() called with period(us):" << period << "pulse_length(us):" << pulse_length << "mopa_pulse(ns):" << mopa_pulse;
   write_bsl_command(2, {period, pulse_length, double(mopa_pulse)});
 }
 
@@ -326,13 +328,13 @@ void FCodeGenerator::start_promark_task(void) {
   write_bsl_command(7, {});
 }
 
-void FCodeGenerator::set_promark_jump_speed_ctrl(double jump_speed) {
-  qInfo() << "set_promark_jump_speed_ctrl() jump_speed:" << jump_speed;
+void FCodeGenerator::set_promark_jump_speed(double jump_speed) {
+  qInfo() << "set_promark_jump_speed() jump_speed:" << jump_speed;
   write_bsl_command(8, {jump_speed});
 }
 
-void FCodeGenerator::set_promark_mark_speed_ctrl(double mark_speed) {
-  qInfo() << "set_promark_mark_speed_ctrl() mark_speed:" << mark_speed;
+void FCodeGenerator::set_promark_mark_speed(double mark_speed) {
+  qInfo() << "set_promark_mark_speed() mark_speed:" << mark_speed;
   write_bsl_command(9, {mark_speed});
 }
 

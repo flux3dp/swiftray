@@ -154,6 +154,13 @@ class FCodeGenerator {
   void write_bsl_command(uint16_t opcode, std::initializer_list<double> params);
   void enter_promark_mode(void); // TODO: check rotary, red light
   void set_promark_block_center(float x, float y);
+  // 2 -> lcs_set_laser_pulses(period, pulse_length, pulse_width), passed through
+  // verbatim by the execution end. UNITS: period is microseconds (NOT the
+  // layer's kHz frequency -- convert with 1000/freq), pulse_length microseconds,
+  // mopa_pulse nanoseconds.
+  // mopa_pulse 0 means "leave unchanged" -- the execution end keeps the pulse
+  // width already in effect, which is how an unset layer pulseWidth() is passed
+  // on without turning the MOPA pulse off.
   void set_promark_pulse(float period, float pulse_length, uint16_t mopa_pulse);
   void set_promark_dotting_time(int dotting_time);
   void set_promark_wobble(float step, float diameter); // with wobble k
@@ -161,8 +168,11 @@ class FCodeGenerator {
   void exit_promark_mode(void);
   void start_promark_task(void);
   // Promark setup commands (opcodes 8-13), one per execution-end lcs API call.
-  void set_promark_jump_speed_ctrl(double jump_speed);   // 8  -> lcs_set_jump_speed_ctrl
-  void set_promark_mark_speed_ctrl(double mark_speed);   // 9  -> lcs_set_mark_speed_ctrl
+  // 8/9 are LIST commands (lcs_set_jump_speed / lcs_set_mark_speed), so they
+  // sequence with the surrounding moves and may be re-sent mid-block. Both are
+  // only valid after enter_promark_mode(), which opens the list.
+  void set_promark_jump_speed(double jump_speed);   // 8  -> lcs_set_jump_speed
+  void set_promark_mark_speed(double mark_speed);   // 9  -> lcs_set_mark_speed
   void set_promark_delay_mode(int jump_delay_min,        // 10 -> lcs_set_delay_mode
                               int jump_delay_max,
                               int jump_delay_limit);
@@ -445,8 +455,8 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(overwrite_promark_gradient_resolution)
   FORWARD_TO_GENERATOR(exit_promark_mode)
   FORWARD_TO_GENERATOR(start_promark_task)
-  FORWARD_TO_GENERATOR(set_promark_jump_speed_ctrl)
-  FORWARD_TO_GENERATOR(set_promark_mark_speed_ctrl)
+  FORWARD_TO_GENERATOR(set_promark_jump_speed)
+  FORWARD_TO_GENERATOR(set_promark_mark_speed)
   FORWARD_TO_GENERATOR(set_promark_delay_mode)
   FORWARD_TO_GENERATOR(set_promark_laser_delays)
   FORWARD_TO_GENERATOR(set_promark_scanner_delays)
