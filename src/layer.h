@@ -101,6 +101,8 @@ public:
   double ceZLimit() const;
   int interpolation() const;
   double rightPadding() const;
+  int printingTopPadding() const;
+  int printingBotPadding() const;
   int uvPrintingRepeat() const;
   int uvCuringAfter() const;
   int uvCuringRepeat() const;
@@ -201,6 +203,9 @@ private:
   // UV configs
   int interpolation_ = 1;
   double right_padding_ = 0;
+  // px, -1 for unset, overrides the global printing paddings when >= 0
+  int printing_top_padding_ = -1;
+  int printing_bot_padding_ = -1;
   int uv_printing_repeat_ = 1;
   int uv_curing_after_ = 0;
   int uv_curing_repeat_ = 1;

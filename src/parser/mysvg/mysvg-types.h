@@ -68,6 +68,9 @@ namespace MySVG {
         double ce_z_limit;
         int interpolation;
         double right_padding;
+        // px, -1 for unset, overrides the global printing paddings when >= 0
+        int printing_top_padding;
+        int printing_bot_padding;
         int uv_printing_repeat;
         int uv_curing_after;
         int uv_curing_repeat;

@@ -1006,8 +1006,11 @@ void ToolpathExporterFcode::convertPrintingLayer() {
     }
     factory_->set_slice_width(config_.printing_slice_width);
     factory_->set_slice_height(config_.printing_slice_height);
-    factory_->set_slice_top_padding(config_.printing_top_padding);
-    factory_->set_slice_bot_padding(config_.printing_bot_padding);
+    // layer padding (data-printingTopPadding / data-printingBotPadding) overrides global
+    int layer_top_padding = current_layer_->printingTopPadding();
+    int layer_bot_padding = current_layer_->printingBotPadding();
+    factory_->set_slice_top_padding(layer_top_padding >= 0 ? layer_top_padding : config_.printing_top_padding);
+    factory_->set_slice_bot_padding(layer_bot_padding >= 0 ? layer_bot_padding : config_.printing_bot_padding);
   } else if (is_uv_layer_) {
     kwargs.interpolation = current_layer_->interpolation();
     factory_ = std::make_unique<UVBitmapFactory>(kwargs);
