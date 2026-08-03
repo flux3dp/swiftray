@@ -2934,6 +2934,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.interpolation = getAttr(attributes, "data-interpolation", default_config, "interpolation", 1);
         layer_config.right_padding = getAttr(attributes, "data-rightPadding", default_config, "right_padding", 0.0);
+        layer_config.printing_top_padding = getAttr(attributes, "data-printingTopPadding", default_config, "printingTopPadding", -1);
+        layer_config.printing_bot_padding = getAttr(attributes, "data-printingBotPadding", default_config, "printingBotPadding", -1);
         layer_config.uv_printing_repeat = getAttr(attributes, "data-uvPrintingRepeat", default_config, "uv_printing_repeat", 1);
         layer_config.uv_curing_after = getAttr(attributes, "data-uvCuringAfter", default_config, "uv_curing_after", 0);
         layer_config.uv_curing_repeat = getAttr(attributes, "data-uvCuringRepeat", default_config, "uv_curing_repeat", 1);

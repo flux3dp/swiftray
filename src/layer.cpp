@@ -170,6 +170,10 @@ int Layer::interpolation() const { return interpolation_; }
 
 double Layer::rightPadding() const { return right_padding_; }
 
+int Layer::printingTopPadding() const { return printing_top_padding_; }
+
+int Layer::printingBotPadding() const { return printing_bot_padding_; }
+
 int Layer::uvPrintingRepeat() const { return uv_printing_repeat_; }
 
 int Layer::uvCuringAfter() const { return uv_curing_after_; }
@@ -310,6 +314,8 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->ce_z_limit_ = config.ce_z_limit;
   this->interpolation_ = config.interpolation;
   this->right_padding_ = config.right_padding;
+  this->printing_top_padding_ = config.printing_top_padding;
+  this->printing_bot_padding_ = config.printing_bot_padding;
   this->uv_printing_repeat_ = config.uv_printing_repeat;
   this->uv_curing_after_ = config.uv_curing_after;
   this->uv_curing_repeat_ = config.uv_curing_repeat;
