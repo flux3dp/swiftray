@@ -110,8 +110,7 @@ struct SCurveParameters {
 };
 
 std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
-                                                       float speed,
-                                                       bool is_high_quality = false);
+                                                       float speed);
 
 /**
  * Compute the S-curve acceleration padding distance from explicit motion

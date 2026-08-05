@@ -155,7 +155,11 @@ bool LaserBitmapFactory::fg_iterate_x_pwm(const uchar* data,
     left_x += backlash;
     right_x += backlash;
   }
-  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y).set_is_travel());
+  // y-step at normal travel speed, then x return at working speed if it is
+  // faster than travel speed
+  float return_vel = qMax(speed, proc->get_travel_speed());
+  proc->moveto(NamedArgs().ry(y).set_is_travel());
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).rf(return_vel).set_is_travel());
   proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y));  // for 3d curve, move z to start position
   proc->set_line_pixels(pixel_number);
 
@@ -221,7 +225,11 @@ bool LaserBitmapFactory::fg_iterate_x(const uchar* data,
     left_x += backlash;
     right_x += backlash;
   }
-  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y).set_is_travel());
+  // y-step at normal travel speed, then x return at working speed if it is
+  // faster than travel speed
+  float return_vel = qMax(speed, proc->get_travel_speed());
+  proc->moveto(NamedArgs().ry(y).set_is_travel());
+  proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).rf(return_vel).set_is_travel());
   proc->moveto(NamedArgs().rx(reverse ? right_x : left_x).ry(y));  // for 3d curve, move z to start position
   proc->set_line_pixels(pixel_number);
 
