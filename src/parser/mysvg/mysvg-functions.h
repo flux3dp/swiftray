@@ -142,7 +142,8 @@ namespace MySVG {
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
                           double g_scale, QColor &g_color, QImage &g_image, QRectF g_bbox = QRectF(),
-                          bool g_gradient = true, int g_threshold = 128, bool g_pwm = false, int g_pass = 0, double g_zstep = 0) {
+                          bool g_gradient = true, int g_threshold = 128, bool g_pwm = false, int g_pass = 0, double g_zstep = 0,
+                          StlPlacement g_stl_placement = StlPlacement()) {
         qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
@@ -171,7 +172,13 @@ namespace MySVG {
                     ((QSvgFillStyle*)fillStyle)->fillOpacity() != 0 &&
                     ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
             n.color = g_color;
-            if (n.fill) {
+            n.stl_placement = g_stl_placement;
+            // esther review: actually, the rect itself is visible
+            // An STL placeholder rect carries no visible style, so it would be dropped by both
+            // skip rules below. It must survive: the mesh is engraved through it.
+            if (n.stl_placement.isValid()) {
+                qInfo() << "STL placeholder rect" << n.stl_placement.id;
+            } else if (n.fill) {
                 if (qGray(((QSvgFillStyle*)fillStyle)->qbrush().color().rgba()) > MAX_BITMAP_THRESHOLD) {
                     // Note: use fill instead g_color in case fill and stroke have different color
                     qInfo() << "Path has white fill, skip element";

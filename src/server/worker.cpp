@@ -1,6 +1,7 @@
 #include "worker.h"
 #include "swiftray-server.h"
 #include <QCoreApplication>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <executor/machine_job/machine_job.h>
 #include <toolpath_exporter/convex-hull-exporter.h>
@@ -69,6 +70,33 @@ bool Worker::handleAction(QWebSocket* socket,
     server_->m_canvas->loadSVG(svg_data_bytes, true, default_config);
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
+
+    // esther review: FIXME
+    // STL meshes for inner engraving. Keyed by the id of the placeholder rect in the SVG.
+    // NOTE: the mesh is base64 inside the JSON payload -- processBinaryMessage() decodes the whole
+    //       frame as UTF-8, so raw binary would be corrupted. See TODO-backend.md section A.
+    server_->m_stl_objects.clear();
+    const QJsonObject stl_objects = params_obj["stlObjects"].toObject();
+    QJsonArray failed_stl_objects;
+    for (auto it = stl_objects.constBegin(); it != stl_objects.constEnd(); ++it) {
+      const QString base64 = it.value().isObject() ? it.value().toObject()["data"].toString()
+                                                   : it.value().toString();
+      QByteArray mesh_data = QByteArray::fromBase64(base64.toLatin1());
+      stl::Mesh mesh;
+      QString error;
+      if (!stl::readMesh(mesh_data, &mesh, &error)) {
+        qWarning() << "Failed to parse STL object" << it.key() << error;
+        failed_stl_objects.append(QJsonObject{{"id", it.key()}, {"error", error}});
+        continue;
+      }
+      qInfo() << "STL object loaded" << it.key() << mesh.triangles.size() << "triangles"
+              << mesh_data.size() << "bytes";
+      server_->m_stl_objects.insert(it.key(), std::move(mesh));
+    }
+    result["loadedStlObjects"] = server_->m_stl_objects.size();
+    if (!failed_stl_objects.isEmpty()) {
+      result["failedStlObjects"] = failed_stl_objects;
+    }
   } else if (action == "convert") {
     // Get the parameters
     QJsonObject params_obj = params.toObject();
@@ -131,6 +159,8 @@ bool Worker::handleAction(QWebSocket* socket,
       QTransform move_translate = QTransform();
       auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
       if (type == "hull") {
+        // TODO: ConvexHullExporter has no STL handling yet. Framing an inner engraving job draws
+        //       the placeholder rects, and the FramingType for the material shape (B-7) is missing.
         ConvexHullExporter exporter((BaseGenerator*)&gen);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
 
@@ -157,6 +187,7 @@ bool Worker::handleAction(QWebSocket* socket,
             move_translate,
             true);
         exporter.parseParam(params_obj);
+        exporter.setStlObjects(&server_->m_stl_objects);
         exporter.setSortRule(PathSort::NestedSort);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
         if (type == "contour") exporter.handleContour();

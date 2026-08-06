@@ -61,6 +61,9 @@ int g_threshold = 128;
 bool g_pwm = false;
 int g_pass = 0;
 double g_zstep = 0;
+// Set by createRectNode, consumed and cleared right after processMySVGNode so it can never leak
+// into the next element (unlike g_pass above, which is only ever read by the image branch).
+StlPlacement g_stl_placement;
 
 #endif
 
@@ -4008,6 +4011,40 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     const QStringView rx      = attributes.value(QLatin1String("rx"));
     const QStringView ry      = attributes.value(QLatin1String("ry"));
 
+#ifdef MYSVG
+    // esther review: declare one g_stl_placement for each rect node? Can we declare one only when it IS a placeholder or use pointer?
+    // esther review: also, should this be handled here or use a separate function to parse the attributes?
+    // The placeholder rect of an STL object, see shape/stl-placement.h for the attribute contract.
+    g_stl_placement = StlPlacement();
+    if (attributes.hasAttribute("data-stl")) {
+        // esther review: "data-stl" always true, use "id" instead?
+        g_stl_placement.id = attributes.value("data-stl").toString();
+        const QStringList matrix_values =
+            attributes.value("data-stl-matrix").toString().split(QRegularExpression("[\\s,]+"),
+                                                                Qt::SkipEmptyParts);
+        if (matrix_values.size() == 16) {
+            float values[16];
+            for (int i = 0; i < 16; ++i) values[i] = matrix_values[i].toFloat();
+            // Attribute order is column major (THREE.Matrix4::elements), QMatrix4x4 takes row major.
+            g_stl_placement.matrix = QMatrix4x4(values).transposed();
+        } else if (!matrix_values.isEmpty()) {
+            qWarning() << "STL placeholder" << g_stl_placement.id << "has a data-stl-matrix with"
+                       << matrix_values.size() << "values, expected 16; falling back to identity";
+        }
+        // esther review: confirm attr name
+        // esther review: Set default values instead of 0? Some values are required to be non-zero. Even it marks 'use the layer setting'
+        g_stl_placement.layer_height_mm = attributes.value("data-stl-layer-height").toDouble();
+        g_stl_placement.point_spacing_mm = attributes.value("data-stl-point-spacing").toDouble();
+        g_stl_placement.mode = attributes.value("data-stl-mode").toString() == "dot"
+                                   ? StlPlacement::Mode::Dot
+                                   : StlPlacement::Mode::Line;
+        // esther review: confirm attr name, this probably share same attributes with normal elements
+        if (attributes.hasAttribute("data-stl-fill")) {
+            g_stl_placement.fill = attributes.value("data-stl-fill").toString() == "1" ? 1 : 0;
+        }
+    }
+#endif
+
     bool ok = true;
     MyQSvgHandler::LengthType type;
     qreal nwidth = parseLength(width.toString(), &type, handler, &ok);
@@ -4022,8 +4059,22 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     qreal nry = toDouble(ry);
 
     QRectF bounds(toDouble(x), toDouble(y), nwidth, nheight);
-    if (bounds.isEmpty())
+    if (bounds.isEmpty()) {
+#ifdef MYSVG
+        // esther review: does this ever happen?
+        // A degenerate placeholder (the frontend has not synced the 3D bbox yet, or the model is
+        // flat in XY) must not make the whole STL object silently disappear.
+        if (g_stl_placement.isValid()) {
+            qWarning() << "STL placeholder" << g_stl_placement.id
+                       << "has an empty bounds, using a 1x1 placeholder instead" << bounds;
+            bounds = QRectF(toDouble(x), toDouble(y), qMax(nwidth, 1.0), qMax(nheight, 1.0));
+        } else {
+            return nullptr;
+        }
+#else
         return nullptr;
+#endif
+    }
 
     if (!rx.isEmpty() && ry.isEmpty())
         nry = nrx;
@@ -4736,6 +4787,9 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             continue;
         } else if (data_list_[i].type == QSVG_PATH) {
             new_shape = std::make_shared<PathShape>(data_list_[i].qpath);
+            if (data_list_[i].stl_placement.isValid()) {
+                ((PathShape*)new_shape.get())->setStlPlacement(data_list_[i].stl_placement);
+            }
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
             data_list_[i].fill= true;
@@ -5167,7 +5221,10 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm, g_pass, g_zstep);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm, g_pass, g_zstep, g_stl_placement);
+        // Consume it here: the placement belongs to exactly one element, it must not leak into
+        // whatever element comes next.
+        g_stl_placement = StlPlacement();
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

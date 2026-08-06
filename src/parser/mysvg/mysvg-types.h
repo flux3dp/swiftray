@@ -7,6 +7,7 @@
 #include <QPainterPath>
 #include <QImage>
 #include <QFont>
+#include "shape/stl-placement.h"
 
 namespace MySVG {
     struct Node {
@@ -27,6 +28,8 @@ namespace MySVG {
         bool pwm;
         int depthPass;
         double depthZStep;
+        /** Set only for the placeholder rect of an STL object (empty id otherwise) */
+        StlPlacement stl_placement;
     };
 
     struct BeamLayerConfig {

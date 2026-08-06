@@ -9,6 +9,7 @@
 #include <machine/machine.h>
 #include <canvas/canvas.h>
 #include <toolpath_exporter/generators/gcode-generator.h>
+#include <toolpath_exporter/stl-utils.h>
 
 class SwiftrayServer : public QObject {
   Q_OBJECT
@@ -31,6 +32,14 @@ private:
   Machine* m_machine;
   QString m_buffer;
   Canvas* m_canvas = nullptr;
+  /**
+   * Meshes of the STL objects of the current document, keyed by the id of their placeholder rect.
+   * Loaded together with the SVG and kept until the next loadSVG.
+   * TODO: a discardStlObjects action would let the frontend free these earlier -- a single model
+   *       can be tens of MB and they stay resident between loadSVG and convert.
+   * TBD: or consider to hold a life timeout like 10min if it is not used and discard it automatically
+   */
+  QMap<QString, stl::Mesh> m_stl_objects;
   QString m_thumbnail;
   QStringList gcode_list_;
   bool m_rotary_mode;

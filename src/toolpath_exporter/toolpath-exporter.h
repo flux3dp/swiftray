@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QList>
+#include <QMap>
 #include <QPainter>
 #include <QMutex>
 #include <QProgressDialog>
@@ -14,6 +15,7 @@
 #include <document.h>
 #include <constants.h>
 #include "toolpath-utils.h"
+#include "stl-utils.h"
 
 struct FilledPath {
   QList<QPolygonF> polys;
@@ -60,6 +62,12 @@ public:
 
   void handleContour() { is_contour_ = true; }
 
+  /**
+   * Meshes of the STL objects of the document, keyed by the id of their placeholder rect.
+   * Not owned, must outlive the exporter. Without it every placeholder rect is discarded.
+   */
+  void setStlObjects(const QMap<QString, stl::Mesh> *objects) { stl_objects_ = objects; }
+
   enum class ScanDirectionMode {
       kBidirectionMode,
       kUnidirectionMode
@@ -97,6 +105,18 @@ private:
 
   void outputLayerBitmapGcode(BitmapHandlerType type);
 
+  // esther review: 既然已經有 is_contour_ 的 flag 了，這邊可以考慮移除，直接用 flag 判斷
+  /**
+   * Whether the 3D mesh has to be sliced, or the placeholder rect can be used as a flat projection.
+   * Framing / red light preview only needs the footprint, engraving needs the real geometry.
+   */
+  bool useStlDetail() const { return !is_contour_; }
+
+  void outputLayerStlGcode();
+
+  void outputStlContour(const stl::Contour &contour, const StlPlacement &placement,
+                        float speed, float power);
+
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
   int calculatePWMPower(unsigned char grayscale);
@@ -131,6 +151,15 @@ private:
   QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
   QList<BitmapShape*> depth_mode_bitmaps_; // bitmap shapes for Promark depth mode
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
+  const QMap<QString, stl::Mesh> *stl_objects_ = nullptr;
+  QList<StlPlacement> layer_stl_placements_; // STL objects of the current layer, sliced at output time
+  /**
+   * ⚠️ Which machine Z direction means "deeper into the material" is not self evident: the existing
+   * focus code needs a per layer data-focusRev flag to get it right. Engraving with the Z direction
+   * flipped ruins the workpiece, so this is exposed as a parameter (`stl_z_reversed`) and MUST be
+   * verified on a real machine with a small model before running a real job.
+   */
+  bool stl_z_reversed_ = false;
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;

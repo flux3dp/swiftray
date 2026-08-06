@@ -11,6 +11,13 @@
 #include <cmath>
 #include <constants.h>
 
+// esther review: 這兩個值，如果之後沒準備做 layer 參數，可以直接在 loadSVG 裡處理
+namespace {
+// Fallbacks when neither the placeholder rect nor the layer provides a value (TODO.md step 3).
+constexpr double kDefaultStlLayerHeightMm = 0.1;
+constexpr double kDefaultStlPointSpacingMm = 0.1;
+}  // namespace
+
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
@@ -50,6 +57,11 @@ void ToolpathExporter::parseParam(QJsonObject param) {
     uint32_t jump_delay_max = param["jump_delay_max"].toInt();
     gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
   }
+  if (param.contains("stl_z_reversed")) {
+    // See the field comment: the Z direction has to be confirmed on a real machine.
+    stl_z_reversed_ = param["stl_z_reversed"].toBool();
+  }
+  // TODO: refractive index compensation (B-3) enters here, it only affects the Z of each slice.
 }
 
 void ToolpathExporter::setDpmm(qreal dpmm) {
@@ -219,6 +231,7 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   layer_polygons_.clear();
   layer_filled_polygons_.clear();
   polygons_mutex_.unlock();
+  layer_stl_placements_.clear();
   with_image_ = false;
   for (int i = 0; i < 5; i++) {
     element_cnt_[i] = 0;
@@ -352,6 +365,23 @@ void ToolpathExporter::convertPath(const PathShape *path) {
     exceed_boundary_ = true;
   }
 
+  if (path->isStlPlaceholder()) {
+    const StlPlacement &placement = path->stlPlacement();
+    if (useStlDetail()) {
+      if (stl_objects_ == nullptr || !stl_objects_->contains(placement.id)) {
+        // Discard, but say so: otherwise the user just gets an object that was never engraved.
+        qWarning() << "[Export] STL placeholder" << placement.id
+                   << "has no matching mesh in stlObjects, the object is skipped";
+        return;
+      }
+      layer_stl_placements_.append(placement);
+      return;
+    }
+    // Framing / red light: the footprint of the placeholder is exactly the XY projection we want,
+    // so fall through and treat it as an ordinary path.
+    qInfo() << "[Export] STL placeholder" << placement.id << "exported as a flat projection";
+  }
+
   // Fill shape
   if ((path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
       current_layer_->type() == Layer::Type::Fill ||
@@ -471,8 +501,13 @@ void ToolpathExporter::outputLayerGcode() {
   element_cnt_[3] = layer_filled_polygons_.size();
   element_cnt_[4] = layer_polygons_.size();
   total_element_cnt_ = 0;
+  // TODO: give STL objects their own element count so the progress reflects them.
   for (int i = 0; i < 5; i++) {
     total_element_cnt_ += element_cnt_[i];
+  }
+  // Guard the divisions below.
+  if (total_element_cnt_ <= 0) {
+    total_element_cnt_ = 1;
   }
 
   outputLayerBitmapGcode(BitmapHandlerType::NormalMode);
@@ -495,7 +530,154 @@ void ToolpathExporter::outputLayerGcode() {
   onProgressChanged(0.05 + 0.95 * (total_element_cnt_ - element_cnt_[4]) / total_element_cnt_, true);
 
   outputLayerPathGcode();
+  if (this->cancelled_) return;
+
+  outputLayerStlGcode();
   onProgressChanged(1, true);
+}
+
+/**
+ * @brief Slice the STL objects of the current layer and output them layer by layer.
+ *
+ * within one object the slices run deep -> shallow (bottom to top)
+ * objects are engraved one after another, not interleaved.
+ */
+void ToolpathExporter::outputLayerStlGcode() {
+  if (layer_stl_placements_.isEmpty() || stl_objects_ == nullptr) return;
+
+  // esther review: don't we have class variables for speed and power?
+  const float layer_speed = current_layer_->speed();
+  const float layer_power = current_layer_->power();
+
+  gen_->turnOnLaser();  // M3, also makes sure the cmd list is opened
+  for (const StlPlacement &placement : layer_stl_placements_) {
+    if (this->cancelled_) break;
+    auto mesh_it = stl_objects_->constFind(placement.id);
+    if (mesh_it == stl_objects_->constEnd()) continue;
+
+    const double layer_height_mm =
+        placement.layer_height_mm > 0 ? placement.layer_height_mm : kDefaultStlLayerHeightMm;
+    stl::SliceParams params;
+    // The mesh is expressed in canvas units (0.1mm) once the placement matrix is applied, so the
+    // layer height has to be converted from mm as well.
+    params.layer_height = layer_height_mm * canvas_mm_ratio_;
+
+    // esther review: TBD with PM, 多次雕刻可能會影響雕刻結果，水晶雕刻是否要直接禁用 repeat？
+    // TODO: convertLayer runs once per repeat, so a layer with repeat > 1 slices the same mesh
+    //       again every time. Cache the slice result per (placement id, layer height).
+    // esther review: slice_timer 是 dev 看效能用的，PR 前移除
+    QElapsedTimer slice_timer;
+    slice_timer.start();
+    const stl::SliceResult slice = stl::sliceMesh(mesh_it.value(), placement.matrix, params);
+    if (!slice.ok) {
+      qWarning() << "[Export] Failed to slice STL object" << placement.id << slice.error;
+      continue;
+    }
+    qInfo() << "[Export] STL object" << placement.id << "sliced into" << slice.layers.size()
+            << "layers," << slice.stats.contour_count << "contours in" << slice_timer.elapsed()
+            << "ms";
+    if (slice.stats.open_contour_count > 0) {
+      qWarning() << "[Export] STL object" << placement.id << "produced"
+                 << slice.stats.open_contour_count
+                 << "open contours, the mesh is probably not watertight";
+    }
+    if (slice.layers.isEmpty()) continue;
+
+    if (placement.mode == StlPlacement::Mode::Dot) {
+      gen_->setDottingTime(current_layer_->dottingTime());
+    }
+
+    // esther review: FIXME: z 應該紀錄在外層（所有 STL 物件共用，並在所有 STL 物件雕刻完後回到原點，以減少Z軸移動）。另外，在 cancel 的 case 可以不用考慮復位的問題（這裡只是計算指令，根本就沒有執行）
+    // esther review: TBD with PM
+    // TBD: the job starts with Z at the ORIGIN z of the workarea, i.e. the user focuses on the
+    //      bottom of the model. This may become "the highest point" or a user defined offset.
+    // Same field as the per layer Z below, so the refractive compensation cannot end up being
+    // measured against an uncompensated origin once B-3 lands.
+    const double origin_z = 0;
+    const int z_sign = stl_z_reversed_ ? -1 : 1;
+    double machine_z_mm = 0;
+
+    for (const stl::Layer &layer : slice.layers) {
+      if (this->cancelled_) break;
+      if (layer.contours.isEmpty()) continue;  // empty layers are legal, just nothing to engrave
+
+      const double target_z_mm = (layer.z_compensated - origin_z) / canvas_mm_ratio_;
+      const double delta_mm = target_z_mm - machine_z_mm;
+      if (delta_mm != 0) {
+        // Note: moveZ is always relative for Promark
+        gen_->moveZ(delta_mm * z_sign);
+        machine_z_mm = target_z_mm;
+      }
+
+      // esther review: FIXME: for filled STL objects. All contour should be handled together
+      // esther review: not important here since Promark moves very fast. Keep this TODO here without doing it
+      // TODO: sort the contours of a layer to shorten the jumps?
+      //       Right now they come out in chaining order.
+      for (const stl::Contour &contour : layer.contours) {
+        outputStlContour(contour, placement, layer_speed, layer_power);
+        if (this->cancelled_) break;
+      }
+      // TODO: report real progress for STL objects. Calling it with the current value is still
+      //       necessary: onProgressChanged runs processEvents(), which is how the queued cancel
+      //       signal arrives. Without it a 1500 layer job could not be cancelled at all.
+      onProgressChanged(current_progress_, true);
+    }
+
+    // esther review: FIXME: 見上方 Z 軸相關
+    // Always bring Z back, including on the cancel path: leaving the axis 150mm away from the
+    // focus origin would be far worse than the focus case this mirrors.
+    if (machine_z_mm != 0) {
+      gen_->moveZ(-machine_z_mm * z_sign);
+    }
+  }
+  gen_->turnOffLaser();
+}
+
+
+// esther review: 這裡可以改成直接丟給現有的 outputLayerPathGcode() 之類的函數處理嗎？
+/**
+ * @brief Output a single sliced contour, in either line or dot mode (B-2)
+ */
+void ToolpathExporter::outputStlContour(const stl::Contour &contour, const StlPlacement &placement,
+                                        float speed, float power) {
+  // Contour points are in canvas units; map them to document dots exactly like convertPath does.
+  // The 2D transform of the placeholder shape is deliberately NOT applied: the placement matrix is
+  // the authoritative transform for the mesh, the rect only mirrors its XY projection.
+  QPolygonF poly = global_transform_.map(contour.polygon);
+  if (poly.isEmpty()) return;
+
+  const bool filled = placement.fill >= 0
+                          ? placement.fill == 1
+                          : (current_layer_->type() == Layer::Type::Fill ||
+                             current_layer_->type() == Layer::Type::FillLine);
+  if (filled) {
+    // TODO (B-2): filled mode. Line + fill needs the outputLayerFillGcode scanline pass, dot + fill
+    //             needs the contour rasterised at the layer DPI and fed to outputLayerBitmapGcode.
+    //             Falling back to the outline keeps the object visible instead of silently empty.
+    qWarning() << "[Export] STL fill mode is not implemented yet, engraving the outline only";
+  }
+
+  if (placement.mode == StlPlacement::Mode::Dot) {
+    const double spacing_mm =
+        placement.point_spacing_mm > 0 ? placement.point_spacing_mm : kDefaultStlPointSpacingMm;
+    poly = stl::resamplePolygon(poly, spacing_mm * dpmm_, contour.is_closed);
+    if (poly.isEmpty()) return;
+    // TODO: confirm the dot mode contract with the controller. This jumps to each point with the
+    //       laser off and then fires in place (a move with no displacement but a power change),
+    //       with the dotting time set beforehand. Emitting a continuous path at power instead
+    //       would engrave a solid line, which is why the jump is not optimised away here.
+    for (const QPointF &point : poly) {
+      moveTo(point / dpmm_, travel_speed_, 0, 0);
+      moveTo(point / dpmm_, speed, power, 0);
+    }
+    return;
+  }
+
+  moveTo(poly.first() / dpmm_, travel_speed_, 0, 0);
+  for (const QPointF &point : poly) {
+    moveTo(point / dpmm_, speed, power, 0);
+  }
+  moveTo(poly.last() / dpmm_, travel_speed_, 0, 0);
 }
 
 /**

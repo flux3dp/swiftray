@@ -1,6 +1,7 @@
 #pragma once
 
 #include <shape/shape.h>
+#include <shape/stl-placement.h>
 
 //using namespace std;
 
@@ -36,6 +37,12 @@ public:
 
   void setPath(const QPainterPath &path);
 
+  const StlPlacement &stlPlacement() const { return stl_placement_; }
+
+  void setStlPlacement(const StlPlacement &placement) { stl_placement_ = placement; }
+
+  bool isStlPlaceholder() const { return stl_placement_.isValid(); }
+
   friend class DocumentSerializer;
 
 private:
@@ -45,4 +52,6 @@ private:
 
 protected:
   QPainterPath path_;
+  // Note: DocumentSerializer (bvg save / load) does not keep this. Add it for debug if needed.
+  StlPlacement stl_placement_;
 };
