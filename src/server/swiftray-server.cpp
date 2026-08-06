@@ -8,6 +8,7 @@
 #include <toolpath_exporter/generators/dirty-area-outline-generator.h>
 #include <toolpath_exporter/toolpath-exporter.h>
 #include <toolpath_exporter/toolpath-exporter-fcode.h>
+#include <toolpath_exporter/stl-slice-test.h>
 #include <QCoreApplication>
 #include <QCryptographicHash>                                                                                                                                                                             
 #include <QJsonDocument>
@@ -339,6 +340,13 @@ void SwiftrayServer::handleSystemAction(QWebSocket* socket, const QString& id, c
     info["totalMemory"] = 0; // Implement memory retrieval
     info["availableMemory"] = 0; // Implement memory retrieval
     result["info"] = info;
+  } else if (action == "sliceStlTest") {
+    // Development entry point for the STL slicer (TODO.md backend step 4). Params are optional and
+    // map to StlSliceTestOptions; with no params it slices the hardcoded development model.
+    StlSliceTestReport report = runStlSliceTest(stlSliceTestOptionsFromJson(params.toObject()));
+    result["success"] = report.ok;
+    if (!report.error.isEmpty()) result["error"] = report.error;
+    result["report"] = report.toJson();
   } else {
     result["success"] = false;
     result["error"] = "Unknown system action";
