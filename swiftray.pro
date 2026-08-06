@@ -220,6 +220,7 @@ macx{
     QMAKE_CXXFLAGS += -ferror-limit=1
     QMAKE_CXXFLAGS += -ftemplate-backtrace-limit=12
 }
+QMAKE_CXXFLAGS += -Wno-error=implicit-function-declaration
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
@@ -388,3 +389,9 @@ macx{
 }
 
 DISTFILES +=
+
+LIBS += -F$$PWD/fake_libs
+
+FAKE_AGL.files += $$PWD/fake_libs/libAGL.dylib
+FAKE_AGL.path = Contents/MacOS
+QMAKE_BUNDLE_DATA += FAKE_AGL
