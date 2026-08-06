@@ -818,15 +818,20 @@ double get_padding_dist(double min_padding, float speed, float acc) {
 // std::nullopt if the hardware does not support s-curve.
 // Mirrors fluxclient/hw_profile/s_curve.py::get_s_curve_parameters.
 std::optional<SCurveParameters> get_s_curve_parameters(HardwareType hw_type,
-                                                       float speed,
-                                                       bool is_high_quality) {
+                                                       float speed) {
   if (hw_type == HardwareType::RF) {
-    if (speed < 1525) {
-      return SCurveParameters{0, is_high_quality ? 21000.0 : 30000.0, 800000};
-    } else if (speed < 1800) {
-      return SCurveParameters{0, is_high_quality ? 10500.0 : 15000.0, 800000};
+    if (speed <= 1500) {
+      return SCurveParameters{0, 30000, 800000};
+    } else if (speed <= 1600) {
+      return SCurveParameters{0, 23000, 800000};
+    } else if (speed <= 1700) {
+      return SCurveParameters{0, 22000, 800000};
+    } else if (speed <= 1800) {
+      return SCurveParameters{0, 21000, 800000};
+    } else if (speed <= 1900) {
+      return SCurveParameters{0, 15000, 400000};
     }
-    return SCurveParameters{0, is_high_quality ? 10500.0 : 15000.0, 400000};
+    return SCurveParameters{0, 14000, 400000};
   } else if (hw_type == HardwareType::BB2) {
     return SCurveParameters{8000, 20000, 300000};
   }

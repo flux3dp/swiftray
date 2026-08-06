@@ -734,8 +734,12 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   };
   kwargs.split_bbox = config_.enable_segmentation;
   kwargs.one_way = current_layer_->isOneWayEngraving() ||
+                   layer_is_high_quality_ ||
                    (config_.enable_diode && current_layer_->isUseDiode() &&
                     config_.is_diode_one_way_engraving);
+  if (layer_is_high_quality_ && !current_layer_->isOneWayEngraving()) {
+    qInfo() << "High quality: force one-way engraving";
+  }
   kwargs.fg_pwm_limit = hw_profile.fg_pwm_limit;
 
   // Note: convert path without dpmm_x
@@ -856,8 +860,7 @@ void ToolpathExporterFcode::outputBitmapFcode() {
                                         current_layer_->sCurveAMax(),
                                         current_layer_->sCurveJerk()};
     } else {
-      s_curve_params = get_s_curve_parameters(hardware_, layer_speed_ / 60.0,
-                                              layer_is_high_quality_);
+      s_curve_params = get_s_curve_parameters(hardware_, layer_speed_ / 60.0);
     }
     if (s_curve_params) {
       s_curve_padding = calculate_s_curve_padding_dist(
