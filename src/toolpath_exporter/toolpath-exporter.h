@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QLineF>
 #include <QList>
 #include <QMap>
 #include <QPainter>
@@ -20,6 +21,38 @@
 struct FilledPath {
   QList<QPolygonF> polys;
   bool isEvenOdd;
+};
+
+/**
+ * The four kinds of STL object (TODO.md B-2). Each kind needs a different gcode path, and every
+ * Z step of a layer emits them in this order -- the enum values double as the index of the per kind
+ * slice buckets, so the order lives here and nowhere else.
+ */
+enum class StlEngraveKind {
+  kLineFill = 0,  // contours -> outputLayerFillGcode()
+  kLine = 1,      // contours -> outputLayerPathGcode()
+  kDotFill = 2,   // contours -> scan lines at the point spacing -> points -> path + dotting time
+  kDot = 3,       // contours resampled into points -> outputLayerPathGcode() + dotting time
+};
+constexpr int kStlEngraveKindCount = 4;
+
+/** An STL object of the canvas, waiting to be sliced at output time. */
+struct StlPlacementJob {
+  StlPlacement placement;
+  /**
+   * Resolved while the object's OWN layer was still current_layer_.
+   * A canvas layer that mixes filled and unfilled objects reaches the exporter as a pair of layers
+   * ("x" and "x-filled"), and the STL output of the pair is deferred to the second one, by which
+   * time current_layer_ no longer says whether this object was filled.
+   */
+  StlEngraveKind kind = StlEngraveKind::kLine;
+};
+
+/** The contours one STL object produced at a single Z step of the shared ladder. */
+struct StlSlice {
+  /** Points into the job list of outputLayerStlGcode(), valid for that layer only. */
+  const StlPlacement *placement;
+  stl::Layer layer;
 };
 
 class ToolpathExporter : public QObject
@@ -85,7 +118,14 @@ public Q_SLOTS:
 private:
   void setDpmm(qreal dpmm);
 
-  void convertLayer(const LayerPtr &layer);
+  /**
+   * @param stl_paired the layer is the first half of a "x" / "x-filled" pair, so its STL objects
+   *        are kept for the second half instead of being engraved now. Without this a canvas layer
+   *        that mixes filled and unfilled objects would run the Z ladder twice: the axis would
+   *        sweep the whole material, come back down and engrave a second time THROUGH the parts it
+   *        just engraved, which is exactly what the deep -> shallow rule (B-5) forbids.
+   */
+  void convertLayer(const LayerPtr &layer, bool stl_paired = false);
 
   void convertShape(const ShapePtr &shape);
 
@@ -101,21 +141,50 @@ private:
 
   void outputLayerPathGcode();
 
-  void outputLayerFillGcode();
+  /**
+   * Options for outputLayerFillGcode(), used by the STL fill passes.
+   * Passing nothing keeps the layer settings and emits gcode as usual.
+   */
+  struct FillOverride {
+    /** false: keep the layer's own scan settings and ignore the four fields below. */
+    bool override_scan = false;
+    /** Scan line spacing in document dots. <= 0 keeps the layer setting. */
+    double interval_dots = 0;
+    double angle_deg = 0;
+    bool bidirectional = true;
+    int hatch_count = 1;
+    /**
+     * When set, the scan pass emits NO gcode: every filled segment is appended here instead, for
+     * the caller to turn into a toolpath of its own.
+     */
+    QList<QLineF> *out_segments = nullptr;
+    /** Skip the per call logging. An STL layer calls this once per Z step, 1500 times over. */
+    bool quiet = false;
+  };
+
+  void outputLayerFillGcode(const FillOverride *fill_override = nullptr);
 
   void outputLayerBitmapGcode(BitmapHandlerType type);
 
-  // esther review: 既然已經有 is_contour_ 的 flag 了，這邊可以考慮移除，直接用 flag 判斷
-  /**
-   * Whether the 3D mesh has to be sliced, or the placeholder rect can be used as a flat projection.
-   * Framing / red light preview only needs the footprint, engraving needs the real geometry.
-   */
-  bool useStlDetail() const { return !is_contour_; }
-
   void outputLayerStlGcode();
 
-  void outputStlContour(const stl::Contour &contour, const StlPlacement &placement,
-                        float speed, float power);
+  StlEngraveKind stlEngraveKind(const StlPlacement &placement) const;
+
+  /**
+   * The placement matrix expressed in canvas coordinates.
+   * The frontend sends it in 3D scene coordinates, whose Y is the mirror of the canvas Y.
+   */
+  QMatrix4x4 stlCanvasMatrix(const StlPlacement &placement) const;
+
+  /** +1 engraves deeper along +Z, -1 along -Z. See stl_z_reversed_. */
+  int stlZSign() const { return stl_z_reversed_ ? -1 : 1; }
+
+  // The four emitters. Each gets every contour its kind produced at one Z step -- a filled object
+  // needs its holes together with its outlines, and objects at the same height share the Z move.
+  void outputStlLineFillGcode(const QList<StlSlice> &slices);
+  void outputStlLineGcode(const QList<StlSlice> &slices);
+  void outputStlDotFillGcode(const QList<StlSlice> &slices);
+  void outputStlDotGcode(const QList<StlSlice> &slices);
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
@@ -152,7 +221,9 @@ private:
   QList<BitmapShape*> depth_mode_bitmaps_; // bitmap shapes for Promark depth mode
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
   const QMap<QString, stl::Mesh> *stl_objects_ = nullptr;
-  QList<StlPlacement> layer_stl_placements_; // STL objects of the current layer, sliced at output time
+  QList<StlPlacementJob> layer_stl_placements_; // STL objects of the current layer, sliced at output time
+  /** Set by convertLayer(..., stl_paired): the STL objects belong to the layer that follows. */
+  bool stl_output_deferred_ = false;
   /**
    * ⚠️ Which machine Z direction means "deeper into the material" is not self evident: the existing
    * focus code needs a per layer data-focusRev flag to get it right. Engraving with the Z direction

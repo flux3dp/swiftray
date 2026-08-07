@@ -136,7 +136,73 @@ struct MeshInstance {
   QMatrix4x4 transform;
 };
 
-/** Slice a single mesh. The transform is applied to a private copy, @p mesh is left untouched. */
+/**
+ * Incremental slicer: prepare a mesh once, then ask for the contours at any Z.
+ *
+ * This is what lets several objects share one Z ladder: a job with more than one STL engraves
+ * strictly bottom to top across ALL objects, so each object has to be sliced at the Z values of the
+ * merged ladder rather than at its own private layer positions.
+ *
+ * @note when @p transform is the identity, prepare() keeps a pointer to @p mesh instead of copying
+ *       it (a 700k triangle model is ~50MB), so the mesh must outlive the slicer.
+ */
+class Slicer {
+ public:
+  /** @return false and fills @p error when the mesh is empty or the layer height is invalid */
+  bool prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params,
+               QString *error = nullptr);
+
+  bool isReady() const { return ready_; }
+
+  /** Z range of the transformed mesh */
+  double minZ() const { return min_z_; }
+  double maxZ() const { return max_z_; }
+
+  /** The Z planes this mesh would be sliced at on its own, with the prepared layer height */
+  QVector<double> planes() const;
+
+  /**
+   * Contours at an arbitrary Z.
+   * Non decreasing Z is the fast path (the internal sweep only moves forward); going backwards is
+   * still correct, it just restarts the sweep.
+   * `index` and `elapsed_us` of the returned layer are left at their defaults: the caller numbers
+   * the layers, because a shared ladder does not map one to one onto a single object.
+   */
+  Layer sliceAt(double z);
+
+  /** Counters accumulated over every sliceAt() call so far */
+  const SliceStats &stats() const { return stats_; }
+
+ private:
+  /**
+   * The mesh being sliced. A transformed copy is owned, an untransformed one is only referenced --
+   * and the flag rather than a pointer decides which, so that moving a Slicer (jobs are collected
+   * in a vector) can never leave a pointer aimed at the moved-from object's own member.
+   */
+  const Mesh &work() const { return owns_mesh_ ? transformed_ : *source_; }
+
+  bool ready_ = false;
+  bool owns_mesh_ = false;
+  const Mesh *source_ = nullptr;
+  Mesh transformed_;
+  SliceParams params_;
+  std::vector<double> tri_min_z_;
+  std::vector<double> tri_max_z_;
+  /** Triangle indices sorted by their minimum Z, degenerate ones already dropped */
+  std::vector<int> order_;
+  /** Triangles straddling the last sliced plane */
+  std::vector<int> active_;
+  size_t next_triangle_ = 0;
+  double last_z_ = 0.0;
+  bool swept_ = false;
+  double min_z_ = 0.0;
+  double max_z_ = 0.0;
+  double plane_eps_ = 0.0;
+  double weld_tolerance_ = 0.0;
+  SliceStats stats_;
+};
+
+/** Slice a whole mesh at its own layer positions. Thin wrapper over Slicer. */
 SliceResult sliceMesh(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params);
 
 /**
@@ -146,13 +212,20 @@ SliceResult sliceMesh(const Mesh &mesh, const QMatrix4x4 &transform, const Slice
 QVector<SliceResult> sliceMeshes(const QVector<MeshInstance> &instances, const SliceParams &params);
 
 /**
- * Resample a contour into evenly spaced points for dot mode:
- *   - sample positions are k * spacing for k = 0 .. floor(length / spacing)
- *   - a closed contour never repeats its start point
- *   - a trailing piece shorter than one spacing is DISCARDED (no extra point, no redistribution)
- *   - a contour shorter than one spacing still yields its start point
- * Known side effect: on closed contours the seam gap is `length mod spacing`, which can be much
- * smaller than the spacing and therefore slightly over-exposed.
+ * Resample a contour into EVENLY spaced points for dot mode.
+ *
+ * The point count is `round(length / spacing)`, and the actual step is then `length / count`, so
+ * every gap is identical and only slightly off the requested spacing. Nothing is discarded and no
+ * gap is ever shorter than the others -- in particular a closed contour has no over exposed seam.
+ *
+ *   - open contour:   count + 1 points, both endpoints included
+ *   - closed contour: count points, the start is not repeated at the end
+ *   - count is clamped to at least 1, so a contour shorter than half a spacing still yields its
+ *     endpoints (open) or its start point (closed)
+ *
+ * @param is_closed whether the contour wraps around. A trailing point equal to the first one is
+ *                  dropped either way, so passing a contour in the `Contour::polygon` convention
+ *                  works without any preparation.
  */
 QPolygonF resamplePolygon(const QPolygonF &polygon, double spacing, bool is_closed);
 

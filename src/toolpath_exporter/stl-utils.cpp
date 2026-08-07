@@ -425,16 +425,19 @@ double signedArea(const QPolygonF &polygon) {
   return sum * 0.5;
 }
 
+// QPolygonF only knows `isClosed()`, which is a first == last comparison -- it cannot tell a real
+// loop from a polyline that happens to start and end at the same place, and after resampling the
+// duplicated point would be meaningless anyway. So closedness stays an explicit argument (Contour
+// carries it), and the trailing duplicate is normalised away here regardless of the flag.
 QPolygonF resamplePolygon(const QPolygonF &polygon, double spacing, bool is_closed) {
   QPolygonF result;
   if (polygon.isEmpty() || !(spacing > 0.0)) return result;
 
   QVector<QPointF> path(polygon.begin(), polygon.end());
-  // Closed contours are stored with a repeated first point; drop it and re-add it as the closing
-  // edge so the walk covers the whole loop exactly once.
-  if (is_closed && path.size() > 1 && path.front() == path.back()) path.removeLast();
+  if (path.size() > 1 && path.front() == path.back()) path.removeLast();
   if (path.isEmpty()) return result;
   if (is_closed && path.size() > 1) {
+    // Walk the closing edge as well, so the loop is covered exactly once.
     const QPointF start = path.front();  // copy first, appending an element of the same container
     path.push_back(start);
   }
@@ -455,13 +458,18 @@ QPolygonF resamplePolygon(const QPolygonF &polygon, double spacing, bool is_clos
     return result;
   }
 
-  // Sample positions are k * spacing; anything left over at the end is discarded on purpose.
-  const int sample_count = static_cast<int>(std::floor(length / spacing));
+  // Round the number of gaps to the nearest integer and spread them evenly over the whole length,
+  // so every gap is `length / gap_count` -- within half a spacing of what was asked for, and with
+  // no short leftover at the end (a closed contour would otherwise have an over exposed seam).
+  int gap_count = static_cast<int>(std::llround(length / spacing));
+  if (gap_count < 1) gap_count = 1;
+  const double step = length / gap_count;
+  // A closed contour must not repeat its start point, so it stops one sample earlier.
+  const int last_sample = is_closed ? gap_count - 1 : gap_count;
+
   int segment = 1;
-  for (int k = 0; k <= sample_count; ++k) {
-    const double target = k * spacing;
-    // A closed contour must not repeat its start point.
-    if (is_closed && k == sample_count && std::abs(length - target) <= spacing * 1e-9) break;
+  for (int k = 0; k <= last_sample; ++k) {
+    const double target = k * step;
     while (segment < path.size() - 1 && cumulative[static_cast<size_t>(segment)] < target) ++segment;
     const double previous = cumulative[static_cast<size_t>(segment - 1)];
     const double span = cumulative[static_cast<size_t>(segment)] - previous;
@@ -472,51 +480,65 @@ QPolygonF resamplePolygon(const QPolygonF &polygon, double spacing, bool is_clos
   return result;
 }
 
-SliceResult sliceMesh(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params) {
-  SliceResult result;
-  QElapsedTimer timer;
-  timer.start();
+bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params,
+                     QString *error) {
+  ready_ = false;
+  owns_mesh_ = false;
+  source_ = nullptr;
+  transformed_.triangles.clear();
+  tri_min_z_.clear();
+  tri_max_z_.clear();
+  order_.clear();
+  active_.clear();
+  next_triangle_ = 0;
+  swept_ = false;
+  stats_ = SliceStats();
 
   if (mesh.isEmpty()) {
-    result.error = QStringLiteral("mesh has no triangle");
-    return result;
+    if (error != nullptr) *error = QStringLiteral("mesh has no triangle");
+    return false;
   }
   if (!(params.layer_height > 0.0)) {
-    result.error = QStringLiteral("layer height must be greater than 0");
-    return result;
+    if (error != nullptr) *error = QStringLiteral("layer height must be greater than 0");
+    return false;
   }
+  params_ = params;
 
   // Only copy the mesh when there is something to transform: a 700k triangle model is ~50MB.
-  Mesh transformed;
-  if (!transform.isIdentity()) {
-    transformed = mesh;
-    applyTransform(&transformed, transform);
+  if (transform.isIdentity()) {
+    source_ = &mesh;
+    owns_mesh_ = false;
+  } else {
+    transformed_ = mesh;
+    applyTransform(&transformed_, transform);
+    owns_mesh_ = true;
   }
-  const Mesh &work = transform.isIdentity() ? mesh : transformed;
 
+  const Mesh &mesh_ref = work();
   Vec3 lo;
   Vec3 hi;
-  work.boundingBox(&lo, &hi);
+  mesh_ref.boundingBox(&lo, &hi);
+  min_z_ = lo.z;
+  max_z_ = hi.z;
   const double dx = hi.x - lo.x;
   const double dy = hi.y - lo.y;
   const double dz = hi.z - lo.z;
   const double diagonal = std::sqrt(dx * dx + dy * dy + dz * dz);
   // Vertices closer than this to a slicing plane are pushed above it, so no vertex ever lies
-  // exactly on a plane (TODO.md 5-(e)).
-  const double plane_eps = std::max(1e-12, diagonal * 1e-9);
-  const double weld_tolerance =
+  // exactly on a plane.
+  plane_eps_ = std::max(1e-12, diagonal * 1e-9);
+  weld_tolerance_ =
       (params.weld_tolerance > 0.0) ? params.weld_tolerance : std::max(1e-9, diagonal * 1e-7);
   const double area_eps = std::max(1e-20, diagonal * diagonal * 1e-14);
 
-  const size_t triangle_count = work.triangles.size();
-  std::vector<double> tri_min_z(triangle_count);
-  std::vector<double> tri_max_z(triangle_count);
-  std::vector<int> order;
-  order.reserve(triangle_count);
+  const size_t triangle_count = mesh_ref.triangles.size();
+  tri_min_z_.resize(triangle_count);
+  tri_max_z_.resize(triangle_count);
+  order_.reserve(triangle_count);
   for (size_t i = 0; i < triangle_count; ++i) {
-    const Triangle &tri = work.triangles[i];
-    tri_min_z[i] = std::min({tri.v[0].z, tri.v[1].z, tri.v[2].z});
-    tri_max_z[i] = std::max({tri.v[0].z, tri.v[1].z, tri.v[2].z});
+    const Triangle &tri = mesh_ref.triangles[i];
+    tri_min_z_[i] = std::min({tri.v[0].z, tri.v[1].z, tri.v[2].z});
+    tri_max_z_[i] = std::max({tri.v[0].z, tri.v[1].z, tri.v[2].z});
     const double ax = tri.v[1].x - tri.v[0].x;
     const double ay = tri.v[1].y - tri.v[0].y;
     const double az = tri.v[1].z - tri.v[0].z;
@@ -527,118 +549,151 @@ SliceResult sliceMesh(const Mesh &mesh, const QMatrix4x4 &transform, const Slice
     const double cy = az * bx - ax * bz;
     const double cz = ax * by - ay * bx;
     if (std::sqrt(cx * cx + cy * cy + cz * cz) * 0.5 < area_eps) {
-      ++result.stats.degenerate_triangle_count;
+      ++stats_.degenerate_triangle_count;
       continue;  // zero area triangle, it can only produce zero length segments
     }
-    order.push_back(static_cast<int>(i));
+    order_.push_back(static_cast<int>(i));
   }
-  std::sort(order.begin(), order.end(),
-            [&](int a, int b) { return tri_min_z[static_cast<size_t>(a)] < tri_min_z[static_cast<size_t>(b)]; });
+  std::sort(order_.begin(), order_.end(), [&](int a, int b) {
+    return tri_min_z_[static_cast<size_t>(a)] < tri_min_z_[static_cast<size_t>(b)];
+  });
 
-  // Layer count follows the documented formula; the topmost plane may land above the mesh and
-  // simply produce an empty layer, which is legal (TODO.md 5-(m)).
-  int layer_count = static_cast<int>(std::ceil(dz / params.layer_height));
-  if (layer_count < 1) layer_count = 1;  // flat mesh, or layer height larger than the model
-  // Half a layer above the bottom so the extreme planes never graze the bbox faces (TODO.md 5-(o)),
-  // but never above the middle of the model: with a layer height larger than the model height that
-  // offset would push the only plane past the top and silently return an empty result (5-(n)).
-  const double first_z = std::min(lo.z + params.layer_height * 0.5, (lo.z + hi.z) * 0.5);
+  stats_.triangle_count = static_cast<int>(triangle_count);
+  ready_ = true;
+  return true;
+}
 
-  result.layers.reserve(layer_count);
-  std::vector<int> active;
-  size_t next_triangle = 0;
+QVector<double> Slicer::planes() const {
+  QVector<double> result;
+  if (!isReady()) return result;
+
+  // The topmost plane may land above the mesh and simply produce an empty layer, which is legal.
+  int count = static_cast<int>(std::ceil((max_z_ - min_z_) / params_.layer_height));
+  if (count < 1) count = 1;  // flat mesh, or layer height larger than the model
+  // Half a layer above the bottom so the extreme planes never graze the bbox faces, but never above
+  // the middle of the model: with a layer height larger than the model height that offset would
+  // push the only plane past the top and silently return nothing.
+  const double first =
+      std::min(min_z_ + params_.layer_height * 0.5, (min_z_ + max_z_) * 0.5);
+
+  result.reserve(count);
+  for (int i = 0; i < count; ++i) result.push_back(first + i * params_.layer_height);
+  return result;
+}
+
+Layer Slicer::sliceAt(double z) {
+  Layer layer;
+  layer.z_geometry = z;
+  layer.z_compensated = z;  // refractive index compensation not implemented yet (B-3)
+  if (!isReady()) return layer;
+
+  const Mesh &mesh_ref = work();
+
+  // The active list is a forward sweep: triangles enter once their minimum Z is reached and leave
+  // once their maximum Z is passed. Going back down means the sweep has to start over.
+  if (swept_ && z < last_z_) {
+    active_.clear();
+    next_triangle_ = 0;
+  }
+  swept_ = true;
+  last_z_ = z;
+
+  while (next_triangle_ < order_.size() &&
+         tri_min_z_[static_cast<size_t>(order_[next_triangle_])] <= z) {
+    active_.push_back(order_[next_triangle_]);
+    ++next_triangle_;
+  }
+  size_t write = 0;
+  for (size_t read = 0; read < active_.size(); ++read) {
+    if (tri_max_z_[static_cast<size_t>(active_[read])] >= z) active_[write++] = active_[read];
+  }
+  active_.resize(write);
+
   std::vector<std::pair<int, int>> segments;
-  PointWelder welder(weld_tolerance);
+  PointWelder welder(weld_tolerance_);
+  for (int index : active_) {
+    const Triangle &tri = mesh_ref.triangles[static_cast<size_t>(index)];
+    double d[3];
+    int above = 0;
+    int on_plane = 0;
+    for (int i = 0; i < 3; ++i) {
+      d[i] = tri.v[i].z - z;
+      if (std::abs(d[i]) < plane_eps_) {
+        d[i] = plane_eps_;  // consistent rule: a vertex on the plane counts as above it
+        ++on_plane;
+      }
+      if (d[i] > 0.0) ++above;
+    }
+    if (on_plane == 3) {
+      ++stats_.coplanar_triangle_count;  // triangle lies in the plane, skipped
+      continue;
+    }
+    if (above == 0 || above == 3) continue;
 
+    // Exactly two edges cross the plane because no vertex sits on it any more.
+    QPointF crossing[2];
+    int found = 0;
+    for (int i = 0; i < 3 && found < 2; ++i) {
+      const int j = (i + 1) % 3;
+      if ((d[i] > 0.0) == (d[j] > 0.0)) continue;
+      const double t = d[i] / (d[i] - d[j]);
+      crossing[found++] = QPointF(tri.v[i].x + (tri.v[j].x - tri.v[i].x) * t,
+                                  tri.v[i].y + (tri.v[j].y - tri.v[i].y) * t);
+    }
+    if (found != 2) continue;
+    const int a = welder.insert(crossing[0].x(), crossing[0].y());
+    const int b = welder.insert(crossing[1].x(), crossing[1].y());
+    if (a != b) segments.emplace_back(a, b);
+  }
+
+  if (!segments.empty()) {
+    const std::vector<QPointF> &points = welder.points();
+    const std::vector<Chain> chains = chainSegments(segments, static_cast<int>(points.size()),
+                                                    &stats_.non_manifold_junction_count);
+    for (const Chain &chain : chains) {
+      const size_t unique = chain.closed ? chain.point_ids.size() - 1 : chain.point_ids.size();
+      if (unique < 2 || (chain.closed && unique < 3)) continue;
+      Contour contour;
+      contour.is_closed = chain.closed;
+      contour.polygon.reserve(static_cast<int>(chain.point_ids.size()));
+      for (int id : chain.point_ids) contour.polygon << points[static_cast<size_t>(id)];
+      layer.contours.push_back(std::move(contour));
+    }
+    classifyContours(layer.contours, weld_tolerance_);
+  }
+
+  for (const Contour &contour : layer.contours) {
+    if (!contour.is_closed) ++stats_.open_contour_count;
+  }
+  stats_.contour_count += static_cast<int>(layer.contours.size());
+  return layer;
+}
+
+SliceResult sliceMesh(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params) {
+  SliceResult result;
+  QElapsedTimer timer;
+  timer.start();
+
+  Slicer slicer;
+  if (!slicer.prepare(mesh, transform, params, &result.error)) return result;
+
+  const QVector<double> planes = slicer.planes();
+  result.layers.reserve(planes.size());
   QElapsedTimer layer_timer;
   layer_timer.start();
-  for (int layer_index = 0; layer_index < layer_count; ++layer_index) {
+  for (int i = 0; i < planes.size(); ++i) {
     layer_timer.restart();
-    const double z = first_z + layer_index * params.layer_height;
-
-    // Active triangle list: planes are visited in ascending Z, so triangles enter once their
-    // minimum Z is reached and leave once their maximum Z is passed.
-    while (next_triangle < order.size() &&
-           tri_min_z[static_cast<size_t>(order[next_triangle])] <= z) {
-      active.push_back(order[next_triangle]);
-      ++next_triangle;
-    }
-    size_t write = 0;
-    for (size_t read = 0; read < active.size(); ++read) {
-      if (tri_max_z[static_cast<size_t>(active[read])] >= z) active[write++] = active[read];
-    }
-    active.resize(write);
-
-    segments.clear();
-    welder.clear();
-    for (int index : active) {
-      const Triangle &tri = work.triangles[static_cast<size_t>(index)];
-      double d[3];
-      int above = 0;
-      int on_plane = 0;
-      for (int i = 0; i < 3; ++i) {
-        d[i] = tri.v[i].z - z;
-        if (std::abs(d[i]) < plane_eps) {
-          d[i] = plane_eps;  // consistent rule: a vertex on the plane counts as above it
-          ++on_plane;
-        }
-        if (d[i] > 0.0) ++above;
-      }
-      if (on_plane == 3) {
-        ++result.stats.coplanar_triangle_count;  // triangle lies in the plane, skipped (5-(f))
-        continue;
-      }
-      if (above == 0 || above == 3) continue;
-
-      // Exactly two edges cross the plane because no vertex sits on it any more.
-      QPointF crossing[2];
-      int found = 0;
-      for (int i = 0; i < 3 && found < 2; ++i) {
-        const int j = (i + 1) % 3;
-        if ((d[i] > 0.0) == (d[j] > 0.0)) continue;
-        const double t = d[i] / (d[i] - d[j]);
-        crossing[found++] =
-            QPointF(tri.v[i].x + (tri.v[j].x - tri.v[i].x) * t,
-                    tri.v[i].y + (tri.v[j].y - tri.v[i].y) * t);
-      }
-      if (found != 2) continue;
-      const int a = welder.insert(crossing[0].x(), crossing[0].y());
-      const int b = welder.insert(crossing[1].x(), crossing[1].y());
-      if (a != b) segments.emplace_back(a, b);
-    }
-
-    Layer layer;
-    layer.index = layer_index;
-    layer.z_geometry = z;
-    layer.z_compensated = z;  // refractive index compensation not implemented yet (B-3)
-
-    if (!segments.empty()) {
-      const std::vector<QPointF> &points = welder.points();
-      const std::vector<Chain> chains = chainSegments(
-          segments, static_cast<int>(points.size()), &result.stats.non_manifold_junction_count);
-      for (const Chain &chain : chains) {
-        const size_t unique = chain.closed ? chain.point_ids.size() - 1 : chain.point_ids.size();
-        if (unique < 2 || (chain.closed && unique < 3)) continue;
-        Contour contour;
-        contour.is_closed = chain.closed;
-        contour.polygon.reserve(static_cast<int>(chain.point_ids.size()));
-        for (int id : chain.point_ids) contour.polygon << points[static_cast<size_t>(id)];
-        layer.contours.push_back(std::move(contour));
-      }
-      classifyContours(layer.contours, weld_tolerance);
-    }
-
+    Layer layer = slicer.sliceAt(planes[i]);
+    layer.index = i;
     layer.elapsed_us = layer_timer.nsecsElapsed() / 1000;
-    for (const Contour &contour : layer.contours) {
-      if (!contour.is_closed) ++result.stats.open_contour_count;
-    }
-    result.stats.contour_count += static_cast<int>(layer.contours.size());
-    if (layer.contours.isEmpty()) ++result.stats.empty_layer_count;
     result.layers.push_back(std::move(layer));
   }
 
-  result.stats.triangle_count = static_cast<int>(triangle_count);
+  result.stats = slicer.stats();
   result.stats.layer_count = static_cast<int>(result.layers.size());
+  for (const Layer &layer : result.layers) {
+    if (layer.contours.isEmpty()) ++result.stats.empty_layer_count;
+  }
   result.stats.elapsed_ms = timer.elapsed();
   result.ok = true;
   return result;

@@ -4017,8 +4017,7 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     // The placeholder rect of an STL object, see shape/stl-placement.h for the attribute contract.
     g_stl_placement = StlPlacement();
     if (attributes.hasAttribute("data-stl")) {
-        // esther review: "data-stl" always true, use "id" instead?
-        g_stl_placement.id = attributes.value("data-stl").toString();
+        g_stl_placement.id = attributes.value("id").toString();
         const QStringList matrix_values =
             attributes.value("data-stl-matrix").toString().split(QRegularExpression("[\\s,]+"),
                                                                 Qt::SkipEmptyParts);

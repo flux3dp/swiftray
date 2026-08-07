@@ -475,25 +475,87 @@ void runSelfChecks(int *passed, int *failed) {
     checker.check(ok, "B-4 a non trivial 4x4 matrix (scale + rotate + translate) is applied");
   }
 
-  // 5-(p) resampling rules.
+  // 5-(p) resampling rules: round the gap count, then spread the gaps evenly.
   {
+    // Straight polylines only: on a contour with corners two consecutive samples can straddle a
+    // corner, and then their straight line distance is legitimately shorter than the arc step.
+    auto gapsAreEven = [](const QPolygonF &poly, double expected_step) {
+      if (poly.size() < 2) return false;
+      for (int i = 0; i + 1 < poly.size(); ++i) {
+        const QPointF d = poly[i + 1] - poly[i];
+        if (!nearly(std::sqrt(d.x() * d.x() + d.y() * d.y()), expected_step, 1e-6)) return false;
+      }
+      return true;
+    };
+
     const QPolygonF open_line = makePolyline({QPointF(0, 0), QPointF(10, 0)});
-    checker.check(stl::resamplePolygon(open_line, 1.0, false).size() == 11,
-                  "5-(p) open 10mm path at 1mm gives 11 points");
+    const QPolygonF open_sampled = stl::resamplePolygon(open_line, 1.0, false);
+    checker.check(open_sampled.size() == 11 && gapsAreEven(open_sampled, 1.0),
+                  "5-(p) open 10mm path at 1mm gives 11 evenly spaced points");
+
     const QPolygonF long_line = makePolyline({QPointF(0, 0), QPointF(10.5, 0)});
-    const QPolygonF sampled = stl::resamplePolygon(long_line, 1.0, false);
-    checker.check(sampled.size() == 11 && nearly(sampled.last().x(), 10.0, 1e-9),
-                  "5-(p) the trailing 0.5mm is discarded, no extra point, no redistribution");
+    const QPolygonF long_sampled = stl::resamplePolygon(long_line, 1.0, false);
+    // round(10.5 / 1) = 11 gaps -> 12 points, every gap 10.5 / 11
+    checker.check(long_sampled.size() == 12 && nearly(long_sampled.last().x(), 10.5, 1e-9) &&
+                      gapsAreEven(long_sampled, 10.5 / 11.0),
+                  QStringLiteral("5-(p) open 10.5mm at 1mm rounds to 11 even gaps, nothing is "
+                                 "discarded (got %1 points)")
+                      .arg(long_sampled.size()));
+
     const QPolygonF square = makePolyline({QPointF(0, 0), QPointF(2.5, 0), QPointF(2.5, 2.5),
                                            QPointF(0, 2.5), QPointF(0, 0)});
     const QPolygonF closed_sampled = stl::resamplePolygon(square, 1.0, true);
-    checker.check(closed_sampled.size() == 10,
+    checker.check(closed_sampled.size() == 10 && closed_sampled.first() == QPointF(0, 0) &&
+                      closed_sampled.last() != closed_sampled.first(),
                   QStringLiteral("5-(p) closed 10mm contour at 1mm gives 10 points, start not "
                                  "repeated (got %1)")
                       .arg(closed_sampled.size()));
+
+    // A closed contour whose length is not a multiple of the spacing must not end up with a short
+    // seam gap: round(10.5) = 11 gaps of 10.5 / 11, including the one that closes the loop.
+    const QPolygonF odd_square = makePolyline({QPointF(0, 0), QPointF(2.625, 0),
+                                               QPointF(2.625, 2.625), QPointF(0, 2.625),
+                                               QPointF(0, 0)});
+    const QPolygonF odd_sampled = stl::resamplePolygon(odd_square, 1.0, true);
+    // The last sample sits one step before the start, measured along the left edge, so here the
+    // straight line distance back to the start is the arc step.
+    const QPointF seam = odd_sampled.isEmpty() ? QPointF() : odd_sampled.last() - odd_sampled.first();
+    checker.check(odd_sampled.size() == 11 &&
+                      nearly(std::sqrt(seam.x() * seam.x() + seam.y() * seam.y()), 10.5 / 11.0, 1e-6),
+                  QStringLiteral("5-(p) closed 10.5mm contour has an even seam, no over exposed "
+                                 "point (got %1 points)")
+                      .arg(odd_sampled.size()));
+
     const QPolygonF tiny = makePolyline({QPointF(0, 0), QPointF(0.4, 0)});
-    checker.check(stl::resamplePolygon(tiny, 1.0, false).size() == 1,
-                  "5-(p) a contour shorter than the spacing still yields its start point");
+    const QPolygonF tiny_sampled = stl::resamplePolygon(tiny, 1.0, false);
+    checker.check(tiny_sampled.size() == 2,
+                  "5-(p) a contour shorter than the spacing keeps both of its endpoints");
+    const QPolygonF tiny_closed = makePolyline({QPointF(0, 0), QPointF(0.2, 0), QPointF(0, 0)});
+    checker.check(stl::resamplePolygon(tiny_closed, 1.0, true).size() == 1,
+                  "5-(p) a closed contour shorter than the spacing yields its start point");
+  }
+
+  // Slicing at an arbitrary Z, which is what a shared multi object Z ladder needs.
+  {
+    stl::SliceParams slicer_params;
+    slicer_params.layer_height = 1.0;
+    stl::Slicer slicer;
+    QString error;
+    const bool prepared = slicer.prepare(box, QMatrix4x4(), slicer_params, &error);
+    checker.check(prepared && nearly(slicer.minZ(), 0.0, 1e-9) &&
+                      nearly(slicer.maxZ(), 10.0, 1e-9) && slicer.planes().size() == 10,
+                  QStringLiteral("Slicer::prepare reports the Z range and 10 planes (%1)").arg(error));
+    const stl::Layer at_3_7 = slicer.sliceAt(3.7);
+    checker.check(at_3_7.contours.size() == 1 &&
+                      nearly(std::abs(stl::signedArea(at_3_7.contours.front().polygon)), 100.0, 1e-6),
+                  "Slicer::sliceAt slices at an arbitrary Z, not only at the layer positions");
+    // Walking backwards has to restart the sweep instead of returning nothing.
+    const stl::Layer at_1_2 = slicer.sliceAt(1.2);
+    checker.check(at_1_2.contours.size() == 1 &&
+                      nearly(std::abs(stl::signedArea(at_1_2.contours.front().polygon)), 100.0, 1e-6),
+                  "Slicer::sliceAt going back down restarts the sweep and still finds the contour");
+    const stl::Layer outside = slicer.sliceAt(20.0);
+    checker.check(outside.contours.isEmpty(), "Slicer::sliceAt outside the mesh returns nothing");
   }
 
   qInfo().noquote() << QStringLiteral("== self checks: %1 passed, %2 failed ==")
@@ -552,7 +614,7 @@ StlSliceTestReport runStlSliceTest(const StlSliceTestOptions &options) {
   report.file_path =
       options.file_path.isEmpty() ? QString::fromUtf8(kDefaultStlPath) : options.file_path;
   report.output_dir = options.output_dir.isEmpty()
-                          ? QDir::tempPath() + QStringLiteral("/swiftray-slice-test")
+                          ? "/Users/software/Downloads/slice-test"
                           : options.output_dir;
 
   if (options.run_self_checks) {
