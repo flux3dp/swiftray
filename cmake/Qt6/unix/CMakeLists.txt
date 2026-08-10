@@ -96,8 +96,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     ${SPARKLE_LIBRARIES}
   )
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(LIBGCC_DYLIB_NAME "libgcc_s.1.1.dylib")
     list(APPEND APP_FRAMEWORK_FILES
-      /opt/homebrew/opt/gcc/lib/gcc/current/libgcc_s.1.1.dylib
+      /opt/homebrew/opt/gcc/lib/gcc/current/${LIBGCC_DYLIB_NAME}
     )
   endif()
   set(APP_RESOURCE_FILES
@@ -135,6 +136,19 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
    COMMAND install_name_tool -add_rpath "@executable_path/../Frameworks"
            $<TARGET_FILE:${PROJECT_NAME}>
   )
+
+  # Homebrew ships libgcc read-only (0444) and CMake preserves that mode while
+  # copying it into Contents/Frameworks. A read-only file breaks the auto-update.
+  if(LIBGCC_DYLIB_NAME)
+    set(BUNDLED_LIBGCC "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.app/Contents/Frameworks/${LIBGCC_DYLIB_NAME}")
+    add_custom_command(
+      TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E echo "Fixing ${LIBGCC_DYLIB_NAME} permission and install name"
+      COMMAND chmod 644 "${BUNDLED_LIBGCC}"
+      COMMAND install_name_tool -id "@executable_path/../Frameworks/${LIBGCC_DYLIB_NAME}"
+              "${BUNDLED_LIBGCC}"
+    )
+  endif()
 
   if(ENABLE_SENTRY)
     add_custom_command(
