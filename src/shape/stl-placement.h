@@ -19,7 +19,9 @@
     | ------------------------ | -------------------------------------------------------------- |
     | `data-stl`               | object id, the key into the `stlObjects` map                    |
     | `data-stl-matrix`        | 16 numbers, COLUMN major (same order as `THREE.Matrix4.elements`
-    |                          | and CSS `matrix3d()`), already folding the mm -> 0.1mm x10      |
+    |                          | and CSS `matrix3d()`), already in canvas coordinates: the mm -> |
+    |                          | 0.1mm x10 and the Y axis conversion are both done by the        |
+    |                          | frontend                                                        |
     | `data-stl-layer-height`  | layer height in mm; <= 0 falls back to the layer setting        |
     | `data-stl-point-spacing` | dot mode point spacing in mm; <= 0 falls back to the layer      |
     | `data-stl-mode`          | "dot" or "line" (default line)                                  |
@@ -36,7 +38,10 @@ struct StlPlacement {
   /** Key into the stlObjects map. Empty means "this shape is an ordinary path". */
   QString id;
   // esther review: TBC
-  /** 3D transform, already expressed in canvas units (0.1mm) by the frontend. */
+  /**
+   * 3D transform, already expressed in canvas coordinates by the frontend (unit 0.1mm, canvas Y).
+   * It is handed to stl::Slicer::prepare() as is -- the backend does no coordinate conversion.
+   */
   QMatrix4x4 matrix;
   /** <= 0 means "use the layer setting" */
   double layer_height_mm = 0.0;

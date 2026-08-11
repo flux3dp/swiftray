@@ -368,13 +368,6 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   // qInfo() << "Convert Path" << path;
   // transformed_path: Express path in unit of dots (depends on document resolution settings)
   QPainterPath transformed_path = (path->transform() * global_transform_).map(path->path());
-  if (path->isStlPlaceholder()) {
-    // The placeholder rect mirrors the XY projection of the 3D object, so its y is a 3D scene y and
-    // needs the same flip as the mesh itself: canvas_y = workarea_height - scene_y.
-    // See stlCanvasMatrix(). Only framing / red light ever engraves this path, but the flip has to
-    // happen before the boundary check either way.
-    transformed_path = QTransform(1, 0, 0, -1, 0, canvas_height_).map(transformed_path);
-  }
   QRectF boundary_mm = resolution_scale_transform_.mapRect(machine_work_area_mm_);
 
   // Boundary check
@@ -619,7 +612,7 @@ void ToolpathExporter::outputLayerStlGcode() {
     // Resolved at collection time, current_layer_ may be the paired layer by now.
     job.kind = entry.kind;
     QString error;
-    if (!job.slicer.prepare(mesh_it.value(), stlCanvasMatrix(placement), params, &error)) {
+    if (!job.slicer.prepare(mesh_it.value(), placement.matrix, params, &error)) {
       qWarning() << "[Export] Failed to prepare STL object" << placement.id << error;
       continue;
     }
@@ -745,29 +738,6 @@ StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement) c
     return filled ? StlEngraveKind::kDotFill : StlEngraveKind::kDot;
   }
   return filled ? StlEngraveKind::kLineFill : StlEngraveKind::kLine;
-}
-
-/**
- * The placement matrix maps the mesh into the 3D scene of the frontend, whose Y is the mirror of
- * the canvas Y (TODO-frontend.md, "Y 軸轉換由後端負責"):
- *
- *     canvas_y = workarea_height - scene_y
- *
- * The workarea height MUST come from the document, it changes with the machine and with custom
- * sizes. Everything here is in canvas units (0.1mm), which is also the unit the frontend already
- * folded into the matrix.
- *
- * The flip is folded into the matrix rather than applied to every contour point: it costs nothing
- * at slice time, and it means every contour that leaves the slicer is already in canvas
- * coordinates -- no other STL code has to know about the two coordinate systems.
- * Mirroring makes the determinant negative, which stl::applyTransform explicitly allows: contour
- * winding is normalised after slicing, so outer contours and holes still come out right.
- */
-QMatrix4x4 ToolpathExporter::stlCanvasMatrix(const StlPlacement &placement) const {
-  QMatrix4x4 flip_y;
-  flip_y(1, 1) = -1;
-  flip_y(1, 3) = machine_work_area_mm_.height() * canvas_mm_ratio_;
-  return flip_y * placement.matrix;
 }
 
 /**

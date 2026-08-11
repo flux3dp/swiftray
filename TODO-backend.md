@@ -86,19 +86,16 @@ z0: line+fill, line, dot+fill, dot | z1: line+fill, line, dot+fill, dot | ...
 
 ⚠️ 網格只有在掃描方向上是等距的：列與列剛好差一個點距，但同一列內的點距是 `弦長 / round(弦長 / 點距)`（I-1 的四捨五入規則）。弦長短於半個點距時仍會給頭尾兩點，所以切片邊緣會比內部稍密。
 
-## I-4. Y 軸翻轉在後端做
+## I-4. Y 軸翻轉在前端做
 
-前端送來的 `data-stl-matrix` 與佔位 rect 的 `y` 都是 **3D 場景座標**（見 TODO-frontend.md 文末），與畫布 / G-code 的 Y 差一個翻轉：
+前端送來的 `data-stl-matrix` 與佔位 rect 的 `x/y/width/height` **都已經是畫布座標**（單位 0.1mm、Y 與畫布同向），2D / 3D 的 Y 軸轉換由前端負責。
 
-```
-canvas_y = workarea_height - scene_y
-```
+後端不做任何 Y 軸特殊處理：
 
-`workarea_height` 取 `machine_work_area_mm_.height() * canvas_mm_ratio_`（畫布單位 0.1mm），**不可寫死**。
+- `outputLayerStlGcode()` 把 `placement.matrix` 原封不動交給 `stl::Slicer::prepare()`
+- `convertPath()` 在 contour / 紅光模式把佔位 rect 當投影輸出時，就是一般的路徑，沒有額外的翻轉
 
-實作方式：`ToolpathExporter::stlCanvasMatrix()` 把這個翻轉**併進 placement 矩陣**再交給 `stl::Slicer::prepare()`，所以切片出來的輪廓已經是畫布座標，其餘 STL 程式碼完全不需要知道有兩套座標系。翻轉會讓行列式變負（鏡射），`stl::applyTransform` 明確允許 —— 繞向在切片後會正規化。
-
-⚠️ 佔位 rect 的 `x/y/width/height` 也是場景座標，所以 `convertPath()` 在 contour / 紅光模式把佔位 rect 當投影輸出時，**同樣要套一次 Y 翻轉**（已實作），否則框線會上下顛倒。
+（先前的 `ToolpathExporter::stlCanvasMatrix()` 與佔位 rect 的翻轉已移除。）
 
 ## I-5. 被拆成 `x` / `x-filled` 的圖層，STL 要合成一條 Z ladder
 

@@ -170,12 +170,6 @@ private:
 
   StlEngraveKind stlEngraveKind(const StlPlacement &placement) const;
 
-  /**
-   * The placement matrix expressed in canvas coordinates.
-   * The frontend sends it in 3D scene coordinates, whose Y is the mirror of the canvas Y.
-   */
-  QMatrix4x4 stlCanvasMatrix(const StlPlacement &placement) const;
-
   /** +1 engraves deeper along +Z, -1 along -Z. See stl_z_reversed_. */
   int stlZSign() const { return stl_z_reversed_ ? -1 : 1; }
 
