@@ -13,7 +13,6 @@
 #include <vector>
 #include <constants.h>
 
-// esther review: 這兩個值，如果之後沒準備做 layer 參數，可以直接在 loadSVG 裡處理
 namespace {
 // Fallbacks when neither the placeholder rect nor the layer provides a value (TODO.md step 3).
 constexpr double kDefaultStlLayerHeightMm = 0.1;
@@ -58,10 +57,6 @@ void ToolpathExporter::parseParam(QJsonObject param) {
   if (param.contains("jump_delay_max")) {
     uint32_t jump_delay_max = param["jump_delay_max"].toInt();
     gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
-  }
-  if (param.contains("stl_z_reversed")) {
-    // See the field comment: the Z direction has to be confirmed on a real machine.
-    stl_z_reversed_ = !param["stl_z_reversed"].toBool();
   }
   // TODO: refractive index compensation (B-3) enters here, it only affects the Z of each slice.
 }
@@ -391,7 +386,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       }
       // The kind has to be resolved HERE: the object's own layer is current_layer_ right now, and
       // that is what says whether it is filled. By output time it may be the paired layer's turn.
-      layer_stl_placements_.append(StlPlacementJob{placement, stlEngraveKind(placement)});
+      layer_stl_placements_.append(StlPlacementJob{placement, stlEngraveKind(placement, path)});
       return;
     }
     // Framing / red light: the footprint of the placeholder is exactly the XY projection we want,
@@ -636,8 +631,8 @@ void ToolpathExporter::outputLayerStlGcode() {
 
   // Z is tracked across ALL objects and restored once at the very end, so overlapping objects do
   // not make the axis travel back and forth.
-  // Phase 1: everything is focused at z = 0, so the machine Z of a slice is just its own Z.
-  const int z_sign = stlZSign();
+  // The focus origin is the work platform (z = 0), so the machine Z of a slice is just its own Z.
+  // machine_z_mm and target_z_mm are positive when moving up, which is the opposite of the Promark convention (up is negative).
   double machine_z_mm = 0;
   // The dotting time is only re-emitted when it actually changes: a layer of nothing but dot mode
   // objects sets it once, not once per Z step.
@@ -669,8 +664,8 @@ void ToolpathExporter::outputLayerStlGcode() {
 
     const double target_z_mm = step_z_output / canvas_mm_ratio_;
     if (target_z_mm != machine_z_mm) {
-      // Note: moveZ is always relative for Promark
-      gen_->moveZ((target_z_mm - machine_z_mm) * z_sign);
+      // Note: moveZ is always relative for Promark, and up is negative.
+      gen_->moveZ(-(target_z_mm - machine_z_mm));
       machine_z_mm = target_z_mm;
     }
 
@@ -725,15 +720,15 @@ void ToolpathExporter::outputLayerStlGcode() {
     gen_->setDottingTime(0);
   }
   if (machine_z_mm != 0) {
-    gen_->moveZ(-machine_z_mm * z_sign);
+    gen_->moveZ(machine_z_mm);
   }
 }
 
-StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement) const {
-  const bool filled = placement.fill >= 0
-                          ? placement.fill == 1
-                          : (current_layer_->type() == Layer::Type::Fill ||
-                             current_layer_->type() == Layer::Type::FillLine);
+StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement,
+                                                const PathShape *path) const {
+  const bool filled = (path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
+                      current_layer_->type() == Layer::Type::Fill ||
+                      current_layer_->type() == Layer::Type::FillLine;
   if (placement.mode == StlPlacement::Mode::Dot) {
     return filled ? StlEngraveKind::kDotFill : StlEngraveKind::kDot;
   }

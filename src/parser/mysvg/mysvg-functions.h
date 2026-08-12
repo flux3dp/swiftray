@@ -173,12 +173,7 @@ namespace MySVG {
                     ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
             n.color = g_color;
             n.stl_placement = g_stl_placement;
-            // esther review: actually, the rect itself is visible
-            // An STL placeholder rect carries no visible style, so it would be dropped by both
-            // skip rules below. It must survive: the mesh is engraved through it.
-            if (n.stl_placement.isValid()) {
-                qInfo() << "STL placeholder rect" << n.stl_placement.id;
-            } else if (n.fill) {
+            if (n.fill) {
                 if (qGray(((QSvgFillStyle*)fillStyle)->qbrush().color().rgba()) > MAX_BITMAP_THRESHOLD) {
                     // Note: use fill instead g_color in case fill and stroke have different color
                     qInfo() << "Path has white fill, skip element";

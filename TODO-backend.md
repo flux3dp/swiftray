@@ -66,7 +66,7 @@ z0: line+fill, line, dot+fill, dot | z1: line+fill, line, dot+fill, dot | ...
 | 打點 + 填充 | `outputStlDotFillGcode` | 輪廓 → 掃描線（間隔＝點距）取得線段 → 每段重取樣成點 → `outputLayerPathGcode` + dotting time |
 | 打點 + 非填充 | `outputStlDotGcode` | 輪廓重取樣成點 → `outputLayerPathGcode` + dotting time |
 
-- 種類是切片前就決定的（`stlEngraveKind()`：物件的 `data-stl-fill` 優先，沒有就看圖層 type），每個 Z step 把切出來的輪廓丟進四個 bucket，再依序輸出。
+- 種類是切片前就決定的（`stlEngraveKind()`：打點/打線看 `data-stl-mode`，填充看**佔位 rect 自己的 `fill`**，判斷式與 `convertPath()` 的填充分支完全相同），每個 Z step 把切出來的輪廓丟進四個 bucket，再依序輸出。
 - 每個 Z step 只 `moveZ` 一次，四種共用；Z 只在整個圖層做完後復位一次。
 - 每一種輸出前會清空 `layer_polygons_` / `layer_filled_polygons_`，四種互不污染。
 - dotting time 只在**實際改變時**才重下（全部都是打點的圖層只會設一次）：`kDotFill` / `kDot` 需要，`kLineFill` / `kLine` 需要關掉。
@@ -161,10 +161,8 @@ swiftray 是**以圖層為單位**設定填充與否，但前端是 per-object�
 
 1. ⚠️ **`outputLayerGcode()` 會除以零**：`total_element_cnt_` 是各類元素數量的總和（`toolpath-exporter.cpp:470-476`），接著直接拿它當分母。若某圖層只有 STL 佔位 rect，而佔位 rect 又被攔截（不進 `layer_polygons_`），`total_element_cnt_` 會是 0 → NaN / 除零。**加 STL 計數或先判斷 0。**
 2. **切片順序**：`for 每個物件 { for 每層 { } }`，不是 `for 每層 { for 每個物件 } }` —— B-6 明確寫「多物件的層各自打完再換物件」。
-3. ⚠️ **Z 的正負向沒有自明的答案**。現有 focus 的寫法是 `gen_->moveZ(-focus * focus_dir)`，而 `focus_dir` 來自圖層的 `data-focusRev` —— 也就是**連既有功能都需要一個反向旗標才能對**。內雕的 Z 打錯方向 = 整件報廢，建議：
-   - 比照做一個反向設定（或沿用圖層的 focusRev）
-   - 第一版先用小模型 + 少層數實機驗證方向後再放大
-4. **Z 復位**：現有 focus 的做法是累加 `total_move` 最後一次移回。若中途 `cancelled_`，`convertStack` 直接 return，**不會復位** —— 內雕累積 150mm 的位移，不復位問題比 focus 大得多。要處理取消路徑。
+3. ✅ **Z 的正負向已定案，不需要反向旗標**。對焦原點固定在工作平台（z = 0），所以每一層的機器 Z 就是它自己的 Z；模型的 Z 越大代表越高，而**往高處移動的 gcode Z 是負值**，`outputLayerStlGcode()` 直接送 `moveZ(-(target - current))`。原本的 `stl_z_reversed` 參數已移除 —— 只要給定初始位置就能算出方向，多一個旗標反而會把它算錯。
+4. ✅ **Z 復位**：`outputLayerStlGcode()` 把整條 ladder 的位移累加在 `machine_z_mm`，離開迴圈後一次移回，**取消時也會執行**（`cancelled_` 是 break 不是 return）。
 5. `moveZ` 一律相對（`gcode-generator.h:159` 送 `M102` + `Z`），符合 B-10「Z 是相對座標」✓。精度 `move_precision_ = 10000`（Promark）→ 0.0001mm，優於需求的 0.001mm ✓。
 6. ⚠️ **M102 是「Z 軸 io」**（`bsl_motion_controller.cpp:638`：`SetIo(0b10, 0b10)`），不是同步等待的移動指令。1500 層每層都要等 Z 到位，**要確認 Z 移動與 galvo 掃描之間是否需要顯式等待**，否則會在 Z 還在動的時候就開始掃描。
 7. ⚠️ **產出的 gcode 量級是最大的實務風險**。以測試模型（71 萬面 / 高 150mm）0.1mm 層高估算，切片會產生數百萬個點；每個點一行 gcode → **數十 MB 的 QString**。而 `worker.cpp` 後續會做：
@@ -204,18 +202,19 @@ TODO.md 的 TBD 傾向放圖層，但第 6 點把層高/點距放在物件的 Op
 
 | attribute | 說明 |
 | --- | --- |
-| `data-stl` | 物件 id，對應 stlObjects 的 key（必要） |
-| `data-stl-matrix` | 16 個數字，**column-major**（＝ `THREE.Matrix4.elements` / CSS `matrix3d()` 的順序），已含 mm → 0.1mm 的 ×10 |
+| `data-stl` | 只是標記（前端送 `"1"`），值不會被讀 |
+| `id` | 物件 id，對應 stlObjects 的 key（必要） |
+| `data-stl-matrix` | 16 個數字，**column-major**（＝ `THREE.Matrix4.elements` / CSS `matrix3d()` 的順序），已是畫布座標（含 mm → 0.1mm 的 ×10 與 Y 軸轉換，見 I-4） |
 | `data-stl-layer-height` | 層高 mm，<= 0 或省略則用預設 0.1 |
 | `data-stl-point-spacing` | 點距 mm，<= 0 或省略則用預設 0.1 |
 | `data-stl-mode` | `"dot"` / `"line"`（預設 line） |
-| `data-stl-fill` | `"1"` / `"0"`，省略則跟隨圖層 type |
+| `fill`（rect 自己的屬性） | 填充與否走**一般圖形那一套**，沒有 `data-stl-fill` |
 
 > 層高 / 點距採「物件優先、圖層 fallback」，所以 per-object 或 per-layer 的結論還沒定也不影響後端。
 
 ### convert params
 
-- `stl_z_reversed`（bool）：翻轉內雕 Z 的方向。**實機驗證前務必先用小模型確認**（見 D-3）。
+- （目前沒有 STL 專用的 convert param。折射率 B-3 之後從 `parseParam` 進來。）
 
 ## H. 這一輪還沒做的（已在程式碼標 TODO）
 
@@ -225,5 +224,5 @@ TODO.md 的 TBD 傾向放圖層，但第 6 點把層高/點距放在物件的 Op
 4. ~~**每層輪廓沒有排序**~~ → **刻意不做**：Promark 跳點很快，不值得付排序成本。TODO 留在程式碼裡但不實作。
 5. **repeat > 1 會重複切片**（`convertLayer` 每個 repeat 跑一次）。應該用 (id, 層高) 當 key 快取。
 6. **切片本身無法中斷**：`sliceMesh` 是一次性的阻塞呼叫，大模型會卡住數秒。
-7. **ConvexHullExporter** 完全沒處理 STL。
+7. ~~**ConvexHullExporter** 完全沒處理 STL~~ → **不需要處理**：佔位 rect 就是 3D 物件的 XY 投影、也已經是畫布座標，framing 的外框要的正好是它，所以 `convertPath()` 當成一般路徑處理就對了。【材料】外框由前端自己算好送出，不走這條路徑。
 8. **DocumentSerializer** 沒有存 `StlPlacement`（daemon 路徑用不到，GUI 存檔才需要）。

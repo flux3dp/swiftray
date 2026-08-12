@@ -71,10 +71,9 @@ bool Worker::handleAction(QWebSocket* socket,
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
 
-    // esther review: FIXME
     // STL meshes for inner engraving. Keyed by the id of the placeholder rect in the SVG.
     // NOTE: the mesh is base64 inside the JSON payload -- processBinaryMessage() decodes the whole
-    //       frame as UTF-8, so raw binary would be corrupted. See TODO-backend.md section A.
+    //       frame as UTF-8, so raw binary would be corrupted. Implement binary data if needed.
     server_->m_stl_objects.clear();
     const QJsonObject stl_objects = params_obj["stlObjects"].toObject();
     QJsonArray failed_stl_objects;
@@ -159,8 +158,6 @@ bool Worker::handleAction(QWebSocket* socket,
       QTransform move_translate = QTransform();
       auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
       if (type == "hull") {
-        // TODO: ConvexHullExporter has no STL handling yet. Framing an inner engraving job draws
-        //       the placeholder rects, and the FramingType for the material shape (B-7) is missing.
         ConvexHullExporter exporter((BaseGenerator*)&gen);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
 

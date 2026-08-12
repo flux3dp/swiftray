@@ -4000,6 +4000,40 @@ static QSvgStyleProperty *createRadialGradientNode(QSvgNode *node,
     return prop;
 }
 
+#ifdef MYSVG
+/**
+ * Parse the STL attributes of a `<rect>`.
+ * A rect without `data-stl` yields an invalid (empty) placement, which is what marks it as an
+ * ordinary rect -- so the result can be assigned unconditionally and never leaks to the next node.
+ */
+static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes)
+{
+    StlPlacement placement;
+    if (!attributes.hasAttribute("data-stl")) return placement;
+
+    placement.id = attributes.value("id").toString();
+    const QStringList matrix_values =
+        attributes.value("data-stl-matrix").toString().split(QRegularExpression("[\\s,]+"),
+                                                             Qt::SkipEmptyParts);
+    if (matrix_values.size() == 16) {
+        float values[16];
+        for (int i = 0; i < 16; ++i) values[i] = matrix_values[i].toFloat();
+        // Attribute order is column major (THREE.Matrix4::elements), QMatrix4x4 takes row major.
+        placement.matrix = QMatrix4x4(values).transposed();
+    } else if (!matrix_values.isEmpty()) {
+        qWarning() << "STL placeholder" << placement.id << "has a data-stl-matrix with"
+                   << matrix_values.size() << "values, expected 16; falling back to identity";
+    }
+    // 0 (missing or non positive) means "use the layer setting", resolved by the exporter.
+    placement.layer_height_mm = attributes.value("data-stl-layer-height").toDouble();
+    placement.point_spacing_mm = attributes.value("data-stl-point-spacing").toDouble();
+    placement.mode = attributes.value("data-stl-mode").toString() == "dot"
+                         ? StlPlacement::Mode::Dot
+                         : StlPlacement::Mode::Line;
+    return placement;
+}
+#endif
+
 static QSvgNode *createRectNode(QSvgNode *parent,
                                 const QXmlStreamAttributes &attributes,
                                 MyQSvgHandler *handler)
@@ -4012,36 +4046,7 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     const QStringView ry      = attributes.value(QLatin1String("ry"));
 
 #ifdef MYSVG
-    // esther review: declare one g_stl_placement for each rect node? Can we declare one only when it IS a placeholder or use pointer?
-    // esther review: also, should this be handled here or use a separate function to parse the attributes?
-    // The placeholder rect of an STL object, see shape/stl-placement.h for the attribute contract.
-    g_stl_placement = StlPlacement();
-    if (attributes.hasAttribute("data-stl")) {
-        g_stl_placement.id = attributes.value("id").toString();
-        const QStringList matrix_values =
-            attributes.value("data-stl-matrix").toString().split(QRegularExpression("[\\s,]+"),
-                                                                Qt::SkipEmptyParts);
-        if (matrix_values.size() == 16) {
-            float values[16];
-            for (int i = 0; i < 16; ++i) values[i] = matrix_values[i].toFloat();
-            // Attribute order is column major (THREE.Matrix4::elements), QMatrix4x4 takes row major.
-            g_stl_placement.matrix = QMatrix4x4(values).transposed();
-        } else if (!matrix_values.isEmpty()) {
-            qWarning() << "STL placeholder" << g_stl_placement.id << "has a data-stl-matrix with"
-                       << matrix_values.size() << "values, expected 16; falling back to identity";
-        }
-        // esther review: confirm attr name
-        // esther review: Set default values instead of 0? Some values are required to be non-zero. Even it marks 'use the layer setting'
-        g_stl_placement.layer_height_mm = attributes.value("data-stl-layer-height").toDouble();
-        g_stl_placement.point_spacing_mm = attributes.value("data-stl-point-spacing").toDouble();
-        g_stl_placement.mode = attributes.value("data-stl-mode").toString() == "dot"
-                                   ? StlPlacement::Mode::Dot
-                                   : StlPlacement::Mode::Line;
-        // esther review: confirm attr name, this probably share same attributes with normal elements
-        if (attributes.hasAttribute("data-stl-fill")) {
-            g_stl_placement.fill = attributes.value("data-stl-fill").toString() == "1" ? 1 : 0;
-        }
-    }
+    g_stl_placement = parseStlPlacement(attributes);
 #endif
 
     bool ok = true;
@@ -4060,7 +4065,6 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     QRectF bounds(toDouble(x), toDouble(y), nwidth, nheight);
     if (bounds.isEmpty()) {
 #ifdef MYSVG
-        // esther review: does this ever happen?
         // A degenerate placeholder (the frontend has not synced the 3D bbox yet, or the model is
         // flat in XY) must not make the whole STL object silently disappear.
         if (g_stl_placement.isValid()) {

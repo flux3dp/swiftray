@@ -168,10 +168,7 @@ private:
 
   void outputLayerStlGcode();
 
-  StlEngraveKind stlEngraveKind(const StlPlacement &placement) const;
-
-  /** +1 engraves deeper along +Z, -1 along -Z. See stl_z_reversed_. */
-  int stlZSign() const { return stl_z_reversed_ ? -1 : 1; }
+  StlEngraveKind stlEngraveKind(const StlPlacement &placement, const PathShape *path) const;
 
   // The four emitters. Each gets every contour its kind produced at one Z step -- a filled object
   // needs its holes together with its outlines, and objects at the same height share the Z move.
@@ -218,13 +215,6 @@ private:
   QList<StlPlacementJob> layer_stl_placements_; // STL objects of the current layer, sliced at output time
   /** Set by convertLayer(..., stl_paired): the STL objects belong to the layer that follows. */
   bool stl_output_deferred_ = false;
-  /**
-   * ⚠️ Which machine Z direction means "deeper into the material" is not self evident: the existing
-   * focus code needs a per layer data-focusRev flag to get it right. Engraving with the Z direction
-   * flipped ruins the workpiece, so this is exposed as a parameter (`stl_z_reversed`) and MUST be
-   * verified on a real machine with a small model before running a real job.
-   */
-  bool stl_z_reversed_ = false;
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;
