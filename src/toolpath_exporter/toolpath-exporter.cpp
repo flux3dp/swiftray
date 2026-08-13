@@ -17,6 +17,12 @@ namespace {
 // Fallbacks when neither the placeholder rect nor the layer provides a value (TODO.md step 3).
 constexpr double kDefaultStlLayerHeightMm = 0.1;
 constexpr double kDefaultStlPointSpacingMm = 0.1;
+/**
+ * Longest straight move emitted as a single segment while the lateral refraction compensation is
+ * on. The compensation bends straight lines slightly, so long moves are subdivided; 2mm keeps the
+ * deviation far below the spot size over the whole field.
+ */
+constexpr double kStlLateralSegmentMm = 2.0;
 }  // namespace
 
 // TODO: Fix ToolpathExporter for non-Promark machines
@@ -58,7 +64,23 @@ void ToolpathExporter::parseParam(QJsonObject param) {
     uint32_t jump_delay_max = param["jump_delay_max"].toInt();
     gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
   }
-  // TODO: refractive index compensation (B-3) enters here, it only affects the Z of each slice.
+  // Refractive index compensation (B-3). All lengths are mm. See refraction-compensator.h --
+  // without the focal length only the depth is compensated, without n / the workpiece height
+  // nothing is.
+  RefractionParams refraction = refraction_.params();
+  if (param.contains("refraction_compensation")) {
+    refraction.enabled = param["refraction_compensation"].toBool();
+  }
+  if (param.contains("refractive_index")) {
+    refraction.refractive_index = param["refractive_index"].toDouble();
+  }
+  if (param.contains("material_height")) {
+    refraction.material_height_mm = param["material_height"].toDouble();
+  }
+  if (param.contains("focal_length")) {
+    refraction.focal_length_mm = param["focal_length"].toDouble();
+  }
+  refraction_.setParams(refraction);
 }
 
 void ToolpathExporter::setDpmm(qreal dpmm) {
@@ -569,6 +591,12 @@ void ToolpathExporter::outputLayerGcode() {
  *
  * Each kind needs a different gcode path, so they cannot be emitted in one pass, but they all
  * belong to the same Z and must not cost a second Z travel.
+ *
+ * With the refractive index compensation on (B-3) the mesh is sliced in MACHINE Z rather than in
+ * model height (stl::MeshWarp, see refraction-compensator.h), so "one layer = one Z move" survives
+ * -- a slicing plane there is the shallow bowl the machine can actually reach at that Z. The ladder
+ * below does not change at all, its numbers are simply already compensated. What does not fit in
+ * the geometry is the lateral term, and that is applied per emitted point.
  */
 void ToolpathExporter::outputLayerStlGcode() {
   if (layer_stl_placements_.isEmpty() || stl_objects_ == nullptr) return;
@@ -590,6 +618,17 @@ void ToolpathExporter::outputLayerStlGcode() {
   std::vector<PlaneRef> ladder;
   double finest_layer_height = 0;
 
+  // The galvo field is the work area, so the compensation is radial around its centre. Everything
+  // the compensator is asked about below is in mm; the mesh is in canvas units.
+  refraction_.setField(
+      machine_work_area_mm_.center(),
+      std::hypot(machine_work_area_mm_.width(), machine_work_area_mm_.height()) / 2,
+      canvas_mm_ratio_);
+  // With the compensation on the mesh is sliced in machine Z, so a slicing plane is the curved
+  // surface the machine can actually reach and the ladder keeps one Z move per layer.
+  const stl::MeshWarp *warp = refraction_.isActive() ? &refraction_ : nullptr;
+  qInfo() << "[Export] STL layer:" << refraction_.describe();
+
   for (const StlPlacementJob &entry : layer_stl_placements_) {
     const StlPlacement &placement = entry.placement;
     auto mesh_it = stl_objects_->constFind(placement.id);
@@ -599,15 +638,16 @@ void ToolpathExporter::outputLayerStlGcode() {
         placement.layer_height_mm > 0 ? placement.layer_height_mm : kDefaultStlLayerHeightMm;
     stl::SliceParams params;
     // The mesh is expressed in canvas units (0.1mm) once the placement matrix is applied, so the
-    // layer height has to be converted from mm as well.
-    params.layer_height = layer_height_mm * canvas_mm_ratio_;
+    // layer height has to be converted from mm as well. ⚠️ The layer height is a step of REAL depth
+    // in the model, but a warped mesh is sliced in machine Z, which is ~n times smaller.
+    params.layer_height = layer_height_mm * canvas_mm_ratio_ * refraction_.layerHeightScale();
 
     StlJob job;
     job.placement = placement;
     // Resolved at collection time, current_layer_ may be the paired layer by now.
     job.kind = entry.kind;
     QString error;
-    if (!job.slicer.prepare(mesh_it.value(), placement.matrix, params, &error)) {
+    if (!job.slicer.prepare(mesh_it.value(), placement.matrix, params, &error, warp)) {
       qWarning() << "[Export] Failed to prepare STL object" << placement.id << error;
       continue;
     }
@@ -631,9 +671,12 @@ void ToolpathExporter::outputLayerStlGcode() {
 
   // Z is tracked across ALL objects and restored once at the very end, so overlapping objects do
   // not make the axis travel back and forth.
-  // The focus origin is the work platform (z = 0), so the machine Z of a slice is just its own Z.
-  // machine_z_mm and target_z_mm are positive when moving up, which is the opposite of the Promark convention (up is negative).
-  double machine_z_mm = 0;
+  // The focus origin is the work platform (z = 0). Without compensation the machine Z of a slice is
+  // just its own Z; with it the mesh was sliced in machine Z already, so it still is.
+  // stl_focus_z_mm_ and target_z_mm are positive when moving up, which is the opposite of the
+  // Promark convention (up is negative) -- moveStlFocusZ() does the negating.
+  stl_focus_z_mm_ = 0;
+  stl_refraction_active_ = refraction_.hasLateralTerm();
   // The dotting time is only re-emitted when it actually changes: a layer of nothing but dot mode
   // objects sets it once, not once per Z step.
   bool dotting_enabled = false;
@@ -645,15 +688,15 @@ void ToolpathExporter::outputLayerStlGcode() {
 
     for (QList<StlSlice> &bucket : by_kind) bucket.clear();
     bool has_content = false;
-    // Grouping uses the geometric Z, the move uses the compensated one -- identical today, but B-3
-    // will make them differ and the machine has to follow the compensated value.
+    // The sweep coordinate IS the machine Z once the refraction warp is on, so the whole step still
+    // costs exactly one Z move. See stl::MeshWarp.
     double step_z_output = step_z;
     while (i < ladder.size() && ladder[i].z - step_z <= group_eps) {
       StlJob &job = jobs[static_cast<size_t>(ladder[i].job)];
       stl::Layer sliced = job.slicer.sliceAt(ladder[i].z);
       if (!sliced.contours.isEmpty()) {
         if (!has_content) {
-          step_z_output = sliced.z_compensated;
+          step_z_output = sliced.z_geometry;
           has_content = true;
         }
         by_kind[static_cast<int>(job.kind)].append(StlSlice{&job.placement, std::move(sliced)});
@@ -663,11 +706,10 @@ void ToolpathExporter::outputLayerStlGcode() {
     if (!has_content) continue;  // empty slices are legal, they just cost no Z move
 
     const double target_z_mm = step_z_output / canvas_mm_ratio_;
-    if (target_z_mm != machine_z_mm) {
-      // Note: moveZ is always relative for Promark, and up is negative.
-      gen_->moveZ(-(target_z_mm - machine_z_mm));
-      machine_z_mm = target_z_mm;
-    }
+    moveStlFocusZ(target_z_mm);
+    // The lateral compensation is a distortion of the XY pattern, not of the geometry, so it stays
+    // at emission time: this builds the r -> scale table this layer's points are mapped through.
+    if (stl_refraction_active_) refraction_.prepareFocusZ(target_z_mm);
 
     for (int k = 0; k < kStlEngraveKindCount; ++k) {
       // outputLayerFillGcode() returns early on cancel while still holding polygons_mutex_, so no
@@ -675,16 +717,21 @@ void ToolpathExporter::outputLayerStlGcode() {
       if (this->cancelled_) break;
       const QList<StlSlice> &slices = by_kind[k];
       if (slices.isEmpty()) continue;
+      qInfo() << "Handling StlEngraveKind" << k;
       const StlEngraveKind kind = static_cast<StlEngraveKind>(k);
 
       // Both dot kinds end up in outputLayerPathGcode() with a polygon of points, and it is the
       // dotting time that makes the controller fire once per point instead of drawing between them.
       const bool want_dotting =
           kind == StlEngraveKind::kDot || kind == StlEngraveKind::kDotFill;
+      qInfo() << "want_dotting" << want_dotting << "dotting_enabled" << dotting_enabled;
       if (want_dotting != dotting_enabled) {
+        qInfo() << "Set dotting mode" << want_dotting;
         gen_->setDottingTime(want_dotting ? current_layer_->dottingTime() : 0);
         dotting_enabled = want_dotting;
       }
+      // Tells the emitters that a point of layer_polygons_ is a dot, not a path vertex.
+      stl_dot_mode_ = want_dotting;
 
       polygons_mutex_.lock();
       layer_polygons_.clear();
@@ -719,9 +766,67 @@ void ToolpathExporter::outputLayerStlGcode() {
     // Leave the machine as we found it, the next layer does not dot.
     gen_->setDottingTime(0);
   }
-  if (machine_z_mm != 0) {
-    gen_->moveZ(machine_z_mm);
+  stl_refraction_active_ = false;
+  stl_dot_mode_ = false;
+  // Back to the focus origin. Also runs on cancel: 150mm of accumulated Z must not be left behind.
+  moveStlFocusZ(0);
+}
+
+void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
+  // Quantise to the machine resolution (B-10: 0.001mm). The moves are relative, so a target the
+  // generator rounds away would still count here and the two positions would slowly drift apart --
+  // over 1500 layers that adds up. 0.001 is exact in both generator grids (1/1000 and 1/10000).
+  const double target_z_mm = std::round(focus_z_mm * 1000.0) / 1000.0;
+  if (target_z_mm == stl_focus_z_mm_) return;
+  // Note: moveZ is always relative for Promark, and moving up is a negative Z.
+  gen_->moveZ((target_z_mm - stl_focus_z_mm_));
+  stl_focus_z_mm_ = target_z_mm;
+}
+
+void ToolpathExporter::moveStlSegment(const QPointF &from_mm, const QPointF &to_mm, double speed,
+                                      double power) {
+  // The lateral compensation is a radial distortion, so the image of a straight line is slightly
+  // curved: mapping only the endpoints of a long segment would bow it. Cheap to avoid.
+  const double length_mm = QLineF(from_mm, to_mm).length();
+  const int steps = std::max(1, static_cast<int>(std::ceil(length_mm / kStlLateralSegmentMm)));
+  for (int step = 1; step <= steps; ++step) {
+    const QPointF point_mm = from_mm + (to_mm - from_mm) * (double(step) / steps);
+    moveTo(refraction_.mapXY(point_mm), speed, power, 0);
   }
+}
+
+/**
+ * One polygon of an STL layer, with the lateral refraction compensation applied. The Z of the layer
+ * is not this function's business: the mesh was sliced in machine Z, so the whole layer -- points,
+ * paths and scan lines alike -- belongs to the one Z move the ladder already made.
+ */
+void ToolpathExporter::emitStlPolygon(const QPolygonF &poly_dots, double speed, double power) {
+  if (stl_dot_mode_) {
+    // Every point IS a dot, so it is mapped on its own and nothing may be inserted between two of
+    // them -- an interpolated point would be an extra dot at the wrong spacing.
+    moveTo(refraction_.mapXY(poly_dots.first() / dpmm_), travel_speed_, 0, 0);
+    for (const QPointF &point_dots : poly_dots) {
+      moveTo(refraction_.mapXY(point_dots / dpmm_), speed, power, 0);
+    }
+    return;
+  }
+
+  QPointF previous_mm = poly_dots.first() / dpmm_;
+  moveTo(refraction_.mapXY(previous_mm), travel_speed_, 0, 0);
+  for (const QPointF &point_dots : poly_dots) {
+    const QPointF point_mm = point_dots / dpmm_;
+    moveStlSegment(previous_mm, point_mm, speed, power);
+    previous_mm = point_mm;
+  }
+  moveTo(refraction_.mapXY(previous_mm), travel_speed_, 0, 0);
+}
+
+/** One scan line segment of an STL fill, with the lateral refraction compensation applied. */
+void ToolpathExporter::emitStlFillSegment(const QPointF &start_dots, const QPointF &end_dots) {
+  const QPointF start_mm = start_dots / dpmm_;
+  const QPointF end_mm = end_dots / dpmm_;
+  moveTo(refraction_.mapXY(start_mm), current_layer_->speed(), 0, 0);
+  moveStlSegment(start_mm, end_mm, current_layer_->speed(), current_layer_->power());
 }
 
 StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement,
@@ -1121,8 +1226,15 @@ void ToolpathExporter::outputLayerFillGcode(const FillOverride *fill_override) {
         }
 
         if (out_segments != nullptr) {
-          // The caller turns the segment into its own toolpath, nothing is engraved here.
+          // The caller turns the segment into its own toolpath, nothing is engraved here. The
+          // refraction compensation is applied there, on the resulting points.
           out_segments->append(QLineF(merged_intersections[i], merged_intersections[i + 1]));
+          continue;
+        }
+
+        if (stl_refraction_active_) {
+          // STL: the scan line has to be laterally compensated, and therefore subdivided.
+          emitStlFillSegment(merged_intersections[i], merged_intersections[i + 1]);
           continue;
         }
 
@@ -1158,6 +1270,12 @@ void ToolpathExporter::outputLayerPathGcode() {
   polygons_mutex_.lock();
   for (auto &poly : layer_polygons_) {
     if (poly.empty()) continue;
+
+    if (stl_refraction_active_) {
+      // STL: every point of the path goes through the lateral compensation, see emitStlPolygon().
+      emitStlPolygon(poly, layer_speed, layer_power);
+      continue;
+    }
 
     QPointF next_point_mm;
 

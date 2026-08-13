@@ -94,14 +94,12 @@ struct Contour {
 
 struct Layer {
   int index = 0;
-  /** Pure geometric Z of the slicing plane */
-  double z_geometry = 0.0;
   /**
-   * Z after refractive index compensation (TODO.md B-3).
-   * Currently equal to z_geometry -- the compensation formula is still to be confirmed, the field
-   * exists so adding it later does not change this struct.
+   * Z of the slicing plane, in the space the mesh was prepared in. Without a MeshWarp that is the
+   * geometry's own Z; with one it is the warped sweep coordinate -- for the refractive index
+   * compensation, the machine Z that engraves this layer (see refraction-compensator.h).
    */
-  double z_compensated = 0.0;
+  double z_geometry = 0.0;
   /** Empty layers are legal and are kept, so layer index always maps to a Z. */
   QVector<Contour> contours;
   /** Time spent on this layer, to spot the layers that dominate the run, this is for dev estimates */
@@ -137,20 +135,51 @@ struct MeshInstance {
 };
 
 /**
+ * Bends the sweep axis before slicing, so that a flat slicing plane in the swept space is a curved
+ * surface in the real one.
+ *
+ * This exists for the refractive index compensation (TODO.md B-3): what the machine can reach with
+ * ONE Z position is not a flat plane inside the workpiece but a shallow bowl, so slicing at flat
+ * heights and correcting afterwards means every single point of a layer needs its own Z move.
+ * Slicing in the warped space instead gives back "one layer = one Z", and costs nothing in the
+ * slicer: `w = warpZ(x, y, z)` is applied to the vertices, the sweep is unchanged.
+ *
+ * The implementation is in refraction-compensator.h; nothing in this file knows about optics.
+ *
+ * ⚠️ Two things the implementer owes the slicer:
+ *   - `warpZ` MUST be strictly increasing in z, otherwise the sweep is not a sweep any more.
+ *   - the warp is nonlinear in XY, so the straight edges of a triangle are no longer straight after
+ *     it. `maxEdgeLength()` says how long an edge may be before prepare() subdivides it.
+ */
+class MeshWarp {
+ public:
+  virtual ~MeshWarp() = default;
+  /** @return the sweep coordinate of a point, in mesh units. Must be increasing in @p z. */
+  virtual double warpZ(double x, double y, double z) const = 0;
+  /** Longest edge kept as is, in mesh units. <= 0 disables the subdivision. */
+  virtual double maxEdgeLength() const = 0;
+};
+
+/**
  * Incremental slicer: prepare a mesh once, then ask for the contours at any Z.
  *
  * This is what lets several objects share one Z ladder: a job with more than one STL engraves
  * strictly bottom to top across ALL objects, so each object has to be sliced at the Z values of the
  * merged ladder rather than at its own private layer positions.
  *
- * @note when @p transform is the identity, prepare() keeps a pointer to @p mesh instead of copying
- *       it (a 700k triangle model is ~50MB), so the mesh must outlive the slicer.
+ * @note when @p transform is the identity and there is no warp, prepare() keeps a pointer to
+ *       @p mesh instead of copying it (a 700k triangle model is ~50MB), so the mesh must outlive
+ *       the slicer.
  */
 class Slicer {
  public:
-  /** @return false and fills @p error when the mesh is empty or the layer height is invalid */
+  /**
+   * @param warp optional sweep axis warp, see MeshWarp. Not owned, only used during this call.
+   *             ⚠️ With a warp the layer height is a step in the WARPED coordinate.
+   * @return false and fills @p error when the mesh is empty or the layer height is invalid
+   */
   bool prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params,
-               QString *error = nullptr);
+               QString *error = nullptr, const MeshWarp *warp = nullptr);
 
   bool isReady() const { return ready_; }
 

@@ -1,5 +1,6 @@
 #include "stl-utils.h"
 
+#include <QDebug>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QHash>
@@ -480,8 +481,51 @@ QPolygonF resamplePolygon(const QPolygonF &polygon, double spacing, bool is_clos
   return result;
 }
 
+namespace {
+
+/**
+ * Split a triangle at the midpoints of its three edges until every edge is short enough, so that a
+ * nonlinear warp stays accurate over it. Each level turns one triangle into four.
+ */
+void subdivideTriangle(const Triangle &tri, double max_edge, int depth_left,
+                       std::vector<Triangle> *out) {
+  const auto edge_len = [](const Vec3 &a, const Vec3 &b) {
+    const double dx = a.x - b.x;
+    const double dy = a.y - b.y;
+    const double dz = a.z - b.z;
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+  };
+  if (depth_left <= 0 ||
+      (edge_len(tri.v[0], tri.v[1]) <= max_edge && edge_len(tri.v[1], tri.v[2]) <= max_edge &&
+       edge_len(tri.v[2], tri.v[0]) <= max_edge)) {
+    out->push_back(tri);
+    return;
+  }
+  const auto midpoint = [](const Vec3 &a, const Vec3 &b) {
+    return Vec3{(a.x + b.x) * 0.5, (a.y + b.y) * 0.5, (a.z + b.z) * 0.5};
+  };
+  const Vec3 m01 = midpoint(tri.v[0], tri.v[1]);
+  const Vec3 m12 = midpoint(tri.v[1], tri.v[2]);
+  const Vec3 m20 = midpoint(tri.v[2], tri.v[0]);
+  // Winding is preserved by all four children, so the contour orientation stays meaningful.
+  const Triangle children[4] = {
+      Triangle{{tri.v[0], m01, m20}},
+      Triangle{{m01, tri.v[1], m12}},
+      Triangle{{m20, m12, tri.v[2]}},
+      Triangle{{m01, m12, m20}},
+  };
+  for (const Triangle &child : children) {
+    subdivideTriangle(child, max_edge, depth_left - 1, out);
+  }
+}
+
+/** 4^6 = 4096 children for one triangle is already far past useful, and it bounds the memory. */
+constexpr int kMaxSubdivisionDepth = 6;
+
+}  // namespace
+
 bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceParams &params,
-                     QString *error) {
+                     QString *error, const MeshWarp *warp) {
   ready_ = false;
   owns_mesh_ = false;
   source_ = nullptr;
@@ -504,14 +548,37 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
   }
   params_ = params;
 
-  // Only copy the mesh when there is something to transform: a 700k triangle model is ~50MB.
-  if (transform.isIdentity()) {
+  // Only copy the mesh when there is something to do to it: a 700k triangle model is ~50MB.
+  if (transform.isIdentity() && warp == nullptr) {
     source_ = &mesh;
     owns_mesh_ = false;
   } else {
     transformed_ = mesh;
-    applyTransform(&transformed_, transform);
+    if (!transform.isIdentity()) applyTransform(&transformed_, transform);
     owns_mesh_ = true;
+  }
+
+  if (warp != nullptr) {
+    // Subdivide first, warp after: the split has to happen on the real geometry, and it is what
+    // keeps the warped edges close to the surface they are meant to follow.
+    const double max_edge = warp->maxEdgeLength();
+    if (max_edge > 0.0) {
+      std::vector<Triangle> refined;
+      refined.reserve(transformed_.triangles.size());
+      for (const Triangle &tri : transformed_.triangles) {
+        subdivideTriangle(tri, max_edge, kMaxSubdivisionDepth, &refined);
+      }
+      if (refined.size() != transformed_.triangles.size()) {
+        qInfo() << "[Slicer] warp subdivision:" << transformed_.triangles.size() << "->"
+                << refined.size() << "triangles, max edge" << max_edge;
+      }
+      transformed_.triangles = std::move(refined);
+    }
+    for (Triangle &tri : transformed_.triangles) {
+      for (Vec3 &vertex : tri.v) {
+        vertex.z = warp->warpZ(vertex.x, vertex.y, vertex.z);
+      }
+    }
   }
 
   const Mesh &mesh_ref = work();
@@ -583,8 +650,9 @@ QVector<double> Slicer::planes() const {
 
 Layer Slicer::sliceAt(double z) {
   Layer layer;
+  // In warped space (refractive index compensation) this is the machine Z of the layer, not a
+  // height of the model. See MeshWarp.
   layer.z_geometry = z;
-  layer.z_compensated = z;  // refractive index compensation not implemented yet (B-3)
   if (!isReady()) return layer;
 
   const Mesh &mesh_ref = work();

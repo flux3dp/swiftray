@@ -17,6 +17,7 @@
 #include <constants.h>
 #include "toolpath-utils.h"
 #include "stl-utils.h"
+#include "refraction-compensator.h"
 
 struct FilledPath {
   QList<QPolygonF> polys;
@@ -170,6 +171,24 @@ private:
 
   StlEngraveKind stlEngraveKind(const StlPlacement &placement, const PathShape *path) const;
 
+  /**
+   * Move the head so the nominal focus sits @p focus_z_mm above the focus origin (the platform).
+   * Relative move, and the gcode Z of "up" is negative -- see outputLayerStlGcode().
+   */
+  void moveStlFocusZ(double focus_z_mm);
+
+  /**
+   * Straight move in target space, emitted as the laterally compensated (and therefore subdivided)
+   * path that actually lands on it.
+   */
+  void moveStlSegment(const QPointF &from_mm, const QPointF &to_mm, double speed, double power);
+
+  /** One polygon of an STL layer, with the lateral refraction compensation applied. */
+  void emitStlPolygon(const QPolygonF &poly_dots, double speed, double power);
+
+  /** One scan line segment of an STL fill, with the lateral refraction compensation applied. */
+  void emitStlFillSegment(const QPointF &start_dots, const QPointF &end_dots);
+
   // The four emitters. Each gets every contour its kind produced at one Z step -- a filled object
   // needs its holes together with its outlines, and objects at the same height share the Z move.
   void outputStlLineFillGcode(const QList<StlSlice> &slices);
@@ -215,6 +234,18 @@ private:
   QList<StlPlacementJob> layer_stl_placements_; // STL objects of the current layer, sliced at output time
   /** Set by convertLayer(..., stl_paired): the STL objects belong to the layer that follows. */
   bool stl_output_deferred_ = false;
+  /**
+   * Refractive index compensation (B-3), configured through parseParam().
+   * The depth half is a warp applied to the mesh before slicing, so the ladder still moves Z once
+   * per layer; only the (small) lateral half reaches the emitters.
+   */
+  RefractionCompensator refraction_;
+  /** True only while an STL layer whose points need the lateral compensation is being emitted. */
+  bool stl_refraction_active_ = false;
+  /** The points of layer_polygons_ are dots, not path vertices: nothing may be inserted between. */
+  bool stl_dot_mode_ = false;
+  /** Height of the nominal focus above the focus origin, mm. Owned by the STL output path. */
+  double stl_focus_z_mm_ = 0;
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;
