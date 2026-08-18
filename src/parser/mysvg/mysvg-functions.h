@@ -181,7 +181,8 @@ namespace MySVG {
                 auto strokeStyle = node->styleProperty(QSvgStyleProperty::STROKE);
                 if (!strokeStyle ||
                     ((QSvgStrokeStyle*)strokeStyle)->stroke().brush().style() == Qt::NoBrush ||
-                    ((QSvgStrokeStyle*)strokeStyle)->stroke().width() == 0 ||
+                    // Use widthF(): QPen::width() rounds to int, dropping sub-0.5px strokes
+                    qFuzzyIsNull(((QSvgStrokeStyle*)strokeStyle)->stroke().widthF()) ||
                     !((QSvgStrokeStyle*)strokeStyle)->stroke().color().isValid()) {
                     qInfo() << "Path has no valid stroke, skip element";
                     return;
