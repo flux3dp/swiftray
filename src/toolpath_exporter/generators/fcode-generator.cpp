@@ -191,6 +191,12 @@ void FCodeGenerator::set_printer_packet_crc(uint16_t val, bool is_4c) {
   write(val, &script_crc32);
 }
 
+void FCodeGenerator::burst_refresh(uint16_t counts) {
+  write_command(17, &script_crc32);
+  write(uint8_t(15), &script_crc32);
+  write(counts, &script_crc32);
+}
+
 // 5 for white ink, 6 for varnish
 void FCodeGenerator::start_printer_packet(uint8_t packet_type, bool is_4c) {
   write_command(17, &script_crc32);

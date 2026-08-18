@@ -99,8 +99,8 @@ void PrinterBitmapFactory4C::set_refresh_interval(int val) {
   refresh_interval = val;
 }
 
-void PrinterBitmapFactory4C::set_refresh_threshold(int val) {
-  refresh_threshold = val;
+void PrinterBitmapFactory4C::set_burst_refresh(bool val) {
+  burst_refresh = val;
 }
 
 QPointF PrinterBitmapFactory4C::pixel_to_actual_position(int x,
@@ -209,86 +209,36 @@ void PrinterBitmapFactory4C::generate_4_color_block(QRect box,
     SlicedBox real_box(box.x() + x, box.y() + y, box.width(), box.height(),
                        box.padding_top);
     bool is_end = (i == len_boxes - 1);
-    write_data_to_proc_4c(real_box, data.payload,
-                          data.nozzle_use_counts, speed, reverse_x, false,
+    write_data_to_proc_4c(real_box, data.payload, speed, reverse_x, false,
                           !did_start, is_end, false, nozzle_mode);
     did_start = true;
   }
   proc->wait_printer_mode_sync();
 }
 
-void PrinterBitmapFactory4C::renew_nozzle_counts() {
-  int colors_size = colors.size();
-  left_nozzle_counts.resize(colors_size);
-  right_nozzle_counts.resize(colors_size);
-  for (int i = 0; i < colors_size; i++) {
-    left_nozzle_counts[i].resize(DEFAULT_SLICE_HEIGHT_4C);
-    left_nozzle_counts[i].clear();
-    right_nozzle_counts[i].resize(DEFAULT_SLICE_HEIGHT_4C);
-    right_nozzle_counts[i].clear();
-  }
-}
-
-void PrinterBitmapFactory4C::update_nozzle_use_counts(
-    QVector<QVector<int>> new_values,
-    bool is_left) {
-  auto counts_ptr = is_left ? &left_nozzle_counts : &right_nozzle_counts;
-  for (int i = 0; i < colors.size(); i++) {
-    std::transform(new_values[i].begin(), new_values[i].end(),
-                   (*counts_ptr)[i].begin(), (*counts_ptr)[i].begin(),
-                   std::plus<int>());
-  }
-}
-
-void PrinterBitmapFactory4C::refresh_ink(int repeat, double block_width_mm) {
+void PrinterBitmapFactory4C::refresh_ink(int repeat,
+                                         double block_width_mm,
+                                         double y) {
   int block_width = block_width_mm * pixel_per_mm;
   int color_size = colors.size();
-  QVector<QVector<bool>> left_data;
-  QVector<QVector<bool>> right_data;
-  if (refresh_threshold > 0) {
-    left_data.resize(color_size);
-    right_data.resize(color_size);
-    auto need_refresh = [this](int count) -> bool {
-      return count <= this->refresh_threshold;
-    };
-    for (int i = 0; i < color_size; i++) {
-      left_data[i].resize(DEFAULT_SLICE_HEIGHT_4C);
-      right_data[i].resize(DEFAULT_SLICE_HEIGHT_4C);
-      std::transform(left_nozzle_counts[i].begin(), left_nozzle_counts[i].end(),
-                     left_data[i].begin(), need_refresh);
-      std::transform(right_nozzle_counts[i].begin(),
-                     right_nozzle_counts[i].end(), right_data[i].begin(),
-                     need_refresh);
-    }
-  } else {
-    left_data.resize(color_size);
-    right_data.resize(color_size);
-    for (int i = 0; i < color_size; i++) {
-      left_data[i].fill(true, DEFAULT_SLICE_HEIGHT_4C);
-      right_data[i].fill(true, DEFAULT_SLICE_HEIGHT_4C);
-    }
+  QVector<QVector<bool>> nozzle_data(color_size);
+  for (int i = 0; i < color_size; i++) {
+    nozzle_data[i].fill(true, DEFAULT_SLICE_HEIGHT_4C);
   }
-  auto any_true = [](const QVector<QVector<bool>>& data) -> bool {
-    for (const auto& row : data) {
-      for (bool val : row) {
-        if (val)
-          return true;
-      }
-    }
-    return false;
-  };
   bool need_refresh_left =
-      (nozzle_mode_ == NozzleMode::BOTH || nozzle_mode_ == NozzleMode::LEFT) &&
-      any_true(left_data);
+      nozzle_mode_ == NozzleMode::BOTH || nozzle_mode_ == NozzleMode::LEFT;
   bool need_refresh_right =
-      (nozzle_mode_ == NozzleMode::BOTH || nozzle_mode_ == NozzleMode::RIGHT) &&
-      any_true(right_data);
+      nozzle_mode_ == NozzleMode::BOTH || nozzle_mode_ == NozzleMode::RIGHT;
   if (need_refresh_left || need_refresh_right) {
     bool use_macros_refresh = std::isnan(refresh_x_mm);
     float x = NAN;
     if (!use_macros_refresh) {
       x = refresh_x_mm - offset.x();
-      proc->moveto(NamedArgs().rx(x).rs(0).set_is_travel());
+      if (std::isnan(y)) {
+        proc->moveto(NamedArgs().rx(x).rs(0).set_is_travel());
+      } else {
+        proc->moveto(NamedArgs().rx(x).ry(y).rs(0).set_is_travel());
+      }
     } else if (hasattr(macros, MacroFunc::move_to_refresh_position)) {
       QPointF pos = macros->move_to_refresh_position();
       x = pos.x();
@@ -322,33 +272,39 @@ void PrinterBitmapFactory4C::refresh_ink(int repeat, double block_width_mm) {
         }
         return payload;
       };
-      if (nozzle_mode_ == NozzleMode::BOTH ||
-          nozzle_mode_ == NozzleMode::LEFT) {
-        QByteArray payload = generate_payload(left_data, block_width);
-        for (int i = 0; i < repeat; i++) {
-          write_payload(NozzleMode::LEFT, payload);
-          if (!is_going_back) {
-            proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
-          } else {
-            proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
+      if (burst_refresh) {
+        proc->sync_grbl_motion(0);
+        proc->burst_refresh(burst_refresh_counts);
+        proc->sync_grbl_motion(0);
+      } else {
+        if (nozzle_mode_ == NozzleMode::BOTH ||
+            nozzle_mode_ == NozzleMode::LEFT) {
+          QByteArray payload = generate_payload(nozzle_data, block_width);
+          for (int i = 0; i < repeat; i++) {
+            write_payload(NozzleMode::LEFT, payload);
+            if (!is_going_back) {
+              proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
+            } else {
+              proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
+            }
+            proc->wait_printer_mode_sync();
+            is_going_back = !is_going_back;
           }
-          proc->wait_printer_mode_sync();
-          is_going_back = !is_going_back;
         }
-      }
-      proc->moveto(NamedArgs().rs(0));
-      if (nozzle_mode_ == NozzleMode::BOTH ||
-          nozzle_mode_ == NozzleMode::RIGHT) {
-        QByteArray payload = generate_payload(right_data, block_width);
-        for (int i = 0; i < repeat; i++) {
-          write_payload(NozzleMode::RIGHT, payload);
-          if (!is_going_back) {
-            proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
-          } else {
-            proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
+        proc->moveto(NamedArgs().rs(0));
+        if (nozzle_mode_ == NozzleMode::BOTH ||
+            nozzle_mode_ == NozzleMode::RIGHT) {
+          QByteArray payload = generate_payload(nozzle_data, block_width);
+          for (int i = 0; i < repeat; i++) {
+            write_payload(NozzleMode::RIGHT, payload);
+            if (!is_going_back) {
+              proc->moveto(NamedArgs().rx(end_x).rs(1).rf(1800));
+            } else {
+              proc->moveto(NamedArgs().rx(x).rs(1).rf(1800));
+            }
+            proc->wait_printer_mode_sync();
+            is_going_back = !is_going_back;
           }
-          proc->wait_printer_mode_sync();
-          is_going_back = !is_going_back;
         }
       }
       proc->moveto(NamedArgs().rx(x).rs(0).set_is_travel());
@@ -359,7 +315,6 @@ void PrinterBitmapFactory4C::refresh_ink(int repeat, double block_width_mm) {
       }
     }
   }
-  renew_nozzle_counts();
 }
 
 PacketData4C PrinterBitmapFactory4C::create_image_packet_data_4c(
@@ -371,12 +326,10 @@ PacketData4C PrinterBitmapFactory4C::create_image_packet_data_4c(
   int w = box.width();
   int h = box.height();
   int padding_top = box.padding_top;
-  QVector<QVector<int>> nozzle_use_counts(
-      colors.size(), QVector<int>(DEFAULT_SLICE_HEIGHT_4C, 0));
 
   int bit_idx, cur_val;
   QVector<QByteArray> payload_data;
-  int i, j, c, r, dist, val, count;
+  int i, c, r, dist, val, count;
   bool has_data = false;
   int max_y = y + h;                     // excluded
   int min_y = qMax(y + padding_top, 0);  // included
@@ -394,11 +347,6 @@ PacketData4C PrinterBitmapFactory4C::create_image_packet_data_4c(
         uchar pixel_value = WHITE_PIXEL - data_ptr[c];
         if (pixel_value > 0) {
           cur_val += pixel_value << bit_idx;
-          for (j = 0; j < bit_count; j++) {
-            if ((pixel_value >> j) & 1) {
-              nozzle_use_counts[bit_count - 1 - j][r - y] += 1;
-            }
-          }
           has_data = true;
         }
       }
@@ -427,7 +375,7 @@ PacketData4C PrinterBitmapFactory4C::create_image_packet_data_4c(
   for (i = 0; i < w; i++) {
     payload.append(payload_data[i]);
   }
-  return PacketData4C{nozzle_use_counts, payload};
+  return PacketData4C{payload};
 }
 
 void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
@@ -537,8 +485,7 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
     return;
   onProgressChanged(0.05, true);
 
-  renew_nozzle_counts();
-  bool should_refresh = false;
+  bool should_refresh = true;
   float last_refresh_time = proc->get_time_cost();
   int row_counts = 0;
 
@@ -573,8 +520,16 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
             }
             continue;
           }
+          NozzleMode nozzle_mode = nozzle_mode_;
+          if (nozzle_mode == NozzleMode::BOTH) {
+            nozzle_mode =
+                (row_counts % 2 == 0) ? NozzleMode::LEFT : NozzleMode::RIGHT;
+          }
           if (should_refresh) {
-            refresh_ink();
+            double refresh_y =
+                pixel_to_actual_position(box.x(), box.y(), nozzle_mode, false)
+                    .y();
+            refresh_ink(3, 5, refresh_y);
             should_refresh = false;
             last_refresh_time = proc->get_time_cost();
             just_refreshed = true;
@@ -582,16 +537,8 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
           bool is_start = !is_printing || just_refreshed;
           is_printing = true;
           bool is_end = (i == row_size - 1);
-          NozzleMode nozzle_mode = nozzle_mode_;
-          if (nozzle_mode == NozzleMode::BOTH) {
-            nozzle_mode =
-                (row_counts % 2 == 0) ? NozzleMode::LEFT : NozzleMode::RIGHT;
-          }
-          update_nozzle_use_counts(data.nozzle_use_counts,
-                                   nozzle_mode == NozzleMode::LEFT);
           final_x = write_data_to_proc_4c(
-              box, data.payload,
-              data.nozzle_use_counts, kwargs.speed, reverse_x, false, is_start,
+              box, data.payload, kwargs.speed, reverse_x, false, is_start,
               is_end, just_refreshed && isnan(refresh_x_mm), nozzle_mode,
               is_row_printed ? 0 : start_padding);
           just_refreshed = false;
@@ -636,7 +583,6 @@ float PrinterBitmapFactory4C::get_padded_x(double x,
 double PrinterBitmapFactory4C::write_data_to_proc_4c(
     const SlicedBox& box,
     const QByteArray& payload,
-    QVector<QVector<int>> nozzle_use_counts,
     float speed,
     bool reverse_x,
     bool force_y,

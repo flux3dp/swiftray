@@ -63,7 +63,6 @@ struct PacketData {
 };
 
 struct PacketData4C {
-  QVector<QVector<int>> nozzle_use_counts;
   QByteArray payload;  // 8 bits (from 1 to 127): row 1 colors[0] + colors[1] +
                        // colors[2] + colors[3] + row 2...
 };

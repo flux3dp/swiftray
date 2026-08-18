@@ -59,7 +59,6 @@ namespace MySVG {
         QString raw_am_angle_map;
         QString raw_color_curves_map;
         int refresh_interval;
-        int refresh_threshold;
         int nozzle_mode;
         double nozzle_offset_x;
         double nozzle_offset_y;

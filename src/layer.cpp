@@ -152,7 +152,6 @@ const QString& Layer::rawColorCurvesMap() const { return raw_color_curves_map_; 
 
 int Layer::refreshInterval() const { return refresh_interval_; }
 
-int Layer::refreshThreshold() const { return refresh_threshold_; }
 
 int Layer::nozzleMode() const { return nozzle_mode_; }
 
@@ -305,7 +304,6 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->raw_am_angle_map_ = config.raw_am_angle_map;
   this->raw_color_curves_map_ = config.raw_color_curves_map;
   this->refresh_interval_ = config.refresh_interval;
-  this->refresh_threshold_ = config.refresh_threshold;
   this->nozzle_mode_ = config.nozzle_mode;
   this->nozzle_offset_x_ = config.nozzle_offset_x;
   this->nozzle_offset_y_ = config.nozzle_offset_y;

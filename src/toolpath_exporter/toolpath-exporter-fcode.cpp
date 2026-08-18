@@ -156,6 +156,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.is_diode_one_way_engraving = param["diode_owe"].toBool();
   config_.is_reverse_engraving = param["rev"].toBool();
   config_.skip_prespray = param["skip_prespray"].toBool();
+  config_.burst_refresh = param["burst_refresh"].toBool();
   config_.prespray_times = param["prespray_times"].toInt(3);
   config_.min_speed = param["min_speed"].toDouble(3);
   config_.travel_speed = param["ts"].toDouble(7500);
@@ -995,7 +996,7 @@ void ToolpathExporterFcode::convertPrintingLayer() {
       factory_->set_am_angle_map(current_layer_->rawAmAngleMap());
       factory_->set_color_curves_map(current_layer_->rawColorCurvesMap());
       factory_->set_refresh_interval(current_layer_->refreshInterval());
-      factory_->set_refresh_threshold(current_layer_->refreshThreshold());
+      factory_->set_burst_refresh(config_.burst_refresh);
       factory_->set_nozzle_mode(current_layer_->nozzleMode());
       factory_->set_nozzle_offset(NozzleMode::RIGHT,
                                   QPointF(current_layer_->nozzleOffsetX(),
@@ -1109,7 +1110,8 @@ void ToolpathExporterFcode::outputPrintingTestFcode() {
   if (support_info.PRINTING_SCRIPTS) {
     if (has_printing_task_) {
       // 0002: pure prespray task
-      if (!config_.skip_prespray && hasattr(macros, MacroFunc::test_cartridge)) {
+      if (!config_.skip_prespray && !config_.burst_refresh &&
+          hasattr(macros, MacroFunc::test_cartridge)) {
         proc.start_task_script_block("xMIN", "0002");
         qInfo() << "Prespray" << config_.prespray_times << "times";
         macros->test_cartridge(config_.prespray_times);

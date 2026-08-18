@@ -129,6 +129,7 @@ class FCodeGenerator {
   void start_printer_packet_payload(bool is_4c = false);
   void add_printer_packet_payload(uint8_t byte);
   void set_printer_packet_crc(uint16_t val, bool is_4c = false);
+  void burst_refresh(uint16_t counts);
   void start_printer_packet(uint8_t packet_type, bool is_4c = false);
   void end_printer_packet(bool is_4c = false);
   void set_printer_packet_px_count(uint32_t count);
@@ -404,6 +405,7 @@ class ToolpathProcessor {
   FORWARD_TO_GENERATOR(start_printer_packet_payload)
   FORWARD_TO_GENERATOR(add_printer_packet_payload)
   FORWARD_TO_GENERATOR(set_printer_packet_crc)
+  FORWARD_TO_GENERATOR(burst_refresh)
   FORWARD_TO_GENERATOR(sync_grbl_motion)
   FORWARD_TO_GENERATOR(flux_custom_cmd)
   FORWARD_TO_GENERATOR(end_content)
