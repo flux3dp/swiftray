@@ -17,8 +17,6 @@ PrinterBitmapFactory4C::PrinterBitmapFactory4C(FactoryKwargs& kwargs) noexcept
   nozzle_mode_ = NozzleMode::BOTH;
 
   color_curves_map = COLOR_CURVES_MAP_4C[halftone - 1];
-  left_nozzle_counts.resize(colors.size());
-  right_nozzle_counts.resize(colors.size());
 }
 
 void PrinterBitmapFactory4C::set_reversed(bool val) {
