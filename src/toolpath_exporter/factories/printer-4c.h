@@ -13,13 +13,11 @@ class PrinterBitmapFactory4C : public PrinterBitmapFactory {
       {PrintingColor::YELLOW, QPoint(84, 0)},
       {PrintingColor::BLACK, QPoint(126, 0)},
   };
-  int refresh_interval = 0;  // rows counts to refresh ink
-  int refresh_threshold =
-      0;  // nozzle usage threshold to trigger refresh, 0 means always refresh
+  int refresh_interval = 0;  // time counts (second) to refresh ink
+  bool burst_refresh = false;
+  int burst_refresh_counts = 300;
   double refresh_x_mm = 0;
   std::shared_ptr<BaseMacros> macros;
-  QVector<QVector<int>> left_nozzle_counts;  // colors x slice rows
-  QVector<QVector<int>> right_nozzle_counts;
   bool is_reversed = false;
 
   static FactoryKwargs normalize(FactoryKwargs kwargs) {
@@ -49,16 +47,12 @@ class PrinterBitmapFactory4C : public PrinterBitmapFactory {
                               bool reverse_x = false,
                               NozzleMode nozzle_mode = NozzleMode::UNDEFINED,
                               int multipass = 1);
-  void renew_nozzle_counts();
-  void update_nozzle_use_counts(QVector<QVector<int>> new_values,
-                                bool is_left = true);
-  void refresh_ink(int repeat = 3, double block_width_mm = 5);
+  void refresh_ink(int repeat = 3, double block_width_mm = 5, double y = NAN);
   PacketData4C create_image_packet_data_4c(const SlicedBox& box,
                                            bool reverse_x = false,
                                            bool skip_empty = true);
   double write_data_to_proc_4c(const SlicedBox& box,
                                const QByteArray& payload,
-                               QVector<QVector<int>> nozzle_use_counts,
                                float speed,
                                bool reverse_x = false,
                                bool force_y = false,
@@ -77,7 +71,7 @@ class PrinterBitmapFactory4C : public PrinterBitmapFactory {
   void set_macros(std::shared_ptr<BaseMacros> macros_ptr) override;
   void set_refresh_x_mm(double val) override;
   void set_refresh_interval(int val) override;
-  void set_refresh_threshold(int val) override;
+  void set_burst_refresh(bool val) override;
   void add_image_by_color(QImage& img, QRectF& bbox, QColor color) override;
   void generate_prespray_task_code(float speed,
                                    bool reverse_x,

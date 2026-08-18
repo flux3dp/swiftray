@@ -92,7 +92,6 @@ public:
   const QString& rawAmAngleMap() const;
   const QString& rawColorCurvesMap() const;
   int refreshInterval() const;
-  int refreshThreshold() const;
   int nozzleMode() const;
   double nozzleOffsetX() const;
   double nozzleOffsetY() const;
@@ -192,7 +191,6 @@ private:
   QString raw_am_angle_map_;
   QString raw_color_curves_map_;
   int refresh_interval_ = 0;
-  int refresh_threshold_ = 0;
   int nozzle_mode_ = 0;
   double nozzle_offset_x_ = 0;
   double nozzle_offset_y_ = 0;

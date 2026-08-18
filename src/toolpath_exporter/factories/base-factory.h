@@ -66,7 +66,7 @@ class BaseBitmapFactory : public BaseFactory {
   virtual void set_macros(std::shared_ptr<BaseMacros> macros_ptr) {};
   virtual void set_refresh_x_mm(double val) {};
   virtual void set_refresh_interval(int val) {};
-  virtual void set_refresh_threshold(int val) {};
+  virtual void set_burst_refresh(bool val) {};
   // UV
   virtual void set_uv_type(UVType val) {};
   virtual void set_uv_x_step(int val) {};

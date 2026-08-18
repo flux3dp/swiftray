@@ -2925,7 +2925,6 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.raw_am_angle_map = attributes.value("data-amAngleMap").toString();
         layer_config.raw_color_curves_map = attributes.value("data-colorCurvesMap").toString();
         layer_config.refresh_interval = getAttr(attributes, "data-refreshInterval", default_config, "refresh_interval", 0);
-        layer_config.refresh_threshold = getAttr(attributes, "data-refreshThreshold", default_config, "refresh_threshold", 0);
         layer_config.nozzle_mode = getAttr(attributes, "data-nozzleMode", default_config, "nozzle_mode", 0);
         layer_config.nozzle_offset_x = getAttr(attributes, "data-nozzleOffsetX", default_config, "nozzle_offset_x", 0.0);
         layer_config.nozzle_offset_y = getAttr(attributes, "data-nozzleOffsetY", default_config, "nozzle_offset_y", 0.0);

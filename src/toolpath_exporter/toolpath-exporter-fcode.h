@@ -83,6 +83,7 @@ struct Config {
   bool is_diode_one_way_engraving = false;
   bool is_reverse_engraving = false;
   bool skip_prespray = false;
+  bool burst_refresh = false;
   int prespray_times = 3;
   bool use_ga_reorder = true;
   // other
