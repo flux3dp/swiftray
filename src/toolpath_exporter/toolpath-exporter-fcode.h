@@ -1,6 +1,6 @@
 // Updated to
 // Ghost: b10a72e5e59c5f03b7e214953557903af141d611
-// Client: 3b285b419b2852b4265f4f1508bacb5b95b1a4c8
+// Client: 1a1e65fd01c55e2a2c1b124bc04543082d7c552c
 
 #pragma once
 
@@ -145,6 +145,8 @@ class ToolpathExporterFcode : public QObject {
   float layer_backlash_ = 0;
   float layer_pwm_scale_ = 1;
   bool layer_is_high_quality_ = false;
+  bool layer_texture_enabled_ = false;
+  LaserTextureParams layer_texture_params_;
   LayerModule layer_module_;
   bool is_laser_layer_ = false;
   bool is_printing_layer_ = false;
@@ -202,6 +204,7 @@ class ToolpathExporterFcode : public QObject {
   void clearWhite(QImage* src, QRect dirty_area);
   void clearTransparent(QImage* src);
   void dilateBinaryBitmap(QImage* src);
+  void texturizeLaserImage(QImage* src, bool redither);
   // Move related functions
   void homeZAxis();
   void backToHome();

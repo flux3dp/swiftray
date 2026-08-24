@@ -2,9 +2,11 @@
 #include "toolpath-exporter-constants.h"
 #include "ga-path-solver.h"
 #include <QDebug>
+#include <algorithm>
 #include <cmath>
 #include <opencv2/imgproc.hpp>
 #include <optional>
+#include <random>
 
 /**
  * @brief Remove the suffix and prefix zeros
@@ -153,6 +155,71 @@ std::tuple<std::vector<ByteArray32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
   }
 
   return std::make_tuple(grayscale_array, trim_start_idx, trim_end_idx);
+}
+
+/**
+ * Texturize a laser engraving image in-place, in ink space (0 = white / no
+ * engraving, 255 = full power) so the texture stays visible on solid black
+ * areas. Stripe geometry is computed in mm so anisotropic x/y dpmm stays
+ * correct. Noise is seeded so repeated exports are identical.
+ * @param src Format_Grayscale8, or grayscaled Format_ARGB32 (alpha preserved,
+ *            fully transparent pixels untouched)
+ */
+void applyLaserTexture(QImage* src, const LaserTextureParams& params) {
+  const bool grayscale8 = src->format() == QImage::Format_Grayscale8;
+  Q_ASSERT_X(grayscale8 || src->format() == QImage::Format_ARGB32 ||
+                 src->format() == QImage::Format_ARGB32_Premultiplied,
+             "toolpath-utils",
+             "applyLaserTexture() expects Grayscale8 or ARGB32");
+
+  const bool stripe_mode = params.mode == 2;
+  const double angle = params.stripe_angle * M_PI / 180.0;
+  const double interval = std::max(params.stripe_interval, 0.01);
+  const bool vertical_lines = std::abs(std::cos(angle)) < 1e-12;
+  const double slope = -std::tan(angle);  // image rows grow downwards
+  const double slope_norm = std::hypot(slope, 1.0);
+  // ~1 px wide stripe lines with anti-aliased edges
+  const double line_width = std::min(params.pixel_size_x, params.pixel_size_y);
+  const double stripe_scale = params.stripe_intensity / 100.0;
+  const double noise_scale = params.random_intensity / 100.0;
+  std::mt19937 rng(0);
+  std::uniform_real_distribution<double> uniform(-1.0, 1.0);
+
+  for (int y = 0; y < src->height(); ++y) {
+    uchar* gray_line = grayscale8 ? src->scanLine(y) : nullptr;
+    QRgb* rgb_line = grayscale8 ? nullptr : (QRgb*)src->scanLine(y);
+    const double y_mm = y * params.pixel_size_y;
+    for (int x = 0; x < src->width(); ++x) {
+      double factor;
+      if (stripe_mode) {
+        const double x_mm = x * params.pixel_size_x;
+        // signed perpendicular distance from the line through the origin
+        const double dist_axis =
+            vertical_lines ? x_mm : (y_mm - slope * x_mm) / slope_norm;
+        double m = std::fmod(dist_axis + interval / 2.0, interval);
+        if (m < 0) m += interval;
+        const double dist = std::abs(m - interval / 2.0);
+        const double coverage = std::clamp(1.0 - dist / line_width, 0.0, 1.0);
+        factor = 1.0 - coverage * stripe_scale;
+      } else {
+        // per pixel +-intensity% of the pixel's own ink, so white stays white
+        factor = 1.0 + uniform(rng) * noise_scale;
+      }
+      if (grayscale8) {
+        const double ink =
+            std::clamp((255.0 - gray_line[x]) * factor, 0.0, 255.0);
+        gray_line[x] = (uchar)std::lround(255.0 - ink);
+      } else {
+        const int alpha = qAlpha(rgb_line[x]);
+        if (alpha == 0)
+          continue;
+        const double ink =
+            std::clamp((255.0 - qGray(rgb_line[x])) * factor, 0.0, 255.0);
+        const int gray = (int)std::lround(255.0 - ink);
+        rgb_line[x] = qRgba(gray, gray, gray, alpha);
+      }
+    }
+  }
 }
 
 /**

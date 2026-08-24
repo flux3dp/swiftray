@@ -2954,6 +2954,12 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.laser_delay = getAttr(attributes, "data-delay", default_config, "delay", 0);
         layer_config.dpmm = getAttr(attributes, "data-dpmm", default_config, "dpmm", 0);
         layer_config.is_high_quality = getAttr(attributes, "data-highQuality", default_config, "highQuality", 0) == 1;
+        layer_config.texture = getAttr(attributes, "data-texture", default_config, "texture", 0) == 1;
+        layer_config.texture_mode = getAttr(attributes, "data-textureMode", default_config, "textureMode", 1);
+        layer_config.texture_random_intensity = getAttr(attributes, "data-textureRandomIntensity", default_config, "textureRandomIntensity", 30.0);
+        layer_config.texture_stripe_angle = getAttr(attributes, "data-textureStripeAngle", default_config, "textureStripeAngle", 45.0);
+        layer_config.texture_stripe_interval = getAttr(attributes, "data-textureStripeInterval", default_config, "textureStripeInterval", 0.5);
+        layer_config.texture_stripe_intensity = getAttr(attributes, "data-textureStripeIntensity", default_config, "textureStripeIntensity", 50.0);
         layer_config.s_curve_enable = getAttr(attributes, "data-scEnable", default_config, "scEnable", 1) == 1;
         layer_config.s_curve_a0 = getAttr(attributes, "data-scA0", default_config, "scA0", 0.0);
         layer_config.s_curve_a_max = getAttr(attributes, "data-scAMax", default_config, "scAMax", 0.0);
