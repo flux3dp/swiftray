@@ -18,6 +18,17 @@ std::tuple<std::vector<ByteArray32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
     const std::vector<ByteArray32>& src_bit_array,
     uint32_t padding_dot_cnt);
 
+struct LaserTextureParams {
+  int mode = 1;                  // 1 = random noise, 2 = angled stripes
+  double random_intensity = 30;  // +-% of the pixel's own ink
+  double stripe_angle = 45;      // degrees
+  double stripe_interval = 0.5;  // mm between stripe lines
+  double stripe_intensity = 50;  // % of ink removed on a stripe line
+  double pixel_size_x = 0.1;     // mm per px; may differ from y (anisotropic dpmm)
+  double pixel_size_y = 0.1;
+};
+void applyLaserTexture(QImage* src, const LaserTextureParams& params);
+
 QImage imageBinarize(QImage* src, int threshold);
 void imageBinarizeARGB32(QImage* src, int threshold);
 QImage imageTranspose(QImage* img);

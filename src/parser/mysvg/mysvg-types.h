@@ -89,6 +89,13 @@ namespace MySVG {
         int laser_delay;
         int dpmm;
         bool is_high_quality;
+        // Laser engraving texture
+        bool texture;
+        int texture_mode;  // 1 = random noise, 2 = angled stripes
+        double texture_random_intensity;
+        double texture_stripe_angle;
+        double texture_stripe_interval;
+        double texture_stripe_intensity;
         bool s_curve_enable;
         float s_curve_a0;
         float s_curve_a_max;

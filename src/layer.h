@@ -121,6 +121,12 @@ public:
   int laserDelay() const;
   int dpmm() const;
   bool isHighQuality() const;
+  bool hasTexture() const;
+  int textureMode() const;
+  double textureRandomIntensity() const;
+  double textureStripeAngle() const;
+  double textureStripeInterval() const;
+  double textureStripeIntensity() const;
   bool sCurveEnable() const;
   float sCurveA0() const;
   float sCurveAMax() const;
@@ -225,6 +231,13 @@ private:
   int laser_delay_ = 0;
   int dpmm_ = 0;
   bool is_high_quality_ = false;
+  // Laser engraving texture
+  bool has_texture_ = false;
+  int texture_mode_ = 1;  // 1 = random noise, 2 = angled stripes
+  double texture_random_intensity_ = 30;
+  double texture_stripe_angle_ = 45;
+  double texture_stripe_interval_ = 0.5;
+  double texture_stripe_intensity_ = 50;
   bool s_curve_enable_ = false;
   float s_curve_a0_ = 0;
   float s_curve_a_max_ = 0;

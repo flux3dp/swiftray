@@ -713,6 +713,19 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
                                           : 10;  // fallback to medium
   int dpmm_x = qMin(dpmm_y, hw_profile.max_pixel_per_mm_x);
 
+  layer_texture_enabled_ = current_layer_->hasTexture();
+  if (layer_texture_enabled_) {
+    layer_texture_params_ = {
+        current_layer_->textureMode(),
+        current_layer_->textureRandomIntensity(),
+        current_layer_->textureStripeAngle(),
+        current_layer_->textureStripeInterval(),
+        current_layer_->textureStripeIntensity(),
+        1.0 / dpmm_x,
+        1.0 / dpmm_y,
+    };
+  }
+
   // use y to determine auto shrink or not because dpmm_y >= dpmm_x
   int kernel_size_y = dpmm_y >= 10 ? std::round(2 * config_.engraving_erode * dpmm_y) + 1 : 0;
   if (kernel_size_y > 1) {
@@ -772,6 +785,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   auto workspace = laser_filled_factory_->get_workspace();
   if (!workspace->get_dirty_area().isEmpty()) {
     dilateBinaryBitmap(workspace->get_bitmap());
+    texturizeLaserImage(workspace->get_bitmap(), true);
   }
 
   if (this->cancelled_)
@@ -1273,6 +1287,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
         factory_->add_image(transformed_image, new_dirty_area);
       }
     } else if (bmp->pwm()) {
+      texturizeLaserImage(&transformed_image, false);
       if (!config_.enable_fast_gradient) {
         clearTransparent(&transformed_image);
         transformed_image = transformed_image.convertToFormat(QImage::Format_Mono)
@@ -1281,6 +1296,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
       factory_->add_image(transformed_image, new_dirty_area);
     } else {
       clearTransparent(&transformed_image);
+      texturizeLaserImage(&transformed_image, false);
       ImageSharpenDialog sharpener = ImageSharpenDialog();
       sharpener.loadImage(transformed_image);
       sharpener.onSharpnessChanged(1);
@@ -1294,6 +1310,7 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
   } else if (is_laser_layer_) {
     transformed_image = imageBinarize(&transformed_image, bmp->thrsh_brightness());
     dilateBinaryBitmap(&transformed_image);
+    texturizeLaserImage(&transformed_image, true);
     factory_->add_image(transformed_image, new_dirty_area);
   } else {
     // Note: use ARGB version to prevent transparent converted to white and
@@ -1365,6 +1382,24 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
       int blended = (gray * alpha + 255 * (255 - alpha)) / 255;
       ptr[x] = qRgba(blended, blended, blended, 255);
     }
+  }
+}
+
+/**
+ * Apply the layer's engraving texture in-place. redither converts the textured
+ * grays back to a binary image (for images that must stay binarized, e.g.
+ * threshold bitmaps and filled paths).
+ */
+void ToolpathExporterFcode::texturizeLaserImage(QImage* image, bool redither) {
+  if (!layer_texture_enabled_ || !image || image->isNull()) {
+    return;
+  }
+  applyLaserTexture(image, layer_texture_params_);
+  if (redither) {
+    *image = image
+                 ->convertToFormat(QImage::Format_Mono,
+                                   Qt::MonoOnly | Qt::DiffuseDither)
+                 .convertToFormat(QImage::Format_Grayscale8);
   }
 }
 

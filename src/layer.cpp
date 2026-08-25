@@ -211,6 +211,18 @@ int Layer::dpmm() const { return dpmm_; }
 
 bool Layer::isHighQuality() const { return is_high_quality_; }
 
+bool Layer::hasTexture() const { return has_texture_; }
+
+int Layer::textureMode() const { return texture_mode_; }
+
+double Layer::textureRandomIntensity() const { return texture_random_intensity_; }
+
+double Layer::textureStripeAngle() const { return texture_stripe_angle_; }
+
+double Layer::textureStripeInterval() const { return texture_stripe_interval_; }
+
+double Layer::textureStripeIntensity() const { return texture_stripe_intensity_; }
+
 bool Layer::sCurveEnable() const { return s_curve_enable_; }
 
 float Layer::sCurveA0() const { return s_curve_a0_; }
@@ -333,6 +345,12 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->laser_delay_ = config.laser_delay;
   this->dpmm_ = config.dpmm;
   this->is_high_quality_ = config.is_high_quality;
+  this->has_texture_ = config.texture;
+  this->texture_mode_ = config.texture_mode;
+  this->texture_random_intensity_ = config.texture_random_intensity;
+  this->texture_stripe_angle_ = config.texture_stripe_angle;
+  this->texture_stripe_interval_ = config.texture_stripe_interval;
+  this->texture_stripe_intensity_ = config.texture_stripe_intensity;
   this->s_curve_enable_ = config.s_curve_enable;
   this->s_curve_a0_ = config.s_curve_a0;
   this->s_curve_a_max_ = config.s_curve_a_max;
@@ -355,6 +373,12 @@ LayerPtr Layer::clone() {
   new_layer->multipass_ = this->multipass_;
   new_layer->x_backlash_ = this->x_backlash_;
   new_layer->is_high_quality_ = this->is_high_quality_;
+  new_layer->has_texture_ = this->has_texture_;
+  new_layer->texture_mode_ = this->texture_mode_;
+  new_layer->texture_random_intensity_ = this->texture_random_intensity_;
+  new_layer->texture_stripe_angle_ = this->texture_stripe_angle_;
+  new_layer->texture_stripe_interval_ = this->texture_stripe_interval_;
+  new_layer->texture_stripe_intensity_ = this->texture_stripe_intensity_;
   new_layer->s_curve_enable_ = this->s_curve_enable_;
   new_layer->s_curve_a0_ = this->s_curve_a0_;
   new_layer->s_curve_a_max_ = this->s_curve_a_max_;
