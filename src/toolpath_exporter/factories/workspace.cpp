@@ -1,4 +1,5 @@
 #include "workspace.h"
+#include "toolpath_exporter/toolpath-utils.h"
 #include <QDebug>
 
 void Workspace::setup_canvas() {
@@ -59,7 +60,9 @@ void Workspace::add_filled_path(QPainterPath& path, QRectF& bbox) {
 
 QRectF Workspace::get_dirty_area() {
   if (updated) {
-    bitmap_dirty_area = bitmap_dirty_area.intersected(clip_rect);
+    bitmap_dirty_area =
+        QRectF(getImageBBox(bitmap_dirty_area,
+                            clip_rect.intersected(bitmap.rect())));
     updated = false;
   }
   return bitmap_dirty_area;

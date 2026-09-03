@@ -92,13 +92,6 @@ void PrinterBitmapFactory::setup_clip_rect(
 void PrinterBitmapFactory::generate_image_for_task(double black_ratio) {
   auto workspace = get_workspace();
   bitmap_dirty_area = workspace->get_dirty_area();
-  int bbox_left = bitmap_dirty_area.left();
-  int bbox_top = bitmap_dirty_area.top();
-  int bbox_right = bitmap_dirty_area.right();
-  int bbox_bottom = bitmap_dirty_area.bottom();
-  if (bbox_left > bbox_right || bbox_top > bbox_bottom) {
-    return;
-  }
 
   bool do_color_curve = !color_curve.isEmpty();
   bool do_am = halftone > 1;
@@ -117,11 +110,20 @@ void PrinterBitmapFactory::generate_image_for_task(double black_ratio) {
   QImage* src_bitmap = workspace->get_bitmap();
   bitmap = QImage(work_area, QImage::Format_Grayscale8);
   bitmap.fill(Qt::white);
+  const QRect dirty_rect =
+      getImageBBox(bitmap_dirty_area,
+                   bitmap.rect().intersected(src_bitmap->rect()));
+  if (dirty_rect.isEmpty()) {
+    bitmap_dirty_area = QRectF();
+    return;
+  }
+  bitmap_dirty_area = QRectF(dirty_rect);
+  const RectBorders borders = getRectBorders(dirty_rect);
   // Preprocess image
-  for (int y = bbox_top; y <= bbox_bottom; y++) {
+  for (int y = borders.top; y < borders.bottom_exclusive; y++) {
     uchar* data_ptr = bitmap.scanLine(y);
     uchar* src_data_ptr = src_bitmap->scanLine(y);
-    for (int x = bbox_left; x <= bbox_right; x++) {
+    for (int x = borders.left; x < borders.right_exclusive; x++) {
       int inv_val = WHITE_PIXEL - src_data_ptr[x];
       if (inv_val == 0) {
         // Skip white pixels
@@ -413,7 +415,7 @@ void PrinterBitmapFactory::preprocess_box_data(const QRect& box) {
   int bottom = y + h;  // exclusive
 
   const uchar* last_val_ptr = y > 0 ? val_table.constScanLine(y - 1) : nullptr;
-  for (int r = y; r <= bottom; r++) {
+  for (int r = y; r < bottom; r++) {
     const uchar* data_ptr = bitmap.constScanLine(r);
     uchar* val_ptr = val_table.scanLine(r);
     for (int c = x; c < right; c++) {
@@ -441,11 +443,13 @@ PacketData PrinterBitmapFactory::create_image_packet_data(
   int h = box.height();
   int min_data_idx = -1;
   int max_data_idx = -1;
-  int max_y = y + h;  // excluded
-  int min_y = y + box.padding_top;  // included
-
-  int max_x = x + w;  // excluded
-  int padded_w = -1;
+  // NOTE: slice_image() shifts y by interpolation_offset without shrinking the
+  //       height, so y + h can reach box_bottom + interpolation - 1.
+  const int max_y = qMin(y + h, val_table.height());  // excluded
+  const int min_y = qMax(y + box.padding_top, 0);     // included
+  if (min_y >= max_y) {
+    return PacketData{};  // the branches below index val_table row max_y - 1
+  }
 
   QVector<QByteArray> payload_data;
   int px_count = 0;
