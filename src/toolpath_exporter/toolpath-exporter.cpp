@@ -203,8 +203,16 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   for (int i = 0; i < 5; i++) {
     element_cnt_[i] = 0;
   }
-  //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
+  // bitmap_dirty_areas_ records only the extent; stale pixels inside it bleed
+  // into this layer. Snap outward with a margin, since drawImage() can paint a
+  // pixel beyond the recorded bbox.
   for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::PwmMode; ++i) {
+    if (!bitmap_dirty_areas_[i].isEmpty()) {
+      QPainter painter(&layer_bitmaps_[i]);
+      painter.fillRect(
+          bitmap_dirty_areas_[i].toAlignedRect().adjusted(-1, -1, 1, 1),
+          Qt::white);
+    }
     bitmap_dirty_areas_[i] = QRectF();
   }
   current_layer_ = layer;
