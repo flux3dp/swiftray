@@ -46,7 +46,7 @@ bool BitmapShape::hitTest(QRectF global_coord_rect) const {
 }
 
 void BitmapShape::calcBoundingBox() const {
-  bbox_ = transform().mapRect(src_image_.rect());
+  bbox_ = transform().mapRect(QRectF(src_image_.rect()));
   rotated_bbox_ = transform().map(QPolygonF(QRectF(src_image_.rect())));
 }
 
