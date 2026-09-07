@@ -11,6 +11,25 @@
 #include <cmath>
 #include <constants.h>
 
+namespace {
+
+/**
+ * @brief One horizontal scan line per row of @p bbox, ending at the exclusive
+ *        right edge since rasterBitmap*() samples at pixel centers.
+ */
+QList<QLine> makeRasterLines(const QRect& bbox) {
+  const RectBorders borders = getRectBorders(bbox);
+  QList<QLine> raster_lines;
+  raster_lines.reserve(bbox.height());
+  for (int y = borders.top; y < borders.bottom_exclusive; y++) {
+    raster_lines.push_back(
+        QLine{borders.left, y, borders.right_exclusive, y});
+  }
+  return raster_lines;
+}
+
+}  // namespace
+
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
@@ -184,8 +203,16 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   for (int i = 0; i < 5; i++) {
     element_cnt_[i] = 0;
   }
-  //layer_painter_->fillRect(bitmap_dirty_area_, Qt::white);
+  // bitmap_dirty_areas_ records only the extent; stale pixels inside it bleed
+  // into this layer. Snap outward with a margin, since drawImage() can paint a
+  // pixel beyond the recorded bbox.
   for (int i = BitmapHandlerType::NormalMode; i < BitmapHandlerType::PwmMode; ++i) {
+    if (!bitmap_dirty_areas_[i].isEmpty()) {
+      QPainter painter(&layer_bitmaps_[i]);
+      painter.fillRect(
+          bitmap_dirty_areas_[i].toAlignedRect().adjusted(-1, -1, 1, 1),
+          Qt::white);
+    }
     bitmap_dirty_areas_[i] = QRectF();
   }
   current_layer_ = layer;
@@ -774,12 +801,11 @@ void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
   }
   // NOTE: Express bbox in # of dots
   //       Reserve x-direction padding in bounding box (for acceleration distance)
-  const qreal mm_per_dot = 1.0 / dpmm_;    // unit size of engraving dot (segment)
-  QRect bbox{QPoint{qMax(qRound(bitmap_dirty_area_->topLeft().x() - padding_mm * dpmm_), 0),
-               qMax(qRound(bitmap_dirty_area_->topLeft().y()), 0)},
-             QPoint{qMin(qRound(bitmap_dirty_area_->bottomRight().x() + padding_mm * dpmm_), canvas_size_.toSize().width() - 1),
-               qMin(qRound(bitmap_dirty_area_->bottomRight().y()), canvas_size_.toSize().height() - 1)}};
-  if (bbox.width() <= 0 || bbox.height() <= 0) {
+  const qreal padding_dots = padding_mm * dpmm_;
+  const QRectF padded_area =
+      bitmap_dirty_area_->adjusted(-padding_dots, 0, padding_dots, 0);
+  const QRect work_area{QPoint{0, 0}, canvas_size_.toSize()};
+  if (!padded_area.intersects(QRectF{work_area})) {
     // Skip if completely outside of work area
     return;
   }
@@ -798,6 +824,14 @@ void ToolpathExporter::outputLayerBitmapGcode(BitmapHandlerType type) {
   } else {
     layer_image = layer_bitmaps_[type].toImage()
                       .convertToFormat(QImage::Format_Grayscale8);
+  }
+
+  // NOTE: layer_bitmaps_ is only reallocated when the canvas has to grow, so it
+  //       may be larger than the current work area. Clip against both.
+  const QRect bbox =
+      getImageBBox(padded_area, layer_image.rect().intersected(work_area));
+  if (bbox.isEmpty()) {
+    return;
   }
 
   gen_->turnOnLaserAdpatively(); // M4
@@ -856,13 +890,7 @@ bool ToolpathExporter::rasterBitmap(const QImage& layer_image,
   bool reverse_raster_dir = false;
 
   // Prepare raster line paths
-  QList<QLine> raster_lines;
-  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
-  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
-  for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
-    raster_lines.push_back(QLine{bbox.left(), y,
-                                 bbox.left() + bbox.width(), y});
-  }
+  QList<QLine> raster_lines = makeRasterLines(bbox);
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
@@ -1011,11 +1039,7 @@ bool ToolpathExporter::rasterBitmapPwmMode(const QImage &layer_image,
   bool reverse_raster_dir = false;
 
   // Prepare raster line paths
-  QList<QLine> raster_lines;
-  for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
-    raster_lines.push_back(QLine{bbox.left(), y,
-                                 bbox.left() + bbox.width(), y});
-  }
+  QList<QLine> raster_lines = makeRasterLines(bbox);
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
@@ -1178,13 +1202,7 @@ bool ToolpathExporter::rasterBitmapHighSpeed(const QImage &layer_image,
   int jump_count = 0;
 
   // 2-1. Prepare raster line paths
-  QList<QLine> raster_lines;
-  // NOTE: Use bbox.left() + bbox.width() instead of bbox.right() 
-  //       since the latter is the left position of the last pixel instead of the right boundary of the work area
-  for (int y = bbox.top(); y <= bbox.bottom(); y += 1) {
-    raster_lines.push_back(QLine{bbox.left(), y,
-                                  bbox.left() + bbox.width(), y});
-  }
+  QList<QLine> raster_lines = makeRasterLines(bbox);
   qInfo() << "bbox: " << bbox;
   qInfo() << "# of raster line: " << raster_lines.size();
 
@@ -1339,10 +1357,12 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
             .transformed(bmp->transform() * bmp->tempTransform(), Qt::SmoothTransformation)
             .convertToFormat(QImage::Format_ARGB32);
 
-    QRect bbox = bmp->tempTransform().mapRect(bmp->boundingRect()).toRect();
-    QPointF offset = bbox.topLeft();
-    bbox &= QRect(0, 0, canvas_width_, canvas_height_);
-    if (bbox.width() <= 0 || bbox.height() <= 0) continue;
+    const QPoint offset = bmp->tempTransform().mapRect(bmp->boundingRect()).topLeft().toPoint();
+    const QRect image_rect =
+        bitmap_image.rect().translated(offset);
+    QRect bbox = getImageBBox(
+        QRectF(image_rect), QRect(0, 0, canvas_width_, canvas_height_));
+    if (bbox.isEmpty()) continue;
 
     double zStep = bmp->depthZStep();
     int depthPass = bmp->depthPass();
@@ -1356,7 +1376,7 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
     int threshold = 256, threshold_tr = 256, current_threshold;
     QImage binary_image, bitmap_image_tr, binary_image_tr;
     QRect bbox_tr(bbox.y(), bbox.x(), bbox.height(), bbox.width());
-    QPointF offset_tr = offset.transposed();
+    QPoint offset_tr = offset.transposed();
     bool transposed = false;
 
     gen_->useAbsolutePositioning();

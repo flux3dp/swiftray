@@ -329,8 +329,8 @@ PacketData4C PrinterBitmapFactory4C::create_image_packet_data_4c(
   QVector<QByteArray> payload_data;
   int i, c, r, dist, val, count;
   bool has_data = false;
-  int max_y = y + h;                     // excluded
-  int min_y = qMax(y + padding_top, 0);  // included
+  const int max_y = qMin(y + h, bitmap.height());  // excluded
+  const int min_y = qMax(y + padding_top, 0);     // included
   int bit_count = 4;
   int init_idx = 8 - bit_count;
 
@@ -384,16 +384,20 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
   if (!bitmap_dirty_area.isValid()) {
     return;
   }
+  const QRect work_area_rect(QPoint(0, 0), work_area);
+  const QRect dirty_rect = getImageBBox(bitmap_dirty_area, work_area_rect);
+  if (dirty_rect.isEmpty()) {
+    bitmap_dirty_area = QRectF();
+    return;
+  }
+  bitmap_dirty_area = QRectF(dirty_rect);
   double padding_dist_l = qMax(kwargs.padding_dist_left, kwargs.padding_dist);
   double padding_dist_r = qMax(kwargs.padding_dist_right, kwargs.padding_dist);
   int padding_pixels_l = get_padding_pixels(padding_dist_l);
   int padding_pixels_r = get_padding_pixels(padding_dist_r);
 
   // color_curve and halftone
-  int bbox_left = bitmap_dirty_area.left();
-  int bbox_top = bitmap_dirty_area.top();
-  int bbox_right = bitmap_dirty_area.right();
-  int bbox_bottom = bitmap_dirty_area.bottom();
+  const RectBorders borders = getRectBorders(dirty_rect);
 
   bool do_am = halftone > 1;
   double smoother = halftone_params.smoother;
@@ -422,9 +426,9 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
     }
 
     QImage* src_bitmap = workspace->get_bitmap();
-    for (int y = bbox_top; y <= bbox_bottom; y++) {
+    for (int y = borders.top; y < borders.bottom_exclusive; y++) {
       uchar* data_ptr = src_bitmap->scanLine(y);
-      for (int x = bbox_left; x <= bbox_right; x++) {
+      for (int x = borders.left; x < borders.right_exclusive; x++) {
         int inv_val = WHITE_PIXEL - data_ptr[x];
         if (inv_val == 0) {
           // Skip white pixels
@@ -460,10 +464,10 @@ void PrinterBitmapFactory4C::generate_task_code(GenerateTaskKwargs kwargs) {
     }
     uchar bit = 1 << (color_size - i - 1);
     QImage* src_bitmap = workspace->get_bitmap();
-    for (int y = bbox_top; y <= bbox_bottom; y++) {
+    for (int y = borders.top; y < borders.bottom_exclusive; y++) {
       uchar* data_ptr = bitmap.scanLine(y);
       uchar* src_data_ptr = src_bitmap->scanLine(y);
-      for (int x = bbox_left; x <= bbox_right; x++) {
+      for (int x = borders.left; x < borders.right_exclusive; x++) {
         if (src_data_ptr[x] != WHITE_PIXEL)
           data_ptr[x] -= bit;
       }

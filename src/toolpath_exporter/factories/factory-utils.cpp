@@ -1,5 +1,6 @@
 #include "factory-utils.h"
 #include "toolpath_exporter/toolpath-exporter-constants.h"
+#include "toolpath_exporter/toolpath-utils.h"
 #include <QDebug>
 #include <opencv2/opencv.hpp>
 
@@ -14,14 +15,13 @@ QVector<QRect> get_bounding_boxes(QImage* src,
              "Input image for get_bounding_boxes() must be Format_Grayscale8");
   QVector<QRect> res;
   if (!enable_segmentation) {
-    int b_left = dirty_area.left() - 1 - merge_offset_l;
-    b_left = qMin(qMax(b_left, 0), src->width());
-    int b_top = dirty_area.top() - 1;
-    b_top = qMin(qMax(b_top, 0), src->height());
-    int b_right = dirty_area.right() + 1 + merge_offset_r;
-    b_right = qMax(qMin(b_right, src->width()), 0);
-    int b_bottom = dirty_area.bottom() + 1;
-    b_bottom = qMax(qMin(b_bottom, src->height()), 0);
+    // Snap the fractional dirty area outward, then grow by the merge offsets
+    // and clamp to the image so the box is always safe to index.
+    const RectBorders borders = getRectBorders(dirty_area.toAlignedRect());
+    const int b_left = qBound(0, borders.left - 1 - merge_offset_l, src->width());
+    const int b_top = qBound(0, borders.top - 1, src->height());
+    const int b_right = qBound(0, borders.right_exclusive + 1 + merge_offset_r, src->width());
+    const int b_bottom = qBound(0, borders.bottom_exclusive + 1, src->height());
 
     if (b_left < b_right && b_top < b_bottom) {
       res.append(QRect(b_left, b_top, b_right - b_left, b_bottom - b_top));

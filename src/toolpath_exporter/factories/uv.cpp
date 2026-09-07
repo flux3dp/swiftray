@@ -58,8 +58,12 @@ PacketData UVBitmapFactory::create_image_packet_data(const SlicedBox& box,
   int row_number = slice_height / interpolation;
   int min_data_idx = -1;
   int max_data_idx = -1;  // included
-  int max_y = y + h;      // excluded
-  int min_y = y + padding_top;
+  // NOTE: y + h can reach box_bottom + interpolation - 1; see printer.cpp
+  const int max_y = qMin(y + h, bitmap.height());  // excluded
+  const int min_y = qMax(y + padding_top, 0);      // included
+  if (min_y >= max_y) {
+    return PacketData{};
+  }
 
   int r = (row_number + 7) / 8;
   QByteArray empty_column;

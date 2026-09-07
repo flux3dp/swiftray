@@ -4,12 +4,38 @@
 #include "toolpath-exporter-types.h"
 #include <QImage>
 #include <QPolygonF>
+#include <QRect>
 #include <QSet>
 #include <opencv2/core.hpp>
 #include <array>
 #include <bitset>
 #include <optional>
 #include <vector>
+
+/**
+ * Half-open pixel bounds: [left, right_exclusive) x [top, bottom_exclusive).
+ * QRect::right()/bottom() are the last pixel, QRectF::right()/bottom() are the
+ * geometric edge; neither works as a loop limit without knowing which is which.
+ */
+struct RectBorders {
+  int left;
+  int top;
+  int right_exclusive;
+  int bottom_exclusive;
+};
+
+inline RectBorders getRectBorders(const QRect& rect) {
+  return {rect.left(), rect.top(), rect.left() + rect.width(),
+          rect.top() + rect.height()};
+}
+
+/**
+ * Smallest whole-pixel rect covering @p area, clipped to @p limit (typically
+ * image.rect()). Snaps outward: partially covered edge pixels were painted too.
+ */
+inline QRect getImageBBox(const QRectF& area, const QRect& limit) {
+  return area.toAlignedRect() & limit;
+}
 
 std::tuple<std::vector<Bitset32>, uint32_t, uint32_t> adjustPrefixSuffixZero(
     const std::vector<Bitset32>& src_bit_array,

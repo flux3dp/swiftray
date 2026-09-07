@@ -6,6 +6,7 @@
 #include "toolpath_exporter/macros/beamo2.h"
 #include "toolpath_exporter/macros/prespray.h"
 #include "toolpath_exporter/macros/uv1.h"
+#include "toolpath_exporter/toolpath-utils.h"
 #include "windows/image-sharpen-dialog.h"
 #include <QBuffer>
 #include <QCoreApplication>
@@ -1350,13 +1351,10 @@ void ToolpathExporterFcode::clearWhite(QImage* src, QRect dirty_area) {
              "Input image for clearWhite() must be grayscaled");
   Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
              "Input image for clearWhite() must be Format_ARGB32");
-  int left = qMax(dirty_area.x(), 0);
-  int right = qMin(dirty_area.x() + dirty_area.width(), src->width());
-  int top = qMax(dirty_area.y(), 0);
-  int bottom = qMin(dirty_area.y() + dirty_area.height(), src->height());
-  for (int y = top; y < bottom; ++y) {
+  const RectBorders borders = getRectBorders(dirty_area.intersected(src->rect()));
+  for (int y = borders.top; y < borders.bottom_exclusive; ++y) {
     QRgb* ptr = (QRgb*)src->scanLine(y);
-    for (int x = left; x < right; ++x) {
+    for (int x = borders.left; x < borders.right_exclusive; ++x) {
       int gray = qGray(ptr[x]);
       if (gray == WHITE_PIXEL) {
         // Set alpha to 0
