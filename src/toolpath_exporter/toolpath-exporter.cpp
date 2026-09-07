@@ -1357,9 +1357,9 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
             .transformed(bmp->transform() * bmp->tempTransform(), Qt::SmoothTransformation)
             .convertToFormat(QImage::Format_ARGB32);
 
-    const QPointF offset = bmp->tempTransform().mapRect(bmp->boundingRect()).topLeft();
+    const QPoint offset = bmp->tempTransform().mapRect(bmp->boundingRect()).topLeft().toPoint();
     const QRect image_rect =
-        bitmap_image.rect().translated(offset.toPoint());
+        bitmap_image.rect().translated(offset);
     QRect bbox = getImageBBox(
         QRectF(image_rect), QRect(0, 0, canvas_width_, canvas_height_));
     if (bbox.isEmpty()) continue;
@@ -1376,7 +1376,7 @@ bool ToolpathExporter::rasterBitmapDepthMode(ScanDirectionMode direction_mode,
     int threshold = 256, threshold_tr = 256, current_threshold;
     QImage binary_image, bitmap_image_tr, binary_image_tr;
     QRect bbox_tr(bbox.y(), bbox.x(), bbox.height(), bbox.width());
-    QPointF offset_tr = offset.transposed();
+    QPoint offset_tr = offset.transposed();
     bool transposed = false;
 
     gen_->useAbsolutePositioning();
