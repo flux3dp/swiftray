@@ -1,4 +1,15 @@
-# STL 內雕輸入資料契約
+---
+name: stl-inner-engraving
+description: Swiftray daemon 的 STL／BSPC／3D 內雕輸入與轉換契約，包含 loadSVG payload、SVG attributes、折射、Z bucket 與 Promark timing。修改 STL parser、placement、toolpath exporter、convert API 或相關測試時使用。
+---
+
+# STL 內雕輸入與轉換契約
+
+修改 3D 內雕資料流時，以本 skill 為前後端介面的單一真實來源。實作應同時檢查
+`src/server/worker.cpp`、`src/parser/my_qsvg_handler_qt6.cpp`、
+`src/shape/stl-placement.h`、`src/toolpath_exporter/stl-utils.*` 與
+`src/toolpath_exporter/toolpath-exporter.*`；契約或預設值變更時同步更新本檔案與
+`tests/test_stl_utils.h`。
 
 本文描述 daemon 的 `loadSVG` 與 `convert` 預期收到的 STL 內雕資料。折射補償固定使用
 Basic 軸向模型，不提供開關或其他模型。
@@ -162,3 +173,12 @@ convert 共用欄位仍照原介面提供。
 其餘 timing params 會以同名的大寫 `;CONFIG` 寫入 G-code。`first_pulse_killer_enabled` 也走
 同一條路徑，不再由 controller setter 設定。STL 低速打點的時間預估對單點完整成本套用
 實測係數 `2.0`，`MachineJob` 與 BSL streaming progress 使用相同公式。
+
+## 維護約束
+
+- 測試用定義與實作只能由 `UnitTest` target 引用，不可加入 `swiftray_app_bundle`。
+- Basic 軸向折射固定套用；不要重新加入 opt-in、模型切換或 XY 補償。
+- STL machine-Z bucket 固定為 `0.0001 mm`。
+- convert 期間的長時間切片、取樣、排序與輸出必須持續回報進度並可取消。
+- 取消後直接停止產生輸出，不追加 STL 清理、dotting 關閉或 Z 軸歸零命令。
+- 不要在正式路徑加入切片／補償結果的 CSV、image 或其他 debug dump。
