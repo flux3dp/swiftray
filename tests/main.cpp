@@ -2,6 +2,7 @@
 #include "test_gui.h"
 #include "test_canvas.h"
 #include "test_laser_texture.h"
+#include "test_stl_utils.h"
 #include "test_toolpath_utils.h"
 #include <QApplication>
 

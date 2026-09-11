@@ -24,7 +24,8 @@ BitmapShape::BitmapShape(QImage &&image) : Shape(),
 }
 
 BitmapShape::BitmapShape(const BitmapShape &orig) : Shape(orig),
-  src_image_(orig.src_image_)
+  src_image_(orig.src_image_),
+  stl_placement_(orig.stl_placement_)
 {
   setLayer(orig.layer());
   setTransform(orig.transform());

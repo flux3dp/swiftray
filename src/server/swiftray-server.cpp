@@ -174,15 +174,17 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement get device parameter logic, probably laser speed, power, fan...etc
     result["value"] = 0; // Replace with actual value
   } else if (action == "setCorrection") {
-    double scaleX = params.toObject()["scaleX"].toDouble();
-    double scaleY = params.toObject()["scaleY"].toDouble();
-    double bucketX = params.toObject()["bucketX"].toDouble();
-    double bucketY = params.toObject()["bucketY"].toDouble();
-    double paralleX = params.toObject()["paralleX"].toDouble();
-    double paralleY = params.toObject()["paralleY"].toDouble();
-    double trapeX = params.toObject()["trapeX"].toDouble();
-    double trapeY = params.toObject()["trapeY"].toDouble();
-    getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY); 
+    QJsonObject obj = params.toObject();
+    double scaleX = obj["scaleX"].toDouble();
+    double scaleY = obj["scaleY"].toDouble();
+    double bucketX = obj["bucketX"].toDouble();
+    double bucketY = obj["bucketY"].toDouble();
+    double paralleX = obj["paralleX"].toDouble();
+    double paralleY = obj["paralleY"].toDouble();
+    double trapeX = obj["trapeX"].toDouble();
+    double trapeY = obj["trapeY"].toDouble();
+    QString laser_source = obj["laserSource"].toString("MOPA");
+    getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
   } else if (action == "setScanaheadParams") {
     QJsonObject obj = params.toObject();
     double worksize = obj["worksize"].toDouble();

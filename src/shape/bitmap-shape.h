@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <shape/shape.h>
+#include <shape/stl-placement.h>
 
 class BitmapShape : public Shape {
 public:
@@ -41,6 +42,12 @@ public:
   double depthZStep() const { return depth_zstep_; }
   void setColor(QColor color) { color_ = color; }
   QColor color() const { return color_; }
+  const StlPlacement &stlPlacement() const { return stl_placement_; }
+  void setStlPlacement(const StlPlacement &placement) { stl_placement_ = placement; }
+  bool isStlPhoto() const {
+    return stl_placement_.isValid() &&
+           stl_placement_.geometry_kind == StlPlacement::GeometryKind::Photo;
+  }
 
   friend class DocumentSerializer;
 
@@ -59,4 +66,6 @@ private:
   // Promark depth mode
   int depth_pass_ = 0;
   double depth_zstep_ = 0;
+  /** Set only when this bitmap is a transformable photo in the inner-engraving 3D canvas. */
+  StlPlacement stl_placement_;
 };

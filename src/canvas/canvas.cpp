@@ -70,7 +70,7 @@ Canvas::Canvas(QQuickItem *parent)
 
   // Set main loop and timers
   connect(timer, &QTimer::timeout, this, &Canvas::loop);
-  timer->start(16);//16 for about 60 fps
+  // timer->start(16);//16 for about 60 fps
   volatility_timer.start();
 
   // Register controls

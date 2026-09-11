@@ -2,6 +2,7 @@
 
 #include "bsl_list_manager.h"
 #include "motion_controller.h"
+#include "promark_timing.h"
 
 #include <QStringList>
 #include <QRegularExpression>
@@ -17,6 +18,7 @@ struct TaskSettings {
   unsigned char current_s = 0;  // 0~100
   double current_f = 100.0;     // Default speed, mm/s
   double period = 10.0;         // us
+  double q_pulse_width = 0.0;   // us
   uint16_t pulse_width = 100;   // ns
   double wobble_diameter = -1;  // mm
   double wobble_step = 0;       // mm
@@ -42,7 +44,7 @@ public:
     if (current_error_ != LCS_RES_NO_ERROR) return this->getErrorString(current_error_);
     return QString();
   }
-  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY);
+  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   void setTaskTime(double time) { total_task_time_ = time; }
@@ -54,6 +56,10 @@ public:
   bool isPreparingFirstList() { return is_preparing_first_list_; }
   int getDisconnectCount() { return disconnect_count_; }
   double getProgressByTime();
+  //
+  void resetConfig() {
+    config_.reset();
+  }
 
 public Q_SLOTS:
   void respReceived(QString resp) override;
@@ -103,4 +109,11 @@ private:
   double running_task_time_ = 0; // Time for current executing list, ms
   QElapsedTimer task_timer_;
   BSLListManager list_manager_{this};
+  uint32_t dotting_time_ = 0; // us; re-emitted into every list by startList()
+
+  LCS2LaserType laser_type_ = LCS2LaserType::LCS_MOPA;
+  // Timing parameters the running job may override through ";CONFIG KEY=VALUE"
+  PromarkTiming::Config config_;
+  // Where we are inside a run of consecutive mark vectors, for estimated_time_
+  PromarkTiming::MarkSequence mark_sequence_;
 };

@@ -7,6 +7,7 @@
 #include <QPainterPath>
 #include <QImage>
 #include <QFont>
+#include "shape/stl-placement.h"
 
 namespace MySVG {
     struct Node {
@@ -27,6 +28,8 @@ namespace MySVG {
         bool pwm;
         int depthPass;
         double depthZStep;
+        /** Set only for a 3D mesh/point-cloud placeholder or photo projection. */
+        StlPlacement stl_placement;
     };
 
     struct BeamLayerConfig {
@@ -63,7 +66,9 @@ namespace MySVG {
         double nozzle_offset_x;
         double nozzle_offset_y;
         float focus;
+        bool focus_rev;
         float focus_step;
+        bool focus_step_rev;
         double ce_z_limit;
         int interpolation;
         double right_padding;
@@ -77,6 +82,7 @@ namespace MySVG {
         int uv_x_step;
         int frequency;
         int pulse_width;
+        double q_pulse_width;
         double fill_interval;
         double fill_angle;
         bool fill_bidirectional;

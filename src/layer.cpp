@@ -161,7 +161,11 @@ double Layer::nozzleOffsetY() const { return nozzle_offset_y_; }
 
 float Layer::focus() const { return focus_; }
 
+bool Layer::focusRev() const { return focus_rev_; }
+
 float Layer::focusStep() const { return focus_step_; }
+
+bool Layer::focusStepRev() const { return focus_step_rev_; }
 
 double Layer::ceZLimit() const { return ce_z_limit_; }
 
@@ -186,6 +190,8 @@ int Layer::uvXStep() const { return uv_x_step_; }
 int Layer::frequency() const { return frequency_; }
 
 int Layer::pulseWidth() const { return pulse_width_; }
+
+double Layer::qPulseWidth() const { return q_pulse_width_; }
 
 double Layer::fillInterval() const { return fill_interval_; }
 
@@ -320,7 +326,9 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->nozzle_offset_x_ = config.nozzle_offset_x;
   this->nozzle_offset_y_ = config.nozzle_offset_y;
   this->focus_ = config.focus;
+  this->focus_rev_ = config.focus_rev;
   this->focus_step_ = config.focus_step;
+  this->focus_step_rev_ = config.focus_step_rev;
   this->ce_z_limit_ = config.ce_z_limit;
   this->interpolation_ = config.interpolation;
   this->right_padding_ = config.right_padding;
@@ -333,6 +341,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->uv_x_step_ = config.uv_x_step;
   this->frequency_ = config.frequency;
   this->pulse_width_ = config.pulse_width;
+  this->q_pulse_width_ = config.q_pulse_width;
   this->fill_interval_ = config.fill_interval;
   this->fill_angle_ = config.fill_angle;
   this->fill_bidirectional_ = config.fill_bidirectional;

@@ -61,6 +61,10 @@ int g_threshold = 128;
 bool g_pwm = false;
 int g_pass = 0;
 double g_zstep = 0;
+// Set by createRectNode/createImageNode, consumed and cleared right after processMySVGNode so it
+// can never leak into the next element (unlike g_pass above, which is only read by the image branch).
+StlPlacement g_stl_placement;
+static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes);
 
 #endif
 
@@ -2929,7 +2933,9 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.nozzle_offset_x = getAttr(attributes, "data-nozzleOffsetX", default_config, "nozzle_offset_x", 0.0);
         layer_config.nozzle_offset_y = getAttr(attributes, "data-nozzleOffsetY", default_config, "nozzle_offset_y", 0.0);
         layer_config.focus = getAttr(attributes, "data-focus", default_config, "focus", 0.0);
+        layer_config.focus_rev = getAttr(attributes, "data-focusRev", default_config, "focusRev", 0) == 1;
         layer_config.focus_step = getAttr(attributes, "data-focusStep", default_config, "focusStep", 0.0);
+        layer_config.focus_step_rev = getAttr(attributes, "data-focusStepRev", default_config, "focusStepRev", 0) == 1;
         layer_config.ce_z_limit = getAttr(attributes, "data-ceZSpeedLimit", default_config, "ceZSpeedLimit", 0.0);
         layer_config.interpolation = getAttr(attributes, "data-interpolation", default_config, "interpolation", 1);
         layer_config.right_padding = getAttr(attributes, "data-rightPadding", default_config, "right_padding", 0.0);
@@ -2942,6 +2948,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.uv_x_step = getAttr(attributes, "data-xStep", default_config, "x_step", 1);
         layer_config.frequency = getAttr(attributes, "data-frequency", default_config, "frequency", 0);
         layer_config.pulse_width = getAttr(attributes, "data-pulseWidth", default_config, "pulseWidth", 0);
+        layer_config.q_pulse_width = getAttr(attributes, "data-qPulseWidth", default_config, "qPulseWidth", 0.0);
         layer_config.fill_interval = getAttr(attributes, "data-fillInterval", default_config, "fillInterval", 0.0);
         layer_config.fill_angle = getAttr(attributes, "data-fillAngle", default_config, "fillAngle", 0.0);
         layer_config.fill_bidirectional = getAttr(attributes, "data-biDirectional", default_config, "biDirectional", 0) == 1;
@@ -3078,6 +3085,7 @@ static QSvgNode *createImageNode(QSvgNode *parent,
         image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
 #ifdef MYSVG
     g_image = image;
+    g_stl_placement = parseStlPlacement(attributes);
 #else
 #endif
     QSvgNode *img = new QSvgImage(parent,
@@ -3999,6 +4007,51 @@ static QSvgStyleProperty *createRadialGradientNode(QSvgNode *node,
     return prop;
 }
 
+#ifdef MYSVG
+/**
+ * Parse the STL attributes of a `<rect>`.
+ * A rect without `data-stl` yields an invalid (empty) placement, which is what marks it as an
+ * ordinary rect -- so the result can be assigned unconditionally and never leaks to the next node.
+ */
+static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes)
+{
+    StlPlacement placement;
+    if (!attributes.hasAttribute("data-stl")) return placement;
+
+    placement.id = attributes.value("id").toString();
+    const QStringList matrix_values =
+        attributes.value("data-stl-matrix").toString().split(QRegularExpression("[\\s,]+"),
+                                                             Qt::SkipEmptyParts);
+    if (matrix_values.size() == 16) {
+        float values[16];
+        for (int i = 0; i < 16; ++i) values[i] = matrix_values[i].toFloat();
+        // Attribute order is column major (THREE.Matrix4::elements), QMatrix4x4 takes row major.
+        placement.matrix = QMatrix4x4(values).transposed();
+    } else if (!matrix_values.isEmpty()) {
+        qWarning() << "STL placeholder" << placement.id << "has a data-stl-matrix with"
+                   << matrix_values.size() << "values, expected 16; falling back to identity";
+    }
+    // 0 (missing or non-positive) means "use the exporter default".
+    placement.layer_height_mm = attributes.value("data-stl-layer-height").toDouble();
+    // Adaptive slicing is opt-in. Missing or non-positive values keep the fixed plane ladder.
+    placement.min_layer_height_mm =
+        attributes.value("data-stl-min-layer-height").toDouble();
+    placement.point_spacing_mm = attributes.value("data-stl-point-spacing").toDouble();
+    const QString geometry_kind = attributes.value("data-stl-kind").toString();
+    if (geometry_kind == QStringLiteral("photo")) {
+        placement.geometry_kind = StlPlacement::GeometryKind::Photo;
+    } else if (geometry_kind == QStringLiteral("point-cloud")) {
+        placement.geometry_kind = StlPlacement::GeometryKind::PointCloud;
+    }
+    placement.photo_width_mm = attributes.value("data-stl-photo-width").toDouble();
+    placement.photo_height_mm = attributes.value("data-stl-photo-height").toDouble();
+    placement.mode = attributes.value("data-stl-mode").toString() == "dot"
+                         ? StlPlacement::Mode::Dot
+                         : StlPlacement::Mode::Line;
+    return placement;
+}
+#endif
+
 static QSvgNode *createRectNode(QSvgNode *parent,
                                 const QXmlStreamAttributes &attributes,
                                 MyQSvgHandler *handler)
@@ -4009,6 +4062,10 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     const QStringView height = attributes.value(QLatin1String("height"));
     const QStringView rx      = attributes.value(QLatin1String("rx"));
     const QStringView ry      = attributes.value(QLatin1String("ry"));
+
+#ifdef MYSVG
+    g_stl_placement = parseStlPlacement(attributes);
+#endif
 
     bool ok = true;
     MyQSvgHandler::LengthType type;
@@ -4024,8 +4081,21 @@ static QSvgNode *createRectNode(QSvgNode *parent,
     qreal nry = toDouble(ry);
 
     QRectF bounds(toDouble(x), toDouble(y), nwidth, nheight);
-    if (bounds.isEmpty())
+    if (bounds.isEmpty()) {
+#ifdef MYSVG
+        // A degenerate placeholder (the frontend has not synced the 3D bbox yet, or the model is
+        // flat in XY) must not make the whole STL object silently disappear.
+        if (g_stl_placement.isValid()) {
+            qWarning() << "STL placeholder" << g_stl_placement.id
+                       << "has an empty bounds, using a 1x1 placeholder instead" << bounds;
+            bounds = QRectF(toDouble(x), toDouble(y), qMax(nwidth, 1.0), qMax(nheight, 1.0));
+        } else {
+            return nullptr;
+        }
+#else
         return nullptr;
+#endif
+    }
 
     if (!rx.isEmpty() && ry.isEmpty())
         nry = nrx;
@@ -4738,6 +4808,9 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             continue;
         } else if (data_list_[i].type == QSVG_PATH) {
             new_shape = std::make_shared<PathShape>(data_list_[i].qpath);
+            if (data_list_[i].stl_placement.isValid()) {
+                ((PathShape*)new_shape.get())->setStlPlacement(data_list_[i].stl_placement);
+            }
         } else if(data_list_[i].type == QSVG_IMAGE) {
             new_shape = std::make_shared<BitmapShape>(data_list_[i].image);
             data_list_[i].fill= true;
@@ -4748,6 +4821,9 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
             bitmap_shape->setDepthPass(data_list_[i].depthPass);
             bitmap_shape->setDepthZStep(data_list_[i].depthZStep);
             bitmap_shape->setColor(data_list_[i].color);
+            if (data_list_[i].stl_placement.isValid()) {
+                bitmap_shape->setStlPlacement(data_list_[i].stl_placement);
+            }
         } else if(data_list_[i].type == QSVG_USE) {
             // Skip use nodes since we have already processed them
             continue;
@@ -5169,7 +5245,10 @@ bool MyQSvgHandler::startElement(const QString &localName,
 
     if (node) {
 #ifdef MYSVG
-        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm, g_pass, g_zstep);
+        MySVG::processMySVGNode(node, data_list_, this->read_type_, layer_config_map_, g_scale, g_color, g_image, g_bbox, g_gradient, g_threshold, g_pwm, g_pass, g_zstep, g_stl_placement);
+        // Consume it here: the placement belongs to exactly one element, it must not leak into
+        // whatever element comes next.
+        g_stl_placement = StlPlacement();
 #endif
         m_nodes.push(node);
         m_skipNodes.push(Graphics);

@@ -3,16 +3,22 @@
 #include <QElapsedTimer>
 #include <QDebug>
 #include <QVector2D>
+#include <QVector3D>
 #include <QtMath>
 #include <QProgressDialog>
 #include <QCoreApplication>
+#include <QPainter>
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <vector>
+#include <map>
+#include <queue>
+#include <limits>
 #include <constants.h>
 
 namespace {
-
 /**
  * @brief One horizontal scan line per row of @p bbox, ending at the exclusive
  *        right edge since rasterBitmap*() samples at pixel centers.
@@ -28,11 +34,86 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
   return raster_lines;
 }
 
+// Fallbacks when neither the placeholder rect nor the layer provides a value.
+constexpr double kDefaultStlLayerHeightMm = 0.1;
+constexpr double kDefaultStlPointSpacingMm = 0.1;
+constexpr qint64 kMaxPhotoSampleCount = 10000000;
 }  // namespace
 
 // TODO: Fix ToolpathExporter for non-Promark machines
 ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double travel_speed, QPointF end_point, PaddingType padding_type, QTransform move_translate, bool is_promark) noexcept :
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
+
+void ToolpathExporter::parseParam(QJsonObject param) {
+  qInfo() << "Parsing parameters from JSON object:" << param;
+  gen_->addComment("CONFIG RESET");
+  if (param.contains("is_uv_light")) {
+    int is_uv_light = param["is_uv_light"].toInt();
+    gen_->addComment(QString("CONFIG UV=%1").arg(is_uv_light));
+  }
+  if (param.contains("jump_speed")) {
+    double jump_speed = param["jump_speed"].toDouble();
+    gen_->addComment(QString("CONFIG JUMP_SPEED=%1").arg(jump_speed));
+  }
+  if (param.contains("laser_on_delay")) {
+    int laser_on_delay = param["laser_on_delay"].toInt();
+    gen_->addComment(QString("CONFIG LASER_ON_DELAY=%1").arg(laser_on_delay));
+  }
+  if (param.contains("laser_off_delay")) {
+    uint32_t laser_off_delay = param["laser_off_delay"].toInt();
+    gen_->addComment(QString("CONFIG LASER_OFF_DELAY=%1").arg(laser_off_delay));
+  }
+  if (param.contains("marking_delay")) {
+    uint32_t marking_delay = param["marking_delay"].toInt();
+    gen_->addComment(QString("CONFIG MARKING_DELAY=%1").arg(marking_delay));
+  }
+  if (param.contains("corner_delay")) {
+    uint32_t corner_delay = param["corner_delay"].toInt();
+    gen_->addComment(QString("CONFIG CORNER_DELAY=%1").arg(corner_delay));
+  }
+  if (param.contains("jump_delay_min")) {
+    uint32_t jump_delay_min = param["jump_delay_min"].toInt();
+    gen_->addComment(QString("CONFIG JUMP_DELAY_MIN=%1").arg(jump_delay_min));
+  }
+  if (param.contains("jump_delay_max")) {
+    uint32_t jump_delay_max = param["jump_delay_max"].toInt();
+    gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
+  }
+  if (param.contains("first_pulse_killer_enabled")) {
+    const int enabled = param["first_pulse_killer_enabled"].toBool() ? 1 : 0;
+    gen_->addComment(QString("CONFIG FIRST_PULSE_KILLER_ENABLED=%1").arg(enabled));
+  }
+  // Basic axial refraction is always applied. n=1 keeps the original Z plane unchanged.
+  RefractionParams refraction = refraction_.params();
+  if (param.contains("refractive_index")) {
+    refraction.refractive_index = param["refractive_index"].toDouble();
+  }
+  if (param.contains("material_height")) {
+    refraction.material_height_mm = param["material_height"].toDouble();
+  }
+  refraction_.setParams(refraction);
+
+  material_min_z_mm_ = param.contains("material_min_z")
+                           ? param["material_min_z"].toDouble()
+                           : 0.0;
+  material_max_z_mm_ = param.contains("material_max_z")
+                           ? param["material_max_z"].toDouble()
+                           : refraction.material_height_mm;
+  if (!std::isfinite(material_min_z_mm_)) {
+    qWarning() << "[Export] material_min_z is not finite; using 0";
+    material_min_z_mm_ = 0.0;
+  }
+  if (!std::isfinite(material_max_z_mm_)) {
+    qWarning() << "[Export] material_max_z is not finite; using material_height";
+    material_max_z_mm_ = refraction.material_height_mm;
+  }
+  if (material_max_z_mm_ < material_min_z_mm_) {
+    qWarning() << "[Export] empty STL material Z range" << material_min_z_mm_ << "to"
+               << material_max_z_mm_;
+  }
+  is_path_preview_ = param["shouldMockFastGradient"].toBool();
+  qInfo() << "is_path_preview_" << is_path_preview_;
+}
 
 void ToolpathExporter::setDpmm(qreal dpmm) {
   if (dpmm == dpmm_ || dpmm <= 0) return;
@@ -105,7 +186,20 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
   setDpmm(default_dpmm);
 
   processed_layer_cnt_ = 0;
-  total_layer_cnt_ = layers.size();
+  // Progress is measured in exporter passes. A line / "-filled" pair is converted as one pass,
+  // and invisible layers do not consume conversion time.
+  total_layer_cnt_ = 0;
+  for (int index = layers.size() - 1; index >= 0; --index) {
+    const LayerPtr &layer = layers[index];
+    if (!layer->isVisible()) continue;
+    ++total_layer_cnt_;
+    if (index > 0 && layer->type() == Layer::Type::Line &&
+        layers[index - 1]->isVisible() && layers[index - 1]->type() != Layer::Type::Line &&
+        layer->name() + "-filled" == layers[index - 1]->name()) {
+      --index;
+    }
+  }
+  total_layer_cnt_ = std::max(1, total_layer_cnt_);
   for (auto layer_rit = layers.crbegin(); layer_rit != layers.crend(); layer_rit++) {
     if ((*layer_rit)->isVisible()) {
       qInfo() << "[Export] Output layer: " << (*layer_rit)->name();
@@ -114,7 +208,9 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
         total_repeat_times_ = 1;
       }
       float focus = is_contour_ ? 0 : (*layer_rit)->focus();
+      int focus_dir = (*layer_rit)->focusRev() ? -1 : 1;
       float focus_step = is_contour_ ? 0 : (*layer_rit)->focusStep();
+      int focus_step_dir = (*layer_rit)->focusStepRev() ? -1 : 1;
       float total_move = 0;
       LayerPtr current_layer_ = *layer_rit;
       LayerPtr current_layer_2_ = nullptr;
@@ -126,6 +222,16 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
         // Swiftray create two layers for line + filled path, handle them together
         current_layer_2_ = *layer_rit;
         qInfo() << "[Export] Handle layers together" << current_layer_->name() << current_layer_2_->name();
+        // The two halves come from ONE canvas layer, so the parser gives them the same config
+        // (my_qsvg_handler_qt6.cpp, layer_config_map_[title + "-filled"] = layer_config_map_[title]).
+        // The STL pass relies on that: it engraves both halves under the second layer's parameters.
+        if (current_layer_2_->speed() != current_layer_->speed() ||
+            current_layer_2_->power() != current_layer_->power()) {
+          qWarning() << "[Export] Paired layers have different parameters, speed"
+                     << current_layer_->speed() << current_layer_2_->speed() << "power"
+                     << current_layer_->power() << current_layer_2_->power()
+                     << "-- STL objects of both halves will use the latter";
+        }
       } else {
         layer_rit--;
         current_layer_2_ = nullptr;
@@ -135,21 +241,25 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
           if (focus > 0) {
             // Make sure cmd list is opened
             gen_->turnOnLaser();
-            gen_->moveZ(-focus);
-            total_move += focus;
+            gen_->moveZ(-focus * focus_dir);
+            total_move += focus * focus_dir;
           }
         } else if (focus_step > 0) {
           // Make sure cmd list is opened
           gen_->turnOnLaser();
-          gen_->moveZ(-focus_step);
-          total_move += focus_step;
+          gen_->moveZ(-focus_step * focus_step_dir);
+          total_move += focus_step * focus_step_dir;
         }
-        convertLayer(current_layer_);
+        convertLayer(current_layer_, current_layer_2_ != nullptr);
+        if (cancelled_) break;
         if (current_layer_2_) {
           convertLayer(current_layer_2_);
+          if (cancelled_) break;
         }
       }
-      if (total_move > 0) {
+      // Cancellation is immediate. In particular, do not append a compensating Z move that
+      // returns focus to the pre-conversion position; the incomplete output is discarded.
+      if (!cancelled_ && total_move != 0) {
         gen_->moveZ(total_move);
       }
     }
@@ -190,7 +300,7 @@ bool ToolpathExporter::convertStack(const QList<LayerPtr> &layers, bool is_high_
  *             if dpmm = 20 (High res), canvas_mm = 10 -> scale by 2
  * @param layer
  */
-void ToolpathExporter::convertLayer(const LayerPtr &layer) {
+void ToolpathExporter::convertLayer(const LayerPtr &layer, bool stl_paired) {
   // Reset context states for the layer
   setDpmm(layer->dpmm());
   // TODO (Use layer_painter to manage transform over different sub objects)
@@ -199,6 +309,10 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
   layer_polygons_.clear();
   layer_filled_polygons_.clear();
   polygons_mutex_.unlock();
+  // Keep what the first half of a pair collected, this call is the second half.
+  const bool is_paired_second = stl_output_deferred_;
+  if (!is_paired_second) layer_stl_placements_.clear();
+  stl_output_deferred_ = stl_paired;
   with_image_ = false;
   for (int i = 0; i < 5; i++) {
     element_cnt_[i] = 0;
@@ -226,13 +340,27 @@ void ToolpathExporter::convertLayer(const LayerPtr &layer) {
     gen_->turnOnLaser();
     gen_->setPulseWidth(layer->pulseWidth());
   }
+  if (!is_contour_ && layer->qPulseWidth() != 0) {
+    // Make sure cmd list is opened
+    gen_->turnOnLaser();
+    gen_->setQPulseWidth(layer->qPulseWidth());
+  }
   // Iterate through all shapes in the layer
   for (auto &shape : layer->children()) {
     convertShape(shape);
   }
   sortPolygons();
-  onProgressChanged(0.05, true);
-  outputLayerGcode();
+  // A mixed canvas layer is represented as two exporter layers. Reserve the first quarter for
+  // its first half, then let the second half use the remaining range (including STL processing).
+  // This keeps progress monotonic and prevents a deferred first half from reporting 100% before
+  // the expensive STL pass starts.
+  if (stl_paired) {
+    outputLayerGcode(0.0, 0.25);
+  } else if (is_paired_second) {
+    outputLayerGcode(0.25, 0.75);
+  } else {
+    outputLayerGcode();
+  }
 }
 
 void ToolpathExporter::convertShape(const ShapePtr &shape) {
@@ -277,6 +405,15 @@ void ToolpathExporter::convertBitmap(BitmapShape *bmp) {
     transformed_bbox = transformed_bbox.intersected(canvas_clip_path_);
     layer_polygons_.append(transformed_bbox.toSubpathPolygons());
     polygons_mutex_.unlock();
+    return;
+  }
+  if (bmp->isStlPhoto()) {
+    const QRectF projected_bounds = global_transform_.mapRect(bmp->boundingRect());
+    const QRectF boundary = resolution_scale_transform_.mapRect(machine_work_area_mm_);
+    if (!exceed_boundary_ && !boundary.contains(projected_bounds)) exceed_boundary_ = true;
+
+    layer_stl_placements_.append(
+        StlPlacementJob{bmp->stlPlacement(), StlEngraveKind::kDot, bmp});
     return;
   }
   QRectF new_dirty_area = global_transform_.mapRect(bmp->boundingRect());
@@ -333,6 +470,33 @@ void ToolpathExporter::convertPath(const PathShape *path) {
       transformed_path.boundingRect().left() < boundary_mm.left() * canvas_mm_ratio_ || 
       transformed_path.boundingRect().right() > boundary_mm.right() * canvas_mm_ratio_)) {
     exceed_boundary_ = true;
+  }
+
+  if (path->isStlPlaceholder()) {
+    const StlPlacement &placement = path->stlPlacement();
+    // Framing / red light only needs the footprint, engraving needs the real 3D geometry.
+    if (!is_contour_) {
+      bool has_geometry = false;
+      if (placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
+        has_geometry =
+            point_cloud_objects_ != nullptr && point_cloud_objects_->contains(placement.id);
+      } else if (placement.geometry_kind == StlPlacement::GeometryKind::Mesh) {
+        has_geometry = stl_objects_ != nullptr && stl_objects_->contains(placement.id);
+      }
+      if (!has_geometry) {
+        // Discard, but say so: otherwise the user just gets an object that was never engraved.
+        qWarning() << "[Export] 3D placeholder" << placement.id
+                   << "has no matching geometry payload, the object is skipped";
+        return;
+      }
+      // The kind has to be resolved HERE: the object's own layer is current_layer_ right now, and
+      // that is what says whether it is filled. By output time it may be the paired layer's turn.
+      layer_stl_placements_.append(StlPlacementJob{placement, stlEngraveKind(placement, path)});
+      return;
+    }
+    // Framing / red light: the footprint of the placeholder is exactly the XY projection we want,
+    // so fall through and treat it as an ordinary path.
+    qInfo() << "[Export] STL placeholder" << placement.id << "exported as a flat projection";
   }
 
   // Fill shape
@@ -450,41 +614,680 @@ void ToolpathExporter::sortPolygons() {
  *        to generator
  * 
  */
-void ToolpathExporter::outputLayerGcode() {
+void ToolpathExporter::outputLayerGcode(double progress_start, double progress_span) {
+  const bool has_stl = !stl_output_deferred_ && !layer_stl_placements_.isEmpty();
+  // STL preparation/slicing can dominate conversion time, so reserve a visible half of this
+  // layer's progress for it. Layers without STL retain the existing full-range behaviour.
+  const double two_d_span = progress_span * (has_stl ? 0.5 : 1.0);
+  progress_increment_scale_ = two_d_span;
+  const auto report2d = [&](double value) {
+    onProgressChanged(progress_start + value * two_d_span, true);
+  };
+  const auto stopIfCancelled = [&]() {
+    if (!cancelled_) return false;
+    progress_increment_scale_ = 1.0;
+    return true;
+  };
+
   element_cnt_[3] = layer_filled_polygons_.size();
   element_cnt_[4] = layer_polygons_.size();
   total_element_cnt_ = 0;
   for (int i = 0; i < 5; i++) {
     total_element_cnt_ += element_cnt_[i];
   }
+  // Guard the divisions below.
+  if (total_element_cnt_ <= 0) {
+    total_element_cnt_ = 1;
+  }
+  report2d(0.05);
 
   outputLayerBitmapGcode(BitmapHandlerType::NormalMode);
-  if (this->cancelled_) return;
-  onProgressChanged(0.05 + 0.95 * element_cnt_[0] / total_element_cnt_, true);
+  if (stopIfCancelled()) return;
+  report2d(0.05 + 0.95 * element_cnt_[0] / total_element_cnt_);
 
   outputLayerBitmapGcode(BitmapHandlerType::GradientMode);
-  if (this->cancelled_) return;
-  onProgressChanged(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1]) / total_element_cnt_, true);
+  if (stopIfCancelled()) return;
+  report2d(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1]) / total_element_cnt_);
 
   int temp_cnt = element_cnt_[0];
   element_cnt_[0] = 0; // avoid counting progress twice in rasterBitmap
   rasterBitmapDepthMode(ScanDirectionMode::kBidirectionMode, 0);
   element_cnt_[0] = temp_cnt;
-  if (this->cancelled_) return;
-  onProgressChanged(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1] + element_cnt_[2]) / total_element_cnt_, true);
+  if (stopIfCancelled()) return;
+  report2d(0.05 + 0.95 * (element_cnt_[0] + element_cnt_[1] + element_cnt_[2]) /
+                       total_element_cnt_);
 
   outputLayerFillGcode();
-  if (this->cancelled_) return;
-  onProgressChanged(0.05 + 0.95 * (total_element_cnt_ - element_cnt_[4]) / total_element_cnt_, true);
+  if (stopIfCancelled()) return;
+  report2d(0.05 + 0.95 * (total_element_cnt_ - element_cnt_[4]) / total_element_cnt_);
 
   outputLayerPathGcode();
-  onProgressChanged(1, true);
+  if (stopIfCancelled()) return;
+  report2d(1.0);
+
+  if (has_stl) {
+    // Nested fill/path emitters still call onProgressChanged() to pump queued cancel signals, but
+    // STL reports its own absolute preparation/slicing progress.
+    progress_increment_scale_ = 0.0;
+    outputLayerStlGcode(progress_start + two_d_span, progress_span - two_d_span);
+  }
+  progress_increment_scale_ = 1.0;
+  if (cancelled_) return;
+  onProgressChanged(progress_start + progress_span, true);
+}
+
+/**
+ * @brief Plan every STL object of the current canvas layer and engrave strictly bottom to top.
+ *
+ * Line objects share a merged slice ladder; transformed blue-noise surface/shell points join that
+ * ladder as ordered point events. All output lands in the same machine-Z buckets, so the axis is
+ * strictly increasing and already engraved crack points never sit in front of later work.
+ *
+ * "Canvas layer", not "exporter layer": a canvas layer holding both filled and unfilled objects
+ * reaches the exporter as the pair "x" / "x-filled", and convertLayer() defers the first half so
+ * that both halves end up in this one ladder.
+ *
+ * Inside one Z step the objects are dispatched by kind, always in the same order:
+ *
+ *     z0: line+fill, line, dot+fill, dot | z1: line+fill, line, dot+fill, dot | ...
+ *
+ * Each kind needs a different gcode path, so they cannot be emitted in one pass, but they all
+ * belong to the same Z and must not cost a second Z travel.
+ *
+ * Slicing stays in real model Z. Basic refraction maps the finished geometry into a sliding window
+ * of 0.0001 mm machine-Z buckets. A bucket is flushed only when later geometry cannot add to it.
+ */
+void ToolpathExporter::outputLayerStlGcode(double progress_start, double progress_span) {
+  if (layer_stl_placements_.isEmpty()) return;
+  constexpr double kPreparationFraction = 0.30;
+  constexpr double kPlanningFraction = 0.68;
+  const auto reportProgress = [&](double value) {
+    onProgressChanged(progress_start + progress_span * std::clamp(value, 0.0, 1.0), true);
+    return !cancelled_;
+  };
+  if (!reportProgress(0.0)) return;
+
+  struct StlJob {
+    stl::Slicer slicer;
+    StlEngraveKind kind;
+    /** Already transformed 3D samples for kDot/kDotFill, sorted by real model Z. */
+    std::vector<stl::SurfacePoint> dot_points;
+    size_t next_dot_point = 0;
+    int next_layer_index = 0;
+  };
+  std::vector<StlJob> jobs;
+  jobs.reserve(layer_stl_placements_.size());
+  // One entry per (object, slice position); sorting these is what merges the ladders.
+  struct PlaneRef {
+    double z;
+    int job;
+  };
+  std::vector<PlaneRef> ladder;
+  double finest_layer_height = 0;
+  double finest_point_spacing = 0;
+
+  qInfo() << "[Export] STL layer:" << refraction_.describe();
+  qInfo() << "[Export] STL material model-Z range" << material_min_z_mm_ << "to"
+          << material_max_z_mm_ << "mm";
+
+  const auto modelZInMaterial = [&](double model_z_canvas) {
+    const double model_z_mm = model_z_canvas / canvas_mm_ratio_;
+    constexpr double kBoundsEpsilonMm = 1e-9;
+    return model_z_mm >= material_min_z_mm_ - kBoundsEpsilonMm &&
+           model_z_mm <= material_max_z_mm_ + kBoundsEpsilonMm;
+  };
+  const auto discardPointsOutsideMaterial = [&](std::vector<stl::SurfacePoint> *points,
+                                                 const QString &id) {
+    const size_t before = points->size();
+    points->erase(std::remove_if(points->begin(), points->end(), [&](const auto &point) {
+                    return !modelZInMaterial(point.position.z);
+                  }),
+                  points->end());
+    const size_t discarded = before - points->size();
+    if (discarded > 0) {
+      qInfo() << "[Export] STL object" << id << "discarded" << discarded
+              << "points outside the material Z range";
+    }
+  };
+
+  const int placement_count = layer_stl_placements_.size();
+  for (int placement_index = 0; placement_index < placement_count; ++placement_index) {
+    if (cancelled_) return;
+    const StlPlacementJob &entry = layer_stl_placements_[placement_index];
+    const StlPlacement &placement = entry.placement;
+    const auto reportPreparation = [&](double object_fraction) {
+      return reportProgress(kPreparationFraction *
+                            (placement_index + std::clamp(object_fraction, 0.0, 1.0)) /
+                            placement_count);
+    };
+    const double layer_height_mm =
+        placement.layer_height_mm > 0 ? placement.layer_height_mm : kDefaultStlLayerHeightMm;
+    const double point_spacing_mm =
+        placement.point_spacing_mm > 0 ? placement.point_spacing_mm : kDefaultStlPointSpacingMm;
+    stl::SliceParams params;
+    // Slicing planes are real model heights. Refraction never changes the mesh or layer count.
+    params.layer_height = layer_height_mm * canvas_mm_ratio_;
+
+    StlJob job;
+    // Resolved at collection time, current_layer_ may be the paired layer by now.
+    job.kind = entry.kind;
+    QString error;
+    const int job_index = static_cast<int>(jobs.size());
+    if (placement.geometry_kind == StlPlacement::GeometryKind::Photo ||
+        placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
+      job.kind = StlEngraveKind::kDot;
+      if (placement.geometry_kind == StlPlacement::GeometryKind::Photo) {
+        if (entry.photo == nullptr || entry.photo->sourceImage().isNull() ||
+            !(placement.photo_width_mm > 0) || !(placement.photo_height_mm > 0)) {
+          qWarning() << "[Export] Photo object" << placement.id
+                     << "has no usable image or local dimensions";
+          continue;
+        }
+
+        const double transformed_width_mm =
+            placement.matrix
+                .mapVector(QVector3D(static_cast<float>(placement.photo_width_mm), 0, 0))
+                .length() /
+            canvas_mm_ratio_;
+        const double transformed_height_mm =
+            placement.matrix
+                .mapVector(QVector3D(0, static_cast<float>(placement.photo_height_mm), 0))
+                .length() /
+            canvas_mm_ratio_;
+        const double columns_value = std::ceil(transformed_width_mm / point_spacing_mm);
+        const double rows_value = std::ceil(transformed_height_mm / point_spacing_mm);
+        if (!std::isfinite(columns_value) || !std::isfinite(rows_value) || columns_value < 1 ||
+            rows_value < 1 || columns_value * rows_value > kMaxPhotoSampleCount) {
+          qWarning() << "[Export] Photo object" << placement.id
+                     << "has an invalid or excessive sampling grid" << columns_value << "x"
+                     << rows_value;
+          continue;
+        }
+
+        const int columns = static_cast<int>(columns_value);
+        const int rows = static_cast<int>(rows_value);
+        // Match the ordinary backend bitmap path: composite transparency onto white, resample to
+        // the physical dot grid, then let Qt perform diffuse dithering. The SVG contains grayscale
+        // source pixels; no frontend-generated dot map is needed.
+        QImage sampled_image(QSize(columns, rows), QImage::Format_ARGB32);
+        sampled_image.fill(Qt::white);
+        QPainter sampled_painter(&sampled_image);
+        sampled_painter.setRenderHint(QPainter::SmoothPixmapTransform, entry.photo->gradient());
+        sampled_painter.drawImage(sampled_image.rect(), entry.photo->sourceImage());
+        sampled_painter.end();
+
+        QImage binary_image;
+        if (entry.photo->gradient()) {
+          binary_image =
+              sampled_image
+                  .convertToFormat(QImage::Format_Mono, Qt::MonoOnly | Qt::DiffuseDither)
+                  .convertToFormat(QImage::Format_Grayscale8);
+        } else {
+          QImage grayscale_image =
+              sampled_image.convertToFormat(QImage::Format_Grayscale8)
+                  .convertToFormat(QImage::Format_ARGB32);
+          binary_image = imageBinarize(&grayscale_image, entry.photo->thrsh_brightness());
+        }
+
+        job.dot_points.reserve(static_cast<size_t>(columns) * static_cast<size_t>(rows));
+        for (int row = 0; row < rows; ++row) {
+          if ((row & 31) == 0 && !reportPreparation(0.1 + 0.7 * row / rows)) return;
+          const double y_ratio = (row + 0.5) / rows;
+          const uchar *pixels = binary_image.constScanLine(row);
+          for (int column = 0; column < columns; ++column) {
+            if (pixels[column] != 0) continue;
+
+            const double x_ratio = (column + 0.5) / columns;
+            const QVector3D transformed = placement.matrix.map(QVector3D(
+                static_cast<float>((x_ratio - 0.5) * placement.photo_width_mm),
+                static_cast<float>((0.5 - y_ratio) * placement.photo_height_mm), 0));
+            job.dot_points.push_back(stl::SurfacePoint{
+                stl::Vec3{transformed.x(), transformed.y(), transformed.z()}, 0});
+          }
+        }
+      } else {
+        if (point_cloud_objects_ == nullptr) continue;
+        auto cloud_it = point_cloud_objects_->constFind(placement.id);
+        if (cloud_it == point_cloud_objects_->constEnd()) continue;
+
+        job.dot_points.reserve(cloud_it->points.size());
+        for (size_t point_index = 0; point_index < cloud_it->points.size(); ++point_index) {
+          if ((point_index & 4095) == 0 &&
+              !reportPreparation(0.1 + 0.7 * static_cast<double>(point_index) /
+                                           std::max<size_t>(1, cloud_it->points.size()))) {
+            return;
+          }
+          const stl::Vec3 &point = cloud_it->points[point_index];
+          const QVector3D transformed = placement.matrix.map(
+              QVector3D(static_cast<float>(point.x), static_cast<float>(point.y),
+                        static_cast<float>(point.z)));
+          job.dot_points.push_back(stl::SurfacePoint{
+              stl::Vec3{transformed.x(), transformed.y(), transformed.z()}, 0});
+        }
+      }
+      discardPointsOutsideMaterial(&job.dot_points, placement.id);
+      if (job.dot_points.empty()) {
+        qWarning() << "[Export] Direct-point object" << placement.id << "has no engravable points";
+        continue;
+      }
+      std::sort(job.dot_points.begin(), job.dot_points.end(), [](const auto &a, const auto &b) {
+        if (a.position.z != b.position.z) return a.position.z < b.position.z;
+        if (a.position.y != b.position.y) return a.position.y < b.position.y;
+        return a.position.x < b.position.x;
+      });
+      const double spacing = point_spacing_mm * canvas_mm_ratio_;
+      if (finest_point_spacing <= 0 || spacing < finest_point_spacing) {
+        finest_point_spacing = spacing;
+      }
+      qInfo() << "[Export] Direct-point object" << placement.id << "prepared,"
+              << job.dot_points.size() << "direct points";
+      jobs.push_back(std::move(job));
+      if (!reportPreparation(1.0)) return;
+      continue;
+    }
+
+    if (stl_objects_ == nullptr) continue;
+    auto mesh_it = stl_objects_->constFind(placement.id);
+    if (mesh_it == stl_objects_->constEnd()) continue;
+
+    if (job.kind == StlEngraveKind::kDot || job.kind == StlEngraveKind::kDotFill) {
+      stl::BlueNoiseParams blue_noise;
+      // The placement matrix ends in canvas units (10/mm), so both Poisson distance and shell
+      // offset are evaluated after the 4x4 transform in that same real-geometry space.
+      blue_noise.spacing = point_spacing_mm * canvas_mm_ratio_;
+      // Preserve the two existing controls: point spacing is density on a shell, layer height is
+      // now the distance between inward shells for kDotFill.
+      blue_noise.shell_spacing = layer_height_mm * canvas_mm_ratio_;
+      stl::PointCloudResult cloud =
+          job.kind == StlEngraveKind::kDot
+              ? stl::sampleSurfaceBlueNoise(mesh_it.value(), placement.matrix, blue_noise,
+                                            reportPreparation)
+              : stl::sampleInwardShellsBlueNoise(mesh_it.value(), placement.matrix, blue_noise,
+                                                 reportPreparation);
+      if (cancelled_) return;
+      if (!cloud.ok) {
+        qWarning() << "[Export] Failed to sample STL object" << placement.id << cloud.error;
+        continue;
+      }
+      if (cloud.shell_limit_reached) {
+        qWarning() << "[Export] STL inward shells reached safety limit" << blue_noise.max_shell_count
+                   << "for object" << placement.id;
+      }
+      job.dot_points = std::move(cloud.points);
+      discardPointsOutsideMaterial(&job.dot_points, placement.id);
+      if (job.dot_points.empty()) {
+        qWarning() << "[Export] STL object" << placement.id
+                   << "has no points inside the material Z range";
+        continue;
+      }
+      std::sort(job.dot_points.begin(), job.dot_points.end(), [](const auto &a, const auto &b) {
+        if (a.position.z != b.position.z) return a.position.z < b.position.z;
+        if (a.shell_index != b.shell_index) return a.shell_index < b.shell_index;
+        if (a.position.y != b.position.y) return a.position.y < b.position.y;
+        return a.position.x < b.position.x;
+      });
+      if (finest_point_spacing <= 0 || blue_noise.spacing < finest_point_spacing) {
+        finest_point_spacing = blue_noise.spacing;
+      }
+      qInfo() << "[Export] STL object" << placement.id << "sampled," << job.dot_points.size()
+              << "blue-noise points," << cloud.shell_count << "shells, kind"
+              << static_cast<int>(job.kind) << "seed" << QString::number(stl::kBlueNoiseSeed, 16);
+    } else {
+      if (!job.slicer.prepare(mesh_it.value(), placement.matrix, params, &error,
+                              [&](double value) { return reportPreparation(value * 0.8); })) {
+        if (cancelled_) return;
+        qWarning() << "[Export] Failed to prepare STL object" << placement.id << error;
+        continue;
+      }
+      // Adaptive slicing is a per-object opt-in. Filled lines retain their fixed-plane path.
+      const bool adaptive = job.kind == StlEngraveKind::kLine &&
+                            placement.min_layer_height_mm > 0.0;
+      const QVector<double> planes =
+          adaptive ? job.slicer.adaptivePlanes(
+                         placement.min_layer_height_mm * canvas_mm_ratio_,
+                         [&](double value) { return reportPreparation(0.8 + value * 0.2); })
+                   : job.slicer.planes();
+      if (cancelled_) return;
+      int accepted_plane_count = 0;
+      for (double z : planes) {
+        if (!modelZInMaterial(z)) continue;
+        ladder.push_back(PlaneRef{z, job_index});
+        ++accepted_plane_count;
+      }
+      if (finest_layer_height <= 0 || params.layer_height < finest_layer_height) {
+        finest_layer_height = params.layer_height;
+      }
+      qInfo() << "[Export] STL object" << placement.id << "prepared," << accepted_plane_count
+              << (adaptive ? "adaptive layers," : "fixed layers,")
+              << "kind" << static_cast<int>(job.kind);
+    }
+    jobs.push_back(std::move(job));
+    if (!reportPreparation(1.0)) return;
+  }
+  if (jobs.empty()) {
+    reportProgress(1.0);
+    return;
+  }
+
+  std::sort(ladder.begin(), ladder.end(),
+            [](const PlaneRef &a, const PlaneRef &b) { return a.z < b.z; });
+  if (!reportProgress(kPreparationFraction)) return;
+  // Objects with different layer heights will not land on exactly the same plane, so slices closer
+  // than a thousandth of the finest layer are treated as one Z step.
+  const double group_eps = finest_layer_height > 0 ? finest_layer_height * 1e-3 : 1e-9;
+  // Continuous surface samples would otherwise make the event loop wake once per point. Batching a
+  // quarter spacing at a time does not merge machine-Z buckets; it only amortises planning work.
+  const double point_batch_span = finest_point_spacing > 0 ? finest_point_spacing * 0.25 : 0.0;
+
+  stl_focus_z_mm_ = 0;
+  // STL dot mode must never inherit generic path interpolation, which would create extra dots.
+  stl_output_active_ = true;
+  bool dotting_enabled = false;
+
+  struct DotPoint {
+    QPointF target_mm;
+  };
+  struct MachineBucket {
+    QList<stl::Layer> lines[2];
+    QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
+  };
+  std::map<qint64, MachineBucket> buckets;
+  constexpr double kMachineZBucketMm = 0.0001;
+  double total_work = static_cast<double>(ladder.size());
+  for (const StlJob &job : jobs) total_work += static_cast<double>(job.dot_points.size());
+  total_work = std::max(1.0, total_work);
+  double processed_work = 0.0;
+  const auto reportPlanning = [&](double in_flight = 0.0) {
+    return reportProgress(kPreparationFraction +
+                          kPlanningFraction *
+                              std::min(1.0, (processed_work + in_flight) / total_work));
+  };
+  const auto bucketKey = [&](double z_mm) {
+    return static_cast<qint64>(std::llround(z_mm / kMachineZBucketMm));
+  };
+  const auto bucketZ = [&](qint64 key) { return key * kMachineZBucketMm; };
+
+  auto addBlueNoisePointToBucket = [&](const stl::SurfacePoint &sample, int dot_kind) {
+    const QPointF target_dots = global_transform_.map(
+        QPointF(sample.position.x, sample.position.y));
+    const QPointF target_mm = target_dots / dpmm_;
+    const double model_z_mm = sample.position.z / canvas_mm_ratio_;
+    const qint64 key = bucketKey(refraction_.machineZ(model_z_mm));
+    buckets[key].dot_cloud[dot_kind].append(DotPoint{target_mm});
+  };
+
+  auto setDotting = [&](bool enabled) {
+    if (enabled == dotting_enabled) return;
+    gen_->setDottingTime(enabled ? current_layer_->dottingTime() : 0);
+    if (is_path_preview_) gen_->setDottingMode(enabled);
+    dotting_enabled = enabled;
+  };
+  auto clearGeometry = [&]() {
+    QMutexLocker lock(&polygons_mutex_);
+    layer_polygons_.clear();
+    layer_filled_polygons_.clear();
+  };
+  auto flushBucket = [&](qint64 key, MachineBucket &bucket) {
+    if (!reportPlanning()) return false;
+    const double target_z_mm = bucketZ(key);
+    if (target_z_mm < 0.0) {
+      qWarning() << "[Export] skipping unreachable STL machine Z" << target_z_mm;
+      return true;
+    }
+    moveStlFocusZ(target_z_mm);
+    setDotting(false);
+    stl_dot_mode_ = false;
+    if (!bucket.lines[0].isEmpty()) {
+      clearGeometry();
+      outputStlLineFillGcode(bucket.lines[0]);
+      if (cancelled_) return false;
+    }
+    if (!bucket.lines[1].isEmpty()) {
+      clearGeometry();
+      outputStlLineGcode(bucket.lines[1]);
+      if (cancelled_) return false;
+    }
+    for (int dot_kind = 0; dot_kind < 2; ++dot_kind) {
+      QVector<DotPoint> &cloud = bucket.dot_cloud[dot_kind];
+      if (cloud.isEmpty()) continue;
+      setDotting(true);
+      stl_dot_mode_ = true;
+      clearGeometry();
+      QPolygonF points;
+      points.reserve(cloud.size());
+      for (const DotPoint &point : cloud) points << point.target_mm;
+      const QVector<int> cloud_order = stl::nearestPointOrder(
+          points, current_pos_mm_, [&](double) { return reportPlanning(); });
+      if (cancelled_) return false;
+      QPolygonF cloud_path;
+      cloud_path.reserve(cloud.size());
+      for (int index : cloud_order) cloud_path << cloud[index].target_mm * dpmm_;
+      {
+        QMutexLocker lock(&polygons_mutex_);
+        layer_polygons_.append(std::move(cloud_path));
+      }
+      outputLayerPathGcode();
+      if (cancelled_) return false;
+    }
+    return true;
+  };
+
+  QList<stl::Layer> by_kind[2];
+  struct PointCursor {
+    double z = 0.0;
+    int job = -1;
+  };
+  struct PointCursorLater {
+    bool operator()(const PointCursor &a, const PointCursor &b) const {
+      return a.z > b.z || (a.z == b.z && a.job > b.job);
+    }
+  };
+  std::priority_queue<PointCursor, std::vector<PointCursor>, PointCursorLater> point_queue;
+  for (int job_index = 0; job_index < static_cast<int>(jobs.size()); ++job_index) {
+    if (!jobs[static_cast<size_t>(job_index)].dot_points.empty()) {
+      point_queue.push(PointCursor{
+          jobs[static_cast<size_t>(job_index)].dot_points.front().position.z, job_index});
+    }
+  }
+
+  size_t i = 0;
+  while (i < ladder.size() || !point_queue.empty()) {
+    if (this->cancelled_) break;
+    const double next_line_z = i < ladder.size() ? ladder[i].z
+                                                  : std::numeric_limits<double>::infinity();
+    const double next_point_z = !point_queue.empty() ? point_queue.top().z
+                                                      : std::numeric_limits<double>::infinity();
+    const double step_z = std::min(next_line_z, next_point_z);
+
+    for (QList<stl::Layer> &bucket : by_kind) bucket.clear();
+    while (i < ladder.size() && ladder[i].z - step_z <= group_eps) {
+      StlJob &job = jobs[static_cast<size_t>(ladder[i].job)];
+      stl::Layer sliced = job.slicer.sliceAt(
+          ladder[i].z, [&](double value) { return reportPlanning(value); });
+      if (cancelled_) break;
+      sliced.index = job.next_layer_index++;
+      if (!sliced.contours.isEmpty()) {
+        by_kind[static_cast<int>(job.kind)].append(std::move(sliced));
+      }
+      ++i;
+      processed_work += 1.0;
+    }
+    if (cancelled_) break;
+    while (!point_queue.empty() && point_queue.top().z - step_z <= point_batch_span + 1e-12) {
+      const PointCursor cursor = point_queue.top();
+      point_queue.pop();
+      StlJob &job = jobs[static_cast<size_t>(cursor.job)];
+      const stl::SurfacePoint &sample = job.dot_points[job.next_dot_point];
+      const int dot_kind = job.kind == StlEngraveKind::kDotFill ? 0 : 1;
+      addBlueNoisePointToBucket(sample, dot_kind);
+      ++job.next_dot_point;
+      processed_work += 1.0;
+      if ((job.next_dot_point & 1023) == 0 && !reportPlanning()) break;
+      if (job.next_dot_point < job.dot_points.size()) {
+        point_queue.push(PointCursor{job.dot_points[job.next_dot_point].position.z, cursor.job});
+      }
+    }
+    if (cancelled_) break;
+    for (int k = 0; k < 2; ++k) {
+      if (this->cancelled_) break;
+      const QList<stl::Layer> &slices = by_kind[k];
+      if (slices.isEmpty()) continue;
+      for (const stl::Layer &slice : slices) {
+        const double model_z_mm = slice.z_geometry / canvas_mm_ratio_;
+        const qint64 key = bucketKey(refraction_.machineZ(model_z_mm));
+        buckets[key].lines[k].append(slice);
+      }
+    }
+    if (this->cancelled_) break;
+    const double following_line_z = i < ladder.size() ? ladder[i].z
+                                                       : std::numeric_limits<double>::infinity();
+    const double following_point_z = !point_queue.empty() ? point_queue.top().z
+                                                           : std::numeric_limits<double>::infinity();
+    const double next_geometry_z = std::min(following_line_z, following_point_z);
+    const double next_model_z_mm = std::isfinite(next_geometry_z)
+                                       ? next_geometry_z / canvas_mm_ratio_
+                                       : std::numeric_limits<double>::infinity();
+    const qint64 flush_before = std::isfinite(next_model_z_mm)
+                                    ? bucketKey(refraction_.machineZ(next_model_z_mm))
+                                    : std::numeric_limits<qint64>::max();
+    while (!buckets.empty() && buckets.begin()->first < flush_before) {
+      if (!flushBucket(buckets.begin()->first, buckets.begin()->second)) break;
+      buckets.erase(buckets.begin());
+    }
+    if (!reportPlanning()) break;
+  }
+
+  for (auto &entry : buckets) {
+    if (this->cancelled_) break;
+    if (!flushBucket(entry.first, entry.second)) break;
+  }
+
+  stl_output_active_ = false;
+  stl_dot_mode_ = false;
+  // Cancellation adds no STL-specific cleanup commands here. Only a normally completed STL pass
+  // disables dotting, returns to the focus origin and reports completion.
+  if (!cancelled_) {
+    if (dotting_enabled) gen_->setDottingTime(0);
+    moveStlFocusZ(0);
+    reportProgress(1.0);
+  }
+}
+
+void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
+  // Quantise to the forced 0.0001mm STL bucket. The moves are relative, so a target the
+  // generator rounds away would still count here and the two positions would slowly drift apart --
+  // over many layers that adds up.
+  const double target_z_mm = std::round(focus_z_mm * 10000.0) / 10000.0;
+  if (target_z_mm == stl_focus_z_mm_) return;
+  // moveZ is relative for Promark. A positive delta raises the head, matching focus_z_mm.
+  gen_->moveZ((target_z_mm - stl_focus_z_mm_));
+  stl_focus_z_mm_ = target_z_mm;
+}
+
+/**
+ * Emit one STL polygon. Z is handled by the shared layer ladder before this function is called.
+ */
+void ToolpathExporter::emitStlPolygon(const QPolygonF &poly_dots, double speed, double power) {
+  if (poly_dots.isEmpty() || cancelled_) return;
+  if (stl_dot_mode_) {
+    // Every point is a dot; inserting interpolation points would change the requested density.
+    moveTo(poly_dots.first() / dpmm_, travel_speed_, 0, 0);
+    for (int index = 0; index < poly_dots.size(); ++index) {
+      if ((index & 1023) == 0) {
+        onProgressChanged(current_progress_, true);
+        if (cancelled_) return;
+      }
+      moveTo(poly_dots[index] / dpmm_, speed, power, 0);
+    }
+    return;
+  }
+
+  moveTo(poly_dots.first() / dpmm_, travel_speed_, 0, 0);
+  for (int index = 0; index < poly_dots.size(); ++index) {
+    if ((index & 1023) == 0) {
+      onProgressChanged(current_progress_, true);
+      if (cancelled_) return;
+    }
+    moveTo(poly_dots[index] / dpmm_, speed, power, 0);
+  }
+  moveTo(poly_dots.last() / dpmm_, travel_speed_, 0, 0);
+}
+
+/** Emit one scan-line segment of an STL fill. */
+void ToolpathExporter::emitStlFillSegment(const QPointF &start_dots, const QPointF &end_dots) {
+  const QPointF start_mm = start_dots / dpmm_;
+  const QPointF end_mm = end_dots / dpmm_;
+  moveTo(start_mm, current_layer_->speed(), 0, 0);
+  moveTo(end_mm, current_layer_->speed(), current_layer_->power(), 0);
+}
+
+StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement,
+                                                const PathShape *path) const {
+  if (placement.geometry_kind == StlPlacement::GeometryKind::Photo ||
+      placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
+    return StlEngraveKind::kDot;
+  }
+
+  const bool filled = (path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
+                      current_layer_->type() == Layer::Type::Fill ||
+                      current_layer_->type() == Layer::Type::FillLine;
+  if (placement.mode == StlPlacement::Mode::Dot) {
+    return filled ? StlEngraveKind::kDotFill : StlEngraveKind::kDot;
+  }
+  return filled ? StlEngraveKind::kLineFill : StlEngraveKind::kLine;
+}
+
+/**
+ * Map the contours of one slice into document dots.
+ * The 2D transform of the placeholder shape is deliberately NOT applied: the placement matrix is
+ * the authoritative transform for the mesh, the rect only mirrors its XY projection.
+ */
+static QList<QPolygonF> mapStlContours(const QTransform &transform, const stl::Layer &layer) {
+  QList<QPolygonF> polys;
+  polys.reserve(layer.contours.size());
+  for (const stl::Contour &contour : layer.contours) {
+    QPolygonF poly = transform.map(contour.polygon);
+    if (poly.isEmpty()) continue;
+    polys.append(std::move(poly));
+  }
+  return polys;
+}
+
+/** Line + fill: the contours bound the area, outputLayerFillGcode scans it. */
+void ToolpathExporter::outputStlLineFillGcode(const QList<stl::Layer> &slices) {
+  {
+    QMutexLocker lock(&polygons_mutex_);
+    for (const stl::Layer &slice : slices) {
+      FilledPath filled_path;
+      // The contours of a slice are properly nested and never overlap, so even odd fill is both
+      // correct and independent of the winding.
+      filled_path.isEvenOdd = true;
+      // One FilledPath per object: an object has to be filled together with its own holes, and two
+      // objects overlapping in XY must not punch holes into each other.
+      filled_path.polys = mapStlContours(global_transform_, slice);
+      if (!filled_path.polys.isEmpty()) layer_filled_polygons_.append(filled_path);
+    }
+  }
+  // The layer's own scan settings apply, only the per Z step logging is silenced.
+  outputLayerFillGcode(true);
+}
+
+/** Line, no fill: the contours are the toolpath. */
+void ToolpathExporter::outputStlLineGcode(const QList<stl::Layer> &slices) {
+  {
+    QMutexLocker lock(&polygons_mutex_);
+    for (const stl::Layer &slice : slices) {
+      layer_polygons_.append(mapStlContours(global_transform_, slice));
+    }
+  }
+  outputLayerPathGcode();
 }
 
 /**
  * @brief Export layer_filled_polygons_ for non-filled geometry
+ * @param quiet suppresses per-call logging for STL layers with many Z planes
  */
-void ToolpathExporter::outputLayerFillGcode() {
+void ToolpathExporter::outputLayerFillGcode(bool quiet) {
   struct Path {
     QLineF path;
     bool isClockwise;
@@ -499,7 +1302,7 @@ void ToolpathExporter::outputLayerFillGcode() {
   };
 
   QRectF bounds;
-  polygons_mutex_.lock();
+  QMutexLocker polygons_lock(&polygons_mutex_);
   for (auto &paths : layer_filled_polygons_) {
     if (paths.polys.empty()) continue;
     for (const auto& poly : paths.polys) {
@@ -507,21 +1310,24 @@ void ToolpathExporter::outputLayerFillGcode() {
       bounds = bounds.united(poly.boundingRect());
     }
   }
-  qInfo() << "Fill Path Bounds: " << bounds;
-  qInfo() << "DPMM: " << dpmm_;
+  const bool verbose = !quiet;
+  if (verbose) {
+    qInfo() << "Fill Path Bounds: " << bounds;
+    qInfo() << "DPMM: " << dpmm_;
+  }
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;
-  if (fill_interval == 0) fill_interval = 1;
   double fill_angle = current_layer_->fillAngle();
   bool fill_bidirectional = current_layer_->fillBidirectional();
   int hatch_count = current_layer_->fillHatch() ? 2 : 1;
+  if (fill_interval <= 0) fill_interval = 1;
+  if (hatch_count < 1) hatch_count = 1;
 
   // Calculate diagonal length to ensure coverage
   double diagonal = qSqrt(bounds.width() * bounds.width() +
                           bounds.height() * bounds.height()) * 1.1;
-  qInfo() << "Diagonal: " << diagonal / dpmm_;
+  if (verbose) qInfo() << "Diagonal: " << diagonal / dpmm_;
   if (diagonal == 0) {
-    polygons_mutex_.unlock();
     return;
   }
 
@@ -541,11 +1347,11 @@ void ToolpathExporter::outputLayerFillGcode() {
 
     // Calculate center point
     QPointF center = bounds.center();
-    qInfo() << "Center Point: " << center / dpmm_;
+    if (verbose) qInfo() << "Center Point: " << center / dpmm_;
 
     // Calculate start point (offset by half diagonal in perpendicular direction)
     QPointF start = center - (perpendicular * diagonal / 2);
-    qInfo() << "Start Point: " << start / dpmm_;
+    if (verbose) qInfo() << "Start Point: " << start / dpmm_;
 
     QList<PathGroup> all_paths;
     for (const auto& paths : layer_filled_polygons_) {
@@ -711,6 +1517,11 @@ void ToolpathExporter::outputLayerFillGcode() {
           continue;
         }
 
+        if (stl_output_active_) {
+          emitStlFillSegment(merged_intersections[i], merged_intersections[i + 1]);
+          continue;
+        }
+
         // Move to start point with no laser
         moveTo(merged_intersections[i] / dpmm_, current_layer_->speed(), 0, 0);
 
@@ -721,7 +1532,6 @@ void ToolpathExporter::outputLayerFillGcode() {
     }
     fill_angle += 90;
   }
-  polygons_mutex_.unlock();
   gen_->turnOffLaser();
 }
 
@@ -740,14 +1550,26 @@ void ToolpathExporter::outputLayerPathGcode() {
   float layer_power = is_contour_ ? 0 : current_layer_->power();
 
   // NOTE: Should convert points from canvas unit to mm
-  polygons_mutex_.lock();
+  QMutexLocker polygons_lock(&polygons_mutex_);
   for (auto &poly : layer_polygons_) {
+    onProgressChanged(current_progress_, true);
+    if (cancelled_) break;
     if (poly.empty()) continue;
+
+    if (stl_output_active_) {
+      emitStlPolygon(poly, layer_speed, layer_power);
+      continue;
+    }
 
     QPointF next_point_mm;
 
     moveTo(poly.first() / dpmm_, travel_speed_, 0, 0);
-    for (QPointF &point : poly) {
+    for (int point_index = 0; point_index < poly.size(); ++point_index) {
+      if ((point_index & 1023) == 0) {
+        onProgressChanged(current_progress_, true);
+        if (cancelled_) break;
+      }
+      const QPointF &point = poly[point_index];
       next_point_mm = point / dpmm_;
       // Divide a long line into small segments
       if (!is_promark_ && (next_point_mm - current_pos_mm_).manhattanLength() > 5) { // At most 5mm per segment
@@ -765,11 +1587,11 @@ void ToolpathExporter::outputLayerPathGcode() {
         moveTo(next_point_mm, layer_speed, layer_power, 0);
       }
     }
+    if (cancelled_) break;
     moveTo(poly.last() / dpmm_, travel_speed_, 0, 0);
 
     //gen_->turnOffLaser();
   }
-  polygons_mutex_.unlock();
   // gen_->moveTo(gen_->x(), gen_->y(), current_layer_->speed(), 0, 0);
   gen_->turnOffLaser();
   if (wobble_step > 0 && wobble_diameter > 0) {
@@ -1445,7 +2267,7 @@ void ToolpathExporter::handleCancel() {
  * Also check if the process is cancelled
  */
 void ToolpathExporter::onProgressChanged(double value, bool absolute) {
-  current_progress_ = absolute ? value : current_progress_ + value;
+  current_progress_ = absolute ? value : current_progress_ + value * progress_increment_scale_;
   int new_progress = 100 * (processed_layer_cnt_ + (processed_repeat_times_ + current_progress_) / total_repeat_times_) / total_layer_cnt_;
   if (new_progress > progress_) {
     progress_ = new_progress;

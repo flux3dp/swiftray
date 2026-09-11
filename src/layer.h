@@ -96,7 +96,9 @@ public:
   double nozzleOffsetX() const;
   double nozzleOffsetY() const;
   float focus() const;
+  bool focusRev() const;
   float focusStep() const;
+  bool focusStepRev() const;
   double ceZLimit() const;
   int interpolation() const;
   double rightPadding() const;
@@ -109,6 +111,7 @@ public:
   int uvXStep() const;
   int frequency() const;
   int pulseWidth() const;
+  double qPulseWidth() const;
   double fillInterval() const;
   double fillAngle() const;
   bool fillBidirectional() const;
@@ -202,7 +205,9 @@ private:
   double nozzle_offset_y_ = 0;
   // Height / Curve Engraving
   float focus_ = -2;
+  bool focus_rev_ = false;
   float focus_step_ = -2;
+  bool focus_step_rev_ = false;
   double ce_z_limit_ = 0;
   // UV configs
   int interpolation_ = 1;
@@ -218,6 +223,7 @@ private:
   // Promark
   int frequency_ = 0;
   int pulse_width_ = 0;
+  double q_pulse_width_ = 0;
   double fill_interval_;
   double fill_angle_;
   bool fill_bidirectional_;

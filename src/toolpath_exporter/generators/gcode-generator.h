@@ -149,6 +149,12 @@ public:
     }
     moveX(x, is_absolute);
     moveY(y, is_absolute);
+    if (mock_dotting_mode_ && power > 0) {
+      str_stream_ << "S0" << std::endl;
+      power_ = 0;
+      moveX(x + 0.01, is_absolute);
+      // moveX(x + 1/move_precision_, is_absolute);
+    }
     if (std::fabs(power_ - power) >= epsilon_) {
       str_stream_ << "S" << power * 10;
       power_ = power;
@@ -201,6 +207,10 @@ public:
 
   void setPulseWidth(int pulse_width) override { 
     str_stream_ << "P" << pulse_width << std::endl;
+  }
+
+  void setQPulseWidth(double q_pulse_width) override {
+    str_stream_ << "B" << q_pulse_width << std::endl;
   }
 
   void setDottingTime(int dotting_time) override { 

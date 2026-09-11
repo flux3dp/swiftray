@@ -1,5 +1,6 @@
 #include "machine_job.h"
 #include "constants.h"
+#include "promark_timing.h"
 
 #include <QtMath>
 #include <QCoreApplication>
@@ -41,6 +42,10 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
   bool hasEnd = false;
   double wobble_k = 1;
   int batch_size = qMax(1000, gcode_list.size() / 30);
+  // Mirrors what BSLMotionController does with the same GCode, so that this estimate and the
+  // per-list estimate the controller keeps while streaming stay comparable.
+  PromarkTiming::Config config;
+  PromarkTiming::MarkSequence mark_sequence;
 
   while (current_line < gcode_list.size() && !hasEnd && !cancelled) {
     QString line = gcode_list[current_line];
@@ -48,15 +53,25 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
     if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int dots = line.mid(4).toInt();
-      total_time += dots * PromarkJobConfig::JUMP_DELAY_MS; // Jump delay for each dot
+      total_time += dots * config.averageJumpDelayMs(); // Jump delay for each dot
       total_time += 0.001 * dots * dotting_time; // Actual dotting time
     } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int jumps = line.mid(5).toInt();
-      total_time += jumps * PromarkJobConfig::JUMP_DELAY_MS;  // Jump delay for blank parts
+      total_time += jumps * config.averageJumpDelayMs();  // Jump delay for blank parts
     } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for Wobble
       wobble_k = line.mid(9).toFloat();
+    } else if (line.startsWith(";CONFIG ", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Machine parameters the job overrides -- they change how long it takes
+      QString config_key, config_value;
+      if (PromarkTiming::parseConfigLine(line, &config_key, &config_value)) {
+        if (config_key == "RESET") {
+          config.reset();
+        } else {
+          config.applyKeyValue(config_key, config_value);
+        }
+      }
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
@@ -70,6 +85,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       x_param = relative_mode ? 0 : last_abs_x;
       y_param = relative_mode ? 0 : last_abs_y;
       z_param = 0;
+      bool has_s_param = false;
       for (auto& c : line) {
         if (c == '-' || c == '.' || c.isDigit()) {
           if (current_param != ';') {
@@ -108,6 +124,7 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
             f_param = val_str.toFloat();
           } else if (current_param == 'S') {
             s_param = val_str.toFloat();
+            has_s_param = true;
           } else if (current_param == 'T') {
             dotting_time = val_str.toInt();
           }
@@ -126,11 +143,12 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       }
 
       if (z_param != 0) {
-        // Note: Ingore acc time
-        total_time += fabs(z_param) * PromarkJobConfig::Z_MS_PER_MM;
+        total_time += mark_sequence.endMs(config);
+        total_time += PromarkTiming::zMoveTimeMs(z_param);
       } else {
         if (a_param != last_abs_a) {
-          total_time += fabs(a_param - last_abs_a) * PromarkJobConfig::A_MS_PER_MM;
+          total_time += mark_sequence.endMs(config);
+          total_time += PromarkTiming::aMoveTimeMs(a_param - last_abs_a);
           last_abs_a = a_param;
         }
         if (relative_mode) {
@@ -146,14 +164,23 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         if (move_distance > 0) {
           if (s_param == 0) {
             // jump & delay
-            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED + PromarkJobConfig::JUMP_DELAY_MS;
+            total_time += mark_sequence.endMs(config);
+            total_time += config.jumpTimeMs(move_distance);
           } else if (dotting_time == 0) {
             // mark & delay
-            total_time += 1000.0 * move_distance * wobble_k / f_param * 60 + PromarkJobConfig::LASER_DELAY_MS;
+            total_time += mark_sequence.beginSegmentMs(config);
+            total_time += config.markTimeMs(move_distance * wobble_k, f_param / 60);
           } else {
-            // jump for dotting
-            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED;
+            // An isolated dot: jump to the point, apply the configured point delays, then fire.
+            total_time += mark_sequence.endMs(config);
+            total_time += config.jumpTimeMs(move_distance);
+            total_time += config.dotTimeMs(dotting_time);
           }
+        } else if (has_s_param && s_param > 0 && dotting_time > 0) {
+          // GCodeGenerator first jumps to a polygon's first point with S0, then emits F...S...
+          // at the same XY.  That power-only command is the first dot of the polygon.
+          total_time += mark_sequence.endMs(config);
+          total_time += config.dotTimeMs(dotting_time);
         }
       }
     }
@@ -164,6 +191,8 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
       QCoreApplication::processEvents();
     }
   }
+  total_time += mark_sequence.endMs(config); // Close an unterminated marking run
+
   return total_time;
 }
 
