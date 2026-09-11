@@ -1,6 +1,6 @@
 ---
 name: stl-inner-engraving
-description: Swiftray daemon 的 STL／BSPC／3D 內雕輸入與轉換契約，包含 loadSVG payload、SVG attributes、折射、Z bucket 與 Promark timing。修改 STL parser、placement、toolpath exporter、convert API 或相關測試時使用。
+description: Swiftray daemon 的 STL／BSPC／3D 內雕輸入契約，包含 loadSVG payload、SVG attributes、物件對應、折射與 material Z。修改 STL parser、placement、convert API 或前後端資料格式時使用。
 ---
 
 # STL 內雕輸入與轉換契約
@@ -10,6 +10,10 @@ description: Swiftray daemon 的 STL／BSPC／3D 內雕輸入與轉換契約，�
 `src/shape/stl-placement.h`、`src/toolpath_exporter/stl-utils.*` 與
 `src/toolpath_exporter/toolpath-exporter.*`；契約或預設值變更時同步更新本檔案與
 `tests/test_stl_utils.h`。
+
+本 skill 聚焦外部輸入契約。修改切片、contour、blue-noise、inward shells 或點排序時讀
+`stl-geometry-processing` skill；修改 Promark 時間預估、delay 或 first-pulse 行為時讀
+`promark-job-timing` skill。
 
 本文描述 daemon 的 `loadSVG` 與 `convert` 預期收到的 STL 內雕資料。折射補償固定使用
 Basic 軸向模型，不提供開關或其他模型。
