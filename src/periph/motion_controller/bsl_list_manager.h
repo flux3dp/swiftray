@@ -19,6 +19,7 @@ enum class ListApiType {
   Jump,
   Mark,
   LaserPulse,
+  LongDelay,
   MoveAxis,
   EndOfList
 };

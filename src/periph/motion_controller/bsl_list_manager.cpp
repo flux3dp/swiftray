@@ -13,6 +13,7 @@ QString getApiName(ListApiType type) {
     case ListApiType::Jump: return "lcs_jump_abs";
     case ListApiType::Mark: return "lcs_mark_abs";
     case ListApiType::LaserPulse: return "lcs_laser_on_list";
+    case ListApiType::LongDelay: return "lcs_long_delay";
     case ListApiType::MoveAxis: return "lcs_set_axis_move";
     case ListApiType::EndOfList: return "lcs_set_end_of_list";
     default: return "unknown_api";
@@ -23,7 +24,8 @@ QString formatArgs(const Params& args, ListApiType type) {
   QString result;
   switch (type) {
     case ListApiType::DisableLaser:
-    case ListApiType::LaserPulse: {
+    case ListApiType::LaserPulse:
+    case ListApiType::LongDelay: {
       auto& [time] = std::get<std::tuple<uint32_t>>(args);
       result = QString("time=%1").arg(time);
       break;
@@ -187,6 +189,11 @@ int BSLListManager::doApiCall(ListApiCall call) {
     case ListApiType::LaserPulse: {
       auto& [duration] = std::get<std::tuple<uint32_t>>(call.args);
       error = lcs_laser_on_list(duration);
+      break;
+    }
+    case ListApiType::LongDelay: {
+      auto& [duration] = std::get<std::tuple<uint32_t>>(call.args);
+      error = lcs_long_delay(duration);
       break;
     }
     case ListApiType::MoveAxis: {

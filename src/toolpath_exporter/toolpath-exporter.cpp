@@ -1322,6 +1322,13 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
   int hatch_count = current_layer_->fillHatch() ? 2 : 1;
   if (fill_interval <= 0) fill_interval = 1;
   if (hatch_count < 1) hatch_count = 1;
+  // UV heat mitigation. A UV spot fed continuously inside a small area accumulates heat and burns
+  // deeper than intended, so the fill may be spread out in two independent ways: engrave the scan
+  // lines interleaved instead of adjacent, and pause between them.
+  const int stagger_groups = std::max(1, current_layer_->fillStagger());
+  // The U command is a FLUX extension only the Promark controller understands.
+  const int fill_dwell_us = is_promark_ ? std::max(0, current_layer_->fillDwellTime()) : 0;
+  const bool fill_dwell_adaptive = current_layer_->fillDwellAdaptive();
 
   // Calculate diagonal length to ensure coverage
   double diagonal = qSqrt(bounds.width() * bounds.width() +
@@ -1384,9 +1391,47 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
 
     gen_->turnOnLaser();
 
-    bool reverse = false;
-    // Scan across the path
+    // Scan across the path.
+    // A scan line sits at perpendicular coordinate (offset - diagonal / 2) relative to the center,
+    // so it can only reach the shape while that stays inside the projection of bounds onto the
+    // perpendicular axis. The grid deliberately spans more than the shape, but it is not centered
+    // on it: the offsets below first_offset alone are over half of the range for a square at angle
+    // 0. Those lines never produced anything, they only cost an intersection pass -- and once the
+    // lines are engraved in a staggered order they would also pad the line count and skew every
+    // group. The grid itself is unchanged, so the engraved lines stay exactly where they were.
+    const double half_extent = (std::fabs(bounds.width() * perpendicular.x()) +
+                                std::fabs(bounds.height() * perpendicular.y())) / 2 +
+                               fill_interval;
+    const double first_offset = diagonal / 2 - half_extent;
+    const double last_offset = diagonal / 2 + half_extent;
+    QList<double> scan_offsets;
     for (double offset = -diagonal / 2; offset <= diagonal; offset += fill_interval) {
+      if (offset < first_offset || offset > last_offset) continue;
+      scan_offsets.append(offset);
+    }
+    // Split the scan lines into stagger_groups contiguous blocks and take one line from each block
+    // in turn, so consecutive laser work never stays inside the same narrow band. 40 lines with
+    // stagger 4 engrave as 1, 11, 21, 31, 2, 12, 22, 32, ... A stagger of 1 keeps the plain
+    // spatial order.
+    const int scan_line_count = scan_offsets.size();
+    const int stagger_step =
+        stagger_groups > 1
+            ? std::max(1, (scan_line_count + stagger_groups - 1) / stagger_groups)
+            : 1;
+    QList<int> scan_order;
+    scan_order.reserve(scan_line_count);
+    for (int first = 0; first < stagger_step; ++first) {
+      for (int index = first; index < scan_line_count; index += stagger_step) {
+        scan_order.append(index);
+      }
+    }
+    if (verbose) qInfo() << "Scan lines: " << scan_line_count << " stagger step: " << stagger_step;
+    // Keep reporting roughly once per percent now that the empty lines no longer inflate the count
+    progress_batch = std::max<int>(1, hatch_count * scan_line_count / 100);
+
+    bool reverse = false;
+    for (int order_index = 0; order_index < scan_order.size(); ++order_index) {
+      const double offset = scan_offsets[scan_order[order_index]];
       if (this->cancelled_) {
         return;
       }
@@ -1511,11 +1556,15 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
       }
 
       // Process pairs of intersections
+      double marked_length_mm = 0;
       for (int i = 0; i < merged_intersections.size() - 1; i += 2) {
         if (merged_intersections[i] == merged_intersections[i + 1]) {
           // Skip zero length segments
           continue;
         }
+
+        marked_length_mm +=
+            QLineF(merged_intersections[i], merged_intersections[i + 1]).length() / dpmm_;
 
         if (stl_output_active_) {
           emitStlFillSegment(merged_intersections[i], merged_intersections[i + 1]);
@@ -1528,6 +1577,18 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
         // Move to end point
         moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
+
+      // Let the material cool down before the next scan line. In adaptive mode the time this line
+      // already spent marking counts towards the pause, so a line long enough to have spread the
+      // heat by itself waits less, or not at all.
+      if (fill_dwell_us > 0 && marked_length_mm > 0) {
+        double dwell_us = fill_dwell_us;
+        if (fill_dwell_adaptive && current_layer_->speed() > 0) {
+          dwell_us -= 1e6 * marked_length_mm / current_layer_->speed();
+        }
+        if (dwell_us >= 1) gen_->dwell(static_cast<int>(std::lround(dwell_us)));
+      }
+
       if (fill_bidirectional) reverse = !reverse;
     }
     fill_angle += 90;

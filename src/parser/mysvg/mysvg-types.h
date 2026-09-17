@@ -87,6 +87,10 @@ namespace MySVG {
         double fill_angle;
         bool fill_bidirectional;
         bool fill_hatch;
+        // UV heat mitigation, see ToolpathExporter::outputLayerFillGcode()
+        int fill_stagger;       // number of blocks the scan lines are interleaved into, 1 = off
+        int fill_dwell_time;    // us, pause after each scan line, 0 = off
+        bool fill_dwell_adaptive; // subtract the line's own marking time from the pause
         int dotting_time;
         double wobble_step;
         double wobble_diameter;

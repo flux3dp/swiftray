@@ -71,6 +71,10 @@ STL convert params 與輸入契約請讀 `stl-inner-engraving` skill；幾何演
   sequence 結束時加 laser-off 與 marking delay。
 - Dot：`T > 0` 且 power 開啟。先 jump 到點，再計入獨立 laser pulse 的完整 delay。
 - Z/A 軸移動、jump、dot 與 `M2`／job 結束都會結束當前 `MarkSequence`。
+- Dwell：`U<µs>`。FLUX 自訂指令，對應 `lcs_long_delay()` list instruction，不移動也不出光。
+  它不結束 `MarkSequence`（後續必定接一個 jump，laser-off／marking delay 由該 jump 計入），
+  兩套 estimator 都必須把這段時間加進總時間。目前由 UV 填充的「每行停留」產生，見
+  `ToolpathExporter::outputLayerFillGcode()`。
 
 Dot polygon 的第一點可能是只有 `F...S...`、沒有 XY 位移的 power-only command；它仍是一個
 實際 dot，兩套 estimator 與 controller 都不可因 `distance == 0` 而忽略。

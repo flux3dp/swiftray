@@ -217,6 +217,14 @@ public:
     str_stream_ << "T" << dotting_time << std::endl;
   }
 
+  /**
+   * FLUX custom command: hold for dwell_time microseconds.
+   * On Promark this becomes a lcs_long_delay() list instruction.
+   */
+  void dwell(int dwell_time) override {
+    str_stream_ << "U" << dwell_time << std::endl;
+  }
+
   void setWobble(double wobble_step, double wobble_diameter) override {
     str_stream_ << "WS" << wobble_step << "WD" << wobble_diameter << std::endl;
     // Estimate wobble time multiplier (not accurate)

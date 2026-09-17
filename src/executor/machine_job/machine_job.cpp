@@ -72,6 +72,9 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
           config.applyKeyValue(config_key, config_value);
         }
       }
+    } else if (line.startsWith("U", Qt::CaseSensitivity::CaseInsensitive)) {
+      // FLUX custom dwell in us, see GCodeGenerator::dwell()
+      total_time += line.mid(1).toDouble() / 1000.0;
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||

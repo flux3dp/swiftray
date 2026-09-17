@@ -318,7 +318,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static int freq = 100; //100 khz
     static bool last_is_z_command = false;
     static double wobble_k = 1;
-    static QRegularExpression re("([GMXYFSZDWQPTAB]|WD|WS)(-?\\d+\\.?\\d*)");
+    static QRegularExpression re("([GMXYFSZDWQPTABU]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
     static double last_x = 0;
 
@@ -434,6 +434,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 } else {
                   laser_enabled = false;
                 }
+            }
+        } else if (type == "U") {
+            // FLUX custom: hold the list for the given number of microseconds without moving or
+            // firing. The fill exporter uses it to stop feeding a UV spot continuously into one
+            // small area. Like Q/P/B/T this is not a move command, so the instruction has to be
+            // queued here -- the move handling below is never reached for a bare U line.
+            const double delay_us = value.toDouble();
+            if (delay_us >= 1 && is_running_laser_) {
+              list_manager_.call(ListApiType::LongDelay, static_cast<uint32_t>(delay_us));
+              estimated_time_ += delay_us / 1000.0;
             }
         } else if (type == "W") {
             double workarea = value.toDouble();

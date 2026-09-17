@@ -116,6 +116,9 @@ public:
   double fillAngle() const;
   bool fillBidirectional() const;
   bool fillHatch() const;
+  int fillStagger() const;
+  int fillDwellTime() const;
+  bool fillDwellAdaptive() const;
   int dottingTime() const;
   double wobbleStep() const;
   double wobbleDiameter() const;
@@ -228,6 +231,10 @@ private:
   double fill_angle_;
   bool fill_bidirectional_;
   bool fill_hatch_;
+  // UV heat mitigation, see ToolpathExporter::outputLayerFillGcode()
+  int fill_stagger_ = 1;
+  int fill_dwell_time_ = 0;
+  bool fill_dwell_adaptive_ = false;
   int dotting_time_ = 0;
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;

@@ -82,6 +82,11 @@ public:
     qWarning() << "BaseGenerator::setDottingTime()" << "Promark feature not implemented"; 
   }
 
+  // Pause the machine for dwell_time microseconds without moving or firing.
+  virtual void dwell(int dwell_time) {
+    qWarning() << "BaseGenerator::dwell()" << "Promark feature not implemented";
+  }
+
   virtual void setWobble(double wobble_step, double wobble_diameter) { 
     qWarning() << "BaseGenerator::setWobble()" << "Promark feature not implemented"; 
   }
