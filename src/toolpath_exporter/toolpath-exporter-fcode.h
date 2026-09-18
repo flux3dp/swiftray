@@ -93,6 +93,19 @@ struct Config {
   float nozzle_voltage = NAN;
   float nozzle_pulse_width = NAN;
   int watt = 0;
+  // --- galvo (HEXA II), see HX2_GALVO_PROTOCOL.md -------------------------
+  // Addressable field of the galvo, mm across. 110 mm means +/- 55 mm about the
+  // lens centre (§19.4).
+  double galvo_field_mm = 110;
+  // Side of one tile the work area is cut into when a layer does not fit the
+  // field. Defaults to the field itself (tiles just touch, no overlap).
+  double galvo_block_mm = 0;
+  // Baseline galvo parameters. Everything a list's prologue needs that the
+  // layer itself does not carry; see §19.3 and §6.2.
+  GalvoParams galvo_params;
+  // Split a list once it reaches this many records; 0 leaves lists whole. The
+  // protocol sets no upper bound (§19.7).
+  int galvo_max_list_commands = 0;
 };
 
 class ToolpathExporterFcode : public QObject {
@@ -130,6 +143,8 @@ class ToolpathExporterFcode : public QObject {
   std::shared_ptr<BaseMacros> macros;
   int magic_number_ = 0;
   bool is_v2_ = false;
+  // HEXA II routes laser layers through the galvo board instead of the gantry.
+  bool is_galvo_machine_ = false;
   bool is_rotary_task_ = false;
   bool is_3d_task_ = false;
   bool has_job_origin_ = false;
@@ -150,6 +165,7 @@ class ToolpathExporterFcode : public QObject {
   LaserTextureParams layer_texture_params_;
   LayerModule layer_module_;
   bool is_laser_layer_ = false;
+  bool layer_is_galvo_ = false;
   bool is_printing_layer_ = false;
   bool is_uv_layer_ = false;
   QPointF layer_offset_;
@@ -190,6 +206,15 @@ class ToolpathExporterFcode : public QObject {
   void convertLayer();
   void preprocessLaserLayer();
   void convertLaserLayer();
+  // Galvo counterpart of convertLaserLayer(): parks the head once per tile and
+  // writes the geometry as galvo lists (§19).
+  void convertGalvoLaserLayer();
+  // Tiles `content` (mm, layer frame) into galvo blocks. One entry per head
+  // position; the rect is the region that block is responsible for and the
+  // centre of that rect is where the head parks.
+  QVector<QRectF> planGalvoBlocks(const QRectF& content) const;
+  // Fill the writer's prologue state from the current layer.
+  void applyGalvoLayerParams();
   void outputLayerPathFcode();
   void outputBitmapFcode();
   void convertPrintingLayer();

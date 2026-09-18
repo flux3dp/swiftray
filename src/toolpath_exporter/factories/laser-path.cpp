@@ -33,6 +33,18 @@ void LaserPathFactory::preprocess() {
   preprocessed = true;
 }
 
+QRectF LaserPathFactory::get_bounds_mm() {
+  preprocess();
+  QRectF bounds;
+  for (auto& poly : polygons) {
+    if (poly.isEmpty()) {
+      continue;
+    }
+    bounds = bounds.united(poly.boundingRect());
+  }
+  return bounds;
+}
+
 void LaserPathFactory::generate_task_code(float path_speed) {
   speed = path_speed;
   current_pwm = 0;

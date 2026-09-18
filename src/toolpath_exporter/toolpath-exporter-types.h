@@ -40,6 +40,10 @@ enum class LayerModule {
   PRINTER_4C = 7,
   WHITE_INK = 8,
   VARNISH = 9,
+  // HEXA II galvo heads. The two differ by laser source, which decides the LCS
+  // laser mode and how power maps to pulse width.
+  GALVO_CO2 = 12,
+  GALVO_MOPA = 13,
   UNIVERSAL_LASER = 15
 };
 

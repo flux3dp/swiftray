@@ -12,6 +12,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <cmath>
 
 QString convertUnicode(const QString s) {
   QString result;
@@ -52,6 +53,10 @@ ToolpathExporterFcode::ToolpathExporterFcode(
   proc.add_metadata("3D_CURVE_TASK", is_3d_task_ ? "1" : "0");
   proc.set_time_est_z_speed(hw_profile.z_speed);
   proc.set_travel_speed(config_.travel_speed);
+  if (is_galvo_machine_ && proc.galvo()) {
+    proc.galvo()->params() = config_.galvo_params;
+    proc.galvo()->set_max_commands_per_list(config_.galvo_max_list_commands);
+  }
 
   if (hardware_ == HardwareType::BM2) {
     macros = std::make_shared<Beamo2Macros>(&proc, config_.travel_speed);
@@ -110,6 +115,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   hardware_ = model_to_hardware_type(model);
   hw_profile = HW_PROFILE[hardware_];
   is_v2_ = hw_profile.fcode_version == 2;
+  is_galvo_machine_ = hardware_ == HardwareType::HEXA2;
   if (SUPPORT_INFO.contains(hardware_)) {
     support_info = SUPPORT_INFO[hardware_];
   }
@@ -182,6 +188,26 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.expected_module = MachineModules(param["expected_module"].toInt(0));
   config_.use_ga_reorder = param["use_ga_reorder"].toBool(true);
   config_.enable_s_curve = param["s_curve"].toBool(false);
+
+  if (is_galvo_machine_) {
+    // Galvo list parameters. Optical calibration, scanahead and the head type
+    // are deliberately absent: they never travel in the fcode (§19.6), the
+    // player pushes them out of band from the machine profile.
+    config_.galvo_field_mm = param["galvo_field"].toDouble(110);
+    config_.galvo_block_mm =
+        param["galvo_block"].toDouble(config_.galvo_field_mm);
+    GalvoParams& g = config_.galvo_params;
+    g.jump_speed_mm_s = param["galvo_jump_speed"].toDouble(4000);
+    g.laser_on_delay_us = param["galvo_laser_on_delay"].toDouble(-100);
+    g.laser_off_delay_us = param["galvo_laser_off_delay"].toDouble(100);
+    g.scanner_mark_delay_us = param["galvo_scanner_mark_delay"].toDouble(100);
+    g.scanner_polygon_delay_us =
+        param["galvo_scanner_polygon_delay"].toDouble(50);
+    // Estimation only; set_delay_mode itself is a CONTROL instruction (§6.2).
+    g.jump_delay_min_us = param["galvo_jump_delay_min"].toDouble(200);
+    g.jump_delay_max_us = param["galvo_jump_delay_max"].toDouble(400);
+    config_.galvo_max_list_commands = param["galvo_max_list_commands"].toInt(0);
+  }
 
   if (param.contains("acc_override")) {
     QJsonObject acc_obj = param["acc_override"].toObject();
@@ -486,6 +512,8 @@ void ToolpathExporterFcode::convertLayer() {
   is_printing_layer_ = is_printing_module(layer_module_);
   is_uv_layer_ = is_uv_module(layer_module_);
   is_laser_layer_ = !is_printing_layer_ && !is_uv_layer_;
+  layer_is_galvo_ = is_galvo_machine_ && is_laser_layer_ &&
+                    is_galvo_module(layer_module_);
   layer_pwm_scale_ = 1 - current_layer_->minPower() / current_layer_->power();
   if (layer_pwm_scale_ <= 0) {
     layer_pwm_scale_ = 1;
@@ -639,7 +667,11 @@ void ToolpathExporterFcode::convertLayer() {
         target_z = round(qMax(0.0f, qMin(17.0f, target_z)) * 100) / 100;
         proc.moveto(NamedArgs().rz(target_z));
       }
-      convertLaserLayer();
+      if (layer_is_galvo_) {
+        convertGalvoLaserLayer();
+      } else {
+        convertLaserLayer();
+      }
       proc.set_toolhead_pwm(0);
     }
     proc.moveto(NamedArgs().rs(0));
@@ -830,6 +862,142 @@ void ToolpathExporterFcode::convertLaserLayer() {
     // Note: Bitmap list is already reversed for first-depth shapes
     // When converting group, reverse order of children and ignore paths
     convertShape(shape);
+  }
+}
+
+void ToolpathExporterFcode::applyGalvoLayerParams() {
+  GalvoParams& g = proc.galvo()->params();
+  g = config_.galvo_params;  // start from the machine baseline every layer
+  g.mark_speed_mm_s = layer_path_speed_ / 60;  // mm/min -> mm/s
+  g.power_pct = current_layer_->power();
+  // Layer frequency is in kHz, so the period is 1000 / f microseconds. This is
+  // the same conversion the execution end makes for the text "Q" command.
+  int frequency_khz = current_layer_->frequency();
+  if (frequency_khz > 0) {
+    g.pulse_period_us = 1000.0 / frequency_khz;
+  }
+  if (layer_module_ == LayerModule::GALVO_MOPA) {
+    // The Mopa head drives its own pulse width; power stays on opcode 11.
+    g.pulse_width_us = current_layer_->pulseWidth();
+  } else {
+    // The CO2 head has no separate power input: the duty cycle is the power.
+    g.pulse_width_us = qMax(0.021, g.pulse_period_us * g.power_pct / 100);
+  }
+  // Dotting is not a vector-path setting: on the old text path it was armed
+  // only around gradient bitmaps. Raster has no galvo path in phase 1 (§19.5),
+  // so nothing here ever dots and layer dottingTime() stays unread.
+  g.dotting_time_us = 0;
+  double wobble_step = current_layer_->wobbleStep();
+  double wobble_diameter = current_layer_->wobbleDiameter();
+  if (wobble_step > 0 && wobble_diameter > 0) {
+    // SDK order is (transversal, longitudinal, space, mode); the execution end
+    // passes the diameter for both axes.
+    g.wobble_mode = GalvoWobbleMode::WHEEL;
+    g.wobble_transversal_mm = wobble_diameter;
+    g.wobble_longitudinal_mm = wobble_diameter;
+    g.wobble_space_mm = wobble_step;
+  } else {
+    g.wobble_mode = GalvoWobbleMode::DISABLE;
+  }
+  g.wobble_k = calculate_wobble_k(wobble_step, wobble_diameter);
+}
+
+QVector<QRectF> ToolpathExporterFcode::planGalvoBlocks(
+    const QRectF& content) const {
+  // TODO: replace with the laser-phy-simulator's tiling. This lays plain
+  // touching tiles over the content -- no overlap, no seam blending -- which is
+  // enough to get a correct file out of a job wider than the field, but the
+  // seams will show.
+  QVector<QRectF> blocks;
+  if (content.isEmpty()) {
+    return blocks;
+  }
+  const double tile = config_.galvo_block_mm > 0 ? config_.galvo_block_mm
+                                                 : config_.galvo_field_mm;
+  if (content.width() <= tile && content.height() <= tile) {
+    // Fits the field: one head position, centred on the content.
+    blocks.append(content);
+    return blocks;
+  }
+  const int cols = qMax(1, int(std::ceil(content.width() / tile)));
+  const int rows = qMax(1, int(std::ceil(content.height() / tile)));
+  // Spread the tiles evenly so the outermost ones do not hang off the content.
+  const double step_x = content.width() / cols;
+  const double step_y = content.height() / rows;
+  blocks.reserve(cols * rows);
+  for (int row = 0; row < rows; row++) {
+    for (int col = 0; col < cols; col++) {
+      // Serpentine across rows so the head does not fly back every row.
+      int c = (row % 2 == 0) ? col : (cols - 1 - col);
+      blocks.append(QRectF(content.left() + c * step_x,
+                           content.top() + row * step_y, step_x, step_y));
+    }
+  }
+  return blocks;
+}
+
+void ToolpathExporterFcode::convertGalvoLaserLayer() {
+  // Raster has no galvo path in phase 1 (§19.5): bitmaps and rasterised fills
+  // stay out of the list stream entirely rather than being emitted wrongly.
+  if (!laser_bitmaps_.isEmpty() || laser_filled_factory_->is_workspace_valid()) {
+    qWarning() << "[Export] Galvo layer" << current_layer_->name()
+               << "has raster content; skipped (raster over the galvo is phase 2)";
+  }
+  if (laser_path_factory_->get_size() == 0) {
+    onProgressChanged(1.0, true);
+    return;
+  }
+
+  GalvoListWriter* galvo = proc.galvo();
+  const int out_of_field_before = galvo->out_of_field_count();
+  applyGalvoLayerParams();
+  const double half_field = config_.galvo_field_mm / 2;
+  const QRectF content = laser_path_factory_->get_bounds_mm();
+  const QVector<QRectF> blocks = planGalvoBlocks(content);
+  qInfo() << "[Export] Galvo layer" << current_layer_->name() << "content"
+          << content << "->" << blocks.size() << "block(s), field"
+          << config_.galvo_field_mm << "mm";
+
+  convert_target_ = ConvertTarget::NON_BITMAP;
+  for (int i = 0; i < blocks.size(); i++) {
+    const QRectF& block = blocks[i];
+    const QPointF centre = block.center();
+    // Park the gantry, then wait for the motion to finish before anything goes
+    // to the galvo board. Without the sync the ok is only an ack, not a
+    // completed move (§10 step 2).
+    proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
+    proc.sync_grbl_motion(0);
+
+    galvo->beginBlock(centre, half_field);
+    galvo->beginList();
+    if (blocks.size() > 1) {
+      // The hair of slack keeps rounding from dropping a point that sits on the
+      // seam. A segment lying exactly along a seam is emitted by both
+      // neighbours and so marked twice -- one more reason the simulator's
+      // overlap handling needs to replace this.
+      galvo->set_clip_rect(block.adjusted(-1e-6, -1e-6, 1e-6, 1e-6));
+    }
+    // Not outputLayerPathFcode(): its acceleration override writes gantry
+    // commands, and a galvo block has to stay one unbroken run of byte 23
+    // (§19.1). Acceleration is a gantry notion anyway.
+    proc.set_travel_speed(config_.path_travel_speed);
+    laser_path_factory_->generate_task_code(layer_path_speed_);
+    proc.set_travel_speed(config_.travel_speed);
+    galvo->clear_clip_rect();
+    galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
+
+    // §15-S8: the galvo's own travel belongs in travel_dist too.
+    proc.add_travel_dist(galvo->block_distance_mm());
+    if (this->cancelled_) {
+      return;
+    }
+    onProgressChanged(0.05 + 0.95 * (i + 1.0) / blocks.size(), true);
+  }
+  const int out_of_field = galvo->out_of_field_count() - out_of_field_before;
+  if (out_of_field > 0) {
+    qWarning() << "[Export] layer" << current_layer_->name() << "put"
+               << out_of_field << "galvo points outside +/-" << half_field
+               << "mm";
   }
 }
 
