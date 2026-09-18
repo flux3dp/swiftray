@@ -14,6 +14,16 @@ typedef void *HINSTANCE;
 #include <mutex>
 #endif
 
+#ifdef _WIN32
+#include <winsock2.h>  //in_addr_t
+#pragma comment(lib, "ws2_32.lib")
+#include <ws2tcpip.h>  //inet_pton
+#else
+#include <netinet/in.h> //in_addr_t
+#include <arpa/inet.h>  //inet_pton
+#endif
+#include <QDebug>
+
 volatile HINSTANCE gLibLCS = NULL;
 
 LCS_INIT_DLL lcs_init_dll;
@@ -589,9 +599,34 @@ bool lcs_check_init() {
     return true;
 }
 
+static bool use_usb = false;
+static std::string lcs_ip = "192.168.1.101";
+
+
+uint32_t eth_convert_string_to_ip(const char* ipStr)
+{
+	// 使用inet_pton将IP地址字符串转换为二进制
+	in_addr addr;
+	inet_pton(AF_INET, ipStr, &addr);
+
+	uint32_t uIp = 0;
+	// 使用memcpy将大端序的IP地址复制到目标数组
+	memcpy(&uIp, &addr, sizeof(in_addr));
+	return uIp;
+}
+
 bool lcs_available() {
     if (!lcs_check_init()) return false;
-    return lcs_search_cards() != 0;
+    qInfo() << "Using USB?" << use_usb;
+    int count = 0;
+    if (use_usb) {
+        count = lcs_search_cards();
+    } else {
+        qInfo() << "Searching with local IP" << lcs_ip.c_str() << eth_convert_string_to_ip(lcs_ip.c_str());
+        count = lcs_eth_search_cards(eth_convert_string_to_ip(lcs_ip.c_str()), eth_convert_string_to_ip("255.255.255.255"));
+    }
+    qInfo() << "Found" << count << "cards";
+    return count != 0;
 }
 
 bool first_connect = true;
@@ -613,8 +648,18 @@ bool lcs_connect(bool force) {
 
     std::lock_guard<std::mutex> lock(connect_mutex_);
     // Refresh the card list every time
-    lcs_remove_card(0);
-    lcs_assign_card(0, 0);
+    if (use_usb) {
+        lcs_remove_card(0);
+        lcs_assign_card(0, 0);
+    } else {
+        auto err = lcs_eth_assign_card(0, 0);
+        if ((err != LCS_RES_NO_ERROR) && (err != LCS_GENERAL_AREADY_EXIST)) {
+            // 若綁定失敗，嘗試設定板卡網路到和電腦同網段（範例檔案裡的地址錯誤，需要使用 .1.xxx 的 IP、255 的 mask 和正確的 gateway）後再次綁定
+            lcs_n_eth_set_static_ip(0, eth_convert_string_to_ip("192.168.1.10"), eth_convert_string_to_ip("255.255.255.255"), eth_convert_string_to_ip("192.168.1.254"));
+            // 需要手動重試
+            return false;
+        }
+    }
     auto select_result = lcs_select_card(0);
 
     if (select_result != LCS_RES_NO_ERROR) {
