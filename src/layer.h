@@ -77,6 +77,7 @@ public:
   // BS
   double minPower() const;
   bool isOneWayEngraving() const;
+  bool isOneWayEngravingReversed() const;
   int module() const;
   int ink() const;
   double printingSpeed() const;
@@ -181,6 +182,7 @@ private:
   /** BS properties **/
   double min_power_ = 0;
   bool is_one_way_engraving_ = false;
+  bool is_one_way_engraving_reversed_ = false;
   int module_ = 15;
   // Printing
   int ink_ = 3;

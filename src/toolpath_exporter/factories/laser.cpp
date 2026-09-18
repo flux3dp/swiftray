@@ -87,7 +87,7 @@ void LaserBitmapFactory::generate_task_code(GenerateTaskKwargs kwargs) {
   bool engraved;
   QImage* src_bitmap = workspace->get_bitmap();
   for (auto bbox : bboxes) {
-    reverse_x = false;
+    reverse_x = one_way && one_way_reversed;
     if (!bbox.isValid()) {
       continue;
     }

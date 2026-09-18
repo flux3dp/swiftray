@@ -752,6 +752,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
                    layer_is_high_quality_ ||
                    (config_.enable_diode && current_layer_->isUseDiode() &&
                     config_.is_diode_one_way_engraving);
+  kwargs.one_way_reversed = current_layer_->isOneWayEngravingReversed();
   if (layer_is_high_quality_ && !current_layer_->isOneWayEngraving()) {
     qInfo() << "High quality: force one-way engraving";
   }

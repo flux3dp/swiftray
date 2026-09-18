@@ -122,6 +122,10 @@ double Layer::minPower() const { return min_power_; }
 
 bool Layer::isOneWayEngraving() const { return is_one_way_engraving_; }
 
+bool Layer::isOneWayEngravingReversed() const {
+  return is_one_way_engraving_reversed_;
+}
+
 int Layer::module() const { return module_; }
 
 int Layer::ink() const { return ink_; }
@@ -301,6 +305,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
 
   this->min_power_ = config.min_power;
   this->is_one_way_engraving_ = config.is_one_way_engraving;
+  this->is_one_way_engraving_reversed_ = config.is_one_way_engraving_reversed;
   this->module_ = config.module;
   this->ink_ = config.ink;
   this->printing_speed_ = config.printing_speed;
