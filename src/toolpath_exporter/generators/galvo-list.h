@@ -1,0 +1,213 @@
+#pragma once
+
+#include <QPointF>
+#include <QRectF>
+#include <cstdint>
+#include <initializer_list>
+
+class FCodeGenerator;
+
+/**
+ * Galvo (BSL) list emission for HEXA II, per HX2_GALVO_PROTOCOL.md §19.
+ *
+ * Everything handed to the galvo board travels in the FLUX fcode container as a
+ * run of command byte 23, each carrying one record:
+ *
+ *     uint16 LE opcode | uint8 paramCount | paramCount x float64 LE
+ *
+ * The opcode table is the simulator's (§4.2); FLUX extensions start at 0x20.
+ * Opcodes 17/18 are deliberately absent -- the protocol forbids them.
+ */
+enum class GalvoOp : uint16_t {
+  JUMP_ABS = 1,            // x, y
+  JUMP_REL = 2,            // dx, dy
+  MARK_ABS = 3,            // x, y
+  MARK_REL = 4,            // dx, dy
+  LASER_ON = 5,            // period(us) -- this is a dot
+  LONG_DELAY = 6,          // delay(us)
+  SET_JUMP_SPEED = 7,      // mm/s
+  SET_MARK_SPEED = 8,      // mm/s
+  SET_LASER_DELAYS = 9,    // on(us), off(us)  -- may be negative
+  SET_SCANNER_DELAYS = 10, // mark(us), polygon(us)
+  SET_LASER_POWER = 11,    // 0-100
+  SET_LASER_PULSES = 12,   // period(us), width(us)
+  SET_STANDBY = 13,        // period(us), width(us)
+  ENABLE_LASER = 14,       // moDelay(us)
+  DISABLE_LASER = 15,      // moDelay(us)
+  SET_WOBBLE = 16,         // transversal, longitudinal, space, mode
+  SET_END_OF_LIST = 19,    // estimated list run time (ms) -- see §20.1
+  // FLUX extensions (0x20 and up; 0x14-0x1F stay reserved for the simulator)
+  AXIS_MOVE = 0x21,        // A axis only; Z never reaches the galvo board
+  SET_IO = 0x22,           // mask, value
+};
+
+/** lcs_set_wobble_mode()'s mode argument. */
+enum class GalvoWobbleMode : int {
+  DISABLE = -1,
+  WHEEL = 0,
+};
+
+/**
+ * The parameter set a list's prologue carries. Everything here is re-sent at the
+ * head of every list: §19.3 requires each list to stand on its own, because the
+ * board frames every list with disable_laser and there is no state replay on the
+ * bsl side to lean on.
+ */
+struct GalvoParams {
+  // --- written into the prologue -------------------------------------------
+  double jump_speed_mm_s = 4000;
+  double mark_speed_mm_s = 1000;
+  double laser_on_delay_us = -100;
+  double laser_off_delay_us = 100;
+  double scanner_mark_delay_us = 100;
+  double scanner_polygon_delay_us = 50;
+  double power_pct = 0;
+  double pulse_period_us = 31.25;  // 10 kHz, the CO2 head's fixed frequency
+  double pulse_width_us = 0.021;
+  // Wobble is only emitted when the mode is not DISABLE.
+  GalvoWobbleMode wobble_mode = GalvoWobbleMode::DISABLE;
+  double wobble_transversal_mm = 0;
+  double wobble_longitudinal_mm = 0;
+  double wobble_space_mm = 0;
+
+  // --- time estimation only, never emitted ---------------------------------
+  // set_delay_mode is a CONTROL instruction: it reaches the board out of band
+  // via ;CONFIG (§6.2), not through the fcode. The values still belong here
+  // because §14 requires swiftray's estimate to use the same numbers bsl does.
+  double jump_delay_min_us = 200;
+  double jump_delay_max_us = 400;
+  // Multiplier for the extra path length wobble adds. 1 when wobble is off.
+  double wobble_k = 1;
+  // Non-zero switches marking to dotting: jump to the point, then LASER_ON.
+  double dotting_time_us = 0;
+
+  // §14's model, shared with bsl (bsl_controller.h PromarkRuntimeConfig).
+  double jump_delay_ms() const {
+    return (jump_delay_min_us + jump_delay_max_us) / 2000;
+  }
+  double laser_delay_ms() const {
+    return (laser_off_delay_us - laser_on_delay_us) / 1000;
+  }
+};
+
+/**
+ * Builds the galvo command stream for one job.
+ *
+ * Coordinates arrive in machine mm (bed-aligned, the same frame the gantry
+ * commands use) and leave as field-local mm relative to the block's lens centre
+ * -- §3 moves that conversion to swiftray. Mirroring is not applied here; it
+ * belongs at the SDK boundary (§18.6), so what lands in the file stays
+ * bed-aligned.
+ *
+ * Lifecycle:
+ *
+ *     beginBlock(centre)      // gantry is already parked there
+ *       beginList()           // prologue
+ *       ... moveTo / setLaserOn ...
+ *       endList()             // DISABLE_LASER + SET_END_OF_LIST(ms)
+ *     endBlock()
+ */
+class GalvoListWriter {
+ public:
+  explicit GalvoListWriter(FCodeGenerator* gen) : gen_(gen) {}
+
+  GalvoParams& params() { return params_; }
+  const GalvoParams& params() const { return params_; }
+
+  /**
+   * Open a galvo block centred on `field_centre_mm` (machine mm). Everything
+   * emitted until endBlock() is expressed relative to that point.
+   */
+  void beginBlock(const QPointF& field_centre_mm, double half_field_mm);
+  void endBlock();
+  bool in_block() const { return in_block_; }
+  bool list_open() const { return list_open_; }
+
+  /**
+   * Arm a list. The §19.3 prologue is written when the first geometry command
+   * arrives, so a block that turns out to be empty costs nothing; either way the
+   * prologue is the first thing in the list.
+   */
+  void beginList();
+  /**
+   * Close a list: DISABLE_LASER(0) then SET_END_OF_LIST(estimated ms). Does
+   * nothing when the armed list never received any geometry.
+   */
+  void endList();
+
+  /**
+   * Restrict emission to `rect` (machine mm). Segments are clipped against it,
+   * so a path crossing the edge is cut rather than dropped. An empty rect
+   * clears the restriction.
+   */
+  void set_clip_rect(const QRectF& rect_mm) { clip_rect_ = rect_mm; }
+  void clear_clip_rect() { clip_rect_ = QRectF(); }
+
+  /** Laser on -> subsequent moves mark (or dot); off -> they are travels. */
+  void set_laser_on(bool on) { laser_on_ = on; }
+  bool laser_on() const { return laser_on_; }
+
+  /** Both take effect immediately, mid-list if need be (§5). */
+  void set_mark_speed(double mm_s);
+  void set_power(double pct);
+
+  /** Move to `x_mm`, `y_mm` in machine mm. NaN keeps that axis. */
+  void moveTo(double x_mm, double y_mm);
+
+  /** Estimated run time of the list being built, in ms (§14). */
+  double list_time_ms() const { return list_time_ms_; }
+  /** Galvo distance covered since beginBlock(), for the travel_dist metadata. */
+  double block_distance_mm() const { return block_distance_mm_; }
+
+  /** Number of records written into the list being built. */
+  int list_command_count() const { return list_command_count_; }
+  /**
+   * Split the current list after this many records (0 = never). The protocol
+   * sets no upper bound (§19.7) and bsl no longer splits on its own (§20.2), so
+   * this is off unless a machine profile asks for it.
+   */
+  void set_max_commands_per_list(int n) { max_commands_per_list_ = n; }
+
+  /** Field-local points that fell outside +/- half_field, counted for the
+   *  whole job (never reset; take differences to scope it). */
+  int out_of_field_count() const { return out_of_field_count_; }
+
+ private:
+  void emit(GalvoOp op, std::initializer_list<double> params);
+  /** Write the prologue if the armed list has not started yet. */
+  void ensureListOpen();
+  /** Move the board to `p` (machine mm) with a jump, if it is not there. */
+  void jumpTo(const QPointF& p);
+  void markTo(const QPointF& p);
+  QPointF toField(const QPointF& p);
+  /**
+   * Liang-Barsky clip of p0->p1 against clip_rect_. Returns false when the
+   * segment lies entirely outside; otherwise p0/p1 are moved to the crossings.
+   */
+  bool clipSegment(QPointF& p0, QPointF& p1) const;
+
+  FCodeGenerator* gen_ = nullptr;
+  GalvoParams params_;
+
+  bool in_block_ = false;
+  bool list_armed_ = false;
+  bool list_open_ = false;
+  QPointF field_centre_;
+  double half_field_mm_ = 55;
+  QRectF clip_rect_;
+
+  // Logical head position in machine mm: where the toolpath thinks it is,
+  // whether or not anything was emitted for the last move.
+  QPointF cur_;
+  bool cur_valid_ = false;
+  // Board position in machine mm: where the last emitted command left it.
+  QPointF emitted_;
+  bool emitted_valid_ = false;
+  bool laser_on_ = false;
+
+  double list_time_ms_ = 0;
+  double block_distance_mm_ = 0;
+  int list_command_count_ = 0;
+  int max_commands_per_list_ = 0;
+  int out_of_field_count_ = 0;
+};

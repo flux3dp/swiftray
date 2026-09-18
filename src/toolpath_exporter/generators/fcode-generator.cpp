@@ -10,6 +10,10 @@ void FCodeGenerator::write(float value, unsigned long* crc32) {
   write((const char*)&value, 4, crc32);
 }
 
+void FCodeGenerator::write(double value, unsigned long* crc32) {
+  write((const char*)&value, 8, crc32);
+}
+
 // to_all: to full fcode or to task content, v2 only
 void FCodeGenerator::write(uint32_t value, unsigned long* crc32, bool to_all) {
   write((const char*)&value, sizeof(uint32_t), crc32, to_all);
@@ -271,6 +275,17 @@ void FCodeGenerator::flux_custom_cmd(uint32_t val) {
   write(val, &script_crc32);
 }
 
+void FCodeGenerator::write_galvo_command(
+    uint16_t opcode,
+    std::initializer_list<double> params) {
+  write_command(23, &script_crc32);
+  write(opcode, &script_crc32);
+  write(uint8_t(params.size()), &script_crc32);
+  for (double p : params) {
+    write(p, &script_crc32);
+  }
+}
+
 void FCodeGenerator::one_seg_custom_cmd(int type, uint8_t cmd) {
   write_command(type, &script_crc32);
   write(cmd, &script_crc32);
@@ -447,6 +462,14 @@ float FCodeGeneratorV1::get_time_cost() {
   return time_cost;
 }
 
+void FCodeGeneratorV1::add_time_cost(double seconds) {
+  time_cost += seconds;
+}
+
+void FCodeGeneratorV1::add_travel_dist(double mm) {
+  traveled += mm;
+}
+
 void FCodeGeneratorV1::terminated() {
   uint32_t u32value;
 
@@ -544,6 +567,16 @@ size_t FCodeGeneratorV2::total_length() {
 
 float FCodeGeneratorV2::get_time_cost() {
   return time_cost;
+}
+
+void FCodeGeneratorV2::add_time_cost(double seconds) {
+  time_cost += seconds;
+  current_task_time_cost += seconds;
+}
+
+void FCodeGeneratorV2::add_travel_dist(double mm) {
+  traveled += mm;
+  current_task_traveled += mm;
 }
 
 void FCodeGeneratorV2::write_string(const char* s,
@@ -858,6 +891,23 @@ void ToolpathProcessor::init(int magic_number, const QString* thumbnail) {
     gen = std::make_shared<FCodeGeneratorV1>(thumbnail);
   }
   gen_ = gen.get();
+  galvo_ = std::make_unique<GalvoListWriter>(gen_);
+}
+
+// Laser strength as the rest of the exporter uses it: negative sets the modal
+// power (fraction of full scale), zero turns the beam off, positive turns it on.
+// In a galvo block that maps onto SET_LASER_POWER plus the mark/jump choice
+// rather than onto an fcode pwm command.
+void ToolpathProcessor::set_toolhead_pwm(float strength) {
+  if (in_galvo_block()) {
+    if (strength < 0) {
+      galvo_->set_power(-strength * 100);
+    } else {
+      galvo_->set_laser_on(strength > 0);
+    }
+    return;
+  }
+  gen_->set_toolhead_pwm(strength);
 }
 
 void ToolpathProcessor::clear_curve_engraving_data() {
@@ -1218,6 +1268,29 @@ void ToolpathProcessor::_moveto(NamedArgs args) {
   }
   if (!isnan(args.s)) {
     flags |= FCodeGenerator::FLAG_S;
+  }
+  if (in_galvo_block()) {
+    // Inside a galvo block the gantry does not move: the same motion becomes a
+    // jump or a mark in the block's field-local frame (§19.4).
+    if ((flags & FCodeGenerator::FLAG_F) && !args.is_travel) {
+      // Travels carry travel_speed_, which is a gantry number: the galvo's
+      // traverse rate is SET_JUMP_SPEED and belongs to the prologue.
+      galvo_->set_mark_speed(args.f / 60);  // mm/min -> mm/s
+    }
+    if (flags & FCodeGenerator::FLAG_S) {
+      galvo_->set_laser_on(args.s > 0);
+    }
+    if (flags & (FCodeGenerator::FLAG_Z | FCodeGenerator::FLAG_A)) {
+      // §4.4: the HEXA II galvo board drives neither axis. The caller is
+      // supposed to leave the block first; dropping the move here would
+      // silently engrave at the wrong depth, so say so loudly.
+      qWarning() << "Z/A move inside a galvo block was dropped; leave the block"
+                 << "before moving them (z" << args.z << "a" << args.a << ")";
+    }
+    if (flags & (FCodeGenerator::FLAG_X | FCodeGenerator::FLAG_Y)) {
+      galvo_->moveTo(args.x, args.y);
+    }
+    return;
   }
   gen_->moveto(flags, args.f, args.x, args.y, args.z, args.a, args.s);
 }

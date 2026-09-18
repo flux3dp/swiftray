@@ -1,11 +1,13 @@
 #pragma once
 
 #include "config.h"
+#include "galvo-list.h"
 #include "interpolation.cpp"
 #include "toolpath_exporter/toolpath-exporter-types.h"
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRectF>
+#include <initializer_list>
 #include <vector>
 
 #define FORWARD_TO_GENERATOR(FUNC)                           \
@@ -73,6 +75,7 @@ class FCodeGenerator {
                      unsigned long* crc32_ptr,
                      bool to_all) = 0;
   void write(float value, unsigned long* crc32);
+  void write(double value, unsigned long* crc32);
   void write(uint32_t value, unsigned long* crc32, bool to_all = false);
   void write(uint16_t value, unsigned long* crc32);
   void write(uint8_t value, unsigned long* crc32);
@@ -146,6 +149,14 @@ class FCodeGenerator {
                       float s);
   void flux_custom_cmd(uint32_t val);
   void one_seg_custom_cmd(int type, uint8_t cmd);
+  // Galvo (BSL) record, v2 only. Command byte 23 followed by the wire format of
+  // HX2_GALVO_PROTOCOL.md §19.2: uint16 LE opcode, uint8 param count, then one
+  // float64 LE per parameter. See generators/galvo-list.h for the opcodes.
+  void write_galvo_command(uint16_t opcode, std::initializer_list<double> params);
+  // Fold externally computed cost into the metadata. Galvo geometry never goes
+  // through moveto(), so its time and distance have to be handed over directly.
+  virtual void add_time_cost(double seconds) {}
+  virtual void add_travel_dist(double mm) {}
 
   // v1 only
   virtual void terminated() {};
@@ -200,6 +211,8 @@ class FCodeGeneratorV1 : public FCodeGenerator {
   std::string to_string() override;
   size_t total_length() override;
   float get_time_cost() override;
+  void add_time_cost(double seconds) override;
+  void add_travel_dist(double mm) override;
   void terminated() override;
 };
 
@@ -258,6 +271,8 @@ class FCodeGeneratorV2 : public FCodeGenerator {
                        bool is_string = true,
                        bool has_next = true);
   unsigned long write_metadata();
+  void add_time_cost(double seconds) override;
+  void add_travel_dist(double mm) override;
   void end_content() override;
   void write_post_config(const char* s, size_t length) override;
 };
@@ -311,6 +326,10 @@ class ToolpathProcessor {
   float travel_speed_ = 12000;
   float a_travel_speed_ = 2000;
 
+  // Galvo (BSL) emission. While a block is open every XY move is written as a
+  // galvo record instead of a gantry moveto; see galvo-list.h.
+  std::unique_ptr<GalvoListWriter> galvo_;
+
   std::vector<void (ToolpathProcessor::*)(NamedArgs args,
                                           MoveCallback callback)>
       moveto_pipeline_functions_;
@@ -347,6 +366,10 @@ class ToolpathProcessor {
   void set_rotary_y_ratio(float ratio);
   void set_travel_speed(float feedrate = NAN, bool a_axis = false);
   float get_travel_speed(bool a_axis = false);
+  /** Null until init() has run. */
+  GalvoListWriter* galvo() { return galvo_.get(); }
+  bool in_galvo_block() const { return galvo_ && galvo_->in_block(); }
+  void set_toolhead_pwm(float strength);
   void set_rotary_wait_move(bool wait, float y);
   void update_moveto_pipeline();
   void pipeline_moveto(int idx, NamedArgs args);
@@ -383,8 +406,8 @@ class ToolpathProcessor {
                             bool is_4c = false);
 
   FORWARD_TO_GENERATOR(get_time_cost)
+  FORWARD_TO_GENERATOR(add_travel_dist)
   FORWARD_TO_GENERATOR(sleep)
-  FORWARD_TO_GENERATOR(set_toolhead_pwm)
   FORWARD_TO_GENERATOR(set_toolhead_laser_module)
   FORWARD_TO_GENERATOR(turn_on_gradient_print_mode)
   FORWARD_TO_GENERATOR(turn_off_gradient_print_mode)
