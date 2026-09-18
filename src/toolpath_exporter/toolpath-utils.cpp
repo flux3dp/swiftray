@@ -816,6 +816,35 @@ bool is_uv_module(LayerModule module) {
   }
 }
 
+bool is_galvo_module(LayerModule module) {
+  switch (module) {
+    case LayerModule::GALVO_CO2:
+    case LayerModule::GALVO_MOPA:
+      return true;
+    default:
+      return false;
+  }
+}
+
+double calculate_wobble_k(double wobble_step, double wobble_diameter) {
+  // Kept identical to GCodeGenerator::setWobble(), which is where the execution
+  // end's own estimate comes from.
+  if (wobble_step <= 0 || wobble_diameter <= 0) {
+    return 1;
+  }
+  double wobble_k = M_PI * wobble_diameter / wobble_step + 1;
+  if (wobble_step <= 0.1) {
+    if (wobble_diameter <= 0.1) {
+      wobble_k *= 2.5;
+    } else if (wobble_diameter <= 0.2) {
+      wobble_k *= wobble_step <= 0.01 ? 1.27 : 1.2;
+    } else {
+      wobble_k *= 1.05;
+    }
+  }
+  return wobble_k;
+}
+
 PrintingColor get_color(QString hex_color) {
   hex_color = hex_color.toUpper();
   if (hex_color == "#9FE3FF" || hex_color == "#009FE3") {

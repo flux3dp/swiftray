@@ -23,5 +23,8 @@ class LaserPathFactory : public BaseFactory {
   void set_use_ga(bool use_ga) { use_ga_ = use_ga; }
   void add_path(const QPainterPath& path);
   int get_size();
+  // Bounding box of every path, in mm in the same frame generate_task_code()
+  // emits (work area minus the layer offset). Forces the preprocess pass.
+  QRectF get_bounds_mm();
   void generate_task_code(float path_speed);
 };

@@ -130,6 +130,10 @@ double get_backlash_compensation(
 float get_laser_delay(HardwareType hw_type, int watt, float speed);
 bool is_printing_module(LayerModule module);
 bool is_uv_module(LayerModule module);
+bool is_galvo_module(LayerModule module);
+// Rough multiplier for the extra path length wobble makes the beam walk. Used
+// only for time estimation; it has to match what the execution end assumes.
+double calculate_wobble_k(double wobble_step, double wobble_diameter);
 PrintingColor get_color(QString hex_color);
 InwardRect get_boundary(HardwareType hw_type, LayerModule layer_module);
 double get_default_min_padding(
