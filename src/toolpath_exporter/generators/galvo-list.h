@@ -73,10 +73,15 @@ struct GalvoParams {
   // pulse_length_us is derived from power_pct and re-sent whenever power moves.
   // Mopa heads carry their own width and are set once per layer.
   bool derive_pulse_from_power = true;
-  // Standby (idle "tickle") train. bsl only calls set_standby_list when a file
-  // asks for it, so leaving this out means the board is never told at all.
+  // Standby ("pre ionization") train. bsl only calls set_standby_list when a
+  // file asks for it, so leaving this out means the board is never told at all.
+  // CO2 only: pre-ionization is a CO2 notion, and the code this replaces was
+  // guarded by if (!isMopaHead()).
   bool emit_standby = true;
   double standby_period_us = 100;
+  // set_standby_list takes this as a uint32_t (lcsApi.h:1116), so it is rounded
+  // to a whole microsecond and floored at 1 -- anything under 0.5 would reach
+  // the SDK as 0, outside its documented 0.021~1365 range.
   double standby_width_us = 1;
   // Wobble is only emitted when the mode is not DISABLE.
   GalvoWobbleMode wobble_mode = GalvoWobbleMode::DISABLE;

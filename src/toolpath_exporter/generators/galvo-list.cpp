@@ -54,12 +54,11 @@ void GalvoListWriter::ensureListOpen() {
   }
   list_open_ = true;
   if (params_.emit_standby) {
-    // Ahead of the §19.3 order, matching the simulator's own list prologue
-    // (armedBslGalvoTransport buildPrologue, session_list_runner doLoad). Our
-    // bsl emits no set_standby_list of its own, so if this is not here the
-    // board never gets a standby train.
+    // First in the §19.3 order. Our bsl emits no set_standby_list of its own,
+    // so if this is not here the board never gets a standby train.
     emit(GalvoOp::SET_STANDBY,
-         {params_.standby_period_us, params_.standby_width_us});
+         {params_.standby_period_us,
+          qMax(1.0, std::round(params_.standby_width_us))});
   }
   // §19.3: every list carries its own prologue, in this order. Nothing here may
   // be skipped because "the last list already set it" -- bsl keeps no state
