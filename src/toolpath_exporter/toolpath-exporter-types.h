@@ -5,6 +5,7 @@
 #include <QPolygonF>
 #include <array>
 #include <bitset>
+#include <optional>
 #include <opencv2/core.hpp>
 
 using Bitset32 = std::bitset<32>;
@@ -123,8 +124,10 @@ struct HardwareProfile {
   double z_speed = 7.5;
   // limit for high res engraving and fast gradient
   int max_pixel_per_mm_x = 20;
-  // position when changing module without job origin
-  QPointF tran_pos;  // Note: (0,0) = not set
+  // position when changing module without job origin; unset falls back to the
+  // middle of the work area. Optional because (0, 0) is a real answer for a
+  // machine that homes right after the transition.
+  std::optional<QPointF> tran_pos;
   QPointF home_position;
   bool reverse_4c = false;
 };
