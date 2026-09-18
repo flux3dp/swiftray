@@ -19,7 +19,8 @@ enum class HardwareType {
   BB2,
   BM2,
   RF,
-  UV
+  UV,
+  HEXA2
 };
 
 enum class NozzleMode {

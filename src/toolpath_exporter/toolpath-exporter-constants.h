@@ -40,7 +40,10 @@ const QMap<HardwareType, HardwareProfile> HW_PROFILE = {
   }},
   {HardwareType::UV, {
     300, 215, 0, 2, 7.5, 20, {}, {}, true
-  }}
+  }},
+  {HardwareType::HEXA2, {
+    900, 508, 7300, 2, 7.5, 39
+  }},
 };
 
 const QMap<HardwareType, AccelerationData> PATH_ACCELERATION_DATA = {
@@ -77,7 +80,10 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
   }},
   {HardwareType::UV, {
     false, true, false, false, true, true
-  }}
+  }},
+  {HardwareType::HEXA2, {
+    false, false, false, true
+  }},
 };
 
 // Pre-move z axis in curve engraving to avoid motor out of step
