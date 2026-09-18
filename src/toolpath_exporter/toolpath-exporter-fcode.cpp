@@ -562,8 +562,8 @@ void ToolpathExporterFcode::convertLayer() {
         QPointF tran_pos;
         if (has_job_origin_) {
           tran_pos = QPointF(0, 0);
-        } else if (!hw_profile.tran_pos.isNull()) {
-          tran_pos = hw_profile.tran_pos;
+        } else if (hw_profile.tran_pos.has_value()) {
+          tran_pos = *hw_profile.tran_pos;
         } else {
           tran_pos = QPointF(hw_profile.width / 2, hw_profile.length / 2);
         }

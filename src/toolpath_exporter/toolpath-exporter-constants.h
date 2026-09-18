@@ -42,7 +42,9 @@ const QMap<HardwareType, HardwareProfile> HW_PROFILE = {
     300, 215, 0, 2, 7.5, 20, {}, {}, true
   }},
   {HardwareType::HEXA2, {
-    900, 508, 7300, 2, 7.5, 39
+    // tran_pos (0, 0): the module transition ends in a home, so parking in the
+    // middle of a 900 x 508 bed first is a long move to nowhere.
+    900, 508, 7300, 2, 7.5, 39, QPointF(0, 0)
   }},
 };
 
