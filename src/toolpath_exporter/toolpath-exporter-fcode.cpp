@@ -888,6 +888,9 @@ void ToolpathExporterFcode::applyGalvoLayerParams() {
     // execution end has always used for this head.
     g.derive_pulse_from_power = false;
     g.mopa_pulse_ns = current_layer_->pulseWidth();
+    // Standby is pre-ionization, which is a CO2 notion; the Mopa head skips the
+    // call, as the text path did before it was removed.
+    g.emit_standby = false;
   } else {
     // The CO2 head has no separate power input: its duty cycle is the power, so
     // the writer derives opcode 12's second parameter and re-sends it whenever
