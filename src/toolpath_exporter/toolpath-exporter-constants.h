@@ -82,7 +82,7 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
     false, true, false, false, true, true
   }},
   {HardwareType::HEXA2, {
-    false, false, false, true
+    false, true, false, true
   }},
 };
 
