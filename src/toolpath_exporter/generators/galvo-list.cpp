@@ -53,6 +53,14 @@ void GalvoListWriter::ensureListOpen() {
     return;
   }
   list_open_ = true;
+  if (params_.emit_standby) {
+    // Ahead of the §19.3 order, matching the simulator's own list prologue
+    // (armedBslGalvoTransport buildPrologue, session_list_runner doLoad). Our
+    // bsl emits no set_standby_list of its own, so if this is not here the
+    // board never gets a standby train.
+    emit(GalvoOp::SET_STANDBY,
+         {params_.standby_period_us, params_.standby_width_us});
+  }
   // §19.3: every list carries its own prologue, in this order. Nothing here may
   // be skipped because "the last list already set it" -- bsl keeps no state
   // across list boundaries and has no replay to fall back on.
@@ -63,8 +71,7 @@ void GalvoListWriter::ensureListOpen() {
   emit(GalvoOp::SET_SCANNER_DELAYS,
        {params_.scanner_mark_delay_us, params_.scanner_polygon_delay_us});
   emit(GalvoOp::SET_LASER_POWER, {params_.power_pct});
-  emit(GalvoOp::SET_LASER_PULSES,
-       {params_.pulse_period_us, params_.pulse_width_us});
+  emitPulses();
   if (params_.wobble_mode != GalvoWobbleMode::DISABLE) {
     emit(GalvoOp::SET_WOBBLE, {params_.wobble_transversal_mm,
                                params_.wobble_longitudinal_mm,
@@ -108,6 +115,21 @@ void GalvoListWriter::set_mark_speed(double mm_s) {
   }
 }
 
+void GalvoListWriter::emitPulses() {
+  // Three parameters since 2026-09-18: period us, pulse length us, Mopa pulse
+  // width ns. The board clamps the third to 1..65535, so keep it in range here
+  // too rather than relying on that.
+  double mopa_ns = params_.mopa_pulse_ns;
+  if (mopa_ns < 1) {
+    mopa_ns = 1;
+  } else if (mopa_ns > 65535) {
+    mopa_ns = 65535;
+  }
+  emit(GalvoOp::SET_LASER_PULSES, {params_.pulse_period_us,
+                                   params_.effective_pulse_length_us(),
+                                   mopa_ns});
+}
+
 void GalvoListWriter::set_power(double pct) {
   if (pct == params_.power_pct) {
     return;
@@ -115,6 +137,12 @@ void GalvoListWriter::set_power(double pct) {
   params_.power_pct = pct;
   if (list_open_) {
     emit(GalvoOp::SET_LASER_POWER, {pct});
+    if (params_.derive_pulse_from_power) {
+      // A CO2 head's duty cycle is its power, and opcode 11 alone does not move
+      // it: the board's galvo-list path calls lcs_set_laser_power and nothing
+      // else. The pulses record has to follow every power change (§19 notice).
+      emitPulses();
+    }
   }
 }
 
