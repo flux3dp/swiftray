@@ -737,6 +737,8 @@ HardwareType model_to_hardware_type(const QString& model) {
     return HardwareType::BM2;
   if (model.startsWith("fhx2rf"))
     return HardwareType::RF;
+  if (model == "fhx2galvo")
+    return HardwareType::HEXA2;
   // default beambox
   return HardwareType::Beambox;
 }
@@ -852,6 +854,8 @@ InwardRect get_boundary(HardwareType hw_type, LayerModule layer_module) {
     } else {
       rect.bottom = 40;
     }
+  } else if (hw_type == HardwareType::HEXA2) {
+    // TODO
   }
   return rect;
 }
