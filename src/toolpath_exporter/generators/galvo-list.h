@@ -2,6 +2,7 @@
 
 #include <QPointF>
 #include <QRectF>
+#include <QtGlobal>
 #include <cstdint>
 #include <initializer_list>
 
@@ -30,7 +31,7 @@ enum class GalvoOp : uint16_t {
   SET_LASER_DELAYS = 9,    // on(us), off(us)  -- may be negative
   SET_SCANNER_DELAYS = 10, // mark(us), polygon(us)
   SET_LASER_POWER = 11,    // 0-100
-  SET_LASER_PULSES = 12,   // period(us), width(us)
+  SET_LASER_PULSES = 12,   // period(us), pulseLength(us), mopaPulse(ns)
   SET_STANDBY = 13,        // period(us), width(us)
   ENABLE_LASER = 14,       // moDelay(us)
   DISABLE_LASER = 15,      // moDelay(us)
@@ -62,8 +63,21 @@ struct GalvoParams {
   double scanner_mark_delay_us = 100;
   double scanner_polygon_delay_us = 50;
   double power_pct = 0;
-  double pulse_period_us = 31.25;  // 10 kHz, the CO2 head's fixed frequency
-  double pulse_width_us = 0.021;
+  // opcode 12, all three of them. The third is a real Mopa pulse width in ns
+  // (lcsApi.h:1133, range 1..65535), not the flag the simulator's 2-parameter
+  // definition made it look like -- see the change notice at the head of §19.
+  double pulse_period_us = 31.25;  // 32 kHz
+  double pulse_length_us = 0;
+  double mopa_pulse_ns = 1;
+  // CO2 heads have no separate power input: the duty cycle is the power, so
+  // pulse_length_us is derived from power_pct and re-sent whenever power moves.
+  // Mopa heads carry their own width and are set once per layer.
+  bool derive_pulse_from_power = true;
+  // Standby (idle "tickle") train. bsl only calls set_standby_list when a file
+  // asks for it, so leaving this out means the board is never told at all.
+  bool emit_standby = true;
+  double standby_period_us = 100;
+  double standby_width_us = 1;
   // Wobble is only emitted when the mode is not DISABLE.
   GalvoWobbleMode wobble_mode = GalvoWobbleMode::DISABLE;
   double wobble_transversal_mm = 0;
@@ -87,6 +101,13 @@ struct GalvoParams {
   }
   double laser_delay_ms() const {
     return (laser_off_delay_us - laser_on_delay_us) / 1000;
+  }
+
+  /** opcode 12's param[1] for the current power, on a head that derives it. */
+  double effective_pulse_length_us() const {
+    return derive_pulse_from_power
+               ? qMax(0.021, pulse_period_us * power_pct / 100)
+               : pulse_length_us;
   }
 };
 
@@ -149,6 +170,7 @@ class GalvoListWriter {
 
   /** Both take effect immediately, mid-list if need be (§5). */
   void set_mark_speed(double mm_s);
+  /** On a CO2 head this also re-sends SET_LASER_PULSES, which carries the duty. */
   void set_power(double pct);
 
   /** Move to `x_mm`, `y_mm` in machine mm. NaN keeps that axis. */
@@ -179,6 +201,7 @@ class GalvoListWriter {
   /** Move the board to `p` (machine mm) with a jump, if it is not there. */
   void jumpTo(const QPointF& p);
   void markTo(const QPointF& p);
+  void emitPulses();
   QPointF toField(const QPointF& p);
   /**
    * Liang-Barsky clip of p0->p1 against clip_rect_. Returns false when the

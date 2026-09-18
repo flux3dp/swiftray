@@ -206,6 +206,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // Estimation only; set_delay_mode itself is a CONTROL instruction (§6.2).
     g.jump_delay_min_us = param["galvo_jump_delay_min"].toDouble(200);
     g.jump_delay_max_us = param["galvo_jump_delay_max"].toDouble(400);
+    g.emit_standby = param["galvo_standby"].toBool(true);
+    g.standby_period_us = param["galvo_standby_period"].toDouble(100);
+    g.standby_width_us = param["galvo_standby_width"].toDouble(1);
+    // opcode 12's second parameter on a Mopa head, where it is not derived
+    // from power. 0 is what the execution end has used for this head.
+    g.pulse_length_us = param["galvo_mopa_pulse_length"].toDouble(0);
     config_.galvo_max_list_commands = param["galvo_max_list_commands"].toInt(0);
   }
 
@@ -877,11 +883,17 @@ void ToolpathExporterFcode::applyGalvoLayerParams() {
     g.pulse_period_us = 1000.0 / frequency_khz;
   }
   if (layer_module_ == LayerModule::GALVO_MOPA) {
-    // The Mopa head drives its own pulse width; power stays on opcode 11.
-    g.pulse_width_us = current_layer_->pulseWidth();
+    // The Mopa head carries its own width on opcode 12's third parameter (ns),
+    // set once here for the layer. Its second parameter stays at the value the
+    // execution end has always used for this head.
+    g.derive_pulse_from_power = false;
+    g.mopa_pulse_ns = current_layer_->pulseWidth();
   } else {
-    // The CO2 head has no separate power input: the duty cycle is the power.
-    g.pulse_width_us = qMax(0.021, g.pulse_period_us * g.power_pct / 100);
+    // The CO2 head has no separate power input: its duty cycle is the power, so
+    // the writer derives opcode 12's second parameter and re-sends it whenever
+    // power moves. The third parameter means nothing here; 1 is the SDK floor.
+    g.derive_pulse_from_power = true;
+    g.mopa_pulse_ns = 1;
   }
   // Dotting is not a vector-path setting: on the old text path it was armed
   // only around gradient bitmaps. Raster has no galvo path in phase 1 (§19.5),
