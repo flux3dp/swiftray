@@ -64,8 +64,13 @@ private:
   void commandRunnerThread();
   void dequeueCmd(int count);
   LCS2Error waitListAvailable(int list_no);
+  void waitListsIdle();
   QString getErrorString(int error_code);
   ListStatus getListStatus();
+  // isConnected() costs one control instruction (round trip to the board). Over Ethernet
+  // that is orders of magnitude more expensive than over USB, so the hot paths use a
+  // throttled variant instead of polling the board for every single GCode command.
+  bool isConnectedThrottled(int max_age_ms = 100);
   void startList(int list_no, TaskSettings settings, bool disable_laser);
   bool executeList(int list_no);
   void checkPauseResume();
@@ -90,6 +95,11 @@ private:
   bool is_preparing_first_list_ = false;
   bool before_first_laser_ = true;
   bool should_check_door_ = false;
+  // The board chains list 1 <-> list 2 by itself once lcs_auto_change() is armed, so
+  // lcs_execute_list() only has to be sent for the first list of a job (and again after a
+  // reconnection, which drops the board side execution state).
+  bool list_execution_started_ = false;
+  QElapsedTimer connection_check_timer_;
   std::thread command_runner_thread_;
   int current_error_ = 0;
   QString current_custom_error_ = QString();

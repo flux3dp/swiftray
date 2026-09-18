@@ -103,8 +103,22 @@ void BSLMotionController::startCommandRunner() {
 
 int debug_count_bsl  = 0;
 
+bool BSLMotionController::isConnectedThrottled(int max_age_ms) {
+  // Reuse the last known state while it is fresh enough. Every real check is a control
+  // instruction, i.e. a synchronous round trip to the board; on the Ethernet transport that
+  // costs tens of milliseconds and it used to be paid for every GCode command.
+  if (connection_check_timer_.isValid() && connection_check_timer_.elapsed() < max_age_ms) {
+    return is_board_connected_;
+  }
+  if (connection_check_timer_.isValid()) connection_check_timer_.restart();
+  else connection_check_timer_.start();
+  return isConnected();
+}
+
 void BSLMotionController::checkPauseResume() {
-  isConnected();
+  bool checked_board = !connection_check_timer_.isValid() ||
+                       connection_check_timer_.elapsed() >= 100;
+  isConnectedThrottled();
   QCoreApplication::processEvents();
   bool should_do_pause = false;
   bool should_do_resume = false;
@@ -122,8 +136,9 @@ void BSLMotionController::checkPauseResume() {
         should_do_resume = true;
       }
   }
-  if (should_check_door_ && is_running_laser_ && !is_framing_ && (should_do_resume || !lcs_paused_)) {
-    // Check door status
+  if (should_check_door_ && is_running_laser_ && !is_framing_ && (should_do_resume || !lcs_paused_) &&
+      (checked_board || should_do_resume)) {
+    // Check door status (throttled together with the connection check, see above)
     uint32_t io_port = lcs_read_io_port();
     if (io_port & 0b1) {
       qInfo() << "BSLM~::thread() - door opened, pause task";
@@ -185,7 +200,7 @@ void BSLMotionController::commandRunnerThread() {
           if (debug_count_bsl % 1000 == 1) {
             qInfo() << "BSLM~::thread() - pending commands: " << this->pending_cmds_.size();
           }
-          bool is_connected = isConnected();
+          bool is_connected = isConnectedThrottled();
           if (!is_connected) {
             this->setState(MotionControllerState::kQuit);
             break;
@@ -220,18 +235,38 @@ void BSLMotionController::dequeueCmd(int count) {
   this->cmd_list_mutex_.unlock();
 }
 
+/**
+ * @brief Claim a list buffer for writing, waiting until the board released it.
+ *
+ * This is the back pressure of the double buffered pipeline: while the board is still
+ * executing this list buffer, lcs_load_list() answers LCS_GENERAL_CURRENTLY_BUSY. That is
+ * the normal state, not an error, so it must not count towards the error limit.
+ */
 LCS2Error BSLMotionController::waitListAvailable(int list_no) {
   qInfo() << "BSLM~::waitList(" << list_no << ")@" << getDebugTime();
   LCS2Error ret = lcs_load_list(list_no, 0);
   bool fixing_aready = false;
+  int busy_count = 0;
   while (ret != LCS_RES_NO_ERROR) {
-    QThread::msleep(25);
+    // Waiting for the buffer is expected and happens while the board is marking, so the wait
+    // itself is hidden. Poll tightly so that the buffer is refilled as soon as it is free.
+    QThread::msleep(ret == LCS_GENERAL_CURRENTLY_BUSY ? 10 : 25);
     checkPauseResume();
     if (lcs_paused_) {
       qInfo() << "BSLM~::waitList - Paused while waitListAvailable!";
       continue;
     }
-    qInfo() << getErrorString(ret);
+    if (!is_running_laser_) {
+      qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - Laser session ended while waiting" << getDebugTime();
+      break;
+    }
+    if (ret == LCS_GENERAL_CURRENTLY_BUSY) {
+      if (++busy_count % 100 == 0) {
+        qInfo() << "BSLM~::waitListAvailable(" << list_no << ") - Buffer still executing on board" << getDebugTime();
+      }
+    } else {
+      qInfo() << getErrorString(ret);
+    }
     ret = lcs_load_list(list_no, 0);
     // If the list is already opened, close the list
     if (ret == LCS_GENERAL_AREADY_OPENED) {
@@ -243,6 +278,7 @@ LCS2Error BSLMotionController::waitListAvailable(int list_no) {
       }
       ret = lcs_load_list(list_no, 0);
     }
+    if (ret == LCS_RES_NO_ERROR || ret == LCS_GENERAL_CURRENTLY_BUSY) continue;
     if (lcs_error_count ++ > 100) {
       qWarning() << "BSLM~::waitListAvailable(" << list_no << ") - Error count exceeded 100" << getDebugTime();
       this->current_error_ = ret;
@@ -517,6 +553,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           lcs_set_end_of_list();
           lcs_set_start_list(2);
           lcs_set_end_of_list();
+          list_execution_started_ = false;
           QThread::msleep(100);
         }
         if (list_status.bPaused) lcs_restart_list();
@@ -529,6 +566,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // Force delay for the first laser
       lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
       lcs_error_count = 0;
+      // The first list of the job still has to be triggered from the host
+      list_execution_started_ = false;
       laser_enabled = false;
       last_is_z_command = false;
       before_first_laser_ = !is_framing_;
@@ -601,15 +640,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - Ending Laser Control"  << "@" << getDebugTime();
       // qInfo() << "BSLM~::handleGcode() - Executing list" << list_no << "@" << getDebugTime();
       if(!executeList(list_no)) return;
-      QThread::msleep(2);
-      list_no = list_no == 1 ? 2 : 1;
-      waitListAvailable(list_no); // Wait till the previous list is available.
-      if(!executeList(list_no)) return;
-      QThread::msleep(1);
-      list_no = list_no == 1 ? 2 : 1;
-      waitListAvailable(list_no); // Wait till the previous list is available.
-      if(!executeList(list_no)) return;
-      QThread::msleep(1);
+      // The board chains the lists on its own, so the last list does not have to be flushed
+      // out by executing extra empty lists; just wait until both buffers are done.
+      // Framing never waited for completion before, keep it that way.
+      if (!is_framing_) waitListsIdle();
+      list_execution_started_ = false;
 
       BoardRunStatus Status;
       do {
@@ -745,6 +780,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   qInfo() << "BSLM~::stop() - Clearing pending commands" << getDebugTime();
   lcs_set_end_of_list();
   lcs_stop_execution();
+  list_execution_started_ = false;
   total_task_time_ = 0;
   completed_task_time_ = 0;
   estimated_time_ = 0;
@@ -875,6 +911,9 @@ bool BSLMotionController::isConnected() {
       } else {
         this->current_error_ = 0;
         this->current_custom_error_.clear();
+        // Re-assigning the card wipes the board side list execution state, so the next list
+        // has to be triggered from the host again.
+        list_execution_started_ = false;
         setScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
         setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY);
         if (lcs_paused_) {
@@ -909,51 +948,72 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   }
 }
 
+/**
+ * @brief Close the list currently being written and hand it over to the board.
+ *
+ * The board has a built in list switcher: after lcs_auto_change() it continues with the other
+ * list buffer as soon as the running one ends, without any host interaction. Therefore
+ * lcs_execute_list() is only needed to start the very first list of a job (and again after a
+ * reconnection, which drops the board side execution state).
+ *
+ * This used to wait until the board reported both list buffers idle and then trigger the next
+ * list from the host. That inserted (polling period + one control instruction round trip)
+ * of dead time between every pair of lists. Over USB a round trip is sub-millisecond so the
+ * gap went unnoticed; over Ethernet it is tens of milliseconds and the gap became visible.
+ *
+ * Back pressure is provided by waitListAvailable(): the other list buffer can only be claimed
+ * once the board is done with it, so at most one list is executing while one is being written,
+ * exactly as before.
+ */
 bool BSLMotionController::executeList(int list_no) {
   qInfo() << "BSLM~::executeList(" << list_no << ") @" << getDebugTime();
   list_manager_.call(ListApiType::EndOfList);
-  if(!is_framing_ && running_task_time_ > 0){
-    // Wait for last list completion
-    int count = 0;
-    do {
-      QThread::msleep(100);
-      // Update status and trigger reconnect if disconnected
-      isConnected();
-      getListStatus();
-      checkPauseResume();
-      if (!lcs_paused_ && getRemainingTime() < 0) {
-        // In case bBusy1 and bBusy2 are not updated
-        qInfo() << "BSLM~::executeList() - Timeout waiting for list completion @" << getDebugTime();
-        break;
-      }
-      if (++count % 10 == 0) {
-        qInfo() << "BSLM~::executeList() - Waiting for previous list..." << "paused" << lcs_paused_ << "list paused" << list_status.bPaused << "busy1" << list_status.bBusy1 << "busy2" << list_status.bBusy2;
-      }
-    } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
-  }
-  if (!is_running_laser_ || !status.bConnected) return false;
-  qInfo() << "BSLM~::executeList() - 1st try to execute list" << list_no << "@" << getDebugTime();
-  int e = lcs_execute_list(list_no);
+  // One connection / pause check per list switch instead of one per polling tick
+  checkPauseResume();
+  if (!is_running_laser_ || !is_board_connected_) return false;
+
+  // lcs_auto_change() only takes effect once, so it has to be re-armed for every list.
+  int e = lcs_auto_change();
   if (e != LCS_RES_NO_ERROR) {
-    qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
-    if (e == LCS_GENERAL_CURRENTLY_BUSY) {
-      // Sometimes happens after reconnecting
-      // Board is connected but not able to execute list
-      qInfo() << "Board connected but currently busy; force reconnecting" << getDebugTime();
-      lcs_connect(true);
-    }
-    // Trigger reconnect
-    qInfo() << "BSLM~::executeList() - Check connection before 2nd try" << "@" << getDebugTime();
-    bool is_connected = isConnected();
-    qInfo() << "BSLM~::executeList() - 2nd try to execute list" << list_no << is_connected << "@" << getDebugTime();
-    e = lcs_execute_list(list_no);
+    qWarning() << "BSLM~::executeList() - Error arming auto change" << getErrorString(e) << "@" << getDebugTime();
+    // Do not fall back to lcs_execute_list() here: it restarts the executor from position 0
+    // and would abort the list the board is currently marking.
+    isConnected();
+    e = lcs_auto_change();
     if (e != LCS_RES_NO_ERROR) {
-      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
+      qWarning() << "BSLM~::executeList() - Error arming auto change (2nd try)" << getErrorString(e) << "@" << getDebugTime();
       this->current_error_ = e;
       this->current_custom_error_ = "Failed to execute list";
       this->stop();
       return false;
     }
+  }
+
+  if (!list_execution_started_) {
+    qInfo() << "BSLM~::executeList() - 1st try to execute list" << list_no << "@" << getDebugTime();
+    e = lcs_execute_list(list_no);
+    if (e != LCS_RES_NO_ERROR) {
+      qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
+      if (e == LCS_GENERAL_CURRENTLY_BUSY) {
+        // Sometimes happens after reconnecting
+        // Board is connected but not able to execute list
+        qInfo() << "Board connected but currently busy; force reconnecting" << getDebugTime();
+        lcs_connect(true);
+      }
+      // Trigger reconnect
+      qInfo() << "BSLM~::executeList() - Check connection before 2nd try" << "@" << getDebugTime();
+      bool is_connected = isConnected();
+      qInfo() << "BSLM~::executeList() - 2nd try to execute list" << list_no << is_connected << "@" << getDebugTime();
+      e = lcs_execute_list(list_no);
+      if (e != LCS_RES_NO_ERROR) {
+        qInfo() << "BSLM~::executeList() - Error executing list" << getErrorString(e) << "@" << getDebugTime();
+        this->current_error_ = e;
+        this->current_custom_error_ = "Failed to execute list";
+        this->stop();
+        return false;
+      }
+    }
+    list_execution_started_ = true;
   }
   if (before_first_laser_) {
     // Set before_first_laser_ to false after any execution
@@ -963,13 +1023,38 @@ bool BSLMotionController::executeList(int list_no) {
     // Set is_preparing_first_list_ to false after an execution that is not triggered by should_flush(before_first_laser_)
     is_preparing_first_list_ = false;
   }
-  completed_task_time_ += running_task_time_;
-  running_task_time_ = estimated_time_;
-  qInfo() << "BSLM~::executeList() - Start executing new list, task time:" << running_task_time_;
+  // The board may still be working on a previously dispatched list, so the new list is
+  // appended to the remaining work instead of replacing it.
+  double elapsed = task_timer_.isValid() ? double(task_timer_.elapsed()) : 0.0;
+  double consumed = qBound(0.0, elapsed, qMax(0.0, running_task_time_));
+  completed_task_time_ += consumed;
+  running_task_time_ = qMax(0.0, running_task_time_ - consumed) + estimated_time_;
+  qInfo() << "BSLM~::executeList() - Dispatched new list, queued task time:" << running_task_time_;
   resetTimer();
   estimated_time_ = 0;
   list_manager_.resetBackup();
   return true;
+}
+
+/**
+ * @brief Wait until the board finished every list that was handed over to it.
+ */
+void BSLMotionController::waitListsIdle() {
+  int count = 0;
+  do {
+    QThread::msleep(50);
+    checkPauseResume();
+    if (!is_board_connected_) return;
+    getListStatus();
+    if (!lcs_paused_ && getRemainingTime() < 0) {
+      // In case bBusy1 and bBusy2 are not updated
+      qInfo() << "BSLM~::waitListsIdle() - Timeout waiting for list completion @" << getDebugTime();
+      break;
+    }
+    if (++count % 20 == 0) {
+      qInfo() << "BSLM~::waitListsIdle() - Waiting for lists..." << "paused" << lcs_paused_ << "list paused" << list_status.bPaused << "busy1" << list_status.bBusy1 << "busy2" << list_status.bBusy2;
+    }
+  } while (is_running_laser_ && (lcs_paused_ || list_status.bPaused || list_status.bBusy1 || list_status.bBusy2));
 }
 
 
@@ -979,7 +1064,8 @@ void BSLMotionController::resetTimer() {
 }
 void BSLMotionController::pauseTimer() {
   if (!task_timer_.isValid()) return;
-  int passed = task_timer_.elapsed();
+  // running_task_time_ is the work queued on the board, it can never be consumed twice
+  double passed = qBound(0.0, double(task_timer_.elapsed()), qMax(0.0, running_task_time_));
   task_timer_.invalidate();
   running_task_time_ -= passed;
   completed_task_time_ += passed;
