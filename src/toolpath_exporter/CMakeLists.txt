@@ -13,6 +13,7 @@ target_sources(Swiftray PRIVATE
   factories/uv.cpp
   factories/workspace.cpp
   generators/fcode-generator.cpp
+  generators/galvo-list.cpp
   macros/beamo2.cpp
   macros/prespray.cpp
   macros/uv1.cpp
