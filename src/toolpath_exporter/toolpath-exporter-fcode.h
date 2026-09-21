@@ -105,6 +105,11 @@ struct Config {
   // multiples of it and anything in between is unaddressable. Smaller than the
   // field, so neighbouring blocks can reach into each other.
   QSizeF galvo_block_size = QSizeF(100, 100);
+  // mm/min. How fast the gantry moves between galvo blocks. Slower than the
+  // ordinary travel speed: a galvo job parks, settles and waits for the sync
+  // at every block, so the move is a positioning step rather than a traverse.
+  // TODO: provisional, waiting on measurement.
+  float galvo_travel_speed = 3000;
   // Where to drop a picture of the tiling, for looking at what the splitter
   // decided. Empty, and nothing is drawn.
   QString galvo_debug_image;
