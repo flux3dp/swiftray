@@ -826,6 +826,37 @@ bool is_galvo_module(LayerModule module) {
   }
 }
 
+QSizeF get_galvo_block_size(double field_mm) {
+  // The displacement is a whole number of full steps, so it cannot be derived
+  // from the field alone -- each lens gets a measured pair. Current 6090 test
+  // platform, X full step 0.5 mm and Y full step 0.2032 mm:
+  //   110 mm lens -> X 200 steps = 100 mm,   Y 492 steps = 99.9744 mm
+  //    70 mm lens -> X 120 steps =  60 mm,   Y 295 steps = 59.944 mm
+  // The next EVT machine steps 0.25 / 0.16 mm, which lands on a round
+  // 100 x 100 and 60 x 60 for the same two lenses, so this table is per
+  // platform and will need revisiting.
+  // TODO: provisional, waiting on measurement.
+  struct Entry {
+    double field_mm;
+    QSizeF block;
+  };
+  static const Entry table[] = {
+      {110.0, QSizeF(100.0, 99.9744)},
+      {70.0, QSizeF(60.0, 59.944)},
+  };
+  for (const Entry& entry : table) {
+    if (qAbs(entry.field_mm - field_mm) < 0.5) {
+      return entry.block;
+    }
+  }
+  // An unmeasured lens still has to end up with a block that fits inside it,
+  // so fall back to the overlap the measured pairs leave.
+  const double fallback = qMax(field_mm - 10.0, 1.0);
+  qWarning() << "No measured galvo block displacement for a" << field_mm
+             << "mm field; falling back to" << fallback << "mm";
+  return QSizeF(fallback, fallback);
+}
+
 double calculate_wobble_k(double wobble_step, double wobble_diameter) {
   // Kept identical to GCodeGenerator::setWobble(), which is where the execution
   // end's own estimate comes from.
@@ -884,7 +915,11 @@ InwardRect get_boundary(HardwareType hw_type, LayerModule layer_module) {
       rect.bottom = 40;
     }
   } else if (hw_type == HardwareType::HEXA2) {
-    // TODO
+    // The galvo heads sit to the right of the main head, so they cost the
+    // gantry travel on that side whether they are cutting or parked. Mopa is
+    // the bulkier of the two.
+    // TODO: provisional, waiting on measurement.
+    rect.right = layer_module == LayerModule::GALVO_MOPA ? 100 : 50;
   }
   return rect;
 }
