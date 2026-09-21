@@ -20,7 +20,8 @@ cmake --build build --config RelWithDebInfo --parallel
 cmake --install build --prefix install
 cd ../..
 
-# Build application
+# Build application (the first configure downloads the prebuilt ONNX Runtime and the
+# MobileSAM models for src/segment via scripts/fetch-onnxruntime.sh; both are gitignored)
 mkdir build && cd build
 cmake ..
 make -j12
@@ -74,6 +75,7 @@ doxygen Doxygen
 | `periph/` | Serial port and motion controller peripherals |
 | `connection/` | Serial communication layer |
 | `server/` | WebSocket server for daemon mode |
+| `segment/` | MobileSAM ONNX "segment everything" service (`/segment` ws path), ported from the mini-sam prototype |
 | `windows/` | Qt windows, dialogs, and QML files (`windows/qml/`) |
 | `widgets/` | Custom Qt widgets and panels (layers, tools, properties) |
 | `settings/` | Machine and user settings persistence |

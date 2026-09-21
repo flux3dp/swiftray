@@ -110,6 +110,10 @@ void SwiftrayServer::processMessage(const QString& message) {
         handleParserAction(socket, id, action, params);
       } else if (path == "/ws/sr/system") {
         handleSystemAction(socket, id, action, params);
+      } else if (path == "/segment") {
+        // ONNX segmentation runs on its own thread so a convert never blocks it (and vice versa)
+        Q_EMIT sendTaskToSegmentWorker(socket, id, action, params);
+        QCoreApplication::processEvents();
       }
     } catch (std::exception& e) {
       qCritical() << "Error processing action" << action << e.what();
@@ -509,5 +513,14 @@ void SwiftrayServer::setupWorker() {
 
     worker->moveToThread(workerThread);
     workerThread->start();
+  }
+  if (segmentThread == nullptr) {
+    segmentThread = new QThread(this);
+    segment_worker = new SegmentWorker();
+    connect(this, &SwiftrayServer::sendTaskToSegmentWorker, segment_worker, &SegmentWorker::handleAction, Qt::QueuedConnection);
+    connect(segment_worker, &SegmentWorker::sendDataInMain, this, &SwiftrayServer::sendData, Qt::QueuedConnection);
+    connect(segment_worker, &SegmentWorker::sendCallbackInMain, this, &SwiftrayServer::sendCallback, Qt::QueuedConnection);
+    segment_worker->moveToThread(segmentThread);
+    segmentThread->start();
   }
 }

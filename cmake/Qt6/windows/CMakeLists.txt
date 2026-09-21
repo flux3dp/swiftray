@@ -43,6 +43,7 @@ find_package(Poppler REQUIRED)
 find_package(Boost REQUIRED)
 find_package(Cairo REQUIRED)
 find_package(GLib REQUIRED)
+include(${CMAKE_SOURCE_DIR}/cmake/onnxruntime.cmake)
 
 # ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
 set_property(DIRECTORY APPEND
@@ -119,9 +120,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   Qt::Qml
   third_party_libs
   ${WINSPARKLE_LIBRARIES}
+  ${ORT_LIBRARY}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
+  ${ORT_INCLUDE_DIR}
   ${WINSPARKLE_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
@@ -138,6 +141,15 @@ set(LCS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/liblcs/lib/x64/release"
 
 file(GLOB LCS_DLLS "${LCS_LIB_DIR}/*.dll")
 list(APPEND THIRD_PARTY_DLLS ${LCS_DLLS})
+list(APPEND THIRD_PARTY_DLLS ${ORT_RUNTIME_FILES})
+
+# ==== Segmentation models (next to the exe, see SegmentWorker::modelsDir) ====
+add_custom_command(
+  TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${SEGMENT_MODELS_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/models"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${SEGMENT_MODELS_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/deploy/models"
+)
+install(DIRECTORY "${SEGMENT_MODELS_DIR}/" DESTINATION ${CMAKE_INSTALL_PREFIX}/models)
 
 # ==== Clone third-party DLLs and executables ====
 if (THIRD_PARTY_DLLS)
