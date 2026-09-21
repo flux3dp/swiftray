@@ -97,9 +97,14 @@ struct Config {
   // Addressable field of the galvo, mm across. 110 mm means +/- 55 mm about the
   // lens centre (§19.4).
   double galvo_field_mm = 110;
-  // Side of one tile the work area is cut into when a layer does not fit the
-  // field. Defaults to the field itself (tiles just touch, no overlap).
-  double galvo_block_mm = 0;
+  // How far the gantry moves between galvo blocks, mm. Not a free number: it is
+  // a whole count of X and Y full steps, so the head can only ever stand on
+  // multiples of it and anything in between is unaddressable. Smaller than the
+  // field, so neighbouring blocks can reach into each other.
+  QSizeF galvo_block_size = QSizeF(100, 100);
+  // Where to drop a picture of the tiling, for looking at what the splitter
+  // decided. Empty, and nothing is drawn.
+  QString galvo_debug_image;
   // Baseline galvo parameters. Everything a list's prologue needs that the
   // layer itself does not carry; see §19.3 and §6.2.
   GalvoParams galvo_params;
@@ -218,11 +223,21 @@ class ToolpathExporterFcode : public QObject {
     // ones, so geometry lying along a seam belongs to the tile above or to the
     // left of it rather than being marked by both.
     QRectF clip;
+    // Where the gantry stands: a lattice point of the block displacement, which
+    // is not the centre of `region` once an edge cell has stretched.
+    QPointF park;
   };
+  // Where the head itself can stand, mm in the layer frame: the work area less
+  // the travel this module costs.
+  QRectF galvoHeadTravel() const;
   // Tiles `content` (mm, layer frame) into galvo blocks, in the order to run.
   QVector<GalvoBlock> planGalvoBlocks(const QRectF& content) const;
   // Fill the writer's prologue state from the current layer.
   void applyGalvoLayerParams();
+  // Draw what the splitter decided: where the head stands and how far the beam
+  // reaches from there. Opt-in via Config::galvo_debug_image.
+  void writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,
+                            const QRectF& content) const;
   void outputLayerPathFcode();
   void outputBitmapFcode();
   void convertPrintingLayer();

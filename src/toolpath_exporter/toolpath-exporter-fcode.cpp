@@ -12,6 +12,8 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QFontMetrics>
+#include <QPainter>
 #include <cmath>
 
 // How far a galvo tile's clip reaches past its own edge, mm. Only has to beat
@@ -198,8 +200,17 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // are deliberately absent: they never travel in the fcode (§19.6), the
     // player pushes them out of band from the machine profile.
     config_.galvo_field_mm = param["galvo_field"].toDouble(110);
-    config_.galvo_block_mm =
-        param["galvo_block"].toDouble(config_.galvo_field_mm);
+    // The block displacement follows the lens; a caller that has a better
+    // number for its own machine sends galvo_block and overrides this.
+    config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
+    config_.galvo_debug_image = param["galvo_debug_image"].toString();
+    if (param.contains("galvo_block")) {
+      const QJsonArray block = param["galvo_block"].toArray();
+      if (block.size() == 2) {
+        config_.galvo_block_size =
+            QSizeF(block[0].toDouble(), block[1].toDouble());
+      }
+    }
     GalvoParams& g = config_.galvo_params;
     g.jump_speed_mm_s = param["galvo_jump_speed"].toDouble(4000);
     g.laser_on_delay_us = param["galvo_laser_on_delay"].toDouble(-100);
@@ -257,14 +268,20 @@ InwardRect ToolpathExporterFcode::getClipRect(InwardRect current,
   InwardRect res = {current.top, current.right, current.bottom, current.left};
   if (support_info.MODULES) {
     InwardRect module_clip = get_boundary(hardware_, module);
-    module_clip.right = qMax(module_clip.right - offset.x(), 0.0);
-    module_clip.left = qMax(module_clip.left + offset.x(), 0.0);
+    // get_boundary is the strip of travel the module costs the gantry. A galvo
+    // then reaches half a field past wherever the gantry can put its lens, so
+    // the strip it actually costs the drawing is that much smaller -- often
+    // nothing at all, since half a field dwarfs the clearance.
+    const double reach =
+        is_galvo_machine_ && is_galvo_module(module) ? config_.galvo_field_mm / 2 : 0;
+    module_clip.right = qMax(module_clip.right - offset.x() - reach, 0.0);
+    module_clip.left = qMax(module_clip.left + offset.x() - reach, 0.0);
     if (rotary) {
       module_clip.top = 0;
       module_clip.bottom = 0;
     } else {
-      module_clip.top = qMax(module_clip.top + offset.y(), 0.0);
-      module_clip.bottom = qMax(module_clip.bottom - offset.y(), 0.0);
+      module_clip.top = qMax(module_clip.top + offset.y() - reach, 0.0);
+      module_clip.bottom = qMax(module_clip.bottom - offset.y() - reach, 0.0);
     }
     res.top = qMax(res.top, module_clip.top);
     res.right = qMax(res.right, module_clip.right);
@@ -921,48 +938,227 @@ void ToolpathExporterFcode::applyGalvoLayerParams() {
   g.wobble_k = calculate_wobble_k(wobble_step, wobble_diameter);
 }
 
+QRectF ToolpathExporterFcode::galvoHeadTravel() const {
+  // get_boundary's margins are what the module costs the gantry, so what is
+  // left of the work area is where the head itself can stand.
+  const InwardRect b = get_boundary(hardware_, layer_module_);
+  const double w = work_area_mm_.width() - b.left - b.right;
+  const double h = work_area_mm_.height() - b.top - b.bottom;
+  return QRectF(b.left, b.top, qMax(w, 0.0), qMax(h, 0.0));
+}
+
 QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlocks(
     const QRectF& content) const {
-  // Plain touching tiles over the content: no overlap and no seam blending.
-  // Splitting a vector drawing across the field is a backstop for the rare job
-  // that does not fit, not the way galvo work is meant to be done, so the seam
-  // only has to be geometrically exact -- which it is -- and not invisible.
+  // The gantry cannot stop wherever it likes. A block displacement is a whole
+  // count of X and Y full steps, so the head only ever stands on multiples of
+  // it measured from the machine origin -- and since the layer frame is the
+  // main head's own frame, those multiples are the lattice below.
+  //
+  // A head owns the displacement-sized cell centred on itself. The galvo
+  // reaches half a field either way, which is wider than the displacement, so
+  // neighbouring blocks overlap and the outermost ones can stretch past their
+  // cell to wherever the beam still reaches.
   QVector<GalvoBlock> blocks;
   if (content.isEmpty()) {
     return blocks;
   }
-  const double tile = config_.galvo_block_mm > 0 ? config_.galvo_block_mm
-                                                 : config_.galvo_field_mm;
-  if (content.width() <= tile && content.height() <= tile) {
-    // Fits the field: one head position, centred on the content, no clipping.
-    blocks.append({content, content});
+  const double sx = config_.galvo_block_size.width();
+  const double sy = config_.galvo_block_size.height();
+  const double half = config_.galvo_field_mm / 2;
+  if (sx > config_.galvo_field_mm || sy > config_.galvo_field_mm) {
+    // The block displacement is derived from the field for exactly this reason
+    // -- a smaller lens needs a smaller one -- so this means they disagree.
+    qWarning() << "[Export] galvo block displacement" << config_.galvo_block_size
+               << "is wider than the" << config_.galvo_field_mm
+               << "mm field; a head cannot reach its own cell";
+  }
+  if (sx <= 0 || sy <= 0) {
+    qWarning() << "[Export] galvo block displacement" << config_.galvo_block_size
+               << "is not usable; falling back to one block";
+    blocks.append({content, content, content.center()});
     return blocks;
   }
-  const int cols = qMax(1, int(std::ceil(content.width() / tile)));
-  const int rows = qMax(1, int(std::ceil(content.height() / tile)));
-  // Spread the tiles evenly so the outermost ones do not hang off the content.
-  const double step_x = content.width() / cols;
-  const double step_y = content.height() / rows;
-  blocks.reserve(cols * rows);
-  for (int row = 0; row < rows; row++) {
-    for (int col = 0; col < cols; col++) {
+  const QRectF travel = galvoHeadTravel();
+  // Lattice points the head can actually stand on.
+  const int i_lo = int(std::ceil(travel.left() / sx - kGalvoSeamEpsilonMm));
+  const int i_hi = int(std::floor(travel.right() / sx + kGalvoSeamEpsilonMm));
+  const int j_lo = int(std::ceil(travel.top() / sy - kGalvoSeamEpsilonMm));
+  const int j_hi = int(std::floor(travel.bottom() / sy + kGalvoSeamEpsilonMm));
+  if (i_lo > i_hi || j_lo > j_hi) {
+    qWarning() << "[Export] no galvo head position on the" << config_.galvo_block_size
+               << "lattice lies within the travel" << travel;
+    return blocks;
+  }
+  // Index of the cell a coordinate falls in, since cell k spans k*s +/- s/2.
+  auto cell_of = [](double v, double s, int lo, int hi) {
+    return qBound(lo, int(std::floor(v / s + 0.5)), hi);
+  };
+  // Whether to split at all is the field's call, not the block displacement's:
+  // a drawing that fits inside one field is done from a single head position,
+  // and that position is free. The lattice only governs how a split is laid
+  // out, so it does not apply here.
+  if (content.width() <= config_.galvo_field_mm &&
+      content.height() <= config_.galvo_field_mm) {
+    const QPointF park(
+        qBound(travel.left(), content.center().x(), travel.right()),
+        qBound(travel.top(), content.center().y(), travel.bottom()));
+    if (qAbs(content.left() - park.x()) <= half &&
+        qAbs(content.right() - park.x()) <= half &&
+        qAbs(content.top() - park.y()) <= half &&
+        qAbs(content.bottom() - park.y()) <= half) {
+      blocks.append({content, content, park});
+      return blocks;
+    }
+  }
+  const int i0 = cell_of(content.left(), sx, i_lo, i_hi);
+  const int i1 = cell_of(content.right(), sx, i_lo, i_hi);
+  const int j0 = cell_of(content.top(), sy, j_lo, j_hi);
+  const int j1 = cell_of(content.bottom(), sy, j_lo, j_hi);
+  blocks.reserve((i1 - i0 + 1) * (j1 - j0 + 1));
+  for (int j = j0; j <= j1; j++) {
+    for (int c = i0; c <= i1; c++) {
       // Serpentine across rows so the head does not fly back every row.
-      int c = (row % 2 == 0) ? col : (cols - 1 - col);
-      QRectF region(content.left() + c * step_x, content.top() + row * step_y,
-                    step_x, step_y);
+      const int i = (j - j0) % 2 == 0 ? c : (i0 + i1 - c);
+      const QPointF park(i * sx, j * sy);
+      // Once split, a block engraves its own cell and no more, even though the
+      // field reaches further. The head sits at the cell's centre.
+      const QRectF region(park.x() - sx / 2, park.y() - sy / 2, sx, sy);
       // Geometry lying along a seam goes to the tile above or to the left of
       // it. A tile therefore reaches just past its right and bottom edges, and
       // starts just inside its left and top ones unless it opens a row or
       // column. The slack is also what keeps rounding from dropping a point
       // that sits on a seam out of both neighbours.
       const QRectF clip =
-          region.adjusted(c > 0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
-                          row > 0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+          region.adjusted(i > i0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+                          j > j0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
                           kGalvoSeamEpsilonMm, kGalvoSeamEpsilonMm);
-      blocks.append({region, clip});
+      blocks.append({region, clip, park});
     }
   }
+  // The lattice is anchored at the machine origin and its cells span the whole
+  // work area, so this only bites when the travel keeps the head off the
+  // lattice points an edge of the drawing needs. Losing geometry silently would
+  // be far worse than saying so.
+  QRectF covered;
+  for (const GalvoBlock& block : blocks) {
+    covered = covered.united(block.region);
+  }
+  if (!covered.contains(content)) {
+    qWarning() << "[Export] galvo blocks cover" << covered << "but the layer needs"
+               << content << "-- geometry outside that will not be engraved";
+  }
   return blocks;
+}
+
+void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,
+                                                 const QRectF& content) const {
+  // Drawn in the design frame, the one the work area is in. The gantry's own
+  // coordinates are the main head's position in that frame, so a park is
+  // plotted as it stands -- but the lens is a module offset away from it, and
+  // everything the beam does hangs off the lens, not the head. With a big
+  // enough offset the head can even stand outside the area its own beam covers,
+  // which is exactly the thing worth being able to see.
+  constexpr double kPxPerMm = 2;
+  const double half = config_.galvo_field_mm / 2;
+  QImage image(qRound(work_area_mm_.width() * kPxPerMm),
+               qRound(work_area_mm_.height() * kPxPerMm),
+               QImage::Format_ARGB32);
+  image.fill(Qt::white);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.scale(kPxPerMm, kPxPerMm);
+  // Widths are in mm because the painter is scaled; one pixel is 1/kPxPerMm mm.
+  auto pen = [](QColor color, double width, Qt::PenStyle style = Qt::SolidLine) {
+    QPen p(color);
+    p.setWidthF(width);
+    p.setStyle(style);
+    return p;
+  };
+  const double hairline = 1 / kPxPerMm;
+
+  // Geometry reaches this function in the frame the factory emits, which is the
+  // design frame less the module offset; adding it back puts the beam where the
+  // drawing actually is.
+  const QPointF lens = layer_offset_;
+
+  painter.setBrush(Qt::NoBrush);
+  painter.setPen(pen(QColor(170, 170, 170), hairline));
+  // inset by half a line so the border is not half outside the image
+  painter.drawRect(QRectF(QPointF(0, 0), work_area_mm_)
+                       .adjusted(hairline / 2, hairline / 2, -hairline / 2,
+                                 -hairline / 2));
+  // where the head itself can stand -- a head position, so no offset
+  painter.setPen(pen(QColor(70, 110, 200), hairline, Qt::DashLine));
+  painter.drawRect(galvoHeadTravel());
+
+  for (const GalvoBlock& block : blocks) {
+    const QPointF centre = block.park + lens;
+    const QRectF reach(centre.x() - half, centre.y() - half, half * 2,
+                       half * 2);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 140, 0, 26));
+    painter.drawRect(reach);
+    painter.setBrush(Qt::NoBrush);
+    painter.setPen(pen(QColor(230, 120, 0, 160), hairline));
+    painter.drawRect(reach);
+    // the slice of that reach this head is actually responsible for
+    painter.setPen(pen(QColor(0, 140, 70), hairline * 2));
+    painter.drawRect(block.region.translated(lens));
+    // how far the lens sits from the head that carries it
+    painter.setPen(pen(QColor(150, 150, 150), hairline));
+    painter.drawLine(block.park, centre);
+    // and where that head stands to do it
+    painter.setPen(pen(QColor(200, 0, 0), hairline * 2));
+    painter.drawLine(QPointF(block.park.x() - 3, block.park.y()),
+                     QPointF(block.park.x() + 3, block.park.y()));
+    painter.drawLine(QPointF(block.park.x(), block.park.y() - 3),
+                     QPointF(block.park.x(), block.park.y() + 3));
+  }
+
+  painter.setPen(pen(QColor(0, 0, 0), hairline * 2));
+  painter.setBrush(Qt::NoBrush);
+  painter.drawRect(content.translated(lens));
+
+  painter.resetTransform();
+  painter.setFont(QFont(painter.font().family(), 11));
+  const QStringList legend = {  // NOLINT
+      QString("%1 blocks, field %2 mm, displacement %3 x %4 mm")
+          .arg(blocks.size())
+          .arg(config_.galvo_field_mm)
+          .arg(config_.galvo_block_size.width())
+          .arg(config_.galvo_block_size.height()),
+      QString("module offset %1, %2 mm: the lens is that far from the head")
+          .arg(lens.x())
+          .arg(lens.y()),
+      "red cross = gantry position   orange = galvo reach from its lens",
+      "green = block engraved   black = layer content   blue dash = head travel"};
+  // on its own backing, since it sits over the drawing
+  int width = 0;
+  const QFontMetrics metrics(painter.font());
+  for (const QString& line : legend) {
+    width = qMax(width, metrics.horizontalAdvance(line));
+  }
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(QColor(255, 255, 255, 225));
+  painter.drawRect(QRect(0, 0, width + 16, 15 * legend.size() + 10));
+  int y = 18;
+  for (const QString& line : legend) {
+    painter.setPen(QColor(60, 60, 60));
+    painter.drawText(8, y, line);
+    y += 15;
+  }
+  painter.end();
+
+  QString path = config_.galvo_debug_image;
+  const int dot = path.lastIndexOf('.');
+  const QString suffix = QString("-layer%1").arg(current_layer_id_);
+  path = dot > path.lastIndexOf('/') ? path.left(dot) + suffix + path.mid(dot)
+                                     : path + suffix + ".png";
+  if (image.save(path)) {
+    qInfo() << "[Export] galvo tiling image ->" << path;
+  } else {
+    qWarning() << "[Export] could not write the galvo tiling image to" << path;
+  }
 }
 
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
@@ -985,12 +1181,16 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   const QVector<GalvoBlock> blocks = planGalvoBlocks(content);
   qInfo() << "[Export] Galvo layer" << current_layer_->name() << "content"
           << content << "->" << blocks.size() << "block(s), field"
-          << config_.galvo_field_mm << "mm";
+          << config_.galvo_field_mm << "mm, displacement"
+          << config_.galvo_block_size;
+  if (!config_.galvo_debug_image.isEmpty()) {
+    writeGalvoDebugImage(blocks, content);
+  }
 
   convert_target_ = ConvertTarget::NON_BITMAP;
   for (int i = 0; i < blocks.size(); i++) {
     const GalvoBlock& block = blocks[i];
-    const QPointF centre = block.region.center();
+    const QPointF centre = block.park;
     // Park the gantry, then wait for the motion to finish before anything goes
     // to the galvo board. Without the sync the ok is only an ack, not a
     // completed move (§10 step 2). This runs on the block's first record, so a
