@@ -21,6 +21,7 @@
 #include <QJsonObject>
 #include <QProgressDialog>
 #include <QVector>
+#include <functional>
 
 enum class ConvertTarget {
   ALL,         // printer and uv
@@ -144,6 +145,8 @@ class ToolpathExporterFcode : public QObject {
   // Galvo only: bitmaps are expanded here into marks and dots, for the same
   // reason. Depth bitmaps are held apart because they run a pass per threshold.
   std::unique_ptr<LaserRasterGalvoFactory> laser_raster_factory_;
+  // Depth bitmaps run a pass per threshold and are held apart for it.
+  std::unique_ptr<LaserRasterGalvoFactory> laser_depth_factory_;
   QVector<const BitmapShape*> galvo_depth_bitmaps_;
   QVector<std::shared_ptr<Workspace>> workspaces_ = {};
   QVector<ShapePtr> laser_bitmaps_;
@@ -244,6 +247,13 @@ class ToolpathExporterFcode : public QObject {
   void applyGalvoLayerParams();
   // Turn the layer's bitmaps into greyscale images the raster factory can walk.
   void prepareGalvoBitmaps();
+  // Park at each block in turn and let `emit_content` write into it.
+  void emitGalvoBlocks(const QVector<GalvoBlock>& blocks,
+                       const std::function<void()>& emit_content,
+                       double progress_from,
+                       double progress_to);
+  // Depth engraving: a pass per threshold, stepping Z between them.
+  void convertGalvoDepthBitmaps();
   // Draw what the splitter decided: where the head stands and how far the beam
   // reaches from there. Opt-in via Config::galvo_debug_image.
   void writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,
