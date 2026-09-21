@@ -194,6 +194,13 @@ class GalvoListWriter {
 
   /** Move to `x_mm`, `y_mm` in machine mm. NaN keeps that axis. */
   void moveTo(double x_mm, double y_mm);
+  /**
+   * Bring the mirrors back to the middle of the field before the list closes,
+   * so the galvo is left centred rather than wherever the last mark happened to
+   * end. Not clipped -- the block owns its own centre by construction -- and
+   * does nothing if the block never wrote anything.
+   */
+  void returnToCentre();
 
   /** Estimated run time of the list being built, in ms (§14). */
   double list_time_ms() const { return list_time_ms_; }

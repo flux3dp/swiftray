@@ -912,11 +912,14 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     const QVector<GalvoBlock>& blocks,
     const std::function<void()>& emit_content,
     double progress_from,
-    double progress_to) {
+    double progress_to,
+    bool centre_when_done) {
   GalvoListWriter* galvo = proc.galvo();
   const double half_field = config_.galvo_field_mm / 2;
+  bool anything_emitted = false;
   for (int i = 0; i < blocks.size(); i++) {
     const GalvoBlock& block = blocks[i];
+    const bool last = i == blocks.size() - 1;
     const QPointF centre = block.park;
     // Park the gantry, then wait for the motion to finish before anything goes
     // to the galvo board. Without the sync the ok is only an ack, not a
@@ -933,6 +936,13 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     }
     emit_content();
     galvo->clear_clip_rect();
+    anything_emitted = anything_emitted || galvo->block_started();
+    // Only park the mirrors if there was work to park them after; a layer that
+    // engraves nothing should not open a list just to say so. The last block
+    // may itself be empty, and centring there is what opens it.
+    if (last && centre_when_done && anything_emitted) {
+      galvo->returnToCentre();
+    }
     galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
 
     // §15-S8: the galvo's own travel belongs in travel_dist too.
@@ -957,7 +967,9 @@ void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
   // power to modulate.
   const double span = 0.5 / galvo_depth_bitmaps_.size();
   double progress = 0.5;
+  int remaining = galvo_depth_bitmaps_.size();
   for (const BitmapShape* bmp : galvo_depth_bitmaps_) {
+    remaining--;
     QTransform transform =
         global_transform_ * laser_depth_factory_->get_transform();
     QRectF bbox_px = transform.mapRect(bmp->boundingRect());
@@ -1018,7 +1030,8 @@ void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
                                                      transposed);
           },
           progress + span * pass / passes,
-          progress + span * (pass + 1.0) / passes);
+          progress + span * (pass + 1.0) / passes,
+          remaining == 0 && pass == passes - 1);
       if (this->cancelled_) {
         return;
       }
@@ -1171,9 +1184,15 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
     }
   }
   const int i0 = cell_of(content.left(), sx, i_lo, i_hi);
-  const int i1 = cell_of(content.right(), sx, i_lo, i_hi);
   const int j0 = cell_of(content.top(), sy, j_lo, j_hi);
-  const int j1 = cell_of(content.bottom(), sy, j_lo, j_hi);
+  // The far edges are nudged inwards first. A cell keeps its right and bottom
+  // edges and gives up its left and top, so content ending exactly on a
+  // boundary belongs to the cell before it -- ask for the cell at the boundary
+  // itself and the answer is a column that owns nothing but that one line.
+  const int i1 = qMax(i0, cell_of(content.right() - kGalvoSeamEpsilonMm, sx,
+                                  i_lo, i_hi));
+  const int j1 = qMax(j0, cell_of(content.bottom() - kGalvoSeamEpsilonMm, sy,
+                                  j_lo, j_hi));
   blocks.reserve((i1 - i0 + 1) * (j1 - j0 + 1));
   for (int j = j0; j <= j1; j++) {
     for (int c = i0; c <= i1; c++) {
@@ -1376,7 +1395,8 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
           laser_raster_factory_->generate_task_code(layer_speed_);
         }
       },
-      0.05, galvo_depth_bitmaps_.isEmpty() ? 1.0 : 0.5);
+      0.05, galvo_depth_bitmaps_.isEmpty() ? 1.0 : 0.5,
+      galvo_depth_bitmaps_.isEmpty());
   if (this->cancelled_) {
     return;
   }
@@ -2025,10 +2045,16 @@ void ToolpathExporterFcode::homeZAxis() {
 }
 
 void ToolpathExporterFcode::backToHome() {
-  proc.moveto(NamedArgs()
-                  .rx(config_.home_pos.x())
-                  .ry(config_.home_pos.y())
-                  .set_is_travel());
+  NamedArgs args = NamedArgs()
+                       .rx(config_.home_pos.x())
+                       .ry(config_.home_pos.y())
+                       .set_is_travel();
+  if (is_galvo_machine_) {
+    // The gantry of a galvo machine positions rather than traverses, and this
+    // run home is no different -- the ordinary travel speed is too quick for it.
+    args.rf(config_.galvo_travel_speed);
+  }
+  proc.moveto(args);
 }
 
 void ToolpathExporterFcode::handleCancel() {

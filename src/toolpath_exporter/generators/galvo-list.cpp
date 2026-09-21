@@ -241,6 +241,17 @@ void GalvoListWriter::markTo(const QPointF& p) {
   block_distance_mm_ += dist;
 }
 
+void GalvoListWriter::returnToCentre() {
+  if (!in_block_ || (!list_open_ && !list_armed_)) {
+    return;
+  }
+  // jumpTo opens the list if it has only been armed, so a block that engraved
+  // nothing still parks the mirrors rather than leaving them where the previous
+  // block put them.
+  jumpTo(field_centre_);
+  cur_ = field_centre_;
+}
+
 void GalvoListWriter::moveTo(double x_mm, double y_mm) {
   if (!in_block_) {
     qWarning() << "GalvoListWriter::moveTo() outside a block";
