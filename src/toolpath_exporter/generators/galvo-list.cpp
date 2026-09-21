@@ -12,12 +12,15 @@ void GalvoListWriter::emit(GalvoOp op, std::initializer_list<double> params) {
 }
 
 void GalvoListWriter::beginBlock(const QPointF& field_centre_mm,
-                                 double half_field_mm) {
+                                 double half_field_mm,
+                                 std::function<void()> on_first_record) {
   if (in_block_) {
     qWarning() << "GalvoListWriter::beginBlock() while a block is open";
     endBlock();
   }
   in_block_ = true;
+  block_started_ = false;
+  on_block_start_ = std::move(on_first_record);
   field_centre_ = field_centre_mm;
   half_field_mm_ = half_field_mm;
   block_distance_mm_ = 0;
@@ -35,6 +38,19 @@ void GalvoListWriter::endBlock() {
   }
   endList();
   in_block_ = false;
+  on_block_start_ = nullptr;
+}
+
+void GalvoListWriter::ensureBlockStarted() {
+  if (block_started_) {
+    return;
+  }
+  block_started_ = true;
+  if (on_block_start_) {
+    running_block_start_ = true;
+    on_block_start_();
+    running_block_start_ = false;
+  }
 }
 
 void GalvoListWriter::beginList() {
@@ -52,6 +68,7 @@ void GalvoListWriter::ensureListOpen() {
   if (list_open_ || !list_armed_) {
     return;
   }
+  ensureBlockStarted();
   list_open_ = true;
   if (params_.emit_standby) {
     // First in the §19.3 order. Our bsl emits no set_standby_list of its own,

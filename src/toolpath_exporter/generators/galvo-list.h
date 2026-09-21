@@ -4,6 +4,7 @@
 #include <QRectF>
 #include <QtGlobal>
 #include <cstdint>
+#include <functional>
 #include <initializer_list>
 
 class FCodeGenerator;
@@ -143,10 +144,23 @@ class GalvoListWriter {
   /**
    * Open a galvo block centred on `field_centre_mm` (machine mm). Everything
    * emitted until endBlock() is expressed relative to that point.
+   *
+   * `on_first_record` runs immediately before the block's first record, so the
+   * caller can park the gantry there. Deferring it means a block that turns out
+   * to hold nothing costs no head travel at all -- which is most of them once a
+   * sparse drawing is tiled across a large bed.
    */
-  void beginBlock(const QPointF& field_centre_mm, double half_field_mm);
+  void beginBlock(const QPointF& field_centre_mm,
+                  double half_field_mm,
+                  std::function<void()> on_first_record = {});
   void endBlock();
-  bool in_block() const { return in_block_; }
+  /**
+   * False while `on_first_record` runs: the gantry commands it writes must reach
+   * the generator instead of being folded back into the galvo list.
+   */
+  bool in_block() const { return in_block_ && !running_block_start_; }
+  /** True once the block has actually written something. */
+  bool block_started() const { return block_started_; }
   bool list_open() const { return list_open_; }
 
   /**
@@ -203,6 +217,8 @@ class GalvoListWriter {
   void emit(GalvoOp op, std::initializer_list<double> params);
   /** Write the prologue if the armed list has not started yet. */
   void ensureListOpen();
+  /** Run the block-start callback, once per block. */
+  void ensureBlockStarted();
   /** Move the board to `p` (machine mm) with a jump, if it is not there. */
   void jumpTo(const QPointF& p);
   void markTo(const QPointF& p);
@@ -218,6 +234,9 @@ class GalvoListWriter {
   GalvoParams params_;
 
   bool in_block_ = false;
+  bool block_started_ = false;
+  bool running_block_start_ = false;
+  std::function<void()> on_block_start_;
   bool list_armed_ = false;
   bool list_open_ = false;
   QPointF field_centre_;

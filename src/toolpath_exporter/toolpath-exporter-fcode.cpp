@@ -979,11 +979,13 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
     const QPointF centre = block.center();
     // Park the gantry, then wait for the motion to finish before anything goes
     // to the galvo board. Without the sync the ok is only an ack, not a
-    // completed move (§10 step 2).
-    proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
-    proc.sync_grbl_motion(0);
-
-    galvo->beginBlock(centre, half_field);
+    // completed move (§10 step 2). This runs on the block's first record, so a
+    // tile the drawing never reaches costs no head travel -- most of them do
+    // not, once a sparse drawing is tiled across the bed.
+    galvo->beginBlock(centre, half_field, [this, centre]() {
+      proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
+      proc.sync_grbl_motion(0);
+    });
     galvo->beginList();
     if (blocks.size() > 1) {
       // The hair of slack keeps rounding from dropping a point that sits on the
