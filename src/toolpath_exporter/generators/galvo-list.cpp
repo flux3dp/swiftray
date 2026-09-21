@@ -6,6 +6,13 @@
 
 #include "fcode-generator.h"
 
+// Shortest segment worth emitting, mm. A tile's clip reaches a hair past its own
+// edge so a seam cannot fall out of both neighbours, which leaves a sliver of a
+// segment that merely starts on that seam; this drops it. 0.1 um is an order of
+// magnitude below what the galvo can resolve across a 110 mm field, so nothing
+// a drawing can legitimately ask for is lost.
+constexpr double kMinSegmentMm = 1e-4;
+
 void GalvoListWriter::emit(GalvoOp op, std::initializer_list<double> params) {
   gen_->write_galvo_command(uint16_t(op), params);
   list_command_count_++;
@@ -263,7 +270,7 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     list_time_ms_ += params_.dotting_time_us / 1000.0;
     return;
   }
-  if (QLineF(a, b).length() == 0) {
+  if (QLineF(a, b).length() <= kMinSegmentMm) {
     return;
   }
   jumpTo(a);

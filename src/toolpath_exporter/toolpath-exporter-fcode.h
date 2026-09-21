@@ -209,10 +209,18 @@ class ToolpathExporterFcode : public QObject {
   // Galvo counterpart of convertLaserLayer(): parks the head once per tile and
   // writes the geometry as galvo lists (§19).
   void convertGalvoLaserLayer();
-  // Tiles `content` (mm, layer frame) into galvo blocks. One entry per head
-  // position; the rect is the region that block is responsible for and the
-  // centre of that rect is where the head parks.
-  QVector<QRectF> planGalvoBlocks(const QRectF& content) const;
+  // One head position in the tiling.
+  struct GalvoBlock {
+    // The tile itself, mm in the layer frame. Its centre is where the head parks.
+    QRectF region;
+    // `region` with seam ownership settled: a tile keeps its right and bottom
+    // edges and, unless it starts a row or column, gives up its left and top
+    // ones, so geometry lying along a seam belongs to the tile above or to the
+    // left of it rather than being marked by both.
+    QRectF clip;
+  };
+  // Tiles `content` (mm, layer frame) into galvo blocks, in the order to run.
+  QVector<GalvoBlock> planGalvoBlocks(const QRectF& content) const;
   // Fill the writer's prologue state from the current layer.
   void applyGalvoLayerParams();
   void outputLayerPathFcode();
