@@ -203,6 +203,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // The block displacement follows the lens; a caller that has a better
     // number for its own machine sends galvo_block and overrides this.
     config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
+    config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
@@ -1321,6 +1322,11 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
 }
 
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
+  // The gantry only ever positions in a galvo job, so it runs at its own speed
+  // for the whole layer. Inside a block this has no effect anyway: those
+  // travels are galvo jumps and take SET_JUMP_SPEED instead.
+  proc.set_travel_speed(config_.galvo_travel_speed);
+
   prepareGalvoBitmaps();
   const bool has_hatch =
       laser_hatch_factory_ && !laser_hatch_factory_->is_empty();
@@ -1328,6 +1334,7 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
       laser_raster_factory_ && !laser_raster_factory_->is_empty();
   if (laser_path_factory_->get_size() == 0 && !has_hatch && !has_raster) {
     convertGalvoDepthBitmaps();
+    proc.set_travel_speed(config_.travel_speed);
     onProgressChanged(1.0, true);
     return;
   }
@@ -1359,7 +1366,6 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
         // Not outputLayerPathFcode(): its acceleration override writes gantry
         // commands, and a galvo block has to stay one unbroken run of byte 23
         // (§19.1). Acceleration is a gantry notion anyway.
-        proc.set_travel_speed(config_.path_travel_speed);
         laser_path_factory_->generate_task_code(layer_path_speed_);
         if (has_hatch) {
           // Same clip, so the hatch splits across blocks exactly as the
@@ -1369,7 +1375,6 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
         if (has_raster) {
           laser_raster_factory_->generate_task_code(layer_speed_);
         }
-        proc.set_travel_speed(config_.travel_speed);
       },
       0.05, galvo_depth_bitmaps_.isEmpty() ? 1.0 : 0.5);
   if (this->cancelled_) {
@@ -1377,6 +1382,7 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   }
   convertGalvoDepthBitmaps();
 
+  proc.set_travel_speed(config_.travel_speed);
   const int out_of_field = galvo->out_of_field_count() - out_of_field_before;
   if (out_of_field > 0) {
     qWarning() << "[Export] layer" << current_layer_->name() << "put"
