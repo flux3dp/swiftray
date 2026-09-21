@@ -257,17 +257,23 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     // the beam somewhere, which also collapses runs of travel into one jump.
     return;
   }
-  QPointF a = p0;
-  QPointF b = p1;
-  if (clip_rect_.isValid() && !clipSegment(a, b)) {
-    return;
-  }
   if (params_.dotting_time_us > 0) {
-    // Dot mode: opcode 5 replaces the old {23,3} + T modal pair (§4.5).
-    jumpTo(b);
+    // Dot mode: opcode 5 replaces the old {23,3} + T modal pair (§4.5). A dot
+    // has a position and no path, so the block either owns that position or it
+    // does not -- clipping the approach to it, as a segment would be, would
+    // slide the dot onto the block edge and burn it in the wrong place.
+    if (clip_rect_.isValid() && !clip_rect_.contains(p1)) {
+      return;
+    }
+    jumpTo(p1);
     ensureListOpen();
     emit(GalvoOp::LASER_ON, {params_.dotting_time_us});
     list_time_ms_ += params_.dotting_time_us / 1000.0;
+    return;
+  }
+  QPointF a = p0;
+  QPointF b = p1;
+  if (clip_rect_.isValid() && !clipSegment(a, b)) {
     return;
   }
   if (QLineF(a, b).length() <= kMinSegmentMm) {
