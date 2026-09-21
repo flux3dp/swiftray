@@ -1,0 +1,70 @@
+#pragma once
+
+#include <QImage>
+#include <QRectF>
+#include <QVector>
+
+#include "base-factory.h"
+
+/**
+ * Raster for a galvo head, cut as vectors.
+ *
+ * The fcode raster commands expand a bitmap on the machine, and those are not
+ * allowed down the galvo path until phase 2 (HX2_GALVO_PROTOCOL.md §19.5). So
+ * the bitmap is expanded here instead and leaves as ordinary galvo geometry,
+ * which is what the protocol has in mind: nothing raster-shaped reaches the
+ * board, only marks and dots.
+ *
+ * Two shapes come out of it, matching what the gcode path does for the same
+ * images:
+ *
+ *  - a run of dark pixels becomes one marked segment, for a binarised image or
+ *    one pass of a depth engraving;
+ *  - a dithered image becomes one dot per dark pixel, the tone carried by how
+ *    densely the dither placed them. The writer turns those into LASER_ON when
+ *    a dotting time is set, so nothing here needs to know about the opcode.
+ *
+ * Splitting is not this class's business: moves leave through `proc`, so the
+ * block lattice and cell clip apply to them without knowing they exist.
+ */
+class LaserRasterGalvoFactory : public BaseFactory {
+ public:
+  explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
+
+  /**
+   * `gray` is 8-bit greyscale already scaled to this factory's pixels, placed
+   * with its top-left at `bbox_px.topLeft()`. `dots` picks one dot per pixel
+   * over one segment per run.
+   */
+  void add_bitmap(const QImage& gray, const QRectF& bbox_px, bool dots);
+  bool is_empty() const { return bitmaps_.isEmpty(); }
+  int get_size() const { return bitmaps_.size(); }
+  void clear() { bitmaps_.clear(); }
+  /** Dwell for a dot, microseconds; the layer's dotting time. */
+  void set_dotting_time(double us) { dotting_time_us_ = us; }
+
+  /** Bounds in the frame the moves are emitted in (mm, offset applied). */
+  QRectF get_bounds_mm() const;
+
+  /**
+   * Emit one pass. A pixel darker than `threshold` is engraved, so 255 takes
+   * everything that is not pure white -- which is what a binarised or dithered
+   * image wants -- and a depth pass walks the threshold down instead.
+   */
+  void generate_task_code(float speed, int threshold = 255);
+
+ private:
+  struct Entry {
+    QImage gray;
+    QRectF bbox_px;
+    bool dots = false;
+  };
+
+  void emitRow(const Entry& entry, int row, int threshold, bool reversed,
+               float speed);
+  void setPwm(float pwm);
+
+  QVector<Entry> bitmaps_;
+  double dotting_time_us_ = 0;
+  float current_pwm_ = 0;
+};

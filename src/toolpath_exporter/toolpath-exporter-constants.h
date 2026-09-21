@@ -84,7 +84,9 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
     false, true, false, false, true, true
   }},
   {HardwareType::HEXA2, {
-    false, true, false, true
+    // REL_Z_MOVE: depth engraving steps Z between passes, and that step is
+    // relative (P184), the way the gcode path's moveZ() always has been.
+    true, true, false, true
   }},
 };
 

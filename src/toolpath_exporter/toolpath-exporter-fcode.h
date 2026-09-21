@@ -8,6 +8,7 @@
 #include "toolpath-exporter-constants.h"
 #include "toolpath_exporter/factories/base-factory.h"
 #include "toolpath_exporter/factories/laser-path-filled.h"
+#include "toolpath_exporter/factories/laser-raster-galvo.h"
 #include "toolpath_exporter/factories/laser-path.h"
 #include "toolpath_exporter/generators/fcode-generator.h"
 #include "toolpath_exporter/macros/base-macros.h"
@@ -140,6 +141,10 @@ class ToolpathExporterFcode : public QObject {
   std::unique_ptr<LaserPathFactory> laser_path_factory_;
   // Galvo only: filled paths become vector hatch instead of raster (§19.5).
   std::unique_ptr<LaserPathFilledFactory> laser_hatch_factory_;
+  // Galvo only: bitmaps are expanded here into marks and dots, for the same
+  // reason. Depth bitmaps are held apart because they run a pass per threshold.
+  std::unique_ptr<LaserRasterGalvoFactory> laser_raster_factory_;
+  QVector<const BitmapShape*> galvo_depth_bitmaps_;
   QVector<std::shared_ptr<Workspace>> workspaces_ = {};
   QVector<ShapePtr> laser_bitmaps_;
 
@@ -237,6 +242,8 @@ class ToolpathExporterFcode : public QObject {
   QVector<GalvoBlock> planGalvoBlocks(const QRectF& content) const;
   // Fill the writer's prologue state from the current layer.
   void applyGalvoLayerParams();
+  // Turn the layer's bitmaps into greyscale images the raster factory can walk.
+  void prepareGalvoBitmaps();
   // Draw what the splitter decided: where the head stands and how far the beam
   // reaches from there. Opt-in via Config::galvo_debug_image.
   void writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,

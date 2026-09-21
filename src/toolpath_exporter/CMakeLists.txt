@@ -8,6 +8,7 @@ target_sources(Swiftray PRIVATE
   factories/factory-utils.cpp
   factories/laser-path-filled.cpp
   factories/laser-path.cpp
+  factories/laser-raster-galvo.cpp
   factories/laser.cpp
   factories/printer-4c.cpp
   factories/printer.cpp

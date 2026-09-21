@@ -827,6 +827,9 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   laser_path_factory_->set_loop_compensation(config_.loop_compensation);
   laser_path_factory_->set_use_ga(config_.use_ga_reorder);
   if (layer_is_galvo_) {
+    laser_raster_factory_ = std::make_unique<LaserRasterGalvoFactory>(kwargs);
+    laser_raster_factory_->set_dotting_time(current_layer_->dottingTime());
+    galvo_depth_bitmaps_.clear();
     laser_hatch_factory_ = std::make_unique<LaserPathFilledFactory>(kwargs);
     laser_hatch_factory_->set_fill_params(
         {current_layer_->fillInterval(), current_layer_->fillAngle(),
@@ -834,6 +837,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
          current_layer_->fillHatch() ? 2 : 1});
   } else {
     laser_hatch_factory_.reset();
+    laser_raster_factory_.reset();
   }
   kwargs.pixel_per_mm_x = dpmm_x;
   factory_ = std::make_unique<LaserBitmapFactory>(kwargs);
@@ -899,6 +903,24 @@ void ToolpathExporterFcode::convertLaserLayer() {
     // When converting group, reverse order of children and ignore paths
     convertShape(shape);
   }
+}
+
+void ToolpathExporterFcode::prepareGalvoBitmaps() {
+  if (!laser_raster_factory_ || laser_bitmaps_.isEmpty()) {
+    return;
+  }
+  // The same second pass the gantry path runs, except convertBitmap hands the
+  // images to the raster factory instead of painting them into a workspace.
+  const ConvertTarget previous = convert_target_;
+  convert_target_ = ConvertTarget::BITMAP_ONLY;
+  setTransform();
+  for (auto& shape : laser_bitmaps_) {
+    convertShape(shape);
+    if (this->cancelled_) {
+      break;
+    }
+  }
+  convert_target_ = previous;
 }
 
 void ToolpathExporterFcode::applyGalvoLayerParams() {
@@ -1171,16 +1193,17 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
 }
 
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
-  // Bitmaps have no galvo path in phase 1 (§19.5): they stay out of the list
-  // stream entirely rather than being emitted wrongly. Filled paths do have
-  // one -- they are cut as hatch rather than rasterised -- see convertPath().
-  if (!laser_bitmaps_.isEmpty()) {
-    qWarning() << "[Export] Galvo layer" << current_layer_->name()
-               << "has bitmaps; skipped (raster over the galvo is phase 2)";
+  prepareGalvoBitmaps();
+  if (!galvo_depth_bitmaps_.isEmpty()) {
+    qWarning() << "[Export] Galvo layer" << current_layer_->name() << "has"
+               << galvo_depth_bitmaps_.size()
+               << "depth bitmap(s); skipped (not implemented yet)";
   }
   const bool has_hatch =
       laser_hatch_factory_ && !laser_hatch_factory_->is_empty();
-  if (laser_path_factory_->get_size() == 0 && !has_hatch) {
+  const bool has_raster =
+      laser_raster_factory_ && !laser_raster_factory_->is_empty();
+  if (laser_path_factory_->get_size() == 0 && !has_hatch && !has_raster) {
     onProgressChanged(1.0, true);
     return;
   }
@@ -1192,6 +1215,9 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   QRectF content = laser_path_factory_->get_bounds_mm();
   if (has_hatch) {
     content = content.united(laser_hatch_factory_->get_bounds_mm());
+  }
+  if (has_raster) {
+    content = content.united(laser_raster_factory_->get_bounds_mm());
   }
   const QVector<GalvoBlock> blocks = planGalvoBlocks(content);
   qInfo() << "[Export] Galvo layer" << current_layer_->name() << "content"
@@ -1227,6 +1253,9 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
     if (has_hatch) {
       // Same clip, so the hatch splits across blocks exactly as the outlines do.
       laser_hatch_factory_->generate_task_code(layer_speed_);
+    }
+    if (has_raster) {
+      laser_raster_factory_->generate_task_code(layer_speed_);
     }
     proc.set_travel_speed(config_.travel_speed);
     galvo->clear_clip_rect();
@@ -1693,6 +1722,40 @@ bool ToolpathExporterFcode::convertGroup(const GroupShape* group) {
 }
 
 void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
+  if (layer_is_galvo_ && convert_target_ == ConvertTarget::BITMAP_ONLY) {
+    // A galvo expands its own raster (§19.5), so the image is prepared here and
+    // walked later, once per block -- never painted into a workspace.
+    if (bmp->depthPass() > 0) {
+      // The layer owns these for the whole export, as the gcode path assumes too.
+      galvo_depth_bitmaps_.append(bmp);
+      return;
+    }
+    QTransform transform = global_transform_ * laser_raster_factory_->get_transform();
+    QRectF bbox_px = transform.mapRect(bmp->boundingRect());
+    transform = bmp->transform() * transform;
+    QImage image = bmp->sourceImage()
+                       .transformed(transform, bmp->gradient()
+                                                   ? Qt::SmoothTransformation
+                                                   : Qt::FastTransformation)
+                       .convertToFormat(QImage::Format_ARGB32);
+    bbox_px.setWidth(image.width());
+    bbox_px.setHeight(image.height());
+    clearTransparent(&image);
+    if (bmp->gradient()) {
+      // Tone becomes dot density, the way the gcode path does it: dither to one
+      // bit, then one dot per surviving pixel.
+      texturizeLaserImage(&image, false);
+      image = image.convertToFormat(QImage::Format_Mono,
+                                    Qt::MonoOnly | Qt::DiffuseAlphaDither)
+                  .convertToFormat(QImage::Format_Grayscale8);
+    } else {
+      image = imageBinarize(&image, bmp->thrsh_brightness());
+      dilateBinaryBitmap(&image);
+      texturizeLaserImage(&image, true);
+    }
+    laser_raster_factory_->add_bitmap(image, bbox_px, bmp->gradient());
+    return;
+  }
   QTransform transform = global_transform_ * factory_->get_transform();
   QRectF new_dirty_area = transform.mapRect(bmp->boundingRect());
   transform = bmp->transform() * transform;
@@ -1863,6 +1926,8 @@ void ToolpathExporterFcode::handleCancel() {
     laser_path_factory_->handleCancel();
   if (laser_hatch_factory_)
     laser_hatch_factory_->handleCancel();
+  if (laser_raster_factory_)
+    laser_raster_factory_->handleCancel();
 }
 
 /**
