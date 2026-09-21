@@ -253,10 +253,13 @@ class ToolpathExporterFcode : public QObject {
   // Turn the layer's bitmaps into greyscale images the raster factory can walk.
   void prepareGalvoBitmaps();
   // Park at each block in turn and let `emit_content` write into it.
+  // `centre_when_done` brings the mirrors home at the end of the last block,
+  // for when this is the end of the galvo's work.
   void emitGalvoBlocks(const QVector<GalvoBlock>& blocks,
                        const std::function<void()>& emit_content,
                        double progress_from,
-                       double progress_to);
+                       double progress_to,
+                       bool centre_when_done = false);
   // Depth engraving: a pass per threshold, stepping Z between them.
   void convertGalvoDepthBitmaps();
   // Draw what the splitter decided: where the head stands and how far the beam
