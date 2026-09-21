@@ -14,6 +14,10 @@
 #include <QElapsedTimer>
 #include <cmath>
 
+// How far a galvo tile's clip reaches past its own edge, mm. Only has to beat
+// floating-point noise on a seam; GalvoListWriter drops anything this short.
+constexpr double kGalvoSeamEpsilonMm = 1e-6;
+
 QString convertUnicode(const QString s) {
   QString result;
   for (int i = 0; i < s.size(); i++) {
@@ -917,21 +921,21 @@ void ToolpathExporterFcode::applyGalvoLayerParams() {
   g.wobble_k = calculate_wobble_k(wobble_step, wobble_diameter);
 }
 
-QVector<QRectF> ToolpathExporterFcode::planGalvoBlocks(
+QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlocks(
     const QRectF& content) const {
-  // TODO: replace with the laser-phy-simulator's tiling. This lays plain
-  // touching tiles over the content -- no overlap, no seam blending -- which is
-  // enough to get a correct file out of a job wider than the field, but the
-  // seams will show.
-  QVector<QRectF> blocks;
+  // Plain touching tiles over the content: no overlap and no seam blending.
+  // Splitting a vector drawing across the field is a backstop for the rare job
+  // that does not fit, not the way galvo work is meant to be done, so the seam
+  // only has to be geometrically exact -- which it is -- and not invisible.
+  QVector<GalvoBlock> blocks;
   if (content.isEmpty()) {
     return blocks;
   }
   const double tile = config_.galvo_block_mm > 0 ? config_.galvo_block_mm
                                                  : config_.galvo_field_mm;
   if (content.width() <= tile && content.height() <= tile) {
-    // Fits the field: one head position, centred on the content.
-    blocks.append(content);
+    // Fits the field: one head position, centred on the content, no clipping.
+    blocks.append({content, content});
     return blocks;
   }
   const int cols = qMax(1, int(std::ceil(content.width() / tile)));
@@ -944,8 +948,18 @@ QVector<QRectF> ToolpathExporterFcode::planGalvoBlocks(
     for (int col = 0; col < cols; col++) {
       // Serpentine across rows so the head does not fly back every row.
       int c = (row % 2 == 0) ? col : (cols - 1 - col);
-      blocks.append(QRectF(content.left() + c * step_x,
-                           content.top() + row * step_y, step_x, step_y));
+      QRectF region(content.left() + c * step_x, content.top() + row * step_y,
+                    step_x, step_y);
+      // Geometry lying along a seam goes to the tile above or to the left of
+      // it. A tile therefore reaches just past its right and bottom edges, and
+      // starts just inside its left and top ones unless it opens a row or
+      // column. The slack is also what keeps rounding from dropping a point
+      // that sits on a seam out of both neighbours.
+      const QRectF clip =
+          region.adjusted(c > 0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+                          row > 0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+                          kGalvoSeamEpsilonMm, kGalvoSeamEpsilonMm);
+      blocks.append({region, clip});
     }
   }
   return blocks;
@@ -968,15 +982,15 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   applyGalvoLayerParams();
   const double half_field = config_.galvo_field_mm / 2;
   const QRectF content = laser_path_factory_->get_bounds_mm();
-  const QVector<QRectF> blocks = planGalvoBlocks(content);
+  const QVector<GalvoBlock> blocks = planGalvoBlocks(content);
   qInfo() << "[Export] Galvo layer" << current_layer_->name() << "content"
           << content << "->" << blocks.size() << "block(s), field"
           << config_.galvo_field_mm << "mm";
 
   convert_target_ = ConvertTarget::NON_BITMAP;
   for (int i = 0; i < blocks.size(); i++) {
-    const QRectF& block = blocks[i];
-    const QPointF centre = block.center();
+    const GalvoBlock& block = blocks[i];
+    const QPointF centre = block.region.center();
     // Park the gantry, then wait for the motion to finish before anything goes
     // to the galvo board. Without the sync the ok is only an ack, not a
     // completed move (§10 step 2). This runs on the block's first record, so a
@@ -988,11 +1002,7 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
     });
     galvo->beginList();
     if (blocks.size() > 1) {
-      // The hair of slack keeps rounding from dropping a point that sits on the
-      // seam. A segment lying exactly along a seam is emitted by both
-      // neighbours and so marked twice -- one more reason the simulator's
-      // overlap handling needs to replace this.
-      galvo->set_clip_rect(block.adjusted(-1e-6, -1e-6, 1e-6, 1e-6));
+      galvo->set_clip_rect(block.clip);
     }
     // Not outputLayerPathFcode(): its acceleration override writes gantry
     // commands, and a galvo block has to stay one unbroken run of byte 23
