@@ -569,14 +569,16 @@ float FCodeGeneratorV2::get_time_cost() {
   return time_cost;
 }
 
+// The per-task totals are not accumulators: start_task_script_block() snapshots
+// the running total into them and end_task_script_block() turns that into the
+// block's own delta. Adding here would be subtracted back out at that point, so
+// the running total is all these touch -- the delta picks the galvo up with it.
 void FCodeGeneratorV2::add_time_cost(double seconds) {
   time_cost += seconds;
-  current_task_time_cost += seconds;
 }
 
 void FCodeGeneratorV2::add_travel_dist(double mm) {
   traveled += mm;
-  current_task_traveled += mm;
 }
 
 void FCodeGeneratorV2::write_string(const char* s,
