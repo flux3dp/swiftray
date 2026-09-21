@@ -7,6 +7,7 @@
 #include "toolpath-utils.h"
 #include "toolpath-exporter-constants.h"
 #include "toolpath_exporter/factories/base-factory.h"
+#include "toolpath_exporter/factories/laser-path-filled.h"
 #include "toolpath_exporter/factories/laser-path.h"
 #include "toolpath_exporter/generators/fcode-generator.h"
 #include "toolpath_exporter/macros/base-macros.h"
@@ -137,6 +138,8 @@ class ToolpathExporterFcode : public QObject {
   std::unique_ptr<BaseBitmapFactory> factory_;
   std::unique_ptr<BaseBitmapFactory> laser_filled_factory_;  // Use another factory to keep filled path data
   std::unique_ptr<LaserPathFactory> laser_path_factory_;
+  // Galvo only: filled paths become vector hatch instead of raster (§19.5).
+  std::unique_ptr<LaserPathFilledFactory> laser_hatch_factory_;
   QVector<std::shared_ptr<Workspace>> workspaces_ = {};
   QVector<ShapePtr> laser_bitmaps_;
 

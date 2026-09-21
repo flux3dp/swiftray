@@ -826,6 +826,15 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   laser_path_factory_ = std::make_unique<LaserPathFactory>(kwargs);
   laser_path_factory_->set_loop_compensation(config_.loop_compensation);
   laser_path_factory_->set_use_ga(config_.use_ga_reorder);
+  if (layer_is_galvo_) {
+    laser_hatch_factory_ = std::make_unique<LaserPathFilledFactory>(kwargs);
+    laser_hatch_factory_->set_fill_params(
+        {current_layer_->fillInterval(), current_layer_->fillAngle(),
+         current_layer_->fillBidirectional(),
+         current_layer_->fillHatch() ? 2 : 1});
+  } else {
+    laser_hatch_factory_.reset();
+  }
   kwargs.pixel_per_mm_x = dpmm_x;
   factory_ = std::make_unique<LaserBitmapFactory>(kwargs);
   laser_filled_factory_ = std::make_unique<LaserBitmapFactory>(kwargs);
@@ -1162,13 +1171,16 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
 }
 
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
-  // Raster has no galvo path in phase 1 (§19.5): bitmaps and rasterised fills
-  // stay out of the list stream entirely rather than being emitted wrongly.
-  if (!laser_bitmaps_.isEmpty() || laser_filled_factory_->is_workspace_valid()) {
+  // Bitmaps have no galvo path in phase 1 (§19.5): they stay out of the list
+  // stream entirely rather than being emitted wrongly. Filled paths do have
+  // one -- they are cut as hatch rather than rasterised -- see convertPath().
+  if (!laser_bitmaps_.isEmpty()) {
     qWarning() << "[Export] Galvo layer" << current_layer_->name()
-               << "has raster content; skipped (raster over the galvo is phase 2)";
+               << "has bitmaps; skipped (raster over the galvo is phase 2)";
   }
-  if (laser_path_factory_->get_size() == 0) {
+  const bool has_hatch =
+      laser_hatch_factory_ && !laser_hatch_factory_->is_empty();
+  if (laser_path_factory_->get_size() == 0 && !has_hatch) {
     onProgressChanged(1.0, true);
     return;
   }
@@ -1177,7 +1189,10 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   const int out_of_field_before = galvo->out_of_field_count();
   applyGalvoLayerParams();
   const double half_field = config_.galvo_field_mm / 2;
-  const QRectF content = laser_path_factory_->get_bounds_mm();
+  QRectF content = laser_path_factory_->get_bounds_mm();
+  if (has_hatch) {
+    content = content.united(laser_hatch_factory_->get_bounds_mm());
+  }
   const QVector<GalvoBlock> blocks = planGalvoBlocks(content);
   qInfo() << "[Export] Galvo layer" << current_layer_->name() << "content"
           << content << "->" << blocks.size() << "block(s), field"
@@ -1209,6 +1224,10 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
     // (§19.1). Acceleration is a gantry notion anyway.
     proc.set_travel_speed(config_.path_travel_speed);
     laser_path_factory_->generate_task_code(layer_path_speed_);
+    if (has_hatch) {
+      // Same clip, so the hatch splits across blocks exactly as the outlines do.
+      laser_hatch_factory_->generate_task_code(layer_speed_);
+    }
     proc.set_travel_speed(config_.travel_speed);
     galvo->clear_clip_rect();
     galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
@@ -1737,6 +1756,14 @@ void ToolpathExporterFcode::convertPath(const PathShape* path) {
        current_layer_->type() == Layer::Type::Fill ||
        current_layer_->type() == Layer::Type::FillLine);
   if (has_filled) {
+    if (layer_is_galvo_) {
+      // A galvo cannot engrave the bitmap the other machines fill into, so the
+      // outline is kept and cut as hatch lines instead (§19.5).
+      laser_hatch_factory_->add_filled_path(
+          (path->transform() * global_transform_).map(path->path()),
+          path->path().fillRule() == Qt::OddEvenFill);
+      return;
+    }
     QPainterPath transformed_path = (path->transform() * global_transform_ *
                                      laser_filled_factory_->get_transform())
                                         .map(path->path());
@@ -1834,6 +1861,8 @@ void ToolpathExporterFcode::handleCancel() {
     laser_filled_factory_->handleCancel();
   if (laser_path_factory_)
     laser_path_factory_->handleCancel();
+  if (laser_hatch_factory_)
+    laser_hatch_factory_->handleCancel();
 }
 
 /**
