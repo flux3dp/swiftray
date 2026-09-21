@@ -829,6 +829,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   if (layer_is_galvo_) {
     laser_raster_factory_ = std::make_unique<LaserRasterGalvoFactory>(kwargs);
     laser_raster_factory_->set_dotting_time(current_layer_->dottingTime());
+    laser_depth_factory_ = std::make_unique<LaserRasterGalvoFactory>(kwargs);
     galvo_depth_bitmaps_.clear();
     laser_hatch_factory_ = std::make_unique<LaserPathFilledFactory>(kwargs);
     laser_hatch_factory_->set_fill_params(
@@ -838,6 +839,7 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   } else {
     laser_hatch_factory_.reset();
     laser_raster_factory_.reset();
+    laser_depth_factory_.reset();
   }
   kwargs.pixel_per_mm_x = dpmm_x;
   factory_ = std::make_unique<LaserBitmapFactory>(kwargs);
@@ -902,6 +904,132 @@ void ToolpathExporterFcode::convertLaserLayer() {
     // Note: Bitmap list is already reversed for first-depth shapes
     // When converting group, reverse order of children and ignore paths
     convertShape(shape);
+  }
+}
+
+void ToolpathExporterFcode::emitGalvoBlocks(
+    const QVector<GalvoBlock>& blocks,
+    const std::function<void()>& emit_content,
+    double progress_from,
+    double progress_to) {
+  GalvoListWriter* galvo = proc.galvo();
+  const double half_field = config_.galvo_field_mm / 2;
+  for (int i = 0; i < blocks.size(); i++) {
+    const GalvoBlock& block = blocks[i];
+    const QPointF centre = block.park;
+    // Park the gantry, then wait for the motion to finish before anything goes
+    // to the galvo board. Without the sync the ok is only an ack, not a
+    // completed move (§10 step 2). This runs on the block's first record, so a
+    // tile the drawing never reaches costs no head travel -- most of them do
+    // not, once a sparse drawing is tiled across the bed.
+    galvo->beginBlock(centre, half_field, [this, centre]() {
+      proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
+      proc.sync_grbl_motion(0);
+    });
+    galvo->beginList();
+    if (blocks.size() > 1) {
+      galvo->set_clip_rect(block.clip);
+    }
+    emit_content();
+    galvo->clear_clip_rect();
+    galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
+
+    // §15-S8: the galvo's own travel belongs in travel_dist too.
+    proc.add_travel_dist(galvo->block_distance_mm());
+    if (this->cancelled_) {
+      return;
+    }
+    onProgressChanged(progress_from + (progress_to - progress_from) *
+                                          (i + 1.0) / blocks.size(),
+                      true);
+  }
+}
+
+void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
+  if (galvo_depth_bitmaps_.isEmpty() || !laser_depth_factory_) {
+    return;
+  }
+  // Depth is cut as a stack of binary passes, each one taking a little more of
+  // the image than the last, with the head dropping between them -- the same
+  // shape as ToolpathExporter::rasterBitmapDepthMode(). It is the gcode
+  // treatment rather than the fcode PWM one because a galvo has no per-pixel
+  // power to modulate.
+  const double span = 0.5 / galvo_depth_bitmaps_.size();
+  double progress = 0.5;
+  for (const BitmapShape* bmp : galvo_depth_bitmaps_) {
+    QTransform transform =
+        global_transform_ * laser_depth_factory_->get_transform();
+    QRectF bbox_px = transform.mapRect(bmp->boundingRect());
+    transform = bmp->transform() * transform;
+    QImage image = bmp->sourceImage()
+                       .transformed(transform, Qt::SmoothTransformation)
+                       .convertToFormat(QImage::Format_ARGB32);
+    bbox_px.setWidth(image.width());
+    bbox_px.setHeight(image.height());
+    // The pixel range decides the thresholds, and it is taken before the
+    // transparency is flattened: a transparent corner is not part of the
+    // picture and must not drag the lightest value to white. Done here rather
+    // than through findMinMaxPixel(), which reads QRgb and so insists on an
+    // ARGB32 image that is already grey.
+    int darkest = 256;
+    int lightest = 0;
+    for (int y = 0; y < image.height(); y++) {
+      const QRgb* row = reinterpret_cast<const QRgb*>(image.constScanLine(y));
+      for (int x = 0; x < image.width(); x++) {
+        if (qAlpha(row[x]) == 0) {
+          continue;
+        }
+        const int grey = qGray(row[x]);
+        darkest = qMin(darkest, grey);
+        lightest = qMax(lightest, grey);
+      }
+    }
+    if (darkest > 255) {
+      continue;  // nothing but transparency
+    }
+    clearTransparent(&image);
+    image = image.convertToFormat(QImage::Format_Grayscale8);
+    const int passes = qMax(bmp->depthPass(), 1);
+    const double z_step = bmp->depthZStep();
+    const double threshold_step = double(lightest - darkest) / passes;
+    qInfo() << "[Export] Galvo depth bitmap: pixels" << darkest << ".."
+            << lightest << "over" << passes << "pass(es), z step" << z_step;
+
+    laser_depth_factory_->clear();
+    laser_depth_factory_->add_bitmap(image, bbox_px, false);
+    const QVector<GalvoBlock> blocks =
+        planGalvoBlocks(laser_depth_factory_->get_bounds_mm());
+
+    bool transposed = false;
+    for (int pass = 0; pass < passes; pass++) {
+      if (pass != 0 && z_step != 0) {
+        // Between passes, and so outside any block: Z never reaches the galvo
+        // board (§4.4), and this is the only place the gantry can take it.
+        proc.sync_motion_type2(184, -z_step);
+      }
+      const int threshold =
+          passes <= 1 ? (lightest + darkest) / 2
+                      : int(lightest - pass * threshold_step);
+      emitGalvoBlocks(
+          blocks,
+          [&]() {
+            laser_depth_factory_->generate_task_code(layer_speed_, threshold,
+                                                     transposed);
+          },
+          progress + span * pass / passes,
+          progress + span * (pass + 1.0) / passes);
+      if (this->cancelled_) {
+        return;
+      }
+      // Cross the passes over each other, as the gcode depth pass does.
+      transposed = !transposed;
+    }
+    if (passes > 1 && z_step != 0) {
+      // Put the head back where the layer left it, so a second depth bitmap
+      // does not start out of focus.
+      proc.sync_motion_type2(184, z_step * (passes - 1));
+    }
+    progress += span;
   }
 }
 
@@ -1194,16 +1322,12 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
 
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
   prepareGalvoBitmaps();
-  if (!galvo_depth_bitmaps_.isEmpty()) {
-    qWarning() << "[Export] Galvo layer" << current_layer_->name() << "has"
-               << galvo_depth_bitmaps_.size()
-               << "depth bitmap(s); skipped (not implemented yet)";
-  }
   const bool has_hatch =
       laser_hatch_factory_ && !laser_hatch_factory_->is_empty();
   const bool has_raster =
       laser_raster_factory_ && !laser_raster_factory_->is_empty();
   if (laser_path_factory_->get_size() == 0 && !has_hatch && !has_raster) {
+    convertGalvoDepthBitmaps();
     onProgressChanged(1.0, true);
     return;
   }
@@ -1229,45 +1353,30 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   }
 
   convert_target_ = ConvertTarget::NON_BITMAP;
-  for (int i = 0; i < blocks.size(); i++) {
-    const GalvoBlock& block = blocks[i];
-    const QPointF centre = block.park;
-    // Park the gantry, then wait for the motion to finish before anything goes
-    // to the galvo board. Without the sync the ok is only an ack, not a
-    // completed move (§10 step 2). This runs on the block's first record, so a
-    // tile the drawing never reaches costs no head travel -- most of them do
-    // not, once a sparse drawing is tiled across the bed.
-    galvo->beginBlock(centre, half_field, [this, centre]() {
-      proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
-      proc.sync_grbl_motion(0);
-    });
-    galvo->beginList();
-    if (blocks.size() > 1) {
-      galvo->set_clip_rect(block.clip);
-    }
-    // Not outputLayerPathFcode(): its acceleration override writes gantry
-    // commands, and a galvo block has to stay one unbroken run of byte 23
-    // (§19.1). Acceleration is a gantry notion anyway.
-    proc.set_travel_speed(config_.path_travel_speed);
-    laser_path_factory_->generate_task_code(layer_path_speed_);
-    if (has_hatch) {
-      // Same clip, so the hatch splits across blocks exactly as the outlines do.
-      laser_hatch_factory_->generate_task_code(layer_speed_);
-    }
-    if (has_raster) {
-      laser_raster_factory_->generate_task_code(layer_speed_);
-    }
-    proc.set_travel_speed(config_.travel_speed);
-    galvo->clear_clip_rect();
-    galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
-
-    // §15-S8: the galvo's own travel belongs in travel_dist too.
-    proc.add_travel_dist(galvo->block_distance_mm());
-    if (this->cancelled_) {
-      return;
-    }
-    onProgressChanged(0.05 + 0.95 * (i + 1.0) / blocks.size(), true);
+  emitGalvoBlocks(
+      blocks,
+      [&]() {
+        // Not outputLayerPathFcode(): its acceleration override writes gantry
+        // commands, and a galvo block has to stay one unbroken run of byte 23
+        // (§19.1). Acceleration is a gantry notion anyway.
+        proc.set_travel_speed(config_.path_travel_speed);
+        laser_path_factory_->generate_task_code(layer_path_speed_);
+        if (has_hatch) {
+          // Same clip, so the hatch splits across blocks exactly as the
+          // outlines do.
+          laser_hatch_factory_->generate_task_code(layer_speed_);
+        }
+        if (has_raster) {
+          laser_raster_factory_->generate_task_code(layer_speed_);
+        }
+        proc.set_travel_speed(config_.travel_speed);
+      },
+      0.05, galvo_depth_bitmaps_.isEmpty() ? 1.0 : 0.5);
+  if (this->cancelled_) {
+    return;
   }
+  convertGalvoDepthBitmaps();
+
   const int out_of_field = galvo->out_of_field_count() - out_of_field_before;
   if (out_of_field > 0) {
     qWarning() << "[Export] layer" << current_layer_->name() << "put"
@@ -1928,6 +2037,8 @@ void ToolpathExporterFcode::handleCancel() {
     laser_hatch_factory_->handleCancel();
   if (laser_raster_factory_)
     laser_raster_factory_->handleCancel();
+  if (laser_depth_factory_)
+    laser_depth_factory_->handleCancel();
 }
 
 /**

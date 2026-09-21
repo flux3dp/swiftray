@@ -50,8 +50,12 @@ class LaserRasterGalvoFactory : public BaseFactory {
    * Emit one pass. A pixel darker than `threshold` is engraved, so 255 takes
    * everything that is not pure white -- which is what a binarised or dithered
    * image wants -- and a depth pass walks the threshold down instead.
+   *
+   * `transposed` scans down the columns rather than along the rows. Depth
+   * engraving alternates it pass to pass so the passes cross each other.
    */
-  void generate_task_code(float speed, int threshold = 255);
+  void generate_task_code(float speed, int threshold = 255,
+                          bool transposed = false);
 
  private:
   struct Entry {
@@ -60,8 +64,9 @@ class LaserRasterGalvoFactory : public BaseFactory {
     bool dots = false;
   };
 
-  void emitRow(const Entry& entry, int row, int threshold, bool reversed,
-               float speed);
+  /** One scan line: a row of the image, or a column when transposed. */
+  void emitLine(const Entry& entry, int index, int threshold, bool reversed,
+                bool transposed, float speed);
   void setPwm(float pwm);
 
   QVector<Entry> bitmaps_;
