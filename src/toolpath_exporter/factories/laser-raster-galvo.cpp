@@ -21,6 +21,10 @@ constexpr int kScreen[kScreenHeight][kScreenWidth] = {
     {19, 8, 11, 2, 17},
 };
 constexpr double kEpsilon = 1e-9;
+// Ownership phases for runs, and how many of them a cell's height is divided
+// into so the interlocking shifts along as the scan walks down.
+constexpr int kRunPhases = 100;
+constexpr int kRunRowsPerStep = 64;
 
 /**
  * How deep into a seam's band a coordinate sits, on one axis. Zero through the
@@ -100,10 +104,32 @@ double LaserRasterGalvoFactory::rawWeight(int col,
                                      row < blend_.max_row));
 }
 
+double LaserRasterGalvoFactory::siteTarget(int column, int row) const {
+  const int sx = ((column % kScreenWidth) + kScreenWidth) % kScreenWidth;
+  const int sy = ((row % kScreenHeight) + kScreenHeight) % kScreenHeight;
+  return (kScreen[sy][sx] + 0.5) / kScreenPhases;
+}
+
+double LaserRasterGalvoFactory::runTarget(double x, double y) const {
+  // Coarse cells along the scan line, offset row by row, so the seam
+  // interlocks like brickwork instead of running straight. The multipliers are
+  // the reference implementation's: coprime with the phase count, so
+  // neighbouring cells and rows land far apart in the ordering.
+  const double length = blend_.segment_length > 0 ? blend_.segment_length : 2;
+  const long long cell = static_cast<long long>(std::floor(x / length));
+  const long long row =
+      static_cast<long long>(std::floor(y / qMax(blend_.step.height(), 1e-6) *
+                                        kRunRowsPerStep));
+  long long phase = (cell * 61 + row * 37) % kRunPhases;
+  if (phase < 0) {
+    phase += kRunPhases;
+  }
+  return (phase + 0.5) / kRunPhases;
+}
+
 bool LaserRasterGalvoFactory::ownsSite(double x,
                                        double y,
-                                       int column,
-                                       int row) const {
+                                       double target) const {
   struct Candidate {
     int col;
     int row;
@@ -134,12 +160,6 @@ bool LaserRasterGalvoFactory::ownsSite(double x,
   if (total <= kEpsilon) {
     return false;
   }
-  // The target comes off the ordered screen, so consecutive sites fall to
-  // different owners in a fixed pattern instead of banding by row.
-  const int sxi = ((column % kScreenWidth) + kScreenWidth) % kScreenWidth;
-  const int syi = ((row % kScreenHeight) + kScreenHeight) % kScreenHeight;
-  const double target =
-      (kScreen[syi][sxi] + 0.5) / kScreenPhases;
   double cumulative = 0;
   for (const Candidate& candidate : candidates) {
     cumulative += candidate.weight / total;
@@ -238,8 +258,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     // and a LASER_ON, since a dotting time is set for a dithered image.
     const double half_pixel =
         0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
-    const QRectF band = blend_.active ? blend_band() : QRectF();
-    for (int i = 0; i < length; i++) {
+      for (int i = 0; i < length; i++) {
       const int at = reversed ? length - 1 - i : i;
       if (sample(at) >= threshold) {
         continue;
@@ -248,7 +267,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
       if (blend_.active) {
         const double x = transposed ? fixed : along;
         const double y = transposed ? along : fixed;
-        if (!band.contains(x, y)) {
+        if (!blend_band().contains(x, y)) {
           continue;  // beyond what this block samples
         }
         // The screen is indexed by the image's own pixel grid, which every
@@ -256,7 +275,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         // given site and agree on who owns it.
         const int column = transposed ? index : at;
         const int row = transposed ? at : index;
-        if (!ownsSite(x, y, column, row)) {
+        if (!ownsSite(x, y, siteTarget(column, row))) {
           continue;
         }
       }
@@ -266,10 +285,22 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     return;
   }
 
-  // Runs of dark pixels, each one marked segment.
+  // Runs of dark pixels, each one marked segment. Ownership cuts them the same
+  // way a dark-to-light edge does, so a run simply ends where the neighbouring
+  // block takes over.
+  const QRectF run_band = blend_.active ? blend_band() : QRectF();
+  auto owned = [&](int at) {
+    if (!blend_.active) {
+      return true;
+    }
+    const double along = moving(at) + 0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
+    const double px = transposed ? fixed : along;
+    const double py = transposed ? along : fixed;
+    return run_band.contains(px, py) && ownsSite(px, py, runTarget(px, py));
+  };
   int run_start = -1;
   for (int i = 0; i <= length; i++) {
-    const bool on = i < length && sample(i) < threshold;
+    const bool on = i < length && sample(i) < threshold && owned(i);
     if (on && run_start < 0) {
       run_start = i;
     } else if (!on && run_start >= 0) {
@@ -301,14 +332,13 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
       return;
     }
     // Dotting is a property of the image, not the layer: a dithered one is dots
-    // and a binarised one is runs, and a layer can hold both. So is the blend:
-    // only a dithered image works past its cell into the seam, so only its
-    // entries get the wider clip, and the block's own hard edge goes back
-    // afterwards for everything else.
+    // and a binarised one is runs, and a layer can hold both. Both work past
+    // their cell into the seam when blending, so the clip has to let the band
+    // through and the block's own hard edge goes back afterwards.
     if (proc->galvo()) {
       proc->galvo()->params().dotting_time_us =
           entry.dots ? dotting_time_us_ : 0;
-      if (entry.dots && blend_.active) {
+      if (blend_.active) {
         proc->galvo()->set_clip_rect(hard_clip.united(blend_band()));
       } else {
         proc->galvo()->set_clip_rect(hard_clip);
