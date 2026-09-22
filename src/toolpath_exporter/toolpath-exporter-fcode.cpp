@@ -321,7 +321,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // The simulator's 'dot-blend-line-core' strategy.
     config_.galvo_band_dots =
         param["galvo_dot_blend_line_core"].toBool(config_.galvo_band_dots);
-    config_.galvo_band_dot_time = param["galvo_band_dot_time"].toDouble(0);
+    // processDot.pulseOnTimeUs in the simulator, which the hybrid reads and no
+    // other strategy does. The rest of that block -- its own power, pitch,
+    // jump speed and delays -- has no counterpart here yet: the band dots run
+    // at the layer's.
+    config_.galvo_band_dot_time =
+        param["galvo_process_dot_pulse_on_time"].toDouble(0);
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
