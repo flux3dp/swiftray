@@ -204,6 +204,16 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // number for its own machine sends galvo_block and overrides this.
     config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
     config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
+    config_.galvo_dot_blend_overlap =
+        param["galvo_dot_blend_overlap"].toDouble(10);
+    const QString profile = param["galvo_dot_blend_profile"].toString();
+    if (profile == "simple") {
+      config_.galvo_dot_blend_profile =
+          LaserRasterGalvoFactory::BlendProfile::Simple;
+    } else if (profile == "super-granular") {
+      config_.galvo_dot_blend_profile =
+          LaserRasterGalvoFactory::BlendProfile::SuperGranular;
+    }
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
@@ -914,6 +924,20 @@ void ToolpathExporterFcode::emitGalvoBlocks(
   GalvoListWriter* galvo = proc.galvo();
   const double half_field = config_.galvo_field_mm / 2;
   bool anything_emitted = false;
+  // The extent of the lattice, which a dithered raster needs: to work out who
+  // owns a site it weighs its neighbours too, and a cell at the edge of the
+  // lattice has fewer of them.
+  int min_col = 0, max_col = 0, min_row = 0, max_row = 0;
+  if (!blocks.isEmpty()) {
+    min_col = max_col = blocks.first().col;
+    min_row = max_row = blocks.first().row;
+    for (const GalvoBlock& block : blocks) {
+      min_col = qMin(min_col, block.col);
+      max_col = qMax(max_col, block.col);
+      min_row = qMin(min_row, block.row);
+      max_row = qMax(max_row, block.row);
+    }
+  }
   for (int i = 0; i < blocks.size(); i++) {
     const GalvoBlock& block = blocks[i];
     const bool last = i == blocks.size() - 1;
@@ -930,6 +954,23 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     galvo->beginList();
     if (blocks.size() > 1) {
       galvo->set_clip_rect(block.clip);
+    }
+    if (laser_raster_factory_) {
+      // A dithered image fades across a seam instead of stopping at it, so it
+      // works to a band wider than the cell and thins itself there. Everything
+      // else keeps the hard edge the clip gives it.
+      LaserRasterGalvoFactory::Blend blend;
+      blend.active = blocks.size() > 1 && config_.galvo_dot_blend_overlap > 0;
+      blend.step = config_.galvo_block_size;
+      blend.col = block.col;
+      blend.row = block.row;
+      blend.min_col = min_col;
+      blend.max_col = max_col;
+      blend.min_row = min_row;
+      blend.max_row = max_row;
+      blend.overlap = config_.galvo_dot_blend_overlap;
+      blend.profile = config_.galvo_dot_blend_profile;
+      laser_raster_factory_->set_blend(blend);
     }
     emit_content();
     galvo->clear_clip_rect();
@@ -1199,16 +1240,21 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
       // Once split, a block engraves its own cell and no more, even though the
       // field reaches further. The head sits at the cell's centre.
       const QRectF region(park.x() - sx / 2, park.y() - sy / 2, sx, sy);
+      const bool has_left = i > i0;
+      const bool has_right = i < i1;
+      const bool has_top = j > j0;
+      const bool has_bottom = j < j1;
       // Geometry lying along a seam goes to the tile above or to the left of
       // it. A tile therefore reaches just past its right and bottom edges, and
       // starts just inside its left and top ones unless it opens a row or
       // column. The slack is also what keeps rounding from dropping a point
       // that sits on a seam out of both neighbours.
       const QRectF clip =
-          region.adjusted(i > i0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
-                          j > j0 ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+          region.adjusted(has_left ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
+                          has_top ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
                           kGalvoSeamEpsilonMm, kGalvoSeamEpsilonMm);
-      blocks.append({region, clip, park});
+      blocks.append({region, clip, park, i, j, has_left, has_right, has_top,
+                     has_bottom});
     }
   }
   // The lattice is anchored at the machine origin and its cells span the whole

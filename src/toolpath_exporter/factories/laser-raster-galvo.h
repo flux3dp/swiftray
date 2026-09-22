@@ -29,7 +29,45 @@
  */
 class LaserRasterGalvoFactory : public BaseFactory {
  public:
+  /** How the density falls off across an overlap band. */
+  enum class BlendProfile { Simple, Granular, SuperGranular };
+
+  /**
+   * What a block needs to fade its dots out towards a seam.
+   *
+   * Blocks that share a seam all sample a band straddling it, and each lays
+   * only some of the dots there, so together they come to one full covering.
+   * Only a dithered image can take this: its tone already lives in how densely
+   * the dots sit, so thinning them reads as a fade rather than a gap.
+   *
+   * Who lays which dot is settled by weight, not by agreement. Every block that
+   * samples a site works out the weight of *all* the blocks that sample it,
+   * normalises them so they sum to one, and walks that distribution against a
+   * target drawn from an ordered screen. Exactly one block finds itself the
+   * owner, and it needs no coordination to know it -- the others compute the
+   * same answer and stay quiet. That is what keeps a corner, where four blocks
+   * meet, from being burned twice.
+   */
+  struct Blend {
+    bool active = false;
+    /** Lattice step, mm: also the size of one nominal cell. */
+    QSizeF step;
+    /** Which cell this block is, and how far the lattice runs. */
+    int col = 0;
+    int row = 0;
+    int min_col = 0;
+    int max_col = 0;
+    int min_row = 0;
+    int max_row = 0;
+    /** Total band width, mm; half of it lies each side of a shared edge. */
+    double overlap = 10;
+    BlendProfile profile = BlendProfile::Granular;
+  };
+
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
+  void set_blend(const Blend& blend) { blend_ = blend; }
+  /** The region a block samples: its cell, grown into every shared seam. */
+  QRectF blend_band() const;
 
   /**
    * `gray` is 8-bit greyscale already scaled to this factory's pixels, placed
@@ -68,7 +106,17 @@ class LaserRasterGalvoFactory : public BaseFactory {
   void emitLine(const Entry& entry, int index, int threshold, bool reversed,
                 bool transposed, float speed);
   void setPwm(float pwm);
+  double profileDensity(double progress) const;
+  /** The nominal cell of a lattice position. */
+  QRectF cellAt(int col, int row) const;
+  /** A cell grown into every seam it shares -- what that block samples. */
+  QRectF bandAt(int col, int row) const;
+  /** How much of this site belongs to that cell, before normalising. */
+  double rawWeight(int col, int row, double x, double y) const;
+  /** Whether this block, of all that sample it, is the one that lays this site. */
+  bool ownsSite(double x, double y, int column, int row) const;
 
+  Blend blend_;
   QVector<Entry> bitmaps_;
   double dotting_time_us_ = 0;
   float current_pwm_ = 0;

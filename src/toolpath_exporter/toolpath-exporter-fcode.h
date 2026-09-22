@@ -105,6 +105,12 @@ struct Config {
   // multiples of it and anything in between is unaddressable. Smaller than the
   // field, so neighbouring blocks can reach into each other.
   QSizeF galvo_block_size = QSizeF(100, 100);
+  // mm. Total width of the band two neighbouring blocks share, over which a
+  // dithered raster thins its dots out so the two add up to one covering.
+  // Zero turns the blend off and the seam becomes a hard edge again.
+  double galvo_dot_blend_overlap = 10;
+  LaserRasterGalvoFactory::BlendProfile galvo_dot_blend_profile =
+      LaserRasterGalvoFactory::BlendProfile::Granular;
   // mm/min. How fast the gantry moves between galvo blocks. Slower than the
   // ordinary travel speed: a galvo job parks, settles and waits for the sync
   // at every block, so the move is a positioning step rather than a traverse.
@@ -242,7 +248,17 @@ class ToolpathExporterFcode : public QObject {
     // Where the gantry stands: a lattice point of the block displacement, which
     // is not the centre of `region` once an edge cell has stretched.
     QPointF park;
+    // Position in the lattice, and which sides have a neighbour to share a
+    // seam with. Dithered raster needs both: the parity decides which half of
+    // the screen this block keeps, and the flags which edges it blends across.
+    int col = 0;
+    int row = 0;
+    bool has_left = false;
+    bool has_right = false;
+    bool has_top = false;
+    bool has_bottom = false;
   };
+
   // Where the head itself can stand, mm in the layer frame: the work area less
   // the travel this module costs.
   QRectF galvoHeadTravel() const;
