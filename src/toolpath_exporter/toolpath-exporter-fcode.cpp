@@ -219,9 +219,6 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     g.scanner_mark_delay_us = param["galvo_scanner_mark_delay"].toDouble(100);
     g.scanner_polygon_delay_us =
         param["galvo_scanner_polygon_delay"].toDouble(50);
-    // Estimation only; set_delay_mode itself is a CONTROL instruction (§6.2).
-    g.jump_delay_min_us = param["galvo_jump_delay_min"].toDouble(200);
-    g.jump_delay_max_us = param["galvo_jump_delay_max"].toDouble(400);
     g.emit_standby = param["galvo_standby"].toBool(true);
     g.standby_period_us = param["galvo_standby_period"].toDouble(100);
     g.standby_width_us = param["galvo_standby_width"].toDouble(1);

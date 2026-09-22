@@ -91,19 +91,37 @@ struct GalvoParams {
   double wobble_space_mm = 0;
 
   // --- time estimation only, never emitted ---------------------------------
-  // set_delay_mode is a CONTROL instruction: it reaches the board out of band
-  // via ;CONFIG (§6.2), not through the fcode. The values still belong here
-  // because §14 requires swiftray's estimate to use the same numbers bsl does.
-  double jump_delay_min_us = 200;
-  double jump_delay_max_us = 400;
   // Multiplier for the extra path length wobble adds. 1 when wobble is off.
   double wobble_k = 1;
   // Non-zero switches marking to dotting: jump to the point, then LASER_ON.
   double dotting_time_us = 0;
 
-  // §14's model, shared with bsl (bsl_controller.h PromarkRuntimeConfig).
-  double jump_delay_ms() const {
-    return (jump_delay_min_us + jump_delay_max_us) / 2000;
+  // The delay-mode window, as bsl hands it to the card. These are not settings:
+  // set_delay_mode is a CONTROL instruction with no LIST form (§16-C), so it is
+  // called once per job with compile-time constants (bsl_controller.cpp:440),
+  // and a file cannot ask for anything else. They live here only because §14
+  // requires this estimate to use the numbers the card is actually running.
+  static constexpr double kJumpDelayMinUs = 200;
+  static constexpr double kJumpDelayMaxUs = 400;
+  // The jump length at which the delay reaches its maximum, in mm.
+  static constexpr double kJumpDelayLimitMm = 10;
+
+  /**
+   * §14's jump delay, for a jump of `distance_mm`.
+   *
+   * bsl enables the variable window (set_delay_mode's VarPoly is true), so the
+   * delay is not the flat mean it was taken for: it rises with the jump from
+   * the minimum to the maximum and saturates at the length limit. That matters
+   * most where the jumps are short and many -- a stitched raster hops a tooth's
+   * width at a time, a few millimetres, which the window charges near its floor
+   * rather than its middle.
+   */
+  double jump_delay_ms(double distance_mm) const {
+    const double reach =
+        qBound(0.0, distance_mm / kJumpDelayLimitMm, 1.0);
+    return (kJumpDelayMinUs +
+            (kJumpDelayMaxUs - kJumpDelayMinUs) * reach) /
+           1000;
   }
   double laser_delay_ms() const {
     return (laser_off_delay_us - laser_on_delay_us) / 1000;
