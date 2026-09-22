@@ -80,9 +80,18 @@ class LaserRasterGalvoFactory : public BaseFactory {
     int max_col = 0;
     int min_row = 0;
     int max_row = 0;
-    /** Total band width, mm; half of it lies each side of a shared edge. */
-    double overlap = 10;
-    BlendProfile profile = BlendProfile::Granular;
+    /**
+     * The band and the falloff are settled per path, not once: the simulator
+     * keeps dotBlendOverlapMm/dotBlendProfile apart from lineBlendOverlapMm/
+     * lineBlendProfile, and defaults them differently. Dots can afford a finer
+     * staircase than runs, which pay a jump at every step of it.
+     *
+     * Total band width, mm; half of it lies each side of a shared edge.
+     */
+    double dot_overlap = 10;
+    BlendProfile dot_profile = BlendProfile::Granular;
+    double line_overlap = 10;
+    BlendProfile line_profile = BlendProfile::SuperGranular;
     /**
      * mm. How far along a scan line ownership holds before it can change hands,
      * for the runs a binarised or depth image is made of. A dithered image
@@ -99,12 +108,14 @@ class LaserRasterGalvoFactory : public BaseFactory {
      * misplaced seam is. 2 mm is the simulator's own default.
      */
     double segment_length = 2;
-    RunEmission run_emission = RunEmission::Checkerboard;
+    RunEmission line_emission = RunEmission::Checkerboard;
     /**
      * Two-pass seam, the simulator's 'dot-blend-line-core'. The core -- the
-     * cell drawn back by half the overlap on every shared side -- is engraved
-     * as runs at full exposure, and only the band around it is laid as dots,
-     * blended by the same density rule a dithered image uses.
+     * cell drawn back by half the dot overlap on every shared side -- is
+     * engraved as runs at full exposure, and only the band around it is laid as
+     * dots, blended by the same density rule a dithered image uses. It is the
+     * dot band throughout: the line knobs take no part in it, which is why the
+     * core is measured off the dot overlap.
      *
      * This is the one answer to a run having no tone to fade: give the band
      * tone by turning it into dots. It costs a dot per dark site across the
@@ -121,7 +132,12 @@ class LaserRasterGalvoFactory : public BaseFactory {
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
   void set_blend(const Blend& blend) { blend_ = blend; }
-  /** The region a block samples: its cell, grown into every shared seam. */
+  /**
+   * The region a block samples: its cell, grown into every shared seam. Which
+   * band depends on what is being emitted, so this follows the pass that is
+   * running -- dots reach further or less far than runs whenever the two
+   * overlaps differ.
+   */
   QRectF blend_band() const;
 
   /**
@@ -185,6 +201,16 @@ class LaserRasterGalvoFactory : public BaseFactory {
   QRectF cellAt(int col, int row) const;
   /** A cell grown into every seam it shares -- what that block samples. */
   QRectF bandAt(int col, int row) const;
+  /** The band width and falloff of whichever pass is running. */
+  double activeOverlap() const;
+  BlendProfile activeProfile() const;
+  /**
+   * Whether the pass under way blends at all: the lattice has to be split, and
+   * the band that pass works to has to have a width. The two overlaps are
+   * independent, so a layer can fade its dots across the seam while its runs
+   * butt up hard against it, or the other way round.
+   */
+  bool blendActive() const;
   /**
    * The full-exposure core: this block's cell drawn back by half the overlap on
    * every side it shares. Outside edges keep the cell.
@@ -211,6 +237,12 @@ class LaserRasterGalvoFactory : public BaseFactory {
   double runTarget(double along, int line) const;
 
   Blend blend_;
+  /**
+   * Whether the pass under way is laying dots. The two paths blend against
+   * different bands, so every weight, band and progress has to know which one
+   * is asking.
+   */
+  bool dot_pass_ = false;
   QVector<Entry> bitmaps_;
   /** The layer's own power, which the pwm fade takes its shares of. */
   double base_power_pct_ = 0;

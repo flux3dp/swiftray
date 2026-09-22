@@ -104,6 +104,26 @@ void ToolpathExporterFcode::setTransform(QTransform transform) {
   global_transform_ = transform * transform_base_;
 }
 
+namespace {
+
+/** One of the simulator's three density profiles, or `fallback` if unnamed. */
+LaserRasterGalvoFactory::BlendProfile read_blend_profile(
+    const QString& name,
+    LaserRasterGalvoFactory::BlendProfile fallback) {
+  if (name == "simple") {
+    return LaserRasterGalvoFactory::BlendProfile::Simple;
+  }
+  if (name == "granular") {
+    return LaserRasterGalvoFactory::BlendProfile::Granular;
+  }
+  if (name == "super-granular") {
+    return LaserRasterGalvoFactory::BlendProfile::SuperGranular;
+  }
+  return fallback;
+}
+
+}  // namespace
+
 void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   qInfo() << "Parsing parameters" << param;
   if (param.contains("job_origin")) {
@@ -205,33 +225,37 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // number for its own machine sends galvo_block and overrides this.
     config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
     config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
+    // The dot path and the line path each get their own band and falloff, the
+    // way the simulator keeps dotBlend* apart from lineBlend*. They default
+    // differently on purpose: a run pays a jump at every step of the staircase,
+    // so the finer profile belongs to the dots.
     config_.galvo_dot_blend_overlap =
         param["galvo_dot_blend_overlap"].toDouble(10);
-    config_.galvo_run_blend_segment =
-        param["galvo_run_blend_segment"].toDouble(2);
-    // The simulator's three binary-ownership line strategies, by their own
-    // names less the "line-overlap-" they all share.
-    const QString emission = param["galvo_run_blend_emission"].toString();
-    if (emission == "segments") {
-      config_.galvo_run_blend_emission =
+    config_.galvo_dot_blend_profile = read_blend_profile(
+        param["galvo_dot_blend_profile"].toString(),
+        LaserRasterGalvoFactory::BlendProfile::Granular);
+    config_.galvo_line_blend_overlap =
+        param["galvo_line_blend_overlap"].toDouble(10);
+    config_.galvo_line_blend_profile = read_blend_profile(
+        param["galvo_line_blend_profile"].toString(),
+        LaserRasterGalvoFactory::BlendProfile::SuperGranular);
+    config_.galvo_line_blend_segment =
+        param["galvo_line_blend_segment"].toDouble(2);
+    // The simulator's four overlap line strategies, by their own names.
+    const QString emission = param["galvo_line_blend_emission"].toString();
+    if (emission == "overlap-segments") {
+      config_.galvo_line_blend_emission =
           LaserRasterGalvoFactory::RunEmission::Segments;
-    } else if (emission == "scanlines") {
-      config_.galvo_run_blend_emission =
+    } else if (emission == "overlap-scanlines") {
+      config_.galvo_line_blend_emission =
           LaserRasterGalvoFactory::RunEmission::Scanlines;
-    } else if (emission == "pwm") {
-      config_.galvo_run_blend_emission =
+    } else if (emission == "overlap-pwm") {
+      config_.galvo_line_blend_emission =
           LaserRasterGalvoFactory::RunEmission::Pwm;
     }
-    config_.galvo_band_dots = param["galvo_band_dots"].toBool(false);
+    // The simulator's 'dot-blend-line-core' strategy.
+    config_.galvo_band_dots = param["galvo_dot_blend_line_core"].toBool(false);
     config_.galvo_band_dot_time = param["galvo_band_dot_time"].toDouble(0);
-    const QString profile = param["galvo_dot_blend_profile"].toString();
-    if (profile == "simple") {
-      config_.galvo_dot_blend_profile =
-          LaserRasterGalvoFactory::BlendProfile::Simple;
-    } else if (profile == "super-granular") {
-      config_.galvo_dot_blend_profile =
-          LaserRasterGalvoFactory::BlendProfile::SuperGranular;
-    }
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
@@ -979,7 +1003,10 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       // dithered image fades across it site by site; a run changes hands in
       // coarser stretches, since alternating per pixel would shred it.
       LaserRasterGalvoFactory::Blend blend;
-      blend.active = blocks.size() > 1 && config_.galvo_dot_blend_overlap > 0;
+      // Whether either path blends is settled per path further in, from its own
+      // overlap; this only says the lattice has more than one block to blend
+      // between.
+      blend.active = blocks.size() > 1;
       blend.step = config_.galvo_block_size;
       blend.col = block.col;
       blend.row = block.row;
@@ -987,10 +1014,12 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.max_col = max_col;
       blend.min_row = min_row;
       blend.max_row = max_row;
-      blend.overlap = config_.galvo_dot_blend_overlap;
-      blend.profile = config_.galvo_dot_blend_profile;
-      blend.segment_length = config_.galvo_run_blend_segment;
-      blend.run_emission = config_.galvo_run_blend_emission;
+      blend.dot_overlap = config_.galvo_dot_blend_overlap;
+      blend.dot_profile = config_.galvo_dot_blend_profile;
+      blend.line_overlap = config_.galvo_line_blend_overlap;
+      blend.line_profile = config_.galvo_line_blend_profile;
+      blend.segment_length = config_.galvo_line_blend_segment;
+      blend.line_emission = config_.galvo_line_blend_emission;
       blend.band_dots = config_.galvo_band_dots;
       blend.band_dot_time_us = config_.galvo_band_dot_time;
       if (laser_raster_factory_) {
