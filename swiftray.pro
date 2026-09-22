@@ -55,7 +55,7 @@ win32 {
 } else {
     ORT_DIR = $$PWD/third_party/onnxruntime/macos
 }
-!exists($$ORT_DIR/include/onnxruntime_cxx_api.h)|!exists($$PWD/resources/models/mobile_sam.decoder.onnx) {
+!exists($$ORT_DIR/include/onnxruntime_cxx_api.h)|!exists($$PWD/resources/models/mobile_sam.encoder.onnx)|!exists($$PWD/resources/models/mobile_sam.decoder.onnx) {
     message("Fetching ONNX Runtime and segmentation models (first run only)")
     win32: system("cmd /c $$shell_path($$PWD/scripts/fetch-onnxruntime.bat)")
     else: system("sh $$PWD/scripts/fetch-onnxruntime.sh")

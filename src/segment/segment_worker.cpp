@@ -161,9 +161,11 @@ void SegmentWorker::handleAction(QWebSocket* socket, const QString& id, const QS
       if (!ensureLoaded(&error)) {
         result = errorResult(error);
       } else {
-        result = action == "detect" ? detect(socket_ptr, id, params.toObject()) : prompt(params.toObject());
+        // arm before the work so a throwing request still gets the model unloaded
         last_used_ms_ = QDateTime::currentMSecsSinceEpoch();
         QTimer::singleShot(kIdleUnloadMs, this, &SegmentWorker::unloadIfIdle);
+        result = action == "detect" ? detect(socket_ptr, id, params.toObject()) : prompt(params.toObject());
+        last_used_ms_ = QDateTime::currentMSecsSinceEpoch();  // refresh so a long request is not unloaded right after
       }
     } else {
       result = errorResult("Unknown segment action: " + action);

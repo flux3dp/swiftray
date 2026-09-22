@@ -58,9 +58,10 @@ class Sam {
       so_dec.DisableCpuMemArena();
       so_dec.DisableMemPattern();
     }
-    // std::filesystem::path::c_str() is wchar_t* on Windows and char* elsewhere - exactly ORTCHAR_T
-    enc_ = std::make_unique<Ort::Session>(env_, std::filesystem::path(encoder_path).c_str(), so_enc);
-    dec_ = std::make_unique<Ort::Session>(env_, std::filesystem::path(decoder_path).c_str(), so_dec);
+    // u8path: the paths are UTF-8 from QString; path(std::string) would decode them as ANSI on Windows.
+    // path::c_str() is wchar_t* on Windows and char* elsewhere - exactly ORTCHAR_T
+    enc_ = std::make_unique<Ort::Session>(env_, std::filesystem::u8path(encoder_path).c_str(), so_enc);
+    dec_ = std::make_unique<Ort::Session>(env_, std::filesystem::u8path(decoder_path).c_str(), so_dec);
 
     Ort::AllocatorWithDefaultOptions alloc;
     enc_input_name_ = enc_->GetInputNameAllocated(0, alloc).get();

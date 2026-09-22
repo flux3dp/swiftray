@@ -15,7 +15,7 @@ ORT_DIR=third_party/onnxruntime/$ORT_PLATFORM
 if [ ! -f "$ORT_DIR/include/onnxruntime_cxx_api.h" ]; then
   echo "Downloading $ORT_PKG"
   mkdir -p third_party/onnxruntime
-  curl -L -o /tmp/$ORT_PKG.tgz "https://github.com/microsoft/onnxruntime/releases/download/v$ORT_VER/$ORT_PKG.tgz"
+  curl -fL -o /tmp/$ORT_PKG.tgz "https://github.com/microsoft/onnxruntime/releases/download/v$ORT_VER/$ORT_PKG.tgz"
   tar -xzf /tmp/$ORT_PKG.tgz -C third_party/onnxruntime
   rm -rf "$ORT_DIR" && mv "third_party/onnxruntime/$ORT_PKG" "$ORT_DIR"
   xattr -dr com.apple.quarantine "$ORT_DIR" 2>/dev/null || true
@@ -29,7 +29,8 @@ for m in mobile_sam.encoder.onnx mobile_sam.decoder.onnx; do
       cp "../mini-sam/models/$m" resources/models/
     else
       echo "Downloading $m"
-      curl -L -o "resources/models/$m" "$MODELS_URL/$m"
+      curl -fL -o "resources/models/$m.part" "$MODELS_URL/$m"
+      mv "resources/models/$m.part" "resources/models/$m"
     fi
   fi
 done
