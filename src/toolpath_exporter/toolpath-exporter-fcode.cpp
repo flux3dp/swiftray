@@ -106,6 +106,21 @@ void ToolpathExporterFcode::setTransform(QTransform transform) {
 
 namespace {
 
+/**
+ * Set the seam up the way one of laser-phy-simulator's strategy ids does.
+ *
+ * The ids are taken verbatim (GeneratorStrategyId in fcodeGeneratorTypes.ts) so
+ * that a strategy proved out there can be named here without translation. What
+ * a caller cannot name is left untouched, and an id this end does not implement
+ * says so rather than quietly engraving something else.
+ *
+ * Which of the two paths a job takes is not a choice here as it is there: the
+ * simulator picks `mode`, whereas a dithered image is always dots and a
+ * binarised or depth one always runs. So a line- id settles the run path and a
+ * dot- id the dot path, and each leaves the other alone.
+ */
+void apply_galvo_strategy(const QString& id, Config* config);
+
 /** One of the simulator's three density profiles, or `fallback` if unnamed. */
 LaserRasterGalvoFactory::BlendProfile read_blend_profile(
     const QString& name,
@@ -120,6 +135,48 @@ LaserRasterGalvoFactory::BlendProfile read_blend_profile(
     return LaserRasterGalvoFactory::BlendProfile::SuperGranular;
   }
   return fallback;
+}
+
+void apply_galvo_strategy(const QString& id,
+                          Config* config) {
+  using RunEmission = LaserRasterGalvoFactory::RunEmission;
+  // Neither of these strategies blends: the line raster stops at the tile.
+  if (id == "line-baseline" || id == "line-report-optimized") {
+    config->galvo_line_blend_overlap = 0;
+    return;
+  }
+  if (id == "line-overlap-pwm") {
+    config->galvo_line_blend_emission = RunEmission::Pwm;
+    return;
+  }
+  if (id == "line-overlap-segments") {
+    config->galvo_line_blend_emission = RunEmission::Segments;
+    return;
+  }
+  if (id == "line-overlap-scanlines") {
+    config->galvo_line_blend_emission = RunEmission::Scanlines;
+    return;
+  }
+  if (id == "line-overlap-checkerboard") {
+    config->galvo_line_blend_emission = RunEmission::Checkerboard;
+    return;
+  }
+  // The dot blend is what a dithered image does anyway; naming it only makes
+  // sure the band is open.
+  if (id == "dot-overlap-blend") {
+    return;
+  }
+  if (id == "dot-blend-line-core") {
+    config->galvo_band_dots = true;
+    return;
+  }
+  qWarning() << "[Export] galvo_strategy" << id
+             << "is not implemented here; the seam settings are left as they"
+                " were. Implemented:"
+             << "line-baseline, line-report-optimized, line-overlap-pwm,"
+                " line-overlap-segments, line-overlap-scanlines,"
+                " line-overlap-checkerboard, dot-overlap-blend,"
+                " dot-blend-line-core";
 }
 
 }  // namespace
@@ -225,22 +282,30 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // number for its own machine sends galvo_block and overrides this.
     config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
     config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
+    // One of the simulator's own strategy ids, which settles the seam in a
+    // single word -- what it names is a combination here, and having to
+    // assemble that by hand is exactly where a reproduction goes wrong. The
+    // individual keys are read afterwards, so one of them still overrides.
+    const QString strategy = param["galvo_strategy"].toString();
+    if (!strategy.isEmpty()) {
+      apply_galvo_strategy(strategy, &config_);
+    }
     // The dot path and the line path each get their own band and falloff, the
     // way the simulator keeps dotBlend* apart from lineBlend*. They default
     // differently on purpose: a run pays a jump at every step of the staircase,
     // so the finer profile belongs to the dots.
-    config_.galvo_dot_blend_overlap =
-        param["galvo_dot_blend_overlap"].toDouble(10);
-    config_.galvo_dot_blend_profile = read_blend_profile(
-        param["galvo_dot_blend_profile"].toString(),
-        LaserRasterGalvoFactory::BlendProfile::Granular);
-    config_.galvo_line_blend_overlap =
-        param["galvo_line_blend_overlap"].toDouble(10);
-    config_.galvo_line_blend_profile = read_blend_profile(
-        param["galvo_line_blend_profile"].toString(),
-        LaserRasterGalvoFactory::BlendProfile::SuperGranular);
-    config_.galvo_line_blend_segment =
-        param["galvo_line_blend_segment"].toDouble(2);
+    config_.galvo_dot_blend_overlap = param["galvo_dot_blend_overlap"].toDouble(
+        config_.galvo_dot_blend_overlap);
+    config_.galvo_dot_blend_profile =
+        read_blend_profile(param["galvo_dot_blend_profile"].toString(),
+                           config_.galvo_dot_blend_profile);
+    config_.galvo_line_blend_overlap = param["galvo_line_blend_overlap"].toDouble(
+        config_.galvo_line_blend_overlap);
+    config_.galvo_line_blend_profile =
+        read_blend_profile(param["galvo_line_blend_profile"].toString(),
+                           config_.galvo_line_blend_profile);
+    config_.galvo_line_blend_segment = param["galvo_line_blend_segment"].toDouble(
+        config_.galvo_line_blend_segment);
     // The simulator's four overlap line strategies, by their own names.
     const QString emission = param["galvo_line_blend_emission"].toString();
     if (emission == "overlap-segments") {
@@ -254,7 +319,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
           LaserRasterGalvoFactory::RunEmission::Pwm;
     }
     // The simulator's 'dot-blend-line-core' strategy.
-    config_.galvo_band_dots = param["galvo_dot_blend_line_core"].toBool(false);
+    config_.galvo_band_dots =
+        param["galvo_dot_blend_line_core"].toBool(config_.galvo_band_dots);
     config_.galvo_band_dot_time = param["galvo_band_dot_time"].toDouble(0);
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
