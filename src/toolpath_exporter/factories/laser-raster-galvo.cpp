@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QtGlobal>
+#include <algorithm>
 #include <cmath>
 
 #include "toolpath_exporter/generators/galvo-list.h"
@@ -21,10 +22,11 @@ constexpr int kScreen[kScreenHeight][kScreenWidth] = {
     {19, 8, 11, 2, 17},
 };
 constexpr double kEpsilon = 1e-9;
-// Ownership phases for runs, and how many of them a cell's height is divided
-// into so the interlocking shifts along as the scan walks down.
+// Ownership phases for runs. The two multipliers below are coprime with it, so
+// neighbouring stretches and neighbouring lines land far apart in the ordering.
 constexpr int kRunPhases = 100;
-constexpr int kRunRowsPerStep = 64;
+constexpr int kRunSegmentStride = 61;
+constexpr int kRunLineStride = 37;
 
 /**
  * How deep into a seam's band a coordinate sits, on one axis. Zero through the
@@ -110,17 +112,20 @@ double LaserRasterGalvoFactory::siteTarget(int column, int row) const {
   return (kScreen[sy][sx] + 0.5) / kScreenPhases;
 }
 
-double LaserRasterGalvoFactory::runTarget(double x, double y) const {
-  // Coarse cells along the scan line, offset row by row, so the seam
-  // interlocks like brickwork instead of running straight. The multipliers are
-  // the reference implementation's: coprime with the phase count, so
-  // neighbouring cells and rows land far apart in the ordering.
-  const double length = blend_.segment_length > 0 ? blend_.segment_length : 2;
-  const long long cell = static_cast<long long>(std::floor(x / length));
-  const long long row =
-      static_cast<long long>(std::floor(y / qMax(blend_.step.height(), 1e-6) *
-                                        kRunRowsPerStep));
-  long long phase = (cell * 61 + row * 37) % kRunPhases;
+double LaserRasterGalvoFactory::runTarget(double along, int line) const {
+  // Which of the three line strategies this is, in the simulator's terms: the
+  // phase is built from the stretch along the scan, from the scan line, or from
+  // both.
+  long long phase = 0;
+  if (blend_.run_emission != RunEmission::Scanlines) {
+    const double length = blend_.segment_length > 0 ? blend_.segment_length : 2;
+    phase += static_cast<long long>(std::floor(along / length)) *
+             kRunSegmentStride;
+  }
+  if (blend_.run_emission != RunEmission::Segments) {
+    phase += static_cast<long long>(line) * kRunLineStride;
+  }
+  phase %= kRunPhases;
   if (phase < 0) {
     phase += kRunPhases;
   }
@@ -129,7 +134,8 @@ double LaserRasterGalvoFactory::runTarget(double x, double y) const {
 
 bool LaserRasterGalvoFactory::ownsSite(double x,
                                        double y,
-                                       double target) const {
+                                       double target,
+                                       bool reversed) const {
   struct Candidate {
     int col;
     int row;
@@ -159,6 +165,9 @@ bool LaserRasterGalvoFactory::ownsSite(double x,
   }
   if (total <= kEpsilon) {
     return false;
+  }
+  if (reversed) {
+    std::reverse(candidates.begin(), candidates.end());
   }
   double cumulative = 0;
   for (const Candidate& candidate : candidates) {
@@ -289,6 +298,17 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // way a dark-to-light edge does, so a run simply ends where the neighbouring
   // block takes over.
   const QRectF run_band = blend_.active ? blend_band() : QRectF();
+  // The scan line's index on the machine's own grid rather than this bitmap's,
+  // so two blocks -- and two bitmaps in one layer -- draw the same phase for
+  // the same line.
+  const int global_line =
+      qRound(transposed ? entry.bbox_px.left() : entry.bbox_px.top()) + index;
+  // Segments builds no line term into the phase, so on its own the teeth would
+  // stand in the same places on every line. What alternates them is the walk
+  // running the other way down the candidates on the lines that are themselves
+  // scanned backwards.
+  const bool reverse_candidates =
+      blend_.run_emission == RunEmission::Segments && (global_line & 1) != 0;
   auto owned = [&](int at) {
     if (!blend_.active) {
       return true;
@@ -296,7 +316,8 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     const double along = moving(at) + 0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
     const double px = transposed ? fixed : along;
     const double py = transposed ? along : fixed;
-    return run_band.contains(px, py) && ownsSite(px, py, runTarget(px, py));
+    return run_band.contains(px, py) &&
+           ownsSite(px, py, runTarget(along, global_line), reverse_candidates);
   };
   int run_start = -1;
   for (int i = 0; i <= length; i++) {
@@ -345,14 +366,18 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
       }
     }
     const int lines = transposed ? entry.gray.width() : entry.gray.height();
-    bool reversed = false;
+    // Which way a line is scanned follows its index on the machine grid, not
+    // its place in this bitmap. Runs decide ownership partly from that parity,
+    // so it has to mean the same thing to every block -- and alternating anyway
+    // is what keeps the beam from flying back for every line.
+    const int first_line =
+        qRound(transposed ? entry.bbox_px.left() : entry.bbox_px.top());
     for (int line = 0; line < lines; line++) {
       if (cancelled) {
         return;
       }
+      const bool reversed = ((first_line + line) & 1) != 0;
       emitLine(entry, line, threshold, reversed, transposed, speed);
-      // Alternate direction so the beam does not fly back for every line.
-      reversed = !reversed;
     }
   }
   setPwm(0);

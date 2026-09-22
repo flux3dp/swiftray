@@ -112,6 +112,8 @@ struct Config {
   // mm. How far along a scan line a run holds its owner before it can change
   // hands; a dithered image changes site by site instead.
   double galvo_run_blend_segment = 2;
+  LaserRasterGalvoFactory::RunEmission galvo_run_blend_emission =
+      LaserRasterGalvoFactory::RunEmission::Checkerboard;
   LaserRasterGalvoFactory::BlendProfile galvo_dot_blend_profile =
       LaserRasterGalvoFactory::BlendProfile::Granular;
   // mm/min. How fast the gantry moves between galvo blocks. Slower than the

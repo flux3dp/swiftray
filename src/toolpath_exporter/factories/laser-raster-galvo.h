@@ -33,6 +33,20 @@ class LaserRasterGalvoFactory : public BaseFactory {
   enum class BlendProfile { Simple, Granular, SuperGranular };
 
   /**
+   * How a run's ownership phase is drawn, mirroring the three binary-ownership
+   * line strategies in laser-phy-simulator (lineRasteringTiledGenerator.ts).
+   * They differ only in what the phase is made of:
+   *
+   *  - Scanlines: the scan line alone, so a whole line belongs to one block and
+   *    the seam alternates row by row;
+   *  - Segments: the position along the line alone, with the candidate order
+   *    reversed on the lines that are scanned backwards, so the teeth stand at
+   *    the same places every line but change hands alternately;
+   *  - Checkerboard: both, so the teeth themselves shift along row by row.
+   */
+  enum class RunEmission { Segments, Scanlines, Checkerboard };
+
+  /**
    * What a block needs to fade its dots out towards a seam.
    *
    * Blocks that share a seam all sample a band straddling it, and each lays
@@ -72,12 +86,13 @@ class LaserRasterGalvoFactory : public BaseFactory {
      *
      * A run carries no tone to fade, so the teeth are here to hide a seam the
      * gantry did not land squarely, not to blend anything, and each one costs a
-     * jump. On a solid fill crossing every seam, teeth this long cost 17% of the
-     * run time; at 2 mm they cost 39%. Nothing is lost either way -- the marked
-     * length is identical to a hard seam -- so this trades time for how visible
-     * a misplaced seam is.
+     * jump. On a solid fill crossing every seam, 2 mm teeth cost 39% of the run
+     * time and 10 mm ones 17%. Nothing is lost either way -- the marked length
+     * is identical to a hard seam -- so this trades time for how visible a
+     * misplaced seam is. 2 mm is the simulator's own default.
      */
-    double segment_length = 10;
+    double segment_length = 2;
+    RunEmission run_emission = RunEmission::Checkerboard;
   };
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
@@ -129,12 +144,21 @@ class LaserRasterGalvoFactory : public BaseFactory {
   QRectF bandAt(int col, int row) const;
   /** How much of this site belongs to that cell, before normalising. */
   double rawWeight(int col, int row, double x, double y) const;
-  /** Whether this block, of all that sample it, is the one that lays this site. */
-  bool ownsSite(double x, double y, double target) const;
+  /**
+   * Whether this block, of all that sample it, is the one that lays this site.
+   * `reversed` walks the candidates the other way round, which hands the site
+   * to the block at the other end of the distribution.
+   */
+  bool ownsSite(double x, double y, double target, bool reversed = false) const;
   /** Ordered-screen target: a dithered image changes owner site by site. */
   double siteTarget(int column, int row) const;
-  /** Coarse target: a run holds its owner for a stretch of the scan line. */
-  double runTarget(double x, double y) const;
+  /**
+   * Coarse target: a run holds its owner for a stretch of the scan line.
+   * `along` is the coordinate down the scan, `line` the global index of the
+   * scan line itself -- global because neighbouring blocks have to draw the
+   * same target for the same place, and they only walk the same grid.
+   */
+  double runTarget(double along, int line) const;
 
   Blend blend_;
   QVector<Entry> bitmaps_;
