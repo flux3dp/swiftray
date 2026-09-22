@@ -222,9 +222,9 @@ void GalvoListWriter::jumpTo(const QPointF& p) {
   emit(GalvoOp::JUMP_ABS, {local.x(), local.y()});
   emitted_ = p;
   emitted_valid_ = true;
-  // §14: a jump costs the traverse plus the mean of the delay-mode window.
+  // §14: a jump costs the traverse plus the delay the window gives it.
   list_time_ms_ +=
-      dist / params_.jump_speed_mm_s * 1000 + params_.jump_delay_ms();
+      dist / params_.jump_speed_mm_s * 1000 + params_.jump_delay_ms(dist);
   block_distance_mm_ += dist;
 }
 
