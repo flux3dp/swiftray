@@ -218,7 +218,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     } else if (emission == "scanlines") {
       config_.galvo_run_blend_emission =
           LaserRasterGalvoFactory::RunEmission::Scanlines;
+    } else if (emission == "pwm") {
+      config_.galvo_run_blend_emission =
+          LaserRasterGalvoFactory::RunEmission::Pwm;
     }
+    config_.galvo_band_dots = param["galvo_band_dots"].toBool(false);
+    config_.galvo_band_dot_time = param["galvo_band_dot_time"].toDouble(0);
     const QString profile = param["galvo_dot_blend_profile"].toString();
     if (profile == "simple") {
       config_.galvo_dot_blend_profile =
@@ -986,6 +991,8 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.profile = config_.galvo_dot_blend_profile;
       blend.segment_length = config_.galvo_run_blend_segment;
       blend.run_emission = config_.galvo_run_blend_emission;
+      blend.band_dots = config_.galvo_band_dots;
+      blend.band_dot_time_us = config_.galvo_band_dot_time;
       if (laser_raster_factory_) {
         laser_raster_factory_->set_blend(blend);
       }

@@ -33,9 +33,10 @@ class LaserRasterGalvoFactory : public BaseFactory {
   enum class BlendProfile { Simple, Granular, SuperGranular };
 
   /**
-   * How a run's ownership phase is drawn, mirroring the three binary-ownership
-   * line strategies in laser-phy-simulator (lineRasteringTiledGenerator.ts).
-   * They differ only in what the phase is made of:
+   * How a run crosses a seam, mirroring the four overlap line strategies in
+   * laser-phy-simulator (lineRasteringTiledGenerator.ts). The first three hand
+   * each stretch to a single block and differ only in what the ownership phase
+   * is made of:
    *
    *  - Scanlines: the scan line alone, so a whole line belongs to one block and
    *    the seam alternates row by row;
@@ -43,8 +44,14 @@ class LaserRasterGalvoFactory : public BaseFactory {
    *    reversed on the lines that are scanned backwards, so the teeth stand at
    *    the same places every line but change hands alternately;
    *  - Checkerboard: both, so the teeth themselves shift along row by row.
+   *
+   * Pwm is the fourth and not an ownership rule at all: every block marks the
+   * whole band, each at its own share of the power. On a CO2 head that share is
+   * the duty cycle, which is what the simulator modulates; on a Mopa head it is
+   * the power input. The shares are normalised, so a site two blocks cross
+   * still receives one full exposure -- a smooth fade rather than teeth.
    */
-  enum class RunEmission { Segments, Scanlines, Checkerboard };
+  enum class RunEmission { Segments, Scanlines, Checkerboard, Pwm };
 
   /**
    * What a block needs to fade its dots out towards a seam.
@@ -93,6 +100,23 @@ class LaserRasterGalvoFactory : public BaseFactory {
      */
     double segment_length = 2;
     RunEmission run_emission = RunEmission::Checkerboard;
+    /**
+     * Two-pass seam, the simulator's 'dot-blend-line-core'. The core -- the
+     * cell drawn back by half the overlap on every shared side -- is engraved
+     * as runs at full exposure, and only the band around it is laid as dots,
+     * blended by the same density rule a dithered image uses.
+     *
+     * This is the one answer to a run having no tone to fade: give the band
+     * tone by turning it into dots. It costs a dot per dark site across the
+     * band rather than a mark per stretch.
+     */
+    bool band_dots = false;
+    /**
+     * Dwell for a band dot, microseconds. Zero derives it from the scan pitch
+     * and the mark speed -- how long a line pass would have spent over the
+     * same ground.
+     */
+    double band_dot_time_us = 0;
   };
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
@@ -132,16 +156,42 @@ class LaserRasterGalvoFactory : public BaseFactory {
     QRectF bbox_px;
     bool dots = false;
   };
+  /** One cell that samples a site, and how much of it it claims. */
+  struct Candidate {
+    int col;
+    int row;
+    double weight;
+  };
 
-  /** One scan line: a row of the image, or a column when transposed. */
+  /**
+   * Every cell whose band covers this site, in a fixed order, with the sum of
+   * their raw weights. Whoever asks gets the same list, which is what lets the
+   * blocks agree without talking to each other.
+   */
+  double collectCandidates(double x, double y, QVector<Candidate>* out) const;
+
+  /**
+   * One scan line: a row of the image, or a column when transposed.
+   * `force_dots` runs the hybrid's second pass, laying dots across the band
+   * around a core the run pass has already covered.
+   */
   void emitLine(const Entry& entry, int index, int threshold, bool reversed,
-                bool transposed, float speed);
+                bool transposed, float speed, bool force_dots = false);
   void setPwm(float pwm);
+  /** Power for the marks that follow, as a percentage of full. */
+  void setPower(double pct);
   double profileDensity(double progress) const;
   /** The nominal cell of a lattice position. */
   QRectF cellAt(int col, int row) const;
   /** A cell grown into every seam it shares -- what that block samples. */
   QRectF bandAt(int col, int row) const;
+  /**
+   * The full-exposure core: this block's cell drawn back by half the overlap on
+   * every side it shares. Outside edges keep the cell.
+   */
+  QRectF coreRect() const;
+  /** This block's share of a site, normalised against everyone who samples it. */
+  double blockWeight(double x, double y) const;
   /** How much of this site belongs to that cell, before normalising. */
   double rawWeight(int col, int row, double x, double y) const;
   /**
@@ -162,6 +212,9 @@ class LaserRasterGalvoFactory : public BaseFactory {
 
   Blend blend_;
   QVector<Entry> bitmaps_;
+  /** The layer's own power, which the pwm fade takes its shares of. */
+  double base_power_pct_ = 0;
+  double current_power_pct_ = 0;
   double dotting_time_us_ = 0;
   float current_pwm_ = 0;
 };
