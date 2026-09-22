@@ -56,7 +56,7 @@ double LaserRasterGalvoFactory::profileDensity(double progress) const {
   if (progress <= kEpsilon) {
     return 1;  // the core keeps every dot
   }
-  switch (blend_.profile) {
+  switch (activeProfile()) {
     case BlendProfile::Simple:
       return 0.5;
     case BlendProfile::SuperGranular: {
@@ -77,8 +77,29 @@ QRectF LaserRasterGalvoFactory::cellAt(int col, int row) const {
   return QRectF(col * sx - sx / 2, row * sy - sy / 2, sx, sy);
 }
 
+double LaserRasterGalvoFactory::activeOverlap() const {
+  return dot_pass_ ? blend_.dot_overlap : blend_.line_overlap;
+}
+
+LaserRasterGalvoFactory::BlendProfile LaserRasterGalvoFactory::activeProfile() const {
+  return dot_pass_ ? blend_.dot_profile : blend_.line_profile;
+}
+
+bool LaserRasterGalvoFactory::blendActive() const {
+  if (!blend_.active) {
+    return false;
+  }
+  // The hybrid's run pass is bounded by the core, which is cut from the dot
+  // overlap, so that is what has to be non-zero for it -- the line knobs take
+  // no part in the hybrid at all.
+  if (dot_pass_ || blend_.band_dots) {
+    return blend_.dot_overlap > 0;
+  }
+  return blend_.line_overlap > 0;
+}
+
 QRectF LaserRasterGalvoFactory::bandAt(int col, int row) const {
-  const double half = blend_.overlap / 2;
+  const double half = activeOverlap() / 2;
   return cellAt(col, row).adjusted(col > blend_.min_col ? -half : 0,
                                    row > blend_.min_row ? -half : 0,
                                    col < blend_.max_col ? half : 0,
@@ -92,8 +113,9 @@ QRectF LaserRasterGalvoFactory::blend_band() const {
 QRectF LaserRasterGalvoFactory::coreRect() const {
   // The mirror image of the band: where the band grows into a shared seam, the
   // core draws back from it by the same half. Between them lies exactly the
-  // ground two blocks both reach.
-  const double half = blend_.overlap / 2;
+  // ground two blocks both reach. Measured off the dot overlap whichever pass
+  // asks, because the hybrid this serves is a dot band from end to end.
+  const double half = blend_.dot_overlap / 2;
   return cellAt(blend_.col, blend_.row)
       .adjusted(blend_.col > blend_.min_col ? half : 0,
                 blend_.row > blend_.min_row ? half : 0,
@@ -110,11 +132,13 @@ double LaserRasterGalvoFactory::rawWeight(int col,
   // makes a corner work: four cells each claim a quarter and the quarters come
   // to one, where the deeper-of-the-two reading would have them all claim a
   // half and burn the corner twice over.
-  return profileDensity(axisProgress(x, cell.left(), cell.right(),
-                                     blend_.overlap, col > blend_.min_col,
+  const double overlap = activeOverlap();
+
+  return profileDensity(axisProgress(x, cell.left(), cell.right(), overlap,
+                                     col > blend_.min_col,
                                      col < blend_.max_col)) *
-         profileDensity(axisProgress(y, cell.top(), cell.bottom(),
-                                     blend_.overlap, row > blend_.min_row,
+         profileDensity(axisProgress(y, cell.top(), cell.bottom(), overlap,
+                                     row > blend_.min_row,
                                      row < blend_.max_row));
 }
 
@@ -129,12 +153,12 @@ double LaserRasterGalvoFactory::runTarget(double along, int line) const {
   // phase is built from the stretch along the scan, from the scan line, or from
   // both.
   long long phase = 0;
-  if (blend_.run_emission != RunEmission::Scanlines) {
+  if (blend_.line_emission != RunEmission::Scanlines) {
     const double length = blend_.segment_length > 0 ? blend_.segment_length : 2;
     phase += static_cast<long long>(std::floor(along / length)) *
              kRunSegmentStride;
   }
-  if (blend_.run_emission != RunEmission::Segments) {
+  if (blend_.line_emission != RunEmission::Segments) {
     phase += static_cast<long long>(line) * kRunLineStride;
   }
   phase %= kRunPhases;
@@ -314,7 +338,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         continue;
       }
       const double along = moving(at) + half_pixel;
-      if (blend_.active) {
+      if (blendActive()) {
         const double x = transposed ? fixed : along;
         const double y = transposed ? along : fixed;
         if (!blend_band().contains(x, y)) {
@@ -341,10 +365,10 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // Runs of dark pixels, each one marked segment. Ownership cuts them the same
   // way a dark-to-light edge does, so a run simply ends where the neighbouring
   // block takes over.
-  const QRectF run_band = blend_.active ? blend_band() : QRectF();
+  const QRectF run_band = blendActive() ? blend_band() : QRectF();
   // The hybrid leaves the band to its dot pass, so the runs stop at the core.
   const QRectF run_region =
-      blend_.active && blend_.band_dots ? coreRect() : run_band;
+      blendActive() && blend_.band_dots ? coreRect() : run_band;
   // The scan line's index on the machine's own grid rather than this bitmap's,
   // so two blocks -- and two bitmaps in one layer -- draw the same phase for
   // the same line.
@@ -355,7 +379,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // running the other way down the candidates on the lines that are themselves
   // scanned backwards.
   const bool reverse_candidates =
-      blend_.run_emission == RunEmission::Segments && (global_line & 1) != 0;
+      blend_.line_emission == RunEmission::Segments && (global_line & 1) != 0;
   const double half_pixel_along =
       0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
   auto site = [&](int at) {
@@ -366,7 +390,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // that reaches, zero where the seam rule hands it elsewhere, and a fraction
   // in between only when the band is faded rather than divided.
   auto share = [&](int at) -> double {
-    if (!blend_.active) {
+    if (!blendActive()) {
       return 1;
     }
     const QPointF p = site(at);
@@ -376,7 +400,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     if (blend_.band_dots) {
       return 1;  // the core is full exposure; the band is the dot pass's
     }
-    if (blend_.run_emission == RunEmission::Pwm) {
+    if (blend_.line_emission == RunEmission::Pwm) {
       return blockWeight(p.x(), p.y());
     }
     const double along = moving(at) + half_pixel_along;
@@ -445,19 +469,22 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
   current_power_pct_ = base_power_pct_;
   // A run pass and a dot pass over the same image, which is the hybrid seam:
   // the core at full exposure as runs, the band around it as blended dots.
-  const bool two_pass = blend_.active && blend_.band_dots;
+  const bool two_pass = blend_.active && blend_.band_dots && blend_.dot_overlap > 0;
   for (const Entry& entry : bitmaps_) {
     if (cancelled) {
       return;
     }
     // Dotting is a property of the image, not the layer: a dithered one is dots
-    // and a binarised one is runs, and a layer can hold both. Both work past
-    // their cell into the seam when blending, so the clip has to let the band
-    // through and the block's own hard edge goes back afterwards.
+    // and a binarised one is runs, and a layer can hold both. Which band this
+    // pass works to follows from that, so the flag has to be set before
+    // anything asks -- the clip below asks first.
+    dot_pass_ = entry.dots;
+    // Both work past their cell into the seam when blending, so the clip has to
+    // let the band through and the block's own hard edge goes back afterwards.
     if (proc->galvo()) {
       proc->galvo()->params().dotting_time_us =
           entry.dots ? dotting_time_us_ : 0;
-      if (blend_.active) {
+      if (blendActive()) {
         proc->galvo()->set_clip_rect(hard_clip.united(blend_band()));
       } else {
         proc->galvo()->set_clip_rect(hard_clip);
@@ -483,7 +510,9 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
     // Second pass: the band the runs stopped short of, laid as dots. A dot's
     // dwell stands in for the time a line pass would have spent over the same
     // ground, so the band reads at the same depth as the core it meets.
+    dot_pass_ = true;
     if (proc->galvo()) {
+      proc->galvo()->set_clip_rect(hard_clip.united(blend_band()));
       const double pitch =
           1 / (transposed ? pixel_per_mm : pixel_per_mm_x);
       proc->galvo()->params().dotting_time_us =
@@ -499,6 +528,7 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
       emitLine(entry, line, threshold, reversed, transposed, speed, true);
     }
   }
+  dot_pass_ = false;
   setPwm(0);
   setPower(base_power_pct_);
   if (proc->galvo()) {
