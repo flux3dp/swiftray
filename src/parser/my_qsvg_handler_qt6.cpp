@@ -2909,7 +2909,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.backlash = getAttr(attributes, "data-backlash", default_config, "backlash", 0.0);
 
         layer_config.min_power = getAttr(attributes, "data-minPower", default_config, "minPower", 0);
-        layer_config.is_one_way_engraving = attributes.value("data-owe").toString() == "1"; // Additional manual feature
+        layer_config.is_one_way_engraving = attributes.value("data-owe").toString() == "1";
+        layer_config.is_one_way_engraving_reversed = attributes.value("data-oweRev").toString() == "1";
         layer_config.module = getAttr(attributes, "data-module", default_config, "module", 1);
         layer_config.ink = getAttr(attributes, "data-ink", default_config, "ink", 3);
         layer_config.printing_speed = getAttr(attributes, "data-printingSpeed", default_config, "printingSpeed", 60.0);

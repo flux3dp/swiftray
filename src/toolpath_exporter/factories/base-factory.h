@@ -33,6 +33,7 @@ class BaseBitmapFactory : public BaseFactory {
   int default_workspaces_index = 0;
 
   bool one_way = false;
+  bool one_way_reversed = false;
   bool split_bbox = false;
   QSize work_area;
   QSizeF work_area_mm;
