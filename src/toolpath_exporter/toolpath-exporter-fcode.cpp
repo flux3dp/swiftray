@@ -206,6 +206,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
     config_.galvo_dot_blend_overlap =
         param["galvo_dot_blend_overlap"].toDouble(10);
+    config_.galvo_run_blend_segment =
+        param["galvo_run_blend_segment"].toDouble(10);
     const QString profile = param["galvo_dot_blend_profile"].toString();
     if (profile == "simple") {
       config_.galvo_dot_blend_profile =
@@ -955,10 +957,11 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     if (blocks.size() > 1) {
       galvo->set_clip_rect(block.clip);
     }
-    if (laser_raster_factory_) {
-      // A dithered image fades across a seam instead of stopping at it, so it
-      // works to a band wider than the cell and thins itself there. Everything
-      // else keeps the hard edge the clip gives it.
+    if (laser_raster_factory_ || laser_depth_factory_) {
+      // Raster works to a band wider than its cell and settles ownership of
+      // each site by weight, so a seam interlocks rather than butting up. A
+      // dithered image fades across it site by site; a run changes hands in
+      // coarser stretches, since alternating per pixel would shred it.
       LaserRasterGalvoFactory::Blend blend;
       blend.active = blocks.size() > 1 && config_.galvo_dot_blend_overlap > 0;
       blend.step = config_.galvo_block_size;
@@ -970,7 +973,13 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.max_row = max_row;
       blend.overlap = config_.galvo_dot_blend_overlap;
       blend.profile = config_.galvo_dot_blend_profile;
-      laser_raster_factory_->set_blend(blend);
+      blend.segment_length = config_.galvo_run_blend_segment;
+      if (laser_raster_factory_) {
+        laser_raster_factory_->set_blend(blend);
+      }
+      if (laser_depth_factory_) {
+        laser_depth_factory_->set_blend(blend);
+      }
     }
     emit_content();
     galvo->clear_clip_rect();

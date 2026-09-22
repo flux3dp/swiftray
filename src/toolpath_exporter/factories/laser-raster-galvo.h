@@ -62,6 +62,22 @@ class LaserRasterGalvoFactory : public BaseFactory {
     /** Total band width, mm; half of it lies each side of a shared edge. */
     double overlap = 10;
     BlendProfile profile = BlendProfile::Granular;
+    /**
+     * mm. How far along a scan line ownership holds before it can change hands,
+     * for the runs a binarised or depth image is made of. A dithered image
+     * changes owner site by site, which is what makes it fade; a run cannot --
+     * alternating per pixel would shred it into single-pixel marks -- so its
+     * ownership is decided in stretches this long instead, and the seam becomes
+     * an interlocking edge rather than a straight one.
+     *
+     * A run carries no tone to fade, so the teeth are here to hide a seam the
+     * gantry did not land squarely, not to blend anything, and each one costs a
+     * jump. On a solid fill crossing every seam, teeth this long cost 17% of the
+     * run time; at 2 mm they cost 39%. Nothing is lost either way -- the marked
+     * length is identical to a hard seam -- so this trades time for how visible
+     * a misplaced seam is.
+     */
+    double segment_length = 10;
   };
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
@@ -114,7 +130,11 @@ class LaserRasterGalvoFactory : public BaseFactory {
   /** How much of this site belongs to that cell, before normalising. */
   double rawWeight(int col, int row, double x, double y) const;
   /** Whether this block, of all that sample it, is the one that lays this site. */
-  bool ownsSite(double x, double y, int column, int row) const;
+  bool ownsSite(double x, double y, double target) const;
+  /** Ordered-screen target: a dithered image changes owner site by site. */
+  double siteTarget(int column, int row) const;
+  /** Coarse target: a run holds its owner for a stretch of the scan line. */
+  double runTarget(double x, double y) const;
 
   Blend blend_;
   QVector<Entry> bitmaps_;
