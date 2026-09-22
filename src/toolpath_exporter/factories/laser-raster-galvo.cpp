@@ -89,6 +89,18 @@ QRectF LaserRasterGalvoFactory::blend_band() const {
   return bandAt(blend_.col, blend_.row);
 }
 
+QRectF LaserRasterGalvoFactory::coreRect() const {
+  // The mirror image of the band: where the band grows into a shared seam, the
+  // core draws back from it by the same half. Between them lies exactly the
+  // ground two blocks both reach.
+  const double half = blend_.overlap / 2;
+  return cellAt(blend_.col, blend_.row)
+      .adjusted(blend_.col > blend_.min_col ? half : 0,
+                blend_.row > blend_.min_row ? half : 0,
+                blend_.col < blend_.max_col ? -half : 0,
+                blend_.row < blend_.max_row ? -half : 0);
+}
+
 double LaserRasterGalvoFactory::rawWeight(int col,
                                           int row,
                                           double x,
@@ -132,20 +144,13 @@ double LaserRasterGalvoFactory::runTarget(double along, int line) const {
   return (phase + 0.5) / kRunPhases;
 }
 
-bool LaserRasterGalvoFactory::ownsSite(double x,
-                                       double y,
-                                       double target,
-                                       bool reversed) const {
-  struct Candidate {
-    int col;
-    int row;
-    double weight;
-  };
+double LaserRasterGalvoFactory::collectCandidates(double x,
+                                                  double y,
+                                                  QVector<Candidate>* out) const {
   const double sx = blend_.step.width();
   const double sy = blend_.step.height();
   const int near_col = int(std::floor(x / sx + 0.5));
   const int near_row = int(std::floor(y / sy + 0.5));
-  QVector<Candidate> candidates;
   double total = 0;
   // Every cell whose band covers this site is a candidate. Walked row then
   // column, so the order is the same for whoever asks.
@@ -159,10 +164,33 @@ bool LaserRasterGalvoFactory::ownsSite(double x,
         continue;
       }
       const double weight = rawWeight(c, r, x, y);
-      candidates.append({c, r, weight});
+      out->append({c, r, weight});
       total += weight;
     }
   }
+  return total;
+}
+
+double LaserRasterGalvoFactory::blockWeight(double x, double y) const {
+  QVector<Candidate> candidates;
+  const double total = collectCandidates(x, y, &candidates);
+  if (total <= kEpsilon) {
+    return 0;
+  }
+  for (const Candidate& candidate : candidates) {
+    if (candidate.col == blend_.col && candidate.row == blend_.row) {
+      return candidate.weight / total;
+    }
+  }
+  return 0;
+}
+
+bool LaserRasterGalvoFactory::ownsSite(double x,
+                                       double y,
+                                       double target,
+                                       bool reversed) const {
+  QVector<Candidate> candidates;
+  const double total = collectCandidates(x, y, &candidates);
   if (total <= kEpsilon) {
     return false;
   }
@@ -220,12 +248,25 @@ void LaserRasterGalvoFactory::setPwm(float pwm) {
   proc->set_toolhead_pwm(pwm);
 }
 
+void LaserRasterGalvoFactory::setPower(double pct) {
+  if (current_power_pct_ == pct) {
+    return;
+  }
+  current_power_pct_ = pct;
+  // A negative pwm is how the toolhead interface carries a power rather than an
+  // on/off: the writer turns it into SET_LASER_POWER, and on a CO2 head into
+  // the pulse length that actually holds the duty.
+  proc->set_toolhead_pwm(-pct / 100);
+  current_pwm_ = 0;  // the laser-on state has to be restated after this
+}
+
 void LaserRasterGalvoFactory::emitLine(const Entry& entry,
                                        int index,
                                        int threshold,
                                        bool reversed,
                                        bool transposed,
-                                       float speed) {
+                                       float speed,
+                                       bool force_dots) {
   const int width = entry.gray.width();
   const int height = entry.gray.height();
   // Along the row, or down the column when transposed.
@@ -262,7 +303,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     proc->moveto(args);
   };
 
-  if (entry.dots) {
+  if (entry.dots || force_dots) {
     // One dot per dark pixel; the writer turns each of these marks into a jump
     // and a LASER_ON, since a dotting time is set for a dithered image.
     const double half_pixel =
@@ -278,6 +319,9 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         const double y = transposed ? along : fixed;
         if (!blend_band().contains(x, y)) {
           continue;  // beyond what this block samples
+        }
+        if (force_dots && coreRect().contains(x, y)) {
+          continue;  // the run pass has already covered the core at full power
         }
         // The screen is indexed by the image's own pixel grid, which every
         // block walks identically, so all of them draw the same target for a
@@ -298,6 +342,9 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // way a dark-to-light edge does, so a run simply ends where the neighbouring
   // block takes over.
   const QRectF run_band = blend_.active ? blend_band() : QRectF();
+  // The hybrid leaves the band to its dot pass, so the runs stop at the core.
+  const QRectF run_region =
+      blend_.active && blend_.band_dots ? coreRect() : run_band;
   // The scan line's index on the machine's own grid rather than this bitmap's,
   // so two blocks -- and two bitmaps in one layer -- draw the same phase for
   // the same line.
@@ -309,35 +356,79 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   // scanned backwards.
   const bool reverse_candidates =
       blend_.run_emission == RunEmission::Segments && (global_line & 1) != 0;
-  auto owned = [&](int at) {
-    if (!blend_.active) {
-      return true;
-    }
-    const double along = moving(at) + 0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
-    const double px = transposed ? fixed : along;
-    const double py = transposed ? along : fixed;
-    return run_band.contains(px, py) &&
-           ownsSite(px, py, runTarget(along, global_line), reverse_candidates);
+  const double half_pixel_along =
+      0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
+  auto site = [&](int at) {
+    const double along = moving(at) + half_pixel_along;
+    return QPointF(transposed ? fixed : along, transposed ? along : fixed);
   };
+  // What share of this site falls to this block: one where it is the only one
+  // that reaches, zero where the seam rule hands it elsewhere, and a fraction
+  // in between only when the band is faded rather than divided.
+  auto share = [&](int at) -> double {
+    if (!blend_.active) {
+      return 1;
+    }
+    const QPointF p = site(at);
+    if (!run_region.contains(p)) {
+      return 0;
+    }
+    if (blend_.band_dots) {
+      return 1;  // the core is full exposure; the band is the dot pass's
+    }
+    if (blend_.run_emission == RunEmission::Pwm) {
+      return blockWeight(p.x(), p.y());
+    }
+    const double along = moving(at) + half_pixel_along;
+    return ownsSite(p.x(), p.y(), runTarget(along, global_line),
+                    reverse_candidates)
+               ? 1
+               : 0;
+  };
+
+  // A run breaks wherever the share changes, not only where it falls to zero:
+  // a fade crosses the band as a handful of pieces, each marked at its own
+  // power, because the profile it is drawn from is a staircase. Pieces are
+  // collected first so that a backwards line can emit them back to front and
+  // the beam still travels the way it scans.
+  struct Piece {
+    int from;  // first pixel
+    int to;    // one past the last, so the run covers all of it
+    double share;
+  };
+  QVector<Piece> pieces;
   int run_start = -1;
+  double run_share = 0;
   for (int i = 0; i <= length; i++) {
-    const bool on = i < length && sample(i) < threshold && owned(i);
-    if (on && run_start < 0) {
-      run_start = i;
-    } else if (!on && run_start >= 0) {
-      // +1 on the end: the run covers the whole of its last pixel.
-      double from = moving(run_start);
-      double to = moving(i);
-      if (reversed) {
-        std::swap(from, to);
-      }
-      setPwm(0);
-      move(from, true, 0);
-      setPwm(100);
-      move(to, false, speed);
+    const double s = i < length && sample(i) < threshold ? share(i) : 0;
+    if (run_start >= 0 && (s <= 0 || qAbs(s - run_share) > kEpsilon)) {
+      pieces.append({run_start, i, run_share});
       run_start = -1;
     }
+    if (s > 0 && run_start < 0) {
+      run_start = i;
+      run_share = s;
+    }
   }
+
+  int previous_end = -1;
+  for (int p = 0; p < pieces.size(); p++) {
+    const Piece& piece = pieces[reversed ? pieces.size() - 1 - p : p];
+    const int start = reversed ? piece.to : piece.from;
+    const int end = reversed ? piece.from : piece.to;
+    // Where one piece ends the next begins, so a fade is one unbroken sweep
+    // and only the power changes under it. Jumping between them would leave
+    // the beam dwelling at every step of the staircase.
+    if (start != previous_end) {
+      setPwm(0);
+      move(moving(start), true, 0);
+    }
+    setPower(base_power_pct_ * piece.share);
+    setPwm(100);
+    move(moving(end), false, speed);
+    previous_end = end;
+  }
+  setPower(base_power_pct_);
 }
 
 void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
@@ -348,6 +439,13 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
   current_pwm_ = 0;
   const QRectF hard_clip =
       proc->galvo() ? proc->galvo()->clip_rect() : QRectF();
+  // The layer's power, as the prologue already carries it. A pwm fade takes
+  // shares of this and has to be able to put it back.
+  base_power_pct_ = proc->galvo() ? proc->galvo()->params().power_pct : 0;
+  current_power_pct_ = base_power_pct_;
+  // A run pass and a dot pass over the same image, which is the hybrid seam:
+  // the core at full exposure as runs, the band around it as blended dots.
+  const bool two_pass = blend_.active && blend_.band_dots;
   for (const Entry& entry : bitmaps_) {
     if (cancelled) {
       return;
@@ -379,8 +477,30 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
       const bool reversed = ((first_line + line) & 1) != 0;
       emitLine(entry, line, threshold, reversed, transposed, speed);
     }
+    if (!two_pass || entry.dots) {
+      continue;
+    }
+    // Second pass: the band the runs stopped short of, laid as dots. A dot's
+    // dwell stands in for the time a line pass would have spent over the same
+    // ground, so the band reads at the same depth as the core it meets.
+    if (proc->galvo()) {
+      const double pitch =
+          1 / (transposed ? pixel_per_mm : pixel_per_mm_x);
+      proc->galvo()->params().dotting_time_us =
+          blend_.band_dot_time_us > 0
+              ? blend_.band_dot_time_us
+              : (speed > 0 ? pitch / (speed / 60) * 1e6 : 0);
+    }
+    for (int line = 0; line < lines; line++) {
+      if (cancelled) {
+        return;
+      }
+      const bool reversed = ((first_line + line) & 1) != 0;
+      emitLine(entry, line, threshold, reversed, transposed, speed, true);
+    }
   }
   setPwm(0);
+  setPower(base_power_pct_);
   if (proc->galvo()) {
     proc->galvo()->params().dotting_time_us = 0;
     proc->galvo()->set_clip_rect(hard_clip);
