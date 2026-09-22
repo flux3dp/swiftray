@@ -289,8 +289,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
                                        int threshold,
                                        bool reversed,
                                        bool transposed,
-                                       float speed,
-                                       bool force_dots) {
+                                       float speed) {
   const int width = entry.gray.width();
   const int height = entry.gray.height();
   // Along the row, or down the column when transposed.
@@ -327,7 +326,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     proc->moveto(args);
   };
 
-  if (entry.dots || force_dots) {
+  if (entry.dots) {
     // One dot per dark pixel; the writer turns each of these marks into a jump
     // and a LASER_ON, since a dotting time is set for a dithered image.
     const double half_pixel =
@@ -343,9 +342,6 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         const double y = transposed ? along : fixed;
         if (!blend_band().contains(x, y)) {
           continue;  // beyond what this block samples
-        }
-        if (force_dots && coreRect().contains(x, y)) {
-          continue;  // the run pass has already covered the core at full power
         }
         // The screen is indexed by the image's own pixel grid, which every
         // block walks identically, so all of them draw the same target for a
@@ -455,6 +451,80 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   setPower(base_power_pct_);
 }
 
+bool LaserRasterGalvoFactory::sampleAt(const Entry& entry,
+                                      const QPointF& mm,
+                                      int threshold) const {
+  const int x = int(std::floor((mm.x() + offset.x()) * pixel_per_mm_x -
+                               entry.bbox_px.left()));
+  const int y = int(std::floor((mm.y() + offset.y()) * pixel_per_mm -
+                               entry.bbox_px.top()));
+  if (x < 0 || y < 0 || x >= entry.gray.width() || y >= entry.gray.height()) {
+    return false;
+  }
+  return entry.gray.constScanLine(y)[x] < threshold;
+}
+
+void LaserRasterGalvoFactory::emitBandDots(const Entry& entry,
+                                           int threshold,
+                                           float speed) {
+  const QRectF band = blend_band();
+  const QRectF core = coreRect();
+  if (band.isEmpty()) {
+    return;
+  }
+  // The pitch the dots are laid on. Falling back to the image's own is what
+  // keeps a caller who names nothing where they were before.
+  const double pitch_x = blend_.dot_process.pitch_mm > 0
+                             ? blend_.dot_process.pitch_mm
+                             : 1 / pixel_per_mm_x;
+  const double pitch_y = blend_.dot_process.pitch_mm > 0
+                             ? blend_.dot_process.pitch_mm
+                             : 1 / pixel_per_mm;
+  if (pitch_x <= 0 || pitch_y <= 0) {
+    return;
+  }
+  // Site centres sit half a pitch in, on a grid measured from the machine
+  // origin, so two blocks sampling the same seam sample the same places.
+  const int first_col = int(std::ceil(band.left() / pitch_x - 0.5 - kEpsilon));
+  const int last_col = int(std::floor((band.right() - kEpsilon) / pitch_x - 0.5));
+  const int first_row = int(std::ceil(band.top() / pitch_y - 0.5 - kEpsilon));
+  const int last_row = int(std::floor((band.bottom() - kEpsilon) / pitch_y - 0.5));
+
+  setPower(base_power_pct_);
+  for (int row = first_row; row <= last_row; row++) {
+    if (cancelled) {
+      return;
+    }
+    const double y = (row + 0.5) * pitch_y;
+    QVector<double> xs;
+    for (int col = first_col; col <= last_col; col++) {
+      const double x = (col + 0.5) * pitch_x;
+      if (core.contains(x, y)) {
+        continue;  // the run pass has already covered the core at full power
+      }
+      if (!sampleAt(entry, QPointF(x, y), threshold)) {
+        continue;
+      }
+      if (!ownsSite(x, y, siteTarget(col, row))) {
+        continue;
+      }
+      xs.append(x);
+    }
+    if (xs.isEmpty()) {
+      continue;
+    }
+    // Serpentine on the row's own index plus the block's, as the simulator
+    // does, so the sweep carries on in the direction it arrived.
+    if (((row + blend_.row) & 1) != 0) {
+      std::reverse(xs.begin(), xs.end());
+    }
+    for (double x : xs) {
+      setPwm(100);
+      proc->moveto(NamedArgs().rx(x).ry(y).rf(speed));
+    }
+  }
+}
+
 void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
                                                  bool transposed) {
   if (bitmaps_.isEmpty()) {
@@ -507,25 +577,62 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
     if (!two_pass || entry.dots) {
       continue;
     }
-    // Second pass: the band the runs stopped short of, laid as dots. A dot's
-    // dwell stands in for the time a line pass would have spent over the same
-    // ground, so the band reads at the same depth as the core it meets.
+    // Second pass: the band the runs stopped short of, laid as dots.
+    //
+    // It runs in a list of its own. A galvo list states its speeds, powers and
+    // delays in its prologue and nowhere else, so giving the band a different
+    // power or a different jump speed means giving it a different list -- which
+    // is also how the simulator does it, the hybrid returning the line blocks
+    // and the dot blocks as two separate lists.
     dot_pass_ = true;
+    GalvoParams saved;
     if (proc->galvo()) {
-      proc->galvo()->set_clip_rect(hard_clip.united(blend_band()));
-      const double pitch =
-          1 / (transposed ? pixel_per_mm : pixel_per_mm_x);
-      proc->galvo()->params().dotting_time_us =
-          blend_.band_dot_time_us > 0
-              ? blend_.band_dot_time_us
-              : (speed > 0 ? pitch / (speed / 60) * 1e6 : 0);
-    }
-    for (int line = 0; line < lines; line++) {
-      if (cancelled) {
-        return;
+      GalvoListWriter* galvo = proc->galvo();
+      galvo->endList();
+      saved = galvo->params();
+      GalvoParams& dot = galvo->params();
+      const Blend::DotProcess& wanted = blend_.dot_process;
+      if (wanted.power_pct > 0) {
+        dot.power_pct = wanted.power_pct;
       }
-      const bool reversed = ((first_line + line) & 1) != 0;
-      emitLine(entry, line, threshold, reversed, transposed, speed, true);
+      if (wanted.pulse_period_us > 0) {
+        dot.pulse_period_us = wanted.pulse_period_us;
+      }
+      if (wanted.jump_speed_mm_s > 0) {
+        dot.jump_speed_mm_s = wanted.jump_speed_mm_s;
+      }
+      if (!qIsNaN(wanted.laser_on_delay_us)) {
+        dot.laser_on_delay_us = wanted.laser_on_delay_us;
+      }
+      if (!qIsNaN(wanted.laser_off_delay_us)) {
+        dot.laser_off_delay_us = wanted.laser_off_delay_us;
+      }
+      // A dot's dwell stands in for the time a line pass would have spent over
+      // the same ground, so the band reads at the same depth as the core it
+      // meets -- unless the caller has measured something better.
+      const double pitch =
+          wanted.pitch_mm > 0 ? wanted.pitch_mm : 1 / pixel_per_mm_x;
+      dot.dotting_time_us = wanted.pulse_on_time_us > 0
+                                ? wanted.pulse_on_time_us
+                                : (speed > 0 ? pitch / (speed / 60) * 1e6 : 0);
+      galvo->set_clip_rect(hard_clip.united(blend_band()));
+      galvo->beginList();
+      // The list's own power is the one its prologue just stated; a fade has
+      // nothing to do here, but setPower still has to agree with it.
+      base_power_pct_ = dot.power_pct;
+      current_power_pct_ = dot.power_pct;
+      current_pwm_ = 0;
+    }
+    emitBandDots(entry, threshold, speed);
+    if (proc->galvo()) {
+      GalvoListWriter* galvo = proc->galvo();
+      setPwm(0);
+      galvo->endList();
+      galvo->params() = saved;
+      galvo->beginList();
+      base_power_pct_ = saved.power_pct;
+      current_power_pct_ = saved.power_pct;
+      current_pwm_ = 0;
     }
   }
   dot_pass_ = false;

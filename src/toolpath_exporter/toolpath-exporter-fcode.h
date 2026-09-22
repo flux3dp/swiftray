@@ -113,7 +113,8 @@ struct Config {
   // hands; a dithered image changes site by site instead.
   double galvo_line_blend_segment = 2;
   bool galvo_band_dots = false;
-  double galvo_band_dot_time = 0;
+  /** The simulator's processDot block, for the hybrid's band dots. */
+  LaserRasterGalvoFactory::Blend::DotProcess galvo_dot_process;
   double galvo_line_blend_overlap = 10;
   LaserRasterGalvoFactory::BlendProfile galvo_line_blend_profile =
       LaserRasterGalvoFactory::BlendProfile::SuperGranular;
