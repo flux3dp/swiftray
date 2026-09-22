@@ -105,6 +105,7 @@ void ToolpathExporterFcode::setTransform(QTransform transform) {
 }
 
 void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
+  qInfo() << "Parsing parameters" << param;
   if (param.contains("job_origin")) {
     has_job_origin_ = true;
     config_.job_origin = QPointF(param["job_origin"].toArray()[0].toDouble(),
@@ -207,7 +208,17 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     config_.galvo_dot_blend_overlap =
         param["galvo_dot_blend_overlap"].toDouble(10);
     config_.galvo_run_blend_segment =
-        param["galvo_run_blend_segment"].toDouble(10);
+        param["galvo_run_blend_segment"].toDouble(2);
+    // The simulator's three binary-ownership line strategies, by their own
+    // names less the "line-overlap-" they all share.
+    const QString emission = param["galvo_run_blend_emission"].toString();
+    if (emission == "segments") {
+      config_.galvo_run_blend_emission =
+          LaserRasterGalvoFactory::RunEmission::Segments;
+    } else if (emission == "scanlines") {
+      config_.galvo_run_blend_emission =
+          LaserRasterGalvoFactory::RunEmission::Scanlines;
+    }
     const QString profile = param["galvo_dot_blend_profile"].toString();
     if (profile == "simple") {
       config_.galvo_dot_blend_profile =
@@ -974,6 +985,7 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.overlap = config_.galvo_dot_blend_overlap;
       blend.profile = config_.galvo_dot_blend_profile;
       blend.segment_length = config_.galvo_run_blend_segment;
+      blend.run_emission = config_.galvo_run_blend_emission;
       if (laser_raster_factory_) {
         laser_raster_factory_->set_blend(blend);
       }
