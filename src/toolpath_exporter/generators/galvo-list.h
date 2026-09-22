@@ -234,7 +234,6 @@ class GalvoListWriter {
    * this is off unless a machine profile asks for it.
    */
   void set_max_commands_per_list(int n) { max_commands_per_list_ = n; }
-
   /** Field-local points that fell outside +/- half_field, counted for the
    *  whole job (never reset; take differences to scope it). */
   int out_of_field_count() const { return out_of_field_count_; }
@@ -248,6 +247,12 @@ class GalvoListWriter {
   /** Move the board to `p` (machine mm) with a jump, if it is not there. */
   void jumpTo(const QPointF& p);
   void markTo(const QPointF& p);
+  /**
+   * Close the list and open the next if this one has reached its cap. Called
+   * after every piece of geometry, a dot as much as a mark -- a dithered image
+   * and a stitched band are where the records actually pile up.
+   */
+  void splitIfFull();
   void emitPulses();
   QPointF toField(const QPointF& p);
   /**

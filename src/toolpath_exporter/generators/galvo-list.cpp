@@ -280,6 +280,7 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     ensureListOpen();
     emit(GalvoOp::LASER_ON, {params_.dotting_time_us});
     list_time_ms_ += params_.dotting_time_us / 1000.0;
+    splitIfFull();
     return;
   }
   QPointF a = p0;
@@ -292,9 +293,17 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
   }
   jumpTo(a);
   markTo(b);
-  if (max_commands_per_list_ > 0 &&
-      list_command_count_ >= max_commands_per_list_) {
-    endList();
-    beginList();
+  splitIfFull();
+}
+
+void GalvoListWriter::splitIfFull() {
+  if (max_commands_per_list_ <= 0 ||
+      list_command_count_ < max_commands_per_list_) {
+    return;
   }
+  // Only ever between one piece of geometry and the next, never between a jump
+  // and the mark it was the approach for: a list that opened would otherwise
+  // start with a mark from a position the board has forgotten.
+  endList();
+  beginList();
 }
