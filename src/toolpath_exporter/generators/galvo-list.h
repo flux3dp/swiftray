@@ -200,6 +200,7 @@ class GalvoListWriter {
    */
   void set_clip_rect(const QRectF& rect_mm) { clip_rect_ = rect_mm; }
   void clear_clip_rect() { clip_rect_ = QRectF(); }
+  QRectF clip_rect() const { return clip_rect_; }
 
   /** Laser on -> subsequent moves mark (or dot); off -> they are travels. */
   void set_laser_on(bool on) { laser_on_ = on; }
