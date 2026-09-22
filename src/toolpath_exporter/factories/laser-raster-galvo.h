@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QImage>
+#include <QtGlobal>
 #include <QRectF>
 #include <QVector>
 
@@ -123,11 +124,38 @@ class LaserRasterGalvoFactory : public BaseFactory {
      */
     bool band_dots = false;
     /**
-     * Dwell for a band dot, microseconds. Zero derives it from the scan pitch
-     * and the mark speed -- how long a line pass would have spent over the
-     * same ground.
+     * What the band's dots are laid with, the simulator's processDot block.
+     * The hybrid is the only thing that reads it: its dots stitch a seam
+     * between two line-rastered cores, so they are not bound to the settings
+     * that engraved those cores -- a different power, a coarser grid and a
+     * longer pulse are exactly how the band is made to read at the same depth.
+     *
+     * Every member falls back to what the layer already carries, so a caller
+     * that names none of them gets the behaviour this had before the block
+     * existed. They travel in a list of their own: the prologue is where a
+     * galvo list states its speeds, powers and delays, so the way to run the
+     * band differently is to give it its own list.
      */
-    double band_dot_time_us = 0;
+    struct DotProcess {
+      /** Percent. Zero keeps the layer's power. */
+      double power_pct = 0;
+      /** mm between dots. Zero walks the image's own pixel grid instead. */
+      double pitch_mm = 0;
+      /** Microseconds. Zero keeps the layer's pulse period. */
+      double pulse_period_us = 0;
+      /**
+       * Dwell for one dot, microseconds. Zero derives it from the pitch and
+       * the mark speed -- how long a line pass would have spent over the same
+       * ground.
+       */
+      double pulse_on_time_us = 0;
+      /** mm/s. Zero keeps the prologue's jump speed. */
+      double jump_speed_mm_s = 0;
+      /** Microseconds. NaN keeps the prologue's delay. */
+      double laser_on_delay_us = qQNaN();
+      double laser_off_delay_us = qQNaN();
+    };
+    DotProcess dot_process;
   };
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
@@ -186,13 +214,21 @@ class LaserRasterGalvoFactory : public BaseFactory {
    */
   double collectCandidates(double x, double y, QVector<Candidate>* out) const;
 
-  /**
-   * One scan line: a row of the image, or a column when transposed.
-   * `force_dots` runs the hybrid's second pass, laying dots across the band
-   * around a core the run pass has already covered.
-   */
+  /** One scan line: a row of the image, or a column when transposed. */
   void emitLine(const Entry& entry, int index, int threshold, bool reversed,
-                bool transposed, float speed, bool force_dots = false);
+                bool transposed, float speed);
+  /**
+   * The hybrid's second pass: dots across the band the runs stopped short of.
+   *
+   * Walks a grid of its own rather than the image's pixels, because the band's
+   * dots answer to the seam and not to the picture -- the simulator gives them
+   * their own pitch for the same reason. The grid is anchored at the machine
+   * origin so that neighbouring blocks land on the same sites and can agree on
+   * who owns each one.
+   */
+  void emitBandDots(const Entry& entry, int threshold, float speed);
+  /** Whether `mm` falls on a dark pixel of `entry`. */
+  bool sampleAt(const Entry& entry, const QPointF& mm, int threshold) const;
   void setPwm(float pwm);
   /** Power for the marks that follow, as a percentage of full. */
   void setPower(double pct);

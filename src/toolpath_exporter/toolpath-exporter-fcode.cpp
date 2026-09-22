@@ -321,12 +321,20 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // The simulator's 'dot-blend-line-core' strategy.
     config_.galvo_band_dots =
         param["galvo_dot_blend_line_core"].toBool(config_.galvo_band_dots);
-    // processDot.pulseOnTimeUs in the simulator, which the hybrid reads and no
-    // other strategy does. The rest of that block -- its own power, pitch,
-    // jump speed and delays -- has no counterpart here yet: the band dots run
-    // at the layer's.
-    config_.galvo_band_dot_time =
+    // The simulator's processDot block, which the hybrid reads and no other
+    // strategy does. Each member falls back to what the layer already carries,
+    // so naming none of them leaves the band dots on the layer's own settings.
+    LaserRasterGalvoFactory::Blend::DotProcess& dot = config_.galvo_dot_process;
+    dot.power_pct = param["galvo_process_dot_power"].toDouble(0);
+    dot.pitch_mm = param["galvo_process_dot_pitch"].toDouble(0);
+    dot.pulse_period_us = param["galvo_process_dot_pulse_period"].toDouble(0);
+    dot.pulse_on_time_us =
         param["galvo_process_dot_pulse_on_time"].toDouble(0);
+    dot.jump_speed_mm_s = param["galvo_process_dot_jump_speed"].toDouble(0);
+    dot.laser_on_delay_us =
+        param["galvo_process_dot_laser_on_delay"].toDouble(qQNaN());
+    dot.laser_off_delay_us =
+        param["galvo_process_dot_laser_off_delay"].toDouble(qQNaN());
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
@@ -1092,7 +1100,7 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.segment_length = config_.galvo_line_blend_segment;
       blend.line_emission = config_.galvo_line_blend_emission;
       blend.band_dots = config_.galvo_band_dots;
-      blend.band_dot_time_us = config_.galvo_band_dot_time;
+      blend.dot_process = config_.galvo_dot_process;
       if (laser_raster_factory_) {
         laser_raster_factory_->set_blend(blend);
       }
