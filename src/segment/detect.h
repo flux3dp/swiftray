@@ -289,6 +289,7 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
 class EverythingDetector {
 public:
     int grid_x = 10, grid_y = 6, max_objects = 20;
+    static constexpr double STABILITY_MIN = 0.85;  // golden bed.jpg parts score >= 0.90; lit bed patches ~0.7
     int decode_workers = 1;  // ORT intra-op parallelism already saturates x64; measure before raising
     double last_ms = 0;
     std::function<void(int, int)> on_progress;  // (decoded prompts, total); called from decode threads
@@ -345,13 +346,16 @@ public:
             LowResMask& lr = lowres[pi];
             Cand c;
             c.mb.resize((size_t)256 * 256);
-            long area = 0, border_hits = 0;
+            long area = 0, border_hits = 0, tight = 0, loose = 0;
             double sx = 0, sy = 0;
             for (int y = 0; y < 256; y++)
                 for (int x = 0; x < 256; x++) {
                     size_t i = (size_t)y * 256 + x;
-                    uint8_t on = lr.logits[i] > 0.f ? 1 : 0;
+                    float l = lr.logits[i];
+                    uint8_t on = l > 0.f ? 1 : 0;
                     c.mb[i] = on;
+                    tight += l > 1.f;
+                    loose += l > -1.f;
                     if (on) {
                         area++;
                         sx += x;
@@ -361,6 +365,9 @@ public:
                 }
             if (area < 150 || area > 0.25 * 256 * 256) continue;      // glints / whole-scene
             if ((double)border_hits / border_total > 0.08) continue;  // backdrop
+            // stability (SAM's own filter): a crisp object barely changes when the logit
+            // threshold moves +-1; a lit patch of bed with a soft edge shrinks a lot
+            if (!loose || (double)tight / loose < STABILITY_MIN) continue;
             c.score = lr.iou;
             c.logits = std::move(lr.logits);
             c.cx = (float)(sx / area);
