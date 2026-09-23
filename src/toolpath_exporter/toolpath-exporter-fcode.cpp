@@ -282,6 +282,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // number for its own machine sends galvo_block and overrides this.
     config_.galvo_block_size = get_galvo_block_size(config_.galvo_field_mm);
     config_.galvo_travel_speed = param["galvo_ts"].toDouble(3000);
+    if (param.contains("galvo_boundary")) {
+      const QJsonObject b = param["galvo_boundary"].toObject();
+      config_.galvo_boundary = InwardRect{
+          b["top"].toDouble(), b["right"].toDouble(), b["bottom"].toDouble(),
+          b["left"].toDouble()};
+    }
     // One of the simulator's own strategy ids, which settles the seam in a
     // single word -- what it names is a combination here, and having to
     // assemble that by hand is exactly where a reproduction goes wrong. The
@@ -396,7 +402,12 @@ InwardRect ToolpathExporterFcode::getClipRect(InwardRect current,
                                               bool rotary) {
   InwardRect res = {current.top, current.right, current.bottom, current.left};
   if (support_info.MODULES) {
-    InwardRect module_clip = get_boundary(hardware_, module);
+    // A caller that knows the machine's own work range may say so, and then it
+    // says so for every module -- what arrives is already the union over them,
+    // not one module's strip to be combined with the rest.
+    InwardRect module_clip = config_.galvo_boundary.has_value()
+                                 ? *config_.galvo_boundary
+                                 : get_boundary(hardware_, module);
     // get_boundary is the strip of travel the module costs the gantry. A galvo
     // then reaches half a field past wherever the gantry can put its lens, so
     // the strip it actually costs the drawing is that much smaller -- often

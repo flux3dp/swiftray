@@ -43,8 +43,8 @@ const QMap<HardwareType, HardwareProfile> HW_PROFILE = {
   }},
   {HardwareType::HEXA2, {
     // tran_pos (0, 0): the module transition ends in a home, so parking in the
-    // middle of a 900 x 508 bed first is a long move to nowhere.
-    900, 508, 7300, 2, 7.5, 39, QPointF(0, 0)
+    // middle of a 920 x 520 bed first is a long move to nowhere.
+    920, 520, 7300, 2, 7.5, 39, QPointF(0, 0)
   }},
 };
 

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "toolpath-utils.h"
 #include "toolpath-exporter-constants.h"
 #include "toolpath_exporter/factories/base-factory.h"
@@ -100,6 +102,16 @@ struct Config {
   // Addressable field of the galvo, mm across. 110 mm means +/- 55 mm about the
   // lens centre (§19.4).
   double galvo_field_mm = 110;
+  /**
+   * The travel a galvo module costs the gantry, when the caller would rather
+   * say than let get_boundary's table decide. Already the union over the
+   * modules, so it stands for every one of them and is not combined further.
+   *
+   * Temporary: the values belong to the machine (galvo_work_range) and will
+   * come from there once Beam Studio can read them, at which point both ends
+   * go back to a fixed number.
+   */
+  std::optional<InwardRect> galvo_boundary;
   // How far the gantry moves between galvo blocks, mm. Not a free number: it is
   // a whole count of X and Y full steps, so the head can only ever stand on
   // multiples of it and anything in between is unaddressable. Smaller than the
