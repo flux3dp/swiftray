@@ -257,6 +257,20 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
     DetectedObject o;
     o.mask = sam.lowres_to_full(logits);
     const int w = sam.frame_w(), h = sam.frame_h();
+    // keep only the largest component: a low-granularity mask can carry stray fragments
+    // (a shadow band under an engraving) that would stretch the bbox and shift the centroid
+    // away from the polygon, which only ever traces the largest component
+    {
+        std::vector<int> labels, areas;
+        int n = label_components(o.mask, w, h, labels, areas);
+        if (n > 1) {
+            int big = 1;
+            for (int i = 2; i <= n; i++)
+                if (areas[i] > areas[big]) big = i;
+            for (size_t i = 0; i < o.mask.size(); i++)
+                if (o.mask[i] && labels[i] != big) o.mask[i] = 0;
+        }
+    }
     long area = 0;
     double sx = 0, sy = 0;
     int minx = w, miny = h, maxx = -1, maxy = -1;
@@ -289,6 +303,7 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
 class EverythingDetector {
 public:
     int grid_x = 10, grid_y = 6, max_objects = 20;
+    static constexpr double IOU_MIN = 0.88;        // SAM's default pred_iou_thresh; golden parts >= 0.94
     static constexpr double STABILITY_MIN = 0.85;  // golden bed.jpg parts score >= 0.90; lit bed patches ~0.7
     int decode_workers = 1;  // ORT intra-op parallelism already saturates x64; measure before raising
     double last_ms = 0;
@@ -317,7 +332,7 @@ public:
 
         // decode all prompts in parallel (Ort::Session::Run is thread-safe;
         // the decoder session runs 1 intra-op thread each, so calls scale)
-        std::vector<LowResMask> lowres(pts.size());
+        std::vector<std::vector<LowResMask>> lowres(pts.size());
         int workers = decode_workers > 0 ? decode_workers : (int)std::thread::hardware_concurrency();
         workers = (std::max)(1, (std::min)((std::min)(workers, (int)pts.size()), 16));
         std::atomic<size_t> next_idx{0};
@@ -325,7 +340,7 @@ public:
         auto work = [&] {
             size_t i;
             while ((i = next_idx.fetch_add(1)) < pts.size()) {
-                lowres[i] = sam.decode_point(pts[i].first, pts[i].second);
+                lowres[i] = sam.decode_point_all(pts[i].first, pts[i].second);
                 int d = ++done;
                 if (on_progress && (d % 10 == 0 || d == (int)pts.size())) on_progress(d, (int)pts.size());
             }
@@ -340,10 +355,12 @@ public:
             std::vector<uint8_t> mb;  // 256x256 binary
             std::vector<float> logits;
             float cx, cy;  // low-res centroid
+            long area = 0;
         };
         std::vector<Cand> cands;
-        for (size_t pi = 0; pi < pts.size(); pi++) {
-            LowResMask& lr = lowres[pi];
+        for (size_t pi = 0; pi < pts.size(); pi++)
+        for (LowResMask& lr : lowres[pi]) {
+            if (lr.iou < IOU_MIN) continue;
             Cand c;
             c.mb.resize((size_t)256 * 256);
             long area = 0, border_hits = 0, tight = 0, loose = 0;
@@ -372,6 +389,7 @@ public:
             c.logits = std::move(lr.logits);
             c.cx = (float)(sx / area);
             c.cy = (float)(sy / area);
+            c.area = area;
             cands.push_back(std::move(c));
         }
         std::sort(cands.begin(), cands.end(), [](const Cand& a, const Cand& b) { return a.score > b.score; });
@@ -381,7 +399,9 @@ public:
             bool dup = false;
             for (auto& k : kept) {
                 float dx = c.cx - k.cx, dy = c.cy - k.cy;
-                if (dx * dx + dy * dy < 16) { dup = true; break; }  // centers < 4 px (low-res)
+                // same centre AND similar size = same object; a part centred on its parent is not
+                double ratio = (double)(std::min)(c.area, k.area) / (std::max)(c.area, k.area);
+                if (dx * dx + dy * dy < 16 && ratio > 0.5) { dup = true; break; }  // centers < 4 px (low-res)
                 long inter = 0, uni = 0;
                 for (size_t i = 0; i < c.mb.size(); i++) {
                     inter += c.mb[i] & k.mb[i];
