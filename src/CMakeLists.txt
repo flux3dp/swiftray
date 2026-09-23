@@ -11,6 +11,7 @@ add_subdirectory(machine)
 add_subdirectory(periph)
 add_subdirectory(executor)
 add_subdirectory(server)
+add_subdirectory(segment)
 add_subdirectory(debug)
 add_subdirectory(osx)
 

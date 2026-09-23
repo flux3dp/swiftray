@@ -35,4 +35,7 @@ third_party/libpotrace/doc/*
 third_party/libpotrace/potrace-1.16/*
 third_party/libpotrace/src/*
 vcpkg_installed/*
+third_party/onnxruntime/*
+resources/models/*.onnx
+resources/models/*.part
 workspace.xml
