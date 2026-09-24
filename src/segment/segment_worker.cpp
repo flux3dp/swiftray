@@ -124,7 +124,8 @@ QJsonObject SegmentWorker::detect(const QPointer<QWebSocket>& socket, const QStr
     const auto& o = objects[i];
     // one line per returned object so a false positive can be traced back to the filter margins
     qDebug().nospace() << "segment: obj " << i + 1 << " bbox " << o.bx << "," << o.by << " " << o.bw << "x" << o.bh
-                       << " area " << o.area << " score " << o.score << " stability " << o.stability << " border " << o.border;
+                       << " area " << o.area << " score " << o.score << " stability " << o.stability << " border " << o.border
+                       << " edge " << o.edge_ratio;
     arr.append(objectToJson(o, (int)i + 1));
   }
   return QJsonObject{{"success", true},

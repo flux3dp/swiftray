@@ -23,6 +23,7 @@ struct DetectedObject {
     float score = 0;                      // SAM iou prediction
     float stability = 0;                  // mask area at logit>1 / area at logit>-1 (filter diagnostics)
     float border = 0;                     // share of the image border band the low-res mask touches
+    float edge_ratio = 0;                 // outline gradient / interior gradient (filter diagnostics)
     int bx = 0, by = 0, bw = 0, bh = 0;   // bbox
     std::vector<std::pair<float, float>> polygon;  // simplified outer contour
 };
@@ -301,12 +302,70 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
     return o;
 }
 
+// Sobel-free gradient magnitude of a lightly smoothed gray image (central differences).
+inline std::vector<float> gradient_magnitude(const Image& frame) {
+    int w = frame.w, h = frame.h;
+    std::vector<uint8_t> gray = to_gray(frame);
+    std::vector<float> blur((size_t)w * h), g((size_t)w * h, 0.f);
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) {
+            int sum = 0, n = 0;
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++) {
+                    int xx = x + dx, yy = y + dy;
+                    if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+                    sum += gray[(size_t)yy * w + xx];
+                    n++;
+                }
+            blur[(size_t)y * w + x] = (float)sum / n;
+        }
+    for (int y = 1; y < h - 1; y++)
+        for (int x = 1; x < w - 1; x++) {
+            float gx = blur[(size_t)y * w + x + 1] - blur[(size_t)y * w + x - 1];
+            float gy = blur[(size_t)(y + 1) * w + x] - blur[(size_t)(y - 1) * w + x];
+            g[(size_t)y * w + x] = std::sqrt(gx * gx + gy * gy);
+        }
+    return g;
+}
+
+// How much sharper the object's outline is than its own interior: mean gradient in a band
+// +-2 px around the mask boundary over the mean gradient of the mask eroded by 4 px.
+// A real part (even a keyring filled with bed texture) has an outline that is a true edge; a lit
+// patch of honeycomb has no outline, its fade runs through cells, so the ratio sits near 1.
+// Returns a large value when the interior is too small to measure (tiny parts are never rejected).
+inline float boundary_edge_ratio(const DetectedObject& o, const std::vector<float>& grad, int w, int h) {
+    int pad = 3;
+    int x0 = (std::max)(0, o.bx - pad), y0 = (std::max)(0, o.by - pad);
+    int x1 = (std::min)(w, o.bx + o.bw + pad), y1 = (std::min)(h, o.by + o.bh + pad);
+    int cw = x1 - x0, ch = y1 - y0;
+    if (cw <= 0 || ch <= 0) return 1e9f;
+    std::vector<uint8_t> crop((size_t)cw * ch);
+    for (int y = 0; y < ch; y++)
+        for (int x = 0; x < cw; x++) crop[(size_t)y * cw + x] = o.mask[(size_t)(y0 + y) * w + (x0 + x)] ? 255 : 0;
+    std::vector<uint8_t> dil = crop, ero2 = crop, ero4 = crop;
+    morph_1d(dil, cw, ch, 2, true, true);   morph_1d(dil, cw, ch, 2, false, true);
+    morph_1d(ero2, cw, ch, 2, true, false); morph_1d(ero2, cw, ch, 2, false, false);
+    morph_1d(ero4, cw, ch, 4, true, false); morph_1d(ero4, cw, ch, 4, false, false);
+    double band = 0, inner = 0;
+    long nb = 0, ni = 0;
+    for (int y = 0; y < ch; y++)
+        for (int x = 0; x < cw; x++) {
+            size_t i = (size_t)y * cw + x;
+            float gv = grad[(size_t)(y0 + y) * w + (x0 + x)];
+            if (dil[i] && !ero2[i]) { band += gv; nb++; }
+            if (ero4[i]) { inner += gv; ni++; }
+        }
+    if (nb < 20 || ni < 50) return 1e9f;
+    return (float)((band / nb) / (std::max)(inner / ni, 1e-3));
+}
+
 // ---- the detector ----
 class EverythingDetector {
 public:
     int grid_x = 10, grid_y = 6, max_objects = 20;
     static constexpr double IOU_MIN = 0.88;        // SAM's default pred_iou_thresh; golden parts >= 0.94
     static constexpr double STABILITY_MIN = 0.85;  // golden bed.jpg parts score >= 0.90; lit bed patches ~0.7
+    static constexpr float EDGE_RATIO_MIN = 1.5f;   // outline vs interior gradient; keyring 2.1, lit bed patch 1.1
     int decode_workers = 1;  // ORT intra-op parallelism already saturates x64; measure before raising
     double last_ms = 0;
     std::function<void(int, int)> on_progress;  // (decoded prompts, total); called from decode threads
@@ -421,9 +480,12 @@ public:
         }
 
         std::vector<DetectedObject> objects;
+        std::vector<float> grad = gradient_magnitude(frame);
         for (auto& k : kept) {
             DetectedObject o = object_from_logits(sam, k.logits, k.score);
             if (o.area < 300) continue;
+            o.edge_ratio = boundary_edge_ratio(o, grad, w, h);
+            if (o.edge_ratio < EDGE_RATIO_MIN) continue;  // no real outline: bed texture lit by the lamp
             o.stability = k.stability;
             o.border = k.border;
             objects.push_back(std::move(o));
