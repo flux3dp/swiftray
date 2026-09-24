@@ -333,7 +333,11 @@ inline std::vector<float> gradient_magnitude(const Image& frame) {
 // A real part (even a keyring filled with bed texture) has an outline that is a true edge; a lit
 // patch of honeycomb has no outline, its fade runs through cells, so the ratio sits near 1.
 // Returns a large value when the interior is too small to measure (tiny parts are never rejected).
-inline float boundary_edge_ratio(const DetectedObject& o, const std::vector<float>& grad, int w, int h) {
+// `cover` counts how many detected masks contain each pixel; band pixels within 2 px of another
+// object's mask are ignored, so a pocket of bed enclosed by parts is judged on its own fade, not on
+// its neighbours' edges. A part nested in a bigger part has no band left and is kept.
+inline float boundary_edge_ratio(const DetectedObject& o, const std::vector<float>& grad,
+                                 const std::vector<uint8_t>& cover, int w, int h) {
     int pad = 3;
     int x0 = (std::max)(0, o.bx - pad), y0 = (std::max)(0, o.by - pad);
     int x1 = (std::min)(w, o.bx + o.bw + pad), y1 = (std::min)(h, o.by + o.bh + pad);
@@ -352,8 +356,17 @@ inline float boundary_edge_ratio(const DetectedObject& o, const std::vector<floa
         for (int x = 0; x < cw; x++) {
             size_t i = (size_t)y * cw + x;
             float gv = grad[(size_t)(y0 + y) * w + (x0 + x)];
-            if (dil[i] && !ero2[i]) { band += gv; nb++; }
             if (ero4[i]) { inner += gv; ni++; }
+            if (!dil[i] || ero2[i]) continue;
+            bool near_other = false;
+            for (int dy = -2; dy <= 2 && !near_other; dy++)
+                for (int dx = -2; dx <= 2; dx++) {
+                    int xx = x0 + x + dx, yy = y0 + y + dy;
+                    if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+                    size_t j = (size_t)yy * w + xx;
+                    if (cover[j] - (o.mask[j] ? 1 : 0) > 0) { near_other = true; break; }
+                }
+            if (!near_other) { band += gv; nb++; }
         }
     if (nb < 20 || ni < 50) return 1e9f;
     return (float)((band / nb) / (std::max)(inner / ni, 1e-3));
@@ -479,15 +492,22 @@ public:
             }
         }
 
-        std::vector<DetectedObject> objects;
-        std::vector<float> grad = gradient_magnitude(frame);
+        std::vector<DetectedObject> all;
         for (auto& k : kept) {
             DetectedObject o = object_from_logits(sam, k.logits, k.score);
             if (o.area < 300) continue;
-            o.edge_ratio = boundary_edge_ratio(o, grad, w, h);
-            if (o.edge_ratio < EDGE_RATIO_MIN) continue;  // no real outline: bed texture lit by the lamp
             o.stability = k.stability;
             o.border = k.border;
+            all.push_back(std::move(o));
+        }
+        std::vector<uint8_t> cover((size_t)w * h, 0);
+        for (auto& o : all)
+            for (size_t i = 0; i < cover.size(); i++) cover[i] += o.mask[i] ? 1 : 0;
+        std::vector<float> grad = gradient_magnitude(frame);
+        std::vector<DetectedObject> objects;
+        for (auto& o : all) {
+            o.edge_ratio = boundary_edge_ratio(o, grad, cover, w, h);
+            if (o.edge_ratio < EDGE_RATIO_MIN) continue;  // no outline of its own: bed texture, lit or enclosed
             objects.push_back(std::move(o));
         }
         last_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
