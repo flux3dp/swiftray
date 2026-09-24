@@ -118,6 +118,16 @@ class Sam {
 
   // Decode a prompt of N points (frame coords; label 1=include, 0=exclude) -> best low-res mask.
   LowResMask decode_prompt(const std::vector<std::pair<float, float>>& points, const std::vector<float>& labels_in) {
+    auto all = decode_prompt_all(points, labels_in);
+    size_t best = 0;
+    for (size_t i = 1; i < all.size(); i++)
+      if (all[i].iou > all[best].iou) best = i;
+    return all[best];
+  }
+
+  // All granularity levels for one prompt (index 0 = whole-object token, 1..3 = multimask);
+  // nested parts (an engraving on a tile) live in the lower-iou outputs.
+  std::vector<LowResMask> decode_prompt_all(const std::vector<std::pair<float, float>>& points, const std::vector<float>& labels_in) {
     Ort::MemoryInfo mem = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
     const int64_t n = (int64_t)points.size() + 1;  // + padding point
     std::vector<float> coords((size_t)n * 2, 0.f);
@@ -151,16 +161,16 @@ class Sam {
     const float* masks = out[0].GetTensorData<float>();  // [1,4,256,256]
     const float* ious = out[1].GetTensorData<float>();   // [1,4]
     int n_cand = (int)out[1].GetTensorTypeAndShapeInfo().GetElementCount();
-    int best = 0;
-    for (int i = 1; i < n_cand; i++)
-      if (ious[i] > ious[best]) best = i;
-    LowResMask r;
-    r.iou = ious[best];
-    r.logits.assign(masks + (size_t)best * 256 * 256, masks + (size_t)(best + 1) * 256 * 256);
-    return r;
+    std::vector<LowResMask> all(n_cand);
+    for (int i = 0; i < n_cand; i++) {
+      all[i].iou = ious[i];
+      all[i].logits.assign(masks + (size_t)i * 256 * 256, masks + (size_t)(i + 1) * 256 * 256);
+    }
+    return all;
   }
 
   LowResMask decode_point(float px, float py) { return decode_prompt({{px, py}}, {1.f}); }
+  std::vector<LowResMask> decode_point_all(float px, float py) { return decode_prompt_all({{px, py}}, {1.f}); }
 
   bool has_embedding() const { return !embedding_.empty(); }
 
