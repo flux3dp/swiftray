@@ -396,18 +396,21 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   }
 }
 
+InwardRect ToolpathExporterFcode::moduleBoundary(LayerModule module) const {
+  // A caller that knows the machine's own work range may say so, and then it
+  // says so for every module -- what arrives is already the union over them,
+  // not one module's strip to be combined with the rest.
+  return config_.galvo_boundary.has_value() ? *config_.galvo_boundary
+                                            : get_boundary(hardware_, module);
+}
+
 InwardRect ToolpathExporterFcode::getClipRect(InwardRect current,
                                               QPointF offset,
                                               LayerModule module,
                                               bool rotary) {
   InwardRect res = {current.top, current.right, current.bottom, current.left};
   if (support_info.MODULES) {
-    // A caller that knows the machine's own work range may say so, and then it
-    // says so for every module -- what arrives is already the union over them,
-    // not one module's strip to be combined with the rest.
-    InwardRect module_clip = config_.galvo_boundary.has_value()
-                                 ? *config_.galvo_boundary
-                                 : get_boundary(hardware_, module);
+    InwardRect module_clip = moduleBoundary(module);
     // get_boundary is the strip of travel the module costs the gantry. A galvo
     // then reaches half a field past wherever the gantry can put its lens, so
     // the strip it actually costs the drawing is that much smaller -- often
@@ -1297,9 +1300,11 @@ void ToolpathExporterFcode::applyGalvoLayerParams() {
 }
 
 QRectF ToolpathExporterFcode::galvoHeadTravel() const {
-  // get_boundary's margins are what the module costs the gantry, so what is
-  // left of the work area is where the head itself can stand.
-  const InwardRect b = get_boundary(hardware_, layer_module_);
+  // The module's margins are what it costs the gantry, so what is left of the
+  // work area is where the head itself can stand. No field reach comes off
+  // here, unlike the layer clip: the reach is what the beam adds on top of
+  // wherever the head is standing, not somewhere the head can go.
+  const InwardRect b = moduleBoundary(layer_module_);
   const double w = work_area_mm_.width() - b.left - b.right;
   const double h = work_area_mm_.height() - b.top - b.bottom;
   return QRectF(b.left, b.top, qMax(w, 0.0), qMax(h, 0.0));

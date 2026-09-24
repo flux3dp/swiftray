@@ -250,6 +250,14 @@ class ToolpathExporterFcode : public QObject {
 
   void parseParam(const QJsonObject& paramPtr);
   void setTransform(QTransform transform = QTransform());
+  /**
+   * The travel a module costs the gantry: what the caller stated, or the
+   * built-in table. Both the layer clip and the head's own range are cut from
+   * this, and they have to be cut from the same thing -- a head allowed to
+   * stand where the drawing is not allowed to reach, or the reverse, is a
+   * lattice that does not line up with the work it is planning for.
+   */
+  InwardRect moduleBoundary(LayerModule module) const;
   InwardRect getClipRect(InwardRect current, QPointF offset, LayerModule module, bool rotary = false);
   void onProgressChanged(double value, bool absolute);
   // Layer task
