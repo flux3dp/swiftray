@@ -21,6 +21,8 @@ struct DetectedObject {
     float cx = 0, cy = 0;                 // centroid (all mask pixels)
     int area = 0;                         // mask pixel count
     float score = 0;                      // SAM iou prediction
+    float stability = 0;                  // mask area at logit>1 / area at logit>-1 (filter diagnostics)
+    float border = 0;                     // share of the image border band the low-res mask touches
     int bx = 0, by = 0, bw = 0, bh = 0;   // bbox
     std::vector<std::pair<float, float>> polygon;  // simplified outer contour
 };
@@ -356,6 +358,7 @@ public:
             std::vector<float> logits;
             float cx, cy;  // low-res centroid
             long area = 0;
+            float stability = 0, border = 0;
         };
         std::vector<Cand> cands;
         for (size_t pi = 0; pi < pts.size(); pi++)
@@ -386,6 +389,8 @@ public:
             // threshold moves +-1; a lit patch of bed with a soft edge shrinks a lot
             if (!loose || (double)tight / loose < STABILITY_MIN) continue;
             c.score = lr.iou;
+            c.stability = loose ? (float)tight / loose : 0.f;
+            c.border = (float)border_hits / border_total;
             c.logits = std::move(lr.logits);
             c.cx = (float)(sx / area);
             c.cy = (float)(sy / area);
@@ -419,6 +424,8 @@ public:
         for (auto& k : kept) {
             DetectedObject o = object_from_logits(sam, k.logits, k.score);
             if (o.area < 300) continue;
+            o.stability = k.stability;
+            o.border = k.border;
             objects.push_back(std::move(o));
         }
         last_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
