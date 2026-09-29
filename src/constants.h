@@ -48,6 +48,22 @@ inline constexpr double A_PULSE_PER_SEC = 3200;
 inline constexpr double A_START_PULSE_PER_SEC = 1600;
 inline constexpr uint16_t AXIS_ACC_TIME_MS = 255; // lcs_set_axis_move() accTime, range 0~255
 
+// Fixed cost of issuing one lcs_set_axis_move(), in ms -- everything the controller spends on an
+// axis move besides travelling the pulses: accepting the list instruction, driving the stepper
+// through its start/stop sequence and settling before the galvo is allowed to mark again.
+//
+// Measured from a Promark UV STL inner-carving job (2025-09-29 log, 8857 Z moves, nearly all
+// 0.001mm = 1.6 pulses, 20 lists of 10000 list instructions each): the ramp model alone predicts
+// 249s for a job whose lists actually took 695s, and the whole gap is proportional to the number
+// of axis moves -- 50.4ms each, constant within +-3% per list while the Z moves per list vary
+// from 296 to 1025. Adding it back predicts 691s vs 695s measured.
+//
+// The job only contains moves at the pulse quantisation floor, so this calibration cannot yet
+// separate a fixed per-command cost from an error in the ramp model itself; a sweep over step
+// sizes is needed before trusting it for long axis moves. It is applied to the A axis as well,
+// where it has not been measured.
+inline constexpr double AXIS_MOVE_OVERHEAD_MS = 50;
+
 // Galvo. All delays are in us, as the lcs API takes them.
 inline constexpr double JUMP_SPEED = 4000; // mm/s
 inline constexpr int JUMP_DELAY_MIN = 200;

@@ -23,7 +23,7 @@
 namespace PromarkTiming {
 
 /**
- * Duration of one lcs_set_axis_move(), in ms.
+ * Time an axis spends actually travelling `pulses`, in ms -- the ramp only, no command overhead.
  *
  * The controller ramps from start_speed up to run_speed over acc_time and symmetrically back down.
  * A move too short to reach run_speed is therefore a pure triangle whose duration grows with
@@ -32,8 +32,8 @@ namespace PromarkTiming {
  * that regime (0.1mm = 160 pulses), which is why the old constant-speed model underestimated the
  * Z time by ~6x: 333 steps of 0.1mm take ~61s, not ~11s.
  */
-inline double axisMoveTimeMs(double pulses, double run_speed, double start_speed,
-                             double acc_time_ms) {
+inline double axisTravelTimeMs(double pulses, double run_speed, double start_speed,
+                               double acc_time_ms) {
   pulses = std::fabs(pulses);
   if (pulses <= 0 || run_speed <= 0) return 0;
   if (acc_time_ms <= 0 || run_speed <= start_speed) {
@@ -49,6 +49,20 @@ inline double axisMoveTimeMs(double pulses, double run_speed, double start_speed
   // Triangle: run_speed is never reached, the move peaks at sqrt(start^2 + acc * pulses).
   const double peak_speed = std::sqrt(start_speed * start_speed + acc * pulses);
   return 1000.0 * 2 * (peak_speed - start_speed) / acc;
+}
+
+/**
+ * Duration of one lcs_set_axis_move(), in ms: the travel plus AXIS_MOVE_OVERHEAD_MS.
+ *
+ * The overhead dominates the short moves a 3D carving job is made of -- a 0.001mm Z step travels
+ * 1.6 pulses in ~18ms but costs ~70ms on the machine -- so it is charged per command, including a
+ * move the pulse quantisation rounds down to nothing: the list instruction is issued either way.
+ * Both callers only reach this for a G-code that really does emit one.
+ */
+inline double axisMoveTimeMs(double pulses, double run_speed, double start_speed,
+                             double acc_time_ms) {
+  return PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS +
+         axisTravelTimeMs(pulses, run_speed, start_speed, acc_time_ms);
 }
 
 /** Duration of a Z (depth) move of the given length in mm. */

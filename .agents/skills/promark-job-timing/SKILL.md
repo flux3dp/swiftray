@@ -60,9 +60,36 @@ STL convert params 與輸入契約請讀 `stl-inner-engraving` skill；幾何演
 - Z/A 實際移動先依 `*_PULSE_PER_MM` 量化為整數 pulse；controller 與 estimator 應使用同一
   組 `run speed`、`start speed`、`acceleration time`。
 
-`axisMoveTimeMs()` 不能退回單純的距離除速度。短距離 Z move 通常到不了 run speed，必須用
+`axisTravelTimeMs()` 不能退回單純的距離除速度。短距離 Z move 通常到不了 run speed，必須用
 三角速度曲線；足夠長的 move 才使用含 cruise 的梯形曲線。更改
 `lcs_set_axis_move()` 參數時，同步更新 `src/constants.h`，不要只校正 estimator。
+
+`axisMoveTimeMs()` = `axisTravelTimeMs()` + `AXIS_MOVE_OVERHEAD_MS`。兩個 estimator 都必須
+用前者（含固定開銷），因為每次 `lcs_set_axis_move()` 除了走 pulse 之外還有固定成本。
+
+### AXIS_MOVE_OVERHEAD_MS 是實測值
+
+`AXIS_MOVE_OVERHEAD_MS = 50`（`src/constants.h`）**是實測經驗值，不是規格書或推導出來的**：
+
+- 樣本：2026-09-29 Promark UV STL 內雕工作 log，8857 個 Z move（其中 8597 個是 0.001mm，
+  即 1.6 pulse，處於 pulse 量化底線），20 個 list，每個 list 10000 個 list instruction。
+- 方法：以 `executeList()` log 的 `task time` 與下一個 list 起始時間對齊，得到每個 list 的
+  預估與實際。誤差正比於該 list 的 Z move 數，**每次 50.4ms**，在各 list Z 數從 296 到 1025
+  變動時仍維持 ±3%；純 ramp 模型預估 249s，實際 695s，補回開銷後預估 691s。
+- 因為樣本只有量化底線附近的步距，**無法分辨「每次指令的固定成本」與「ramp 公式本身高估
+  行程時間」**。要外插到長距離 Z move 之前，必須先做步距 sweep（0.001 ~ 2mm）重新擬合。
+- **A 軸完全沒有量測**。這個常數目前同樣套用在 A 軸，是預設假設而非實測結論。
+
+修改這個常數前先重跑量測；不要只因為某一份工作的預估偏差就調整它。若量測顯示誤差隨步距
+改變（而非固定），要改的是 `axisTravelTimeMs()` 或 `src/constants.h` 的速度／加速度參數。
+
+### 固定開銷會改變 list 切割
+
+`estimated_time_` 變大後，`MAX_BUFFER_LIST_TIME`（30s）會比 `MAX_BUFFER_LIST_SIZE`（10000）
+更早成為切 list 的條件，list 因此變短、swap 更頻繁。調整軸移動時間模型時要一併確認
+streaming 行為，不能只看總時間。內雕工作的時間幾乎由 Z move 次數決定（實測樣本中 8857 次
+Z move 占 695s 中的約 606s），而 Z move 次數來自 exporter 的 machine-Z bucket
+（`machine_z_bucket` convert param，見 `stl-inner-engraving` skill）。
 
 ## G-code 動作分類
 
