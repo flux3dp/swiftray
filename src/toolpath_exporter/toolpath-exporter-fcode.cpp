@@ -1535,11 +1535,59 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
   }
 }
 
+/**
+ * Holds the layer's acceleration override for as long as a galvo layer is being
+ * written, and puts it back however the layer ends -- there are two early
+ * returns, and a machine left on a path acceleration it was never told to leave
+ * would take it into whatever runs next.
+ */
+class ToolpathExporterFcode::GalvoPathAcc {
+ public:
+  explicit GalvoPathAcc(ToolpathExporterFcode* owner) : owner_(owner) {
+    AccelerationData acc = owner_->config_.path_acc;
+    if (!isnan(owner_->config_.z_acc)) {
+      acc.is_valid = true;
+      acc.z = owner_->config_.z_acc;
+    }
+    if (!acc.is_valid) {
+      return;
+    }
+    valid_ = true;
+    qInfo() << "[Export] Set galvo layer acc" << acc.x << acc.y << acc.z
+            << acc.a;
+    owner_->proc.set_acceleration_override(acc.x, acc.y, acc.z, acc.a);
+    if (!isnan(acc.x)) {
+      // The estimate has to be made against what the gantry was actually told
+      // to do, not against the job default it no longer has.
+      owner_->proc.set_time_est_acc(acc.x);
+    }
+  }
+  ~GalvoPathAcc() {
+    if (!valid_) {
+      return;
+    }
+    owner_->proc.sync_grbl_motion(151);
+    owner_->proc.set_time_est_acc(owner_->config_.padding_acc);
+  }
+  GalvoPathAcc(const GalvoPathAcc&) = delete;
+  GalvoPathAcc& operator=(const GalvoPathAcc&) = delete;
+
+ private:
+  ToolpathExporterFcode* owner_;
+  bool valid_ = false;
+};
+
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
   // The gantry only ever positions in a galvo job, so it runs at its own speed
   // for the whole layer. Inside a block this has no effect anyway: those
   // travels are galvo jumps and take SET_JUMP_SPEED instead.
   proc.set_travel_speed(config_.galvo_travel_speed);
+  // Acceleration is set once around the whole layer rather than per path, the
+  // way an ordinary layer does it. Every gantry move here is a park between
+  // blocks, and the command that sets acceleration is a gantry command: emitted
+  // per block it would land inside a byte-23 run and end it (§19.1). Out here
+  // there is no run to break, and one setting covers every park in the layer.
+  const GalvoPathAcc acc(this);
 
   prepareGalvoBitmaps();
   const bool has_hatch =
