@@ -9,6 +9,7 @@
 #include <QCoreApplication>
 #include <QPainter>
 #include <algorithm>
+#include <numeric>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
@@ -1424,23 +1425,41 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
       if (offset < first_offset || offset > last_offset) continue;
       scan_offsets.append(offset);
     }
-    // Split the scan lines into stagger_groups contiguous blocks and take one line from each block
-    // in turn, so consecutive laser work never stays inside the same narrow band. 40 lines with
-    // stagger 4 engrave as 1, 11, 21, 31, 2, 12, 22, 32, ... A stagger of 1 keeps the plain
+    // Stride permutation: pick a stride coprime with N so that (i * stride) % N visits
+    // every index exactly once. Use the golden ratio (φ ≈ 1.618) to choose the stride:
+    // N / φ is the value most irrational relative to N, guaranteeing the most uniform
+    // spatial spread with no periodic banding. stagger_groups only controls the adaptive
+    // dwell divisor (how much cooling credit each line gets). A stagger of 1 keeps plain
     // spatial order.
     const int scan_line_count = scan_offsets.size();
-    const int stagger_step =
-        stagger_groups > 1
-            ? std::max(1, (scan_line_count + stagger_groups - 1) / stagger_groups)
-            : 1;
-    QList<int> scan_order;
-    scan_order.reserve(scan_line_count);
-    for (int first = 0; first < stagger_step; ++first) {
-      for (int index = first; index < scan_line_count; index += stagger_step) {
-        scan_order.append(index);
+    int stagger_stride = 1;
+    if (stagger_groups > 1 && scan_line_count > 1) {
+      // Golden ratio target ≈ N / φ ≈ N * 0.618
+      int target = std::max(2, static_cast<int>(std::round(scan_line_count / 1.6180339887)));
+      // Search outward from target for the nearest coprime with scan_line_count.
+      stagger_stride = target;
+      for (int delta = 0; delta < scan_line_count; ++delta) {
+        int hi = target + delta;
+        if (hi < scan_line_count && std::gcd(hi, scan_line_count) == 1) {
+          stagger_stride = hi;
+          break;
+        }
+        int lo = target - delta;
+        if (lo >= 2 && std::gcd(lo, scan_line_count) == 1) {
+          stagger_stride = lo;
+          break;
+        }
       }
     }
-    if (verbose) qInfo() << "Scan lines: " << scan_line_count << " stagger step: " << stagger_step;
+    QList<int> scan_order;
+    scan_order.reserve(scan_line_count);
+    if (stagger_stride <= 1) {
+      for (int i = 0; i < scan_line_count; ++i)
+        scan_order.append(i);
+    } else {
+      for (int i = 0; i < scan_line_count; ++i)
+        scan_order.append((i * stagger_stride) % scan_line_count);
+    }
     // Keep reporting roughly once per percent now that the empty lines no longer inflate the count
     progress_batch = std::max<int>(1, hatch_count * scan_line_count / 100);
 
@@ -1593,11 +1612,13 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
         moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
 
-      // Let the material cool down before the next scan line. In adaptive mode the time this line
-      // already spent marking counts towards the pause, so a line long enough to have spread the
-      // heat by itself waits less, or not at all.
+      // Let the material cool down before the next scan line. fill_dwell_us represents the total
+      // cooling time needed between two spatially adjacent lines. With golden-ratio stride,
+      // a spatial neighbor is engraved ~N/stride ≈ φ ≈ 1.618 lines away in time at minimum,
+      // and on average stagger_groups lines away. We use stagger_groups as the divisor since
+      // it represents the user's intended heat-spread factor.
       if (fill_dwell_us > 0 && marked_length_mm > 0) {
-        double dwell_us = fill_dwell_us;
+        double dwell_us = static_cast<double>(fill_dwell_us) / stagger_groups;
         if (fill_dwell_adaptive && current_layer_->speed() > 0) {
           dwell_us -= 1e6 * marked_length_mm / current_layer_->speed();
         }
