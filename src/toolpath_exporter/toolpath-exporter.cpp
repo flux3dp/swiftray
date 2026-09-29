@@ -992,7 +992,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
   };
   std::map<qint64, MachineBucket> buckets;
-  constexpr double kMachineZBucketMm = 0.0001;
+  constexpr double kMachineZBucketMm = 0.001;
   double total_work = static_cast<double>(ladder.size());
   for (const StlJob &job : jobs) total_work += static_cast<double>(job.dot_points.size());
   total_work = std::max(1.0, total_work);
