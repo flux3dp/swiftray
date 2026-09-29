@@ -148,6 +148,7 @@ convert 共用欄位仍照原介面提供。
   "material_max_z": 30.0,
 
   "first_pulse_killer_enabled": true,
+  "machine_z_bucket": 0.001,
 
   "is_uv_light": false,
   "jump_speed": 4000,
@@ -167,12 +168,16 @@ convert 共用欄位仍照原介面提供。
 | `material_min_z` | mm，預設 0 | 可雕刻的最小模型 Z（含邊界）。 |
 | `material_max_z` | mm，預設 `material_height` | 可雕刻的最大模型 Z（含邊界）。 |
 | `first_pulse_killer_enabled` | bool，預設 false | 產生 `;CONFIG FIRST_PULSE_KILLER_ENABLED=0/1`，由 BSL 控制器在每個 list 套用。 |
+| `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.001)，最小 0.001 | 補償後 machine Z 的量化間距。低於最小值會被夾住並警告。 |
 
 `material_min_z`／`material_max_z` 判斷的是**折射補償前的模型 Z**。超出範圍的 line slice
 整層不輸出；dot、photo 與 point-cloud 則丟棄超出範圍的點。因此原始 `Z < 0` 的內容即使
 經 Basic 折射公式後得到可到達的正 machine Z，也不會打到底板。
 
-所有 STL 輸出會依補償後的 machine Z 強制量化到 `0.0001 mm` bucket。
+所有 STL 輸出會依補償後的 machine Z 量化到 `machine_z_bucket`。一個 bucket 就是一次 Z 軸
+移動，而 Promark 每次軸移動有約 50ms 的固定開銷（見 `promark-job-timing` skill），所以這個
+值直接決定內雕工作的時間下限：實測樣本中 0.001mm bucket 產生 8857 次 Z move，占 695s 工作
+中的約 606s。加大 bucket 是用深度解析度換時間。
 
 其餘 timing params 會以同名的大寫 `;CONFIG` 寫入 G-code。`first_pulse_killer_enabled` 也走
 同一條路徑，不再由 controller setter 設定。STL 低速打點的時間預估對單點完整成本套用
@@ -182,7 +187,10 @@ convert 共用欄位仍照原介面提供。
 
 - 測試用定義與實作只能由 `UnitTest` target 引用，不可加入 `swiftray_app_bundle`。
 - Basic 軸向折射固定套用；不要重新加入 opt-in、模型切換或 XY 補償。
-- STL machine-Z bucket 固定為 `0.0001 mm`。
+- STL machine-Z bucket 預設 `kDefaultMachineZBucketMm`（0.001 mm），可由 `machine_z_bucket`
+  覆寫，但**最小值 0.001 mm 是硬性下限，不是偏好**：更細的 bucket 實測會讓工作在執行期卡住
+  （commit「Fix small z bucket make runtime stuck」即是把固定值從 0.0001 改為 0.001）。
+  Z 軸一個 pulse 是 0.000625 mm，0.001 mm 已接近軸解析度。前後端都要夾住這個下限。
 - convert 期間的長時間切片、取樣、排序與輸出必須持續回報進度並可取消。
 - 取消後直接停止產生輸出，不追加 STL 清理、dotting 關閉或 Z 軸歸零命令。
 - 不要在正式路徑加入切片／補償結果的 CSV、image 或其他 debug dump。

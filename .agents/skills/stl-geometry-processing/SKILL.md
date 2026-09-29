@@ -70,7 +70,8 @@ intersection endpoint 需在 tolerance 內 welding，並搜尋相鄰 spatial-has
 逐物件各自完整輸出。較深層必須先雕刻，避免已產生的 crack points 散射後方光路。
 
 material Z 範圍先在模型 Z 上過濾，再使用 Basic refraction 轉成 machine Z。所有輸出最後依
-補償後 machine Z 強制量化到 `0.0001 mm` bucket。接近的 slicing planes 可以共用規劃 step，
+補償後 machine Z 量化到 machine-Z bucket（`machine_z_bucket` convert param，預設與最小值
+都是 0.001 mm，見 `stl-inner-engraving` skill）。接近的 slicing planes 可以共用規劃 step，
 但不可因此繞過 machine-Z bucket 或改變跨物件的深度順序。
 
 ## Blue-noise 與 inward shells

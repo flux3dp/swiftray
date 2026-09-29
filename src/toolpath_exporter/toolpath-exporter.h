@@ -26,6 +26,23 @@ struct FilledPath {
   bool isEvenOdd;
 };
 
+/**
+ * Machine-Z quantisation of the STL output, in mm, overridable per job through the
+ * "machine_z_bucket" convert param.
+ *
+ * Every point and slice is snapped to a multiple of this before it is emitted, and each bucket
+ * costs exactly one Z move. On the Promark that move is dominated by a fixed ~50ms command
+ * overhead (PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS), so the bucket size sets the floor on how
+ * long an inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at
+ * the 0.001mm bucket. Coarser buckets trade depth resolution for time.
+ *
+ * The minimum is a hard floor, not a preference: finer buckets have been observed to stall the
+ * job at runtime (see "Fix small z bucket make runtime stuck", which raised the fixed value from
+ * 0.0001mm). One Z pulse is 0.000625mm, so 0.001mm is already near the axis resolution.
+ */
+inline constexpr double kDefaultMachineZBucketMm = 0.001;
+inline constexpr double kMinMachineZBucketMm = 0.001;
+
 /** STL engraving strategies. Dot strategies are sampled into point clouds before output. */
 enum class StlEngraveKind {
   kLineFill = 0,  // original fixed-Z contours -> outputLayerFillGcode()
@@ -214,6 +231,11 @@ private:
   /** Inclusive material bounds in uncorrected model Z. */
   double material_min_z_mm_ = 0.0;
   double material_max_z_mm_ = std::numeric_limits<double>::infinity();
+  /**
+   * Machine-Z quantisation of the STL output, mm. Every emitted point is snapped to a multiple of
+   * this, and one bucket costs one Z move -- see kDefaultMachineZBucketMm.
+   */
+  double machine_z_bucket_mm_ = kDefaultMachineZBucketMm;
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;

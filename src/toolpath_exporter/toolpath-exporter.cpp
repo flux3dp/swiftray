@@ -93,6 +93,18 @@ void ToolpathExporter::parseParam(QJsonObject param) {
   }
   refraction_.setParams(refraction);
 
+  machine_z_bucket_mm_ = kDefaultMachineZBucketMm;
+  if (param.contains("machine_z_bucket")) {
+    const double requested = param["machine_z_bucket"].toDouble();
+    if (!std::isfinite(requested) || requested < kMinMachineZBucketMm) {
+      qWarning() << "[Export] machine_z_bucket" << requested << "is below the"
+                 << kMinMachineZBucketMm << "mm floor; using the floor";
+      machine_z_bucket_mm_ = kMinMachineZBucketMm;
+    } else {
+      machine_z_bucket_mm_ = requested;
+    }
+  }
+
   material_min_z_mm_ = param.contains("material_min_z")
                            ? param["material_min_z"].toDouble()
                            : 0.0;
@@ -695,7 +707,8 @@ void ToolpathExporter::outputLayerGcode(double progress_start, double progress_s
  * belong to the same Z and must not cost a second Z travel.
  *
  * Slicing stays in real model Z. Basic refraction maps the finished geometry into a sliding window
- * of 0.0001 mm machine-Z buckets. A bucket is flushed only when later geometry cannot add to it.
+ * of machine-Z buckets, kDefaultMachineZBucketMm wide unless the job overrides it. A bucket is
+ * flushed only when later geometry cannot add to it.
  */
 void ToolpathExporter::outputLayerStlGcode(double progress_start, double progress_span) {
   if (layer_stl_placements_.isEmpty()) return;
@@ -992,7 +1005,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
   };
   std::map<qint64, MachineBucket> buckets;
-  constexpr double kMachineZBucketMm = 0.001;
+  // Per-job, floored by parseParam(); one bucket is one Z move. See kDefaultMachineZBucketMm.
+  const double machine_z_bucket_mm =
+      std::max(machine_z_bucket_mm_, kMinMachineZBucketMm);
   double total_work = static_cast<double>(ladder.size());
   for (const StlJob &job : jobs) total_work += static_cast<double>(job.dot_points.size());
   total_work = std::max(1.0, total_work);
@@ -1003,9 +1018,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
                               std::min(1.0, (processed_work + in_flight) / total_work));
   };
   const auto bucketKey = [&](double z_mm) {
-    return static_cast<qint64>(std::llround(z_mm / kMachineZBucketMm));
+    return static_cast<qint64>(std::llround(z_mm / machine_z_bucket_mm));
   };
-  const auto bucketZ = [&](qint64 key) { return key * kMachineZBucketMm; };
+  const auto bucketZ = [&](qint64 key) { return key * machine_z_bucket_mm; };
 
   auto addBlueNoisePointToBucket = [&](const stl::SurfacePoint &sample, int dot_kind) {
     const QPointF target_dots = global_transform_.map(
@@ -1174,9 +1189,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
 }
 
 void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
-  // Quantise to the forced 0.0001mm STL bucket. The moves are relative, so a target the
-  // generator rounds away would still count here and the two positions would slowly drift apart --
-  // over many layers that adds up.
+  // Quantise to the generator's 0.0001mm Z precision, which is finer than any machine-Z bucket.
+  // The moves are relative, so a target the generator rounds away would still count here and the
+  // two positions would slowly drift apart -- over many layers that adds up.
   const double target_z_mm = std::round(focus_z_mm * 10000.0) / 10000.0;
   if (target_z_mm == stl_focus_z_mm_) return;
   // moveZ is relative for Promark. A positive delta raises the head, matching focus_z_mm.
