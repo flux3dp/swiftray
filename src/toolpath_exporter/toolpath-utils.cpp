@@ -828,21 +828,20 @@ bool is_galvo_module(LayerModule module) {
 
 QSizeF get_galvo_block_size(double field_mm) {
   // The displacement is a whole number of full steps, so it cannot be derived
-  // from the field alone -- each lens gets a measured pair. Current 6090 test
-  // platform, X full step 0.5 mm and Y full step 0.2032 mm:
-  //   110 mm lens -> X 200 steps = 100 mm,   Y 492 steps = 99.9744 mm
-  //    70 mm lens -> X 120 steps =  60 mm,   Y 295 steps = 59.944 mm
-  // The next EVT machine steps 0.25 / 0.16 mm, which lands on a round
-  // 100 x 100 and 60 x 60 for the same two lenses, so this table is per
-  // platform and will need revisiting.
-  // TODO: provisional, waiting on measurement.
+  // from the field alone -- each lens gets its own pair. These are the EVT
+  // machine, which steps 0.25 mm in X and 0.16 mm in Y:
+  //   110 mm lens -> X 400 steps = 100 mm,   Y 625 steps = 100 mm
+  //    70 mm lens -> X 240 steps =  60 mm,   Y 375 steps =  60 mm
+  // A platform that steps differently lands elsewhere -- the 6090 test rig,
+  // at 0.5 and 0.2032 mm, wants 100 x 99.9744 and 60 x 59.944 -- and says so
+  // with galvo_block rather than by being added here.
   struct Entry {
     double field_mm;
     QSizeF block;
   };
   static const Entry table[] = {
-      {110.0, QSizeF(100.0, 99.9744)},
-      {70.0, QSizeF(60.0, 59.944)},
+      {110.0, QSizeF(100.0, 100.0)},
+      {70.0, QSizeF(60.0, 60.0)},
   };
   for (const Entry& entry : table) {
     if (qAbs(entry.field_mm - field_mm) < 0.5) {
