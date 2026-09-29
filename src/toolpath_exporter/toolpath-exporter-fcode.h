@@ -257,6 +257,9 @@ class ToolpathExporterFcode : public QObject {
    * stand where the drawing is not allowed to reach, or the reverse, is a
    * lattice that does not line up with the work it is planning for.
    */
+  /** Scoped acceleration override for a galvo layer; see the definition. */
+  class GalvoPathAcc;
+
   InwardRect moduleBoundary(LayerModule module) const;
   InwardRect getClipRect(InwardRect current, QPointF offset, LayerModule module, bool rotary = false);
   void onProgressChanged(double value, bool absolute);
