@@ -21,6 +21,9 @@ struct DetectedObject {
     float cx = 0, cy = 0;                 // centroid (all mask pixels)
     int area = 0;                         // mask pixel count
     float score = 0;                      // SAM iou prediction
+    float stability = 0;                  // mask area at logit>1 / area at logit>-1 (filter diagnostics)
+    float border = 0;                     // share of the image border band the low-res mask touches
+    float edge_ratio = 0;                 // outline gradient / interior gradient (filter diagnostics)
     int bx = 0, by = 0, bw = 0, bh = 0;   // bbox
     std::vector<std::pair<float, float>> polygon;  // simplified outer contour
 };
@@ -257,6 +260,20 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
     DetectedObject o;
     o.mask = sam.lowres_to_full(logits);
     const int w = sam.frame_w(), h = sam.frame_h();
+    // keep only the largest component: a low-granularity mask can carry stray fragments
+    // (a shadow band under an engraving) that would stretch the bbox and shift the centroid
+    // away from the polygon, which only ever traces the largest component
+    {
+        std::vector<int> labels, areas;
+        int n = label_components(o.mask, w, h, labels, areas);
+        if (n > 1) {
+            int big = 1;
+            for (int i = 2; i <= n; i++)
+                if (areas[i] > areas[big]) big = i;
+            for (size_t i = 0; i < o.mask.size(); i++)
+                if (o.mask[i] && labels[i] != big) o.mask[i] = 0;
+        }
+    }
     long area = 0;
     double sx = 0, sy = 0;
     int minx = w, miny = h, maxx = -1, maxy = -1;
@@ -285,10 +302,83 @@ inline DetectedObject object_from_logits(Sam& sam, const std::vector<float>& log
     return o;
 }
 
+// Sobel-free gradient magnitude of a lightly smoothed gray image (central differences).
+inline std::vector<float> gradient_magnitude(const Image& frame) {
+    int w = frame.w, h = frame.h;
+    std::vector<uint8_t> gray = to_gray(frame);
+    std::vector<float> blur((size_t)w * h), g((size_t)w * h, 0.f);
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) {
+            int sum = 0, n = 0;
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++) {
+                    int xx = x + dx, yy = y + dy;
+                    if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+                    sum += gray[(size_t)yy * w + xx];
+                    n++;
+                }
+            blur[(size_t)y * w + x] = (float)sum / n;
+        }
+    for (int y = 1; y < h - 1; y++)
+        for (int x = 1; x < w - 1; x++) {
+            float gx = blur[(size_t)y * w + x + 1] - blur[(size_t)y * w + x - 1];
+            float gy = blur[(size_t)(y + 1) * w + x] - blur[(size_t)(y - 1) * w + x];
+            g[(size_t)y * w + x] = std::sqrt(gx * gx + gy * gy);
+        }
+    return g;
+}
+
+// How much sharper the object's outline is than its own interior: mean gradient in a band
+// +-2 px around the mask boundary over the mean gradient of the mask eroded by 4 px.
+// A real part (even a keyring filled with bed texture) has an outline that is a true edge; a lit
+// patch of honeycomb has no outline, its fade runs through cells, so the ratio sits near 1.
+// Returns a large value when the interior is too small to measure (tiny parts are never rejected).
+// `cover` counts how many detected masks contain each pixel; band pixels within 2 px of another
+// object's mask are ignored, so a pocket of bed enclosed by parts is judged on its own fade, not on
+// its neighbours' edges. A part nested in a bigger part has no band left and is kept.
+inline float boundary_edge_ratio(const DetectedObject& o, const std::vector<float>& grad,
+                                 const std::vector<uint8_t>& cover, int w, int h) {
+    int pad = 3;
+    int x0 = (std::max)(0, o.bx - pad), y0 = (std::max)(0, o.by - pad);
+    int x1 = (std::min)(w, o.bx + o.bw + pad), y1 = (std::min)(h, o.by + o.bh + pad);
+    int cw = x1 - x0, ch = y1 - y0;
+    if (cw <= 0 || ch <= 0) return 1e9f;
+    std::vector<uint8_t> crop((size_t)cw * ch);
+    for (int y = 0; y < ch; y++)
+        for (int x = 0; x < cw; x++) crop[(size_t)y * cw + x] = o.mask[(size_t)(y0 + y) * w + (x0 + x)] ? 255 : 0;
+    std::vector<uint8_t> dil = crop, ero2 = crop, ero4 = crop;
+    morph_1d(dil, cw, ch, 2, true, true);   morph_1d(dil, cw, ch, 2, false, true);
+    morph_1d(ero2, cw, ch, 2, true, false); morph_1d(ero2, cw, ch, 2, false, false);
+    morph_1d(ero4, cw, ch, 4, true, false); morph_1d(ero4, cw, ch, 4, false, false);
+    double band = 0, inner = 0;
+    long nb = 0, ni = 0;
+    for (int y = 0; y < ch; y++)
+        for (int x = 0; x < cw; x++) {
+            size_t i = (size_t)y * cw + x;
+            float gv = grad[(size_t)(y0 + y) * w + (x0 + x)];
+            if (ero4[i]) { inner += gv; ni++; }
+            if (!dil[i] || ero2[i]) continue;
+            bool near_other = false;
+            for (int dy = -2; dy <= 2 && !near_other; dy++)
+                for (int dx = -2; dx <= 2; dx++) {
+                    int xx = x0 + x + dx, yy = y0 + y + dy;
+                    if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+                    size_t j = (size_t)yy * w + xx;
+                    if (cover[j] - (o.mask[j] ? 1 : 0) > 0) { near_other = true; break; }
+                }
+            if (!near_other) { band += gv; nb++; }
+        }
+    if (nb < 20 || ni < 50) return 1e9f;
+    return (float)((band / nb) / (std::max)(inner / ni, 1e-3));
+}
+
 // ---- the detector ----
 class EverythingDetector {
 public:
     int grid_x = 10, grid_y = 6, max_objects = 20;
+    static constexpr double IOU_MIN = 0.88;        // SAM's default pred_iou_thresh; golden parts >= 0.94
+    static constexpr double STABILITY_MIN = 0.85;  // golden bed.jpg parts score >= 0.90; lit bed patches ~0.7
+    static constexpr float EDGE_RATIO_MIN = 1.5f;   // outline vs interior gradient; keyring 2.1, lit bed patch 1.1
     int decode_workers = 1;  // ORT intra-op parallelism already saturates x64; measure before raising
     double last_ms = 0;
     std::function<void(int, int)> on_progress;  // (decoded prompts, total); called from decode threads
@@ -316,7 +406,7 @@ public:
 
         // decode all prompts in parallel (Ort::Session::Run is thread-safe;
         // the decoder session runs 1 intra-op thread each, so calls scale)
-        std::vector<LowResMask> lowres(pts.size());
+        std::vector<std::vector<LowResMask>> lowres(pts.size());
         int workers = decode_workers > 0 ? decode_workers : (int)std::thread::hardware_concurrency();
         workers = (std::max)(1, (std::min)((std::min)(workers, (int)pts.size()), 16));
         std::atomic<size_t> next_idx{0};
@@ -324,7 +414,7 @@ public:
         auto work = [&] {
             size_t i;
             while ((i = next_idx.fetch_add(1)) < pts.size()) {
-                lowres[i] = sam.decode_point(pts[i].first, pts[i].second);
+                lowres[i] = sam.decode_point_all(pts[i].first, pts[i].second);
                 int d = ++done;
                 if (on_progress && (d % 10 == 0 || d == (int)pts.size())) on_progress(d, (int)pts.size());
             }
@@ -339,19 +429,25 @@ public:
             std::vector<uint8_t> mb;  // 256x256 binary
             std::vector<float> logits;
             float cx, cy;  // low-res centroid
+            long area = 0;
+            float stability = 0, border = 0;
         };
         std::vector<Cand> cands;
-        for (size_t pi = 0; pi < pts.size(); pi++) {
-            LowResMask& lr = lowres[pi];
+        for (size_t pi = 0; pi < pts.size(); pi++)
+        for (LowResMask& lr : lowres[pi]) {
+            if (lr.iou < IOU_MIN) continue;
             Cand c;
             c.mb.resize((size_t)256 * 256);
-            long area = 0, border_hits = 0;
+            long area = 0, border_hits = 0, tight = 0, loose = 0;
             double sx = 0, sy = 0;
             for (int y = 0; y < 256; y++)
                 for (int x = 0; x < 256; x++) {
                     size_t i = (size_t)y * 256 + x;
-                    uint8_t on = lr.logits[i] > 0.f ? 1 : 0;
+                    float l = lr.logits[i];
+                    uint8_t on = l > 0.f ? 1 : 0;
                     c.mb[i] = on;
+                    tight += l > 1.f;
+                    loose += l > -1.f;
                     if (on) {
                         area++;
                         sx += x;
@@ -361,10 +457,16 @@ public:
                 }
             if (area < 150 || area > 0.25 * 256 * 256) continue;      // glints / whole-scene
             if ((double)border_hits / border_total > 0.08) continue;  // backdrop
+            // stability (SAM's own filter): a crisp object barely changes when the logit
+            // threshold moves +-1; a lit patch of bed with a soft edge shrinks a lot
+            if (!loose || (double)tight / loose < STABILITY_MIN) continue;
             c.score = lr.iou;
+            c.stability = loose ? (float)tight / loose : 0.f;
+            c.border = (float)border_hits / border_total;
             c.logits = std::move(lr.logits);
             c.cx = (float)(sx / area);
             c.cy = (float)(sy / area);
+            c.area = area;
             cands.push_back(std::move(c));
         }
         std::sort(cands.begin(), cands.end(), [](const Cand& a, const Cand& b) { return a.score > b.score; });
@@ -374,7 +476,9 @@ public:
             bool dup = false;
             for (auto& k : kept) {
                 float dx = c.cx - k.cx, dy = c.cy - k.cy;
-                if (dx * dx + dy * dy < 16) { dup = true; break; }  // centers < 4 px (low-res)
+                // same centre AND similar size = same object; a part centred on its parent is not
+                double ratio = (double)(std::min)(c.area, k.area) / (std::max)(c.area, k.area);
+                if (dx * dx + dy * dy < 16 && ratio > 0.5) { dup = true; break; }  // centers < 4 px (low-res)
                 long inter = 0, uni = 0;
                 for (size_t i = 0; i < c.mb.size(); i++) {
                     inter += c.mb[i] & k.mb[i];
@@ -388,10 +492,22 @@ public:
             }
         }
 
-        std::vector<DetectedObject> objects;
+        std::vector<DetectedObject> all;
         for (auto& k : kept) {
             DetectedObject o = object_from_logits(sam, k.logits, k.score);
             if (o.area < 300) continue;
+            o.stability = k.stability;
+            o.border = k.border;
+            all.push_back(std::move(o));
+        }
+        std::vector<uint8_t> cover((size_t)w * h, 0);
+        for (auto& o : all)
+            for (size_t i = 0; i < cover.size(); i++) cover[i] += o.mask[i] ? 1 : 0;
+        std::vector<float> grad = gradient_magnitude(frame);
+        std::vector<DetectedObject> objects;
+        for (auto& o : all) {
+            o.edge_ratio = boundary_edge_ratio(o, grad, cover, w, h);
+            if (o.edge_ratio < EDGE_RATIO_MIN) continue;  // no outline of its own: bed texture, lit or enclosed
             objects.push_back(std::move(o));
         }
         last_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
