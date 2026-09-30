@@ -159,6 +159,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
   config_.skip_prespray = param["skip_prespray"].toBool();
   config_.burst_refresh = param["burst_refresh"].toBool();
   config_.prespray_times = param["prespray_times"].toInt(3);
+  config_.color_order = param["ico"].toString();
   config_.min_speed = param["min_speed"].toDouble(3);
   config_.travel_speed = param["ts"].toDouble(7500);
   config_.a_travel_speed = param["ats"].toDouble(2000);
@@ -401,6 +402,10 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       required_module = MachineModules::LASER_1064;
     }
     proc.add_metadata("REQUIRED_HEADTYPE", int(required_module));
+    if (!config_.color_order.isEmpty()) {
+      // 4C ink per cartridge slot, so readers can map payload nibble bits back to inks
+      proc.add_metadata("COLOR_ORDER", config_.color_order);
+    }
 
     if (config_.expected_module != MachineModules::NONE) {
       MachineModules forbidden_headtype = MachineModules::NONE;
@@ -1003,6 +1008,10 @@ void ToolpathExporterFcode::convertPrintingLayer() {
           {PrintingColor::BLACK, current_layer_->kRatio() / 100},
       };
       factory_ = std::make_unique<PrinterBitmapFactory4C>(kwargs);
+      if (!config_.color_order.isEmpty()) {
+        qInfo() << "Color Order:" << config_.color_order;
+        factory_->set_color_order(config_.color_order);
+      }
       if (hw_profile.reverse_4c) {
         factory_->set_reversed(true);
       }

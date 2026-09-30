@@ -62,6 +62,7 @@ class BaseBitmapFactory : public BaseFactory {
                                  const QPointF& nozzle_offset) {};
   // 4C
   virtual void set_reversed(bool val) {};
+  virtual void set_color_order(const QString& order) {};
   virtual void set_am_angle_map(const QString& raw_val) {};
   virtual void set_color_curves_map(const QString& raw_val) {};
   virtual void set_macros(std::shared_ptr<BaseMacros> macros_ptr) {};
