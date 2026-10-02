@@ -1,6 +1,8 @@
 #include "worker.h"
 #include "swiftray-server.h"
 #include <QCoreApplication>
+
+#include <mutex>
 #include <QJsonObject>
 #include <executor/machine_job/machine_job.h>
 #include <toolpath_exporter/convex-hull-exporter.h>
@@ -19,10 +21,69 @@ void Worker::handleInterrupt(QPointer<QWebSocket> socket_ptr) {
   }
 }
 
+namespace {
+
+/**
+ * Holds the canvas lock and gives it back however the scope ends.
+ *
+ * The action releases it by hand on the paths that answer the client early,
+ * and this catches the one that does not: a throw leaving the action used to
+ * leave the lock held, and every convert after it was told the backend was
+ * busy -- by a daemon that had already died.
+ */
+class CanvasLock {
+ public:
+  explicit CanvasLock(std::mutex& mutex) : mutex_(&mutex) {}
+  ~CanvasLock() { release(); }
+  void release() {
+    if (mutex_) {
+      mutex_->unlock();
+      mutex_ = nullptr;
+    }
+  }
+  CanvasLock(const CanvasLock&) = delete;
+  CanvasLock& operator=(const CanvasLock&) = delete;
+
+ private:
+  std::mutex* mutex_;
+};
+
+}  // namespace
+
+/**
+ * An exception leaving a slot reaches the event loop, which ends the process:
+ * the daemon dies on a job it could have refused instead. A conversion that
+ * runs out of room to hold its own output is exactly that kind of job, so it
+ * is reported as a failed convert and the daemon stays up for the next one.
+ */
 bool Worker::handleAction(QWebSocket* socket,
                           const QString& id,
                           const QString& action,
                           const QJsonValue& params) {
+  QString failure;
+  try {
+    return handleActionImpl(socket, id, action, params);
+  } catch (const std::exception& e) {
+    failure = QString::fromUtf8(e.what());
+  } catch (...) {
+    failure = "Unknown error";
+  }
+  qCritical() << "Error handling" << action << failure;
+  if (socket_ptr_.isNull()) {
+    return false;
+  }
+  Q_EMIT sendCallbackInMain(
+      socket, id,
+      QJsonObject{{"success", false},
+                  {"error", QJsonObject{{"message", failure}}}});
+  QCoreApplication::processEvents();
+  return false;
+}
+
+bool Worker::handleActionImpl(QWebSocket* socket,
+                              const QString& id,
+                              const QString& action,
+                              const QJsonValue& params) {
   QJsonObject result;
   if (!server_->canvas_mutex_.try_lock()) {
     result["success"] = false;
@@ -31,6 +92,7 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
     return false;
   }
+  CanvasLock canvas_lock(server_->canvas_mutex_);
   socket_ptr_ = socket;
   result["success"] = true;
   QString current_task = "";
@@ -44,7 +106,7 @@ bool Worker::handleAction(QWebSocket* socket,
     QCoreApplication::processEvents();
   };
   auto onCancel = [&]() {
-    server_->canvas_mutex_.unlock();
+    canvas_lock.release();
     if (socket_ptr_.isNull()) return;
     result["success"] = false;
     result["error"] = QJsonObject{{"message", "cancel"}},
@@ -227,7 +289,7 @@ bool Worker::handleAction(QWebSocket* socket,
     result["error"] = QJsonObject{{"message", "unknown action"}};
   }
 
-  server_->canvas_mutex_.unlock();
+  canvas_lock.release();
   if (socket_ptr_.isNull()) return false;
   Q_EMIT sendCallbackInMain(socket, id, result);
   QCoreApplication::processEvents();

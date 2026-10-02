@@ -22,5 +22,8 @@ class Worker : public QObject {
   void sendCallbackInMain(QWebSocket* socket, const QString& id, const QJsonObject& result);
 
  private:
+  /** The action itself; handleAction() is the part that catches. */
+  bool handleActionImpl(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
+
   QPointer<QWebSocket> socket_ptr_;
 };
