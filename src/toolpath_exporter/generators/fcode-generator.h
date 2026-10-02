@@ -8,6 +8,7 @@
 #include <QJsonObject>
 #include <QRectF>
 #include <initializer_list>
+#include <ios>
 #include <vector>
 
 #define FORWARD_TO_GENERATOR(FUNC)                           \
@@ -175,7 +176,7 @@ class FCodeGenerator {
 class FCodeGeneratorV1 : public FCodeGenerator {
  private:
   std::ostream* stream;
-  int script_offset;
+  std::streamoff script_offset;
   // for estimating time_cost
   float last_feedrate;
   float last_direction;
@@ -220,9 +221,9 @@ class FCodeGeneratorV2 : public FCodeGenerator {
  private:
   std::ostream* content_stream;
   std::ostream* fc_stream;
-  int start;
+  std::streamoff start;
   /// task info
-  int current_task_script_start;
+  std::streamoff current_task_script_start;
   double current_task_traveled;
   double current_task_time_cost;
   // for estimating time_cost
@@ -281,7 +282,7 @@ class FCodeGeneratorG : public FCodeGenerator {
  private:
   const float move_precision = 10000;
   std::stringstream str_stream;
-  int script_offset;
+  std::streamoff script_offset;
   // dummy metadata
   QJsonObject metadata{};
 

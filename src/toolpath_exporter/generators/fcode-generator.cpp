@@ -1,10 +1,47 @@
 #include "fcode-generator.h"
+
+#include <cstdint>
+#include <stdexcept>
+#include <string>
 #include "crc16.c"
 #include "crc32.c"
 #include "estimate_time.cpp"
 #include <QBuffer>
 #include <QDebug>
 #include <QJsonDocument>
+
+namespace {
+
+/**
+ * Where the stream's write head is, or an error naming the place it failed.
+ *
+ * A std::stringstream does not let an allocation failure out: the output
+ * functions catch it and set badbit, after which every write is a silent no-op
+ * and tellp() answers -1. Read as a length that -1 is four gigabytes, and the
+ * write that follows walks off the end of a buffer that never grew -- which is
+ * a segfault a long way from the cause. Checking here keeps the failure where
+ * it can still be described.
+ */
+std::streamoff checked_tellp(std::ostream* stream, const char* where) {
+  const std::streamoff at = stream->tellp();
+  if (at < 0 || !stream->good()) {
+    throw std::runtime_error(std::string("fcode stream failed at ") + where +
+                             ": the job is too large to hold in memory");
+  }
+  return at;
+}
+
+/** A length the container has to state in 32 bits. */
+uint32_t checked_u32(std::streamoff length, const char* where) {
+  if (length < 0 || length > std::streamoff(UINT32_MAX)) {
+    throw std::runtime_error(std::string("fcode ") + where + " is " +
+                             std::to_string(length) +
+                             " bytes, which the format cannot state in 32 bits");
+  }
+  return uint32_t(length);
+}
+
+}  // namespace
 
 void FCodeGenerator::write(float value, unsigned long* crc32) {
   write((const char*)&value, 4, crc32);
@@ -455,7 +492,7 @@ std::string FCodeGeneratorV1::to_string() {
 };
 
 size_t FCodeGeneratorV1::total_length() {
-  return int(stream->tellp()) - script_offset + magic_number_size;
+  return std::streamoff(stream->tellp()) - script_offset + magic_number_size;
 }
 
 float FCodeGeneratorV1::get_time_cost() {
@@ -474,21 +511,21 @@ void FCodeGeneratorV1::terminated() {
   uint32_t u32value;
 
   // Write script size and CRC32
-  int script_end_offset = stream->tellp();
+  const std::streamoff script_end_offset = checked_tellp(stream, "script end");
   stream->seekp(script_offset, stream->beg);
-  u32value = script_end_offset - script_offset - 4;
+  u32value = checked_u32(script_end_offset - script_offset - 4, "script");
   FCodeGenerator::write(u32value, NULL);
   stream->seekp(script_end_offset, stream->beg);
   FCodeGenerator::write((uint32_t)script_crc32, NULL);
 
   // Write metadata
-  int metadata_offset = stream->tellp();
-  int metadata_end_offset;
+  const std::streamoff metadata_offset = checked_tellp(stream, "metadata start");
   write("\x00\x00\x00\x00", 4, NULL);
   unsigned long metadata_crc32 = write_metadata();
-  metadata_end_offset = stream->tellp();
+  const std::streamoff metadata_end_offset =
+      checked_tellp(stream, "metadata end");
   stream->seekp(metadata_offset, stream->beg);
-  u32value = metadata_end_offset - metadata_offset - 4;
+  u32value = checked_u32(metadata_end_offset - metadata_offset - 4, "metadata");
   FCodeGenerator::write(u32value, NULL);
   stream->seekp(metadata_end_offset, stream->beg);
   FCodeGenerator::write((uint32_t)metadata_crc32, NULL);
@@ -562,7 +599,7 @@ std::string FCodeGeneratorV2::to_string() {
 };
 
 size_t FCodeGeneratorV2::total_length() {
-  return int(fc_stream->tellp()) - start;
+  return std::streamoff(fc_stream->tellp()) - start;
 };
 
 float FCodeGeneratorV2::get_time_cost() {
@@ -596,16 +633,18 @@ void FCodeGeneratorV2::start_task_script_block(const char* header,
   if (proc_id) {
     write(proc_id, 4, NULL);
   }
-  current_task_script_start = content_stream->tellp();
+  current_task_script_start =
+      checked_tellp(content_stream, "task script start");
   current_task_traveled = traveled;
   current_task_time_cost = time_cost;
   write("\x00\x00\x00\x00", 4, NULL);
 }
 
 void FCodeGeneratorV2::end_task_script_block(void) {
-  int end = content_stream->tellp();
+  const std::streamoff end = checked_tellp(content_stream, "task script end");
   content_stream->seekp(current_task_script_start, content_stream->beg);
-  uint32_t task_length = end - current_task_script_start - 4;
+  uint32_t task_length =
+      checked_u32(end - current_task_script_start - 4, "task script");
   FCodeGenerator::write(task_length, NULL);
   content_stream->seekp(end, content_stream->beg);
   current_task_traveled = traveled - current_task_traveled;
@@ -763,12 +802,14 @@ void FCodeGeneratorV2::end_content() {
   // Write metadata
   uint32_t u32value;
   write_to_all("FILE", 4, NULL);
-  int metadata_start_pos = fc_stream->tellp();
+  const std::streamoff metadata_start_pos =
+      checked_tellp(fc_stream, "metadata start");
   write_to_all("\x00\x00\x00\x00", 4, NULL);
   unsigned long metadata_crc32 = write_metadata();
-  int metadata_end_pos = fc_stream->tellp();
+  const std::streamoff metadata_end_pos =
+      checked_tellp(fc_stream, "metadata end");
   fc_stream->seekp(metadata_start_pos, fc_stream->beg);
-  u32value = metadata_end_pos - metadata_start_pos - 4;
+  u32value = checked_u32(metadata_end_pos - metadata_start_pos - 4, "metadata");
   FCodeGenerator::write(u32value, NULL, true);
   fc_stream->seekp(metadata_end_pos, fc_stream->beg);
   FCodeGenerator::write((uint32_t)metadata_crc32, NULL, true);
@@ -786,13 +827,26 @@ void FCodeGeneratorV2::end_content() {
   write_to_all(thumbnail_data.data(), u32value, NULL);
 
   // Copy content to fc_stream
-  int content_end_offset = content_stream->tellp();
-  u32value = content_end_offset;
+  const std::streamoff content_end_offset =
+      checked_tellp(content_stream, "content end");
+  u32value = checked_u32(content_end_offset, "content");
   write_to_all("CONT", 4, NULL);
   FCodeGenerator::write(u32value, NULL, true);
   std::string content = ((std::stringstream*)content_stream)->str();
+  // str() is a copy, so the content is held twice over at this point; if the
+  // copy came up short the length above does not describe it.
+  if (content.size() != size_t(u32value)) {
+    throw std::runtime_error("fcode content is " + std::to_string(u32value) +
+                             " bytes but only " +
+                             std::to_string(content.size()) +
+                             " could be copied: out of memory");
+  }
   script_crc32 = 0;
   write_to_all(content.c_str(), u32value, &script_crc32);
+  if (!fc_stream->good()) {
+    throw std::runtime_error("fcode stream failed while writing the content:"
+                             " the job is too large to hold in memory");
+  }
   FCodeGenerator::write((uint32_t)script_crc32, NULL, true);
 }
 
@@ -873,7 +927,7 @@ std::string FCodeGeneratorG::to_string() {
 };
 
 size_t FCodeGeneratorG::total_length() {
-  return int(str_stream.tellp()) - script_offset;
+  return std::streamoff(str_stream.tellp()) - script_offset;
 }
 
 float FCodeGeneratorG::get_time_cost() {
