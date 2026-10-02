@@ -94,17 +94,40 @@ bool Worker::handleAction(QWebSocket* socket,
         return false;
       }
       if (type == "fcode") {
-        QString fcode(QByteArray::fromStdString(exporter.toString()).toBase64());
-        int max_chunk_size = 4096;
-        if (fcode.length() > max_chunk_size) {
-          qInfo() << "FCode is too large, sending as chunks" << fcode.length();
-          for (int i = 0; i < fcode.length(); i += max_chunk_size) {
-            result["chunk"] = fcode.mid(i, max_chunk_size);
+        // Base64 is ASCII, so it stays a QByteArray. Held as a QString it
+        // would be UTF-16, doubling the largest thing in the process at the
+        // moment the generator is still holding the job twice over itself.
+        QByteArray fcode;
+        {
+          // fromRawData wraps rather than copies, and the string it wraps is
+          // released before the sending starts rather than after it ends.
+          const std::string raw = exporter.toString();
+          fcode = QByteArray::fromRawData(raw.data(), qsizetype(raw.size()))
+                      .toBase64();
+        }
+        // 4 KiB put a quarter of a million queued emissions through the main
+        // thread for a large job, each one copying the result object with it.
+        // The worker fills that queue faster than the main thread can drain
+        // it, which is its own way of running out of memory and looks from
+        // the outside like a hang. The client realigns the base64 quanta
+        // itself, so the size is free to pick.
+        const qsizetype max_chunk_size = 256 * 1024;
+        if (fcode.size() > max_chunk_size) {
+          qInfo() << "FCode is too large, sending as chunks" << fcode.size();
+          // qsizetype, not int: a job past about 1.6 GB overflows an int index
+          // into a negative one, and the loop then never reaches the end.
+          for (qsizetype i = 0; i < fcode.size(); i += max_chunk_size) {
+            result["chunk"] = QString::fromLatin1(fcode.mid(i, max_chunk_size));
             Q_EMIT sendDataInMain(socket, id, result, "chunk");
+            // Let the main thread send what it has before adding to the
+            // queue, so the queue cannot outgrow the payload it describes.
+            QCoreApplication::processEvents();
           }
           result.remove("chunk");
+          fcode.clear();
+          fcode.squeeze();
         } else {
-          result["fcode"] = fcode;
+          result["fcode"] = QString::fromLatin1(fcode);
         }
         result["timeCost"] = exporter.getTimeCost();
         result["metadata"] = exporter.getMetadata();
