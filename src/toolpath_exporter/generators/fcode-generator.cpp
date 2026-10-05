@@ -323,6 +323,20 @@ void FCodeGenerator::write_galvo_command(
   }
 }
 
+void FCodeGenerator::write_galvo_packed_dots(const double header[7],
+                                             const uint8_t* mask,
+                                             size_t slots) {
+  write_command(23, &script_crc32);
+  write(uint16_t(0x20), &script_crc32);
+  write(uint8_t(7 + slots), &script_crc32);
+  for (int i = 0; i < 7; i++) {
+    write(header[i], &script_crc32);
+  }
+  if (slots > 0) {
+    write(reinterpret_cast<const char*>(mask), slots * 8, &script_crc32);
+  }
+}
+
 void FCodeGenerator::one_seg_custom_cmd(int type, uint8_t cmd) {
   write_command(type, &script_crc32);
   write(cmd, &script_crc32);

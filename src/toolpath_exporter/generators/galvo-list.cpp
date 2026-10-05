@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QLineF>
 #include <cmath>
+#include <cstring>
 
 #include "fcode-generator.h"
 
@@ -111,6 +112,9 @@ void GalvoListWriter::endList() {
   if (!list_armed_) {
     return;
   }
+  // A staged record belongs to the list that is closing, so it goes in ahead of
+  // the epilogue. closeDotRecord() never splits, so this cannot come back here.
+  closeDotRecord();
   list_armed_ = false;
   if (!list_open_) {
     // Nothing was ever emitted: no prologue, so no epilogue either.
@@ -245,6 +249,7 @@ void GalvoListWriter::returnToCentre() {
   if (!in_block_ || (!list_open_ && !list_armed_)) {
     return;
   }
+  closeDotRecord();
   // jumpTo opens the list if it has only been armed, so a block that engraved
   // nothing still parks the mirrors rather than leaving them where the previous
   // block put them.
@@ -257,6 +262,7 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     qWarning() << "GalvoListWriter::moveTo() outside a block";
     return;
   }
+  closeDotRecord();
   QPointF p1(std::isnan(x_mm) ? cur_.x() : x_mm,
              std::isnan(y_mm) ? cur_.y() : y_mm);
   const QPointF p0 = cur_;
@@ -269,10 +275,13 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     return;
   }
   if (params_.dotting_time_us > 0) {
-    // Dot mode: opcode 5 replaces the old {23,3} + T modal pair (§4.5). A dot
-    // has a position and no path, so the block either owns that position or it
-    // does not -- clipping the approach to it, as a segment would be, would
-    // slide the dot onto the block edge and burn it in the wrong place.
+    // One dot, uncompressed. Dots reach a galvo file through beginDotRun() /
+    // dotAt() instead; this is what a packed record expands back into, and it
+    // stays here as that reference and for a caller that dots one point.
+    //
+    // A dot has a position and no path, so the block either owns that position
+    // or it does not -- clipping the approach to it, as a segment would be,
+    // would slide the dot onto the block edge and burn it in the wrong place.
     if (clip_rect_.isValid() && !clip_rect_.contains(p1)) {
       return;
     }
@@ -306,4 +315,148 @@ void GalvoListWriter::splitIfFull() {
   // start with a mark from a position the board has forgotten.
   endList();
   beginList();
+}
+
+int GalvoListWriter::remainingListCapacity() const {
+  if (max_commands_per_list_ <= 0) {
+    return INT_MAX;
+  }
+  return qMax(0, max_commands_per_list_ - list_command_count_);
+}
+
+void GalvoListWriter::beginDotRun(const QPointF& base_mm,
+                                  const QPointF& step_mm,
+                                  double dwell_us) {
+  if (run_open_) {
+    qWarning() << "GalvoListWriter::beginDotRun() while a run is open";
+    endDotRun();
+  }
+  const double len = QLineF(QPointF(0, 0), step_mm).length();
+  if (len <= 0) {
+    qWarning() << "GalvoListWriter::beginDotRun() with a zero step";
+    return;
+  }
+  run_open_ = true;
+  run_base_ = base_mm;
+  run_step_ = step_mm;
+  run_step_len_ = len;
+  run_dwell_us_ = dwell_us;
+  // Two reasons to break a record on a long gap, and the shorter one wins. The
+  // delay limit is the one that matters for correctness: below it the jump delay
+  // is affine in distance, which is what lets a record's time be computed from
+  // its header alone. The ceiling is only about size.
+  const int by_delay = int(std::floor(GalvoParams::kJumpDelayLimitMm / len));
+  run_max_zero_gap_ = qMax(1, qMin(by_delay, kPackedDotGapCeiling));
+}
+
+void GalvoListWriter::openDotRecord(int site) {
+  // The prologue counts against the cap, so it has to be written before the
+  // budget is read -- otherwise a record opening a fresh list would believe it
+  // has room for the prologue's records as well as its own.
+  ensureListOpen();
+  if (remainingListCapacity() < 2) {
+    endList();
+    beginList();
+    ensureListOpen();
+  }
+  std::memset(rec_mask_, 0, sizeof(rec_mask_));
+  rec_origin_site_ = site;
+  rec_last_site_ = site;
+  rec_dots_ = 0;
+  const int cap = remainingListCapacity();
+  // Round up: the uncompressed path splits on reaching the cap, which is after
+  // the dot that gets there, so the record holds that dot too and both put the
+  // list boundary between the same two dots.
+  rec_budget_ = cap == INT_MAX ? 0 : qMax(1, (cap + 1) / 2);
+  rec_open_ = true;
+}
+
+void GalvoListWriter::closeDotRecord() {
+  if (!rec_open_) {
+    return;
+  }
+  rec_open_ = false;
+  if (rec_dots_ <= 0) {
+    return;
+  }
+  // The record ends on a dot, so there are never trailing zeros to trim.
+  const int sites = rec_last_site_ - rec_origin_site_ + 1;
+  const int slots = ((sites + 7) / 8 + 7) / 8;
+  const QPointF origin = fieldLocal(
+      run_base_ + QPointF(rec_origin_site_ * run_step_.x(),
+                          rec_origin_site_ * run_step_.y()));
+  const double header[7] = {origin.x(),       origin.y(),
+                            run_step_.x(),    run_step_.y(),
+                            double(sites),    double(rec_dots_),
+                            run_dwell_us_};
+  if (gen_) {
+    gen_->write_galvo_packed_dots(header, rec_mask_, size_t(slots));
+  }
+  // What the board will actually hold: a JUMP_ABS and a LASER_ON per dot. The
+  // cap is the card's, so it is counted expanded or it is not counted at all.
+  list_command_count_ += 2 * rec_dots_;
+}
+
+void GalvoListWriter::dotAt(int site) {
+  if (!run_open_) {
+    qWarning() << "GalvoListWriter::dotAt() outside a run";
+    return;
+  }
+  if (!in_block_) {
+    qWarning() << "GalvoListWriter::dotAt() outside a block";
+    return;
+  }
+  if (rec_open_ && site <= rec_last_site_) {
+    qWarning() << "GalvoListWriter::dotAt() site" << site << "is not ahead of"
+               << rec_last_site_;
+    return;
+  }
+  const QPointF p =
+      run_base_ + QPointF(site * run_step_.x(), site * run_step_.y());
+  // The same test the one-dot path makes: a dot has no path to clip, so a site
+  // the block does not own is simply left out -- which is a zero in the mask.
+  if (clip_rect_.isValid() && !clip_rect_.contains(p)) {
+    return;
+  }
+  cur_ = p;
+  cur_valid_ = true;
+
+  if (rec_open_) {
+    const bool full = rec_budget_ > 0 && rec_dots_ >= rec_budget_;
+    const bool too_long = site - rec_origin_site_ >= kPackedDotMaxSites;
+    const bool too_sparse = site - rec_last_site_ > run_max_zero_gap_;
+    if (full || too_long || too_sparse) {
+      closeDotRecord();
+      if (full) {
+        splitIfFull();
+      }
+    }
+  }
+  if (!rec_open_) {
+    openDotRecord(site);
+  }
+
+  const int bit = site - rec_origin_site_;
+  rec_mask_[bit >> 3] |= uint8_t(0x80 >> (bit & 7));
+  rec_dots_++;
+  rec_last_site_ = site;
+
+  // §14, charged exactly as the JUMP_ABS and LASER_ON this expands into would
+  // charge it -- including jumpTo()'s rule that standing still emits nothing.
+  const double dist = emitted_valid_ ? QLineF(emitted_, p).length() : 0;
+  if (!emitted_valid_ || dist > 0) {
+    toField(p);
+    list_time_ms_ +=
+        dist / params_.jump_speed_mm_s * 1000 + params_.jump_delay_ms(dist);
+    block_distance_mm_ += dist;
+    emitted_ = p;
+    emitted_valid_ = true;
+  }
+  list_time_ms_ += run_dwell_us_ / 1000.0;
+}
+
+void GalvoListWriter::endDotRun() {
+  closeDotRecord();
+  splitIfFull();
+  run_open_ = false;
 }

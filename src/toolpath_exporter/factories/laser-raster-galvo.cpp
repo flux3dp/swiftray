@@ -327,11 +327,25 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
   };
 
   if (entry.dots) {
-    // One dot per dark pixel; the writer turns each of these marks into a jump
-    // and a LASER_ON, since a dotting time is set for a dithered image.
+    // One dot per dark pixel, written as a packed run: a scan line is a
+    // unidirectional sweep on a fixed pitch, which is what opcode 0x20 encodes
+    // (docs/galvo-packed-dots.md). The site index is the place in the sweep, so
+    // it counts up whichever way the line is scanned, and the step carries the
+    // direction instead.
     const double half_pixel =
         0.5 / (transposed ? pixel_per_mm : pixel_per_mm_x);
-      for (int i = 0; i < length; i++) {
+    const double pitch = 1 / (transposed ? pixel_per_mm : pixel_per_mm_x);
+    GalvoListWriter* galvo = proc->galvo();
+    if (galvo) {
+      const double base_along = moving(reversed ? length - 1 : 0) + half_pixel;
+      const double step_along = reversed ? -pitch : pitch;
+      galvo->beginDotRun(transposed ? QPointF(fixed, base_along)
+                                    : QPointF(base_along, fixed),
+                         transposed ? QPointF(0, step_along)
+                                    : QPointF(step_along, 0),
+                         galvo->params().dotting_time_us);
+    }
+    for (int i = 0; i < length; i++) {
       const int at = reversed ? length - 1 - i : i;
       if (sample(at) >= threshold) {
         continue;
@@ -353,7 +367,14 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         }
       }
       setPwm(100);
-      move(along, false, speed);
+      if (galvo) {
+        galvo->dotAt(i);
+      } else {
+        move(along, false, speed);
+      }
+    }
+    if (galvo) {
+      galvo->endDotRun();
     }
     return;
   }
@@ -490,13 +511,14 @@ void LaserRasterGalvoFactory::emitBandDots(const Entry& entry,
   const int first_row = int(std::ceil(band.top() / pitch_y - 0.5 - kEpsilon));
   const int last_row = int(std::floor((band.bottom() - kEpsilon) / pitch_y - 0.5));
 
+  GalvoListWriter* galvo = proc->galvo();
   setPower(base_power_pct_);
   for (int row = first_row; row <= last_row; row++) {
     if (cancelled) {
       return;
     }
     const double y = (row + 0.5) * pitch_y;
-    QVector<double> xs;
+    QVector<int> cols;
     for (int col = first_col; col <= last_col; col++) {
       const double x = (col + 0.5) * pitch_x;
       if (core.contains(x, y)) {
@@ -508,19 +530,36 @@ void LaserRasterGalvoFactory::emitBandDots(const Entry& entry,
       if (!ownsSite(x, y, siteTarget(col, row))) {
         continue;
       }
-      xs.append(x);
+      cols.append(col);
     }
-    if (xs.isEmpty()) {
+    if (cols.isEmpty()) {
       continue;
     }
     // Serpentine on the row's own index plus the block's, as the simulator
     // does, so the sweep carries on in the direction it arrived.
-    if (((row + blend_.row) & 1) != 0) {
-      std::reverse(xs.begin(), xs.end());
+    const bool reversed = ((row + blend_.row) & 1) != 0;
+    if (reversed) {
+      std::reverse(cols.begin(), cols.end());
     }
-    for (double x : xs) {
+    // A row is one sweep on a fixed pitch, so it is one packed run; the
+    // columns are already in sweep order, which makes the site index the
+    // distance from the first of them.
+    const int start_col = cols.first();
+    if (galvo) {
+      galvo->beginDotRun(QPointF((start_col + 0.5) * pitch_x, y),
+                         QPointF(reversed ? -pitch_x : pitch_x, 0),
+                         galvo->params().dotting_time_us);
+    }
+    for (int col : cols) {
       setPwm(100);
-      proc->moveto(NamedArgs().rx(x).ry(y).rf(speed));
+      if (galvo) {
+        galvo->dotAt(reversed ? start_col - col : col - start_col);
+      } else {
+        proc->moveto(NamedArgs().rx((col + 0.5) * pitch_x).ry(y).rf(speed));
+      }
+    }
+    if (galvo) {
+      galvo->endDotRun();
     }
   }
 }
