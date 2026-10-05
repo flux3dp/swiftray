@@ -154,6 +154,16 @@ class FCodeGenerator {
   // HX2_GALVO_PROTOCOL.md §19.2: uint16 LE opcode, uint8 param count, then one
   // float64 LE per parameter. See generators/galvo-list.h for the opcodes.
   void write_galvo_command(uint16_t opcode, std::initializer_list<double> params);
+  /**
+   * One packed dot run: opcode 0x20, a seven-double header and `slots` eight-byte
+   * mask slots. The mask is a bit pattern occupying parameter slots, so it is
+   * written as bytes and never passed through a double -- see
+   * docs/galvo-packed-dots.md. The bytes produced are indistinguishable from a
+   * uniform galvo record, so a parser that does not know 0x20 still skips it.
+   */
+  void write_galvo_packed_dots(const double header[7],
+                               const uint8_t* mask,
+                               size_t slots);
   // Fold externally computed cost into the metadata. Galvo geometry never goes
   // through moveto(), so its time and distance have to be handed over directly.
   virtual void add_time_cost(double seconds) {}

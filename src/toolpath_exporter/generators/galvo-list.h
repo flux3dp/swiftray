@@ -3,6 +3,7 @@
 #include <QPointF>
 #include <QRectF>
 #include <QtGlobal>
+#include <climits>
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
@@ -213,6 +214,30 @@ class GalvoListWriter {
 
   /** Move to `x_mm`, `y_mm` in machine mm. NaN keeps that axis. */
   void moveTo(double x_mm, double y_mm);
+
+  /**
+   * A dot run: one unidirectional sweep along a fixed step, written as packed
+   * records (opcode 0x20) rather than a JUMP_ABS + LASER_ON pair per dot.
+   * See docs/galvo-packed-dots.md; this is the only way dots reach a galvo file.
+   *
+   * `base_mm` is site 0 of the sweep and `step_mm` the displacement per site,
+   * which between them carry the axis, the direction and the pitch. The caller
+   * contributes nothing but "this site is dark": every limit, record boundary,
+   * list boundary and the whole time estimate are settled here, because this is
+   * where the list state is.
+   */
+  void beginDotRun(const QPointF& base_mm,
+                   const QPointF& step_mm,
+                   double dwell_us);
+  /** One dot, at `base_mm + site * step_mm`. Sites must strictly increase. */
+  void dotAt(int site);
+  void endDotRun();
+
+  /**
+   * Records this list can still take before it reaches its cap, counted the way
+   * the board counts them -- expanded. INT_MAX when there is no cap.
+   */
+  int remainingListCapacity() const;
   /**
    * Bring the mirrors back to the middle of the field before the list closes,
    * so the galvo is left centred rather than wherever the last mark happened to
@@ -254,7 +279,18 @@ class GalvoListWriter {
    */
   void splitIfFull();
   void emitPulses();
+  /** Field-local coordinates of `p`, counting it if it falls outside the field. */
   QPointF toField(const QPointF& p);
+  /** The same conversion without the counting, for a record's own header. */
+  QPointF fieldLocal(const QPointF& p) const { return p - field_centre_; }
+  /** Stage a fresh packed record whose first site is `site`. */
+  void openDotRecord(int site);
+  /**
+   * Write the staged record, if it holds anything. Deliberately does not split
+   * the list: the callers that need a split ask for one, which keeps this
+   * callable from endList() without recursing back into it.
+   */
+  void closeDotRecord();
   /**
    * Liang-Barsky clip of p0->p1 against clip_rect_. Returns false when the
    * segment lies entirely outside; otherwise p0/p1 are moved to the crossings.
@@ -288,4 +324,29 @@ class GalvoListWriter {
   int list_command_count_ = 0;
   int max_commands_per_list_ = 0;
   int out_of_field_count_ = 0;
+
+  // Packed dot runs. A record's parameter count is a uint8, so seven header
+  // doubles leave 248 mask slots, i.e. 15872 sites -- 201 mm at 2000 DPI, which
+  // is longer than any field. The staging buffer is that size and fixed: the
+  // run is encoded as it is walked, so a mask is never built larger than what
+  // gets written.
+  static constexpr int kPackedDotSlots = 248;
+  static constexpr int kPackedDotMaxSites = kPackedDotSlots * 64;
+  // Where a fresh 60-byte record becomes cheaper than the zeros it would
+  // replace. The jump-delay limit caps it further on a coarse pitch.
+  static constexpr int kPackedDotGapCeiling = 480;
+
+  bool run_open_ = false;
+  QPointF run_base_;
+  QPointF run_step_;
+  double run_step_len_ = 0;
+  double run_dwell_us_ = 0;
+  int run_max_zero_gap_ = 0;
+
+  bool rec_open_ = false;
+  int rec_origin_site_ = 0;
+  int rec_last_site_ = 0;
+  int rec_dots_ = 0;
+  int rec_budget_ = 0;  // dots, 0 = no cap
+  uint8_t rec_mask_[kPackedDotSlots * 8] = {};
 };
