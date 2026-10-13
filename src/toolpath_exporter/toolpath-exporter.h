@@ -45,21 +45,19 @@ inline constexpr double kMinMachineZBucketMm = 0.001;
 
 /** STL engraving strategies. Dot strategies are sampled into point clouds before output. */
 enum class StlEngraveKind {
-  kLineFill = 0,  // original fixed-Z contours -> outputLayerFillGcode()
-  kLine = 1,      // fixed/adaptive-Z contours -> outputLayerPathGcode()
-  kDotFill = 2,   // transformed inward shells -> deterministic blue-noise points
-  kDot = 3,       // transformed surface -> deterministic blue-noise points
+  kLine = 0,     // fixed/adaptive-Z contours -> outputLayerPathGcode()
+  kDotFill = 1,  // transformed inward shells -> deterministic blue-noise points
+  kDot = 2,      // transformed surface -> deterministic blue-noise points
 };
 
 /** A 3D canvas object waiting to enter the shared Z-ordered output path. */
 struct StlPlacementJob {
-  StlPlacement placement;
   /**
-   * Resolved while the object's OWN layer was still current_layer_.
-   * A canvas layer that mixes filled and unfilled objects reaches the exporter as a pair of layers
-   * ("x" and "x-filled"), and the STL output of the pair is deferred to the second one, by which
-   * time current_layer_ no longer says whether this object was filled.
+   * Placement and kind are resolved while the object's OWN layer is still current_layer_: a canvas
+   * layer that mixes filled and unfilled shapes reaches the exporter as a pair of layers ("x" and
+   * "x-filled"), and the STL output of the pair is deferred to the second one.
    */
+  StlPlacement placement;
   StlEngraveKind kind = StlEngraveKind::kLine;
   /** Present only for GeometryKind::Photo; the SVG projection already owns the decoded pixels. */
   const BitmapShape *photo = nullptr;
@@ -162,7 +160,9 @@ private:
 
   void outputLayerStlGcode(double progress_start, double progress_span);
 
-  StlEngraveKind stlEngraveKind(const StlPlacement &placement, const PathShape *path) const;
+  /** Copy the inner engraving layer parameters of current_layer_ onto a parsed placement. */
+  StlPlacement resolveStlPlacement(const StlPlacement &placement) const;
+  StlEngraveKind stlEngraveKind(const StlPlacement &placement) const;
 
   /**
    * Move the head so the nominal focus sits @p focus_z_mm above the focus origin (the platform).
@@ -173,11 +173,7 @@ private:
   /** One polygon of an STL layer. */
   void emitStlPolygon(const QPolygonF &poly_dots, double speed, double power);
 
-  /** One scan line segment of an STL fill. */
-  void emitStlFillSegment(const QPointF &start_dots, const QPointF &end_dots);
-
   // Dot modes enter machine-Z buckets as point clouds directly from outputLayerStlGcode().
-  void outputStlLineFillGcode(const QList<stl::Layer> &slices);
   void outputStlLineGcode(const QList<stl::Layer> &slices);
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);

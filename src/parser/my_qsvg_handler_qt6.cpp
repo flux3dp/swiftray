@@ -2957,6 +2957,12 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.fill_dwell_time = getAttr(attributes, "data-fillDwellTime", default_config, "fillDwellTime", 0);
         layer_config.fill_dwell_adaptive = getAttr(attributes, "data-fillDwellAdaptive", default_config, "fillDwellAdaptive", 0) == 1;
         layer_config.dotting_time = getAttr(attributes, "data-dottingTime", default_config, "dottingTime", 100);
+        // dot is the default, as in the frontend: only an explicit "line" slices into contours
+        layer_config.stl_dot_mode = attributes.value("data-stl-mode").toString() != "line";
+        layer_config.stl_point_spacing = getAttr(attributes, "data-stl-point-spacing", default_config, "stlPointSpacing", 0.0);
+        layer_config.stl_layer_spacing = getAttr(attributes, "data-stl-layer-spacing", default_config, "stlLayerSpacing", 0.0);
+        layer_config.stl_min_layer_spacing = getAttr(attributes, "data-stl-min-layer-spacing", default_config, "stlMinLayerSpacing", 0.0);
+        layer_config.stl_solid = getAttr(attributes, "data-stl-solid", default_config, "stlSolid", 0) == 1;
         layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
         layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
         layer_config.air_assist = getAttr(attributes, "data-airAssist", default_config, "air_assist", 100);
@@ -4034,12 +4040,6 @@ static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes)
         qWarning() << "STL placeholder" << placement.id << "has a data-stl-matrix with"
                    << matrix_values.size() << "values, expected 16; falling back to identity";
     }
-    // 0 (missing or non-positive) means "use the exporter default".
-    placement.layer_height_mm = attributes.value("data-stl-layer-height").toDouble();
-    // Adaptive slicing is opt-in. Missing or non-positive values keep the fixed plane ladder.
-    placement.min_layer_height_mm =
-        attributes.value("data-stl-min-layer-height").toDouble();
-    placement.point_spacing_mm = attributes.value("data-stl-point-spacing").toDouble();
     const QString geometry_kind = attributes.value("data-stl-kind").toString();
     if (geometry_kind == QStringLiteral("photo")) {
         placement.geometry_kind = StlPlacement::GeometryKind::Photo;
@@ -4048,9 +4048,6 @@ static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes)
     }
     placement.photo_width_mm = attributes.value("data-stl-photo-width").toDouble();
     placement.photo_height_mm = attributes.value("data-stl-photo-height").toDouble();
-    placement.mode = attributes.value("data-stl-mode").toString() == "dot"
-                         ? StlPlacement::Mode::Dot
-                         : StlPlacement::Mode::Line;
     return placement;
 }
 #endif

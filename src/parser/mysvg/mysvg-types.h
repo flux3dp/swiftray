@@ -92,6 +92,12 @@ namespace MySVG {
         int fill_dwell_time;    // us, pause after each scan line, 0 = off
         bool fill_dwell_adaptive; // subtract the line's own marking time from the pause
         int dotting_time;
+        // Inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()
+        bool stl_dot_mode;            // data-stl-mode != "line": dot unless explicitly line
+        double stl_point_spacing;     // mm, <= 0 uses the exporter default
+        double stl_layer_spacing;     // mm, line Z step and dot-fill inset step; <= 0 uses the default
+        double stl_min_layer_spacing; // mm, > 0 opts line slicing into adaptive planes
+        bool stl_solid;               // dot mode only: also sample inward shells
         double wobble_step;
         double wobble_diameter;
         int air_assist;

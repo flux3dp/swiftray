@@ -35,8 +35,9 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
 }
 
 // Fallbacks when neither the placeholder rect nor the layer provides a value.
-constexpr double kDefaultStlLayerHeightMm = 0.1;
-constexpr double kDefaultStlPointSpacingMm = 0.1;
+// Kept in step with the frontend defaults (app/constants/innerEngraving.ts), measured on K9.
+constexpr double kDefaultStlLayerSpacingMm = 0.04;
+constexpr double kDefaultStlPointSpacingMm = 0.03;
 constexpr qint64 kMaxPhotoSampleCount = 10000000;
 }  // namespace
 
@@ -425,7 +426,7 @@ void ToolpathExporter::convertBitmap(BitmapShape *bmp) {
     if (!exceed_boundary_ && !boundary.contains(projected_bounds)) exceed_boundary_ = true;
 
     layer_stl_placements_.append(
-        StlPlacementJob{bmp->stlPlacement(), StlEngraveKind::kDot, bmp});
+        StlPlacementJob{resolveStlPlacement(bmp->stlPlacement()), StlEngraveKind::kDot, bmp});
     return;
   }
   QRectF new_dirty_area = global_transform_.mapRect(bmp->boundingRect());
@@ -485,7 +486,7 @@ void ToolpathExporter::convertPath(const PathShape *path) {
   }
 
   if (path->isStlPlaceholder()) {
-    const StlPlacement &placement = path->stlPlacement();
+    const StlPlacement placement = resolveStlPlacement(path->stlPlacement());
     // Framing / red light only needs the footprint, engraving needs the real 3D geometry.
     if (!is_contour_) {
       bool has_geometry = false;
@@ -501,9 +502,9 @@ void ToolpathExporter::convertPath(const PathShape *path) {
                    << "has no matching geometry payload, the object is skipped";
         return;
       }
-      // The kind has to be resolved HERE: the object's own layer is current_layer_ right now, and
-      // that is what says whether it is filled. By output time it may be the paired layer's turn.
-      layer_stl_placements_.append(StlPlacementJob{placement, stlEngraveKind(placement, path)});
+      // Resolved HERE: the object's own layer is current_layer_ right now, and its parameters are
+      // what decide the kind. By output time it may be the paired layer's turn.
+      layer_stl_placements_.append(StlPlacementJob{placement, stlEngraveKind(placement)});
       return;
     }
     // Framing / red light: the footprint of the placeholder is exactly the XY projection we want,
@@ -701,7 +702,7 @@ void ToolpathExporter::outputLayerGcode(double progress_start, double progress_s
  *
  * Inside one Z step the objects are dispatched by kind, always in the same order:
  *
- *     z0: line+fill, line, dot+fill, dot | z1: line+fill, line, dot+fill, dot | ...
+ *     z0: line, dot+fill, dot | z1: line, dot+fill, dot | ...
  *
  * Each kind needs a different gcode path, so they cannot be emitted in one pass, but they all
  * belong to the same Z and must not cost a second Z travel.
@@ -773,13 +774,13 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
                             (placement_index + std::clamp(object_fraction, 0.0, 1.0)) /
                             placement_count);
     };
-    const double layer_height_mm =
-        placement.layer_height_mm > 0 ? placement.layer_height_mm : kDefaultStlLayerHeightMm;
+    const double layer_spacing_mm =
+        placement.layer_spacing_mm > 0 ? placement.layer_spacing_mm : kDefaultStlLayerSpacingMm;
     const double point_spacing_mm =
         placement.point_spacing_mm > 0 ? placement.point_spacing_mm : kDefaultStlPointSpacingMm;
     stl::SliceParams params;
     // Slicing planes are real model heights. Refraction never changes the mesh or layer count.
-    params.layer_height = layer_height_mm * canvas_mm_ratio_;
+    params.layer_height = layer_spacing_mm * canvas_mm_ratio_;
 
     StlJob job;
     // Resolved at collection time, current_layer_ may be the paired layer by now.
@@ -908,9 +909,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       // The placement matrix ends in canvas units (10/mm), so both Poisson distance and shell
       // offset are evaluated after the 4x4 transform in that same real-geometry space.
       blue_noise.spacing = point_spacing_mm * canvas_mm_ratio_;
-      // Preserve the two existing controls: point spacing is density on a shell, layer height is
-      // now the distance between inward shells for kDotFill.
-      blue_noise.shell_spacing = layer_height_mm * canvas_mm_ratio_;
+      // Point spacing is the density on a shell; the layer spacing is the distance between inward
+      // shells for kDotFill, the same control that sets the Z step in line mode.
+      blue_noise.shell_spacing = layer_spacing_mm * canvas_mm_ratio_;
       stl::PointCloudResult cloud =
           job.kind == StlEngraveKind::kDot
               ? stl::sampleSurfaceBlueNoise(mesh_it.value(), placement.matrix, blue_noise,
@@ -952,12 +953,11 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
         qWarning() << "[Export] Failed to prepare STL object" << placement.id << error;
         continue;
       }
-      // Adaptive slicing is a per-object opt-in. Filled lines retain their fixed-plane path.
-      const bool adaptive = job.kind == StlEngraveKind::kLine &&
-                            placement.min_layer_height_mm > 0.0;
+      // Adaptive slicing is a per-layer opt-in.
+      const bool adaptive = placement.min_layer_spacing_mm > 0.0;
       const QVector<double> planes =
           adaptive ? job.slicer.adaptivePlanes(
-                         placement.min_layer_height_mm * canvas_mm_ratio_,
+                         placement.min_layer_spacing_mm * canvas_mm_ratio_,
                          [&](double value) { return reportPreparation(0.8 + value * 0.2); })
                    : job.slicer.planes();
       if (cancelled_) return;
@@ -1001,7 +1001,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     QPointF target_mm;
   };
   struct MachineBucket {
-    QList<stl::Layer> lines[2];
+    QList<stl::Layer> lines;
     QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
   };
   std::map<qint64, MachineBucket> buckets;
@@ -1052,14 +1052,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     moveStlFocusZ(target_z_mm);
     setDotting(false);
     stl_dot_mode_ = false;
-    if (!bucket.lines[0].isEmpty()) {
+    if (!bucket.lines.isEmpty()) {
       clearGeometry();
-      outputStlLineFillGcode(bucket.lines[0]);
-      if (cancelled_) return false;
-    }
-    if (!bucket.lines[1].isEmpty()) {
-      clearGeometry();
-      outputStlLineGcode(bucket.lines[1]);
+      outputStlLineGcode(bucket.lines);
       if (cancelled_) return false;
     }
     for (int dot_kind = 0; dot_kind < 2; ++dot_kind) {
@@ -1087,7 +1082,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     return true;
   };
 
-  QList<stl::Layer> by_kind[2];
+  QList<stl::Layer> line_slices;
   struct PointCursor {
     double z = 0.0;
     int job = -1;
@@ -1114,7 +1109,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
                                                       : std::numeric_limits<double>::infinity();
     const double step_z = std::min(next_line_z, next_point_z);
 
-    for (QList<stl::Layer> &bucket : by_kind) bucket.clear();
+    line_slices.clear();
     while (i < ladder.size() && ladder[i].z - step_z <= group_eps) {
       StlJob &job = jobs[static_cast<size_t>(ladder[i].job)];
       stl::Layer sliced = job.slicer.sliceAt(
@@ -1122,7 +1117,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       if (cancelled_) break;
       sliced.index = job.next_layer_index++;
       if (!sliced.contours.isEmpty()) {
-        by_kind[static_cast<int>(job.kind)].append(std::move(sliced));
+        line_slices.append(std::move(sliced));
       }
       ++i;
       processed_work += 1.0;
@@ -1143,15 +1138,10 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       }
     }
     if (cancelled_) break;
-    for (int k = 0; k < 2; ++k) {
-      if (this->cancelled_) break;
-      const QList<stl::Layer> &slices = by_kind[k];
-      if (slices.isEmpty()) continue;
-      for (const stl::Layer &slice : slices) {
-        const double model_z_mm = slice.z_geometry / canvas_mm_ratio_;
-        const qint64 key = bucketKey(refraction_.machineZ(model_z_mm));
-        buckets[key].lines[k].append(slice);
-      }
+    for (const stl::Layer &slice : line_slices) {
+      const double model_z_mm = slice.z_geometry / canvas_mm_ratio_;
+      const qint64 key = bucketKey(refraction_.machineZ(model_z_mm));
+      buckets[key].lines.append(slice);
     }
     if (this->cancelled_) break;
     const double following_line_z = i < ladder.size() ? ladder[i].z
@@ -1228,28 +1218,29 @@ void ToolpathExporter::emitStlPolygon(const QPolygonF &poly_dots, double speed, 
   moveTo(poly_dots.last() / dpmm_, travel_speed_, 0, 0);
 }
 
-/** Emit one scan-line segment of an STL fill. */
-void ToolpathExporter::emitStlFillSegment(const QPointF &start_dots, const QPointF &end_dots) {
-  const QPointF start_mm = start_dots / dpmm_;
-  const QPointF end_mm = end_dots / dpmm_;
-  moveTo(start_mm, current_layer_->speed(), 0, 0);
-  moveTo(end_mm, current_layer_->speed(), current_layer_->power(), 0);
+StlPlacement ToolpathExporter::resolveStlPlacement(const StlPlacement &placement) const {
+  StlPlacement resolved = placement;
+  resolved.mode = current_layer_->stlDotMode() ? StlPlacement::Mode::Dot : StlPlacement::Mode::Line;
+  resolved.point_spacing_mm = current_layer_->stlPointSpacing();
+  resolved.layer_spacing_mm = current_layer_->stlLayerSpacing();
+  resolved.min_layer_spacing_mm = current_layer_->stlMinLayerSpacing();
+  resolved.solid = current_layer_->stlSolid();
+  return resolved;
 }
 
-StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement,
-                                                const PathShape *path) const {
+/**
+ * Photos and point clouds are always dotted. A mesh follows its layer's mode; in dot mode the
+ * layer's solid switch adds the inward shells. Whether the projection itself is filled is ignored.
+ */
+StlEngraveKind ToolpathExporter::stlEngraveKind(const StlPlacement &placement) const {
   if (placement.geometry_kind == StlPlacement::GeometryKind::Photo ||
       placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
     return StlEngraveKind::kDot;
   }
-
-  const bool filled = (path->isFilled() && current_layer_->type() == Layer::Type::Mixed) ||
-                      current_layer_->type() == Layer::Type::Fill ||
-                      current_layer_->type() == Layer::Type::FillLine;
   if (placement.mode == StlPlacement::Mode::Dot) {
-    return filled ? StlEngraveKind::kDotFill : StlEngraveKind::kDot;
+    return placement.solid ? StlEngraveKind::kDotFill : StlEngraveKind::kDot;
   }
-  return filled ? StlEngraveKind::kLineFill : StlEngraveKind::kLine;
+  return StlEngraveKind::kLine;
 }
 
 /**
@@ -1266,25 +1257,6 @@ static QList<QPolygonF> mapStlContours(const QTransform &transform, const stl::L
     polys.append(std::move(poly));
   }
   return polys;
-}
-
-/** Line + fill: the contours bound the area, outputLayerFillGcode scans it. */
-void ToolpathExporter::outputStlLineFillGcode(const QList<stl::Layer> &slices) {
-  {
-    QMutexLocker lock(&polygons_mutex_);
-    for (const stl::Layer &slice : slices) {
-      FilledPath filled_path;
-      // The contours of a slice are properly nested and never overlap, so even odd fill is both
-      // correct and independent of the winding.
-      filled_path.isEvenOdd = true;
-      // One FilledPath per object: an object has to be filled together with its own holes, and two
-      // objects overlapping in XY must not punch holes into each other.
-      filled_path.polys = mapStlContours(global_transform_, slice);
-      if (!filled_path.polys.isEmpty()) layer_filled_polygons_.append(filled_path);
-    }
-  }
-  // The layer's own scan settings apply, only the per Z step logging is silenced.
-  outputLayerFillGcode(true);
 }
 
 /** Line, no fill: the contours are the toolpath. */
@@ -1580,11 +1552,6 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
 
         marked_length_mm +=
             QLineF(merged_intersections[i], merged_intersections[i + 1]).length() / dpmm_;
-
-        if (stl_output_active_) {
-          emitStlFillSegment(merged_intersections[i], merged_intersections[i + 1]);
-          continue;
-        }
 
         // Move to start point with no laser
         moveTo(merged_intersections[i] / dpmm_, current_layer_->speed(), 0, 0);

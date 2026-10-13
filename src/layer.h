@@ -120,6 +120,11 @@ public:
   int fillDwellTime() const;
   bool fillDwellAdaptive() const;
   int dottingTime() const;
+  bool stlDotMode() const;
+  double stlPointSpacing() const;
+  double stlLayerSpacing() const;
+  double stlMinLayerSpacing() const;
+  bool stlSolid() const;
   double wobbleStep() const;
   double wobbleDiameter() const;
   int airAssist() const;
@@ -236,6 +241,12 @@ private:
   int fill_dwell_time_ = 0;
   bool fill_dwell_adaptive_ = false;
   int dotting_time_ = 0;
+  // inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()
+  bool stl_dot_mode_ = true;
+  double stl_point_spacing_ = 0;
+  double stl_layer_spacing_ = 0;
+  double stl_min_layer_spacing_ = 0;
+  bool stl_solid_ = false;
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
   // other

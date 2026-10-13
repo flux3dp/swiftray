@@ -209,6 +209,16 @@ bool Layer::fillDwellAdaptive() const { return fill_dwell_adaptive_; }
 
 int Layer::dottingTime() const { return dotting_time_; }
 
+bool Layer::stlDotMode() const { return stl_dot_mode_; }
+
+double Layer::stlPointSpacing() const { return stl_point_spacing_; }
+
+double Layer::stlLayerSpacing() const { return stl_layer_spacing_; }
+
+double Layer::stlMinLayerSpacing() const { return stl_min_layer_spacing_; }
+
+bool Layer::stlSolid() const { return stl_solid_; }
+
 double Layer::wobbleStep() const { return wobble_step_; }
 
 double Layer::wobbleDiameter() const { return wobble_diameter_; }
@@ -356,6 +366,11 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_dwell_time_ = config.fill_dwell_time;
   this->fill_dwell_adaptive_ = config.fill_dwell_adaptive;
   this->dotting_time_ = config.dotting_time;
+  this->stl_dot_mode_ = config.stl_dot_mode;
+  this->stl_point_spacing_ = config.stl_point_spacing;
+  this->stl_layer_spacing_ = config.stl_layer_spacing;
+  this->stl_min_layer_spacing_ = config.stl_min_layer_spacing;
+  this->stl_solid_ = config.stl_solid;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
   this->air_assist_ = config.air_assist;

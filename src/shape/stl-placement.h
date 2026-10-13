@@ -35,18 +35,23 @@ struct StlPlacement {
    * conversion.
    */
   QMatrix4x4 matrix;
+  // The engraving parameters below are layer parameters (data-stl-* on the layer <g>). The
+  // parser leaves them at their defaults; ToolpathExporter::resolveStlPlacement() copies them
+  // from the object's layer when the object is collected.
   /** kLine maximum Z step / kDotFill inward-shell spacing; <= 0 uses the exporter default. */
-  double layer_height_mm = 0.0;
+  double layer_spacing_mm = 0.0;
   /** kLine minimum Z step; > 0 opts the object into adaptive-plane slicing. */
-  double min_layer_height_mm = 0.0;
-  /** Blue-noise minimum distance on each dot shell; <= 0 uses the exporter default. */
+  double min_layer_spacing_mm = 0.0;
+  /** Blue-noise minimum distance on each dot shell / photo grid pitch; <= 0 uses the default. */
   double point_spacing_mm = 0.0;
   /** Local dimensions of a photo plane before the 4x4 transform is applied. */
   double photo_width_mm = 0.0;
   double photo_height_mm = 0.0;
   /** Which loadSVG binary map owns `id`; absent frontend metadata defaults to the legacy mesh. */
   GeometryKind geometry_kind = GeometryKind::Mesh;
-  Mode mode = Mode::Line;
+  Mode mode = Mode::Dot;
+  /** Dot mode only: also sample inward shells (kDotFill). */
+  bool solid = false;
 
   bool isValid() const { return !id.isEmpty(); }
 };
