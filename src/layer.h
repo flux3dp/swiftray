@@ -116,7 +116,7 @@ public:
   double fillAngle() const;
   bool fillBidirectional() const;
   bool fillHatch() const;
-  int fillStagger() const;
+  bool fillInterleave() const;
   int fillDwellTime() const;
   bool fillDwellAdaptive() const;
   int dottingTime() const;
@@ -237,7 +237,7 @@ private:
   bool fill_bidirectional_;
   bool fill_hatch_;
   // UV heat mitigation, see ToolpathExporter::outputLayerFillGcode()
-  int fill_stagger_ = 1;
+  bool fill_interleave_ = false;
   int fill_dwell_time_ = 0;
   bool fill_dwell_adaptive_ = false;
   int dotting_time_ = 0;

@@ -201,7 +201,7 @@ bool Layer::fillBidirectional() const { return fill_bidirectional_; }
 
 bool Layer::fillHatch() const { return fill_hatch_; }
 
-int Layer::fillStagger() const { return fill_stagger_; }
+bool Layer::fillInterleave() const { return fill_interleave_; }
 
 int Layer::fillDwellTime() const { return fill_dwell_time_; }
 
@@ -362,7 +362,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_angle_ = config.fill_angle;
   this->fill_bidirectional_ = config.fill_bidirectional;
   this->fill_hatch_ = config.fill_hatch;
-  this->fill_stagger_ = config.fill_stagger;
+  this->fill_interleave_ = config.fill_interleave;
   this->fill_dwell_time_ = config.fill_dwell_time;
   this->fill_dwell_adaptive_ = config.fill_dwell_adaptive;
   this->dotting_time_ = config.dotting_time;

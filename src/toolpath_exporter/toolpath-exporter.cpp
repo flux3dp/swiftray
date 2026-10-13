@@ -40,6 +40,67 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
 constexpr double kDefaultStlLayerSpacingMm = 0.04;
 constexpr double kDefaultStlPointSpacingMm = 0.03;
 constexpr qint64 kMaxPhotoSampleCount = 10000000;
+
+/** Distance between two of n scan lines, in lines, going round the order like a ring. */
+long long ringDistance(long long offset, int n) {
+  offset %= n;
+  if (offset < 0) offset += n;
+  return std::min(offset, n - offset);
+}
+
+/** The inverse of @p a modulo @p n; gcd(a, n) must be 1. */
+long long modularInverse(long long a, long long n) {
+  long long r0 = n, r1 = a % n, t0 = 0, t1 = 1;
+  while (r1 != 0) {
+    const long long q = r0 / r1;
+    const long long r2 = r0 - q * r1;
+    const long long t2 = t0 - q * t1;
+    r0 = r1;
+    r1 = r2;
+    t0 = t1;
+    t1 = t2;
+  }
+  return t0 < 0 ? t0 + n : t0;
+}
+
+/**
+ * Stride of an interleaved fill of @p n scan lines: step i engraves line (i * stride) % n, and a
+ * stride coprime with n visits every line exactly once. Returns 1, the plain order, for n < 3.
+ *
+ * Heat builds up when lines engraved shortly after one another are close, or when neighbouring
+ * lines are engraved shortly after one another. With stride s, lines engraved j steps apart lie
+ * j * s lines apart, and lines j lines apart are engraved j * s^-1 steps apart, so a stride is
+ * scored by the smallest of these over j = 1..3, both measured round the ring. Strides near n / φ
+ * spread the lines most evenly, so the best scoring coprime stride is taken from within 10% of n
+ * around n / φ, the closest to n / φ on a tie.
+ */
+int interleaveStride(int n) {
+  if (n < 3) return 1;
+
+  constexpr double kGoldenRatio = 1.6180339887498949;
+  constexpr int kNearestSteps = 3;
+  const double target = n / kGoldenRatio;
+  const int window = std::max(3, n / 10);
+  int best_stride = 1;
+  long long best_score = -1;
+  double best_offset = 0;
+  for (int stride = std::max(2, static_cast<int>(target) - window);
+       stride <= std::min(n - 1, static_cast<int>(target) + window); ++stride) {
+    if (std::gcd(stride, n) != 1) continue;
+    const long long inverse = modularInverse(stride, n);
+    long long score = std::numeric_limits<long long>::max();
+    for (int j = 1; j <= kNearestSteps; ++j) {
+      score = std::min({score, ringDistance(1LL * j * stride, n), ringDistance(j * inverse, n)});
+    }
+    const double offset = std::fabs(stride - target);
+    if (score > best_score || (score == best_score && offset < best_offset)) {
+      best_stride = stride;
+      best_score = score;
+      best_offset = offset;
+    }
+  }
+  return best_stride;
+}
 }  // namespace
 
 // TODO: Fix ToolpathExporter for non-Promark machines
@@ -1313,7 +1374,7 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
   // UV heat mitigation. A UV spot fed continuously inside a small area accumulates heat and burns
   // deeper than intended, so the fill may be spread out in two independent ways: engrave the scan
   // lines interleaved instead of adjacent, and pause between them.
-  const int stagger_groups = std::max(1, current_layer_->fillStagger());
+  const bool fill_interleave = current_layer_->fillInterleave();
   // The U command is a FLUX extension only the Promark controller understands.
   const int fill_dwell_us = is_promark_ ? std::max(0, current_layer_->fillDwellTime()) : 0;
   const bool fill_dwell_adaptive = current_layer_->fillDwellAdaptive();
@@ -1385,8 +1446,8 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
     // perpendicular axis. The grid deliberately spans more than the shape, but it is not centered
     // on it: the offsets below first_offset alone are over half of the range for a square at angle
     // 0. Those lines never produced anything, they only cost an intersection pass -- and once the
-    // lines are engraved in a staggered order they would also pad the line count and skew every
-    // group. The grid itself is unchanged, so the engraved lines stay exactly where they were.
+    // lines are engraved in an interleaved order they would also pad the line count and change the
+    // order. The grid itself is unchanged, so the engraved lines stay exactly where they were.
     const double half_extent = (std::fabs(bounds.width() * perpendicular.x()) +
                                 std::fabs(bounds.height() * perpendicular.y())) / 2 +
                                fill_interval;
@@ -1397,41 +1458,16 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
       if (offset < first_offset || offset > last_offset) continue;
       scan_offsets.append(offset);
     }
-    // Stride permutation: pick a stride coprime with N so that (i * stride) % N visits
-    // every index exactly once. Use the golden ratio (φ ≈ 1.618) to choose the stride:
-    // N / φ is the value most irrational relative to N, guaranteeing the most uniform
-    // spatial spread with no periodic banding. stagger_groups only controls the adaptive
-    // dwell divisor (how much cooling credit each line gets). A stagger of 1 keeps plain
-    // spatial order.
+    // Interleaved, step i engraves line (i * stride) % n (see interleaveStride); otherwise the
+    // lines go in plain spatial order.
     const int scan_line_count = scan_offsets.size();
-    int stagger_stride = 1;
-    if (stagger_groups > 1 && scan_line_count > 1) {
-      // Golden ratio target ≈ N / φ ≈ N * 0.618
-      int target = std::max(2, static_cast<int>(std::round(scan_line_count / 1.6180339887)));
-      // Search outward from target for the nearest coprime with scan_line_count.
-      stagger_stride = target;
-      for (int delta = 0; delta < scan_line_count; ++delta) {
-        int hi = target + delta;
-        if (hi < scan_line_count && std::gcd(hi, scan_line_count) == 1) {
-          stagger_stride = hi;
-          break;
-        }
-        int lo = target - delta;
-        if (lo >= 2 && std::gcd(lo, scan_line_count) == 1) {
-          stagger_stride = lo;
-          break;
-        }
-      }
-    }
+    const int interleave_stride = fill_interleave ? interleaveStride(scan_line_count) : 1;
     QList<int> scan_order;
     scan_order.reserve(scan_line_count);
-    if (stagger_stride <= 1) {
-      for (int i = 0; i < scan_line_count; ++i)
-        scan_order.append(i);
-    } else {
-      for (int i = 0; i < scan_line_count; ++i)
-        scan_order.append((i * stagger_stride) % scan_line_count);
+    for (int i = 0; i < scan_line_count; ++i) {
+      scan_order.append(static_cast<int>(1LL * i * interleave_stride % scan_line_count));
     }
+    if (verbose) qInfo() << "Scan lines: " << scan_line_count << " interleave stride: " << interleave_stride;
     // Keep reporting roughly once per percent now that the empty lines no longer inflate the count
     progress_batch = std::max<int>(1, hatch_count * scan_line_count / 100);
 
@@ -1579,13 +1615,11 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
         moveTo(merged_intersections[i + 1] / dpmm_, current_layer_->speed(), current_layer_->power(), 0);
       }
 
-      // Let the material cool down before the next scan line. fill_dwell_us represents the total
-      // cooling time needed between two spatially adjacent lines. With golden-ratio stride,
-      // a spatial neighbor is engraved ~N/stride ≈ φ ≈ 1.618 lines away in time at minimum,
-      // and on average stagger_groups lines away. We use stagger_groups as the divisor since
-      // it represents the user's intended heat-spread factor.
+      // Let the material cool down before the next scan line. In adaptive mode the time this line
+      // already spent marking counts towards the pause, so a line long enough to have spread the
+      // heat by itself waits less, or not at all.
       if (fill_dwell_us > 0 && marked_length_mm > 0) {
-        double dwell_us = static_cast<double>(fill_dwell_us) / stagger_groups;
+        double dwell_us = fill_dwell_us;
         if (fill_dwell_adaptive && current_layer_->speed() > 0) {
           dwell_us -= 1e6 * marked_length_mm / current_layer_->speed();
         }
