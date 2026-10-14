@@ -59,7 +59,10 @@ enum class MachineModules {
   PRINTER_4C_WITH_1064 = 8,
   UNKNOWN = 9,
   PRINTER_4C_WITH_UV = 10,
-  PRINTER_4C_WITH_UV_1064 = 11
+  PRINTER_4C_WITH_UV_1064 = 11,
+  // HEXA II galvo heads: CO2 is always fitted, MOPA is the optional one.
+  GALVO_CO2 = 12,
+  GALVO_MOPA = 13
 };
 
 enum class PrintingColor {

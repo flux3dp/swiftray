@@ -86,7 +86,9 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
   {HardwareType::HEXA2, {
     // REL_Z_MOVE: depth engraving steps Z between passes, and that step is
     // relative (P184), the way the gcode path's moveZ() always has been.
-    true, true, false, false
+    // MODULE_CHECK_METADATA: the player checks the MOPA head against the
+    // REQUIRED_HEADTYPE / FORBIDDEN_HEADTYPE written in Step 6.
+    true, true, false, false, false, true
   }},
 };
 
