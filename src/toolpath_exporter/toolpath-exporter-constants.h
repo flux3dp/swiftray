@@ -73,7 +73,7 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
     true, true, true, false, true, true
   }},
   {HardwareType::RF, {
-    false, false, false, false, false, false, true
+    true, false, false, false, false, false, true
   }},
   {HardwareType::UV, {
     false, true, false, false, true, true
