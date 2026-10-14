@@ -53,8 +53,8 @@ BSPC v1 必須同時滿足：magic `BSPC`、version 1、components 3、point cou
   模型高度時，不可讓唯一平面落到模型之外。
 - `adaptivePlanes()` 以 `SliceParams::layer_height` 為最大步長，以呼叫參數為最小步長；淺斜面
   根據 XY/Z 移動率縮小 Z step，垂直面維持最大步長。
-- adaptive slicing 是否啟用由 exporter 的 engraving kind 與 placement 參數決定，不要在
-  `Slicer` 內推測 UI 模式。
+- adaptive slicing 只用於 `kLine`，由 exporter 依圖層的 `data-stl-min-layer-spacing`（> 0 才啟用）
+  決定，不要在 `Slicer` 內推測 UI 模式。
 
 `sliceAt()` 對非遞減 Z 使用 forward sweep；若要求較低 Z，必須重設 active triangle sweep。
 vertex 落在 plane epsilon 內時一致視為 plane 上方，coplanar triangle 直接略過，避免共享邊被
@@ -81,8 +81,9 @@ material Z 範圍先在模型 Z 上過濾，再使用 Basic refraction 轉成 ma
   跨標準函式庫結果未定義的 random distribution。
 - surface sampling 使用 stream 0；inward shell 使用 `shell_index + 1`，讓每層不同但可重現。
 - spacing 是同一 shell 內的最小 3D 距離；`shell_spacing <= 0` 時沿用 spacing。
-- inward shell 數量受 `max_shell_count` 限制；達到限制時保留合法結果並回報
-  `shell_limit_reached`，不要無界生成。
+- `kDotFill` 的 shell 間距是圖層的 `data-stl-layer-spacing`。shell 數量上限
+  `max_shell_count = 3`（表面 + 2 層向內 shell）是產品決定，不是安全上限：厚度超過 3 倍 shell
+  間距的實心物件都會用滿並回報 `shell_limit_reached`，較薄的物件 shell 更少。
 - 空 mesh、非 finite／非正 spacing、無非退化表面必須失敗並提供 error。
 
 多點輸出使用 `nearestPointOrder()` 的 exact greedy nearest-neighbour；k-d tree 只是效能實作，
