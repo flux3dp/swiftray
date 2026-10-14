@@ -36,9 +36,8 @@ struct FilledPath {
  * long an inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at
  * the 0.001mm bucket. Coarser buckets trade depth resolution for time.
  *
- * The minimum is a hard floor, not a preference: finer buckets have been observed to stall the
- * job at runtime (see "Fix small z bucket make runtime stuck", which raised the fixed value from
- * 0.0001mm). One Z pulse is 0.000625mm, so 0.001mm is already near the axis resolution.
+ * The minimum is a hard floor: buckets below 0.001mm stall the job at runtime (one Z pulse is
+ * 0.000625mm). The default sits on that floor, so a job param can only make the bucket coarser.
  */
 inline constexpr double kDefaultMachineZBucketMm = 0.001;
 inline constexpr double kMinMachineZBucketMm = 0.001;
@@ -119,7 +118,7 @@ public:
       kUnidirectionMode
   };
 
-  //
+  /** Emit ;CONFIG lines and read refraction/material/bucket params from the convert request. */
   void parseParam(QJsonObject param);
 
 Q_SIGNALS:
@@ -136,7 +135,8 @@ private:
    *        are kept for the second half instead of being engraved now. Without this a canvas layer
    *        that mixes filled and unfilled objects would run the Z ladder twice: the axis would
    *        sweep the whole material, come back down and engrave a second time THROUGH the parts it
-   *        just engraved, which is exactly what the deep -> shallow rule (B-5) forbids.
+   *        just engraved, which the bottom-to-top (deep -> shallow) engraving order
+   *        forbids.
    */
   void convertLayer(const LayerPtr &layer, bool stl_paired = false);
 
@@ -154,7 +154,7 @@ private:
 
   void outputLayerPathGcode();
 
-  void outputLayerFillGcode(bool quiet = false);
+  void outputLayerFillGcode();
 
   void outputLayerBitmapGcode(BitmapHandlerType type);
 

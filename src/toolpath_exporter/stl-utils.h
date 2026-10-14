@@ -78,7 +78,7 @@ struct BlueNoiseParams {
   double spacing = 0.1;
   /** Distance between inward shells. <= 0 uses spacing. */
   double shell_spacing = 0.0;
-  /** Safety bound for malformed/huge meshes; high enough for normal exporter work areas. */
+  /** Most shells sampled, surface included: the surface plus 2 inward shells by design. */
   int max_shell_count = 3;
 };
 
@@ -242,7 +242,7 @@ class Slicer {
  * Exact greedy nearest-neighbour order for points.
  *
  * The first point is nearest @p anchor; every following point is nearest the previously selected
- * point. A balanced 2D k-d tree avoids the O(n^2) scan used by the small polygon-path helper above.
+ * point. A balanced 2D k-d tree keeps this O(n log n) on average instead of an O(n^2) scan.
  * Equal-distance ties use the original point index, keeping output deterministic.
  */
 QVector<int> nearestPointOrder(const QPolygonF &points, const QPointF &anchor,

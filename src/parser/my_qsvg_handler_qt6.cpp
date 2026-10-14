@@ -4018,9 +4018,9 @@ static QSvgStyleProperty *createRadialGradientNode(QSvgNode *node,
 
 #ifdef MYSVG
 /**
- * Parse the STL attributes of a `<rect>`.
- * A rect without `data-stl` yields an invalid (empty) placement, which is what marks it as an
- * ordinary rect -- so the result can be assigned unconditionally and never leaks to the next node.
+ * Parse the 3D attributes (data-stl*) of a placeholder `<rect>` or a photo `<image>`.
+ * An element without `data-stl` yields an invalid (empty) placement, which is what marks it as an
+ * ordinary element -- so the result can be assigned unconditionally and never leaks to the next node.
  */
 static StlPlacement parseStlPlacement(const QXmlStreamAttributes &attributes)
 {

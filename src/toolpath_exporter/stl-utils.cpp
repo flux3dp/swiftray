@@ -79,8 +79,8 @@ class PointWelder {
 
  private:
   static qint64 cellKey(qint64 ix, qint64 iy) {
-    // Hash signed indices as unsigned integers; left-shifting a negative signed value is undefined
-    // and produced target-dependent behaviour between MSVC and Clang.
+    // Hash the signed indices as unsigned integers: left-shifting a negative signed value is
+    // undefined behaviour.
     const quint64 x = static_cast<quint64>(ix);
     const quint64 y = static_cast<quint64>(iy);
     return static_cast<qint64>((x * UINT64_C(0x9e3779b97f4a7c15)) ^
@@ -1146,7 +1146,7 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
     owns_mesh_ = false;
   } else {
     transformed_ = mesh;
-    if (!transform.isIdentity()) applyTransform(&transformed_, transform);
+    applyTransform(&transformed_, transform);
     owns_mesh_ = true;
   }
   if (progress && !progress(0.05)) {

@@ -150,10 +150,13 @@ public:
     moveX(x, is_absolute);
     moveY(y, is_absolute);
     if (mock_dotting_mode_ && power > 0) {
+      // Path preview draws only laser-on segments, so a dot (a zero-length laser-on move) would be
+      // invisible. In preview, the move to the dot runs with S0 and the dot becomes a short laser-on
+      // stub along X.
+      constexpr float kMockDotLengthMm = 0.01f;
       str_stream_ << "S0" << std::endl;
       power_ = 0;
-      moveX(x + 0.01, is_absolute);
-      // moveX(x + 1/move_precision_, is_absolute);
+      moveX(x + kMockDotLengthMm, is_absolute);
     }
     if (std::fabs(power_ - power) >= epsilon_) {
       str_stream_ << "S" << power * 10;

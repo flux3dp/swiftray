@@ -36,3 +36,4 @@ third_party/libpotrace/potrace-1.16/*
 third_party/libpotrace/src/*
 vcpkg_installed/*
 workspace.xml
+.qtcreator/

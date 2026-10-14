@@ -303,10 +303,6 @@ void BSLMotionController::setUpTaskList() {
   if (error != LCS_RES_NO_ERROR) {
     qWarning() << "BSLM~::setUpTaskList() - lcs_enable_laser " << getErrorString(error);
   }
-  // error = lcs_set_firstpulse_killer_list(25);
-  // if (error != LCS_RES_NO_ERROR) {
-  //   qWarning() << "BSLM~::setUpTaskList() - lcs_set_firstpulse_killer_list " << getErrorString(error);
-  // }
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
@@ -320,7 +316,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static double wobble_k = 1;
     static QRegularExpression re("([GMXYFSZDWQPTABU]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
-    static double last_x = 0;
 
     // Skip these GCode
     if (gcode == "\u0018" || gcode == "$I" || gcode == "$H") {
@@ -335,7 +330,6 @@ void BSLMotionController::handleGcode(const QString &gcode) {
 
     QString config_key, config_value;
     if (PromarkTiming::parseConfigLine(gcode, &config_key, &config_value)) {
-      // pattern: ;CONFIG KEY=VALUE or ;CONFIG RESET
       if (config_key == "RESET") {
         resetConfig();
         qInfo() << "BSLM~::handleGcode() - Config reset to defaults";
@@ -346,9 +340,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else {
           config_.applyKeyValue(config_key, config_value);
         }
-        qInfo() << "BSLM~::handleGcode() - Config updated: laser_type_" << laser_type_ << " jump_speed " << config_.jump_speed << " laser_on_delay " << config_.laser_on_delay << " laser_off_delay " << config_.laser_off_delay
-                << " marking_delay " << config_.marking_delay << " corner_delay " << config_.corner_delay << " jump_delay_min " << config_.jump_delay_min << " jump_delay_max " << config_.jump_delay_max << " first_pulse_killer_enabled " << config_.first_pulse_killer_enabled;
       }
+      return;
     }
 
     if (gcode.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
@@ -557,6 +550,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           qInfo() << "BSLM~::handleGcode() - M3M4: Laser already started" << getDebugTime();
           return;
       }
+      qInfo() << "BSLM~::handleGcode() - M3M4: Job config: laser_type_" << laser_type_ << " jump_speed " << config_.jump_speed << " laser_on_delay " << config_.laser_on_delay << " laser_off_delay " << config_.laser_off_delay
+              << " marking_delay " << config_.marking_delay << " corner_delay " << config_.corner_delay << " jump_delay_min " << config_.jump_delay_min << " jump_delay_max " << config_.jump_delay_max << " first_pulse_killer_enabled " << config_.first_pulse_killer_enabled;
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_preparing_first_list_ = true;
       is_running_laser_ = true;
@@ -602,10 +597,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       startList(list_no, settings, true);
       // List Instruction
       // Force delay for the first laser
-      int errr__rr;
-      errr__rr = lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
-      if (errr__rr != LCS_RES_NO_ERROR) {
-        qWarning() << "BSLM~::handleGcode() - lcs_set_laser_delays " << getErrorString(errr__rr) << -3000 << PromarkJobConfig::LASER_OFF_DELAY;
+      const int error = lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
+      if (error != LCS_RES_NO_ERROR) {
+        qWarning() << "BSLM~::handleGcode() - lcs_set_laser_delays " << getErrorString(error) << -3000 << PromarkJobConfig::LASER_OFF_DELAY;
       }
       lcs_error_count = 0;
       laser_enabled = false;

@@ -89,7 +89,7 @@ namespace MySVG {
         bool fill_hatch;
         // UV heat mitigation, see ToolpathExporter::outputLayerFillGcode()
         bool fill_interleave;   // engrave the scan lines in an interleaved order
-        int fill_dwell_time;    // us, pause after each scan line, 0 = off
+        int fill_dwell_time;    // us, pause after each scan line; <= 0 = off (the frontend stores a disabled value as its negative)
         bool fill_dwell_adaptive; // subtract the line's own marking time from the pause
         int dotting_time;
         // Inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()

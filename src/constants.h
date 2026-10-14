@@ -42,7 +42,7 @@ namespace PromarkJobConfig {
 // predicts its duration (PromarkTiming::axisMoveTimeMs) cannot drift apart.
 inline constexpr double Z_PULSE_PER_MM = 1600;
 inline constexpr double Z_PULSE_PER_SEC = 4800;
-inline constexpr double Z_START_PULSE_PER_SEC = 0;
+inline constexpr double Z_START_PULSE_PER_SEC = 10;
 inline constexpr double A_PULSE_PER_MM = 63;
 inline constexpr double A_PULSE_PER_SEC = 3200;
 inline constexpr double A_START_PULSE_PER_SEC = 1600;

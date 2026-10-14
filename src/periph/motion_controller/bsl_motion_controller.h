@@ -56,7 +56,7 @@ public:
   bool isPreparingFirstList() { return is_preparing_first_list_; }
   int getDisconnectCount() { return disconnect_count_; }
   double getProgressByTime();
-  //
+  /** Restore the job overrides set by ;CONFIG lines to their defaults. */
   void resetConfig() {
     config_.reset();
   }

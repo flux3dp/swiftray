@@ -35,7 +35,7 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
   return raster_lines;
 }
 
-// Fallbacks when neither the placeholder rect nor the layer provides a value.
+// Fallbacks when the layer has no (or a non-positive) data-stl-layer-spacing / data-stl-point-spacing.
 // Kept in step with the frontend defaults (app/constants/innerEngraving.ts), measured on K9.
 constexpr double kDefaultStlLayerSpacingMm = 0.04;
 constexpr double kDefaultStlPointSpacingMm = 0.03;
@@ -108,7 +108,6 @@ ToolpathExporter::ToolpathExporter(BaseGenerator *generator, qreal dpmm, double 
  gen_(generator), dpmm_(dpmm), padding_type_(padding_type), travel_speed_(travel_speed), end_point_(end_point), move_translate_(move_translate), is_promark_(is_promark) {}
 
 void ToolpathExporter::parseParam(QJsonObject param) {
-  qInfo() << "Parsing parameters from JSON object:" << param;
   gen_->addComment("CONFIG RESET");
   if (param.contains("is_uv_light")) {
     int is_uv_light = param["is_uv_light"].toInt();
@@ -118,28 +117,30 @@ void ToolpathExporter::parseParam(QJsonObject param) {
     double jump_speed = param["jump_speed"].toDouble();
     gen_->addComment(QString("CONFIG JUMP_SPEED=%1").arg(jump_speed));
   }
+  // delays in us, int32_t as the LCS SDK takes them (lcs_set_laser_delays, lcs_set_scanner_delays,
+  // lcs_set_delay_mode); the laser delays can be negative
   if (param.contains("laser_on_delay")) {
-    int laser_on_delay = param["laser_on_delay"].toInt();
+    int32_t laser_on_delay = param["laser_on_delay"].toInt();
     gen_->addComment(QString("CONFIG LASER_ON_DELAY=%1").arg(laser_on_delay));
   }
   if (param.contains("laser_off_delay")) {
-    uint32_t laser_off_delay = param["laser_off_delay"].toInt();
+    int32_t laser_off_delay = param["laser_off_delay"].toInt();
     gen_->addComment(QString("CONFIG LASER_OFF_DELAY=%1").arg(laser_off_delay));
   }
   if (param.contains("marking_delay")) {
-    uint32_t marking_delay = param["marking_delay"].toInt();
+    int32_t marking_delay = param["marking_delay"].toInt();
     gen_->addComment(QString("CONFIG MARKING_DELAY=%1").arg(marking_delay));
   }
   if (param.contains("corner_delay")) {
-    uint32_t corner_delay = param["corner_delay"].toInt();
+    int32_t corner_delay = param["corner_delay"].toInt();
     gen_->addComment(QString("CONFIG CORNER_DELAY=%1").arg(corner_delay));
   }
   if (param.contains("jump_delay_min")) {
-    uint32_t jump_delay_min = param["jump_delay_min"].toInt();
+    int32_t jump_delay_min = param["jump_delay_min"].toInt();
     gen_->addComment(QString("CONFIG JUMP_DELAY_MIN=%1").arg(jump_delay_min));
   }
   if (param.contains("jump_delay_max")) {
-    uint32_t jump_delay_max = param["jump_delay_max"].toInt();
+    int32_t jump_delay_max = param["jump_delay_max"].toInt();
     gen_->addComment(QString("CONFIG JUMP_DELAY_MAX=%1").arg(jump_delay_max));
   }
   if (param.contains("first_pulse_killer_enabled")) {
@@ -187,7 +188,7 @@ void ToolpathExporter::parseParam(QJsonObject param) {
                << material_max_z_mm_;
   }
   is_path_preview_ = param["shouldMockFastGradient"].toBool();
-  qInfo() << "is_path_preview_" << is_path_preview_;
+  qInfo() << "[Export] Path preview:" << is_path_preview_;
 }
 
 void ToolpathExporter::setDpmm(qreal dpmm) {
@@ -986,8 +987,8 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
         continue;
       }
       if (cloud.shell_limit_reached) {
-        qWarning() << "[Export] STL inward shells reached safety limit" << blue_noise.max_shell_count
-                   << "for object" << placement.id;
+        qInfo() << "[Export] STL object" << placement.id << "sampled with"
+                << blue_noise.max_shell_count << "shells";
       }
       job.dot_points = std::move(cloud.points);
       discardPointsOutsideMaterial(&job.dot_points, placement.id);
@@ -1256,19 +1257,6 @@ void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
  */
 void ToolpathExporter::emitStlPolygon(const QPolygonF &poly_dots, double speed, double power) {
   if (poly_dots.isEmpty() || cancelled_) return;
-  if (stl_dot_mode_) {
-    // Every point is a dot; inserting interpolation points would change the requested density.
-    moveTo(poly_dots.first() / dpmm_, travel_speed_, 0, 0);
-    for (int index = 0; index < poly_dots.size(); ++index) {
-      if ((index & 1023) == 0) {
-        onProgressChanged(current_progress_, true);
-        if (cancelled_) return;
-      }
-      moveTo(poly_dots[index] / dpmm_, speed, power, 0);
-    }
-    return;
-  }
-
   moveTo(poly_dots.first() / dpmm_, travel_speed_, 0, 0);
   for (int index = 0; index < poly_dots.size(); ++index) {
     if ((index & 1023) == 0) {
@@ -1277,7 +1265,8 @@ void ToolpathExporter::emitStlPolygon(const QPolygonF &poly_dots, double speed, 
     }
     moveTo(poly_dots[index] / dpmm_, speed, power, 0);
   }
-  moveTo(poly_dots.last() / dpmm_, travel_speed_, 0, 0);
+  // Dots: every vertex is fired as one point, with no trailing travel move.
+  if (!stl_dot_mode_) moveTo(poly_dots.last() / dpmm_, travel_speed_, 0, 0);
 }
 
 StlPlacement ToolpathExporter::resolveStlPlacement(const StlPlacement &placement) const {
@@ -1334,9 +1323,8 @@ void ToolpathExporter::outputStlLineGcode(const QList<stl::Layer> &slices) {
 
 /**
  * @brief Export layer_filled_polygons_ for non-filled geometry
- * @param quiet suppresses per-call logging for STL layers with many Z planes
  */
-void ToolpathExporter::outputLayerFillGcode(bool quiet) {
+void ToolpathExporter::outputLayerFillGcode() {
   struct Path {
     QLineF path;
     bool isClockwise;
@@ -1359,11 +1347,8 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
       bounds = bounds.united(poly.boundingRect());
     }
   }
-  const bool verbose = !quiet;
-  if (verbose) {
-    qInfo() << "Fill Path Bounds: " << bounds;
-    qInfo() << "DPMM: " << dpmm_;
-  }
+  qInfo() << "Fill Path Bounds: " << bounds;
+  qInfo() << "DPMM: " << dpmm_;
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
   double fill_interval = current_layer_->fillInterval() * dpmm_;
   double fill_angle = current_layer_->fillAngle();
@@ -1382,7 +1367,7 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
   // Calculate diagonal length to ensure coverage
   double diagonal = qSqrt(bounds.width() * bounds.width() +
                           bounds.height() * bounds.height()) * 1.1;
-  if (verbose) qInfo() << "Diagonal: " << diagonal / dpmm_;
+  qInfo() << "Diagonal: " << diagonal / dpmm_;
   if (diagonal == 0) {
     return;
   }
@@ -1403,11 +1388,11 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
 
     // Calculate center point
     QPointF center = bounds.center();
-    if (verbose) qInfo() << "Center Point: " << center / dpmm_;
+    qInfo() << "Center Point: " << center / dpmm_;
 
     // Calculate start point (offset by half diagonal in perpendicular direction)
     QPointF start = center - (perpendicular * diagonal / 2);
-    if (verbose) qInfo() << "Start Point: " << start / dpmm_;
+    qInfo() << "Start Point: " << start / dpmm_;
 
     QList<PathGroup> all_paths;
     for (const auto& paths : layer_filled_polygons_) {
@@ -1441,13 +1426,10 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
     gen_->turnOnLaser();
 
     // Scan across the path.
-    // A scan line sits at perpendicular coordinate (offset - diagonal / 2) relative to the center,
-    // so it can only reach the shape while that stays inside the projection of bounds onto the
-    // perpendicular axis. The grid deliberately spans more than the shape, but it is not centered
-    // on it: the offsets below first_offset alone are over half of the range for a square at angle
-    // 0. Those lines never produced anything, they only cost an intersection pass -- and once the
-    // lines are engraved in an interleaved order they would also pad the line count and change the
-    // order. The grid itself is unchanged, so the engraved lines stay exactly where they were.
+    // Only offsets whose scan line can reach the shape are kept: a line sits at
+    // (offset - diagonal / 2) from the center along the perpendicular, so it must stay within half
+    // the projected extent of bounds (plus one interval). Keeping the empty lines would pad n and
+    // change the interleaved order. The grid positions are the same as the unfiltered loop's.
     const double half_extent = (std::fabs(bounds.width() * perpendicular.x()) +
                                 std::fabs(bounds.height() * perpendicular.y())) / 2 +
                                fill_interval;
@@ -1467,8 +1449,8 @@ void ToolpathExporter::outputLayerFillGcode(bool quiet) {
     for (int i = 0; i < scan_line_count; ++i) {
       scan_order.append(static_cast<int>(1LL * i * interleave_stride % scan_line_count));
     }
-    if (verbose) qInfo() << "Scan lines: " << scan_line_count << " interleave stride: " << interleave_stride;
-    // Keep reporting roughly once per percent now that the empty lines no longer inflate the count
+    qInfo() << "Scan lines: " << scan_line_count << " interleave stride: " << interleave_stride;
+    // Report roughly once per percent of the scan lines of all hatch passes.
     progress_batch = std::max<int>(1, hatch_count * scan_line_count / 100);
 
     bool reverse = false;
@@ -1649,9 +1631,12 @@ void ToolpathExporter::outputLayerPathGcode() {
 
   // NOTE: Should convert points from canvas unit to mm
   QMutexLocker polygons_lock(&polygons_mutex_);
-  for (auto &poly : layer_polygons_) {
-    onProgressChanged(current_progress_, true);
-    if (cancelled_) break;
+  for (int poly_index = 0; poly_index < layer_polygons_.size(); ++poly_index) {
+    if ((poly_index & 1023) == 0) {
+      onProgressChanged(current_progress_, true);
+      if (cancelled_) break;
+    }
+    auto &poly = layer_polygons_[poly_index];
     if (poly.empty()) continue;
 
     if (stl_output_active_) {

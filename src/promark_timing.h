@@ -27,10 +27,10 @@ namespace PromarkTiming {
  *
  * The controller ramps from start_speed up to run_speed over acc_time and symmetrically back down.
  * A move too short to reach run_speed is therefore a pure triangle whose duration grows with
- * sqrt(pulses), not linearly -- and with the ramp we use (10 -> 4800 pulse/s over 255ms) the full
- * ramp needs ~1227 pulses, i.e. 0.77mm of Z. Every layer step of a 3D carving job is well inside
- * that regime (0.1mm = 160 pulses), which is why the old constant-speed model underestimated the
- * Z time by ~6x: 333 steps of 0.1mm take ~61s, not ~11s.
+ * sqrt(pulses), not linearly -- with the Z ramp (Z_START_PULSE_PER_SEC 10 -> 4800 pulse/s over
+ * 255ms) a full ramp needs ~1227 pulses, i.e. 0.77mm of Z. Every layer step of a 3D carving job is
+ * inside that regime (0.1mm = 160 pulses): 333 steps of 0.1mm travel for ~61s, ~6x the ~11s a
+ * constant-speed model predicts.
  */
 inline double axisTravelTimeMs(double pulses, double run_speed, double start_speed,
                                double acc_time_ms) {

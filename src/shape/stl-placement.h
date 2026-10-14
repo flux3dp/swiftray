@@ -47,7 +47,7 @@ struct StlPlacement {
   /** Local dimensions of a photo plane before the 4x4 transform is applied. */
   double photo_width_mm = 0.0;
   double photo_height_mm = 0.0;
-  /** Which loadSVG binary map owns `id`; absent frontend metadata defaults to the legacy mesh. */
+  /** Which loadSVG binary map owns `id`; a missing data-stl-kind means Mesh. */
   GeometryKind geometry_kind = GeometryKind::Mesh;
   Mode mode = Mode::Dot;
   /** Dot mode only: also sample inward shells (kDotFill). */
