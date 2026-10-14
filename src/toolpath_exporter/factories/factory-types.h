@@ -31,6 +31,7 @@ struct FactoryKwargs {
   std::optional<double> pixel_per_mm;
   std::optional<double> pixel_per_mm_x;
   bool one_way = false;
+  bool one_way_reversed = false;
   int halftone = 1;
   HalftoneParams* halftone_params = nullptr;
   QVector<int> color_curve = {};

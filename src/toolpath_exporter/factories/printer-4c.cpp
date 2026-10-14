@@ -26,6 +26,26 @@ void PrinterBitmapFactory4C::set_reversed(bool val) {
   }
 }
 
+void PrinterBitmapFactory4C::set_color_order(const QString& order) {
+  // Re-key colors by cartridge slot, e.g. "cymk" for a cartridge with M and Y
+  // swapped. Slot i keeps its packet bit (1 << (3 - i)) and its physical x
+  // offset; only which ink sits in that slot changes.
+  // Must be called before set_reversed / add_image_by_color.
+  QString sorted = order.toLower();
+  std::sort(sorted.begin(), sorted.end());
+  if (sorted != "ckmy") {
+    qWarning() << "Color order must be a permutation of cmyk:" << order;
+    return;
+  }
+  colors.clear();
+  color_offsets.clear();
+  for (int i = 0; i < order.size(); i++) {
+    PrintingColor color = PrintingColor(order[i].toLower().toLatin1());
+    colors.append(color);
+    color_offsets[color] = QPoint(CARTRIDGE_DISTANCE_PX * i, 0);
+  }
+}
+
 void PrinterBitmapFactory4C::reverse_offset() {
   int max_x = 0;
   int max_y = 0;

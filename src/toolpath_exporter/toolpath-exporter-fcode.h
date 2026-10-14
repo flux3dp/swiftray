@@ -85,6 +85,7 @@ struct Config {
   bool skip_prespray = false;
   bool burst_refresh = false;
   int prespray_times = 3;
+  QString color_order;  // 4C ink order by cartridge slot, e.g. "cymk"
   bool use_ga_reorder = true;
   // other
   MachineModules expected_module = MachineModules::NONE;

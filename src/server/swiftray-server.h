@@ -1,6 +1,7 @@
 #pragma once
 
 #include "worker.h"
+#include <segment/segment_worker.h>
 #include <QObject>
 #include <QWebSocketServer>
 #include <QWebSocket>
@@ -25,6 +26,7 @@ private Q_SLOTS:
 Q_SIGNALS:
   void interruptWorker(QPointer<QWebSocket> socket_ptr);
   void sendTaskToWorker(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
+  void sendTaskToSegmentWorker(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);
 
 private:
   QMap<QString, Machine*> machine_map_;
@@ -46,6 +48,8 @@ private:
   std::mutex canvas_mutex_;
   QThread* workerThread = nullptr;
   Worker* worker;
+  QThread* segmentThread = nullptr;
+  SegmentWorker* segment_worker = nullptr;
   friend class Worker;
 
   void handleDevicesAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params);

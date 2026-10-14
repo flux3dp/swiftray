@@ -42,6 +42,7 @@ find_package(Cairo REQUIRED)
 find_package(GLib REQUIRED)
 find_package(Poppler REQUIRED)
 message(STATUS "SPARKLE_LIBRARIES: ${SPARKLE_LIBRARIES}")
+include(${CMAKE_SOURCE_DIR}/cmake/onnxruntime.cmake)
 
 
 # ref: https://github.com/freeorion/freeorion/blob/master/CMakeLists.txt
@@ -94,6 +95,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(APP_FRAMEWORK_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/sentry-native/install/lib/libsentry.dylib
     ${SPARKLE_LIBRARIES}
+    ${ORT_RUNTIME_FILES}
   )
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
     set(LIBGCC_DYLIB_NAME "libgcc_s.1.1.dylib")
@@ -111,12 +113,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_source_files_properties(${APP_ADDITIONAL_EXEC_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "MacOS")
   set_source_files_properties(${APP_FRAMEWORK_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Frameworks")
   set_source_files_properties(${APP_RESOURCE_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+  set_source_files_properties(${SEGMENT_MODEL_FILES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/models")
   add_executable(${PROJECT_NAME} 
     ${SRC_DIR}/main.cpp 
     #${APP_HELPER_FILES}
     ${APP_ADDITIONAL_EXEC_FILES}
     ${APP_FRAMEWORK_FILES}
-    ${APP_RESOURCE_FILES})
+    ${APP_RESOURCE_FILES}
+    ${SEGMENT_MODEL_FILES})
   set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE # Create macOS app bundle
     MACOSX_BUNDLE_INFO_PLIST ${CMAKE_BINARY_DIR}/packaging/macOS/MacOSXBundleInfo.plist
@@ -197,11 +201,13 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   third_party_libs
   poppler
   ${SPARKLE_LIBRARIES}
+  ${ORT_LIBRARY}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${ICONV_INCLUDE_DIR}
   ${SPARKLE_INCLUDE_DIRS}
+  ${ORT_INCLUDE_DIR}
 )
 
 # ==== MacOS Packaging ====

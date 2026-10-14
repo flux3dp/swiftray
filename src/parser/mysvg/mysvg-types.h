@@ -47,6 +47,7 @@ namespace MySVG {
 
         double min_power;
         bool is_one_way_engraving;
+        bool is_one_way_engraving_reversed;
         int module;
         int ink;
         double printing_speed;

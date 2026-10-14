@@ -29,6 +29,7 @@ QTransform BaseFactory::get_transform() {
 BaseBitmapFactory::BaseBitmapFactory(const FactoryKwargs& kwargs) noexcept
     : BaseFactory(kwargs),
       one_way(kwargs.one_way),
+      one_way_reversed(kwargs.one_way_reversed),
       split_bbox(kwargs.split_bbox),
       work_area_mm(kwargs.work_area_mm) {
   if (kwargs.workspaces) {

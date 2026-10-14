@@ -47,6 +47,23 @@ win32 {
     QMAKE_CXXFLAGS_RELEASE += -Os
 }
 
+# === ONNX Runtime + MobileSAM models (src/segment, see cmake/onnxruntime.cmake) ===
+win32 {
+    ORT_DIR = $$PWD/third_party/onnxruntime/windows
+} else:contains(QMAKE_HOST.arch, arm64) {
+    ORT_DIR = $$PWD/third_party/onnxruntime/macos_arm64
+} else {
+    ORT_DIR = $$PWD/third_party/onnxruntime/macos
+}
+!exists($$ORT_DIR/include/onnxruntime_cxx_api.h)|!exists($$PWD/resources/models/mobile_sam.encoder.onnx)|!exists($$PWD/resources/models/mobile_sam.decoder.onnx) {
+    message("Fetching ONNX Runtime and segmentation models (first run only)")
+    win32: system("cmd /c $$shell_path($$PWD/scripts/fetch-onnxruntime.bat)")
+    else: system("sh $$PWD/scripts/fetch-onnxruntime.sh")
+}
+!exists($$ORT_DIR/include/onnxruntime_cxx_api.h): error("ONNX Runtime not found at $$ORT_DIR - run scripts/fetch-onnxruntime by hand")
+INCLUDEPATH += $$ORT_DIR/include
+LIBS += -L$$ORT_DIR/lib -lonnxruntime
+
 # === Import Other Libraries ===
 
 win32 {
@@ -253,6 +270,7 @@ SOURCES += \
     $$files(src/periph/motion_controller/*.cpp) \
     $$files(src/common/*.cpp) \
     $$files(src/server/*.cpp) \
+    $$files(src/segment/*.cpp) \
     $$files(src/debug/*.cpp) \
     $$files(third_party/QxPotrace/src/qxpotrace.cpp) \
     $$files(src/parser/*.cpp) \
@@ -308,6 +326,7 @@ HEADERS += \
     $$files(src/widgets/components/*.h) \
     $$files(src/windows/*.h) \
     $$files(src/server/*.h) \
+    $$files(src/segment/*.h) \
     $$files(src/debug/*.h) \
     $$files(src/parser/mysvg/*.h) \
     $$files(src/parser/dxf_rs/debug/*.h) \
@@ -383,7 +402,8 @@ QML_IMPORT_PATH = src/windows \
 
 macx{
   # Copy additional files to bundle
-  BUNDLE_FRAMEWORKS_FILES.files += $$PWD/third_party/sentry-native/install/lib/libsentry.dylib
+  BUNDLE_FRAMEWORKS_FILES.files += $$PWD/third_party/sentry-native/install/lib/libsentry.dylib \
+                                   $$files($$ORT_DIR/lib/libonnxruntime.*.dylib)
   BUNDLE_FRAMEWORKS_FILES.path = Contents/Frameworks
   QMAKE_BUNDLE_DATA += BUNDLE_FRAMEWORKS_FILES
   
@@ -391,6 +411,17 @@ macx{
                                         $$files($$PWD/third_party/liblcs/lib/macos/*.dylib)
   BUNDLE_ADDITIONAL_EXEC_FILES.path = Contents/MacOS
   QMAKE_BUNDLE_DATA += BUNDLE_ADDITIONAL_EXEC_FILES
+
+  # MobileSAM models, read by SegmentWorker::modelsDir()
+  BUNDLE_MODEL_FILES.files += $$files($$PWD/resources/models/*.onnx)
+  BUNDLE_MODEL_FILES.path = Contents/Resources/models
+  QMAKE_BUNDLE_DATA += BUNDLE_MODEL_FILES
+}
+
+win32 {
+  # onnxruntime.dll and resources/models/ must sit next to Swiftray.exe (windeployqt does not copy them)
+  QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($$ORT_DIR/lib/onnxruntime.dll) $$shell_path($$OUT_PWD) $$escape_expand(\\n\\t)
+  QMAKE_POST_LINK += $$QMAKE_COPY_DIR $$shell_path($$PWD/resources/models) $$shell_path($$OUT_PWD/models) $$escape_expand(\\n\\t)
 }
 
 DISTFILES +=

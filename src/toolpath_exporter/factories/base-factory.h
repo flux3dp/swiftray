@@ -33,6 +33,7 @@ class BaseBitmapFactory : public BaseFactory {
   int default_workspaces_index = 0;
 
   bool one_way = false;
+  bool one_way_reversed = false;
   bool split_bbox = false;
   QSize work_area;
   QSizeF work_area_mm;
@@ -61,6 +62,7 @@ class BaseBitmapFactory : public BaseFactory {
                                  const QPointF& nozzle_offset) {};
   // 4C
   virtual void set_reversed(bool val) {};
+  virtual void set_color_order(const QString& order) {};
   virtual void set_am_angle_map(const QString& raw_val) {};
   virtual void set_color_curves_map(const QString& raw_val) {};
   virtual void set_macros(std::shared_ptr<BaseMacros> macros_ptr) {};

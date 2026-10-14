@@ -7,11 +7,12 @@ class PrinterBitmapFactory4C : public PrinterBitmapFactory {
  private:
   QMap<PrintingColor, double> am_angle_map = AM_ANGLE_MAP_4C;
   QMap<PrintingColor, QVector<int>> color_curves_map;
+  static constexpr int CARTRIDGE_DISTANCE_PX = 42;
   QMap<PrintingColor, QPoint> color_offsets = {
       {PrintingColor::CYAN, QPoint(0, 0)},
-      {PrintingColor::MAGENTA, QPoint(42, 0)},
-      {PrintingColor::YELLOW, QPoint(84, 0)},
-      {PrintingColor::BLACK, QPoint(126, 0)},
+      {PrintingColor::MAGENTA, QPoint(CARTRIDGE_DISTANCE_PX, 0)},
+      {PrintingColor::YELLOW, QPoint(CARTRIDGE_DISTANCE_PX * 2, 0)},
+      {PrintingColor::BLACK, QPoint(CARTRIDGE_DISTANCE_PX * 3, 0)},
   };
   int refresh_interval = 0;  // time counts (second) to refresh ink
   bool burst_refresh = false;
@@ -66,6 +67,7 @@ class PrinterBitmapFactory4C : public PrinterBitmapFactory {
   PrinterBitmapFactory4C(FactoryKwargs& kwargs) noexcept;
 
   void set_reversed(bool val) override;
+  void set_color_order(const QString& order) override;
   void set_am_angle_map(const QString& raw_val) override;
   void set_color_curves_map(const QString& raw_val) override;
   void set_macros(std::shared_ptr<BaseMacros> macros_ptr) override;
