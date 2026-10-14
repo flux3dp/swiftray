@@ -586,7 +586,18 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
   }
 
   // Step 6. Write additional metadata
-  if (support_info.MODULE_CHECK_METADATA) {
+  if (support_info.MODULE_CHECK_METADATA && is_galvo_machine_) {
+    // HEXA II galvo: the CO2 galvo head is always fitted, so only the optional
+    // MOPA head is checked, the way BM2 checks its 4C / 1064 add-ons.
+    bool has_mopa = all_modules_.contains(LayerModule::GALVO_MOPA);
+    proc.add_metadata("REQUIRED_HEADTYPE",
+                      int(has_mopa ? MachineModules::GALVO_MOPA : MachineModules::NONE));
+    // A document without MOPA enabled is laid out for a machine without it: the
+    // parked MOPA head costs the gantry more travel than the CO2 one.
+    if (config_.expected_module == MachineModules::GALVO_CO2) {
+      proc.add_metadata("FORBIDDEN_HEADTYPE", int(MachineModules::GALVO_MOPA));
+    }
+  } else if (support_info.MODULE_CHECK_METADATA) {
     bool has_4c = all_modules_.contains(LayerModule::PRINTER_4C);
     bool has_1064 = all_modules_.contains(LayerModule::LASER_1064);
     MachineModules required_module = MachineModules::NONE;
