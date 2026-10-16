@@ -416,7 +416,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             list_manager_.call(ListApiType::SetSpeed, settings.current_f);
         } else if (type == "S") {
             has_s_param = true;
-            settings.current_s = value.toInt() / 10;
+            // S may carry decimals (e.g. S444.444), which toInt() would reject as 0. Truncating keeps
+            // the same whole percent that integer division gives for an integer S
+            settings.current_s = static_cast<unsigned char>(value.toDouble() / 10);
             if (!is_handling_high_speed_) {
                 if (settings.current_s > 0) {
                   laser_enabled = true;
