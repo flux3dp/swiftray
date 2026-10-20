@@ -34,12 +34,13 @@ struct FilledPath {
  * costs exactly one Z move. On the Promark that move is dominated by a fixed ~50ms command
  * overhead (PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS), so the bucket size sets the floor on how
  * long an inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at
- * the 0.001mm bucket. Coarser buckets trade depth resolution for time.
+ * a 0.001mm bucket. Coarser buckets trade depth resolution for time; the 0.01mm default cuts the
+ * Z-move count by roughly an order of magnitude while the result stays close to the finer bucket.
  *
  * The minimum is a hard floor: buckets below 0.001mm stall the job at runtime (one Z pulse is
- * 0.000625mm). The default sits on that floor, so a job param can only make the bucket coarser.
+ * 0.000625mm). A job param may go finer than the default, down to that floor, or coarser.
  */
-inline constexpr double kDefaultMachineZBucketMm = 0.001;
+inline constexpr double kDefaultMachineZBucketMm = 0.01;
 inline constexpr double kMinMachineZBucketMm = 0.001;
 
 /** STL engraving strategies. Dot strategies are sampled into point clouds before output. */
