@@ -564,7 +564,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       current_error_ = 0;
       current_custom_error_.clear();
       // Reset current settings
-      // Do not reset dotting_time_ here: ToolpathExporter emits T before M3.
+      // Every layer header emits M3S0 (turnOnLaser) ahead of its Q/P/B settings and the T line,
+      // and M5 does not close the session, so this block runs once per job before any T.
+      // Resetting here also covers a job cancelled before its M2 reached the end-of-list reset.
+      dotting_time_ = 0;
       x_pos_ = 0;
       a_pos_ = 0;
       settings.current_s = 0;
