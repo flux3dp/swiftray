@@ -176,14 +176,14 @@ convert 共用欄位仍照原介面提供。
   "first_pulse_killer_enabled": true,
   "machine_z_bucket": 0.01,
 
-  "is_uv_light": false,
+  "is_uv_light": 1,
   "jump_speed": 4000,
   "laser_on_delay": 150,
   "laser_off_delay": 150,
   "marking_delay": 0,
   "corner_delay": 0,
-  "jump_delay_min": 10000,
-  "jump_delay_max": 10000
+  "jump_delay_min": 1000,
+  "jump_delay_max": 1000
 }
 ```
 
