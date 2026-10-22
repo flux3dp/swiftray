@@ -265,17 +265,44 @@ void BSLMotionController::markTo(double y, double x) {
 }
 
 void BSLMotionController::setUpTaskCtrl() {
-  lcs_set_jump_speed_ctrl(PromarkJobConfig::JUMP_SPEED);
-  lcs_set_mark_speed_ctrl(1000);
-  lcs_set_delay_mode(true, PromarkJobConfig::JUMP_DELAY_MIN, PromarkJobConfig::JUMP_DELAY_MAX, 10);
-  lcs_set_laser_mode(LCS_MOPA, is_framing_);
+  int error;
+  error = lcs_set_jump_speed_ctrl(config_.jump_speed);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_jump_speed_ctrl " << getErrorString(error) << config_.jump_speed;
+  }
+  error = lcs_set_mark_speed_ctrl(1000);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_mark_speed_ctrl " << getErrorString(error);
+  }
+  error = lcs_set_delay_mode(true, config_.jump_delay_min, config_.jump_delay_max,
+                            PromarkJobConfig::JUMP_LENGTH_LIMIT_MM);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_delay_mode " << getErrorString(error) << config_.jump_delay_min << config_.jump_delay_max;
+  }
+  error = lcs_set_laser_mode(laser_type_, is_framing_);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << laser_type_ << is_framing_;
+  }
 }
 
 void BSLMotionController::setUpTaskList() {
-  lcs_set_laser_delays(PromarkJobConfig::LASER_ON_DELAY, PromarkJobConfig::LASER_OFF_DELAY);
-  lcs_set_scanner_delays(100, 50);
-  lcs_set_laser_control(true);
-  lcs_enable_laser(0);
+  int error;
+  error = lcs_set_laser_delays(config_.laser_on_delay, config_.laser_off_delay);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_laser_delays " << getErrorString(error) << config_.laser_on_delay << config_.laser_off_delay;
+  }
+  error = lcs_set_scanner_delays(config_.marking_delay, config_.corner_delay);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_scanner_delays " << getErrorString(error) << config_.marking_delay << config_.corner_delay;
+  }
+  error = lcs_set_laser_control(true);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_set_laser_control " << getErrorString(error);
+  }
+  error = lcs_enable_laser(0);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::setUpTaskList() - lcs_enable_laser " << getErrorString(error);
+  }
 }
 
 void BSLMotionController::handleGcode(const QString &gcode) {
@@ -286,9 +313,8 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     static double center_pos = 55;
     static int freq = 100; //100 khz
     static bool last_is_z_command = false;
-    static uint32_t dotting_time = 0;
     static double wobble_k = 1;
-    static QRegularExpression re("([GMXYFSZDWQPTA]|WD|WS)(-?\\d+\\.?\\d*)");
+    static QRegularExpression re("([GMXYFSZDWQPTABU]|WD|WS)(-?\\d+\\.?\\d*)");
     static QRegularExpressionMatchIterator i;
 
     // Skip these GCode
@@ -299,6 +325,22 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     if (gcode == "?" || gcode == "?\n") {
       Q_EMIT MotionController::statusUpdate(state_, x_pos_, y_pos_, 0);
       // qInfo() << "BSLM~::handleGcode() - Realtime status updated" << getDebugTime();
+      return;
+    }
+
+    QString config_key, config_value;
+    if (PromarkTiming::parseConfigLine(gcode, &config_key, &config_value)) {
+      if (config_key == "RESET") {
+        resetConfig();
+        qInfo() << "BSLM~::handleGcode() - Config reset to defaults";
+      } else {
+        qInfo() << "BSLM~::handleGcode() - Config update: " << config_key << " = " << config_value;
+        if (config_key == "UV") {
+          laser_type_ = config_value.toInt() != 0 ? LCS_UV : LCS_MOPA;
+        } else {
+          config_.applyKeyValue(config_key, config_value);
+        }
+      }
       return;
     }
 
@@ -319,6 +361,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
     bool is_move_command = false;
     bool should_swap = false;
     bool should_end = false;
+    bool has_s_param = false;
     double target_a = a_pos_;
     double x = is_absolute_positioning ? x_pos_ : 0;
     double y = is_absolute_positioning ? y_pos_ : 0;
@@ -350,17 +393,31 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         } else if (type == "Q") {
             freq = value.toDouble();
             settings.period = 1000.0 / freq;
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
         } else if (type == "P") {
             settings.pulse_width = value.toInt();
-            list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+            list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
+        } else if (type == "B") {
+            if (laser_type_ == LCS_UV) {
+              settings.q_pulse_width = value.toDouble();
+              qInfo() << "BSLM~::handleGcode() - Set Q Pulse Width: " << settings.q_pulse_width;
+              list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
+            }
         } else if (type == "T") {
-            dotting_time = value.toInt();
+            dotting_time_ = value.toInt();
+            // startList() puts the matching first-pulse suppression into every list. If T changes
+            // mid-job, also update the currently open list immediately: T0 closes a dotting
+            // section (the generator emits it before a line layer), and the suppression has to go
+            // with it.
+            if (is_running_laser_) applyFirstPulseKillerToList("handleGcode T");
         } else if (type == "F") {
             settings.current_f = value.toDouble() / 60;
             list_manager_.call(ListApiType::SetSpeed, settings.current_f);
         } else if (type == "S") {
-            settings.current_s = value.toInt() / 10;
+            has_s_param = true;
+            // S may carry decimals (e.g. S444.444), which toInt() would reject as 0. Truncating keeps
+            // the same whole percent that integer division gives for an integer S
+            settings.current_s = static_cast<unsigned char>(value.toDouble() / 10);
             if (!is_handling_high_speed_) {
                 if (settings.current_s > 0) {
                   laser_enabled = true;
@@ -371,6 +428,16 @@ void BSLMotionController::handleGcode(const QString &gcode) {
                 } else {
                   laser_enabled = false;
                 }
+            }
+        } else if (type == "U") {
+            // FLUX custom: hold the list for the given number of microseconds without moving or
+            // firing. The fill exporter uses it to stop feeding a UV spot continuously into one
+            // small area. Like Q/P/B/T this is not a move command, so the instruction has to be
+            // queued here -- the move handling below is never reached for a bare U line.
+            const double delay_us = value.toDouble();
+            if (delay_us >= 1 && is_running_laser_) {
+              list_manager_.call(ListApiType::LongDelay, static_cast<uint32_t>(delay_us));
+              estimated_time_ += delay_us / 1000.0;
             }
         } else if (type == "W") {
             double workarea = value.toDouble();
@@ -484,21 +551,28 @@ void BSLMotionController::handleGcode(const QString &gcode) {
           qInfo() << "BSLM~::handleGcode() - M3M4: Laser already started" << getDebugTime();
           return;
       }
+      qInfo() << "BSLM~::handleGcode() - M3M4: Job config: laser_type_" << laser_type_ << " jump_speed " << config_.jump_speed << " laser_on_delay " << config_.laser_on_delay << " laser_off_delay " << config_.laser_off_delay
+              << " marking_delay " << config_.marking_delay << " corner_delay " << config_.corner_delay << " jump_delay_min " << config_.jump_delay_min << " jump_delay_max " << config_.jump_delay_max << " first_pulse_killer_enabled " << config_.first_pulse_killer_enabled;
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_preparing_first_list_ = true;
       is_running_laser_ = true;
       completed_task_time_ = 0;
       estimated_time_ = 0;
       running_task_time_ = 0;
+      mark_sequence_.reset();
       current_error_ = 0;
       current_custom_error_.clear();
       // Reset current settings
-      dotting_time = 0;
+      // Every layer header emits M3S0 (turnOnLaser) ahead of its Q/P/B settings and the T line,
+      // and M5 does not close the session, so this block runs once per job before any T.
+      // Resetting here also covers a job cancelled before its M2 reached the end-of-list reset.
+      dotting_time_ = 0;
       x_pos_ = 0;
       a_pos_ = 0;
       settings.current_s = 0;
       settings.current_f = 100.0;
       settings.period = 10.0;
+      settings.q_pulse_width = laser_type_ == LCS_UV ? 1.0 : 0.0;
       settings.pulse_width = 100;
       if (settings.wobble_diameter != -1) {
         settings.wobble_diameter = 0;
@@ -527,7 +601,10 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       startList(list_no, settings, true);
       // List Instruction
       // Force delay for the first laser
-      lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
+      const int error = lcs_set_laser_delays(-3000, PromarkJobConfig::LASER_OFF_DELAY);
+      if (error != LCS_RES_NO_ERROR) {
+        qWarning() << "BSLM~::handleGcode() - lcs_set_laser_delays " << getErrorString(error) << -3000 << PromarkJobConfig::LASER_OFF_DELAY;
+      }
       lcs_error_count = 0;
       laser_enabled = false;
       last_is_z_command = false;
@@ -537,9 +614,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       should_flush_ = false;
     } else if (command == "M2") {
       // qInfo() << "BSLM~::handleGcode() - M2: Ending Laser Control" << getDebugTime();
+      estimated_time_ += mark_sequence_.endMs(config_); // Close an unterminated marking run
       if (last_is_z_command) {
         // Appand a dummy move command to ensure the last Z command is executed
-        list_manager_.call(ListApiType::MoveAxis, 1, 1.0, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
+        list_manager_.call(ListApiType::MoveAxis, 1, 1.0, z > 0, PromarkJobConfig::Z_PULSE_PER_SEC,
+                           PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
       }
       list_manager_.call(ListApiType::DisableLaser, 0u);
       should_swap = true;
@@ -577,7 +656,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       lcs_goto_xy(0, 0);
       // Loose motor
       lcs_write_io_port_mask(0b01, 0b11);
-    } else if (!is_move_command) {
+    } else if (!is_move_command &&
+               !(has_s_param && settings.current_s > 0 && dotting_time_ > 0 &&
+                 (command == "G1" || command.isEmpty()))) {
       return;
     }
 
@@ -623,6 +704,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // qInfo() << "BSLM~::handleGcode() - Pending commands: " << this->pending_cmds_.size();
       is_running_laser_ = false;
       laser_enabled = false;
+      dotting_time_ = 0;
       should_end = false;
       if (!is_framing_) {
         lcs_set_laser_control(false);
@@ -636,8 +718,13 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
       z -= z_pos_; // Fix the difference between last move and target
       double real_steps = round(z * PromarkJobConfig::Z_PULSE_PER_MM);
-      list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0, PromarkJobConfig::Z_PULSE_PER_SEC, 10.0, 255u);
-      estimated_time_ += fabs(z) * PromarkJobConfig::Z_MS_PER_MM;
+      list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0,
+                         PromarkJobConfig::Z_PULSE_PER_SEC, PromarkJobConfig::Z_START_PULSE_PER_SEC,
+                         PromarkJobConfig::AXIS_ACC_TIME_MS);
+      estimated_time_ += mark_sequence_.endMs(config_);
+      estimated_time_ += PromarkTiming::axisMoveTimeMs(
+          real_steps, PromarkJobConfig::Z_PULSE_PER_SEC,
+          PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
       z_pos_ = real_steps / PromarkJobConfig::Z_PULSE_PER_MM - z; // Keep the difference between actual move and cmd target
       last_is_z_command = true;
       // QThread::msleep(1000);
@@ -654,30 +741,46 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       double diff_a = target_a - a_pos_;
       if (diff_a != 0) {
         double real_steps = round(diff_a * PromarkJobConfig::A_PULSE_PER_MM);
-        list_manager_.call(ListApiType::MoveAxis, 0, fabs(real_steps), diff_a > 0, PromarkJobConfig::A_PULSE_PER_SEC, 1600.0, 255u);
-        estimated_time_ += fabs(diff_a) * PromarkJobConfig::A_MS_PER_MM;
+        list_manager_.call(ListApiType::MoveAxis, 0, fabs(real_steps), diff_a > 0,
+                           PromarkJobConfig::A_PULSE_PER_SEC, PromarkJobConfig::A_START_PULSE_PER_SEC,
+                           PromarkJobConfig::AXIS_ACC_TIME_MS);
+        estimated_time_ += mark_sequence_.endMs(config_);
+        estimated_time_ += PromarkTiming::axisMoveTimeMs(
+            real_steps, PromarkJobConfig::A_PULSE_PER_SEC,
+            PromarkJobConfig::A_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
         a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
       }
       double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
       if (distance > 0) {
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
-          if (dotting_time == 0) {
+          if (dotting_time_ == 0) {
             markTo(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += (distance * wobble_k) / settings.current_f * 1000 + PromarkJobConfig::LASER_DELAY_MS;
+            estimated_time_ += mark_sequence_.beginSegmentMs(config_);
+            estimated_time_ += config_.markTimeMs(distance * wobble_k, settings.current_f);
           } else {
             jumpTo(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
-            list_manager_.call(ListApiType::LaserPulse, dotting_time);
-            estimated_time_ += dotting_time / 1000.0;
+            estimated_time_ += mark_sequence_.endMs(config_);
+            estimated_time_ += config_.jumpTimeMs(distance);
+            list_manager_.call(ListApiType::LaserPulse, dotting_time_);
+            estimated_time_ += config_.dotTimeMs(dotting_time_);
           }
         } else {
           jumpTo(-(target_y - center_pos), target_x - center_pos);
-          estimated_time_ += distance / PromarkJobConfig::JUMP_SPEED * 1000 + PromarkJobConfig::JUMP_DELAY_MS;
+          estimated_time_ += mark_sequence_.endMs(config_);
+          estimated_time_ += config_.jumpTimeMs(distance);
         }
       }
       x_pos_ = target_x;
       y_pos_ = target_y;
       last_is_z_command = false;
+    } else if (has_s_param && settings.current_s > 0 && dotting_time_ > 0 &&
+               (command == "G1" || command.isEmpty())) {
+      // In dotting mode the generator first jumps to a polygon's initial XY with S0, then emits a
+      // power-only F...S... command at that same position. It is a real point even though there is
+      // no coordinate change, so it must bypass the normal is_move_command gate.
+      list_manager_.call(ListApiType::LaserPulse, dotting_time_);
+      estimated_time_ += mark_sequence_.endMs(config_);
+      estimated_time_ += config_.dotTimeMs(dotting_time_);
     }
 }
 
@@ -749,6 +852,7 @@ MotionController::CmdSendResult BSLMotionController::stop() {
   completed_task_time_ = 0;
   estimated_time_ = 0;
   running_task_time_ = 0;
+  mark_sequence_.reset();
   this->is_running_laser_ = false;
   this->is_preparing_first_list_ = false;
   getBoardStatus();
@@ -807,7 +911,8 @@ bool BSLMotionController::resetState() {
   }
 }
 
-void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY) {
+void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
+  laser_type_ = laser_source.compare("UV", Qt::CaseInsensitive) == 0 ? LCS_UV : LCS_MOPA;
   correction_params = {scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY};
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
@@ -876,7 +981,7 @@ bool BSLMotionController::isConnected() {
         this->current_error_ = 0;
         this->current_custom_error_.clear();
         setScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
-        setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY);
+        setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY, laser_type_ == LCS_UV ? "UV" : "MOPA");
         if (lcs_paused_) {
           stop();
         }
@@ -889,13 +994,36 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
+/** First-pulse suppression for the current dotting time, in us; 0 means none. */
+uint32_t BSLMotionController::firstPulseKillerUs() const {
+  constexpr uint32_t kFirstPulseKillerExtraUs = 5;  // keep in sync with Config::dotTimeMs()
+  return config_.first_pulse_killer_enabled && dotting_time_ > 0 ? dotting_time_ + kFirstPulseKillerExtraUs : 0;
+}
+
+/**
+ * Write the first-pulse suppression into the open list.
+ *
+ * The suppression time is persistent state on the control card: a value left behind by a dotting
+ * list would otherwise eat the start of every mark vector in a later line list, or in a later job
+ * that never enabled the option (CONFIG RESET only resets our copy of the config). So it is
+ * written for every list and every T, zero included, and a list only ever runs with its own value.
+ */
+void BSLMotionController::applyFirstPulseKillerToList(const char *where) {
+  const uint32_t length = firstPulseKillerUs();
+  const int error = lcs_set_firstpulse_killer_list(length);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::" << where << " - lcs_set_firstpulse_killer_list" << getErrorString(error) << length;
+  }
+}
+
 void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
   estimated_time_ = 0;
   list_manager_.resetBackup(list_no, this);
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  list_manager_.call(ListApiType::SetPulses, settings.period, 0.0, settings.pulse_width);
+  applyFirstPulseKillerToList("startList");
+  list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
   list_manager_.call(ListApiType::SetPower, settings.current_s);
   if (settings.wobble_step > 0 && settings.wobble_diameter > 0) {

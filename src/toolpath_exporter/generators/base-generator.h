@@ -74,8 +74,17 @@ public:
     qWarning() << "BaseGenerator::setPulseWidth()" << "Promark feature not implemented"; 
   }
 
+  virtual void setQPulseWidth(double q_pulse_width) {
+    qWarning() << "BaseGenerator::setQPulseWidth()" << "Promark feature not implemented";
+  }
+
   virtual void setDottingTime(int dotting_time) { 
     qWarning() << "BaseGenerator::setDottingTime()" << "Promark feature not implemented"; 
+  }
+
+  // Pause the machine for dwell_time microseconds without moving or firing.
+  virtual void dwell(int dwell_time) {
+    qWarning() << "BaseGenerator::dwell()" << "Promark feature not implemented";
   }
 
   virtual void setWobble(double wobble_step, double wobble_diameter) { 
@@ -126,6 +135,8 @@ public:
 
   bool isRotaryMode() const { return rotary_mode_; }
 
+  void setDottingMode(bool b) { mock_dotting_mode_ = b; }
+
 protected:
   std::stringstream str_stream_;
   float x_; // in canvas coordinate -> have nothing to do with machine coordinate
@@ -134,4 +145,5 @@ protected:
   float speed_;
   double x_backlash_;
   bool rotary_mode_;
+  bool mock_dotting_mode_ = false;
 };

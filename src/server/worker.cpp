@@ -1,6 +1,7 @@
 #include "worker.h"
 #include "swiftray-server.h"
 #include <QCoreApplication>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <executor/machine_job/machine_job.h>
 #include <toolpath_exporter/convex-hull-exporter.h>
@@ -69,6 +70,55 @@ bool Worker::handleAction(QWebSocket* socket,
     server_->m_canvas->loadSVG(svg_data_bytes, true, default_config);
     qInfo() << "SVG data loaded" << svg_data.length();
     result["loadedDataSize"] = svg_data_bytes.length();
+
+    // STL meshes for inner engraving. Keyed by the id of the placeholder rect in the SVG.
+    // NOTE: the mesh is base64 inside the JSON payload -- processBinaryMessage() decodes the whole
+    //       frame as UTF-8, so raw binary would be corrupted. Implement binary data if needed.
+    server_->m_stl_objects.clear();
+    const QJsonObject stl_objects = params_obj["stlObjects"].toObject();
+    QJsonArray failed_stl_objects;
+    for (auto it = stl_objects.constBegin(); it != stl_objects.constEnd(); ++it) {
+      const QString base64 = it.value().isObject() ? it.value().toObject()["data"].toString()
+                                                   : it.value().toString();
+      QByteArray mesh_data = QByteArray::fromBase64(base64.toLatin1());
+      stl::Mesh mesh;
+      QString error;
+      if (!stl::readMesh(mesh_data, &mesh, &error)) {
+        qWarning() << "Failed to parse STL object" << it.key() << error;
+        failed_stl_objects.append(QJsonObject{{"id", it.key()}, {"error", error}});
+        continue;
+      }
+      qInfo() << "STL object loaded" << it.key() << mesh.triangles.size() << "triangles"
+              << mesh_data.size() << "bytes";
+      server_->m_stl_objects.insert(it.key(), std::move(mesh));
+    }
+    result["loadedStlObjects"] = server_->m_stl_objects.size();
+    if (!failed_stl_objects.isEmpty()) {
+      result["failedStlObjects"] = failed_stl_objects;
+    }
+
+    server_->m_point_cloud_objects.clear();
+    const QJsonObject point_cloud_objects = params_obj["pointCloudObjects"].toObject();
+    QJsonArray failed_point_cloud_objects;
+    for (auto it = point_cloud_objects.constBegin(); it != point_cloud_objects.constEnd(); ++it) {
+      const QString base64 = it.value().isObject() ? it.value().toObject()["data"].toString()
+                                                   : it.value().toString();
+      const QByteArray point_data = QByteArray::fromBase64(base64.toLatin1());
+      stl::PointCloud cloud;
+      QString error;
+      if (!stl::readPointCloud(point_data, &cloud, &error)) {
+        qWarning() << "Failed to parse point-cloud object" << it.key() << error;
+        failed_point_cloud_objects.append(QJsonObject{{"id", it.key()}, {"error", error}});
+        continue;
+      }
+      qInfo() << "Point-cloud object loaded" << it.key() << cloud.points.size() << "points"
+              << point_data.size() << "bytes";
+      server_->m_point_cloud_objects.insert(it.key(), std::move(cloud));
+    }
+    result["loadedPointCloudObjects"] = server_->m_point_cloud_objects.size();
+    if (!failed_point_cloud_objects.isEmpty()) {
+      result["failedPointCloudObjects"] = failed_point_cloud_objects;
+    }
   } else if (action == "convert") {
     // Get the parameters
     QJsonObject params_obj = params.toObject();
@@ -156,6 +206,9 @@ bool Worker::handleAction(QWebSocket* socket,
             ToolpathExporter::PaddingType::kNoPadding,
             move_translate,
             true);
+        exporter.parseParam(params_obj);
+        exporter.setStlObjects(&server_->m_stl_objects);
+        exporter.setPointCloudObjects(&server_->m_point_cloud_objects);
         exporter.setSortRule(PathSort::NestedSort);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
         if (type == "contour") exporter.handleContour();
