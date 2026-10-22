@@ -160,8 +160,11 @@ Basic 軸向模型，不提供開關或其他模型。
 ```
 
 - `pointCloudObjects["cloud-1"]`：必要，base64 BSPC。
-- 點是前端已決定好的直接雕刻點；後端只套用 `data-stl-matrix`、Z 範圍、折射補償與排序。
-  圖層的點距、層距、模式與實心設定都不會重新取樣或改變種類。
+- 點是前端已決定好的直接雕刻點（Beam Studio 的照片轉 3D）；後端只套用 `data-stl-matrix`、
+  Z 範圍、折射補償與排序。圖層的點距、層距、模式與實心設定都不會重新取樣或改變種類。
+- 唯一的例外是過近的點：變換後（canvas 單位、3D 距離）比圖層點距的
+  `kPointCloudMinDistanceRatio`（0.5）倍還近的點會被丟掉（`stl::removeClosePoints`，依輸入順序
+  保留先出現的點），兩個太近的爆點會合成一個大爆點。photo 的取樣格本來就是點距，不過濾。
 - BSPC v1 是 little-endian binary：
 
 | offset | bytes | value |

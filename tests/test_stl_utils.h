@@ -156,3 +156,19 @@ TEST(StlUtilsTest, CapFacesFollowTheTransform) {
   tilted.rotate(30, 1, 0, 0);
   EXPECT_TRUE(capFacesOf(cube, 0, tilted).isEmpty());
 }
+
+TEST(StlUtilsTest, RemoveClosePointsKeepsTheFirstOfEachCluster) {
+  std::vector<stl::SurfacePoint> points = {
+      {{0, 0, 0}, 0},    {{0.3, 0, 0}, 0}, {{1, 0, 0}, 0},
+      {{1, 0.4, 0}, 0},  {{1, 0, 0.6}, 0}, {{5, 5, 5}, 0},
+  };
+
+  EXPECT_EQ(stl::removeClosePoints(&points, 0.5), 2u);
+  ASSERT_EQ(points.size(), 4u);
+  EXPECT_NEAR(points[0].position.x, 0, 1e-12);
+  EXPECT_NEAR(points[1].position.x, 1, 1e-12);
+  // 0.6 away in Z alone is far enough
+  EXPECT_NEAR(points[2].position.z, 0.6, 1e-12);
+  EXPECT_NEAR(points[3].position.x, 5, 1e-12);
+  EXPECT_EQ(stl::removeClosePoints(&points, 0), 0u);
+}

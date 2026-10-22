@@ -1233,6 +1233,54 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
   return true;
 }
 
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance) {
+  if (points->empty() || !(min_distance > 0)) return 0;
+
+  // a hash grid with cells as wide as the distance: a too-close point is in one of the 27 cells
+  // around a point's own
+  const auto cellOf = [&](double value) { return static_cast<qint64>(std::floor(value / min_distance)); };
+  const auto keyOf = [](qint64 x, qint64 y, qint64 z) {
+    return (static_cast<quint64>(x) * 73856093ULL) ^ (static_cast<quint64>(y) * 19349663ULL) ^
+           (static_cast<quint64>(z) * 83492791ULL);
+  };
+  std::unordered_map<quint64, std::vector<size_t>> grid;
+  grid.reserve(points->size());
+  const double min_squared = min_distance * min_distance;
+  size_t kept = 0;
+  for (size_t i = 0; i < points->size(); ++i) {
+    const Vec3 p = (*points)[i].position;
+    const qint64 cx = cellOf(p.x);
+    const qint64 cy = cellOf(p.y);
+    const qint64 cz = cellOf(p.z);
+    bool too_close = false;
+    for (qint64 dx = -1; dx <= 1 && !too_close; ++dx) {
+      for (qint64 dy = -1; dy <= 1 && !too_close; ++dy) {
+        for (qint64 dz = -1; dz <= 1 && !too_close; ++dz) {
+          auto it = grid.find(keyOf(cx + dx, cy + dy, cz + dz));
+          if (it == grid.end()) continue;
+          for (size_t index : it->second) {
+            const Vec3 &q = (*points)[index].position;
+            const double ddx = p.x - q.x;
+            const double ddy = p.y - q.y;
+            const double ddz = p.z - q.z;
+            if (ddx * ddx + ddy * ddy + ddz * ddz < min_squared) {
+              too_close = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (too_close) continue;
+    (*points)[kept] = (*points)[i];
+    grid[keyOf(cx, cy, cz)].push_back(kept);
+    ++kept;
+  }
+  const size_t removed = points->size() - kept;
+  points->resize(kept);
+  return removed;
+}
+
 QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const {
   QVector<CapFace> result;
   if (!isReady()) return result;

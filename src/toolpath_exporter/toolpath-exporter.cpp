@@ -40,6 +40,9 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
 constexpr double kDefaultStlLayerSpacingMm = 0.04;
 constexpr double kDefaultStlPointSpacingMm = 0.03;
 constexpr double kDefaultStlCapIntervalMm = 0.01;
+// A point cloud (photo to 3D) has no spacing guarantee of its own: points closer than this share of
+// the layer's point spacing are dropped.
+constexpr double kPointCloudMinDistanceRatio = 0.5;
 
 /** Distance between two of n scan lines, in lines, going round the order like a ring. */
 long long ringDistance(long long offset, int n) {
@@ -956,6 +959,14 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
         }
       }
       discardPointsOutsideMaterial(&job.dot_points, placement.id);
+      if (placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
+        const size_t removed = stl::removeClosePoints(
+            &job.dot_points, point_spacing_mm * kPointCloudMinDistanceRatio * canvas_mm_ratio_);
+        if (removed > 0) {
+          qInfo() << "[Export] Point cloud" << placement.id << "dropped" << removed
+                  << "points closer than" << point_spacing_mm * kPointCloudMinDistanceRatio << "mm";
+        }
+      }
       if (job.dot_points.empty()) {
         qWarning() << "[Export] Direct-point object" << placement.id << "has no engravable points";
         continue;

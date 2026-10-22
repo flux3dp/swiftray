@@ -119,6 +119,14 @@ Format detectFormat(const QByteArray &data);
 /** Parse an STL blob (binary or ASCII). @return false and fills @p error on malformed input. */
 bool readMesh(const QByteArray &data, Mesh *mesh, QString *error);
 
+/**
+ * Drop every point closer than @p min_distance (3D) to a point kept before it, in order, so the
+ * result does not depend on anything but the input. Two crack points that close merge into one
+ * larger crack.
+ * @return how many points were dropped
+ */
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance);
+
 /** Parse and validate a Beam Studio Point Cloud (`BSPC`, version 1) binary. */
 bool readPointCloud(const QByteArray &data, PointCloud *cloud, QString *error);
 
