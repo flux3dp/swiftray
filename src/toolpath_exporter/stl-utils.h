@@ -162,6 +162,17 @@ struct Layer {
   QVector<Contour> contours;
 };
 
+/** A face of the mesh that looks straight up or down: its XY region at one Z, holes left out. */
+struct CapFace {
+  /** In the transformed model's real geometry space, like Layer::z_geometry. */
+  double z = 0.0;
+  /** Closed outlines, outer ones and holes alike; fill them even-odd. The first point is not repeated. */
+  QList<QPolygonF> polygons;
+};
+
+/** Most a face may lean from horizontal and still count as a top or bottom face, in degrees. */
+inline constexpr double kCapMaxTiltDeg = 1.0;
+
 /**
  * Incremental slicer: prepare a mesh once, then ask for the contours at any Z.
  *
@@ -207,6 +218,18 @@ class Slicer {
    * shared ladder does not map one to one onto a single object.
    */
   Layer sliceAt(double z, ProgressCallback progress = {});
+
+  /**
+   * The top and bottom faces: triangles leaning at most kCapMaxTiltDeg from horizontal, grouped by
+   * Z (within half a layer) and merged into regions. Where an up face lies on a down face (two shells
+   * touching) neither counts. Slicing skips these triangles, so without this a flat top or bottom
+   * only shows as the contour of the nearest slice.
+   *
+   * Every region is shrunk by @p inset (mesh units), so a fill does not run over the contour around
+   * it; a region narrower than twice the inset disappears. Holes stay empty because no triangle
+   * covers them. Ordered bottom to top.
+   */
+  QVector<CapFace> capFaces(double inset, ProgressCallback progress = {}) const;
 
  private:
   /**

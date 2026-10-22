@@ -39,6 +39,7 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
 // Kept in step with the frontend defaults (app/constants/innerEngraving.ts), measured on K9.
 constexpr double kDefaultStlLayerSpacingMm = 0.04;
 constexpr double kDefaultStlPointSpacingMm = 0.03;
+constexpr double kDefaultStlCapIntervalMm = 0.01;
 
 /** Distance between two of n scan lines, in lines, going round the order like a ring. */
 long long ringDistance(long long offset, int n) {
@@ -759,8 +760,9 @@ void ToolpathExporter::outputLayerGcode(double progress_start, double progress_s
 /**
  * @brief Plan every STL object of the current canvas layer and engrave strictly bottom to top.
  *
- * Line objects share a merged slice ladder; transformed blue-noise surface/shell points join that
- * ladder as ordered point events. All output lands in the same machine-Z buckets, so the axis is
+ * Line objects share a merged slice ladder; with the layer's face fill on, their top and bottom
+ * faces join it at their own Z and are filled like a 2D shape. Transformed blue-noise surface/shell
+ * points join that ladder as ordered point events. All output lands in the same machine-Z buckets, so the axis is
  * strictly increasing and already engraved crack points never sit in front of later work.
  *
  * "Canvas layer", not "exporter layer": a canvas layer holding both filled and unfilled objects
@@ -769,7 +771,7 @@ void ToolpathExporter::outputLayerGcode(double progress_start, double progress_s
  *
  * Inside one Z step the objects are dispatched by kind, always in the same order:
  *
- *     z0: line, dot+fill, dot | z1: line, dot+fill, dot | ...
+ *     z0: line, face fill, dot+fill, dot | z1: line, face fill, dot+fill, dot | ...
  *
  * Each kind needs a different gcode path, so they cannot be emitted in one pass, but they all
  * belong to the same Z and must not cost a second Z travel.
@@ -795,13 +797,19 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     std::vector<stl::SurfacePoint> dot_points;
     size_t next_dot_point = 0;
     int next_layer_index = 0;
+    /** kLine with the face fill on: the top and bottom faces, already inset. */
+    QVector<stl::CapFace> caps;
+    double cap_interval_mm = 0.0;
   };
   std::vector<StlJob> jobs;
   jobs.reserve(layer_stl_placements_.size());
-  // One entry per (object, slice position); sorting these is what merges the ladders.
+  // One entry per (object, slice position) or (object, face to fill); sorting these is what merges
+  // the ladders.
   struct PlaneRef {
     double z;
     int job;
+    /** Index into StlJob::caps, -1 for a slicing plane. */
+    int cap = -1;
   };
   std::vector<PlaneRef> ladder;
   double finest_layer_height = 0;
@@ -1035,6 +1043,20 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
         ladder.push_back(PlaneRef{z, job_index});
         ++accepted_plane_count;
       }
+      if (placement.fill_caps) {
+        job.cap_interval_mm =
+            placement.cap_interval_mm > 0 ? placement.cap_interval_mm : kDefaultStlCapIntervalMm;
+        // half an interval in, so the outermost scan line does not run over the face's contour
+        const QVector<stl::CapFace> caps =
+            job.slicer.capFaces(job.cap_interval_mm * 0.5 * canvas_mm_ratio_);
+        for (const stl::CapFace &cap : caps) {
+          if (!modelZInMaterial(cap.z)) continue;
+          ladder.push_back(PlaneRef{cap.z, job_index, static_cast<int>(job.caps.size())});
+          job.caps.push_back(cap);
+        }
+        qInfo() << "[Export] STL object" << placement.id << "fills" << job.caps.size()
+                << "top / bottom faces";
+      }
       if (finest_layer_height <= 0 || params.layer_height < finest_layer_height) {
         finest_layer_height = params.layer_height;
       }
@@ -1068,8 +1090,13 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
   struct DotPoint {
     QPointF target_mm;
   };
+  struct CapFill {
+    QList<QPolygonF> polygons;
+    double interval_mm;
+  };
   struct MachineBucket {
     QList<stl::Layer> lines;
+    QList<CapFill> caps;
     QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
   };
   // Keyed by machine Z in kStlZPrecisionMm steps: dots land on their bucket's Z, line slices on
@@ -1131,6 +1158,17 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       outputStlLineGcode(bucket.lines);
       if (cancelled_) return false;
     }
+    for (const CapFill &cap : bucket.caps) {
+      clearGeometry();
+      {
+        QMutexLocker lock(&polygons_mutex_);
+        FilledPath filled{{}, true};
+        for (const QPolygonF &polygon : cap.polygons) filled.polys << global_transform_.map(polygon);
+        layer_filled_polygons_.append(std::move(filled));
+      }
+      outputLayerFillGcode(cap.interval_mm);
+      if (cancelled_) return false;
+    }
     for (int dot_kind = 0; dot_kind < 2; ++dot_kind) {
       QVector<DotPoint> &cloud = bucket.dot_cloud[dot_kind];
       if (cloud.isEmpty()) continue;
@@ -1157,6 +1195,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
   };
 
   QList<stl::Layer> line_slices;
+  QList<std::pair<double, CapFill>> cap_fills;
   struct PointCursor {
     double z = 0.0;
     int job = -1;
@@ -1184,8 +1223,16 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     const double step_z = std::min(next_line_z, next_point_z);
 
     line_slices.clear();
+    cap_fills.clear();
     while (i < ladder.size() && ladder[i].z - step_z <= group_eps) {
       StlJob &job = jobs[static_cast<size_t>(ladder[i].job)];
+      if (ladder[i].cap >= 0) {
+        const stl::CapFace &cap = job.caps[ladder[i].cap];
+        cap_fills.append({cap.z, CapFill{cap.polygons, job.cap_interval_mm}});
+        ++i;
+        processed_work += 1.0;
+        continue;
+      }
       stl::Layer sliced = job.slicer.sliceAt(
           ladder[i].z, [&](double value) { return reportPlanning(value); });
       if (cancelled_) break;
@@ -1216,6 +1263,10 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       const double model_z_mm = slice.z_geometry / canvas_mm_ratio_;
       const qint64 key = exactKey(refraction_.machineZ(model_z_mm));
       buckets[key].lines.append(slice);
+    }
+    for (auto &[z_geometry, fill] : cap_fills) {
+      const qint64 key = exactKey(refraction_.machineZ(z_geometry / canvas_mm_ratio_));
+      buckets[key].caps.append(std::move(fill));
     }
     if (this->cancelled_) break;
     const double following_line_z = i < ladder.size() ? ladder[i].z
@@ -1290,6 +1341,8 @@ StlPlacement ToolpathExporter::resolveStlPlacement(const StlPlacement &placement
   resolved.layer_spacing_mm = current_layer_->stlLayerSpacing();
   resolved.min_layer_spacing_mm = current_layer_->stlMinLayerSpacing();
   resolved.solid = current_layer_->stlSolid();
+  resolved.fill_caps = current_layer_->stlFillCaps();
+  resolved.cap_interval_mm = current_layer_->stlCapInterval();
   return resolved;
 }
 
@@ -1338,7 +1391,7 @@ void ToolpathExporter::outputStlLineGcode(const QList<stl::Layer> &slices) {
 /**
  * @brief Export layer_filled_polygons_ for non-filled geometry
  */
-void ToolpathExporter::outputLayerFillGcode() {
+void ToolpathExporter::outputLayerFillGcode(double interval_mm) {
   struct Path {
     QLineF path;
     bool isClockwise;
@@ -1364,7 +1417,7 @@ void ToolpathExporter::outputLayerFillGcode() {
   qInfo() << "Fill Path Bounds: " << bounds;
   qInfo() << "DPMM: " << dpmm_;
   // If DPI = 254, DPMM = 10, CANVAS_MM_RATIO = 10
-  double fill_interval = current_layer_->fillInterval() * dpmm_;
+  double fill_interval = (interval_mm > 0 ? interval_mm : current_layer_->fillInterval()) * dpmm_;
   double fill_angle = current_layer_->fillAngle();
   bool fill_bidirectional = current_layer_->fillBidirectional();
   int hatch_count = current_layer_->fillHatch() ? 2 : 1;

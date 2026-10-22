@@ -64,7 +64,7 @@ Basic 軸向模型，不提供開關或其他模型。
 
 `my_qsvg_handler_qt6.cpp` 在 `<g class="layer">` 上讀進 layer config（數值 attribute 缺少時退回
 `loadSVG` 的 `defaultConfig`：`stlPointSpacing`、`stlLayerSpacing`、`stlMinLayerSpacing`、
-`stlSolid`；`data-stl-mode` 沒有這個退路），`ToolpathExporter::resolveStlPlacement()` 在收集物件時
+`stlSolid`、`stlFillCaps`、`stlCapInterval`；`data-stl-mode` 沒有這個退路），`ToolpathExporter::resolveStlPlacement()` 在收集物件時
 從物件所在圖層複製到 `StlPlacement`。同一圖層的所有 3D 物件共用這組參數。
 
 | attribute | 型別／預設 | 用途 |
@@ -74,6 +74,8 @@ Basic 軸向模型，不提供開關或其他模型。
 | `data-stl-layer-spacing` | mm，省略或 <= 0 = 0.04 | `kLine` 的固定（或 adaptive 時的最大）Z 層距；`kDotFill` 的 shell 間距。 |
 | `data-stl-min-layer-spacing` | mm，省略或 0 = 關閉 | > 0 時 `kLine` 改用 adaptive planes，範圍為此值到 `data-stl-layer-spacing`。對點模式無效。 |
 | `data-stl-solid` | `1`＝開，省略 = 關 | 只用於 mesh 點模式（Beam Studio 介面名稱為「加厚輪廓」）：表面加 2 層向內 shell（共 3 個 shell，`BlueNoiseParams::max_shell_count`）。較薄的物件 shell 會更少。 |
+| `data-stl-fill-caps` | `1`＝開，省略 = 關 | 只用於 `kLine`（Beam Studio 介面名稱為「填充上下端面」）：另外把朝正上或正下的面填滿，見 `kLine`。 |
+| `data-stl-cap-interval` | mm，省略或 <= 0 = 0.01 | 端面填充的掃描線間距（`kDefaultStlCapIntervalMm`）。 |
 
 後端預設值 0.04／0.03 在 `toolpath-exporter.cpp`（`kDefaultStlLayerSpacingMm`、
 `kDefaultStlPointSpacingMm`），與前端預設同步。
@@ -90,7 +92,8 @@ Basic 軸向模型，不提供開關或其他模型。
 | mesh | `data-stl-mode` 非 `line`，`data-stl-solid="1"` | `kDotFill`（表面 + 2 層向內 shell） |
 | mesh | `data-stl-mode="line"` | `kLine`（切層打線） |
 
-沒有填充打線的種類；`fill` 與 `data-stl-solid` 對 line 模式都沒有作用。
+沒有填充打線的種類；`fill` 與 `data-stl-solid` 對 line 模式都沒有作用，line 模式的填充只有端面
+（`data-stl-fill-caps`）。
 
 ### `kDot`／`kDotFill`（STL 打點）
 
@@ -122,6 +125,15 @@ Basic 軸向模型，不提供開關或其他模型。
 - `stlObjects["mesh-line"]`：必要，base64 STL。
 - `data-stl-layer-spacing` 是固定層距；`data-stl-min-layer-spacing` > 0 時改用 adaptive planes，
   範圍為最小層距至 `data-stl-layer-spacing`。0 或省略時用固定 `planes()`。
+- 切層會跳過平躺的三角形，所以平的頂面、底面原本只剩最近一層切片的輪廓。`data-stl-fill-caps="1"`
+  時 `Slicer::capFaces()` 取出傾斜不超過 `kCapMaxTiltDeg`（1°）的三角形，Z 相差半個層距以內的
+  併成同一面（Z 取面積加權平均），用 Clipper 合併成區域：
+  - 朝上與朝下的面重疊處（兩個 shell 貼在一起，例如多個 body 匯出的 STL）互相抵消，不算端面。
+  - 孔沒有三角形，自然不填；區域內縮半個填充間距，最外側的掃描線不會壓到輪廓。比兩倍內縮
+    還窄的區域會消失。
+  - 每個面以 `PlaneRef::cap` 加進同一條 ladder，落在自己的 machine Z，與切片一起由下往上輸出；
+    同一個 Z 先打切片輪廓，再以 `outputLayerFillGcode(cap_interval)` 填充。填充的角度、雙向、
+    交叉、打散順序與每行停留沿用圖層的 2D 填充設定，速度與功率是圖層的。
 
 ### 平面點整圖（3D 內雕版）
 

@@ -19,6 +19,7 @@ add_executable(UnitTest
   ${GTestFiles}
   ../src/toolpath_exporter/refraction-compensator.cpp
   ../src/toolpath_exporter/stl-utils.cpp
+  ../third_party/clipper/clipper.cpp
 )
 target_link_libraries(UnitTest gtest_main)
 target_link_libraries(UnitTest Qt::Core)

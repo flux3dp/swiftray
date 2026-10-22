@@ -1,5 +1,7 @@
 #include "stl-utils.h"
 
+#include <clipper/clipper.hpp>
+
 #include <QDebug>
 #include <QHash>
 #include <QRectF>
@@ -1229,6 +1231,109 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
   }
   ready_ = true;
   return true;
+}
+
+QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const {
+  QVector<CapFace> result;
+  if (!isReady()) return result;
+
+  const Mesh &mesh = work();
+  const double min_cos = std::cos(kCapMaxTiltDeg * 3.14159265358979323846 / 180.0);
+  struct Flat {
+    double z;
+    double area;
+    bool up;
+    int triangle;
+  };
+  std::vector<Flat> flats;
+  for (int index : order_) {
+    const Triangle &tri = mesh.triangles[static_cast<size_t>(index)];
+    const double ax = tri.v[1].x - tri.v[0].x;
+    const double ay = tri.v[1].y - tri.v[0].y;
+    const double az = tri.v[1].z - tri.v[0].z;
+    const double bx = tri.v[2].x - tri.v[0].x;
+    const double by = tri.v[2].y - tri.v[0].y;
+    const double bz = tri.v[2].z - tri.v[0].z;
+    const double cx = ay * bz - az * by;
+    const double cy = az * bx - ax * bz;
+    const double cz = ax * by - ay * bx;
+    const double length = std::sqrt(cx * cx + cy * cy + cz * cz);
+    if (!(length > 0) || std::abs(cz) < length * min_cos) continue;
+    flats.push_back(
+        Flat{(tri.v[0].z + tri.v[1].z + tri.v[2].z) / 3.0, length * 0.5, cz > 0, index});
+  }
+  if (flats.empty()) return result;
+  std::sort(flats.begin(), flats.end(), [](const Flat &a, const Flat &b) {
+    return a.z < b.z || (a.z == b.z && a.triangle < b.triangle);
+  });
+
+  // Integer coordinates for Clipper: 1e-4 mesh unit, far finer than any fill interval.
+  constexpr double kScale = 1e4;
+  // Faces closer than half a layer are one fill: a slightly leaning face spans some Z, and two
+  // levels that close could not be told apart by the slices around them either.
+  const double group_eps = std::max(weld_tolerance_, params_.layer_height * 0.5);
+  const auto mergeTriangles = [&](const ClipperLib::Paths &triangles) {
+    ClipperLib::Paths merged;
+    ClipperLib::Clipper clipper;
+    clipper.AddPaths(triangles, ClipperLib::ptSubject, true);
+    clipper.Execute(ClipperLib::ctUnion, merged, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    return merged;
+  };
+  size_t begin = 0;
+  while (begin < flats.size()) {
+    if (progress && !progress(static_cast<double>(begin) / flats.size())) return {};
+    size_t end = begin + 1;
+    while (end < flats.size() && flats[end].z - flats[begin].z <= group_eps) ++end;
+
+    ClipperLib::Paths facing[2];  // up, down
+    double z_sum = 0.0;
+    double area_sum = 0.0;
+    for (size_t i = begin; i < end; ++i) {
+      const Triangle &tri = mesh.triangles[static_cast<size_t>(flats[i].triangle)];
+      ClipperLib::Path path;
+      for (const Vec3 &vertex : tri.v) {
+        path.push_back(ClipperLib::IntPoint(std::llround(vertex.x * kScale),
+                                            std::llround(vertex.y * kScale)));
+      }
+      // a union under the non-zero rule needs every piece wound the same way
+      if (!ClipperLib::Orientation(path)) ClipperLib::ReversePath(path);
+      facing[flats[i].up ? 0 : 1].push_back(std::move(path));
+      z_sum += flats[i].z * flats[i].area;
+      area_sum += flats[i].area;
+    }
+    // Where an up face lies on a down face, the two are inside the body: two shells touching, as in
+    // an STL exported from several bodies. Only what one side covers alone is a real face. Which
+    // side is up does not matter, so a mirroring transform (flipped winding) gives the same result.
+    ClipperLib::Paths merged;
+    ClipperLib::Clipper clipper;
+    clipper.AddPaths(mergeTriangles(facing[0]), ClipperLib::ptSubject, true);
+    clipper.AddPaths(mergeTriangles(facing[1]), ClipperLib::ptClip, true);
+    clipper.Execute(ClipperLib::ctXor, merged, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    if (inset > 0) {
+      ClipperLib::ClipperOffset offset;
+      offset.AddPaths(merged, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
+      ClipperLib::Paths shrunk;
+      offset.Execute(shrunk, -inset * kScale);
+      merged = std::move(shrunk);
+    }
+
+    CapFace face;
+    face.z = area_sum > 0 ? z_sum / area_sum : flats[begin].z;
+    for (const ClipperLib::Path &path : merged) {
+      if (path.size() < 3) continue;
+      QPolygonF polygon;
+      polygon.reserve(static_cast<int>(path.size()));
+      for (const ClipperLib::IntPoint &point : path) {
+        polygon << QPointF(static_cast<double>(point.X) / kScale,
+                           static_cast<double>(point.Y) / kScale);
+      }
+      face.polygons.append(std::move(polygon));
+    }
+    if (!face.polygons.isEmpty()) result.push_back(std::move(face));
+    begin = end;
+  }
+  if (progress && !progress(1.0)) return {};
+  return result;
 }
 
 QVector<double> Slicer::planes() const {

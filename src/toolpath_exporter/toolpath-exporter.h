@@ -160,7 +160,8 @@ private:
 
   void outputLayerPathGcode();
 
-  void outputLayerFillGcode();
+  /** @param interval_mm overrides the layer's fill interval when > 0 */
+  void outputLayerFillGcode(double interval_mm = 0);
 
   void outputLayerBitmapGcode(BitmapHandlerType type);
 
