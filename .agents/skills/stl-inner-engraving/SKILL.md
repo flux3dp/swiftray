@@ -198,7 +198,7 @@ convert 共用欄位仍照原介面提供。
 | `material_max_z` | mm，預設 `material_height` | 可雕刻的最大模型 Z（含邊界）。 |
 | `first_pulse_killer_enabled` | bool，預設 false | 產生 `;CONFIG FIRST_PULSE_KILLER_ENABLED=0/1`，由 BSL 控制器在每個 list 與每個 `T` 套用；停用或 `T0` 時寫 0 清除控制卡上的設定。 |
 | `inner_engraving` | 0/1，預設 0 | 產生 `;CONFIG INNER_ENGRAVING=1`，讓 `MachineJob` 與 BSL 控制器用內雕的時間模型；沒有它的工作一律用 develop 的舊算法（見 `promark-job-timing` skill）。Beam Studio 只在 3D 文件送。 |
-| `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.01)，最小 `kMinMachineZBucketMm`(0.001) | 補償後 machine Z 的量化間距。低於最小值會被夾住並警告。 |
+| `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.01)，最小 `kMinMachineZBucketMm`(0.001) | 補償後 machine Z 的量化間距，只用於打點；打線切片不分桶。低於最小值會被夾住並警告。 |
 
 沒有 `focal_length` 之類的鏡頭參數：內雕鏡頭在同一個 machine Z 雕出的是一個平面，所以折射
 只做軸向（Z）補償，不做焦距、場曲或離軸修正。
@@ -207,7 +207,10 @@ convert 共用欄位仍照原介面提供。
 整層不輸出；dot、photo 與 point-cloud 則丟棄超出範圍的點。因此原始 `Z < 0` 的內容即使
 經 Basic 折射公式後得到可到達的正 machine Z，也不會打到底板。
 
-所有 STL 輸出會依補償後的 machine Z 量化到 `machine_z_bucket`。一個 bucket 就是一次 Z 軸
+打點（dot、dot+fill、photo、point-cloud）會依補償後的 machine Z 量化到 `machine_z_bucket`。
+打線的每層切片不分桶，各自用自己的 machine Z（取到產生器的 0.0001mm 精度，
+`kStlZPrecisionMm`），所以 bucket 大於層距時也不會把相鄰切片併成同一個 Z；同一個 Z 上的點與
+切片仍由下往上一起輸出。一個 bucket 就是一次 Z 軸
 移動，而 Promark 每次軸移動有約 50ms 的固定開銷（見 `promark-job-timing` skill），所以這個
 值直接決定內雕工作的時間下限：實測樣本中 0.001mm bucket 產生 8857 次 Z move，占 695s 工作
 中的約 606s。加大 bucket 是用深度解析度換時間；預設 0.01mm 讓 Z move 次數少約一個數量級，

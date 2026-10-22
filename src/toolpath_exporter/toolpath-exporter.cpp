@@ -1072,8 +1072,10 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     QList<stl::Layer> lines;
     QVector<DotPoint> dot_cloud[2];         // blue-noise dot+fill, dot
   };
+  // Keyed by machine Z in kStlZPrecisionMm steps: dots land on their bucket's Z, line slices on
+  // their own, and the map emits both bottom-up.
   std::map<qint64, MachineBucket> buckets;
-  // Per-job, floored by parseParam(); one bucket is one Z move. See kDefaultMachineZBucketMm.
+  // Per-job, floored by parseParam(); one dot bucket is one Z move. See kDefaultMachineZBucketMm.
   const double machine_z_bucket_mm =
       std::max(machine_z_bucket_mm_, kMinMachineZBucketMm);
   double total_work = static_cast<double>(ladder.size());
@@ -1085,10 +1087,13 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
                           kPlanningFraction *
                               std::min(1.0, (processed_work + in_flight) / total_work));
   };
-  const auto bucketKey = [&](double z_mm) {
-    return static_cast<qint64>(std::llround(z_mm / machine_z_bucket_mm));
+  const auto exactKey = [](double z_mm) {
+    return static_cast<qint64>(std::llround(z_mm / kStlZPrecisionMm));
   };
-  const auto bucketZ = [&](qint64 key) { return key * machine_z_bucket_mm; };
+  const auto bucketKey = [&](double z_mm) {
+    return exactKey(std::llround(z_mm / machine_z_bucket_mm) * machine_z_bucket_mm);
+  };
+  const auto bucketZ = [](qint64 key) { return key * kStlZPrecisionMm; };
 
   auto addBlueNoisePointToBucket = [&](const stl::SurfacePoint &sample, int dot_kind) {
     const QPointF target_dots = global_transform_.map(
@@ -1209,7 +1214,7 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     if (cancelled_) break;
     for (const stl::Layer &slice : line_slices) {
       const double model_z_mm = slice.z_geometry / canvas_mm_ratio_;
-      const qint64 key = bucketKey(refraction_.machineZ(model_z_mm));
+      const qint64 key = exactKey(refraction_.machineZ(model_z_mm));
       buckets[key].lines.append(slice);
     }
     if (this->cancelled_) break;
@@ -1221,9 +1226,12 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
     const double next_model_z_mm = std::isfinite(next_geometry_z)
                                        ? next_geometry_z / canvas_mm_ratio_
                                        : std::numeric_limits<double>::infinity();
-    const qint64 flush_before = std::isfinite(next_model_z_mm)
-                                    ? bucketKey(refraction_.machineZ(next_model_z_mm))
-                                    : std::numeric_limits<qint64>::max();
+    // The next dot may round down into a bucket below its own Z, the next slice stays at its own.
+    const qint64 flush_before =
+        std::isfinite(next_model_z_mm)
+            ? std::min(bucketKey(refraction_.machineZ(next_model_z_mm)),
+                       exactKey(refraction_.machineZ(next_model_z_mm)))
+            : std::numeric_limits<qint64>::max();
     while (!buckets.empty() && buckets.begin()->first < flush_before) {
       if (!flushBucket(buckets.begin()->first, buckets.begin()->second)) break;
       buckets.erase(buckets.begin());
@@ -1248,9 +1256,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
 }
 
 void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
-  // Quantise to the generator's 0.0001mm Z precision, which is finer than any machine-Z bucket.
-  // The moves are relative, so a target the generator rounds away would still count here and the
-  // two positions would slowly drift apart -- over many layers that adds up.
+  // Quantise to the generator's 0.0001mm Z precision (kStlZPrecisionMm), which is finer than any
+  // machine-Z bucket. The moves are relative, so a target the generator rounds away would still
+  // count here and the two positions would slowly drift apart -- over many layers that adds up.
   const double target_z_mm = std::round(focus_z_mm * 10000.0) / 10000.0;
   if (target_z_mm == stl_focus_z_mm_) return;
   // moveZ is relative for Promark. A positive delta raises the head, matching focus_z_mm.

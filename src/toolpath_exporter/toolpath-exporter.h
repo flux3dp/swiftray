@@ -30,18 +30,23 @@ struct FilledPath {
  * Machine-Z quantisation of the STL output, in mm, overridable per job through the
  * "machine_z_bucket" convert param.
  *
- * Every point and slice is snapped to a multiple of this before it is emitted, and each bucket
- * costs exactly one Z move. On the Promark that move is dominated by a fixed ~50ms command
- * overhead (PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS), so the bucket size sets the floor on how
- * long an inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at
- * a 0.001mm bucket. Coarser buckets trade depth resolution for time; the 0.01mm default cuts the
+ * Every dot is snapped to a multiple of this before it is emitted, and each bucket costs exactly
+ * one Z move. On the Promark that move is dominated by a fixed ~50ms command overhead
+ * (PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS), so the bucket size sets the floor on how long a
+ * dotted inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at a
+ * 0.001mm bucket. Coarser buckets trade depth resolution for time; the 0.01mm default cuts the
  * Z-move count by roughly an order of magnitude while the result stays close to the finer bucket.
+ *
+ * Line slices are not bucketed: each keeps its own machine Z (to kStlZPrecisionMm), so a bucket
+ * coarser than the layer spacing never merges neighbouring slices.
  *
  * The minimum is a hard floor: buckets below 0.001mm stall the job at runtime (one Z pulse is
  * 0.000625mm). A job param may go finer than the default, down to that floor, or coarser.
  */
 inline constexpr double kDefaultMachineZBucketMm = 0.01;
 inline constexpr double kMinMachineZBucketMm = 0.001;
+/** The generator's Z precision: every STL Z move is rounded to this. */
+inline constexpr double kStlZPrecisionMm = 0.0001;
 
 /** STL engraving strategies. Dot strategies are sampled into point clouds before output. */
 enum class StlEngraveKind {
