@@ -115,7 +115,11 @@ first-pulse killer 時的 `dotting_time + 5µs`。目前 STL dot 的實測係數
 - `estimated_time_` 會參與 `MAX_BUFFER_LIST_TIME` 判斷，公式誤差也會改變 list 切換時機。
 - `startList()` 必須重新套用 list-level laser/scanner delays、pulse、speed、power 與
   first-pulse killer。
-- `T` 常在 `M3` 前出現，因此 `M3` 不可重設 `dotting_time_`；新 list 也要重新套用它。
+- first-pulse suppression 是控制卡上的持久狀態：`applyFirstPulseKillerToList()` 在每個 list 與
+  每個 `T`（含 `T0`、未啟用選項時）都寫入，值為 0 就是清除。不要改回「只在 > 0 時寫」，否則
+  打點 list 留下的抑制時間會吃掉之後打線 list 或下一個工作的每條線段起點。
+- 每個圖層的 header 都是 `M3S0` 之後才接 Q/P/B 與 `T`，`M3` 會把 `dotting_time_` 歸零；新 list
+  也要重新套用它。
 - list swap 不代表 mark sequence 在物理上自然結束；只有實際動作語意要求時才結束 sequence。
 
 ## 修改與驗證

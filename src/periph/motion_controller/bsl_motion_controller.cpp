@@ -405,12 +405,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             }
         } else if (type == "T") {
             dotting_time_ = value.toInt();
-            // T is commonly emitted before M3, when no list exists yet. startList() is therefore
-            // responsible for putting this instruction into every list. If T changes mid-job,
-            // also update the currently open list immediately.
-            if (config_.first_pulse_killer_enabled && is_running_laser_ && dotting_time_ > 0) {
-              lcs_set_firstpulse_killer_list(dotting_time_ + 5);
-            }
+            // startList() puts the matching first-pulse suppression into every list. If T changes
+            // mid-job, also update the currently open list immediately: T0 closes a dotting
+            // section (the generator emits it before a line layer), and the suppression has to go
+            // with it.
+            if (is_running_laser_) applyFirstPulseKillerToList("handleGcode T");
         } else if (type == "F") {
             settings.current_f = value.toDouble() / 60;
             list_manager_.call(ListApiType::SetSpeed, settings.current_f);
@@ -995,19 +994,35 @@ bool BSLMotionController::isConnected() {
   return is_board_connected_;
 }
 
+/** First-pulse suppression for the current dotting time, in us; 0 means none. */
+uint32_t BSLMotionController::firstPulseKillerUs() const {
+  constexpr uint32_t kFirstPulseKillerExtraUs = 5;  // keep in sync with Config::dotTimeMs()
+  return config_.first_pulse_killer_enabled && dotting_time_ > 0 ? dotting_time_ + kFirstPulseKillerExtraUs : 0;
+}
+
+/**
+ * Write the first-pulse suppression into the open list.
+ *
+ * The suppression time is persistent state on the control card: a value left behind by a dotting
+ * list would otherwise eat the start of every mark vector in a later line list, or in a later job
+ * that never enabled the option (CONFIG RESET only resets our copy of the config). So it is
+ * written for every list and every T, zero included, and a list only ever runs with its own value.
+ */
+void BSLMotionController::applyFirstPulseKillerToList(const char *where) {
+  const uint32_t length = firstPulseKillerUs();
+  const int error = lcs_set_firstpulse_killer_list(length);
+  if (error != LCS_RES_NO_ERROR) {
+    qWarning() << "BSLM~::" << where << " - lcs_set_firstpulse_killer_list" << getErrorString(error) << length;
+  }
+}
+
 void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
   estimated_time_ = 0;
   list_manager_.resetBackup(list_no, this);
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  if (config_.first_pulse_killer_enabled && dotting_time_ > 0) {
-    const int error = lcs_set_firstpulse_killer_list(dotting_time_ + 5);
-    if (error != LCS_RES_NO_ERROR) {
-      qWarning() << "BSLM~::startList() - lcs_set_firstpulse_killer_list"
-                 << getErrorString(error) << dotting_time_ + 5;
-    }
-  }
+  applyFirstPulseKillerToList("startList");
   list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
   list_manager_.call(ListApiType::SetPower, settings.current_s);

@@ -82,6 +82,8 @@ private:
   void markTo(double y, double x);
   void setUpTaskCtrl();
   void setUpTaskList();
+  uint32_t firstPulseKillerUs() const;
+  void applyFirstPulseKillerToList(const char *where);
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
@@ -109,7 +111,7 @@ private:
   double running_task_time_ = 0; // Time for current executing list, ms
   QElapsedTimer task_timer_;
   BSLListManager list_manager_{this};
-  uint32_t dotting_time_ = 0; // us; re-emitted into every list by startList()
+  uint32_t dotting_time_ = 0; // us; its first-pulse suppression is re-emitted into every list by startList()
 
   LCS2LaserType laser_type_ = LCS2LaserType::LCS_MOPA;
   // Timing parameters the running job may override through ";CONFIG KEY=VALUE"
