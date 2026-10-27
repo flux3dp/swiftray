@@ -1,5 +1,6 @@
 #include "stl-utils.h"
 
+#include <QDebug>
 #include <QHash>
 #include <QRectF>
 #include <algorithm>
@@ -849,6 +850,17 @@ Format detectFormat(const QByteArray &data) {
     const quint32 face_count = readUint32LE(data.constData() + 80);
     const qint64 expected = kBinaryHeaderSize + static_cast<qint64>(face_count) * kBinaryTriangleSize;
     if (expected == data.size()) return Format::Binary;
+    // Trailing bytes after the declared triangles are tolerated, the same way Three.js (which
+    // Beam Studio imports with) and most other readers do, so a file that shows on the canvas is
+    // not refused here. parseBinary reads the declared count and ignores the rest. A header that
+    // starts with "solid" still means ASCII in that case; a truncated file is still rejected.
+    // ASCII text cannot be misread as this: its bytes 80..83 are printable, so the declared
+    // count is in the hundreds of millions and `expected` far exceeds any real file.
+    if (data.size() > expected && !data.left(5).toLower().startsWith("solid")) {
+      qWarning() << "[STL] binary STL has" << data.size() - expected
+                 << "bytes after its" << face_count << "triangles, ignoring them";
+      return Format::Binary;
+    }
   }
   // Only reached when the binary size identity fails, so a binary file whose 80 byte header happens
   // to contain the word "facet" cannot be misclassified here.
