@@ -117,7 +117,10 @@ first-pulse killer 時的 `dotting_time + 5µs`。目前 STL dot 的實測係數
   first-pulse killer。
 - first-pulse suppression 是控制卡上的持久狀態：`applyFirstPulseKillerToList()` 在每個 list 與
   每個 `T`（含 `T0`、未啟用選項時）都寫入，值為 0 就是清除。不要改回「只在 > 0 時寫」，否則
-  打點 list 留下的抑制時間會吃掉之後打線 list 或下一個工作的每條線段起點。
+  打點 list 留下的抑制時間會吃掉之後打線 list 或下一個工作的每條線段起點。它走
+  `list_manager_.call(ListApiType::SetFirstPulseKiller, …)`，所以斷線重建 list
+  （`BSLListManager::redoBackup()`）時會連同 list 中段的 `T` 切換一起重播；不要改回直接呼叫
+  `lcs_set_firstpulse_killer_list`。
 - 每個圖層的 header 都是 `M3S0` 之後才接 Q/P/B 與 `T`，`M3` 會把 `dotting_time_` 歸零；新 list
   也要重新套用它。
 - list swap 不代表 mark sequence 在物理上自然結束；只有實際動作語意要求時才結束 sequence。

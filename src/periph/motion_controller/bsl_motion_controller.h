@@ -83,7 +83,7 @@ private:
   void setUpTaskCtrl();
   void setUpTaskList();
   uint32_t firstPulseKillerUs() const;
-  void applyFirstPulseKillerToList(const char *where);
+  void applyFirstPulseKillerToList();
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;

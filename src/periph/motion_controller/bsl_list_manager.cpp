@@ -9,6 +9,7 @@ QString getApiName(ListApiType type) {
     case ListApiType::SetSpeed: return "lcs_set_mark_speed";
     case ListApiType::SetPower: return "lcs_set_laser_power";
     case ListApiType::SetWobble: return "lcs_set_wobble_mode";
+    case ListApiType::SetFirstPulseKiller: return "lcs_set_firstpulse_killer_list";
     case ListApiType::SetIo: return "lcs_write_io_port_mask_list";
     case ListApiType::Jump: return "lcs_jump_abs";
     case ListApiType::Mark: return "lcs_mark_abs";
@@ -25,7 +26,8 @@ QString formatArgs(const Params& args, ListApiType type) {
   switch (type) {
     case ListApiType::DisableLaser:
     case ListApiType::LaserPulse:
-    case ListApiType::LongDelay: {
+    case ListApiType::LongDelay:
+    case ListApiType::SetFirstPulseKiller: {
       auto& [time] = std::get<std::tuple<uint32_t>>(args);
       result = QString("time=%1").arg(time);
       break;
@@ -169,6 +171,11 @@ int BSLListManager::doApiCall(ListApiCall call) {
     case ListApiType::SetWobble: {
       auto& [diameter_x, diameter_y, step, type] = std::get<std::tuple<double, double, double, WobbleType>>(call.args);
       error = lcs_set_wobble_mode(diameter_x, diameter_y, step, type);
+      break;
+    }
+    case ListApiType::SetFirstPulseKiller: {
+      auto& [length] = std::get<std::tuple<uint32_t>>(call.args);
+      error = lcs_set_firstpulse_killer_list(length);
       break;
     }
     case ListApiType::SetIo: {

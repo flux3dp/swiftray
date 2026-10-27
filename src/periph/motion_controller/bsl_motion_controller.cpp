@@ -409,7 +409,7 @@ void BSLMotionController::handleGcode(const QString &gcode) {
             // mid-job, also update the currently open list immediately: T0 closes a dotting
             // section (the generator emits it before a line layer), and the suppression has to go
             // with it.
-            if (is_running_laser_) applyFirstPulseKillerToList("handleGcode T");
+            if (is_running_laser_) applyFirstPulseKillerToList();
         } else if (type == "F") {
             settings.current_f = value.toDouble() / 60;
             list_manager_.call(ListApiType::SetSpeed, settings.current_f);
@@ -1008,12 +1008,10 @@ uint32_t BSLMotionController::firstPulseKillerUs() const {
  * that never enabled the option (CONFIG RESET only resets our copy of the config). So it is
  * written for every list and every T, zero included, and a list only ever runs with its own value.
  */
-void BSLMotionController::applyFirstPulseKillerToList(const char *where) {
-  const uint32_t length = firstPulseKillerUs();
-  const int error = lcs_set_firstpulse_killer_list(length);
-  if (error != LCS_RES_NO_ERROR) {
-    qWarning() << "BSLM~::" << where << " - lcs_set_firstpulse_killer_list" << getErrorString(error) << length;
-  }
+void BSLMotionController::applyFirstPulseKillerToList() {
+  // Through the list manager, so a list rebuilt after a disconnection (BSLListManager::redoBackup)
+  // replays it in place, including a mid-list T switch; a failure is logged by doApiCall
+  list_manager_.call(ListApiType::SetFirstPulseKiller, firstPulseKillerUs());
 }
 
 void BSLMotionController::startList(int list_no, TaskSettings settings, bool disable_laser) {
@@ -1022,7 +1020,7 @@ void BSLMotionController::startList(int list_no, TaskSettings settings, bool dis
   lcs_set_start_list(list_no);
   // Reset laser control in case of disconnection
   setUpTaskList();
-  applyFirstPulseKillerToList("startList");
+  applyFirstPulseKillerToList();
   list_manager_.call(ListApiType::SetPulses, settings.period, laser_type_ == LCS_UV ? settings.q_pulse_width : 0, settings.pulse_width);
   list_manager_.call(ListApiType::SetSpeed, settings.current_f);
   list_manager_.call(ListApiType::SetPower, settings.current_s);
