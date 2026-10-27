@@ -133,6 +133,7 @@ Basic 軸向模型，不提供開關或其他模型。
        href="data:image/png;base64,..." />
 ```
 
+- 路徑預覽與實際工作拿到同一份 gcode：exporter 不為預覽產生 mock 打點（`shouldMockFastGradient` 對 Promark 不再有作用）。打點的呈現由 Beam Studio 的 `PathPreview/tmpParseGcode.ts` 依 `;CONFIG INNER_ENGRAVING=1` 處理。
 - 圖片像素由 SVG `<image>` 提供；不需要 `stlObjects["photo-1"]`。
 - `stlObjects` 的 binary STL 以 header 宣告的三角數為準，尾端多餘的 bytes 容忍並忽略（與 Three.js 一致，`stl::detectFormat`）；截斷的檔案與 `solid` 開頭但長度不符的檔案仍拒收，回報在 `failedStlObjects`，Beam Studio 會因此擋下工作。
 - 後端依 transform 後的實體尺寸與圖層的 `data-stl-point-spacing` 建立取樣格，合成白底後

@@ -193,8 +193,6 @@ void ToolpathExporter::parseParam(QJsonObject param) {
     qWarning() << "[Export] empty STL material Z range" << material_min_z_mm_ << "to"
                << material_max_z_mm_;
   }
-  is_path_preview_ = param["shouldMockFastGradient"].toBool();
-  qInfo() << "[Export] Path preview:" << is_path_preview_;
 }
 
 void ToolpathExporter::setDpmm(qreal dpmm) {
@@ -1103,8 +1101,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
 
   auto setDotting = [&](bool enabled) {
     if (enabled == dotting_enabled) return;
+    // The preview gets the same gcode as the job (no mock dots): Beam Studio's path preview draws
+    // a dot per laser-on move itself while T is set (parseGcode, ";CONFIG INNER_ENGRAVING=1")
     gen_->setDottingTime(enabled ? current_layer_->dottingTime() : 0);
-    if (is_path_preview_) gen_->setDottingMode(enabled);
     dotting_enabled = enabled;
   };
   auto clearGeometry = [&]() {

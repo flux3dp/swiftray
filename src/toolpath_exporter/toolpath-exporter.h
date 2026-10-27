@@ -197,7 +197,6 @@ private:
 
   bool is_promark_ = false;
   bool is_contour_ = false;
-  bool is_path_preview_ = false;
   bool enable_custom_backlash_ = true;
   QTransform global_transform_;
   LayerPtr current_layer_;

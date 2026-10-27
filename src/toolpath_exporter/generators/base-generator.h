@@ -135,8 +135,6 @@ public:
 
   bool isRotaryMode() const { return rotary_mode_; }
 
-  void setDottingMode(bool b) { mock_dotting_mode_ = b; }
-
 protected:
   std::stringstream str_stream_;
   float x_; // in canvas coordinate -> have nothing to do with machine coordinate
@@ -145,5 +143,4 @@ protected:
   float speed_;
   double x_backlash_;
   bool rotary_mode_;
-  bool mock_dotting_mode_ = false;
 };
