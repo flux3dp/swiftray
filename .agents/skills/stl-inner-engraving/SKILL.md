@@ -70,7 +70,7 @@ Basic 軸向模型，不提供開關或其他模型。
 | attribute | 型別／預設 | 用途 |
 | --- | --- | --- |
 | `data-stl-mode` | `dot`／`line`，省略 = `dot` | 只有明確的 `line` 會切層打線；其他值都是點模式。只影響 mesh。 |
-| `data-stl-point-spacing` | mm，省略或 <= 0 = 0.03 | mesh 點模式每個 shell 的 blue-noise 最小點距，以及 photo 的取樣格距。 |
+| `data-stl-point-spacing` | mm，省略或 <= 0 = 0.03 | mesh 點模式每個 shell 的 blue-noise 最小點距，以及 photo 的取樣格距。photo 的取樣格數沒有上限（與 STL 點路徑一致），下限由 Beam Studio 的 0.01 mm 點距把關。 |
 | `data-stl-layer-spacing` | mm，省略或 <= 0 = 0.04 | `kLine` 的固定（或 adaptive 時的最大）Z 層距；`kDotFill` 的 shell 間距。 |
 | `data-stl-min-layer-spacing` | mm，省略或 0 = 關閉 | > 0 時 `kLine` 改用 adaptive planes，範圍為此值到 `data-stl-layer-spacing`。對點模式無效。 |
 | `data-stl-solid` | `1`＝開，省略 = 關 | 只用於 mesh 點模式（Beam Studio 介面名稱為「加厚輪廓」）：表面加 2 層向內 shell（共 3 個 shell，`BlueNoiseParams::max_shell_count`）。較薄的物件 shell 會更少。 |

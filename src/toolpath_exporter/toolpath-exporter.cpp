@@ -39,7 +39,6 @@ QList<QLine> makeRasterLines(const QRect& bbox) {
 // Kept in step with the frontend defaults (app/constants/innerEngraving.ts), measured on K9.
 constexpr double kDefaultStlLayerSpacingMm = 0.04;
 constexpr double kDefaultStlPointSpacingMm = 0.03;
-constexpr qint64 kMaxPhotoSampleCount = 10000000;
 
 /** Distance between two of n scan lines, in lines, going round the order like a ring. */
 long long ringDistance(long long offset, int n) {
@@ -880,11 +879,12 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
             canvas_mm_ratio_;
         const double columns_value = std::ceil(transformed_width_mm / point_spacing_mm);
         const double rows_value = std::ceil(transformed_height_mm / point_spacing_mm);
+        // No sample-count cap: the point spacing floor in Beam Studio (0.01 mm) bounds the grid,
+        // and the STL dot paths have no such cap either
         if (!std::isfinite(columns_value) || !std::isfinite(rows_value) || columns_value < 1 ||
-            rows_value < 1 || columns_value * rows_value > kMaxPhotoSampleCount) {
+            rows_value < 1) {
           qWarning() << "[Export] Photo object" << placement.id
-                     << "has an invalid or excessive sampling grid" << columns_value << "x"
-                     << rows_value;
+                     << "has an invalid sampling grid" << columns_value << "x" << rows_value;
           continue;
         }
 
