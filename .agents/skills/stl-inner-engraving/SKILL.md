@@ -176,6 +176,7 @@ convert 共用欄位仍照原介面提供。
   "first_pulse_killer_enabled": true,
   "machine_z_bucket": 0.01,
 
+  "inner_engraving": 1,
   "is_uv_light": 1,
   "jump_speed": 4000,
   "laser_on_delay": 150,
@@ -194,6 +195,7 @@ convert 共用欄位仍照原介面提供。
 | `material_min_z` | mm，預設 0 | 可雕刻的最小模型 Z（含邊界）。 |
 | `material_max_z` | mm，預設 `material_height` | 可雕刻的最大模型 Z（含邊界）。 |
 | `first_pulse_killer_enabled` | bool，預設 false | 產生 `;CONFIG FIRST_PULSE_KILLER_ENABLED=0/1`，由 BSL 控制器在每個 list 與每個 `T` 套用；停用或 `T0` 時寫 0 清除控制卡上的設定。 |
+| `inner_engraving` | 0/1，預設 0 | 產生 `;CONFIG INNER_ENGRAVING=1`，讓 `MachineJob` 與 BSL 控制器用內雕的時間模型；沒有它的工作一律用 develop 的舊算法（見 `promark-job-timing` skill）。Beam Studio 只在 3D 文件送。 |
 | `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.01)，最小 `kMinMachineZBucketMm`(0.001) | 補償後 machine Z 的量化間距。低於最小值會被夾住並警告。 |
 
 沒有 `focal_length` 之類的鏡頭參數：內雕鏡頭在同一個 machine Z 雕出的是一個平面，所以折射

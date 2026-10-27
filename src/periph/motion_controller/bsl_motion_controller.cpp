@@ -721,10 +721,14 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0,
                          PromarkJobConfig::Z_PULSE_PER_SEC, PromarkJobConfig::Z_START_PULSE_PER_SEC,
                          PromarkJobConfig::AXIS_ACC_TIME_MS);
-      estimated_time_ += mark_sequence_.endMs(config_);
-      estimated_time_ += PromarkTiming::axisMoveTimeMs(
-          real_steps, PromarkJobConfig::Z_PULSE_PER_SEC,
-          PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
+      if (config_.inner_engraving) {
+        estimated_time_ += mark_sequence_.endMs(config_);
+        estimated_time_ += PromarkTiming::axisMoveTimeMs(
+            real_steps, PromarkJobConfig::Z_PULSE_PER_SEC,
+            PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
+      } else {
+        estimated_time_ += PromarkTiming::Legacy::zMoveTimeMs(z);
+      }
       z_pos_ = real_steps / PromarkJobConfig::Z_PULSE_PER_MM - z; // Keep the difference between actual move and cmd target
       last_is_z_command = true;
       // QThread::msleep(1000);
@@ -744,30 +748,48 @@ void BSLMotionController::handleGcode(const QString &gcode) {
         list_manager_.call(ListApiType::MoveAxis, 0, fabs(real_steps), diff_a > 0,
                            PromarkJobConfig::A_PULSE_PER_SEC, PromarkJobConfig::A_START_PULSE_PER_SEC,
                            PromarkJobConfig::AXIS_ACC_TIME_MS);
-        estimated_time_ += mark_sequence_.endMs(config_);
-        estimated_time_ += PromarkTiming::axisMoveTimeMs(
-            real_steps, PromarkJobConfig::A_PULSE_PER_SEC,
-            PromarkJobConfig::A_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
+        if (config_.inner_engraving) {
+          estimated_time_ += mark_sequence_.endMs(config_);
+          estimated_time_ += PromarkTiming::axisMoveTimeMs(
+              real_steps, PromarkJobConfig::A_PULSE_PER_SEC,
+              PromarkJobConfig::A_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
+        } else {
+          estimated_time_ += PromarkTiming::Legacy::aMoveTimeMs(diff_a);
+        }
         a_pos_ += real_steps / PromarkJobConfig::A_PULSE_PER_MM;
       }
       double distance = sqrt(pow(target_x - x_pos_, 2) + pow(target_y - y_pos_, 2));
       if (distance > 0) {
+        // Two time models, see PromarkTiming::Legacy: the inner engraving one tracks the mark
+        // sequence and the configured delays, the legacy one is what 2D jobs always reported.
         if (laser_enabled && (command == "G1" || command.isEmpty())) {
           if (dotting_time_ == 0) {
             markTo(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += mark_sequence_.beginSegmentMs(config_);
-            estimated_time_ += config_.markTimeMs(distance * wobble_k, settings.current_f);
+            if (config_.inner_engraving) {
+              estimated_time_ += mark_sequence_.beginSegmentMs(config_);
+              estimated_time_ += config_.markTimeMs(distance * wobble_k, settings.current_f);
+            } else {
+              estimated_time_ += PromarkTiming::Legacy::markTimeMs(distance * wobble_k, settings.current_f);
+            }
           } else {
             jumpTo(-(target_y - center_pos), target_x - center_pos);
-            estimated_time_ += mark_sequence_.endMs(config_);
-            estimated_time_ += config_.jumpTimeMs(distance);
+            if (config_.inner_engraving) {
+              estimated_time_ += mark_sequence_.endMs(config_);
+              estimated_time_ += config_.jumpTimeMs(distance);
+            } else {
+              estimated_time_ += PromarkTiming::Legacy::jumpTimeMs(distance);
+            }
             list_manager_.call(ListApiType::LaserPulse, dotting_time_);
-            estimated_time_ += config_.dotTimeMs(dotting_time_);
+            estimated_time_ += config_.inner_engraving ? config_.dotTimeMs(dotting_time_) : dotting_time_ / 1000.0;
           }
         } else {
           jumpTo(-(target_y - center_pos), target_x - center_pos);
-          estimated_time_ += mark_sequence_.endMs(config_);
-          estimated_time_ += config_.jumpTimeMs(distance);
+          if (config_.inner_engraving) {
+            estimated_time_ += mark_sequence_.endMs(config_);
+            estimated_time_ += config_.jumpTimeMs(distance);
+          } else {
+            estimated_time_ += PromarkTiming::Legacy::jumpTimeMs(distance);
+          }
         }
       }
       x_pos_ = target_x;
@@ -779,8 +801,11 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       // power-only F...S... command at that same position. It is a real point even though there is
       // no coordinate change, so it must bypass the normal is_move_command gate.
       list_manager_.call(ListApiType::LaserPulse, dotting_time_);
-      estimated_time_ += mark_sequence_.endMs(config_);
-      estimated_time_ += config_.dotTimeMs(dotting_time_);
+      if (config_.inner_engraving) {
+        estimated_time_ += mark_sequence_.endMs(config_);
+        estimated_time_ += config_.dotTimeMs(dotting_time_);
+      }
+      // the legacy model never costed this pulse (develop had no such branch), kept as it was
     }
 }
 

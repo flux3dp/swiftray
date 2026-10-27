@@ -95,6 +95,12 @@ struct Config {
   int32_t jump_delay_min = PromarkJobConfig::JUMP_DELAY_MIN;    // us
   int32_t jump_delay_max = PromarkJobConfig::JUMP_DELAY_MAX;    // us
   bool first_pulse_killer_enabled = false;
+  /**
+   * Which time model the job uses, see `Legacy` below. Set by ";CONFIG INNER_ENGRAVING=1", which
+   * Beam Studio sends only for a 3D (inner engraving) document; every other job keeps the model
+   * that shipped before inner engraving existed.
+   */
+  bool inner_engraving = false;
 
   void reset() { *this = Config(); }
 
@@ -118,6 +124,8 @@ struct Config {
       first_pulse_killer_enabled = value.toInt() != 0 ||
                                    value.compare(QStringLiteral("true"),
                                                  Qt::CaseInsensitive) == 0;
+    } else if (key == "INNER_ENGRAVING") {
+      inner_engraving = value.toInt() != 0;
     } else {
       return false;
     }
@@ -232,6 +240,47 @@ inline bool parseConfigLine(const QString &line, QString *key, QString *value) {
   *value = body.mid(separator + 1).trimmed();
   return true;
 }
+
+
+/**
+ * The time model Promark jobs used before inner engraving (origin/develop), kept verbatim for every
+ * job that is not a 3D document.
+ *
+ * The model above was built for inner engraving and its dot cost was calibrated on a UV STL job;
+ * it also changes what a 2D job is estimated at (per-vector laser delay becomes on / corner /
+ * off+marking delays, the jump delay scales with length, a dot carries the laser delays). None of
+ * that has been checked against a 2D job on hardware, and neither has this legacy model: it is
+ * simply what the shipped estimates were. So a 2D job keeps it unchanged, and `Config::inner_engraving`
+ * picks the model, in MachineJob::calcTotalTime and BSLMotionController alike.
+ *
+ * ⚠️ Known and deliberately preserved: for a dot that is its own G-code line (T > 0, S > 0),
+ * develop's MachineJob only counted the jump travel while the controller counted travel + jump
+ * delay + dotting time. Both halves are kept as they were.
+ */
+namespace Legacy {
+/** Jump delay, the average of the min / max the card is configured with. */
+inline double jumpDelayMs() {
+  return (PromarkJobConfig::JUMP_DELAY_MIN + PromarkJobConfig::JUMP_DELAY_MAX) / 2000.0;
+}
+/** Laser delay charged once per mark vector. */
+inline double laserDelayMs() {
+  return (PromarkJobConfig::LASER_OFF_DELAY - PromarkJobConfig::LASER_ON_DELAY) / 1000.0;
+}
+inline double jumpTravelMs(double distance_mm) { return 1000.0 * distance_mm / PromarkJobConfig::JUMP_SPEED; }
+inline double jumpTimeMs(double distance_mm) { return jumpTravelMs(distance_mm) + jumpDelayMs(); }
+inline double markTimeMs(double distance_mm, double speed_mm_s) {
+  return 1000.0 * distance_mm / speed_mm_s + laserDelayMs();
+}
+/** Axis time by distance only: no ramp, no per-command overhead. */
+inline double zMoveTimeMs(double z_mm) {
+  return std::fabs(z_mm) * (PromarkJobConfig::Z_PULSE_PER_MM / PromarkJobConfig::Z_PULSE_PER_SEC * 1000.0);
+}
+inline double aMoveTimeMs(double a_mm) {
+  return std::fabs(a_mm) * (PromarkJobConfig::A_PULSE_PER_MM / PromarkJobConfig::A_PULSE_PER_SEC * 1000.0);
+}
+/** One high-speed raster dot (from the ;DOT summary): a jump delay plus the dotting time. */
+inline double rasterDotTimeMs(uint32_t dotting_time_us) { return jumpDelayMs() + dotting_time_us / 1000.0; }
+}  // namespace Legacy
 
 }  // namespace PromarkTiming
 

@@ -147,6 +147,13 @@ void ToolpathExporter::parseParam(QJsonObject param) {
     const int enabled = param["first_pulse_killer_enabled"].toBool() ? 1 : 0;
     gen_->addComment(QString("CONFIG FIRST_PULSE_KILLER_ENABLED=%1").arg(enabled));
   }
+  // Selects the time model (PromarkTiming::Legacy vs the inner engraving one) in MachineJob and the
+  // BSL controller. Beam Studio sends it for a 3D document only; it is not inferred from the other
+  // parameters, so a 2D job can never drift onto the inner engraving model by accident.
+  if (param.contains("inner_engraving")) {
+    const int enabled = param["inner_engraving"].toInt() != 0 || param["inner_engraving"].toBool() ? 1 : 0;
+    gen_->addComment(QString("CONFIG INNER_ENGRAVING=%1").arg(enabled));
+  }
   // Basic axial refraction is always applied. n=1 keeps the original Z plane unchanged.
   RefractionParams refraction = refraction_.params();
   if (param.contains("refractive_index")) {

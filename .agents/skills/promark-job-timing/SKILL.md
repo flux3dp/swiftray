@@ -14,6 +14,29 @@ Promark 同一份 G-code 有兩套時間計算，兩者必須使用相同規則�
 共用公式與狀態放在 `src/promark_timing.h`。修改計時行為時，優先擴充這個共用層，不要在
 兩個 consumer 各寫一份近似公式。
 
+## 兩套時間模型：2D 沿用舊算法，3D 用內雕模型
+
+**兩套都沒有完整驗證過正確性**，這是刻意的現狀，不是其中一套已被證明較準：
+
+- **2D 工作**（沒有 `;CONFIG INNER_ENGRAVING=1`）：使用 `PromarkTiming::Legacy`，內容原封不動
+  搬自 develop（內雕之前的版本）。`MachineJob::calcTotalTimeLegacy()` 與
+  `BSLMotionController` 的 legacy 分支都用它。它的固定 jump delay、每段 mark 固定 laser delay、
+  Z/A 只算距離、高速點陣每點 `jump delay + dotting time`，從來沒有對照硬體量過；develop 有一處
+  估算與 controller 不一致（獨立一行的 dot：estimator 只算 jump travel，controller 算
+  travel + jump delay + dotting time）也**原樣保留**。
+- **3D 工作**（內雕，Beam Studio 送 `inner_engraving: 1`，exporter 寫成
+  `;CONFIG INNER_ENGRAVING=1`）：使用本文件其餘章節描述的模型（`MarkSequence`、依距離插值的
+  jump delay、軸移動 ramp + 固定開銷、`dotTimeMs()` 含 2.0 係數）。只有 Z move 的固定開銷與
+  STL dot 的 2.0 係數有單一工作的實測依據，其餘公式是依 LCS delay 語意推導。
+
+選模型的唯一依據是 gcode 開頭的 `;CONFIG INNER_ENGRAVING=1`：estimator 掃開頭的註解行
+（`MachineJob::isInnerEngravingJob()`），controller 讀進 `Config::inner_engraving`，`RESET`
+會清掉。不要用 Z 指令、`UV=1` 或其他 CONFIG 行推測。舊版 Beam Studio 不送這個 key，一律走
+legacy，與上線中的行為相同。
+
+要把 2D 也換成新模型、或調整任一套公式之前，先做 2D 與 3D 各至少一份工作的實測計時，並把
+結果記在這裡。
+
 ## 相關程式碼
 
 - `src/promark_timing.h`：計時公式、`Config`、`MarkSequence`、CONFIG parser。
@@ -42,6 +65,7 @@ STL convert params 與輸入契約請讀 `stl-inner-engraving` skill；幾何演
 - `JUMP_DELAY_MIN`
 - `JUMP_DELAY_MAX`
 - `FIRST_PULSE_KILLER_ENABLED`
+- `INNER_ENGRAVING`（選時間模型，見上）
 
 `UV` 會影響 controller 的 laser type，但不屬於計時參數，由
 `BSLMotionController::handleGcode()` 個別處理。未知 key 不應默默改變 `Config`。
@@ -108,7 +132,12 @@ Dot polygon 的第一點可能是只有 `F...S...`、沒有 XY 位移的 power-o
 
 `Config::dotTimeMs()` 包含 laser-on、laser-off/marking、dotting time，以及啟用
 first-pulse killer 時的 `dotting_time + 5µs`。目前 STL dot 的實測係數是 `2.0`；除非有新的
-硬體量測依據，不要單獨修改或在其他檔案再乘一次。
+硬體量測依據，不要單獨修改或在其他檔案再乘一次。這個函式只用在 3D 模型；2D 的高速點陣
+（`;DOT`）在 legacy 模型是 `Legacy::rasterDotTimeMs()`。
+
+高速點陣的 `;DOT` / `;JUMP` 摘要由 exporter 寫在 `D5` **之後**（`rasterBitmapHighSpeed`），
+新模型的 estimator 因此在 `D5` 後保留高速狀態直到下一個指令行才關閉；legacy 模型無條件計入
+摘要。普通 raster 只寫 `;DOT`、不寫 `D0R/D5/;JUMP`，每個點是獨立的 G1 行。
 
 ## List 邊界
 
