@@ -165,7 +165,11 @@ double Layer::nozzleOffsetY() const { return nozzle_offset_y_; }
 
 float Layer::focus() const { return focus_; }
 
+bool Layer::focusRev() const { return focus_rev_; }
+
 float Layer::focusStep() const { return focus_step_; }
+
+bool Layer::focusStepRev() const { return focus_step_rev_; }
 
 double Layer::ceZLimit() const { return ce_z_limit_; }
 
@@ -191,6 +195,8 @@ int Layer::frequency() const { return frequency_; }
 
 int Layer::pulseWidth() const { return pulse_width_; }
 
+double Layer::qPulseWidth() const { return q_pulse_width_; }
+
 double Layer::fillInterval() const { return fill_interval_; }
 
 double Layer::fillAngle() const { return fill_angle_; }
@@ -199,7 +205,23 @@ bool Layer::fillBidirectional() const { return fill_bidirectional_; }
 
 bool Layer::fillHatch() const { return fill_hatch_; }
 
+bool Layer::fillInterleave() const { return fill_interleave_; }
+
+int Layer::fillDwellTime() const { return fill_dwell_time_; }
+
+bool Layer::fillDwellAdaptive() const { return fill_dwell_adaptive_; }
+
 int Layer::dottingTime() const { return dotting_time_; }
+
+bool Layer::stlDotMode() const { return stl_dot_mode_; }
+
+double Layer::stlPointSpacing() const { return stl_point_spacing_; }
+
+double Layer::stlLayerSpacing() const { return stl_layer_spacing_; }
+
+double Layer::stlMinLayerSpacing() const { return stl_min_layer_spacing_; }
+
+bool Layer::stlSolid() const { return stl_solid_; }
 
 double Layer::wobbleStep() const { return wobble_step_; }
 
@@ -325,7 +347,9 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->nozzle_offset_x_ = config.nozzle_offset_x;
   this->nozzle_offset_y_ = config.nozzle_offset_y;
   this->focus_ = config.focus;
+  this->focus_rev_ = config.focus_rev;
   this->focus_step_ = config.focus_step;
+  this->focus_step_rev_ = config.focus_step_rev;
   this->ce_z_limit_ = config.ce_z_limit;
   this->interpolation_ = config.interpolation;
   this->right_padding_ = config.right_padding;
@@ -338,11 +362,20 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->uv_x_step_ = config.uv_x_step;
   this->frequency_ = config.frequency;
   this->pulse_width_ = config.pulse_width;
+  this->q_pulse_width_ = config.q_pulse_width;
   this->fill_interval_ = config.fill_interval;
   this->fill_angle_ = config.fill_angle;
   this->fill_bidirectional_ = config.fill_bidirectional;
   this->fill_hatch_ = config.fill_hatch;
+  this->fill_interleave_ = config.fill_interleave;
+  this->fill_dwell_time_ = config.fill_dwell_time;
+  this->fill_dwell_adaptive_ = config.fill_dwell_adaptive;
   this->dotting_time_ = config.dotting_time;
+  this->stl_dot_mode_ = config.stl_dot_mode;
+  this->stl_point_spacing_ = config.stl_point_spacing;
+  this->stl_layer_spacing_ = config.stl_layer_spacing;
+  this->stl_min_layer_spacing_ = config.stl_min_layer_spacing;
+  this->stl_solid_ = config.stl_solid;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
   this->air_assist_ = config.air_assist;

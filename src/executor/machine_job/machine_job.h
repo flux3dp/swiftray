@@ -35,6 +35,10 @@ public:
   void setMotionController(QPointer<MotionController>);
 
   double calcTotalTime(const QStringList& gcode_list);
+  /** The pre-inner-engraving estimate (PromarkTiming::Legacy), used for every 2D job. */
+  double calcTotalTimeLegacy(const QStringList& gcode_list);
+  /** Whether the job header carries ";CONFIG INNER_ENGRAVING=1". */
+  static bool isInnerEngravingJob(const QStringList& gcode_list);
 
   static QList<Timestamp> calcRequiredTime(const QStringList &gcode_list,
                                           QPointer<QProgressDialog> progress_dialog);

@@ -97,7 +97,9 @@ public:
   double nozzleOffsetX() const;
   double nozzleOffsetY() const;
   float focus() const;
+  bool focusRev() const;
   float focusStep() const;
+  bool focusStepRev() const;
   double ceZLimit() const;
   int interpolation() const;
   double rightPadding() const;
@@ -110,11 +112,20 @@ public:
   int uvXStep() const;
   int frequency() const;
   int pulseWidth() const;
+  double qPulseWidth() const;
   double fillInterval() const;
   double fillAngle() const;
   bool fillBidirectional() const;
   bool fillHatch() const;
+  bool fillInterleave() const;
+  int fillDwellTime() const;
+  bool fillDwellAdaptive() const;
   int dottingTime() const;
+  bool stlDotMode() const;
+  double stlPointSpacing() const;
+  double stlLayerSpacing() const;
+  double stlMinLayerSpacing() const;
+  bool stlSolid() const;
   double wobbleStep() const;
   double wobbleDiameter() const;
   int airAssist() const;
@@ -204,7 +215,9 @@ private:
   double nozzle_offset_y_ = 0;
   // Height / Curve Engraving
   float focus_ = -2;
+  bool focus_rev_ = false;
   float focus_step_ = -2;
+  bool focus_step_rev_ = false;
   double ce_z_limit_ = 0;
   // UV configs
   int interpolation_ = 1;
@@ -220,11 +233,22 @@ private:
   // Promark
   int frequency_ = 0;
   int pulse_width_ = 0;
+  double q_pulse_width_ = 0;
   double fill_interval_;
   double fill_angle_;
   bool fill_bidirectional_;
   bool fill_hatch_;
+  // UV heat mitigation, see ToolpathExporter::outputLayerFillGcode()
+  bool fill_interleave_ = false;
+  int fill_dwell_time_ = 0;
+  bool fill_dwell_adaptive_ = false;
   int dotting_time_ = 0;
+  // inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()
+  bool stl_dot_mode_ = true;
+  double stl_point_spacing_ = 0;
+  double stl_layer_spacing_ = 0;
+  double stl_min_layer_spacing_ = 0;
+  bool stl_solid_ = false;
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
   // other

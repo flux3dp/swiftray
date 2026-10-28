@@ -13,7 +13,13 @@ SET(TEST_SOURCE ${SOURCES})
 qt_add_resources(TEST_SOURCE "../qml.qrc")
 qt_add_resources(TEST_SOURCE "../sparkle.qrc")
 
-add_executable(UnitTest main.cpp ${TEST_SOURCE} ${GTestFiles})
+add_executable(UnitTest
+  main.cpp
+  ${TEST_SOURCE}
+  ${GTestFiles}
+  ../src/toolpath_exporter/refraction-compensator.cpp
+  ../src/toolpath_exporter/stl-utils.cpp
+)
 target_link_libraries(UnitTest gtest_main)
 target_link_libraries(UnitTest Qt::Core)
 target_link_libraries(UnitTest Qt::Quick)

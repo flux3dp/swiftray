@@ -142,7 +142,8 @@ namespace MySVG {
     void processMySVGNode(QSvgNode *node, QList<Node> &nodes,
                           MySVG::ReadType read_type, QMap<QString, MySVG::BeamLayerConfig> &layer_config_map_,
                           double g_scale, QColor &g_color, QImage &g_image, QRectF g_bbox = QRectF(),
-                          bool g_gradient = true, int g_threshold = 128, bool g_pwm = false, int g_pass = 0, double g_zstep = 0) {
+                          bool g_gradient = true, int g_threshold = 128, bool g_pwm = false, int g_pass = 0, double g_zstep = 0,
+                          StlPlacement g_stl_placement = StlPlacement()) {
         qInfo() << "Processing node" << node->nodeId() << "type" << node->type() << "color" << g_color;
         QTransform trans = getNodeTransform(node);
         double scale = 1;
@@ -171,13 +172,16 @@ namespace MySVG {
                     ((QSvgFillStyle*)fillStyle)->fillOpacity() != 0 &&
                     ((QSvgFillStyle*)fillStyle)->qbrush().style() != Qt::NoBrush;
             n.color = g_color;
-            if (n.fill) {
+            n.stl_placement = g_stl_placement;
+            // A 3D placeholder carries geometry out-of-band. It is commonly fill="none" with no
+            // stroke and must still reach the exporter; paint-based filtering only applies to 2D.
+            if (!n.stl_placement.isValid() && n.fill) {
                 if (qGray(((QSvgFillStyle*)fillStyle)->qbrush().color().rgba()) > MAX_BITMAP_THRESHOLD) {
                     // Note: use fill instead g_color in case fill and stroke have different color
                     qInfo() << "Path has white fill, skip element";
                     return;
                 }
-            } else {
+            } else if (!n.stl_placement.isValid()) {
                 auto strokeStyle = node->styleProperty(QSvgStyleProperty::STROKE);
                 if (!strokeStyle ||
                     ((QSvgStrokeStyle*)strokeStyle)->stroke().brush().style() == Qt::NoBrush ||
@@ -214,6 +218,7 @@ namespace MySVG {
             n.pwm = g_pwm;
             n.depthPass = g_pass;
             n.depthZStep = g_zstep;
+            n.stl_placement = g_stl_placement;
             nodes.push_back(n);
         } else if(node->type() == QSVG_USE) {
             QSvgUse2* use_node = (QSvgUse2*)node;

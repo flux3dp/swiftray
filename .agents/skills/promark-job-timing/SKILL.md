@@ -1,0 +1,164 @@
+---
+name: promark-job-timing
+description: Swiftray Promark／BSL 的工作時間模型與 per-job CONFIG 協定。修改 MachineJob 時間預估、BSL list streaming/progress、galvo delay、Z/A 軸移動、dotting 或 first-pulse 行為時使用。
+---
+
+# Promark 工作時間與 Job Config
+
+Promark 同一份 G-code 有兩套時間計算，兩者必須使用相同規則：
+
+- `MachineJob::calcTotalTime()` 在送出前計算整份工作的總時間，作為進度分母。
+- `BSLMotionController::estimated_time_` 在 streaming 時逐 list 累加，作為執行進度與
+  double-buffer list 切換依據。
+
+共用公式與狀態放在 `src/promark_timing.h`。修改計時行為時，優先擴充這個共用層，不要在
+兩個 consumer 各寫一份近似公式。
+
+## 兩套時間模型：2D 沿用舊算法，3D 用內雕模型
+
+**兩套都沒有完整驗證過正確性**，這是刻意的現狀，不是其中一套已被證明較準：
+
+- **2D 工作**（沒有 `;CONFIG INNER_ENGRAVING=1`）：使用 `PromarkTiming::Legacy`，內容原封不動
+  搬自 develop（內雕之前的版本）。`MachineJob::calcTotalTimeLegacy()` 與
+  `BSLMotionController` 的 legacy 分支都用它。它的固定 jump delay、每段 mark 固定 laser delay、
+  Z/A 只算距離、高速點陣每點 `jump delay + dotting time`，從來沒有對照硬體量過；develop 有一處
+  估算與 controller 不一致（獨立一行的 dot：estimator 只算 jump travel，controller 算
+  travel + jump delay + dotting time）也**原樣保留**。
+- **3D 工作**（內雕，Beam Studio 送 `inner_engraving: 1`，exporter 寫成
+  `;CONFIG INNER_ENGRAVING=1`）：使用本文件其餘章節描述的模型（`MarkSequence`、依距離插值的
+  jump delay、軸移動 ramp + 固定開銷、`dotTimeMs()` 含 2.0 係數）。只有 Z move 的固定開銷與
+  STL dot 的 2.0 係數有單一工作的實測依據，其餘公式是依 LCS delay 語意推導。
+
+選模型的唯一依據是 gcode 開頭的 `;CONFIG INNER_ENGRAVING=1`：estimator 掃開頭的註解行
+（`MachineJob::isInnerEngravingJob()`），controller 讀進 `Config::inner_engraving`，`RESET`
+會清掉。不要用 Z 指令、`UV=1` 或其他 CONFIG 行推測。舊版 Beam Studio 不送這個 key，一律走
+legacy，與上線中的行為相同。
+
+要把 2D 也換成新模型、或調整任一套公式之前，先做 2D 與 3D 各至少一份工作的實測計時，並把
+結果記在這裡。
+
+## 相關程式碼
+
+- `src/promark_timing.h`：計時公式、`Config`、`MarkSequence`、CONFIG parser。
+- `src/constants.h`：實際傳給 LCS 的軸參數與 Promark 預設 delay。
+- `src/executor/machine_job/machine_job.cpp`：整份 G-code 的預估。
+- `src/periph/motion_controller/bsl_motion_controller.cpp`：實際 LCS 指令、per-list 預估與
+  streaming progress。
+- `src/toolpath_exporter/toolpath-exporter.cpp`：從 convert params 產生 `;CONFIG`。
+- `src/toolpath_exporter/generators/gcode-generator.h`：Promark 的 `P`、`B`、`T` 指令輸出。
+
+STL convert params 與輸入契約請讀 `stl-inner-engraving` skill；幾何演算法請讀
+`stl-geometry-processing` skill。
+
+## Per-job CONFIG 資料流
+
+`ToolpathExporter::parseParam()` 應先輸出 `;CONFIG RESET`，再為本次工作提供的參數輸出
+`;CONFIG KEY=VALUE`。
+
+`PromarkTiming::Config` 管理下列會影響計時的 key：
+
+- `JUMP_SPEED`
+- `LASER_ON_DELAY`
+- `LASER_OFF_DELAY`
+- `MARKING_DELAY`
+- `CORNER_DELAY`
+- `JUMP_DELAY_MIN`
+- `JUMP_DELAY_MAX`
+- `FIRST_PULSE_KILLER_ENABLED`
+- `INNER_ENGRAVING`（選時間模型，見上）
+
+`UV` 會影響 controller 的 laser type，但不屬於計時參數，由
+`BSLMotionController::handleGcode()` 個別處理。未知 key 不應默默改變 `Config`。
+
+`RESET` 必須讓每份工作的 timing `Config` 回到 compiled defaults，避免上一份工作的參數洩漏
+到下一份。它不重設 controller 的 laser type；需要指定 UV/MOPA 的工作仍應明確提供 `UV`。
+新增會改變實際工作時間的 CONFIG key 時，必須同時處理 exporter、共用 `Config`、整體預估
+與 controller 實際設定。
+
+## 單位與軸移動
+
+- XY、Z 與距離使用 mm。
+- G-code `F` 是 mm/min；BSL 與 `PromarkTiming::markTimeMs()` 使用 mm/s。
+- LCS laser/scanner/jump delays 與 G-code `T` 使用 µs。
+- 所有 `PromarkTiming` 回傳值與 `estimated_time_` 使用 ms。
+- Z/A 實際移動先依 `*_PULSE_PER_MM` 量化為整數 pulse；controller 與 estimator 應使用同一
+  組 `run speed`、`start speed`、`acceleration time`。
+
+`axisTravelTimeMs()` 不能退回單純的距離除速度。短距離 Z move 通常到不了 run speed，必須用
+三角速度曲線；足夠長的 move 才使用含 cruise 的梯形曲線。更改
+`lcs_set_axis_move()` 參數時，同步更新 `src/constants.h`，不要只校正 estimator。
+
+`axisMoveTimeMs()` = `axisTravelTimeMs()` + `AXIS_MOVE_OVERHEAD_MS`。兩個 estimator 都必須
+用前者（含固定開銷），因為每次 `lcs_set_axis_move()` 除了走 pulse 之外還有固定成本。
+
+### AXIS_MOVE_OVERHEAD_MS 是實測值
+
+`AXIS_MOVE_OVERHEAD_MS = 50`（`src/constants.h`）**是實測經驗值，不是規格書或推導出來的**：
+
+- 樣本：2026-09-29 Promark UV STL 內雕工作 log，8857 個 Z move（其中 8597 個是 0.001mm，
+  即 1.6 pulse，處於 pulse 量化底線），20 個 list，每個 list 10000 個 list instruction。
+- 方法：以 `executeList()` log 的 `task time` 與下一個 list 起始時間對齊，得到每個 list 的
+  預估與實際。誤差正比於該 list 的 Z move 數，**每次 50.4ms**，在各 list Z 數從 296 到 1025
+  變動時仍維持 ±3%；純 ramp 模型預估 249s，實際 695s，補回開銷後預估 691s。
+- 因為樣本只有量化底線附近的步距，**無法分辨「每次指令的固定成本」與「ramp 公式本身高估
+  行程時間」**。要外插到長距離 Z move 之前，必須先做步距 sweep（0.001 ~ 2mm）重新擬合。
+- **A 軸完全沒有量測**。這個常數目前同樣套用在 A 軸，是預設假設而非實測結論。
+
+修改這個常數前先重跑量測；不要只因為某一份工作的預估偏差就調整它。若量測顯示誤差隨步距
+改變（而非固定），要改的是 `axisTravelTimeMs()` 或 `src/constants.h` 的速度／加速度參數。
+
+### 固定開銷會改變 list 切割
+
+`estimated_time_` 變大後，`MAX_BUFFER_LIST_TIME`（30s）會比 `MAX_BUFFER_LIST_SIZE`（10000）
+更早成為切 list 的條件，list 因此變短、swap 更頻繁。調整軸移動時間模型時要一併確認
+streaming 行為，不能只看總時間。內雕工作的時間幾乎由 Z move 次數決定（實測樣本中 8857 次
+Z move 占 695s 中的約 606s），而 Z move 次數來自 exporter 的 machine-Z bucket
+（`machine_z_bucket` convert param，見 `stl-inner-engraving` skill）。
+
+## G-code 動作分類
+
+- Jump：laser off 或 `S0` 的 XY move。時間為 travel 加依距離插值的 jump delay。
+- Mark：laser on、`T0` 的 XY move。第一段加 laser-on delay，連續段之間加 corner delay，
+  sequence 結束時加 laser-off 與 marking delay。
+- Dot：`T > 0` 且 power 開啟。先 jump 到點，再計入獨立 laser pulse 的完整 delay。
+- Z/A 軸移動、jump、dot 與 `M2`／job 結束都會結束當前 `MarkSequence`。
+- Dwell：`U<µs>`。FLUX 自訂指令，對應 `lcs_long_delay()` list instruction，不移動也不出光。
+  它不結束 `MarkSequence`（後續必定接一個 jump，laser-off／marking delay 由該 jump 計入），
+  兩套 estimator 都必須把這段時間加進總時間。目前由 UV 填充的「每行停留」產生，見
+  `ToolpathExporter::outputLayerFillGcode()`。
+
+Dot polygon 的第一點可能是只有 `F...S...`、沒有 XY 位移的 power-only command；它仍是一個
+實際 dot，兩套 estimator 與 controller 都不可因 `distance == 0` 而忽略。
+
+`Config::dotTimeMs()` 包含 laser-on、laser-off/marking、dotting time，以及啟用
+first-pulse killer 時的 `dotting_time + 5µs`。目前 STL dot 的實測係數是 `2.0`；除非有新的
+硬體量測依據，不要單獨修改或在其他檔案再乘一次。這個函式只用在 3D 模型；2D 的高速點陣
+（`;DOT`）在 legacy 模型是 `Legacy::rasterDotTimeMs()`。
+
+高速點陣的 `;DOT` / `;JUMP` 摘要由 exporter 寫在 `D5` **之後**（`rasterBitmapHighSpeed`），
+新模型的 estimator 因此在 `D5` 後保留高速狀態直到下一個指令行才關閉；legacy 模型無條件計入
+摘要。普通 raster 只寫 `;DOT`、不寫 `D0R/D5/;JUMP`，每個點是獨立的 G1 行。
+
+## List 邊界
+
+- `estimated_time_` 會參與 `MAX_BUFFER_LIST_TIME` 判斷，公式誤差也會改變 list 切換時機。
+- `startList()` 必須重新套用 list-level laser/scanner delays、pulse、speed、power 與
+  first-pulse killer。
+- first-pulse suppression 是控制卡上的持久狀態：`applyFirstPulseKillerToList()` 在每個 list 與
+  每個 `T`（含 `T0`、未啟用選項時）都寫入，值為 0 就是清除。不要改回「只在 > 0 時寫」，否則
+  打點 list 留下的抑制時間會吃掉之後打線 list 或下一個工作的每條線段起點。它走
+  `list_manager_.call(ListApiType::SetFirstPulseKiller, …)`，所以斷線重建 list
+  （`BSLListManager::redoBackup()`）時會連同 list 中段的 `T` 切換一起重播；不要改回直接呼叫
+  `lcs_set_firstpulse_killer_list`。
+- 每個圖層的 header 都是 `M3S0` 之後才接 Q/P/B 與 `T`，`M3` 會把 `dotting_time_` 歸零；新 list
+  也要重新套用它。
+- list swap 不代表 mark sequence 在物理上自然結束；只有實際動作語意要求時才結束 sequence。
+
+## 修改與驗證
+
+計時相關修改至少檢查以下案例：純 jump、連續 mark、mark 後 jump、一般 dot、零距離第一個
+dot、Z move、A move、CONFIG RESET，以及跨 list 邊界的 dotting。比較
+`MachineJob::calcTotalTime()` 與 controller 對相同 G-code 的累計邏輯，不要只驗證其中一套。
+
+若變更的是硬體實測常數，記錄機型、laser type、參數、樣本工作與量測結果；不把單次測試的
+補償值擴大成所有 Promark 工作的通則。

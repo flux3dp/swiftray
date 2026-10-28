@@ -203,8 +203,20 @@ public:
     str_stream_ << "P" << pulse_width << std::endl;
   }
 
+  void setQPulseWidth(double q_pulse_width) override {
+    str_stream_ << "B" << q_pulse_width << std::endl;
+  }
+
   void setDottingTime(int dotting_time) override { 
     str_stream_ << "T" << dotting_time << std::endl;
+  }
+
+  /**
+   * FLUX custom command: hold for dwell_time microseconds.
+   * On Promark this becomes a lcs_long_delay() list instruction.
+   */
+  void dwell(int dwell_time) override {
+    str_stream_ << "U" << dwell_time << std::endl;
   }
 
   void setWobble(double wobble_step, double wobble_diameter) override {

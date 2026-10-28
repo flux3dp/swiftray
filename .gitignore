@@ -39,3 +39,4 @@ third_party/onnxruntime/*
 resources/models/*.onnx
 resources/models/*.part
 workspace.xml
+.qtcreator/

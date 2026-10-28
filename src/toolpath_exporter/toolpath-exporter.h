@@ -1,10 +1,14 @@
 #pragma once
 
+#include <QLineF>
 #include <QList>
+#include <QMap>
 #include <QPainter>
 #include <QMutex>
 #include <QProgressDialog>
 #include <QImage>
+
+#include <limits>
 
 #include <layer.h>
 #include <shape/bitmap-shape.h>
@@ -14,10 +18,49 @@
 #include <document.h>
 #include <constants.h>
 #include "toolpath-utils.h"
+#include "stl-utils.h"
+#include "refraction-compensator.h"
 
 struct FilledPath {
   QList<QPolygonF> polys;
   bool isEvenOdd;
+};
+
+/**
+ * Machine-Z quantisation of the STL output, in mm, overridable per job through the
+ * "machine_z_bucket" convert param.
+ *
+ * Every point and slice is snapped to a multiple of this before it is emitted, and each bucket
+ * costs exactly one Z move. On the Promark that move is dominated by a fixed ~50ms command
+ * overhead (PromarkJobConfig::AXIS_MOVE_OVERHEAD_MS), so the bucket size sets the floor on how
+ * long an inner-carving job takes: a measured job spent 87% of its 695s driving 8857 Z moves at
+ * a 0.001mm bucket. Coarser buckets trade depth resolution for time; the 0.01mm default cuts the
+ * Z-move count by roughly an order of magnitude while the result stays close to the finer bucket.
+ *
+ * The minimum is a hard floor: buckets below 0.001mm stall the job at runtime (one Z pulse is
+ * 0.000625mm). A job param may go finer than the default, down to that floor, or coarser.
+ */
+inline constexpr double kDefaultMachineZBucketMm = 0.01;
+inline constexpr double kMinMachineZBucketMm = 0.001;
+
+/** STL engraving strategies. Dot strategies are sampled into point clouds before output. */
+enum class StlEngraveKind {
+  kLine = 0,     // fixed/adaptive-Z contours -> outputLayerPathGcode()
+  kDotFill = 1,  // transformed inward shells -> deterministic blue-noise points
+  kDot = 2,      // transformed surface -> deterministic blue-noise points
+};
+
+/** A 3D canvas object waiting to enter the shared Z-ordered output path. */
+struct StlPlacementJob {
+  /**
+   * Placement and kind are resolved while the object's OWN layer is still current_layer_: a canvas
+   * layer that mixes filled and unfilled shapes reaches the exporter as a pair of layers ("x" and
+   * "x-filled"), and the STL output of the pair is deferred to the second one.
+   */
+  StlPlacement placement;
+  StlEngraveKind kind = StlEngraveKind::kLine;
+  /** Present only for GeometryKind::Photo; the SVG projection already owns the decoded pixels. */
+  const BitmapShape *photo = nullptr;
 };
 
 class ToolpathExporter : public QObject
@@ -60,10 +103,24 @@ public:
 
   void handleContour() { is_contour_ = true; }
 
+  /**
+   * Meshes of the STL objects of the document, keyed by the id of their placeholder rect.
+   * Not owned, must outlive the exporter. Without it every placeholder rect is discarded.
+   */
+  void setStlObjects(const QMap<QString, stl::Mesh> *objects) { stl_objects_ = objects; }
+
+  /** Direct BSPC objects, keyed by `data-stl-kind="point-cloud"` placeholder id. */
+  void setPointCloudObjects(const QMap<QString, stl::PointCloud> *objects) {
+    point_cloud_objects_ = objects;
+  }
+
   enum class ScanDirectionMode {
       kBidirectionMode,
       kUnidirectionMode
   };
+
+  /** Emit ;CONFIG lines and read refraction/material/bucket params from the convert request. */
+  void parseParam(QJsonObject param);
 
 Q_SIGNALS:
   void progressChanged(int value);
@@ -74,7 +131,15 @@ public Q_SLOTS:
 private:
   void setDpmm(qreal dpmm);
 
-  void convertLayer(const LayerPtr &layer);
+  /**
+   * @param stl_paired the layer is the first half of a "x" / "x-filled" pair, so its STL objects
+   *        are kept for the second half instead of being engraved now. Without this a canvas layer
+   *        that mixes filled and unfilled objects would run the Z ladder twice: the axis would
+   *        sweep the whole material, come back down and engrave a second time THROUGH the parts it
+   *        just engraved, which the bottom-to-top (deep -> shallow) engraving order
+   *        forbids.
+   */
+  void convertLayer(const LayerPtr &layer, bool stl_paired = false);
 
   void convertShape(const ShapePtr &shape);
 
@@ -86,13 +151,31 @@ private:
 
   void sortPolygons();
 
-  void outputLayerGcode();
+  void outputLayerGcode(double progress_start = 0.0, double progress_span = 1.0);
 
   void outputLayerPathGcode();
 
   void outputLayerFillGcode();
 
   void outputLayerBitmapGcode(BitmapHandlerType type);
+
+  void outputLayerStlGcode(double progress_start, double progress_span);
+
+  /** Copy the inner engraving layer parameters of current_layer_ onto a parsed placement. */
+  StlPlacement resolveStlPlacement(const StlPlacement &placement) const;
+  StlEngraveKind stlEngraveKind(const StlPlacement &placement) const;
+
+  /**
+   * Move the head so the nominal focus sits @p focus_z_mm above the focus origin (the platform).
+   * Promark Z moves are relative, with a positive G-code Z value moving the head upward.
+   */
+  void moveStlFocusZ(double focus_z_mm);
+
+  /** One polygon of an STL layer. */
+  void emitStlPolygon(const QPolygonF &poly_dots, double speed, double power);
+
+  // Dot modes enter machine-Z buckets as point clouds directly from outputLayerStlGcode().
+  void outputStlLineGcode(const QList<stl::Layer> &slices);
 
   inline void moveTo(QPointF&& dest, double speed, double power, double x_backlash);
   inline void moveTo(const QPointF& dest, double speed, double power, double x_backlash);
@@ -128,6 +211,27 @@ private:
   QList<QPixmap> layer_bitmaps_; // place the image according to handler mode, expressed in unit of document dot
   QList<BitmapShape*> depth_mode_bitmaps_; // bitmap shapes for Promark depth mode
   QList<QRectF> bitmap_dirty_areas_;        // Expressed in unit of document dot.
+  const QMap<QString, stl::Mesh> *stl_objects_ = nullptr;
+  const QMap<QString, stl::PointCloud> *point_cloud_objects_ = nullptr;
+  QList<StlPlacementJob> layer_stl_placements_; // 3D objects of the current layer, planned at output time
+  /** Set by convertLayer(..., stl_paired): the STL objects belong to the layer that follows. */
+  bool stl_output_deferred_ = false;
+  /** Forced basic axial refraction compensation, configured through parseParam(). */
+  RefractionCompensator refraction_;
+  /** True while STL emitters are active. */
+  bool stl_output_active_ = false;
+  /** The points of layer_polygons_ are dots, not path vertices: nothing may be inserted between. */
+  bool stl_dot_mode_ = false;
+  /** Height of the nominal focus above the focus origin, mm. Owned by the STL output path. */
+  double stl_focus_z_mm_ = 0;
+  /** Inclusive material bounds in uncorrected model Z. */
+  double material_min_z_mm_ = 0.0;
+  double material_max_z_mm_ = std::numeric_limits<double>::infinity();
+  /**
+   * Machine-Z quantisation of the STL output, mm. Every emitted point is snapped to a multiple of
+   * this, and one bucket costs one Z move -- see kDefaultMachineZBucketMm.
+   */
+  double machine_z_bucket_mm_ = kDefaultMachineZBucketMm;
   QSizeF canvas_size_;              // Expressed in unit of document dot.
   QPainterPath canvas_clip_path_;  // Workarea boundary includes a small inward margin to handle floating-point tolerance in contour tasks
   double canvas_width_;
@@ -161,5 +265,7 @@ private:
   int element_cnt_[5] = {0, 0, 0, 0, 0}; // 0 Normal Bitmap, 1 Gradient Bitmap, 2 Depth Bitmap(Promark), 3 Filled Path, 4 Unfilled Path
   int total_element_cnt_ = 0;
   double current_progress_ = 0; // progress within current repeat
+  /** Scales relative progress emitted by nested 2D output while STL owns part of the layer range. */
+  double progress_increment_scale_ = 1.0;
   int progress_ = 0;
 };

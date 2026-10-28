@@ -15,17 +15,19 @@ enum class ListApiType {
   SetSpeed,
   SetPower,
   SetWobble,
+  SetFirstPulseKiller,
   SetIo,
   Jump,
   Mark,
   LaserPulse,
+  LongDelay,
   MoveAxis,
   EndOfList
 };
 
 using Params = std::variant<
     std::monostate,                                  // end of list
-    std::tuple<uint32_t>,                            // delay & laser pulse time
+    std::tuple<uint32_t>,                            // delay, laser pulse time & first-pulse length
     std::tuple<double, double, uint16_t>,            // pulses
     std::tuple<double>,                              // speed
     std::tuple<unsigned char>,                       // power

@@ -1,5 +1,6 @@
 #include "machine_job.h"
 #include "constants.h"
+#include "promark_timing.h"
 
 #include <QtMath>
 #include <QCoreApplication>
@@ -23,12 +24,243 @@ void MachineJob::setMotionController(QPointer<MotionController> motion_controlle
   motion_controller_ = motion_controller;
 }
 
+bool MachineJob::isInnerEngravingJob(const QStringList& gcode_list) {
+  // ToolpathExporter::parseParam() writes every ;CONFIG line before the first command, so the
+  // scan stops at the first line that is not a comment.
+  for (const QString& raw : gcode_list) {
+    const QString line = raw.trimmed();
+    if (line.isEmpty()) continue;
+    if (!line.startsWith(';')) break;
+    QString key, value;
+    if (PromarkTiming::parseConfigLine(line.toUpper(), &key, &value) && key == "INNER_ENGRAVING") {
+      return value.toInt() != 0;
+    }
+  }
+  return false;
+}
+
 /**
  * Modified from MachineJob::calcRequiredTime for Promark
  * @brief Calculate the required time
  * @retval Total time required in ms
+ *
+ * Two models, chosen by the job (see PromarkTiming::Legacy): a 2D job keeps the estimate that
+ * shipped before inner engraving, a 3D job uses the inner engraving model below.
  */
 double MachineJob::calcTotalTime(const QStringList& gcode_list) {
+  if (!isInnerEngravingJob(gcode_list)) return calcTotalTimeLegacy(gcode_list);
+
+  cancelled = false;
+
+  double total_time = 0; // ms
+  double move_distance = 0;
+  int current_line = 0;
+  bool relative_mode = false;  // G90 or G91
+  float last_abs_x = 0, last_abs_y = 0, last_abs_a = 0;
+  float x_param = 0, y_param = 0, z_param = 0, a_param = 0, f_param = 7500, s_param = 0;
+  int dotting_time = 0; // us
+  bool hasEnd = false;
+  double wobble_k = 1;
+  int batch_size = qMax(1000, gcode_list.size() / 30);
+  // Mirrors what BSLMotionController does with the same GCode, so that this estimate and the
+  // per-list estimate the controller keeps while streaming stay comparable.
+  PromarkTiming::Config config;
+  PromarkTiming::MarkSequence mark_sequence;
+  // High-speed raster: the exporter encodes the dots of a raster line in D1PC/D2W data between a
+  // jump to the line start and one move to its end. BSLMotionController expands that data into one
+  // jump + pulse per dot (D0R gives the pixel step) and treats the closing move as the sweep, so
+  // the dots are costed from the ;DOT / ;JUMP counts and the closing move only as travel.
+  // Without the D0R..D5 fast raster block the exporter still writes ;DOT after a plain raster, but
+  // there every dot is its own G1 line and is costed below, so the count must not be added again.
+  bool in_high_speed_raster = false;
+  bool high_speed_summary_pending = false;
+  double high_speed_step = 0.1; // mm, D0RM default (see BSLMotionController's D0 handling)
+  bool pending_high_speed_sweep = false;
+
+  while (current_line < gcode_list.size() && !hasEnd && !cancelled) {
+    QString line = gcode_list[current_line];
+    line = line.toUpper();
+    if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for High Speed Mode: one jump + pulse per dot, costed exactly like the
+      // controller's expansion. Travel is covered by the sweep move, so only the settling counts.
+      // The exporter writes the summary after D5 (rasterBitmapHighSpeed), so the raster block is
+      // only closed once the summary has been read, see below.
+      int dots = in_high_speed_raster ? line.mid(4).toInt() : 0;
+      total_time += dots * (config.jumpDelayMs(high_speed_step) + config.dotTimeMs(dotting_time));
+    } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for High Speed Mode
+      int jumps = in_high_speed_raster ? line.mid(5).toInt() : 0;
+      total_time += jumps * config.averageJumpDelayMs();  // Jump delay for blank parts
+    } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Specific comment for Wobble
+      wobble_k = line.mid(9).toFloat();
+    } else if (line.startsWith(";CONFIG ", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Machine parameters the job overrides -- they change how long it takes
+      QString config_key, config_value;
+      if (PromarkTiming::parseConfigLine(line, &config_key, &config_value)) {
+        if (config_key == "RESET") {
+          config.reset();
+        } else {
+          config.applyKeyValue(config_key, config_value);
+        }
+      }
+    } else if (line.startsWith("U", Qt::CaseSensitivity::CaseInsensitive)) {
+      // FLUX custom dwell in us, see GCodeGenerator::dwell()
+      total_time += line.mid(1).toDouble() / 1000.0;
+    } else if (line.startsWith("D0R", Qt::CaseSensitivity::CaseInsensitive)) {
+      // Fast raster resolution, same mapping as BSLMotionController
+      in_high_speed_raster = true;
+      const QChar resolution = line.size() > 3 ? line.at(3) : QChar('M');
+      if (resolution == 'U') high_speed_step = 0.02;
+      else if (resolution == 'H') high_speed_step = 0.05;
+      else if (resolution == 'L') high_speed_step = 0.2;
+      else high_speed_step = 0.1;
+    } else if (line.startsWith("D5", Qt::CaseSensitivity::CaseInsensitive)) {
+      // The ;DOT / ;JUMP summary follows D5, so the block stays open until a command line
+      high_speed_summary_pending = in_high_speed_raster;
+    } else if (line.startsWith("D4PL", Qt::CaseSensitivity::CaseInsensitive)) {
+      // The next move closes the raster line; its dots are already in ;DOT
+      pending_high_speed_sweep = true;
+    } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
+               line.startsWith("$", Qt::CaseSensitivity::CaseInsensitive)) {
+      // do nothing (FLUX's custom cmd)
+    } else {
+      if (high_speed_summary_pending) {
+        // first command after the D5 block: the summary (if any) has been read
+        high_speed_summary_pending = false;
+        in_high_speed_raster = false;
+      }
+      QChar current_param{';'};
+      QString val_str;
+      line.append(' ');  // To ensure the last param is processed
+      // Set default value when X/Y field is absent
+      x_param = relative_mode ? 0 : last_abs_x;
+      y_param = relative_mode ? 0 : last_abs_y;
+      z_param = 0;
+      bool has_s_param = false;
+      for (auto& c : line) {
+        if (c == '-' || c == '.' || c.isDigit()) {
+          if (current_param != ';') {
+            val_str.append(c);
+          }
+        } else {
+          // Finish a cmd (G-Code or M-Code)
+          if (current_param == 'G') {
+            if (val_str.toInt() == 90 || val_str.toInt() == 91) {
+              relative_mode = val_str.toInt() == 90 ? false : true;
+              // Reset default value when X/Y field is absent
+              x_param = relative_mode ? 0 : last_abs_x;
+              y_param = relative_mode ? 0 : last_abs_y;
+              z_param = 0;
+            } else if (val_str.toInt() == 1) {
+              // G1 Motion modal group
+            }
+          } else if (current_param == 'M') {
+            if (val_str.toInt() == 2) {
+              // End of program
+              hasEnd = true;
+              break;
+            }
+          }
+
+          // Finish a param
+          if (current_param == 'X') {
+            x_param = val_str.toFloat();
+          } else if (current_param == 'Y') {
+            y_param = val_str.toFloat();
+          } else if (current_param == 'Z') {
+            z_param = val_str.toFloat();
+          } else if (current_param == 'A') {
+            a_param = val_str.toFloat();
+          } else if (current_param == 'F') {
+            f_param = val_str.toFloat();
+          } else if (current_param == 'S') {
+            s_param = val_str.toFloat();
+            has_s_param = true;
+          } else if (current_param == 'T') {
+            dotting_time = val_str.toInt();
+          }
+
+          // The start of new param
+          if (c == 'G' || c == 'M' || c == 'X' || c == 'Y' || c == 'Z' ||
+              c == 'S' || c == 'F' || c == 'T' || c == 'A') {
+            // Finish a param
+            current_param = c;
+            val_str.clear();
+          } else {
+            current_param = ';';
+            val_str.clear();
+          }
+        }
+      }
+
+      if (z_param != 0) {
+        total_time += mark_sequence.endMs(config);
+        total_time += PromarkTiming::zMoveTimeMs(z_param);
+      } else {
+        if (a_param != last_abs_a) {
+          total_time += mark_sequence.endMs(config);
+          total_time += PromarkTiming::aMoveTimeMs(a_param - last_abs_a);
+          last_abs_a = a_param;
+        }
+        if (relative_mode) {
+          move_distance = qSqrt(qPow(x_param, 2) + qPow(y_param, 2));
+          last_abs_x += x_param;
+          last_abs_y += y_param;
+        } else {
+          move_distance = qSqrt(qPow(x_param - last_abs_x, 2) +
+                                qPow(y_param - last_abs_y, 2));
+          last_abs_x = x_param;
+          last_abs_y = y_param;
+        }
+        if (move_distance > 0 && pending_high_speed_sweep) {
+          // the sweep over an expanded raster line: travel only, the dots and the blank jumps
+          // were costed from the ;DOT / ;JUMP counts
+          pending_high_speed_sweep = false;
+          total_time += mark_sequence.endMs(config);
+          total_time += config.jumpTravelMs(move_distance);
+        } else if (move_distance > 0) {
+          if (s_param == 0) {
+            // jump & delay
+            total_time += mark_sequence.endMs(config);
+            total_time += config.jumpTimeMs(move_distance);
+          } else if (dotting_time == 0) {
+            // mark & delay
+            total_time += mark_sequence.beginSegmentMs(config);
+            total_time += config.markTimeMs(move_distance * wobble_k, f_param / 60);
+          } else {
+            // An isolated dot: jump to the point, apply the configured point delays, then fire.
+            total_time += mark_sequence.endMs(config);
+            total_time += config.jumpTimeMs(move_distance);
+            total_time += config.dotTimeMs(dotting_time);
+          }
+        } else if (has_s_param && s_param > 0 && dotting_time > 0) {
+          // GCodeGenerator first jumps to a polygon's first point with S0, then emits F...S...
+          // at the same XY.  That power-only command is the first dot of the polygon.
+          total_time += mark_sequence.endMs(config);
+          total_time += config.dotTimeMs(dotting_time);
+        }
+      }
+    }
+    current_line++;
+    if (current_line % batch_size == 0) {
+      // Use float calculation to avoid integer overflow on large gcode list
+      Q_EMIT progressChanged(100.0 * current_line / gcode_list.size());
+      QCoreApplication::processEvents();
+    }
+  }
+  total_time += mark_sequence.endMs(config); // Close an unterminated marking run
+
+  return total_time;
+}
+
+/**
+ * The estimate as it was before inner engraving (origin/develop), kept verbatim for 2D jobs; see
+ * PromarkTiming::Legacy for why. Do not "fix" it towards the model above without a measurement.
+ */
+double MachineJob::calcTotalTimeLegacy(const QStringList& gcode_list) {
   cancelled = false;
 
   double total_time = 0; // ms
@@ -48,15 +280,18 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
     if (line.startsWith(";DOT", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int dots = line.mid(4).toInt();
-      total_time += dots * PromarkJobConfig::JUMP_DELAY_MS; // Jump delay for each dot
-      total_time += 0.001 * dots * dotting_time; // Actual dotting time
+      total_time += dots * PromarkTiming::Legacy::rasterDotTimeMs(dotting_time);
     } else if (line.startsWith(";JUMP", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for High Speed Mode
       int jumps = line.mid(5).toInt();
-      total_time += jumps * PromarkJobConfig::JUMP_DELAY_MS;  // Jump delay for blank parts
+      total_time += jumps * PromarkTiming::Legacy::jumpDelayMs();  // Jump delay for blank parts
     } else if (line.startsWith(";WOBBLE K", Qt::CaseSensitivity::CaseInsensitive)) {
       // Specific comment for Wobble
       wobble_k = line.mid(9).toFloat();
+    } else if (line.startsWith("U", Qt::CaseSensitivity::CaseInsensitive)) {
+      // FLUX custom dwell in us (added after develop; the controller holds the list for exactly
+      // this long, so it is counted in both models)
+      total_time += line.mid(1).toDouble() / 1000.0;
     } else if (line.startsWith(";", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("B", Qt::CaseSensitivity::CaseInsensitive) ||
                line.startsWith("D", Qt::CaseSensitivity::CaseInsensitive) ||
@@ -84,8 +319,6 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
               x_param = relative_mode ? 0 : last_abs_x;
               y_param = relative_mode ? 0 : last_abs_y;
               z_param = 0;
-            } else if (val_str.toInt() == 1) {
-              // G1 Motion modal group
             }
           } else if (current_param == 'M') {
             if (val_str.toInt() == 2) {
@@ -127,10 +360,10 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
 
       if (z_param != 0) {
         // Note: Ingore acc time
-        total_time += fabs(z_param) * PromarkJobConfig::Z_MS_PER_MM;
+        total_time += PromarkTiming::Legacy::zMoveTimeMs(z_param);
       } else {
         if (a_param != last_abs_a) {
-          total_time += fabs(a_param - last_abs_a) * PromarkJobConfig::A_MS_PER_MM;
+          total_time += PromarkTiming::Legacy::aMoveTimeMs(a_param - last_abs_a);
           last_abs_a = a_param;
         }
         if (relative_mode) {
@@ -146,13 +379,13 @@ double MachineJob::calcTotalTime(const QStringList& gcode_list) {
         if (move_distance > 0) {
           if (s_param == 0) {
             // jump & delay
-            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED + PromarkJobConfig::JUMP_DELAY_MS;
+            total_time += PromarkTiming::Legacy::jumpTimeMs(move_distance);
           } else if (dotting_time == 0) {
             // mark & delay
-            total_time += 1000.0 * move_distance * wobble_k / f_param * 60 + PromarkJobConfig::LASER_DELAY_MS;
+            total_time += PromarkTiming::Legacy::markTimeMs(move_distance * wobble_k, f_param / 60);
           } else {
-            // jump for dotting
-            total_time += 1000.0 * move_distance / PromarkJobConfig::JUMP_SPEED;
+            // jump for dotting (travel only, as it always was -- the controller charges more)
+            total_time += PromarkTiming::Legacy::jumpTravelMs(move_distance);
           }
         }
       }

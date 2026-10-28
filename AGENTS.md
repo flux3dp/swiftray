@@ -1,6 +1,13 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents (Claude Code, Codex) when working with code in this
+repository. It is the single source of truth: `.claude/CLAUDE.md` is a symlink to this file, and
+repo-specific agent skills live in `.agents/skills/<name>/SKILL.md` (`.claude/skills` is a symlink
+to that directory). Edit the real files, never the symlinks.
+
+On Windows, enable Git symlink support before cloning (`git config --global core.symlinks true`)
+so Claude can discover the shared instructions and skills. Codex reads `AGENTS.md` and
+`.agents/skills/` directly.
 
 ## Project Overview
 
