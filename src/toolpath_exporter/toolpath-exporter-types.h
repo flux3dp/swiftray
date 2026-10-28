@@ -106,6 +106,7 @@ struct SupportInfo {
   bool PRINTING_SCRIPTS = false;  // scripts xMIN 0005, xMIN 0006 for printing modules
   bool MODULE_CHECK_METADATA = false;
   bool LASER_DELAY = false;
+  bool LASER_FREQUENCY = false;  // M137P158 / M137P159
 };
 
 struct HardwareProfile {

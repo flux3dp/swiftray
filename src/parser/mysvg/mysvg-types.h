@@ -104,6 +104,7 @@ namespace MySVG {
         int air_assist;
         QString raw_bbox;
         int laser_delay;
+        double laser_frequency;  // kHz, 0 for machine default
         int dpmm;
         bool is_high_quality;
         // Laser engraving texture
