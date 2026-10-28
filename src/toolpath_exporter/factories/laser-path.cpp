@@ -53,7 +53,9 @@ void LaserPathFactory::walk_path(QPointF point, bool should_emit) {
   if (should_emit) {
     proc->moveto(speed, point.x(), point.y());
   } else {
-    proc->moveto(NAN, point.x(), point.y(), NAN, NAN, NAN, NAN, true);
+    // NamedArgs, not the positional overload: a NAN in the bool force_y slot reads as true and
+    // turns every rotary travel into a real Y move off the axis
+    proc->moveto(NamedArgs().rx(point.x()).ry(point.y()).set_is_travel());
   }
   float target_power = should_emit ? 100 : 0;
   if (current_pwm != target_power) {
