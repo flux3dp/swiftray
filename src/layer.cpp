@@ -233,6 +233,8 @@ const QString& Layer::rawBBox() const { return raw_bbox_; }
 
 int Layer::laserDelay() const { return laser_delay_; }
 
+double Layer::laserFrequency() const { return laser_frequency_; }
+
 int Layer::dpmm() const { return dpmm_; }
 
 bool Layer::isHighQuality() const { return is_high_quality_; }
@@ -381,6 +383,7 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->air_assist_ = config.air_assist;
   this->raw_bbox_ = config.raw_bbox;
   this->laser_delay_ = config.laser_delay;
+  this->laser_frequency_ = config.laser_frequency;
   this->dpmm_ = config.dpmm;
   this->is_high_quality_ = config.is_high_quality;
   this->has_texture_ = config.texture;

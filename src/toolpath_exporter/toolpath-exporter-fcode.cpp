@@ -600,6 +600,9 @@ void ToolpathExporterFcode::convertLayer() {
   float focus_step = current_layer_->focusStep();
   bool has_focus_adjust = support_info.REL_Z_MOVE && !is_printing_layer_ &&
                           (focus > 0 || focus_step > 0);
+  int laser_frequency_hz = support_info.LASER_FREQUENCY && layer_module_ == LayerModule::UNIVERSAL_LASER
+                               ? qRound(current_layer_->laserFrequency() * 1000)
+                               : 0;
   if (has_focus_adjust && focus > 0) {
     proc.sync_motion_type2(184, focus);
   } else if (config_.enable_autofocus && layer_height > 0) {
@@ -628,6 +631,9 @@ void ToolpathExporterFcode::convertLayer() {
         proc.sync_motion_type2(153, laser_delay);
       }
     }
+    if (laser_frequency_hz > 0) {
+      proc.sync_motion_type2(158, laser_frequency_hz);
+    }
     laser_air_assist = current_layer_->airAssist();
     float z_step = current_layer_->stepHeight();
     for (int r = 0; r < layer_repeat_; r++) {
@@ -652,6 +658,10 @@ void ToolpathExporterFcode::convertLayer() {
 
   if (has_focus_adjust && focus > 0) {
     proc.sync_motion_type2(184, -focus);
+  }
+  if (laser_frequency_hz > 0) {
+    // reset to machine default
+    proc.sync_grbl_motion(159);
   }
   if (is_v2_) {
     proc.end_task_script_block();

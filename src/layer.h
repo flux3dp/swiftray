@@ -131,6 +131,7 @@ public:
   int airAssist() const;
   const QString& rawBBox() const;
   int laserDelay() const;
+  double laserFrequency() const;
   int dpmm() const;
   bool isHighQuality() const;
   bool hasTexture() const;
@@ -255,6 +256,7 @@ private:
   int air_assist_ = 100;
   QString raw_bbox_;
   int laser_delay_ = 0;
+  double laser_frequency_ = 0;  // kHz, 0 for machine default
   int dpmm_ = 0;
   bool is_high_quality_ = false;
   // Laser engraving texture

@@ -67,13 +67,13 @@ const QMap<HardwareType, SupportInfo> SUPPORT_INFO = {
     true, true, true, true
   }},
   {HardwareType::BB2, {
-    true
+    true, false, false, false, false, false, false, true
   }},
   {HardwareType::BM2, {
-    true, true, true, false, true, true
+    true, true, true, false, true, true, false, true
   }},
   {HardwareType::RF, {
-    true, false, false, false, false, false, true
+    true, false, false, false, false, false, true, true
   }},
   {HardwareType::UV, {
     false, true, false, false, true, true

@@ -2969,6 +2969,7 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.air_assist = getAttr(attributes, "data-airAssist", default_config, "air_assist", 100);
         layer_config.raw_bbox = attributes.value("data-bbox").toString();
         layer_config.laser_delay = getAttr(attributes, "data-delay", default_config, "delay", 0);
+        layer_config.laser_frequency = getAttr(attributes, "data-laserFrequency", default_config, "laserFrequency", 0.0);
         layer_config.dpmm = getAttr(attributes, "data-dpmm", default_config, "dpmm", 0);
         layer_config.is_high_quality = getAttr(attributes, "data-highQuality", default_config, "highQuality", 0) == 1;
         layer_config.texture = getAttr(attributes, "data-texture", default_config, "texture", 0) == 1;
