@@ -139,7 +139,7 @@ struct Config {
   double jumpDelayMs(double distance_mm) const {
     double ratio = 1.0;
     if (PromarkJobConfig::JUMP_LENGTH_LIMIT_MM > 0) {
-      ratio = std::min(1.0, std::max(0.0, distance_mm / PromarkJobConfig::JUMP_LENGTH_LIMIT_MM));
+      ratio = (std::min)(1.0, (std::max)(0.0, distance_mm / PromarkJobConfig::JUMP_LENGTH_LIMIT_MM));
     }
     return (jump_delay_min + (jump_delay_max - jump_delay_min) * ratio) / 1000.0;
   }
