@@ -1299,8 +1299,21 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
     bool up;
     int triangle;
   };
+  // Every step below can take seconds on a mesh with a million flat triangles, so each checks for
+  // cancellation every few thousand triangles; `done` counts the triangles merged, for progress.
+  bool cancelled = false;
+  size_t done = 0;
+  size_t total = 1;
+  const auto keepGoing = [&]() {
+    if (!cancelled && progress && !progress(std::min(1.0, static_cast<double>(done) / total))) {
+      cancelled = true;
+    }
+    return !cancelled;
+  };
   std::vector<Flat> flats;
-  for (int index : order_) {
+  for (size_t scanned = 0; scanned < order_.size(); ++scanned) {
+    if ((scanned & 65535) == 65535 && !keepGoing()) return {};
+    const int index = order_[scanned];
     const Triangle &tri = mesh.triangles[static_cast<size_t>(index)];
     const double ax = tri.v[1].x - tri.v[0].x;
     const double ay = tri.v[1].y - tri.v[0].y;
@@ -1317,6 +1330,7 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
         Flat{(tri.v[0].z + tri.v[1].z + tri.v[2].z) / 3.0, length * 0.5, cz > 0, index});
   }
   if (flats.empty()) return result;
+  total = flats.size();
   std::sort(flats.begin(), flats.end(), [](const Flat &a, const Flat &b) {
     return a.z < b.z || (a.z == b.z && a.triangle < b.triangle);
   });
@@ -1326,16 +1340,57 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
   // Faces closer than half a layer are one fill: a slightly leaning face spans some Z, and two
   // levels that close could not be told apart by the slices around them either.
   const double group_eps = std::max(weld_tolerance_, params_.layer_height * 0.5);
-  const auto mergeTriangles = [&](const ClipperLib::Paths &triangles) {
+  const auto unite = [](const ClipperLib::Paths &paths) {
     ClipperLib::Paths merged;
     ClipperLib::Clipper clipper;
-    clipper.AddPaths(triangles, ClipperLib::ptSubject, true);
+    clipper.AddPaths(paths, ClipperLib::ptSubject, true);
     clipper.Execute(ClipperLib::ctUnion, merged, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
     return merged;
   };
+  // Clipper cannot stop halfway, so a big union runs in batches of about this many vertices with a
+  // cancellation check between them. The batches' results (a few outlines each, for neighbouring
+  // triangles) are merged the same way until they fit in one batch. Outers and holes keep their
+  // opposite windings, so merging results under the non-zero rule still leaves holes empty.
+  constexpr size_t kUnionBatchVertices = 30000;
+  const auto vertexCount = [](const ClipperLib::Paths &paths) {
+    size_t count = 0;
+    for (const ClipperLib::Path &path : paths) count += path.size();
+    return count;
+  };
+  // @p triangles: whether the paths are triangles, counted towards progress
+  const auto mergePaths = [&](ClipperLib::Paths paths, bool triangles) -> ClipperLib::Paths {
+    size_t vertices = vertexCount(paths);
+    while (vertices > kUnionBatchVertices) {
+      ClipperLib::Paths next;
+      ClipperLib::Paths batch;
+      size_t batch_vertices = 0;
+      const auto flush = [&]() {
+        const ClipperLib::Paths merged = unite(batch);
+        next.insert(next.end(), merged.begin(), merged.end());
+        if (triangles) done += batch.size();
+        batch.clear();
+        batch_vertices = 0;
+        return keepGoing();
+      };
+      for (ClipperLib::Path &path : paths) {
+        batch_vertices += path.size();
+        batch.push_back(std::move(path));
+        if (batch_vertices >= kUnionBatchVertices && !flush()) return {};
+      }
+      if (!batch.empty() && !flush()) return {};
+      triangles = false;
+      const size_t next_vertices = vertexCount(next);
+      paths = std::move(next);
+      // pieces too far apart to merge: one last union, however long
+      if (next_vertices >= vertices) break;
+      vertices = next_vertices;
+    }
+    if (triangles) done += paths.size();
+    return unite(paths);
+  };
   size_t begin = 0;
   while (begin < flats.size()) {
-    if (progress && !progress(static_cast<double>(begin) / flats.size())) return {};
+    if (!keepGoing()) return {};
     size_t end = begin + 1;
     while (end < flats.size() && flats[end].z - flats[begin].z <= group_eps) ++end;
 
@@ -1370,6 +1425,7 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
       }
       ClipperLib::Paths facing[2];  // up, down
       for (size_t k = level_begin; k < level_end; ++k) {
+        if (((k - level_begin) & 65535) == 65535 && !keepGoing()) return {};
         const Flat &flat = flats[by_bottom[k]];
         const Triangle &tri = mesh.triangles[static_cast<size_t>(flat.triangle)];
         ClipperLib::Path path;
@@ -1381,17 +1437,22 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
         if (!ClipperLib::Orientation(path)) ClipperLib::ReversePath(path);
         facing[flat.up ? 0 : 1].push_back(std::move(path));
       }
+      const ClipperLib::Paths up = mergePaths(std::move(facing[0]), true);
+      if (cancelled) return {};
+      const ClipperLib::Paths down = mergePaths(std::move(facing[1]), true);
+      if (cancelled) return {};
       ClipperLib::Paths alone;
       ClipperLib::Clipper clipper;
-      clipper.AddPaths(mergeTriangles(facing[0]), ClipperLib::ptSubject, true);
-      clipper.AddPaths(mergeTriangles(facing[1]), ClipperLib::ptClip, true);
+      clipper.AddPaths(up, ClipperLib::ptSubject, true);
+      clipper.AddPaths(down, ClipperLib::ptClip, true);
       clipper.Execute(ClipperLib::ctXor, alone, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
       // outers and holes keep their opposite windings, so the union below leaves holes empty
       exposed.insert(exposed.end(), alone.begin(), alone.end());
       level_begin = level_end;
     }
     // every level of the group is one fill
-    ClipperLib::Paths merged = mergeTriangles(exposed);
+    ClipperLib::Paths merged = mergePaths(std::move(exposed), false);
+    if (cancelled) return {};
     if (inset > 0) {
       ClipperLib::ClipperOffset offset;
       offset.AddPaths(merged, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
@@ -1415,7 +1476,8 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
     if (!face.polygons.isEmpty()) result.push_back(std::move(face));
     begin = end;
   }
-  if (progress && !progress(1.0)) return {};
+  done = total;
+  if (!keepGoing()) return {};
   return result;
 }
 

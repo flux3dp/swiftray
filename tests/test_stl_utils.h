@@ -182,6 +182,34 @@ TEST(StlUtilsTest, CapFacesCanBeCancelled) {
   EXPECT_EQ(callbacks, 2);
 }
 
+TEST(StlUtilsTest, CapFacesCheckForCancellationWithinOneLargeFace) {
+  // one flat face of 80000 triangles: a 200 x 200 grid of 0.05 x 0.05 quads
+  stl::Mesh sheet;
+  for (int row = 0; row < 200; ++row) {
+    for (int column = 0; column < 200; ++column) {
+      const double x = column * 0.05;
+      const double y = row * 0.05;
+      addQuad(&sheet, {x, y, 1}, {x + 0.05, y, 1}, {x + 0.05, y + 0.05, 1}, {x, y + 0.05, 1});
+    }
+  }
+  stl::Slicer slicer;
+  ASSERT_TRUE(slicer.prepare(sheet, QMatrix4x4(), stl::SliceParams{}));
+
+  int callbacks = 0;
+  const QVector<stl::CapFace> caps = slicer.capFaces(0, [&](double) {
+    ++callbacks;
+    return true;
+  });
+  // merged in batches, checked between them, and still one 10 x 10 face
+  EXPECT_GE(callbacks, 8);
+  ASSERT_EQ(caps.size(), 1);
+  EXPECT_NEAR(capArea(caps[0]), 100, 1e-3);
+
+  callbacks = 0;
+  EXPECT_TRUE(slicer.capFaces(0, [&](double) { return ++callbacks < 3; }).isEmpty());
+  EXPECT_EQ(callbacks, 3);
+}
+
 TEST(StlUtilsTest, CapFacesFollowTheTransform) {
   stl::Mesh cube;
   addBox(&cube, 0, 0, 0, 10, 10, 5);

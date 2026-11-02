@@ -169,7 +169,9 @@ Basic 軸向模型，不提供開關或其他模型。
 - 唯一的例外是過近的點：變換後（canvas 單位、3D 距離）比圖層點距的
   `kPointCloudMinDistanceRatio`（0.5）倍還近的點會被丟掉（`stl::removeClosePoints`，依輸入順序
   保留先出現的點），兩個太近的爆點會合成一個大爆點。photo 的取樣格本來就是點距，不過濾。
-  它和 `capFaces()` 都接進物件準備階段的進度，每幾千點／每組面檢查一次取消（200 萬點約 4.5 秒）。
+  它和 `capFaces()` 都接進物件準備階段的進度，每幾千點檢查一次取消（200 萬點約 4.5 秒）。
+  `capFaces()` 的 Clipper union 無法中途停止，所以分批合併（約 3 萬個頂點一批，批間檢查取消，
+  批次結果再合併到剩一批）：100 萬個共平面三角形，回呼間隔最長約 0.1 秒，取消後約 70ms 返回。
 - BSPC v1 是 little-endian binary：
 
 | offset | bytes | value |
