@@ -64,7 +64,7 @@ Basic 軸向模型，不提供開關或其他模型。
 
 `my_qsvg_handler_qt6.cpp` 在 `<g class="layer">` 上讀進 layer config（數值 attribute 缺少時退回
 `loadSVG` 的 `defaultConfig`：`stlPointSpacing`、`stlLayerSpacing`、`stlMinLayerSpacing`、
-`stlSolid`；`data-stl-mode` 沒有這個退路），`ToolpathExporter::resolveStlPlacement()` 在收集物件時
+`stlSolid`、`stlFillCaps`、`stlCapInterval`；`data-stl-mode` 沒有這個退路），`ToolpathExporter::resolveStlPlacement()` 在收集物件時
 從物件所在圖層複製到 `StlPlacement`。同一圖層的所有 3D 物件共用這組參數。
 
 | attribute | 型別／預設 | 用途 |
@@ -74,6 +74,8 @@ Basic 軸向模型，不提供開關或其他模型。
 | `data-stl-layer-spacing` | mm，省略或 <= 0 = 0.04 | `kLine` 的固定（或 adaptive 時的最大）Z 層距；`kDotFill` 的 shell 間距。 |
 | `data-stl-min-layer-spacing` | mm，省略或 0 = 關閉 | > 0 時 `kLine` 改用 adaptive planes，範圍為此值到 `data-stl-layer-spacing`。對點模式無效。 |
 | `data-stl-solid` | `1`＝開，省略 = 關 | 只用於 mesh 點模式（Beam Studio 介面名稱為「加厚輪廓」）：表面加 2 層向內 shell（共 3 個 shell，`BlueNoiseParams::max_shell_count`）。較薄的物件 shell 會更少。 |
+| `data-stl-fill-caps` | `1`＝開，省略 = 關 | 只用於 `kLine`（Beam Studio 介面名稱為「填充上下端面」）：另外把朝正上或正下的面填滿，見 `kLine`。 |
+| `data-stl-cap-interval` | mm，省略或 <= 0 = 0.01 | 端面填充的掃描線間距（`kDefaultStlCapIntervalMm`）。 |
 
 後端預設值 0.04／0.03 在 `toolpath-exporter.cpp`（`kDefaultStlLayerSpacingMm`、
 `kDefaultStlPointSpacingMm`），與前端預設同步。
@@ -90,7 +92,8 @@ Basic 軸向模型，不提供開關或其他模型。
 | mesh | `data-stl-mode` 非 `line`，`data-stl-solid="1"` | `kDotFill`（表面 + 2 層向內 shell） |
 | mesh | `data-stl-mode="line"` | `kLine`（切層打線） |
 
-沒有填充打線的種類；`fill` 與 `data-stl-solid` 對 line 模式都沒有作用。
+沒有填充打線的種類；`fill` 與 `data-stl-solid` 對 line 模式都沒有作用，line 模式的填充只有端面
+（`data-stl-fill-caps`）。
 
 ### `kDot`／`kDotFill`（STL 打點）
 
@@ -122,6 +125,19 @@ Basic 軸向模型，不提供開關或其他模型。
 - `stlObjects["mesh-line"]`：必要，base64 STL。
 - `data-stl-layer-spacing` 是固定層距；`data-stl-min-layer-spacing` > 0 時改用 adaptive planes，
   範圍為最小層距至 `data-stl-layer-spacing`。0 或省略時用固定 `planes()`。
+- 切層會跳過平躺的三角形，所以平的頂面、底面原本只剩最近一層切片的輪廓。`data-stl-fill-caps="1"`
+  時 `Slicer::capFaces()` 取出傾斜不超過 `kCapMaxTiltDeg`（1°）的三角形，Z 相差半個層距以內的
+  併成同一面（Z 取面積加權平均），用 Clipper 合併成區域：
+  - 朝上與朝下的面重疊處（兩個 shell 貼在一起，例如多個 body 匯出的 STL）互相抵消，不算端面。
+    只有在同一個平面上的面才互相比較：每個三角形以「它的平面在該組參考點的高度」分群（容差為
+    層距 5% 與 weld tolerance 100 倍取大者），傾斜時也分得開平行的上下面。比半個層距還薄的
+    板子（水平或傾斜），上下兩面都保留、合成一個填充（Z 取平均）。不加這個檢查、一律兩面都打
+    的話，貼合處會在物體內部多填一整片。比層距 5% 還薄的板子會被當成貼合而抵消。
+  - 孔沒有三角形，自然不填；區域內縮半個填充間距，最外側的掃描線不會壓到輪廓。比兩倍內縮
+    還窄的區域會消失。
+  - 每個面以 `PlaneRef::cap` 加進同一條 ladder，落在自己的 machine Z，與切片一起由下往上輸出；
+    同一個 Z 先打切片輪廓，再以 `outputLayerFillGcode(cap_interval)` 填充。填充的角度、雙向、
+    交叉、打散順序與每行停留沿用圖層的 2D 填充設定，速度與功率是圖層的。
 
 ### 平面點整圖（3D 內雕版）
 
@@ -148,8 +164,15 @@ Basic 軸向模型，不提供開關或其他模型。
 ```
 
 - `pointCloudObjects["cloud-1"]`：必要，base64 BSPC。
-- 點是前端已決定好的直接雕刻點；後端只套用 `data-stl-matrix`、Z 範圍、折射補償與排序。
-  圖層的點距、層距、模式與實心設定都不會重新取樣或改變種類。
+- 點是前端已決定好的直接雕刻點（Beam Studio 的照片轉 3D）；後端只套用 `data-stl-matrix`、
+  Z 範圍、折射補償與排序。圖層的點距、層距、模式與實心設定都不會重新取樣或改變種類。
+- 唯一的例外是過近的點：變換後（canvas 單位、3D 距離）比圖層點距的
+  `kPointCloudMinDistanceRatio`（0.5）倍還近的點會被丟掉（`stl::removeClosePoints`，依輸入順序
+  保留先出現的點），兩個太近的爆點會合成一個大爆點。photo 的取樣格本來就是點距，不過濾。
+  它和 `capFaces()` 都接進物件準備階段的進度，每幾千點檢查一次取消（200 萬點約 4.5 秒）。
+  `capFaces()` 的 Clipper union 無法中途停止，所以分批合併（約 3 萬個頂點一批，批間檢查取消，
+  批次結果再合併到剩一批）：100 萬個共平面三角形，回呼間隔最長約 0.1–0.2 秒，取消後約 70ms 返回。
+  合併前先依位置（Y、X）排序，STL 裡三角形順序打亂時每批也是相鄰的一帶，仍然合併得掉。
 - BSPC v1 是 little-endian binary：
 
 | offset | bytes | value |
@@ -198,7 +221,7 @@ convert 共用欄位仍照原介面提供。
 | `material_max_z` | mm，預設 `material_height` | 可雕刻的最大模型 Z（含邊界）。 |
 | `first_pulse_killer_enabled` | bool，預設 false | 產生 `;CONFIG FIRST_PULSE_KILLER_ENABLED=0/1`，由 BSL 控制器在每個 list 與每個 `T` 套用；停用或 `T0` 時寫 0 清除控制卡上的設定。 |
 | `inner_engraving` | 0/1，預設 0 | 產生 `;CONFIG INNER_ENGRAVING=1`，讓 `MachineJob` 與 BSL 控制器用內雕的時間模型；沒有它的工作一律用 develop 的舊算法（見 `promark-job-timing` skill）。Beam Studio 只在 3D 文件送。 |
-| `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.01)，最小 `kMinMachineZBucketMm`(0.001) | 補償後 machine Z 的量化間距。低於最小值會被夾住並警告。 |
+| `machine_z_bucket` | mm，預設 `kDefaultMachineZBucketMm`(0.01)，最小 `kMinMachineZBucketMm`(0.001) | 補償後 machine Z 的量化間距，只用於打點；打線切片不分桶。低於最小值會被夾住並警告。 |
 
 沒有 `focal_length` 之類的鏡頭參數：內雕鏡頭在同一個 machine Z 雕出的是一個平面，所以折射
 只做軸向（Z）補償，不做焦距、場曲或離軸修正。
@@ -207,7 +230,13 @@ convert 共用欄位仍照原介面提供。
 整層不輸出；dot、photo 與 point-cloud 則丟棄超出範圍的點。因此原始 `Z < 0` 的內容即使
 經 Basic 折射公式後得到可到達的正 machine Z，也不會打到底板。
 
-所有 STL 輸出會依補償後的 machine Z 量化到 `machine_z_bucket`。一個 bucket 就是一次 Z 軸
+打點（dot、dot+fill、photo、point-cloud）會依補償後的 machine Z 量化到 `machine_z_bucket`。
+打線的每層切片不分桶，各自用自己的 machine Z（取到產生器的 0.0001mm 精度，
+`kStlZPrecisionMm`），所以 bucket 大於層距時也不會把相鄰切片併成同一個 Z；同一個 Z 上的點與
+切片仍由下往上一起輸出。因為切片與點的 bucket 各自有 Z，兩者可能只差 0.0001mm，所以
+`moveStlFocusZ` 先把目標對齊到整數個 Z pulse（`PromarkJobConfig::Z_PULSE_PER_MM`，1600），落在
+同一個 pulse 的目標不移動，每次 Z move 至少 1 pulse。控制器端（`BSLMotionController`）另外會
+跳過四捨五入後 0 pulse 的 Z move，距離留到下一次（`z_pos_`）。一個 bucket 就是一次 Z 軸
 移動，而 Promark 每次軸移動有約 50ms 的固定開銷（見 `promark-job-timing` skill），所以這個
 值直接決定內雕工作的時間下限：實測樣本中 0.001mm bucket 產生 8857 次 Z move，占 695s 工作
 中的約 606s。加大 bucket 是用深度解析度換時間；預設 0.01mm 讓 Z move 次數少約一個數量級，

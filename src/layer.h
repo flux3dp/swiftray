@@ -126,6 +126,8 @@ public:
   double stlLayerSpacing() const;
   double stlMinLayerSpacing() const;
   bool stlSolid() const;
+  bool stlFillCaps() const;
+  double stlCapInterval() const;
   double wobbleStep() const;
   double wobbleDiameter() const;
   int airAssist() const;
@@ -250,6 +252,8 @@ private:
   double stl_layer_spacing_ = 0;
   double stl_min_layer_spacing_ = 0;
   bool stl_solid_ = false;
+  bool stl_fill_caps_ = false;
+  double stl_cap_interval_ = 0;
   double wobble_step_ = 0;
   double wobble_diameter_ = 0;
   // other

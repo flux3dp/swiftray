@@ -2964,6 +2964,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.stl_layer_spacing = getAttr(attributes, "data-stl-layer-spacing", default_config, "stlLayerSpacing", 0.0);
         layer_config.stl_min_layer_spacing = getAttr(attributes, "data-stl-min-layer-spacing", default_config, "stlMinLayerSpacing", 0.0);
         layer_config.stl_solid = getAttr(attributes, "data-stl-solid", default_config, "stlSolid", 0) == 1;
+        layer_config.stl_fill_caps = getAttr(attributes, "data-stl-fill-caps", default_config, "stlFillCaps", 0) == 1;
+        layer_config.stl_cap_interval = getAttr(attributes, "data-stl-cap-interval", default_config, "stlCapInterval", 0.0);
         layer_config.wobble_step = getAttr(attributes, "data-wobbleStep", default_config, "wobbleStep", 0.0);
         layer_config.wobble_diameter = getAttr(attributes, "data-wobbleDiameter", default_config, "wobbleDiameter", 0.0);
         layer_config.air_assist = getAttr(attributes, "data-airAssist", default_config, "air_assist", 100);

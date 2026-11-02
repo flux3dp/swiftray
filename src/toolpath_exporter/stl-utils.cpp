@@ -1,5 +1,7 @@
 #include "stl-utils.h"
 
+#include <clipper/clipper.hpp>
+
 #include <QDebug>
 #include <QHash>
 #include <QRectF>
@@ -10,6 +12,7 @@
 #include <cstring>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <tuple>
 #include <unordered_map>
@@ -1229,6 +1232,278 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
   }
   ready_ = true;
   return true;
+}
+
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance,
+                         ProgressCallback progress) {
+  if (points->empty() || !(min_distance > 0)) return 0;
+
+  // a hash grid with cells as wide as the distance: a too-close point is in one of the 27 cells
+  // around a point's own
+  const auto cellOf = [&](double value) { return static_cast<qint64>(std::floor(value / min_distance)); };
+  const auto keyOf = [](qint64 x, qint64 y, qint64 z) {
+    return (static_cast<quint64>(x) * 73856093ULL) ^ (static_cast<quint64>(y) * 19349663ULL) ^
+           (static_cast<quint64>(z) * 83492791ULL);
+  };
+  std::unordered_map<quint64, std::vector<size_t>> grid;
+  grid.reserve(points->size());
+  const double min_squared = min_distance * min_distance;
+  size_t kept = 0;
+  for (size_t i = 0; i < points->size(); ++i) {
+    if (progress && (i & 4095) == 0 && !progress(static_cast<double>(i) / points->size())) {
+      return 0;
+    }
+    const Vec3 p = (*points)[i].position;
+    const qint64 cx = cellOf(p.x);
+    const qint64 cy = cellOf(p.y);
+    const qint64 cz = cellOf(p.z);
+    bool too_close = false;
+    for (qint64 dx = -1; dx <= 1 && !too_close; ++dx) {
+      for (qint64 dy = -1; dy <= 1 && !too_close; ++dy) {
+        for (qint64 dz = -1; dz <= 1 && !too_close; ++dz) {
+          auto it = grid.find(keyOf(cx + dx, cy + dy, cz + dz));
+          if (it == grid.end()) continue;
+          for (size_t index : it->second) {
+            const Vec3 &q = (*points)[index].position;
+            const double ddx = p.x - q.x;
+            const double ddy = p.y - q.y;
+            const double ddz = p.z - q.z;
+            if (ddx * ddx + ddy * ddy + ddz * ddz < min_squared) {
+              too_close = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (too_close) continue;
+    (*points)[kept] = (*points)[i];
+    grid[keyOf(cx, cy, cz)].push_back(kept);
+    ++kept;
+  }
+  const size_t removed = points->size() - kept;
+  points->resize(kept);
+  if (progress) progress(1.0);
+  return removed;
+}
+
+QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const {
+  QVector<CapFace> result;
+  if (!isReady()) return result;
+
+  const Mesh &mesh = work();
+  const double min_cos = std::cos(kCapMaxTiltDeg * 3.14159265358979323846 / 180.0);
+  struct Flat {
+    double z;
+    double area;
+    bool up;
+    int triangle;
+  };
+  // Every step below can take seconds on a mesh with a million flat triangles, so each checks for
+  // cancellation every few thousand triangles; `done` counts the triangles merged, for progress.
+  bool cancelled = false;
+  size_t done = 0;
+  size_t total = 1;
+  const auto keepGoing = [&]() {
+    if (!cancelled && progress && !progress(std::min(1.0, static_cast<double>(done) / total))) {
+      cancelled = true;
+    }
+    return !cancelled;
+  };
+  std::vector<Flat> flats;
+  for (size_t scanned = 0; scanned < order_.size(); ++scanned) {
+    if ((scanned & 65535) == 65535 && !keepGoing()) return {};
+    const int index = order_[scanned];
+    const Triangle &tri = mesh.triangles[static_cast<size_t>(index)];
+    const double ax = tri.v[1].x - tri.v[0].x;
+    const double ay = tri.v[1].y - tri.v[0].y;
+    const double az = tri.v[1].z - tri.v[0].z;
+    const double bx = tri.v[2].x - tri.v[0].x;
+    const double by = tri.v[2].y - tri.v[0].y;
+    const double bz = tri.v[2].z - tri.v[0].z;
+    const double cx = ay * bz - az * by;
+    const double cy = az * bx - ax * bz;
+    const double cz = ax * by - ay * bx;
+    const double length = std::sqrt(cx * cx + cy * cy + cz * cz);
+    if (!(length > 0) || std::abs(cz) < length * min_cos) continue;
+    flats.push_back(
+        Flat{(tri.v[0].z + tri.v[1].z + tri.v[2].z) / 3.0, length * 0.5, cz > 0, index});
+  }
+  if (flats.empty()) return result;
+  total = flats.size();
+  std::sort(flats.begin(), flats.end(), [](const Flat &a, const Flat &b) {
+    return a.z < b.z || (a.z == b.z && a.triangle < b.triangle);
+  });
+
+  // Integer coordinates for Clipper: 1e-4 mesh unit, far finer than any fill interval.
+  constexpr double kScale = 1e4;
+  // Faces closer than half a layer are one fill: a slightly leaning face spans some Z, and two
+  // levels that close could not be told apart by the slices around them either.
+  const double group_eps = std::max(weld_tolerance_, params_.layer_height * 0.5);
+  const auto unite = [](const ClipperLib::Paths &paths) {
+    ClipperLib::Paths merged;
+    ClipperLib::Clipper clipper;
+    clipper.AddPaths(paths, ClipperLib::ptSubject, true);
+    clipper.Execute(ClipperLib::ctUnion, merged, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    return merged;
+  };
+  // Clipper cannot stop halfway, so a big union runs in batches of about this many vertices with a
+  // cancellation check between them. The batches' results (a few outlines each, for neighbouring
+  // triangles) are merged the same way until they fit in one batch. Outers and holes keep their
+  // opposite windings, so merging results under the non-zero rule still leaves holes empty.
+  constexpr size_t kUnionBatchVertices = 30000;
+  const auto vertexCount = [](const ClipperLib::Paths &paths) {
+    size_t count = 0;
+    for (const ClipperLib::Path &path : paths) count += path.size();
+    return count;
+  };
+  // @p triangles: whether the paths are triangles, counted towards progress
+  const auto mergePaths = [&](ClipperLib::Paths paths, bool triangles) -> ClipperLib::Paths {
+    // in rows, so each batch is a band of neighbours that merges into a few outlines, whatever
+    // order the file lists its triangles in
+    if (triangles) {
+      std::sort(paths.begin(), paths.end(),
+                [](const ClipperLib::Path &a, const ClipperLib::Path &b) {
+                  return a[0].Y < b[0].Y || (a[0].Y == b[0].Y && a[0].X < b[0].X);
+                });
+    }
+    size_t vertices = vertexCount(paths);
+    while (vertices > kUnionBatchVertices) {
+      ClipperLib::Paths next;
+      ClipperLib::Paths batch;
+      size_t batch_vertices = 0;
+      const auto flush = [&]() {
+        const ClipperLib::Paths merged = unite(batch);
+        next.insert(next.end(), merged.begin(), merged.end());
+        if (triangles) done += batch.size();
+        batch.clear();
+        batch_vertices = 0;
+        return keepGoing();
+      };
+      for (ClipperLib::Path &path : paths) {
+        batch_vertices += path.size();
+        batch.push_back(std::move(path));
+        if (batch_vertices >= kUnionBatchVertices && !flush()) return {};
+      }
+      if (!batch.empty() && !flush()) return {};
+      triangles = false;
+      const size_t next_vertices = vertexCount(next);
+      paths = std::move(next);
+      // pieces too far apart to merge: one last union, however long
+      if (next_vertices >= vertices) break;
+      vertices = next_vertices;
+    }
+    if (triangles) done += paths.size();
+    return unite(paths);
+  };
+  size_t begin = 0;
+  while (begin < flats.size()) {
+    if (!keepGoing()) return {};
+    size_t end = begin + 1;
+    while (end < flats.size() && flats[end].z - flats[begin].z <= group_eps) ++end;
+
+    double z_sum = 0.0;
+    double area_sum = 0.0;
+    for (size_t i = begin; i < end; ++i) {
+      z_sum += flats[i].z * flats[i].area;
+      area_sum += flats[i].area;
+    }
+    // Where an up face lies on a down face, the two are inside the body: two shells touching, as in
+    // an STL exported from several bodies. Only what one side covers alone is a real face. Touching
+    // faces lie on one plane, so faces are compared plane by plane: each triangle's plane is its
+    // height at one reference point of the group, which tells two parallel faces apart however
+    // they lean -- the top and bottom of a plate thinner than half a layer are both kept, and make
+    // one fill. Which side is up does not matter, so a mirroring transform (flipped winding) gives
+    // the same result.
+    const Triangle &reference = mesh.triangles[static_cast<size_t>(flats[begin].triangle)];
+    const double reference_x = reference.v[0].x;
+    const double reference_y = reference.v[0].y;
+    std::vector<std::pair<double, size_t>> by_plane;
+    by_plane.reserve(end - begin);
+    for (size_t i = begin; i < end; ++i) {
+      const Triangle &tri = mesh.triangles[static_cast<size_t>(flats[i].triangle)];
+      const double ax = tri.v[1].x - tri.v[0].x;
+      const double ay = tri.v[1].y - tri.v[0].y;
+      const double az = tri.v[1].z - tri.v[0].z;
+      const double bx = tri.v[2].x - tri.v[0].x;
+      const double by = tri.v[2].y - tri.v[0].y;
+      const double bz = tri.v[2].z - tri.v[0].z;
+      const double nx = ay * bz - az * by;
+      const double ny = az * bx - ax * bz;
+      const double nz = ax * by - ay * bx;  // never 0: the triangle leans at most kCapMaxTiltDeg
+      // the plane through v[0]: z = v0.z - (nx (x - v0.x) + ny (y - v0.y)) / nz
+      const double height = tri.v[0].z - (nx * (reference_x - tri.v[0].x) +
+                                          ny * (reference_y - tri.v[0].y)) / nz;
+      by_plane.emplace_back(height, i);
+    }
+    std::sort(by_plane.begin(), by_plane.end());
+    // Above the noise of a plane through float coordinates far from the reference point, below the
+    // thinnest plate worth a fill of its own: a twentieth of a layer.
+    const double plane_tolerance = std::max(weld_tolerance_ * 100, params_.layer_height * 0.05);
+    ClipperLib::Paths exposed;
+    size_t level_begin = 0;
+    while (level_begin < by_plane.size()) {
+      size_t level_end = level_begin + 1;
+      while (level_end < by_plane.size() &&
+             by_plane[level_end].first - by_plane[level_end - 1].first <= plane_tolerance) {
+        ++level_end;
+      }
+      ClipperLib::Paths facing[2];  // up, down
+      for (size_t k = level_begin; k < level_end; ++k) {
+        if (((k - level_begin) & 65535) == 65535 && !keepGoing()) return {};
+        const Flat &flat = flats[by_plane[k].second];
+        const Triangle &tri = mesh.triangles[static_cast<size_t>(flat.triangle)];
+        ClipperLib::Path path;
+        for (const Vec3 &vertex : tri.v) {
+          path.push_back(ClipperLib::IntPoint(std::llround(vertex.x * kScale),
+                                              std::llround(vertex.y * kScale)));
+        }
+        // a union under the non-zero rule needs every piece wound the same way
+        if (!ClipperLib::Orientation(path)) ClipperLib::ReversePath(path);
+        facing[flat.up ? 0 : 1].push_back(std::move(path));
+      }
+      const ClipperLib::Paths up = mergePaths(std::move(facing[0]), true);
+      if (cancelled) return {};
+      const ClipperLib::Paths down = mergePaths(std::move(facing[1]), true);
+      if (cancelled) return {};
+      ClipperLib::Paths alone;
+      ClipperLib::Clipper clipper;
+      clipper.AddPaths(up, ClipperLib::ptSubject, true);
+      clipper.AddPaths(down, ClipperLib::ptClip, true);
+      clipper.Execute(ClipperLib::ctXor, alone, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+      // outers and holes keep their opposite windings, so the union below leaves holes empty
+      exposed.insert(exposed.end(), alone.begin(), alone.end());
+      level_begin = level_end;
+    }
+    // every level of the group is one fill
+    ClipperLib::Paths merged = mergePaths(std::move(exposed), false);
+    if (cancelled) return {};
+    if (inset > 0) {
+      ClipperLib::ClipperOffset offset;
+      offset.AddPaths(merged, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);
+      ClipperLib::Paths shrunk;
+      offset.Execute(shrunk, -inset * kScale);
+      merged = std::move(shrunk);
+    }
+
+    CapFace face;
+    face.z = area_sum > 0 ? z_sum / area_sum : flats[begin].z;
+    for (const ClipperLib::Path &path : merged) {
+      if (path.size() < 3) continue;
+      QPolygonF polygon;
+      polygon.reserve(static_cast<int>(path.size()));
+      for (const ClipperLib::IntPoint &point : path) {
+        polygon << QPointF(static_cast<double>(point.X) / kScale,
+                           static_cast<double>(point.Y) / kScale);
+      }
+      face.polygons.append(std::move(polygon));
+    }
+    if (!face.polygons.isEmpty()) result.push_back(std::move(face));
+    begin = end;
+  }
+  done = total;
+  if (!keepGoing()) return {};
+  return result;
 }
 
 QVector<double> Slicer::planes() const {

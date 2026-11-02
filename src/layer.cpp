@@ -223,6 +223,10 @@ double Layer::stlMinLayerSpacing() const { return stl_min_layer_spacing_; }
 
 bool Layer::stlSolid() const { return stl_solid_; }
 
+bool Layer::stlFillCaps() const { return stl_fill_caps_; }
+
+double Layer::stlCapInterval() const { return stl_cap_interval_; }
+
 double Layer::wobbleStep() const { return wobble_step_; }
 
 double Layer::wobbleDiameter() const { return wobble_diameter_; }
@@ -378,6 +382,8 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->stl_layer_spacing_ = config.stl_layer_spacing;
   this->stl_min_layer_spacing_ = config.stl_min_layer_spacing;
   this->stl_solid_ = config.stl_solid;
+  this->stl_fill_caps_ = config.stl_fill_caps;
+  this->stl_cap_interval_ = config.stl_cap_interval;
   this->wobble_step_ = config.wobble_step;
   this->wobble_diameter_ = config.wobble_diameter;
   this->air_assist_ = config.air_assist;

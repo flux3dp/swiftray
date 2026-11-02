@@ -119,6 +119,18 @@ Format detectFormat(const QByteArray &data);
 /** Parse an STL blob (binary or ASCII). @return false and fills @p error on malformed input. */
 bool readMesh(const QByteArray &data, Mesh *mesh, QString *error);
 
+/**
+ * Drop every point closer than @p min_distance (3D) to a point kept before it, in order, so the
+ * result does not depend on anything but the input. Two crack points that close merge into one
+ * larger crack.
+ *
+ * @p progress is called every few thousand points; when it returns false the filtering stops and
+ * @p points is left half filtered, for the caller to throw away.
+ * @return how many points were dropped
+ */
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance,
+                         ProgressCallback progress = {});
+
 /** Parse and validate a Beam Studio Point Cloud (`BSPC`, version 1) binary. */
 bool readPointCloud(const QByteArray &data, PointCloud *cloud, QString *error);
 
@@ -161,6 +173,17 @@ struct Layer {
   /** Empty layers are legal and are kept, so layer index always maps to a Z. */
   QVector<Contour> contours;
 };
+
+/** A face of the mesh that looks straight up or down: its XY region at one Z, holes left out. */
+struct CapFace {
+  /** In the transformed model's real geometry space, like Layer::z_geometry. */
+  double z = 0.0;
+  /** Closed outlines, outer ones and holes alike; fill them even-odd. The first point is not repeated. */
+  QList<QPolygonF> polygons;
+};
+
+/** Most a face may lean from horizontal and still count as a top or bottom face, in degrees. */
+inline constexpr double kCapMaxTiltDeg = 1.0;
 
 /**
  * Incremental slicer: prepare a mesh once, then ask for the contours at any Z.
@@ -207,6 +230,19 @@ class Slicer {
    * shared ladder does not map one to one onto a single object.
    */
   Layer sliceAt(double z, ProgressCallback progress = {});
+
+  /**
+   * The top and bottom faces: triangles leaning at most kCapMaxTiltDeg from horizontal, grouped by
+   * Z (within half a layer) and merged into regions. Where an up face lies on a down face at the same
+   * Z (two shells touching) neither counts; an up and a down face only close in Z (the top and
+   * bottom of a thin plate) both do. Slicing skips these triangles, so without this a flat top or
+   * bottom only shows as the contour of the nearest slice.
+   *
+   * Every region is shrunk by @p inset (mesh units), so a fill does not run over the contour around
+   * it; a region narrower than twice the inset disappears. Holes stay empty because no triangle
+   * covers them. Ordered bottom to top.
+   */
+  QVector<CapFace> capFaces(double inset, ProgressCallback progress = {}) const;
 
  private:
   /**

@@ -718,19 +718,23 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       qInfo() << "BSLM~::handleGcode() - Z Axis" << z;
       z -= z_pos_; // Fix the difference between last move and target
       double real_steps = round(z * PromarkJobConfig::Z_PULSE_PER_MM);
-      list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0,
-                         PromarkJobConfig::Z_PULSE_PER_SEC, PromarkJobConfig::Z_START_PULSE_PER_SEC,
-                         PromarkJobConfig::AXIS_ACC_TIME_MS);
-      if (config_.inner_engraving) {
-        estimated_time_ += mark_sequence_.endMs(config_);
-        estimated_time_ += PromarkTiming::axisMoveTimeMs(
-            real_steps, PromarkJobConfig::Z_PULSE_PER_SEC,
-            PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
-      } else {
-        estimated_time_ += PromarkTiming::Legacy::zMoveTimeMs(z);
+      // Under half a pulse the move is skipped: an axis move of 0 pulses can stall the list. The
+      // whole distance carries into the next Z move through z_pos_.
+      if (real_steps != 0) {
+        list_manager_.call(ListApiType::MoveAxis, 1, fabs(real_steps), z > 0,
+                           PromarkJobConfig::Z_PULSE_PER_SEC, PromarkJobConfig::Z_START_PULSE_PER_SEC,
+                           PromarkJobConfig::AXIS_ACC_TIME_MS);
+        if (config_.inner_engraving) {
+          estimated_time_ += mark_sequence_.endMs(config_);
+          estimated_time_ += PromarkTiming::axisMoveTimeMs(
+              real_steps, PromarkJobConfig::Z_PULSE_PER_SEC,
+              PromarkJobConfig::Z_START_PULSE_PER_SEC, PromarkJobConfig::AXIS_ACC_TIME_MS);
+        } else {
+          estimated_time_ += PromarkTiming::Legacy::zMoveTimeMs(z);
+        }
+        last_is_z_command = true;
       }
       z_pos_ = real_steps / PromarkJobConfig::Z_PULSE_PER_MM - z; // Keep the difference between actual move and cmd target
-      last_is_z_command = true;
       // QThread::msleep(1000);
     } else if (is_move_command) {
       double target_x, target_y;

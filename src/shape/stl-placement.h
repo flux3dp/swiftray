@@ -52,6 +52,10 @@ struct StlPlacement {
   Mode mode = Mode::Dot;
   /** Dot mode only: also sample inward shells (kDotFill). */
   bool solid = false;
+  /** Line mode only: also fill the top and bottom faces. */
+  bool fill_caps = false;
+  /** Scan-line interval of that fill; <= 0 uses the default. */
+  double cap_interval_mm = 0.0;
 
   bool isValid() const { return !id.isEmpty(); }
 };

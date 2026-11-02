@@ -99,6 +99,8 @@ namespace MySVG {
         double stl_layer_spacing;     // mm, line Z step and dot-fill inset step; <= 0 uses the default
         double stl_min_layer_spacing; // mm, > 0 opts line slicing into adaptive planes
         bool stl_solid;               // dot mode only: also sample inward shells
+        bool stl_fill_caps;           // line mode only: also fill the top and bottom faces
+        double stl_cap_interval;      // mm, face fill scan-line interval; <= 0 uses the default
         double wobble_step;
         double wobble_diameter;
         int air_assist;
