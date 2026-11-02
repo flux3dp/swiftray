@@ -2,7 +2,9 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cmath>
+#include <random>
 
 #include <toolpath_exporter/refraction-compensator.h>
 #include <toolpath_exporter/stl-utils.h>
@@ -158,6 +160,18 @@ TEST(StlUtilsTest, CapFacesKeepBothFacesOfAPlateThinnerThanHalfALayer) {
   ASSERT_EQ(capFacesOf(foil, 0, QMatrix4x4(), 0.04).size(), 1);
 }
 
+TEST(StlUtilsTest, CapFacesKeepBothFacesOfALeaningThinPlate) {
+  stl::Mesh plate;
+  addBox(&plate, 0, 0, 0, 60, 60, 0.1);
+
+  // leaning, the top and bottom span more Z than the plate is thick, yet do not touch
+  QMatrix4x4 leaning;
+  leaning.rotate(0.5, 1, 0, 0);
+  const QVector<stl::CapFace> caps = capFacesOf(plate, 0.005, leaning, 1.0);
+  ASSERT_EQ(caps.size(), 1);
+  EXPECT_NEAR(capArea(caps[0]), 3598.8, 1);
+}
+
 TEST(StlUtilsTest, CapFacesSkipWhereLeaningShellsTouch) {
   stl::Mesh step;
   addBox(&step, 0, 0, 0, 10, 10, 2);
@@ -208,6 +222,38 @@ TEST(StlUtilsTest, CapFacesCheckForCancellationWithinOneLargeFace) {
   callbacks = 0;
   EXPECT_TRUE(slicer.capFaces(0, [&](double) { return ++callbacks < 3; }).isEmpty());
   EXPECT_EQ(callbacks, 3);
+}
+
+TEST(StlUtilsTest, CapFacesCheckForCancellationWhateverTheTriangleOrder) {
+  // big enough that one union of it all takes most of the time: 180000 triangles
+  stl::Mesh sheet;
+  for (int row = 0; row < 300; ++row) {
+    for (int column = 0; column < 300; ++column) {
+      const double x = column * 0.05;
+      const double y = row * 0.05;
+      addQuad(&sheet, {x, y, 1}, {x + 0.05, y, 1}, {x + 0.05, y + 0.05, 1}, {x, y + 0.05, 1});
+    }
+  }
+  // an STL lists its triangles in any order
+  std::mt19937 random(1);
+  std::shuffle(sheet.triangles.begin(), sheet.triangles.end(), random);
+  stl::Slicer slicer;
+  ASSERT_TRUE(slicer.prepare(sheet, QMatrix4x4(), stl::SliceParams{}));
+
+  using Clock = std::chrono::steady_clock;
+  const Clock::time_point start = Clock::now();
+  Clock::time_point last = start;
+  Clock::duration longest{};
+  const QVector<stl::CapFace> caps = slicer.capFaces(0, [&](double) {
+    longest = std::max(longest, Clock::now() - last);
+    last = Clock::now();
+    return true;
+  });
+  ASSERT_EQ(caps.size(), 1);
+  EXPECT_NEAR(capArea(caps[0]), 225, 1e-3);
+  // no single uncancellable union takes a large share of the time (one union of it all takes about
+  // half in a debug build, three quarters optimised; batches take about a tenth)
+  EXPECT_TRUE(longest * 4 < Clock::now() - start);
 }
 
 TEST(StlUtilsTest, CapFacesFollowTheTransform) {

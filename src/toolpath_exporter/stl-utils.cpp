@@ -1359,6 +1359,14 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
   };
   // @p triangles: whether the paths are triangles, counted towards progress
   const auto mergePaths = [&](ClipperLib::Paths paths, bool triangles) -> ClipperLib::Paths {
+    // in rows, so each batch is a band of neighbours that merges into a few outlines, whatever
+    // order the file lists its triangles in
+    if (triangles) {
+      std::sort(paths.begin(), paths.end(),
+                [](const ClipperLib::Path &a, const ClipperLib::Path &b) {
+                  return a[0].Y < b[0].Y || (a[0].Y == b[0].Y && a[0].X < b[0].X);
+                });
+    }
     size_t vertices = vertexCount(paths);
     while (vertices > kUnionBatchVertices) {
       ClipperLib::Paths next;
@@ -1401,32 +1409,49 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
       area_sum += flats[i].area;
     }
     // Where an up face lies on a down face, the two are inside the body: two shells touching, as in
-    // an STL exported from several bodies. Only what one side covers alone is a real face. Faces on
-    // one plane overlap in Z wherever they overlap in XY, even leaning; the top and bottom of a plate
-    // thinner than half a layer do not, so only faces whose Z ranges chain together are compared,
-    // and both faces of a thin plate are kept. Which side is up does not matter, so a mirroring
-    // transform (flipped winding) gives the same result.
-    std::vector<size_t> by_bottom(end - begin);
-    std::iota(by_bottom.begin(), by_bottom.end(), begin);
-    const auto minZ = [&](size_t i) { return tri_min_z_[static_cast<size_t>(flats[i].triangle)]; };
-    const auto maxZ = [&](size_t i) { return tri_max_z_[static_cast<size_t>(flats[i].triangle)]; };
-    std::sort(by_bottom.begin(), by_bottom.end(), [&](size_t a, size_t b) {
-      return minZ(a) < minZ(b) || (minZ(a) == minZ(b) && a < b);
-    });
+    // an STL exported from several bodies. Only what one side covers alone is a real face. Touching
+    // faces lie on one plane, so faces are compared plane by plane: each triangle's plane is its
+    // height at one reference point of the group, which tells two parallel faces apart however
+    // they lean -- the top and bottom of a plate thinner than half a layer are both kept, and make
+    // one fill. Which side is up does not matter, so a mirroring transform (flipped winding) gives
+    // the same result.
+    const Triangle &reference = mesh.triangles[static_cast<size_t>(flats[begin].triangle)];
+    const double reference_x = reference.v[0].x;
+    const double reference_y = reference.v[0].y;
+    std::vector<std::pair<double, size_t>> by_plane;
+    by_plane.reserve(end - begin);
+    for (size_t i = begin; i < end; ++i) {
+      const Triangle &tri = mesh.triangles[static_cast<size_t>(flats[i].triangle)];
+      const double ax = tri.v[1].x - tri.v[0].x;
+      const double ay = tri.v[1].y - tri.v[0].y;
+      const double az = tri.v[1].z - tri.v[0].z;
+      const double bx = tri.v[2].x - tri.v[0].x;
+      const double by = tri.v[2].y - tri.v[0].y;
+      const double bz = tri.v[2].z - tri.v[0].z;
+      const double nx = ay * bz - az * by;
+      const double ny = az * bx - ax * bz;
+      const double nz = ax * by - ay * bx;  // never 0: the triangle leans at most kCapMaxTiltDeg
+      // the plane through v[0]: z = v0.z - (nx (x - v0.x) + ny (y - v0.y)) / nz
+      const double height = tri.v[0].z - (nx * (reference_x - tri.v[0].x) +
+                                          ny * (reference_y - tri.v[0].y)) / nz;
+      by_plane.emplace_back(height, i);
+    }
+    std::sort(by_plane.begin(), by_plane.end());
+    // Above the noise of a plane through float coordinates far from the reference point, below the
+    // thinnest plate worth a fill of its own: a twentieth of a layer.
+    const double plane_tolerance = std::max(weld_tolerance_ * 100, params_.layer_height * 0.05);
     ClipperLib::Paths exposed;
     size_t level_begin = 0;
-    while (level_begin < by_bottom.size()) {
+    while (level_begin < by_plane.size()) {
       size_t level_end = level_begin + 1;
-      double level_top = maxZ(by_bottom[level_begin]);
-      while (level_end < by_bottom.size() &&
-             minZ(by_bottom[level_end]) <= level_top + weld_tolerance_) {
-        level_top = std::max(level_top, maxZ(by_bottom[level_end]));
+      while (level_end < by_plane.size() &&
+             by_plane[level_end].first - by_plane[level_end - 1].first <= plane_tolerance) {
         ++level_end;
       }
       ClipperLib::Paths facing[2];  // up, down
       for (size_t k = level_begin; k < level_end; ++k) {
         if (((k - level_begin) & 65535) == 65535 && !keepGoing()) return {};
-        const Flat &flat = flats[by_bottom[k]];
+        const Flat &flat = flats[by_plane[k].second];
         const Triangle &tri = mesh.triangles[static_cast<size_t>(flat.triangle)];
         ClipperLib::Path path;
         for (const Vec3 &vertex : tri.v) {
