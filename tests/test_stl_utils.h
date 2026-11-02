@@ -91,10 +91,11 @@ double capArea(const stl::CapFace &cap) {
 }
 
 QVector<stl::CapFace> capFacesOf(const stl::Mesh &mesh, double inset,
-                                 const QMatrix4x4 &transform = QMatrix4x4()) {
+                                 const QMatrix4x4 &transform = QMatrix4x4(),
+                                 double layer_height = 0.4) {
   stl::Slicer slicer;
   stl::SliceParams params;
-  params.layer_height = 0.4;
+  params.layer_height = layer_height;
   EXPECT_TRUE(slicer.prepare(mesh, transform, params));
   return slicer.capFaces(inset);
 }
@@ -142,6 +143,45 @@ TEST(StlUtilsTest, CapFacesSkipWhereTwoShellsTouch) {
   EXPECT_NEAR(capArea(caps[2]), 50, 1e-3);
 }
 
+TEST(StlUtilsTest, CapFacesKeepBothFacesOfAPlateThinnerThanHalfALayer) {
+  stl::Mesh plate;
+  addBox(&plate, 0, 0, 0, 10, 10, 0.4);
+
+  // top and bottom are one fill, not an up face cancelling a down face
+  const QVector<stl::CapFace> caps = capFacesOf(plate, 0, QMatrix4x4(), 1.0);
+  ASSERT_EQ(caps.size(), 1);
+  EXPECT_NEAR(caps[0].z, 0.2, 1e-9);
+  EXPECT_NEAR(capArea(caps[0]), 100, 1e-3);
+
+  stl::Mesh foil;
+  addBox(&foil, 0, 0, 0, 10, 10, 0.01);
+  ASSERT_EQ(capFacesOf(foil, 0, QMatrix4x4(), 0.04).size(), 1);
+}
+
+TEST(StlUtilsTest, CapFacesSkipWhereLeaningShellsTouch) {
+  stl::Mesh step;
+  addBox(&step, 0, 0, 0, 10, 10, 2);
+  addBox(&step, 0, 0, 2, 5, 10, 4);
+
+  // leaning, the touching faces span some Z but still lie on one another
+  QMatrix4x4 leaning;
+  leaning.rotate(0.5, 1, 0, 0);
+  const QVector<stl::CapFace> caps = capFacesOf(step, 0, leaning);
+  ASSERT_EQ(caps.size(), 3);
+  EXPECT_NEAR(capArea(caps[1]), 50, 0.1);
+}
+
+TEST(StlUtilsTest, CapFacesCanBeCancelled) {
+  stl::Mesh cube;
+  addBox(&cube, 0, 0, 0, 10, 10, 5);
+  stl::Slicer slicer;
+  ASSERT_TRUE(slicer.prepare(cube, QMatrix4x4(), stl::SliceParams{}));
+
+  int callbacks = 0;
+  EXPECT_TRUE(slicer.capFaces(0, [&](double) { return ++callbacks < 2; }).isEmpty());
+  EXPECT_EQ(callbacks, 2);
+}
+
 TEST(StlUtilsTest, CapFacesFollowTheTransform) {
   stl::Mesh cube;
   addBox(&cube, 0, 0, 0, 10, 10, 5);
@@ -171,4 +211,24 @@ TEST(StlUtilsTest, RemoveClosePointsKeepsTheFirstOfEachCluster) {
   EXPECT_NEAR(points[2].position.z, 0.6, 1e-12);
   EXPECT_NEAR(points[3].position.x, 5, 1e-12);
   EXPECT_EQ(stl::removeClosePoints(&points, 0), 0u);
+}
+
+TEST(StlUtilsTest, RemoveClosePointsReportsProgressAndCanBeCancelled) {
+  std::vector<stl::SurfacePoint> points;
+  for (int i = 0; i < 10000; ++i) points.push_back({{static_cast<double>(i), 0, 0}, 0});
+
+  std::vector<double> reported;
+  std::vector<stl::SurfacePoint> all = points;
+  EXPECT_EQ(stl::removeClosePoints(&all, 0.5, [&](double value) {
+              reported.push_back(value);
+              return true;
+            }),
+            0u);
+  EXPECT_EQ(all.size(), 10000u);
+  ASSERT_GE(reported.size(), 3u);
+  EXPECT_DOUBLE_EQ(reported.back(), 1.0);
+
+  int callbacks = 0;
+  EXPECT_EQ(stl::removeClosePoints(&points, 0.5, [&](double) { return ++callbacks < 2; }), 0u);
+  EXPECT_EQ(callbacks, 2);
 }

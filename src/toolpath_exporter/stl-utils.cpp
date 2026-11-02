@@ -12,6 +12,7 @@
 #include <cstring>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <tuple>
 #include <unordered_map>
@@ -1233,7 +1234,8 @@ bool Slicer::prepare(const Mesh &mesh, const QMatrix4x4 &transform, const SliceP
   return true;
 }
 
-size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance) {
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance,
+                         ProgressCallback progress) {
   if (points->empty() || !(min_distance > 0)) return 0;
 
   // a hash grid with cells as wide as the distance: a too-close point is in one of the 27 cells
@@ -1248,6 +1250,9 @@ size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance)
   const double min_squared = min_distance * min_distance;
   size_t kept = 0;
   for (size_t i = 0; i < points->size(); ++i) {
+    if (progress && (i & 4095) == 0 && !progress(static_cast<double>(i) / points->size())) {
+      return 0;
+    }
     const Vec3 p = (*points)[i].position;
     const qint64 cx = cellOf(p.x);
     const qint64 cy = cellOf(p.y);
@@ -1278,6 +1283,7 @@ size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance)
   }
   const size_t removed = points->size() - kept;
   points->resize(kept);
+  if (progress) progress(1.0);
   return removed;
 }
 
@@ -1333,30 +1339,59 @@ QVector<CapFace> Slicer::capFaces(double inset, ProgressCallback progress) const
     size_t end = begin + 1;
     while (end < flats.size() && flats[end].z - flats[begin].z <= group_eps) ++end;
 
-    ClipperLib::Paths facing[2];  // up, down
     double z_sum = 0.0;
     double area_sum = 0.0;
     for (size_t i = begin; i < end; ++i) {
-      const Triangle &tri = mesh.triangles[static_cast<size_t>(flats[i].triangle)];
-      ClipperLib::Path path;
-      for (const Vec3 &vertex : tri.v) {
-        path.push_back(ClipperLib::IntPoint(std::llround(vertex.x * kScale),
-                                            std::llround(vertex.y * kScale)));
-      }
-      // a union under the non-zero rule needs every piece wound the same way
-      if (!ClipperLib::Orientation(path)) ClipperLib::ReversePath(path);
-      facing[flats[i].up ? 0 : 1].push_back(std::move(path));
       z_sum += flats[i].z * flats[i].area;
       area_sum += flats[i].area;
     }
     // Where an up face lies on a down face, the two are inside the body: two shells touching, as in
-    // an STL exported from several bodies. Only what one side covers alone is a real face. Which
-    // side is up does not matter, so a mirroring transform (flipped winding) gives the same result.
-    ClipperLib::Paths merged;
-    ClipperLib::Clipper clipper;
-    clipper.AddPaths(mergeTriangles(facing[0]), ClipperLib::ptSubject, true);
-    clipper.AddPaths(mergeTriangles(facing[1]), ClipperLib::ptClip, true);
-    clipper.Execute(ClipperLib::ctXor, merged, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    // an STL exported from several bodies. Only what one side covers alone is a real face. Faces on
+    // one plane overlap in Z wherever they overlap in XY, even leaning; the top and bottom of a plate
+    // thinner than half a layer do not, so only faces whose Z ranges chain together are compared,
+    // and both faces of a thin plate are kept. Which side is up does not matter, so a mirroring
+    // transform (flipped winding) gives the same result.
+    std::vector<size_t> by_bottom(end - begin);
+    std::iota(by_bottom.begin(), by_bottom.end(), begin);
+    const auto minZ = [&](size_t i) { return tri_min_z_[static_cast<size_t>(flats[i].triangle)]; };
+    const auto maxZ = [&](size_t i) { return tri_max_z_[static_cast<size_t>(flats[i].triangle)]; };
+    std::sort(by_bottom.begin(), by_bottom.end(), [&](size_t a, size_t b) {
+      return minZ(a) < minZ(b) || (minZ(a) == minZ(b) && a < b);
+    });
+    ClipperLib::Paths exposed;
+    size_t level_begin = 0;
+    while (level_begin < by_bottom.size()) {
+      size_t level_end = level_begin + 1;
+      double level_top = maxZ(by_bottom[level_begin]);
+      while (level_end < by_bottom.size() &&
+             minZ(by_bottom[level_end]) <= level_top + weld_tolerance_) {
+        level_top = std::max(level_top, maxZ(by_bottom[level_end]));
+        ++level_end;
+      }
+      ClipperLib::Paths facing[2];  // up, down
+      for (size_t k = level_begin; k < level_end; ++k) {
+        const Flat &flat = flats[by_bottom[k]];
+        const Triangle &tri = mesh.triangles[static_cast<size_t>(flat.triangle)];
+        ClipperLib::Path path;
+        for (const Vec3 &vertex : tri.v) {
+          path.push_back(ClipperLib::IntPoint(std::llround(vertex.x * kScale),
+                                              std::llround(vertex.y * kScale)));
+        }
+        // a union under the non-zero rule needs every piece wound the same way
+        if (!ClipperLib::Orientation(path)) ClipperLib::ReversePath(path);
+        facing[flat.up ? 0 : 1].push_back(std::move(path));
+      }
+      ClipperLib::Paths alone;
+      ClipperLib::Clipper clipper;
+      clipper.AddPaths(mergeTriangles(facing[0]), ClipperLib::ptSubject, true);
+      clipper.AddPaths(mergeTriangles(facing[1]), ClipperLib::ptClip, true);
+      clipper.Execute(ClipperLib::ctXor, alone, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+      // outers and holes keep their opposite windings, so the union below leaves holes empty
+      exposed.insert(exposed.end(), alone.begin(), alone.end());
+      level_begin = level_end;
+    }
+    // every level of the group is one fill
+    ClipperLib::Paths merged = mergeTriangles(exposed);
     if (inset > 0) {
       ClipperLib::ClipperOffset offset;
       offset.AddPaths(merged, ClipperLib::jtMiter, ClipperLib::etClosedPolygon);

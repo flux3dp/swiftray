@@ -38,7 +38,8 @@ struct FilledPath {
  * Z-move count by roughly an order of magnitude while the result stays close to the finer bucket.
  *
  * Line slices are not bucketed: each keeps its own machine Z (to kStlZPrecisionMm), so a bucket
- * coarser than the layer spacing never merges neighbouring slices.
+ * coarser than the layer spacing never merges neighbouring slices. Every Z move still snaps to a
+ * whole Z pulse (moveStlFocusZ), so a slice next to a dot bucket never makes a move of 0 pulses.
  *
  * The minimum is a hard floor: buckets below 0.001mm stall the job at runtime (one Z pulse is
  * 0.000625mm). A job param may go finer than the default, down to that floor, or coarser.

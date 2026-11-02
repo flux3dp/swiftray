@@ -961,7 +961,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       discardPointsOutsideMaterial(&job.dot_points, placement.id);
       if (placement.geometry_kind == StlPlacement::GeometryKind::PointCloud) {
         const size_t removed = stl::removeClosePoints(
-            &job.dot_points, point_spacing_mm * kPointCloudMinDistanceRatio * canvas_mm_ratio_);
+            &job.dot_points, point_spacing_mm * kPointCloudMinDistanceRatio * canvas_mm_ratio_,
+            [&](double value) { return reportPreparation(0.8 + value * 0.15); });
+        if (cancelled_) return;
         if (removed > 0) {
           qInfo() << "[Export] Point cloud" << placement.id << "dropped" << removed
                   << "points closer than" << point_spacing_mm * kPointCloudMinDistanceRatio << "mm";
@@ -1042,10 +1044,12 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
       }
       // Adaptive slicing is a per-layer opt-in.
       const bool adaptive = placement.min_layer_spacing_mm > 0.0;
+      // the face fill takes the last tenth of this object's progress
+      const double planes_span = placement.fill_caps ? 0.1 : 0.2;
       const QVector<double> planes =
           adaptive ? job.slicer.adaptivePlanes(
                          placement.min_layer_spacing_mm * canvas_mm_ratio_,
-                         [&](double value) { return reportPreparation(0.8 + value * 0.2); })
+                         [&](double value) { return reportPreparation(0.8 + value * planes_span); })
                    : job.slicer.planes();
       if (cancelled_) return;
       int accepted_plane_count = 0;
@@ -1059,7 +1063,9 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
             placement.cap_interval_mm > 0 ? placement.cap_interval_mm : kDefaultStlCapIntervalMm;
         // half an interval in, so the outermost scan line does not run over the face's contour
         const QVector<stl::CapFace> caps =
-            job.slicer.capFaces(job.cap_interval_mm * 0.5 * canvas_mm_ratio_);
+            job.slicer.capFaces(job.cap_interval_mm * 0.5 * canvas_mm_ratio_,
+                                [&](double value) { return reportPreparation(0.9 + value * 0.1); });
+        if (cancelled_) return;
         for (const stl::CapFace &cap : caps) {
           if (!modelZInMaterial(cap.z)) continue;
           ladder.push_back(PlaneRef{cap.z, job_index, static_cast<int>(job.caps.size())});
@@ -1318,10 +1324,16 @@ void ToolpathExporter::outputLayerStlGcode(double progress_start, double progres
 }
 
 void ToolpathExporter::moveStlFocusZ(double focus_z_mm) {
-  // Quantise to the generator's 0.0001mm Z precision (kStlZPrecisionMm), which is finer than any
-  // machine-Z bucket. The moves are relative, so a target the generator rounds away would still
-  // count here and the two positions would slowly drift apart -- over many layers that adds up.
-  const double target_z_mm = std::round(focus_z_mm * 10000.0) / 10000.0;
+  // Snap to a whole Z pulse first: two targets within one pulse are one axis position, and the
+  // controller would round their move to 0 pulses, an axis move that can stall the job. Line slices
+  // and dot buckets each keep their own Z, so without this a slice 0.0001 mm from a bucket would
+  // be such a move. Then quantise to the generator's 0.0001mm Z precision (kStlZPrecisionMm): the
+  // moves are relative, so a target the generator rounds away would still count here and the two
+  // positions would slowly drift apart -- over many layers that adds up. That rounding is under a
+  // tenth of a pulse, so two different pulses never meet.
+  const double pulses = std::round(focus_z_mm * PromarkJobConfig::Z_PULSE_PER_MM);
+  const double target_z_mm =
+      std::round(pulses / PromarkJobConfig::Z_PULSE_PER_MM * 10000.0) / 10000.0;
   if (target_z_mm == stl_focus_z_mm_) return;
   // moveZ is relative for Promark. A positive delta raises the head, matching focus_z_mm.
   gen_->moveZ((target_z_mm - stl_focus_z_mm_));

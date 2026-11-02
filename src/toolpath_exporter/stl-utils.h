@@ -123,9 +123,13 @@ bool readMesh(const QByteArray &data, Mesh *mesh, QString *error);
  * Drop every point closer than @p min_distance (3D) to a point kept before it, in order, so the
  * result does not depend on anything but the input. Two crack points that close merge into one
  * larger crack.
+ *
+ * @p progress is called every few thousand points; when it returns false the filtering stops and
+ * @p points is left half filtered, for the caller to throw away.
  * @return how many points were dropped
  */
-size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance);
+size_t removeClosePoints(std::vector<SurfacePoint> *points, double min_distance,
+                         ProgressCallback progress = {});
 
 /** Parse and validate a Beam Studio Point Cloud (`BSPC`, version 1) binary. */
 bool readPointCloud(const QByteArray &data, PointCloud *cloud, QString *error);
@@ -229,9 +233,10 @@ class Slicer {
 
   /**
    * The top and bottom faces: triangles leaning at most kCapMaxTiltDeg from horizontal, grouped by
-   * Z (within half a layer) and merged into regions. Where an up face lies on a down face (two shells
-   * touching) neither counts. Slicing skips these triangles, so without this a flat top or bottom
-   * only shows as the contour of the nearest slice.
+   * Z (within half a layer) and merged into regions. Where an up face lies on a down face at the same
+   * Z (two shells touching) neither counts; an up and a down face only close in Z (the top and
+   * bottom of a thin plate) both do. Slicing skips these triangles, so without this a flat top or
+   * bottom only shows as the contour of the nearest slice.
    *
    * Every region is shrunk by @p inset (mesh units), so a fill does not run over the contour around
    * it; a region narrower than twice the inset disappears. Holes stay empty because no triangle

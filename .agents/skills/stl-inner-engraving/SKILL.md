@@ -129,6 +129,10 @@ Basic 軸向模型，不提供開關或其他模型。
   時 `Slicer::capFaces()` 取出傾斜不超過 `kCapMaxTiltDeg`（1°）的三角形，Z 相差半個層距以內的
   併成同一面（Z 取面積加權平均），用 Clipper 合併成區域：
   - 朝上與朝下的面重疊處（兩個 shell 貼在一起，例如多個 body 匯出的 STL）互相抵消，不算端面。
+    只有 Z 範圍連在一起（`tri_min_z_`／`tri_max_z_` 相接，差在 weld tolerance 內）的面才互相
+    比較：同一平面上的面在 XY 重疊處 Z 也一樣，傾斜時也是；比半個層距還薄的板子，上下兩面 Z
+    不相接，兩面都保留、合成一個填充（Z 取平均）。不加這個檢查、一律兩面都打的話，貼合處會在
+    物體內部多填一整片。極少數情況（傾斜到三角形的 Z 跨度大於板厚的薄板）上下面仍會被抵消。
   - 孔沒有三角形，自然不填；區域內縮半個填充間距，最外側的掃描線不會壓到輪廓。比兩倍內縮
     還窄的區域會消失。
   - 每個面以 `PlaneRef::cap` 加進同一條 ladder，落在自己的 machine Z，與切片一起由下往上輸出；
@@ -165,6 +169,7 @@ Basic 軸向模型，不提供開關或其他模型。
 - 唯一的例外是過近的點：變換後（canvas 單位、3D 距離）比圖層點距的
   `kPointCloudMinDistanceRatio`（0.5）倍還近的點會被丟掉（`stl::removeClosePoints`，依輸入順序
   保留先出現的點），兩個太近的爆點會合成一個大爆點。photo 的取樣格本來就是點距，不過濾。
+  它和 `capFaces()` 都接進物件準備階段的進度，每幾千點／每組面檢查一次取消（200 萬點約 4.5 秒）。
 - BSPC v1 是 little-endian binary：
 
 | offset | bytes | value |
@@ -225,7 +230,10 @@ convert 共用欄位仍照原介面提供。
 打點（dot、dot+fill、photo、point-cloud）會依補償後的 machine Z 量化到 `machine_z_bucket`。
 打線的每層切片不分桶，各自用自己的 machine Z（取到產生器的 0.0001mm 精度，
 `kStlZPrecisionMm`），所以 bucket 大於層距時也不會把相鄰切片併成同一個 Z；同一個 Z 上的點與
-切片仍由下往上一起輸出。一個 bucket 就是一次 Z 軸
+切片仍由下往上一起輸出。因為切片與點的 bucket 各自有 Z，兩者可能只差 0.0001mm，所以
+`moveStlFocusZ` 先把目標對齊到整數個 Z pulse（`PromarkJobConfig::Z_PULSE_PER_MM`，1600），落在
+同一個 pulse 的目標不移動，每次 Z move 至少 1 pulse。控制器端（`BSLMotionController`）另外會
+跳過四捨五入後 0 pulse 的 Z move，距離留到下一次（`z_pos_`）。一個 bucket 就是一次 Z 軸
 移動，而 Promark 每次軸移動有約 50ms 的固定開銷（見 `promark-job-timing` skill），所以這個
 值直接決定內雕工作的時間下限：實測樣本中 0.001mm bucket 產生 8857 次 Z move，占 695s 工作
 中的約 606s。加大 bucket 是用深度解析度換時間；預設 0.01mm 讓 Z move 次數少約一個數量級，
