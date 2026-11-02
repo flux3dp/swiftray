@@ -121,6 +121,9 @@ struct Config {
   // dithered raster thins its dots out so the two add up to one covering.
   // Zero turns the blend off and the seam becomes a hard edge again.
   double galvo_dot_blend_overlap = 10;
+  // mm. Square a dithered image's dots change owner in across that band; zero
+  // changes owner site by site (LaserRasterGalvoFactory::Blend::dot_grain).
+  double galvo_dot_blend_grain = 0;
   // mm. How far along a scan line a run holds its owner before it can change
   // hands; a dithered image changes site by site instead.
   double galvo_line_blend_segment = 2;

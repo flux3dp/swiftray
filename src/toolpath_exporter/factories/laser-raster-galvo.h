@@ -91,6 +91,20 @@ class LaserRasterGalvoFactory : public BaseFactory {
      */
     double dot_overlap = 10;
     BlendProfile dot_profile = BlendProfile::Granular;
+    /**
+     * mm. Side of the square a dithered image's dots change owner in, on a grid
+     * from the machine origin. Zero changes owner site by site.
+     *
+     * Site by site thins each block's dots to its share, and on material whose
+     * mark has a density threshold that share is the whole problem: measured on
+     * HEXA II (2026-11-02), a #AAA dither laid at 50 % or less of its dots left
+     * no mark at all, and two complementary halves laid seconds apart came out
+     * far lighter than one pass -- a minute apart, nothing. A seam split that
+     * way fades out instead of blending. With a grain, every square is laid
+     * whole by one block, so each stays at the image's own density and the
+     * share shows as how many squares a block takes instead.
+     */
+    double dot_grain = 0;
     double line_overlap = 10;
     BlendProfile line_profile = BlendProfile::SuperGranular;
     /**
@@ -279,6 +293,13 @@ class LaserRasterGalvoFactory : public BaseFactory {
   bool ownsSite(double x, double y, double target, bool reversed = false) const;
   /** Ordered-screen target: a dithered image changes owner site by site. */
   double siteTarget(int column, int row) const;
+  /**
+   * A dot's target: the site's own, or with a dot grain the square's that
+   * holds (x, y), so the whole square goes to one owner. The weights are still
+   * read at the site, which keeps every site with exactly one owner even where
+   * a step of the staircase cuts through a square.
+   */
+  double dotTarget(double x, double y, int column, int row) const;
   /**
    * Coarse target: a run holds its owner for a stretch of the scan line.
    * `along` is the coordinate down the scan, `line` the global index of the

@@ -148,6 +148,19 @@ double LaserRasterGalvoFactory::siteTarget(int column, int row) const {
   return (kScreen[sy][sx] + 0.5) / kScreenPhases;
 }
 
+double LaserRasterGalvoFactory::dotTarget(double x,
+                                          double y,
+                                          int column,
+                                          int row) const {
+  const double grain = blend_.dot_grain;
+  if (grain <= 0) {
+    return siteTarget(column, row);
+  }
+  // The same ordered screen, one phase per square instead of per site, so
+  // neighbouring squares spread their owners as evenly as sites do.
+  return siteTarget(int(std::floor(x / grain)), int(std::floor(y / grain)));
+}
+
 double LaserRasterGalvoFactory::runTarget(double along, int line) const {
   // Which of the three line strategies this is, in the simulator's terms: the
   // phase is built from the stretch along the scan, from the scan line, or from
@@ -432,7 +445,7 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         const int column =
             int(entry.bbox_px.left()) + (transposed ? index : at);
         const int row = int(entry.bbox_px.top()) + (transposed ? at : index);
-        if (!ownsSite(x, y, siteTarget(column, row))) {
+        if (!ownsSite(x, y, dotTarget(x, y, column, row))) {
           continue;
         }
       }
@@ -597,7 +610,7 @@ void LaserRasterGalvoFactory::emitBandDots(const Entry& entry,
       if (!sampleAt(entry, QPointF(x, y), threshold)) {
         continue;
       }
-      if (!ownsSite(x, y, siteTarget(col, row))) {
+      if (!ownsSite(x, y, dotTarget(x, y, col, row))) {
         continue;
       }
       cols.append(col);

@@ -305,6 +305,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     config_.galvo_dot_blend_profile =
         read_blend_profile(param["galvo_dot_blend_profile"].toString(),
                            config_.galvo_dot_blend_profile);
+    config_.galvo_dot_blend_grain = qMax(
+        0.0, param["galvo_dot_blend_grain"].toDouble(config_.galvo_dot_blend_grain));
     config_.galvo_line_blend_overlap = param["galvo_line_blend_overlap"].toDouble(
         config_.galvo_line_blend_overlap);
     config_.galvo_line_blend_profile =
@@ -1149,6 +1151,7 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.max_row = max_row;
       blend.dot_overlap = config_.galvo_dot_blend_overlap;
       blend.dot_profile = config_.galvo_dot_blend_profile;
+      blend.dot_grain = config_.galvo_dot_blend_grain;
       blend.line_overlap = config_.galvo_line_blend_overlap;
       blend.line_profile = config_.galvo_line_blend_profile;
       blend.segment_length = config_.galvo_line_blend_segment;
