@@ -172,6 +172,10 @@ class LaserRasterGalvoFactory : public BaseFactory {
    * `gray` is 8-bit greyscale already scaled to this factory's pixels, placed
    * with its top-left at `bbox_px.topLeft()`. `dots` picks one dot per pixel
    * over one segment per run.
+   *
+   * The top-left is rounded to a whole pixel, so every image sits on the one
+   * pixel grid and images can be merged without resampling (see
+   * mergedEntries()).
    */
   void add_bitmap(const QImage& gray, const QRectF& bbox_px, bool dots);
   bool is_empty() const { return bitmaps_.isEmpty(); }
@@ -200,6 +204,17 @@ class LaserRasterGalvoFactory : public BaseFactory {
     QRectF bbox_px;
     bool dots = false;
   };
+  /**
+   * The images one block walks. Images of the same kind -- dots or runs --
+   * that reach `region_px` are composited into one, darkest pixel winning, so
+   * the block scans them as a single picture top to bottom instead of one
+   * after another: two separate images in a tile are engraved line by line
+   * together rather than each in turn. Images are merged whether or not they
+   * touch. Only `region_px` is composited, which keeps the buffer to the size
+   * of a block however far apart the images lie; an empty `region_px` takes
+   * them whole. A kind with a single image comes back untouched.
+   */
+  QVector<Entry> mergedEntries(const QRect& region_px) const;
   /** One cell that samples a site, and how much of it it claims. */
   struct Candidate {
     int col;

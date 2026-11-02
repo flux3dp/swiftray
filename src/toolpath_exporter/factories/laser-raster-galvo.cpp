@@ -247,9 +247,77 @@ void LaserRasterGalvoFactory::add_bitmap(const QImage& gray,
   entry.gray = gray.format() == QImage::Format_Grayscale8
                    ? gray
                    : gray.convertToFormat(QImage::Format_Grayscale8);
-  entry.bbox_px = bbox_px;
+  // On the whole-pixel grid, so images can be composited pixel for pixel. The
+  // shift is under half a pixel.
+  entry.bbox_px = QRectF(std::round(bbox_px.left()), std::round(bbox_px.top()),
+                         entry.gray.width(), entry.gray.height());
   entry.dots = dots;
   bitmaps_.append(entry);
+}
+
+QVector<LaserRasterGalvoFactory::Entry> LaserRasterGalvoFactory::mergedEntries(
+    const QRect& region_px) const {
+  auto rect_of = [](const Entry& entry) {
+    return QRect(int(entry.bbox_px.left()), int(entry.bbox_px.top()),
+                 entry.gray.width(), entry.gray.height());
+  };
+  // Kinds in the order their first image was added, so a layer keeps the
+  // order it had between its runs and its dots.
+  QVector<bool> kinds;
+  for (const Entry& entry : bitmaps_) {
+    if (!kinds.contains(entry.dots)) {
+      kinds.append(entry.dots);
+    }
+  }
+  QVector<Entry> merged;
+  for (bool dots : kinds) {
+    QVector<const Entry*> group;
+    QRect area;
+    for (const Entry& entry : bitmaps_) {
+      if (entry.dots != dots) {
+        continue;
+      }
+      const QRect rect = rect_of(entry);
+      if (!region_px.isEmpty() && !rect.intersects(region_px)) {
+        continue;  // the block's clip would drop all of it anyway
+      }
+      group.append(&entry);
+      area = area.united(rect);
+    }
+    if (group.isEmpty()) {
+      continue;
+    }
+    if (group.size() == 1) {
+      merged.append(*group.first());
+      continue;
+    }
+    if (!region_px.isEmpty()) {
+      area = area.intersected(region_px);
+    }
+    if (area.isEmpty()) {
+      continue;
+    }
+    QImage gray(area.size(), QImage::Format_Grayscale8);
+    gray.fill(255);
+    for (const Entry* entry : group) {
+      const QRect rect = rect_of(*entry);
+      const QRect overlap = rect.intersected(area);
+      for (int y = overlap.top(); y <= overlap.bottom(); y++) {
+        const uchar* src = entry->gray.constScanLine(y - rect.top()) +
+                           (overlap.left() - rect.left());
+        uchar* dst = gray.scanLine(y - area.top()) + (overlap.left() - area.left());
+        for (int x = 0; x < overlap.width(); x++) {
+          dst[x] = qMin(dst[x], src[x]);
+        }
+      }
+    }
+    Entry entry;
+    entry.gray = gray;
+    entry.bbox_px = QRectF(area);
+    entry.dots = dots;
+    merged.append(entry);
+  }
+  return merged;
 }
 
 QRectF LaserRasterGalvoFactory::get_bounds_mm() const {
@@ -357,11 +425,13 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         if (!blend_band().contains(x, y)) {
           continue;  // beyond what this block samples
         }
-        // The screen is indexed by the image's own pixel grid, which every
+        // The screen is indexed by the machine's pixel grid, which every
         // block walks identically, so all of them draw the same target for a
-        // given site and agree on who owns it.
-        const int column = transposed ? index : at;
-        const int row = transposed ? at : index;
+        // given site and agree on who owns it -- even when one block walks the
+        // image on its own and its neighbour walks it merged with another.
+        const int column =
+            int(entry.bbox_px.left()) + (transposed ? index : at);
+        const int row = int(entry.bbox_px.top()) + (transposed ? at : index);
         if (!ownsSite(x, y, siteTarget(column, row))) {
           continue;
         }
@@ -579,7 +649,23 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
   // A run pass and a dot pass over the same image, which is the hybrid seam:
   // the core at full exposure as runs, the band around it as blended dots.
   const bool two_pass = blend_.active && blend_.band_dots && blend_.dot_overlap > 0;
-  for (const Entry& entry : bitmaps_) {
+  // Everything this block can sample: its clip, grown by the wider of the two
+  // seam bands, and a pixel more for rounding. A block that is not clipped --
+  // the whole layer fits one field -- takes every image whole.
+  QRect region_px;
+  if (!hard_clip.isEmpty()) {
+    const double reach =
+        blend_.active ? qMax(blend_.dot_overlap, blend_.line_overlap) / 2 : 0;
+    const QRectF region_mm = hard_clip.adjusted(-reach, -reach, reach, reach);
+    region_px = QRectF((region_mm.left() + offset.x()) * pixel_per_mm_x,
+                       (region_mm.top() + offset.y()) * pixel_per_mm,
+                       region_mm.width() * pixel_per_mm_x,
+                       region_mm.height() * pixel_per_mm)
+                    .toAlignedRect()
+                    .adjusted(-1, -1, 1, 1);
+  }
+  const QVector<Entry> entries = mergedEntries(region_px);
+  for (const Entry& entry : entries) {
     if (cancelled) {
       return;
     }
