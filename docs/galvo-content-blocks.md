@@ -131,8 +131,9 @@ lattice = false
 `GalvoBlock` gains `bool lattice = true`. `col`, `row` and the four `has_*`
 flags are lattice notions and stay at their defaults for a content block.
 
-Emission order: serpentine over the parks, by lattice row then alternating
-direction in X, the same shape `planGalvoBlocks()` already uses.
+Emission order: by lattice row, each row left to right from an approach park a
+column left of the batch, the same shape `planGalvoBlocks()` already uses (a
+serpentine only with `galvo_fix_backlash` off).
 
 ### Blending must be off
 

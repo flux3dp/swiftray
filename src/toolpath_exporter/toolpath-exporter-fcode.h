@@ -148,6 +148,13 @@ struct Config {
   // Split a list once it reaches this many records; 0 leaves lists whole. The
   // protocol sets no upper bound (§19.7).
   int galvo_max_list_commands = 0;
+  // Walk every row of blocks left to right, from a park a column left of the
+  // batch, so each park is reached moving +X and the gantry's backlash lands the
+  // same way every time. Off runs the rows as a serpentine, which saves the fly
+  // back but reaches every other row's parks moving -X. Beam Studio sends its
+  // galvo-fix-backlash flag here; kept switchable until the mechanics are
+  // measured.
+  bool galvo_fix_backlash = true;
 };
 
 class ToolpathExporterFcode : public QObject {
@@ -291,6 +298,13 @@ class ToolpathExporterFcode : public QObject {
     bool has_right = false;
     bool has_top = false;
     bool has_bottom = false;
+    // Where the gantry goes before the first park of this block's row, so every
+    // park in the row is reached moving +X and the X backlash is always taken
+    // up the same way. It lies a column left of the leftmost block of the whole
+    // batch, not of this row, so a row that starts further right still arrives
+    // from the same side. Only a gantry move: no galvo list is opened there.
+    QPointF approach;
+    bool has_approach = false;
   };
 
   // Where the head itself can stand, mm in the layer frame: the work area less

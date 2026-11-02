@@ -342,6 +342,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     dot.laser_off_delay_us =
         param["galvo_process_dot_laser_off_delay"].toDouble(qQNaN());
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
+    config_.galvo_fix_backlash =
+        param["galvo_fix_backlash"].toBool(config_.galvo_fix_backlash);
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
       if (block.size() == 2) {
@@ -1094,6 +1096,11 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       max_row = qMax(max_row, block.row);
     }
   }
+  // The row whose approach the gantry has already made. A row is approached
+  // once, before its first park that actually opens a list: a row the drawing
+  // never reaches costs no detour either.
+  bool approached = false;
+  int approached_row = 0;
   for (int i = 0; i < blocks.size(); i++) {
     const GalvoBlock& block = blocks[i];
     const bool last = i == blocks.size() - 1;
@@ -1103,7 +1110,19 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     // completed move (§10 step 2). This runs on the block's first record, so a
     // tile the drawing never reaches costs no head travel -- most of them do
     // not, once a sparse drawing is tiled across the bed.
-    galvo->beginBlock(centre, half_field, [this, centre]() {
+    galvo->beginBlock(centre, half_field, [this, centre, block, &approached,
+                                           &approached_row]() {
+      if (block.has_approach && (!approached || approached_row != block.row)) {
+        // No sync here: the moves run in order, so the gantry reaches this
+        // point before it turns back, and only the park itself has to have
+        // landed before the galvo board starts.
+        proc.moveto(NamedArgs()
+                        .rx(block.approach.x())
+                        .ry(block.approach.y())
+                        .set_is_travel());
+        approached = true;
+        approached_row = block.row;
+      }
       proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
       proc.sync_grbl_motion(0);
     });
@@ -1404,11 +1423,29 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
                                   i_lo, i_hi));
   const int j1 = qMax(j0, cell_of(content.bottom() - kGalvoSeamEpsilonMm, sy,
                                   j_lo, j_hi));
+  // The gantry has backlash, so a park reached moving -X stands somewhere else
+  // than the same park reached moving +X, and the seam between two rows tears
+  // by that much. Every row therefore runs left to right, and before its first
+  // park the gantry goes to a column left of the leftmost block of the batch --
+  // taken over the whole batch, not the row, since a row whose first non-empty
+  // block is further right must still arrive from the same side. The lattice
+  // does not bind that point: nothing is marked there. Where the travel stops
+  // the gantry short of a whole column, it goes as far as it can.
+  const double approach_x = qMax(travel.left(), (i0 - 1) * sx);
+  const bool has_approach =
+      config_.galvo_fix_backlash && approach_x < i0 * sx - kGalvoSeamEpsilonMm;
+  if (config_.galvo_fix_backlash && !has_approach) {
+    qWarning() << "[Export] galvo blocks start at the left end of the travel"
+               << travel << "-- rows cannot be approached from the left";
+  }
   blocks.reserve((i1 - i0 + 1) * (j1 - j0 + 1));
   for (int j = j0; j <= j1; j++) {
     for (int c = i0; c <= i1; c++) {
-      // Serpentine across rows so the head does not fly back every row.
-      const int i = (j - j0) % 2 == 0 ? c : (i0 + i1 - c);
+      // Left to right on every row (see above), or a serpentine with the
+      // backlash fix off.
+      const int i = config_.galvo_fix_backlash || (j - j0) % 2 == 0
+                        ? c
+                        : (i0 + i1 - c);
       const QPointF park(i * sx, j * sy);
       // Once split, a block engraves its own cell and no more, even though the
       // field reaches further. The head sits at the cell's centre.
@@ -1427,7 +1464,7 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
                           has_top ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
                           kGalvoSeamEpsilonMm, kGalvoSeamEpsilonMm);
       blocks.append({region, clip, park, i, j, has_left, has_right, has_top,
-                     has_bottom});
+                     has_bottom, QPointF(approach_x, j * sy), has_approach});
     }
   }
   // The lattice is anchored at the machine origin and its cells span the whole
