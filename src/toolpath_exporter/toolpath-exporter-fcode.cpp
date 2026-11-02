@@ -20,6 +20,16 @@
 // floating-point noise on a seam; GalvoListWriter drops anything this short.
 constexpr double kGalvoSeamEpsilonMm = 1e-6;
 
+// How far left of the batch's leftmost park the gantry goes before each row,
+// mm, so every park is reached moving +X. Measured on HEXA II (2026-11-02): a
+// few millimetres take up the backlash, while running all the way to the end
+// of the travel makes the gantry rebound off it and shifts the parks that
+// follow -- so the approach is a short fixed step, not a far point.
+constexpr double kGalvoBacklashOvershootMm = 5;
+// The approach never goes closer than this to the left end of the travel, for
+// the same reason.
+constexpr double kGalvoBacklashTravelClearanceMm = 1;
+
 QString convertUnicode(const QString s) {
   QString result;
   for (int i = 0; i < s.size(); i++) {
@@ -1429,12 +1439,15 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
   // The gantry has backlash, so a park reached moving -X stands somewhere else
   // than the same park reached moving +X, and the seam between two rows tears
   // by that much. Every row therefore runs left to right, and before its first
-  // park the gantry goes to a column left of the leftmost block of the batch --
+  // park the gantry goes a fixed step left of the leftmost park of the batch --
   // taken over the whole batch, not the row, since a row whose first non-empty
   // block is further right must still arrive from the same side. The lattice
-  // does not bind that point: nothing is marked there. Where the travel stops
-  // the gantry short of a whole column, it goes as far as it can.
-  const double approach_x = qMax(travel.left(), (i0 - 1) * sx);
+  // does not bind that point: nothing is marked there. It stays clear of the
+  // left end of the travel (kGalvoBacklashTravelClearanceMm), so a batch that
+  // starts within that much of it goes without an approach.
+  const double approach_x =
+      qMax(travel.left() + kGalvoBacklashTravelClearanceMm,
+           i0 * sx - kGalvoBacklashOvershootMm);
   const bool has_approach =
       config_.galvo_fix_backlash && approach_x < i0 * sx - kGalvoSeamEpsilonMm;
   if (config_.galvo_fix_backlash && !has_approach) {
