@@ -85,6 +85,13 @@ struct GalvoParams {
   // to a whole microsecond and floored at 1 -- anything under 0.5 would reach
   // the SDK as 0, outside its documented 0.021~1365 range.
   double standby_width_us = 1;
+  // LONG_DELAY right after ENABLE_LASER in a block's first list. After the
+  // gantry move that parks the head, the first list marks visibly weaker (2/3
+  // of the darkness of the lists after it, test8 2026-11-03) unless something
+  // waits about this long before marking; a sleep before the list cured it as
+  // well as a delay inside it, so it is the time since arriving that matters.
+  // 0 = none.
+  double block_start_delay_us = 50000;
   // Wobble is only emitted when the mode is not DISABLE.
   GalvoWobbleMode wobble_mode = GalvoWobbleMode::DISABLE;
   double wobble_transversal_mm = 0;

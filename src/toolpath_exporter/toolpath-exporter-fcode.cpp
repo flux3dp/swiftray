@@ -381,6 +381,9 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     g.emit_standby = param["galvo_standby"].toBool(true);
     g.standby_period_us = param["galvo_standby_period"].toDouble(100);
     g.standby_width_us = param["galvo_standby_width"].toDouble(1);
+    // ms here, us inside the writer.
+    g.block_start_delay_us =
+        qMax(0.0, param["galvo_block_start_delay"].toDouble(50)) * 1000;
     // opcode 12's second parameter on a Mopa head, where it is not derived
     // from power. 0 is what the execution end has used for this head.
     g.pulse_length_us = param["galvo_mopa_pulse_length"].toDouble(0);

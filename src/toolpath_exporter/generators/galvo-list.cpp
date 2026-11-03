@@ -76,6 +76,7 @@ void GalvoListWriter::ensureListOpen() {
   if (list_open_ || !list_armed_) {
     return;
   }
+  const bool first_of_block = !block_started_;
   ensureBlockStarted();
   list_open_ = true;
   if (params_.emit_standby) {
@@ -103,6 +104,13 @@ void GalvoListWriter::ensureListOpen() {
                                double(int(params_.wobble_mode))});
   }
   emit(GalvoOp::ENABLE_LASER, {0});
+  if (first_of_block && params_.block_start_delay_us > 0) {
+    // See GalvoParams::block_start_delay_us. Inside the list rather than an
+    // fcode sleep before it, so the wait is the card's own and cannot be eaten
+    // by the time the host spends handing the list over.
+    emit(GalvoOp::LONG_DELAY, {params_.block_start_delay_us});
+    list_time_ms_ += params_.block_start_delay_us / 1000;
+  }
   // A fresh list leaves the board's position unknown to us, so force the next
   // move to be absolute.
   emitted_valid_ = false;
