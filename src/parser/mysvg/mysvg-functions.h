@@ -100,6 +100,9 @@ namespace MySVG {
                     n.is_symbol = false;
                     n.color = use_node.color;
                     n.layer_name = use_node.layer_name;
+                    // A symbol's nodes sit in <defs>, out of any layer, so each
+                    // copy takes the identity of the <use> that placed it.
+                    n.item_key = use_node.item_key;
                     nodes.push_back(n);
                     break;
                 }
@@ -166,6 +169,7 @@ namespace MySVG {
                 tmp_node = tmp_node->parent();
             }
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
+            if (read_type == ReadType::BVG) n.item_key = getBVGItemKey(node, layer_config_map_);
             n.trans = trans * tmp_scale;
             auto fillStyle = node->styleProperty(QSvgStyleProperty::FILL);
             n.fill = fillStyle &&
@@ -210,6 +214,7 @@ namespace MySVG {
                 tmp_node = tmp_node->parent();
             }
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
+            if (read_type == ReadType::BVG) n.item_key = getBVGItemKey(node, layer_config_map_);
             n.trans = tmp_scale * trans;
             n.color = g_color;
             n.visible = getNodeVisible(node);
@@ -228,6 +233,7 @@ namespace MySVG {
             n.node_names.push_back(use_node->linkId());
             QTransform translate = QTransform().translate(use_node->startPos().x(), use_node->startPos().y());
             n.layer_name = (read_type == ReadType::BVG) ? getBVGLayerName(node, layer_config_map_) : getNodeLayerName(node);
+            if (read_type == ReadType::BVG) n.item_key = getBVGItemKey(node, layer_config_map_);
             n.trans = translate * trans;
             nodes.push_back(n);
         } else if(node->type() == QSVG_TEXT) {
@@ -256,6 +262,7 @@ namespace MySVG {
                 n.node_names.push_back(tmp_node->nodeId());
                 tmp_node = tmp_node->parent();
             }
+            if (read_type == ReadType::BVG) n.item_key = getBVGItemKey(node, layer_config_map_);
             n.visible = getNodeVisible(node);
             n.font = font;
             n.text = QString();

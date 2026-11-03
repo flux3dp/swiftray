@@ -211,6 +211,8 @@ int Layer::fillDwellTime() const { return fill_dwell_time_; }
 
 bool Layer::fillDwellAdaptive() const { return fill_dwell_adaptive_; }
 
+Layer::GalvoTiling Layer::galvoTiling() const { return galvo_tiling_; }
+
 int Layer::dottingTime() const { return dotting_time_; }
 
 bool Layer::stlDotMode() const { return stl_dot_mode_; }
@@ -376,6 +378,11 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_interleave_ = config.fill_interleave;
   this->fill_dwell_time_ = config.fill_dwell_time;
   this->fill_dwell_adaptive_ = config.fill_dwell_adaptive;
+
+  // Anything but "object" -- missing, or a value added after this build -- is
+  // the grid, which is what every layer did before the setting existed.
+  this->galvo_tiling_ = config.galvo_tiling == "object" ? GalvoTiling::Object
+                                                        : GalvoTiling::Grid;
   this->dotting_time_ = config.dotting_time;
   this->stl_dot_mode_ = config.stl_dot_mode;
   this->stl_point_spacing_ = config.stl_point_spacing;
@@ -413,6 +420,7 @@ LayerPtr Layer::clone() {
   new_layer->power_ = this->power_;
   new_layer->color_ = this->color_;
   new_layer->module_ = this->module_;
+  new_layer->galvo_tiling_ = this->galvo_tiling_;
   new_layer->repeat_ = this->repeat_;
   new_layer->target_height_ = this->target_height_;
   new_layer->step_height_ = this->step_height_;

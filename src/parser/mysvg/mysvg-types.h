@@ -30,6 +30,12 @@ namespace MySVG {
         double depthZStep;
         /** Set only for a 3D mesh/point-cloud placeholder or photo projection. */
         StlPlacement stl_placement;
+
+        // The layer's first-level element this node belongs to, as the address
+        // of that element's QSvgNode: unique within one parse and meaningless
+        // after it. Empty outside a BVG read and for nodes that live in <defs>
+        // until a <use> copies them.
+        QString item_key;
     };
 
     struct BeamLayerConfig {
@@ -120,6 +126,9 @@ namespace MySVG {
         float s_curve_a0;
         float s_curve_a_max;
         float s_curve_jerk;
+        // data-galvoTiling, kept as the raw string so a value this build does
+        // not know falls back to the grid in Layer::setParameters.
+        QString galvo_tiling;
     };
 
     enum ReadType {

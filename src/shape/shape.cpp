@@ -124,6 +124,10 @@ std::shared_ptr<Shape> Shape::clone() const {
 
 Shape::Type Shape::type() const { return Shape::Type::None; }
 
+const QString &Shape::itemKey() const { return item_key_; }
+
+void Shape::setItemKey(const QString &key) { item_key_ = key; }
+
 void Shape::flushCache() {
   bbox_need_recalc_ = true;
 }

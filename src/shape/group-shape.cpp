@@ -81,6 +81,7 @@ ShapePtr GroupShape::clone() const {
   GroupShape *group = new GroupShape();
   group->setTransform(transform());
   group->setRotation(rotation());
+  group->setItemKey(itemKey());
 
   for (auto &shape : children_) {
     ShapePtr new_shape = shape->clone();

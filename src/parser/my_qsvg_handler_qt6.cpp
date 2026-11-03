@@ -2984,6 +2984,8 @@ static QSvgNode *createGNode(QSvgNode *parent,
         layer_config.s_curve_a0 = getAttr(attributes, "data-scA0", default_config, "scA0", 0.0);
         layer_config.s_curve_a_max = getAttr(attributes, "data-scAMax", default_config, "scAMax", 0.0);
         layer_config.s_curve_jerk = getAttr(attributes, "data-scJerk", default_config, "scJerk", 0.0);
+        // A string, which getAttr (double only) cannot read.
+        layer_config.galvo_tiling = attributes.value("data-galvoTiling").toString();
         layer_config.order_index = handler->nextLayerIndex();
         handler->setLayerConfig(node_addr, layer_config);
     }
@@ -4834,6 +4836,7 @@ MyQSvgHandler::MyQSvgHandler(QIODevice *device, Document *doc, QList<LayerPtr> *
         } else if(data_list_[i].type == QSVG_TEXT) {
             new_shape = std::make_shared<TextShape>(data_list_[i].text, data_list_[i].font, 1);
         }
+        new_shape->setItemKey(data_list_[i].item_key);
         new_shape->applyTransform(data_list_[i].trans);
         LayerPtr target_layer = MySVG::findLayer(read_type, svg_layers_, data_list_[i].layer_name, data_list_[i].color, data_list_[i].fill);
         if(data_list_[i].visible) {

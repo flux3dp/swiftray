@@ -94,6 +94,16 @@ public:
 
   virtual void setFilled(bool filled);
 
+  /**
+   * The document object this shape came from, when a loader flattened a group
+   * or a <use> into several shapes: shapes sharing a key are one object. Empty
+   * means the shape stands alone. Only meaningful within the load that set it,
+   * so it is never serialized.
+   */
+  const QString &itemKey() const;
+
+  void setItemKey(const QString &key);
+
   virtual std::shared_ptr<Shape> clone() const;
 
   virtual bool hitTest(QPointF global_coord, qreal tolerance) const;
@@ -136,6 +146,8 @@ protected:
   bool selected_;
   /** Whether the object is filled type by user */
   bool filled_;
+  /** See itemKey() */
+  QString item_key_;
 };
 
 typedef std::shared_ptr<Shape> ShapePtr;

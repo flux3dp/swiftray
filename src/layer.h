@@ -19,6 +19,16 @@ public:
     Mixed // Compatible mode with Beam Studio, could be deprecated in the future
   };
 
+  /**
+   * How a galvo layer is split between gantry stops. Grid tiles the layer on
+   * the machine lattice and stitches the seams; Object keeps every first-level
+   * object of the layer whole, in one field.
+   */
+  enum class GalvoTiling {
+    Grid,
+    Object
+  };
+
   /** Constructors **/
 
   Layer(Document *doc, const QColor &color, const QString &name);
@@ -120,6 +130,8 @@ public:
   bool fillInterleave() const;
   int fillDwellTime() const;
   bool fillDwellAdaptive() const;
+
+  GalvoTiling galvoTiling() const;
   int dottingTime() const;
   bool stlDotMode() const;
   double stlPointSpacing() const;
@@ -245,6 +257,8 @@ private:
   bool fill_interleave_ = false;
   int fill_dwell_time_ = 0;
   bool fill_dwell_adaptive_ = false;
+
+  GalvoTiling galvo_tiling_ = GalvoTiling::Grid;
   int dotting_time_ = 0;
   // inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()
   bool stl_dot_mode_ = true;
