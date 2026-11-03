@@ -15,6 +15,10 @@
 #include <QFontMetrics>
 #include <QPainter>
 #include <cmath>
+#include <QHash>
+#include <stdexcept>
+#include <optional>
+#include <numeric>
 
 // How far a galvo tile's clip reaches past its own edge, mm. Only has to beat
 // floating-point noise on a seam; GalvoListWriter drops anything this short.
@@ -29,6 +33,10 @@ constexpr double kGalvoBacklashOvershootMm = 5;
 // The approach never goes closer than this to the left end of the travel, for
 // the same reason.
 constexpr double kGalvoBacklashTravelClearanceMm = 1;
+// How far an object tiled by object may overrun the field and still be taken
+// as fitting, mm: only the slack a bounding box computed two different ways
+// needs, since the edge of the field is not trusted for anything more.
+constexpr double kGalvoFieldToleranceMm = 0.001;
 
 QString convertUnicode(const QString s) {
   QString result;
@@ -709,6 +717,9 @@ void ToolpathExporterFcode::convertLayer() {
   is_laser_layer_ = !is_printing_layer_ && !is_uv_layer_;
   layer_is_galvo_ = is_galvo_machine_ && is_laser_layer_ &&
                     is_galvo_module(layer_module_);
+  layer_galvo_by_object_ =
+      layer_is_galvo_ &&
+      current_layer_->galvoTiling() == Layer::GalvoTiling::Object;
   layer_pwm_scale_ = 1 - current_layer_->minPower() / current_layer_->power();
   if (layer_pwm_scale_ <= 0) {
     layer_pwm_scale_ = 1;
@@ -875,6 +886,8 @@ void ToolpathExporterFcode::convertLayer() {
       }
       proc.set_toolhead_pwm(0);
     }
+    // Their factories hold the layer's images; nothing after the repeats needs them.
+    galvo_clusters_.clear();
     proc.moveto(NamedArgs().rs(0));
     if (has_focus_adjust && focus_step > 0 && layer_repeat_ > 1) {
       float total_moved = (layer_repeat_ - 1) * focus_step;
@@ -1001,20 +1014,13 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   kwargs.fg_pwm_limit = hw_profile.fg_pwm_limit;
 
   // Note: convert path without dpmm_x
-  laser_path_factory_ = std::make_unique<LaserPathFactory>(kwargs);
-  laser_path_factory_->set_loop_compensation(config_.loop_compensation);
-  laser_path_factory_->set_use_ga(config_.use_ga_reorder);
+  laser_kwargs_ = kwargs;
   if (layer_is_galvo_) {
-    laser_raster_factory_ = std::make_unique<LaserRasterGalvoFactory>(kwargs);
-    laser_raster_factory_->set_dotting_time(current_layer_->dottingTime());
-    laser_depth_factory_ = std::make_unique<LaserRasterGalvoFactory>(kwargs);
-    galvo_depth_bitmaps_.clear();
-    laser_hatch_factory_ = std::make_unique<LaserPathFilledFactory>(kwargs);
-    laser_hatch_factory_->set_fill_params(
-        {current_layer_->fillInterval(), current_layer_->fillAngle(),
-         current_layer_->fillBidirectional(),
-         current_layer_->fillHatch() ? 2 : 1});
+    createGalvoFactories();
   } else {
+    laser_path_factory_ = std::make_unique<LaserPathFactory>(kwargs);
+    laser_path_factory_->set_loop_compensation(config_.loop_compensation);
+    laser_path_factory_->set_use_ga(config_.use_ga_reorder);
     laser_hatch_factory_.reset();
     laser_raster_factory_.reset();
     laser_depth_factory_.reset();
@@ -1026,6 +1032,18 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
 
   setTransform();
   laser_bitmaps_.clear();
+  galvo_clusters_.clear();
+  if (layer_galvo_by_object_) {
+    // Each stop gets factories of its own instead of sharing the layer's.
+    const LayerPtr line_layer = current_layer_;
+    planGalvoObjectClusters(line_layer, current_layer_2_);
+    // Leave current_layer_ where the shared pass below would have.
+    if (current_layer_2_) {
+      current_layer_ = current_layer_2_;
+    }
+    onProgressChanged(0.05, true);
+    return;
+  }
   // First pass: Generate path list and bitmap list and draw filled path with
   // factory
   convert_target_ = ConvertTarget::NON_BITMAP;
@@ -1197,17 +1215,26 @@ void ToolpathExporterFcode::emitGalvoBlocks(
   }
 }
 
-void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
+void ToolpathExporterFcode::convertGalvoDepthBitmaps(const GalvoBlock* fixed_block,
+                                                     bool centre_when_done,
+                                                     double progress_from,
+                                                     double progress_to) {
   if (galvo_depth_bitmaps_.isEmpty() || !laser_depth_factory_) {
     return;
+  }
+  // A layer tiled by object has its stop already, and its approach is made
+  // once: by whichever pass reaches the stop first.
+  std::optional<GalvoBlock> fixed;
+  if (fixed_block) {
+    fixed = *fixed_block;
   }
   // Depth is cut as a stack of binary passes, each one taking a little more of
   // the image than the last, with the head dropping between them -- the same
   // shape as ToolpathExporter::rasterBitmapDepthMode(). It is the gcode
   // treatment rather than the fcode PWM one because a galvo has no per-pixel
   // power to modulate.
-  const double span = 0.5 / galvo_depth_bitmaps_.size();
-  double progress = 0.5;
+  const double span = (progress_to - progress_from) / galvo_depth_bitmaps_.size();
+  double progress = progress_from;
   int remaining = galvo_depth_bitmaps_.size();
   for (const BitmapShape* bmp : galvo_depth_bitmaps_) {
     remaining--;
@@ -1251,8 +1278,9 @@ void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
 
     laser_depth_factory_->clear();
     laser_depth_factory_->add_bitmap(image, bbox_px, false);
-    const QVector<GalvoBlock> blocks =
-        planGalvoBlocks(laser_depth_factory_->get_bounds_mm());
+    QVector<GalvoBlock> blocks =
+        fixed ? QVector<GalvoBlock>{*fixed}
+              : planGalvoBlocks(laser_depth_factory_->get_bounds_mm());
 
     bool transposed = false;
     for (int pass = 0; pass < passes; pass++) {
@@ -1272,9 +1300,13 @@ void ToolpathExporterFcode::convertGalvoDepthBitmaps() {
           },
           progress + span * pass / passes,
           progress + span * (pass + 1.0) / passes,
-          remaining == 0 && pass == passes - 1);
+          centre_when_done && remaining == 0 && pass == passes - 1);
       if (this->cancelled_) {
         return;
+      }
+      if (fixed) {
+        fixed->has_approach = false;
+        blocks.first().has_approach = false;
       }
       // Cross the passes over each other, as the gcode depth pass does.
       transposed = !transposed;
@@ -1651,7 +1683,322 @@ class ToolpathExporterFcode::GalvoPathAcc {
   bool valid_ = false;
 };
 
+void ToolpathExporterFcode::createGalvoFactories() {
+  laser_path_factory_ = std::make_unique<LaserPathFactory>(laser_kwargs_);
+  laser_path_factory_->set_loop_compensation(config_.loop_compensation);
+  laser_path_factory_->set_use_ga(config_.use_ga_reorder);
+  laser_raster_factory_ = std::make_unique<LaserRasterGalvoFactory>(laser_kwargs_);
+  laser_raster_factory_->set_dotting_time(current_layer_->dottingTime());
+  laser_depth_factory_ = std::make_unique<LaserRasterGalvoFactory>(laser_kwargs_);
+  galvo_depth_bitmaps_.clear();
+  laser_hatch_factory_ = std::make_unique<LaserPathFilledFactory>(laser_kwargs_);
+  laser_hatch_factory_->set_fill_params(
+      {current_layer_->fillInterval(), current_layer_->fillAngle(),
+       current_layer_->fillBidirectional(),
+       current_layer_->fillHatch() ? 2 : 1});
+}
+
+void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
+                                                    const LayerPtr& fill_layer) {
+  // An object is a first-level element of the layer, which the loader recorded
+  // on every shape it flattened out of one (Shape::itemKey). Its outline and
+  // its fill land in the two halves of the layer but share the key.
+  struct Item {
+    QRectF bounds;
+    bool has_bounds = false;
+    QList<ShapePtr> line_shapes;
+    QList<ShapePtr> fill_shapes;
+  };
+  // QRectF::united() drops a rect with no width and no height, and a lone dot
+  // or a straight line is exactly that: it still has a position to fit.
+  auto unite = [](const QRectF& a, const QRectF& b) {
+    return QRectF(QPointF(qMin(a.left(), b.left()), qMin(a.top(), b.top())),
+                  QPointF(qMax(a.right(), b.right()),
+                          qMax(a.bottom(), b.bottom())));
+  };
+  QVector<Item> items;
+  QHash<QString, int> index_of;
+  setTransform();
+  auto collect = [&](const LayerPtr& layer, bool fill) {
+    if (!layer) {
+      return;
+    }
+    for (const ShapePtr& shape : layer->children()) {
+      // Same frame as the factories' get_bounds_mm(): design mm, less the
+      // module offset.
+      const QRectF bounds = global_transform_.mapRect(shape->boundingRect())
+                                .translated(-layer_offset_);
+      int index;
+      if (shape->itemKey().isEmpty()) {
+        index = items.size();  // a shape no loader grouped stands alone
+        items.append(Item());
+      } else {
+        auto found = index_of.constFind(shape->itemKey());
+        if (found == index_of.constEnd()) {
+          index = items.size();
+          index_of.insert(shape->itemKey(), index);
+          items.append(Item());
+        } else {
+          index = found.value();
+        }
+      }
+      Item& item = items[index];
+      item.bounds = item.has_bounds ? unite(item.bounds, bounds) : bounds;
+      item.has_bounds = true;
+      (fill ? item.fill_shapes : item.line_shapes).append(shape);
+    }
+  };
+  collect(line_layer, false);
+  collect(fill_layer, true);
+  if (items.isEmpty()) {
+    return;
+  }
+
+  const double field = config_.galvo_field_mm;
+  const double half = field / 2;
+  const QString layer_name = line_layer->name();
+  auto fits = [&](const QRectF& r) {
+    return r.width() <= field + kGalvoFieldToleranceMm &&
+           r.height() <= field + kGalvoFieldToleranceMm;
+  };
+  // Where the head stands for a set of objects: over their middle, unless the
+  // travel stops it short, in which case it still has to reach every edge.
+  const QRectF travel = galvoHeadTravel();
+  auto park_for = [&](const QRectF& r) -> std::optional<QPointF> {
+    const QPointF park(qBound(travel.left(), r.center().x(), travel.right()),
+                       qBound(travel.top(), r.center().y(), travel.bottom()));
+    const double reach = half + kGalvoFieldToleranceMm;
+    if (r.left() < park.x() - reach || r.right() > park.x() + reach ||
+        r.top() < park.y() - reach || r.bottom() > park.y() + reach) {
+      return std::nullopt;
+    }
+    return park;
+  };
+  // Neither of these may be fixed by splitting the object -- not splitting it
+  // is the whole point of the setting -- so the conversion fails instead, with
+  // what Worker::handleAction hands back to the caller.
+  for (const Item& item : items) {
+    if (!fits(item.bounds)) {
+      throw std::runtime_error(
+          QString("Galvo layer \"%1\" is tiled by object, but one of its objects "
+                  "is %2 x %3 mm, larger than the %4 mm field.")
+              .arg(layer_name)
+              .arg(item.bounds.width(), 0, 'f', 3)
+              .arg(item.bounds.height(), 0, 'f', 3)
+              .arg(field)
+              .toStdString());
+    }
+    if (!park_for(item.bounds)) {
+      throw std::runtime_error(
+          QString("Galvo layer \"%1\" is tiled by object, but an object at "
+                  "(%2, %3) mm lies where no head position within the travel "
+                  "reaches all of it.")
+              .arg(layer_name)
+              .arg(item.bounds.left(), 0, 'f', 3)
+              .arg(item.bounds.top(), 0, 'f', 3)
+              .toStdString());
+    }
+  }
+
+  // Objects close enough to share a field share a stop. Taken in reading order,
+  // each stop absorbs whatever later object still leaves its union inside one
+  // reachable field; the document order says nothing about where things are.
+  QVector<int> order(items.size());
+  std::iota(order.begin(), order.end(), 0);
+  std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+    const QRectF& ra = items[a].bounds;
+    const QRectF& rb = items[b].bounds;
+    return ra.top() != rb.top() ? ra.top() < rb.top() : ra.left() < rb.left();
+  });
+  QVector<bool> taken(items.size(), false);
+  struct Plan {
+    QRectF bounds;
+    QPointF park;
+    QVector<int> members;
+  };
+  QVector<Plan> plans;
+  for (int a = 0; a < order.size(); a++) {
+    if (taken[order[a]]) {
+      continue;
+    }
+    Plan plan{items[order[a]].bounds, *park_for(items[order[a]].bounds),
+              {order[a]}};
+    taken[order[a]] = true;
+    for (int b = a + 1; b < order.size(); b++) {
+      if (taken[order[b]]) {
+        continue;
+      }
+      const QRectF joined = unite(plan.bounds, items[order[b]].bounds);
+      if (!fits(joined)) {
+        continue;
+      }
+      const std::optional<QPointF> park = park_for(joined);
+      if (!park) {
+        continue;
+      }
+      plan.bounds = joined;
+      plan.park = *park;
+      plan.members.append(order[b]);
+      taken[order[b]] = true;
+    }
+    plans.append(plan);
+  }
+  // Stops run by Y, then X: the gantry then never backs up in Y within a pass,
+  // and the X backlash is taken care of where they are emitted.
+  std::stable_sort(plans.begin(), plans.end(), [](const Plan& a, const Plan& b) {
+    return a.park.y() != b.park.y() ? a.park.y() < b.park.y()
+                                    : a.park.x() < b.park.x();
+  });
+
+  // Fresh factories per stop, filled the way the shared pass fills the
+  // layer's: outlines and fills first, then the images.
+  galvo_clusters_.reserve(plans.size());
+  for (const Plan& plan : plans) {
+    createGalvoFactories();
+    laser_bitmaps_.clear();
+    convert_target_ = ConvertTarget::NON_BITMAP;
+    setTransform();
+    for (int member : plan.members) {
+      current_layer_ = line_layer;
+      for (const ShapePtr& shape : items[member].line_shapes) {
+        convertShape(shape);
+      }
+      if (fill_layer) {
+        current_layer_ = fill_layer;
+      }
+      for (const ShapePtr& shape : items[member].fill_shapes) {
+        convertShape(shape);
+      }
+    }
+    current_layer_ = line_layer;
+    prepareGalvoBitmaps();
+    GalvoObjectCluster cluster;
+    cluster.bounds = plan.bounds;
+    cluster.park = plan.park;
+    swapGalvoCluster(cluster);  // the factories just built move into it
+    galvo_clusters_.push_back(std::move(cluster));
+    if (this->cancelled_) {
+      break;
+    }
+  }
+  laser_bitmaps_.clear();
+  qInfo() << "[Export] Galvo layer" << layer_name << "tiled by object:"
+          << items.size() << "object(s) ->" << galvo_clusters_.size()
+          << "stop(s), field" << field << "mm";
+}
+
+void ToolpathExporterFcode::swapGalvoCluster(GalvoObjectCluster& cluster) {
+  std::swap(laser_path_factory_, cluster.path);
+  std::swap(laser_hatch_factory_, cluster.hatch);
+  std::swap(laser_raster_factory_, cluster.raster);
+  std::swap(laser_depth_factory_, cluster.depth);
+  std::swap(galvo_depth_bitmaps_, cluster.depth_bitmaps);
+}
+
+void ToolpathExporterFcode::convertGalvoObjectLayer() {
+  // As convertGalvoLaserLayer(): gantry speed and acceleration for the whole layer.
+  proc.set_travel_speed(config_.galvo_travel_speed);
+  const GalvoPathAcc acc(this);
+  if (galvo_clusters_.empty()) {
+    proc.set_travel_speed(config_.travel_speed);
+    onProgressChanged(1.0, true);
+    return;
+  }
+  GalvoListWriter* galvo = proc.galvo();
+  const int out_of_field_before = galvo->out_of_field_count();
+  applyGalvoLayerParams();
+
+  // The same backlash rule as the grid: every stop is reached moving +X. A stop
+  // left of the one before goes by a point a fixed step left of the leftmost
+  // stop of the batch first, and so does the first stop of every pass.
+  const QRectF travel = galvoHeadTravel();
+  double min_park_x = galvo_clusters_.front().park.x();
+  QRectF content;
+  for (const GalvoObjectCluster& cluster : galvo_clusters_) {
+    min_park_x = qMin(min_park_x, cluster.park.x());
+    content = content.united(cluster.bounds);
+  }
+  const double approach_x =
+      qMax(travel.left() + kGalvoBacklashTravelClearanceMm,
+           min_park_x - kGalvoBacklashOvershootMm);
+  const bool can_approach = config_.galvo_fix_backlash &&
+                            approach_x < min_park_x - kGalvoSeamEpsilonMm;
+  if (config_.galvo_fix_backlash && !can_approach) {
+    qWarning() << "[Export] galvo stops start at the left end of the travel"
+               << travel << "-- they cannot be approached from the left";
+  }
+  QVector<GalvoBlock> blocks;
+  blocks.reserve(galvo_clusters_.size());
+  for (size_t i = 0; i < galvo_clusters_.size(); i++) {
+    const GalvoObjectCluster& cluster = galvo_clusters_[i];
+    GalvoBlock block;
+    // A stop engraves all of its objects and nothing else: one block, so no
+    // clip and no seam blending.
+    block.region = cluster.bounds;
+    block.clip = cluster.bounds;
+    block.park = cluster.park;
+    block.approach = QPointF(approach_x, cluster.park.y());
+    block.has_approach =
+        can_approach &&
+        (i == 0 || cluster.park.x() <
+                       galvo_clusters_[i - 1].park.x() - kGalvoSeamEpsilonMm);
+    blocks.append(block);
+  }
+  if (!config_.galvo_debug_image.isEmpty()) {
+    writeGalvoDebugImage(blocks, content);
+  }
+
+  convert_target_ = ConvertTarget::NON_BITMAP;
+  const double n = galvo_clusters_.size();
+  for (size_t i = 0; i < galvo_clusters_.size(); i++) {
+    GalvoObjectCluster& cluster = galvo_clusters_[i];
+    swapGalvoCluster(cluster);
+    const bool last = i + 1 == galvo_clusters_.size();
+    const double from = 0.05 + 0.95 * i / n;
+    const double to = 0.05 + 0.95 * (i + 1) / n;
+    const bool has_depth = !galvo_depth_bitmaps_.isEmpty();
+    const double mid = has_depth ? (from + to) / 2 : to;
+    GalvoBlock block = blocks[i];
+    const bool has_hatch = !laser_hatch_factory_->is_empty();
+    const bool has_raster = !laser_raster_factory_->is_empty();
+    if (laser_path_factory_->get_size() > 0 || has_hatch || has_raster) {
+      emitGalvoBlocks(
+          {block},
+          [&]() {
+            laser_path_factory_->generate_task_code(layer_path_speed_);
+            if (has_hatch) {
+              laser_hatch_factory_->generate_task_code(layer_speed_);
+            }
+            if (has_raster) {
+              laser_raster_factory_->generate_task_code(layer_speed_);
+            }
+          },
+          from, mid, last && !has_depth);
+      block.has_approach = false;  // made, if it was needed
+    }
+    if (has_depth && !this->cancelled_) {
+      convertGalvoDepthBitmaps(&block, last, mid, to);
+    }
+    swapGalvoCluster(cluster);  // back where the next repeat finds them
+    if (this->cancelled_) {
+      return;
+    }
+  }
+
+  proc.set_travel_speed(config_.travel_speed);
+  const int out_of_field = galvo->out_of_field_count() - out_of_field_before;
+  if (out_of_field > 0) {
+    qWarning() << "[Export] layer" << current_layer_->name() << "put"
+               << out_of_field << "galvo points outside +/-"
+               << config_.galvo_field_mm / 2 << "mm";
+  }
+}
+
 void ToolpathExporterFcode::convertGalvoLaserLayer() {
+  if (layer_galvo_by_object_) {
+    convertGalvoObjectLayer();
+    return;
+  }
   // The gantry only ever positions in a galvo job, so it runs at its own speed
   // for the whole layer. Inside a block this has no effect anyway: those
   // travels are galvo jumps and take SET_JUMP_SPEED instead.

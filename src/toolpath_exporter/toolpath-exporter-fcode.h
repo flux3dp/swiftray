@@ -24,6 +24,7 @@
 #include <QProgressDialog>
 #include <QVector>
 #include <functional>
+#include <vector>
 
 enum class ConvertTarget {
   ALL,         // printer and uv
@@ -312,7 +313,32 @@ class ToolpathExporterFcode : public QObject {
 
   // Where the head itself can stand, mm in the layer frame: the work area less
   // the travel this module costs.
+  /**
+   * One gantry stop of a layer tiled by object: the objects it engraves whole,
+   * and the factories holding exactly those, built once and kept for every
+   * repeat. Its own factories are what keep two objects whose boxes overlap
+   * from engraving each other's geometry.
+   */
+  struct GalvoObjectCluster {
+    QRectF bounds;  // union of its objects, mm, in the frame the factories emit
+    QPointF park;
+    std::unique_ptr<LaserPathFactory> path;
+    std::unique_ptr<LaserPathFilledFactory> hatch;
+    std::unique_ptr<LaserRasterGalvoFactory> raster;
+    std::unique_ptr<LaserRasterGalvoFactory> depth;
+    QVector<const BitmapShape*> depth_bitmaps;
+  };
+  /** What the galvo factories are built from, kept so each cluster gets the same. */
+  FactoryKwargs laser_kwargs_;
+  /** The layer is a galvo layer tiled by object (Layer::GalvoTiling::Object). */
+  bool layer_galvo_by_object_ = false;
+  std::vector<GalvoObjectCluster> galvo_clusters_;
   QRectF galvoHeadTravel() const;
+  void createGalvoFactories();
+  void planGalvoObjectClusters(const LayerPtr& line_layer,
+                               const LayerPtr& fill_layer);
+  void swapGalvoCluster(GalvoObjectCluster& cluster);
+  void convertGalvoObjectLayer();
   // Tiles `content` (mm, layer frame) into galvo blocks, in the order to run.
   QVector<GalvoBlock> planGalvoBlocks(const QRectF& content) const;
   // Fill the writer's prologue state from the current layer.
@@ -328,7 +354,10 @@ class ToolpathExporterFcode : public QObject {
                        double progress_to,
                        bool centre_when_done = false);
   // Depth engraving: a pass per threshold, stepping Z between them.
-  void convertGalvoDepthBitmaps();
+  void convertGalvoDepthBitmaps(const GalvoBlock* fixed_block = nullptr,
+                                bool centre_when_done = true,
+                                double progress_from = 0.5,
+                                double progress_to = 1.0);
   // Draw what the splitter decided: where the head stands and how far the beam
   // reaches from there. Opt-in via Config::galvo_debug_image.
   void writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,
