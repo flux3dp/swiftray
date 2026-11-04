@@ -7,6 +7,9 @@
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
+#include <memory>
+
+#include "galvo-field-correction.h"
 
 class FCodeGenerator;
 
@@ -97,6 +100,15 @@ struct GalvoParams {
   double wobble_transversal_mm = 0;
   double wobble_longitudinal_mm = 0;
   double wobble_space_mm = 0;
+
+  // Pre-distortion of every field coordinate written (galvo-field-correction.h).
+  // Null or disabled: coordinates go out as computed. Shared because the params
+  // are copied per layer and the table does not change within a job.
+  std::shared_ptr<const GalvoFieldCorrection> field_correction;
+  // With a correction, the longest straight piece a mark or a packed dot record
+  // may span, mm: the correction bends lines, and a chord this long strays
+  // from the bent line by curvature x L^2 / 8, about 3 um on the measured field.
+  static constexpr double kCorrectedPieceMm = 4;
 
   // --- time estimation only, never emitted ---------------------------------
   // Multiplier for the extra path length wobble adds. 1 when wobble is off.
@@ -286,10 +298,19 @@ class GalvoListWriter {
    */
   void splitIfFull();
   void emitPulses();
-  /** Field-local coordinates of `p`, counting it if it falls outside the field. */
+  /**
+   * Field-local coordinates of `p` as written to the file: pre-distorted when a
+   * field correction is set, and counted if `p` falls outside the field.
+   */
   QPointF toField(const QPointF& p);
   /** The same conversion without the counting, for a record's own header. */
-  QPointF fieldLocal(const QPointF& p) const { return p - field_centre_; }
+  QPointF fieldLocal(const QPointF& p) const { return corrected(p - field_centre_); }
+  QPointF corrected(const QPointF& local) const {
+    return params_.field_correction ? params_.field_correction->predistort(local) : local;
+  }
+  bool correcting() const { return params_.field_correction && params_.field_correction->enabled(); }
+  /** One straight mark, written as pieces short enough for the correction to bend. */
+  void markPieces(const QPointF& p);
   /** Stage a fresh packed record whose first site is `site`. */
   void openDotRecord(int site);
   /**
@@ -349,6 +370,9 @@ class GalvoListWriter {
   double run_step_len_ = 0;
   double run_dwell_us_ = 0;
   int run_max_zero_gap_ = 0;
+  // Longest record in sites: kPackedDotMaxSites, or what kCorrectedPieceMm
+  // allows when a correction bends the run (a record is a straight line of sites).
+  int run_max_sites_ = kPackedDotMaxSites;
 
   bool rec_open_ = false;
   int rec_origin_site_ = 0;

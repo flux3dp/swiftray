@@ -384,6 +384,18 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // ms here, us inside the writer.
     g.block_start_delay_us =
         qMax(0.0, param["galvo_block_start_delay"].toDouble(50)) * 1000;
+    // The head's measured field distortion, pre-distorted away
+    // (galvo-field-correction.h). Beam Studio sends it from the machine's galvo
+    // settings; absent or malformed, coordinates go out uncorrected.
+    if (param["galvo_field_correction"].isObject()) {
+      auto correction = std::make_shared<const GalvoFieldCorrection>(
+          GalvoFieldCorrection::fromJson(param["galvo_field_correction"].toObject()));
+      if (correction->enabled()) {
+        g.field_correction = correction;
+      } else {
+        qWarning() << "galvo_field_correction is malformed; not applied";
+      }
+    }
     // opcode 12's second parameter on a Mopa head, where it is not derived
     // from power. 0 is what the execution end has used for this head.
     g.pulse_length_us = param["galvo_mopa_pulse_length"].toDouble(0);

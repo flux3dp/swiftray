@@ -187,7 +187,32 @@ QPointF GalvoListWriter::toField(const QPointF& p) {
       std::fabs(local.y()) > half_field_mm_) {
     out_of_field_count_++;
   }
-  return local;
+  // The field test above is on where the point is meant to land; what is
+  // written is where the beam has to be aimed for it to land there.
+  return corrected(local);
+}
+
+void GalvoListWriter::markPieces(const QPointF& p) {
+  const QPointF a = emitted_;
+  const double len = emitted_valid_ ? QLineF(a, p).length() : 0;
+  if (!correcting() || len <= GalvoParams::kCorrectedPieceMm) {
+    markTo(p);
+    return;
+  }
+  const int n = int(std::ceil(len / GalvoParams::kCorrectedPieceMm));
+  for (int k = 1; k <= n; k++) {
+    const QPointF q = a + (p - a) * (double(k) / n);
+    if (k > 1 && max_commands_per_list_ > 0 &&
+        list_command_count_ >= max_commands_per_list_) {
+      // A fresh list knows no position, so it opens with a jump to where the
+      // previous one stopped -- the beam is off for it and moves nowhere.
+      const QPointF here = emitted_;
+      endList();
+      beginList();
+      jumpTo(here);
+    }
+    markTo(q);
+  }
 }
 
 bool GalvoListWriter::clipSegment(QPointF& p0, QPointF& p1) const {
@@ -309,7 +334,7 @@ void GalvoListWriter::moveTo(double x_mm, double y_mm) {
     return;
   }
   jumpTo(a);
-  markTo(b);
+  markPieces(b);
   splitIfFull();
 }
 
@@ -355,6 +380,10 @@ void GalvoListWriter::beginDotRun(const QPointF& base_mm,
   // its header alone. The ceiling is only about size.
   const int by_delay = int(std::floor(GalvoParams::kJumpDelayLimitMm / len));
   run_max_zero_gap_ = qMax(1, qMin(by_delay, kPackedDotGapCeiling));
+  run_max_sites_ =
+      correcting()
+          ? qBound(1, int(std::floor(GalvoParams::kCorrectedPieceMm / len)) + 1, kPackedDotMaxSites)
+          : kPackedDotMaxSites;
 }
 
 void GalvoListWriter::openDotRecord(int site) {
@@ -393,8 +422,18 @@ void GalvoListWriter::closeDotRecord() {
   const QPointF origin = fieldLocal(
       run_base_ + QPointF(rec_origin_site_ * run_step_.x(),
                           rec_origin_site_ * run_step_.y()));
+  // A record is a straight line of evenly spaced sites. Corrected, its ends
+  // are moved and the step follows them; run_max_sites_ keeps the record short
+  // enough for that straight line to stay on the bent one.
+  QPointF step = run_step_;
+  if (correcting() && sites > 1) {
+    const QPointF end = fieldLocal(
+        run_base_ + QPointF(rec_last_site_ * run_step_.x(),
+                            rec_last_site_ * run_step_.y()));
+    step = (end - origin) / double(sites - 1);
+  }
   const double header[7] = {origin.x(),       origin.y(),
-                            run_step_.x(),    run_step_.y(),
+                            step.x(),         step.y(),
                             double(sites),    double(rec_dots_),
                             run_dwell_us_};
   if (gen_) {
@@ -431,7 +470,7 @@ void GalvoListWriter::dotAt(int site) {
 
   if (rec_open_) {
     const bool full = rec_budget_ > 0 && rec_dots_ >= rec_budget_;
-    const bool too_long = site - rec_origin_site_ >= kPackedDotMaxSites;
+    const bool too_long = site - rec_origin_site_ >= run_max_sites_;
     const bool too_sparse = site - rec_last_site_ > run_max_zero_gap_;
     if (full || too_long || too_sparse) {
       closeDotRecord();
