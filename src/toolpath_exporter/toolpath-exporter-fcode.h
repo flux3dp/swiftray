@@ -128,6 +128,15 @@ struct Config {
   // mm. How far along a scan line a run holds its owner before it can change
   // hands; a dithered image changes site by site instead.
   double galvo_line_blend_segment = 2;
+  // Where a dithered image's tone lands as dot density: a pixel's darkness t
+  // (0 white .. 1 black) becomes galvo_tone_min + (max - min) * t before it is
+  // dithered, white staying white. The CO2 tube marks a dot only while it has
+  // been firing in the last few ms, so a floor keeps light tones dense enough
+  // to stay lit; the ceiling stops the fully-dark tones burning deeper than
+  // the darkest the material shows (test10, 2026-11-05). 0 / 1 leave the tone
+  // alone.
+  double galvo_tone_min = 0;
+  double galvo_tone_max = 1;
   bool galvo_band_dots = false;
   /** The simulator's processDot block, for the hybrid's band dots. */
   LaserRasterGalvoFactory::Blend::DotProcess galvo_dot_process;
@@ -376,6 +385,7 @@ class ToolpathExporterFcode : public QObject {
   // Image processing functions
   void clearWhite(QImage* src, QRect dirty_area);
   void clearTransparent(QImage* src);
+  void remapTone(QImage* src, double lo, double hi);
   void dilateBinaryBitmap(QImage* src);
   void texturizeLaserImage(QImage* src, bool redither);
   // Move related functions

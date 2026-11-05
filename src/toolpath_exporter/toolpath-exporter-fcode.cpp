@@ -325,6 +325,11 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
                            config_.galvo_dot_blend_profile);
     config_.galvo_dot_blend_grain = qMax(
         0.0, param["galvo_dot_blend_grain"].toDouble(config_.galvo_dot_blend_grain));
+    config_.galvo_tone_min =
+        qBound(0.0, param["galvo_tone_min"].toDouble(config_.galvo_tone_min), 1.0);
+    config_.galvo_tone_max =
+        qBound(config_.galvo_tone_min,
+               param["galvo_tone_max"].toDouble(config_.galvo_tone_max), 1.0);
     config_.galvo_line_blend_overlap = param["galvo_line_blend_overlap"].toDouble(
         config_.galvo_line_blend_overlap);
     config_.galvo_line_blend_profile =
@@ -2557,7 +2562,9 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     clearTransparent(&image);
     if (bmp->gradient()) {
       // Tone becomes dot density, the way the gcode path does it: dither to one
-      // bit, then one dot per surviving pixel.
+      // bit, then one dot per surviving pixel. The remap goes first so the
+      // dither spreads the remapped tone, not the drawn one.
+      remapTone(&image, config_.galvo_tone_min, config_.galvo_tone_max);
       texturizeLaserImage(&image, false);
       image = image.convertToFormat(QImage::Format_Mono,
                                     Qt::MonoOnly | Qt::DiffuseAlphaDither)
@@ -2688,6 +2695,27 @@ void ToolpathExporterFcode::clearTransparent(QImage* src) {
       int gray = qGray(ptr[x]);
       int blended = (gray * alpha + 255 * (255 - alpha)) / 255;
       ptr[x] = qRgba(blended, blended, blended, 255);
+    }
+  }
+}
+
+/**
+ * Map every pixel's darkness t = 1 - gray / 255 to lo + (hi - lo) * t, in
+ * place. White (t = 0) stays white, so a blank area never grows dots; the
+ * floor only lifts tones that are already there. A no-op at 0 / 1.
+ */
+void ToolpathExporterFcode::remapTone(QImage* src, double lo, double hi) {
+  Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
+             "Input image for remapTone() must be Format_ARGB32");
+  if (lo <= 0 && hi >= 1) return;
+  for (int y = 0; y < src->height(); ++y) {
+    QRgb* ptr = (QRgb*)src->scanLine(y);
+    for (int x = 0; x < src->width(); ++x) {
+      const int gray = qGray(ptr[x]);
+      if (gray >= WHITE_PIXEL) continue;
+      const double t = lo + (hi - lo) * (1.0 - gray / 255.0);
+      const int out = qBound(0, int(std::lround(255.0 * (1.0 - t))), 255);
+      ptr[x] = qRgba(out, out, out, 255);
     }
   }
 }
