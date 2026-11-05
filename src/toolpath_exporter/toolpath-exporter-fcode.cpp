@@ -1649,15 +1649,33 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
   }
   painter.end();
 
-  QString path = config_.galvo_debug_image;
-  const int dot = path.lastIndexOf('.');
-  const QString suffix = QString("-layer%1").arg(current_layer_id_);
-  path = dot > path.lastIndexOf('/') ? path.left(dot) + suffix + path.mid(dot)
-                                     : path + suffix + ".png";
+  const QString path =
+      galvoDebugPath(QString("-layer%1").arg(current_layer_id_));
   if (image.save(path)) {
     qInfo() << "[Export] galvo tiling image ->" << path;
   } else {
     qWarning() << "[Export] could not write the galvo tiling image to" << path;
+  }
+}
+
+QString ToolpathExporterFcode::galvoDebugPath(const QString& suffix) const {
+  const QString path = config_.galvo_debug_image;
+  const int dot = path.lastIndexOf('.');
+  return dot > path.lastIndexOf('/') ? path.left(dot) + suffix + path.mid(dot)
+                                     : path + suffix + ".png";
+}
+
+void ToolpathExporterFcode::writeGalvoDebugBitmap(const QImage& image,
+                                                  const QString& stage) {
+  if (config_.galvo_debug_image.isEmpty()) return;
+  const QString path = galvoDebugPath(QString("-layer%1-bitmap%2-%3")
+                                          .arg(current_layer_id_)
+                                          .arg(galvo_debug_bitmap_)
+                                          .arg(stage));
+  if (image.save(path)) {
+    qInfo() << "[Export] galvo bitmap" << stage << "->" << path;
+  } else {
+    qWarning() << "[Export] could not write the galvo bitmap to" << path;
   }
 }
 
@@ -2560,15 +2578,19 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     bbox_px.setWidth(image.width());
     bbox_px.setHeight(image.height());
     clearTransparent(&image);
+    ++galvo_debug_bitmap_;
+    writeGalvoDebugBitmap(image, "1-source");
     if (bmp->gradient()) {
       // Tone becomes dot density, the way the gcode path does it: dither to one
       // bit, then one dot per surviving pixel. The remap goes first so the
       // dither spreads the remapped tone, not the drawn one.
       remapTone(&image, config_.galvo_tone_min, config_.galvo_tone_max);
+      writeGalvoDebugBitmap(image, "2-remapped");
       texturizeLaserImage(&image, false);
       image = image.convertToFormat(QImage::Format_Mono,
                                     Qt::MonoOnly | Qt::DiffuseAlphaDither)
                   .convertToFormat(QImage::Format_Grayscale8);
+      writeGalvoDebugBitmap(image, "3-dithered");
     } else {
       image = imageBinarize(&image, bmp->thrsh_brightness());
       dilateBinaryBitmap(&image);

@@ -371,6 +371,13 @@ class ToolpathExporterFcode : public QObject {
   // reaches from there. Opt-in via Config::galvo_debug_image.
   void writeGalvoDebugImage(const QVector<GalvoBlock>& blocks,
                             const QRectF& content) const;
+  // Config::galvo_debug_image with `suffix` worked in before its extension
+  // (or ".png" added when it has none).
+  QString galvoDebugPath(const QString& suffix) const;
+  // Every bitmap of a galvo layer, as it was drawn, after the tone remap and
+  // after the dither, beside the tiling image. Opt-in the same way.
+  void writeGalvoDebugBitmap(const QImage& image, const QString& stage);
+  int galvo_debug_bitmap_ = 0;
   void outputLayerPathFcode();
   void outputBitmapFcode();
   void convertPrintingLayer();
