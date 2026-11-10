@@ -1,0 +1,104 @@
+{
+	"BUILD_DIR" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper_autogen",
+	"CMAKE_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CMAKE_CURRENT_BINARY_DIR" : "/Users/estherfu/Desktop/swiftray/third_party/clipper",
+	"CMAKE_CURRENT_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray/third_party/clipper",
+	"CMAKE_EXECUTABLE" : "/opt/homebrew/Cellar/cmake/3.30.2/bin/cmake",
+	"CMAKE_LIST_FILES" : [ "/Users/estherfu/Desktop/swiftray/third_party/clipper/CMakeLists.txt" ],
+	"CMAKE_SOURCE_DIR" : "/Users/estherfu/Desktop/swiftray",
+	"CROSS_CONFIG" : false,
+	"DEP_FILE" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper_autogen/deps",
+	"DEP_FILE_RULE_NAME" : "clipper_autogen/timestamp",
+	"HEADERS" : 
+	[
+		[
+			"/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper.hpp",
+			"MU",
+			"EWIEGA46WW/moc_clipper.cpp",
+			null
+		]
+	],
+	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
+	"INCLUDE_DIR" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper_autogen/include",
+	"MOC_COMPILATION_FILE" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper_autogen/mocs_compilation.cpp",
+	"MOC_DEFINITIONS" : 
+	[
+		"ENABLE_SENTRY=ad81ff6a57274de58ba17f6520240929@o28957.ingest.us.sentry.io/6586888",
+		"QT6",
+		"QT_NO_KEYWORDS"
+	],
+	"MOC_DEPEND_FILTERS" : 
+	[
+		[
+			"Q_PLUGIN_METADATA",
+			"[\n][ \t]*Q_PLUGIN_METADATA[ \t]*\\([^\\)]*FILE[ \t]*\"([^\"]+)\""
+		]
+	],
+	"MOC_INCLUDES" : 
+	[
+		"/Users/estherfu/Desktop/swiftray/third_party",
+		"/Users/estherfu/Desktop/swiftray/third_party/sentry-native/install/include",
+		"/Users/estherfu/Desktop/swiftray/src",
+		"/Users/estherfu/Desktop/swiftray",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtGui.framework/Versions/A/Headers/6.7.2/QtGui",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtCore.framework/Versions/A/Headers/6.7.2/QtCore",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtDBus.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtDBus.framework/Versions/A/Headers/6.7.2/QtDBus",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSvg.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtSvg.framework/Versions/A/Headers/6.7.2/QtSvg",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework/Versions/A/Headers/6.7.2",
+		"/Users/estherfu/Qt6/6.7.2/macos/lib/QtWidgets.framework/Versions/A/Headers/6.7.2/QtWidgets",
+		"/opt/homebrew/Cellar/opencv/4.10.0_19/include/opencv4",
+		"/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include/c++/v1",
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include",
+		"/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.2.sdk/usr/include",
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"
+	],
+	"MOC_MACRO_NAMES" : 
+	[
+		"Q_OBJECT",
+		"Q_GADGET",
+		"Q_NAMESPACE",
+		"Q_NAMESPACE_EXPORT",
+		"Q_GADGET_EXPORT",
+		"Q_ENUM_NS"
+	],
+	"MOC_OPTIONS" : [],
+	"MOC_PATH_PREFIX" : false,
+	"MOC_PREDEFS_CMD" : 
+	[
+		"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++",
+		"-std=c++17",
+		"-dM",
+		"-E",
+		"-c",
+		"/opt/homebrew/Cellar/cmake/3.30.2/share/cmake/Modules/CMakeCXXCompilerABI.cpp"
+	],
+	"MOC_PREDEFS_FILE" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper_autogen/moc_predefs.h",
+	"MOC_RELAXED_MODE" : false,
+	"MOC_SKIP" : [],
+	"MULTI_CONFIG" : false,
+	"PARALLEL" : 8,
+	"PARSE_CACHE_FILE" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/CMakeFiles/clipper_autogen.dir/ParseCache.txt",
+	"QT_MOC_EXECUTABLE" : "/Users/estherfu/Qt6/6.7.2/macos/./libexec/moc",
+	"QT_UIC_EXECUTABLE" : "/Users/estherfu/Qt6/6.7.2/macos/./libexec/uic",
+	"QT_VERSION_MAJOR" : 6,
+	"QT_VERSION_MINOR" : 7,
+	"SETTINGS_FILE" : "/Users/estherfu/Desktop/swiftray/third_party/clipper/CMakeFiles/clipper_autogen.dir/AutogenUsed.txt",
+	"SOURCES" : 
+	[
+		[
+			"/Users/estherfu/Desktop/swiftray/third_party/clipper/clipper.cpp",
+			"MU",
+			null
+		]
+	],
+	"UIC_OPTIONS" : [],
+	"UIC_SEARCH_PATHS" : [],
+	"UIC_SKIP" : [],
+	"UIC_UI_FILES" : [],
+	"USE_BETTER_GRAPH" : false,
+	"VERBOSITY" : 0
+}

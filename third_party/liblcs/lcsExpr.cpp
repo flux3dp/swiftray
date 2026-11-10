@@ -292,7 +292,7 @@ long LCS2open(void) {
 
     if (!gLibLCS) {
         std::string sErr = dlerror();
-        std::cout << "Unable to link libLCS" << sErr << "\n";
+        std::cerr << "Unable to link libLCS" << sErr << "\n";
         sErr = sErr;
     }
 
@@ -572,19 +572,19 @@ void LCS2close(void) {
 
 bool lcs_check_init() {
     if (!gLibLCS) {
-        printf("LCS:: Loading LCS library...\n");
+        std::cerr<<("LCS:: Loading LCS library...\n");
         int result = LCS2open();
-        printf("LCS:: LCSOpen result=%d\n", result);
+        std::cerr<<("LCS:: LCSOpen result=") << result << "\n";
         if (!lcs_init_dll) {
-            printf("LCS:: Failed to load LCS library.\n");
+            std::cerr<<("LCS:: Failed to load LCS library.\n");
             return false;
         }
         if (lcs_init_dll() != LCS_RES_NO_ERROR) {
-            printf("LCS:: Failed to initialize LCS library.\n");
+            std::cerr<<("LCS:: Failed to initialize LCS library.\n");
             return false;
         }
 
-        printf("LCS:: Initialized successfully.\n");
+        std::cerr<<("LCS:: Initialized successfully.\n");
     }
     return true;
 }
@@ -598,7 +598,7 @@ bool first_connect = true;
 std::mutex connect_mutex_;
 bool lcs_connect(bool force) {
     if (!lcs_available()) {
-        printf("LCS:: No laser cards found.\n");
+        std::cerr<<("LCS:: No laser cards found.\n");
         return false;
     }
     BoardRunStatus status;
@@ -606,7 +606,7 @@ bool lcs_connect(bool force) {
     if (!force && !first_connect) {
         lcs_get_status((uint32_t*)&status, &pos);
         if (status.bConnected) {
-            printf("LCS:: Already connected to BSL card #0");
+            std::cerr<<("LCS:: Already connected to BSL card #0");
             return true;
         }
     }
@@ -616,6 +616,7 @@ bool lcs_connect(bool force) {
     lcs_remove_card(0);
     lcs_assign_card(0, 0);
     auto select_result = lcs_select_card(0);
+    std::cerr<<("LCS:: Selecting BSL card #0, result=") << static_cast<int>(select_result);
 
     if (select_result != LCS_RES_NO_ERROR) {
         printf("Failed to select laser card (%d), try again...\n", static_cast<int>(select_result));
@@ -627,7 +628,7 @@ bool lcs_connect(bool force) {
         return false;
     }
 
-    printf("LCS:: Selected BSL card #0. Getting status.\n");
+    std::cerr<<("LCS:: Selected BSL card #0. Getting status.\n");
     // Double Check with get_status
     lcs_get_status((uint32_t*)&status, &pos);
     lcs_restart_list();
@@ -635,7 +636,7 @@ bool lcs_connect(bool force) {
     // Set z axis and rotary off
     lcs_write_io_port_mask(0b01, 0b11);
     if (!status.bConnected) {
-        printf("LCS:: Failed to really connect to BSL card #0.\n");
+        std::cerr<<("LCS:: Failed to really connect to BSL card #0.\n");
         return false;
     }
     return true;
