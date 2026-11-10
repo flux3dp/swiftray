@@ -32,6 +32,8 @@ void GalvoListWriter::beginBlock(const QPointF& field_centre_mm,
   field_centre_ = field_centre_mm;
   half_field_mm_ = half_field_mm;
   block_distance_mm_ = 0;
+  block_laser_enabled_ = false;
+  split_pending_ = false;
   // The gantry move that parked the head is what put us here; the board itself
   // has no position yet, so the first emitted move has to be absolute (§19.4).
   emitted_valid_ = false;
@@ -44,7 +46,20 @@ void GalvoListWriter::endBlock() {
   if (!in_block_) {
     return;
   }
-  endList();
+  split_pending_ = false;
+  endList(true);
+  if (block_laser_enabled_) {
+    // Nothing above should leave the MO on: a full list is only split when the
+    // next command arrives, so the last list of a block always has the geometry
+    // that closes it. Should a path still get here, a list of nothing but the
+    // epilogue switches the laser off rather than leaving it to the next block.
+    qWarning() << "GalvoListWriter::endBlock() - laser still enabled, closing it in an empty list";
+    list_armed_ = true;
+    list_open_ = true;
+    list_time_ms_ = 0;
+    list_command_count_ = 0;
+    endList(true);
+  }
   in_block_ = false;
   on_block_start_ = nullptr;
 }
@@ -73,6 +88,28 @@ void GalvoListWriter::beginList() {
 }
 
 void GalvoListWriter::ensureListOpen() {
+  if (split_pending_) {
+    split_pending_ = false;
+    if (list_open_) {
+      // The list filled up on the last piece of geometry; this command is the
+      // next one, so the split goes here. A fresh list knows no position, so it
+      // opens with a jump to where the previous one stopped -- the beam is off
+      // for it and it moves nowhere.
+      const QPointF here = emitted_;
+      const bool had_position = emitted_valid_;
+      endList();
+      beginList();
+      openList();
+      if (had_position) {
+        jumpTo(here);
+      }
+      return;
+    }
+  }
+  openList();
+}
+
+void GalvoListWriter::openList() {
   if (list_open_ || !list_armed_) {
     return;
   }
@@ -103,20 +140,26 @@ void GalvoListWriter::ensureListOpen() {
                                params_.wobble_space_mm,
                                double(int(params_.wobble_mode))});
   }
-  emit(GalvoOp::ENABLE_LASER, {0});
-  if (first_of_block && params_.block_start_delay_us > 0) {
-    // See GalvoParams::block_start_delay_us. Inside the list rather than an
-    // fcode sleep before it, so the wait is the card's own and cannot be eaten
-    // by the time the host spends handing the list over.
-    emit(GalvoOp::LONG_DELAY, {params_.block_start_delay_us});
-    list_time_ms_ += params_.block_start_delay_us / 1000;
+  if (first_of_block) {
+    // Once per block, not per list: see GalvoParams::mo_delay_us. The MO stays
+    // on through every list of the block until endBlock() closes the last one.
+    emit(GalvoOp::ENABLE_LASER, {qMax(0.0, params_.mo_delay_us)});
+    list_time_ms_ += qMax(0.0, params_.mo_delay_us) / 1000;
+    block_laser_enabled_ = true;
+    if (params_.block_start_delay_us > 0) {
+      // See GalvoParams::block_start_delay_us. Inside the list rather than an
+      // fcode sleep before it, so the wait is the card's own and cannot be eaten
+      // by the time the host spends handing the list over.
+      emit(GalvoOp::LONG_DELAY, {params_.block_start_delay_us});
+      list_time_ms_ += params_.block_start_delay_us / 1000;
+    }
   }
   // A fresh list leaves the board's position unknown to us, so force the next
   // move to be absolute.
   emitted_valid_ = false;
 }
 
-void GalvoListWriter::endList() {
+void GalvoListWriter::endList(bool closing_block) {
   if (!list_armed_) {
     return;
   }
@@ -128,7 +171,11 @@ void GalvoListWriter::endList() {
     // Nothing was ever emitted: no prologue, so no epilogue either.
     return;
   }
-  emit(GalvoOp::DISABLE_LASER, {0});
+  if (closing_block && block_laser_enabled_) {
+    // The block's one DISABLE_LASER. Between lists the MO stays on.
+    emit(GalvoOp::DISABLE_LASER, {0});
+    block_laser_enabled_ = false;
+  }
   // §20.1: opcode 19 is the list boundary and carries this list's estimated run
   // time in ms. This diverges from the simulator, where it takes no parameter.
   emit(GalvoOp::SET_END_OF_LIST, {list_time_ms_});
@@ -345,9 +392,11 @@ void GalvoListWriter::splitIfFull() {
   }
   // Only ever between one piece of geometry and the next, never between a jump
   // and the mark it was the approach for: a list that opened would otherwise
-  // start with a mark from a position the board has forgotten.
-  endList();
-  beginList();
+  // start with a mark from a position the board has forgotten. The split itself
+  // waits for the next command (ensureListOpen), so a block whose last piece of
+  // geometry fills a list does not end on an empty one -- which matters now that
+  // the block's DISABLE_LASER rides in its last list.
+  split_pending_ = true;
 }
 
 int GalvoListWriter::remainingListCapacity() const {

@@ -389,6 +389,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // ms here, us inside the writer.
     g.block_start_delay_us =
         qMax(0.0, param["galvo_block_start_delay"].toDouble(50)) * 1000;
+    // ENABLE_LASER's MO delay, us, once per block (GalvoParams::mo_delay_us).
+    g.mo_delay_us = qMax(0.0, param["galvo_mo_delay"].toDouble(8000));
     // The head's measured field distortion, pre-distorted away
     // (galvo-field-correction.h). Beam Studio sends it from the machine's galvo
     // settings; absent or malformed, coordinates go out uncorrected.
@@ -1222,7 +1224,7 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     if (last && centre_when_done && anything_emitted) {
       galvo->returnToCentre();
     }
-    galvo->endBlock();  // closes the list: DISABLE_LASER + SET_END_OF_LIST(ms)
+    galvo->endBlock();  // closes the last list: DISABLE_LASER + SET_END_OF_LIST(ms)
 
     // §15-S8: the galvo's own travel belongs in travel_dist too.
     proc.add_travel_dist(galvo->block_distance_mm());

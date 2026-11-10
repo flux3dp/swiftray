@@ -54,10 +54,15 @@ enum class GalvoWobbleMode : int {
 };
 
 /**
- * The parameter set a list's prologue carries. Everything here is re-sent at the
- * head of every list: §19.3 requires each list to stand on its own, because the
- * board frames every list with disable_laser and there is no state replay on the
- * bsl side to lean on.
+ * The parameter set a list's prologue carries. The speeds, delays, power and
+ * pulses are re-sent at the head of every list (§19.3: a list stands on its
+ * own, there is no state replay on the bsl side to lean on). The laser itself is
+ * the exception since 2026-11-10: ENABLE_LASER goes out once, in a block's first
+ * list, and DISABLE_LASER once, in its last -- the MO of a Mopa head takes
+ * `mo_delay_us` to come up, and cycling it at every list boundary cost that wait
+ * per list and left the first dots of each list weak. bsl no longer frames lists
+ * with disable_laser of its own, so the state carries across the lists of a
+ * block.
  */
 struct GalvoParams {
   // --- written into the prologue -------------------------------------------
@@ -88,6 +93,12 @@ struct GalvoParams {
   // to a whole microsecond and floored at 1 -- anything under 0.5 would reach
   // the SDK as 0, outside its documented 0.021~1365 range.
   double standby_width_us = 1;
+  // ENABLE_LASER's one parameter: the MO delay in us, how long the card waits
+  // after switching the laser's master oscillator on before the list goes on.
+  // Emitted once per block (see above). 8 ms is the industry figure for a Mopa
+  // source; on the factory EVT head 5 ms still missed a few dots and 10 ms was
+  // complete. A CO2 head has no MO and ignores it.
+  double mo_delay_us = 8000;
   // LONG_DELAY right after ENABLE_LASER in a block's first list. After the
   // gantry move that parks the head, the first list marks visibly weaker (2/3
   // of the darkness of the lists after it, test8 2026-11-03) unless something
@@ -167,10 +178,10 @@ struct GalvoParams {
  * Lifecycle:
  *
  *     beginBlock(centre)      // gantry is already parked there
- *       beginList()           // prologue
+ *       beginList()           // prologue; the block's first list adds ENABLE_LASER
  *       ... moveTo / setLaserOn ...
- *       endList()             // DISABLE_LASER + SET_END_OF_LIST(ms)
- *     endBlock()
+ *       endList()             // SET_END_OF_LIST(ms)
+ *     endBlock()              // closes the last list with DISABLE_LASER first
  */
 class GalvoListWriter {
  public:
@@ -208,10 +219,12 @@ class GalvoListWriter {
    */
   void beginList();
   /**
-   * Close a list: DISABLE_LASER(0) then SET_END_OF_LIST(estimated ms). Does
-   * nothing when the armed list never received any geometry.
+   * Close a list: SET_END_OF_LIST(estimated ms), preceded by DISABLE_LASER(0)
+   * when `closing_block` -- endBlock() is the one caller that passes it, so the
+   * laser stays enabled across the lists of a block. Does nothing when the armed
+   * list never received any geometry.
    */
-  void endList();
+  void endList(bool closing_block = false);
 
   /**
    * Restrict emission to `rect` (machine mm). Segments are clipped against it,
@@ -286,6 +299,8 @@ class GalvoListWriter {
   void emit(GalvoOp op, std::initializer_list<double> params);
   /** Write the prologue if the armed list has not started yet. */
   void ensureListOpen();
+  /** Write the prologue of the armed list. ensureListOpen() is the entry point. */
+  void openList();
   /** Run the block-start callback, once per block. */
   void ensureBlockStarted();
   /** Move the board to `p` (machine mm) with a jump, if it is not there. */
@@ -334,6 +349,11 @@ class GalvoListWriter {
   std::function<void()> on_block_start_;
   bool list_armed_ = false;
   bool list_open_ = false;
+  // ENABLE_LASER has gone out in this block and DISABLE_LASER has not yet.
+  bool block_laser_enabled_ = false;
+  // splitIfFull() found the list full; the split happens when the next command
+  // needs the list, so a block never ends on an armed list that holds nothing.
+  bool split_pending_ = false;
   QPointF field_centre_;
   double half_field_mm_ = 55;
   QRectF clip_rect_;
