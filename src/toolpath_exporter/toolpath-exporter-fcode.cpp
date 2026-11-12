@@ -407,17 +407,17 @@ bool ToolpathExporterFcode::convertStack(const QList<LayerPtr>& layers,
       proc.add_metadata("COLOR_ORDER", config_.color_order);
     }
 
-    if (config_.expected_module != MachineModules::NONE) {
-      MachineModules forbidden_headtype = MachineModules::NONE;
-      if (config_.expected_module == MachineModules::NONE) {
-        forbidden_headtype = MachineModules::PRINTER_4C_WITH_1064;
-      } else if (config_.expected_module == MachineModules::PRINTER_4C) {
-        forbidden_headtype = MachineModules::LASER_1064;
-      } else if (config_.expected_module == MachineModules::LASER_1064) {
-        forbidden_headtype = MachineModules::PRINTER_4C;
-      }
-      proc.add_metadata("FORBIDDEN_HEADTYPE", int(forbidden_headtype));
+    // Always written, as fluxclient does: a plain laser document (NONE) forbids the 4C / 1064
+    // add-ons, which the firmware reads as "run on the laser head only".
+    MachineModules forbidden_headtype = MachineModules::NONE;
+    if (config_.expected_module == MachineModules::NONE) {
+      forbidden_headtype = MachineModules::PRINTER_4C_WITH_1064;
+    } else if (config_.expected_module == MachineModules::PRINTER_4C) {
+      forbidden_headtype = MachineModules::LASER_1064;
+    } else if (config_.expected_module == MachineModules::LASER_1064) {
+      forbidden_headtype = MachineModules::PRINTER_4C;
     }
+    proc.add_metadata("FORBIDDEN_HEADTYPE", int(forbidden_headtype));
   }
 
   // Step 7. Handle post-task
