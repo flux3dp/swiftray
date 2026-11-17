@@ -7,7 +7,8 @@ rem copy. The build copies these dlls next to Swiftray.exe, so signed sources gi
 rem package. Re-run after vcpkg reinstalls or upgrades packages: that restores unsigned dlls.
 rem Windows 11 Smart App Control blocks unsigned dlls with "Bad Image" 0xc0e90002.
 rem
-rem Needs two environment variables (never commit them):
+rem Needs two environment variables (never commit them). In PowerShell use $env:SIGN_SERVER = "..."
+rem because PowerShell's `set` makes a shell variable that this script cannot see.
 rem   SIGN_SERVER      e.g. http://192.168.1.20:8000/
 rem   SIGN_CREDENTIAL  the value of the Credential header
 
@@ -18,17 +19,20 @@ if not exist "%ROOT%" (
   exit /b 1
 )
 if "%SIGN_SERVER%"=="" (
-  echo set SIGN_SERVER first
+  echo SIGN_SERVER is not set. cmd: set SIGN_SERVER=http://ip:port/   PowerShell: $env:SIGN_SERVER = "http://ip:port/"
   exit /b 1
 )
 if "%SIGN_CREDENTIAL%"=="" (
-  echo set SIGN_CREDENTIAL first
+  echo SIGN_CREDENTIAL is not set. cmd: set SIGN_CREDENTIAL=...   PowerShell: $env:SIGN_CREDENTIAL = "..."
   exit /b 1
 )
 
-set PATH=C:\Program Files (x86)\Windows Kits\10\bin\x64;%PATH%
+rem signtool lives in bin\x64 on some SDK installs and in bin\<version>\x64 on others; take the newest
+set "PATH=%ProgramFiles(x86)%\Windows Kits\10\bin\x64;%PATH%"
+for /d %%d in ("%ProgramFiles(x86)%\Windows Kits\10\bin\10.*") do if exist "%%d\x64\signtool.exe" set "SIGNTOOL_DIR=%%d\x64"
+if defined SIGNTOOL_DIR set "PATH=%SIGNTOOL_DIR%;%PATH%"
 where signtool >nul 2>&1 || (
-  echo signtool not found, install the Windows SDK
+  echo signtool not found under "%ProgramFiles(x86)%\Windows Kits\10\bin", install the Windows SDK
   exit /b 1
 )
 
