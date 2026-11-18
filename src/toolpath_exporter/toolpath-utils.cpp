@@ -831,6 +831,7 @@ QSizeF get_galvo_block_size(double field_mm) {
   // from the field alone -- each lens gets its own pair. These are the EVT
   // machine, which steps 0.25 mm in X and 0.16 mm in Y:
   //   110 mm lens -> X 400 steps = 100 mm,   Y 625 steps = 100 mm
+  //    90 mm lens -> X 320 steps =  80 mm,   Y 500 steps =  80 mm  (MOPA only)
   //    70 mm lens -> X 240 steps =  60 mm,   Y 375 steps =  60 mm
   // A platform that steps differently lands elsewhere -- the 6090 test rig,
   // at 0.5 and 0.2032 mm, wants 100 x 99.9744 and 60 x 59.944 -- and says so
@@ -841,6 +842,7 @@ QSizeF get_galvo_block_size(double field_mm) {
   };
   static const Entry table[] = {
       {110.0, QSizeF(100.0, 100.0)},
+      {90.0, QSizeF(80.0, 80.0)},
       {70.0, QSizeF(60.0, 60.0)},
   };
   for (const Entry& entry : table) {
