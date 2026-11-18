@@ -42,11 +42,17 @@ where signtool >nul 2>&1 || (
 
 set /a signed=0
 set /a skipped=0
-rem debug\ and tools\ never ship with Swiftray
-for /r "%ROOT%" %%f in (*.dll) do (
-  echo %%f | findstr /i /c:"\debug\" /c:"\tools\" >nul || call :sign "%%f" || exit /b 1
+rem vcpkg's top-level debug\ and tools\ never ship with Swiftray. Match only that folder name, not
+rem the full path, so a checkout under e.g. C:\tools\ still gets signed.
+for /d %%d in ("%ROOT%\*") do (
+  if /i not "%%~nxd"=="debug" if /i not "%%~nxd"=="tools" call :signdir "%%d" || exit /b 1
 )
 echo signed %signed% files, skipped %skipped% already-signed files
+exit /b 0
+
+rem for /r cannot take its root from a for variable, hence the subroutine
+:signdir
+for /r %1 %%f in (*.dll) do call :sign "%%f" || exit /b 1
 exit /b 0
 
 :sign
