@@ -5,6 +5,8 @@ rem Run on the packaging machine. Sends every unsigned release dll under vcpkg_i
 rem code sign server (same HTTP endpoint the Beam Studio CD uses) and replaces it with the signed
 rem copy. The build copies these dlls next to Swiftray.exe, so signed sources give a signed
 rem package. Re-run after vcpkg reinstalls or upgrades packages: that restores unsigned dlls.
+rem The copy to deploy\ runs as a post-build step, so after signing delete the build dir's
+rem Swiftray.exe, *.dll and deploy\ (keep vcpkg_installed\) and the install dir, then build + install.
 rem Windows 11 Smart App Control blocks unsigned dlls with "Bad Image" 0xc0e90002.
 rem
 rem Needs two environment variables (never commit them). In PowerShell use $env:SIGN_SERVER = "..."
@@ -13,6 +15,8 @@ rem   SIGN_SERVER      e.g. http://192.168.1.20:8000/
 rem   SIGN_CREDENTIAL  the value of the Credential header
 
 set ROOT=%~1
+rem Visual Studio builds (CMakeSettings.json) keep vcpkg packages inside the build dir; CI keeps them at the repo root
+if "%ROOT%"=="" if exist "%~dp0..\..\out\build\x64-Release\vcpkg_installed\x64-windows" set ROOT=%~dp0..\..\out\build\x64-Release\vcpkg_installed\x64-windows
 if "%ROOT%"=="" set ROOT=%~dp0..\..\vcpkg_installed\x64-windows
 if not exist "%ROOT%" (
   echo not found: "%ROOT%"
