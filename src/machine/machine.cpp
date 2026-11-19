@@ -37,6 +37,10 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   });
   connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
   connect(job_executor_, &Executor::finished, this, &Machine::syncPosition); // Always sync the realtime position at the end of job
+  // Queued to this thread: the executor changes state on its own thread
+  connect(job_executor_, &Executor::stateChanged, this, [this](Executor::State state) {
+    if (state != Executor::State::kRunning && state != Executor::State::kPaused) applyPendingLens();
+  });
 }
 
 Machine::~Machine() {
@@ -644,24 +648,70 @@ QString Machine::getConfig(QString key) {
   else return "";
 }
 
-void Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
-  if (motion_controller_) {
-    if (motion_controller_->type() == "BSL") {
-      ((BSLMotionController*)motion_controller_)->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
-      qInfo() << "Machine::setCorrection() - Correction set" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
-    } else {
-      qWarning() << "Machine::setCorrection() - Not supported for this motion controller";
-    }
+bool Machine::isJobActive() const {
+  if (!job_executor_) return false;
+  const Executor::State state = job_executor_->getState();
+  return state == Executor::State::kRunning || state == Executor::State::kPaused;
+}
+
+void Machine::applyPendingLens() {
+  // the work area first: the correction is applied on top of it
+  if (pending_scanahead_) {
+    auto apply = std::move(pending_scanahead_);
+    pending_scanahead_ = nullptr;
+    qInfo() << "Machine::applyPendingLens() - scanahead params held during the job";
+    apply();
+  }
+  if (pending_correction_) {
+    auto apply = std::move(pending_correction_);
+    pending_correction_ = nullptr;
+    qInfo() << "Machine::applyPendingLens() - correction held during the job";
+    apply();
   }
 }
 
-void Machine::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
-  if (motion_controller_) {
-    if (motion_controller_->type() == "BSL") {
-      ((BSLMotionController*)motion_controller_)->setScanaheadParams(worksize, angle, xOffset, yOffset);
-      qInfo() << "Machine::setScanaheadParams() - set" << worksize << angle << xOffset << yOffset;
-    } else {
-      qWarning() << "Machine::setScanaheadParams() - Not supported for this motion controller";
-    }
+/**
+ * The board takes a new correction at once, and the rest of a running job (framing included) would be
+ * converted with it, e.g. Beam Studio sends the lens of another tab's document when that tab connects
+ * mid-job. Held until the job stops, completes or is replaced; the latest call wins.
+ */
+void Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
+  if (!motion_controller_) return;
+  if (motion_controller_->type() != "BSL") {
+    qWarning() << "Machine::setCorrection() - Not supported for this motion controller";
+    return;
   }
+  auto apply = [this, scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source]() {
+    if (!motion_controller_ || motion_controller_->type() != "BSL") return;
+    ((BSLMotionController*)motion_controller_)->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
+    qInfo() << "Machine::setCorrection() - Correction set" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
+  };
+  if (isJobActive()) {
+    qInfo() << "Machine::setCorrection() - Job running, held until it ends" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
+    pending_correction_ = apply;
+    return;
+  }
+  pending_correction_ = nullptr;
+  apply();
+}
+
+/** Held during a job like setCorrection: the work area scales every coordinate of the job. */
+void Machine::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+  if (!motion_controller_) return;
+  if (motion_controller_->type() != "BSL") {
+    qWarning() << "Machine::setScanaheadParams() - Not supported for this motion controller";
+    return;
+  }
+  auto apply = [this, worksize, angle, xOffset, yOffset]() {
+    if (!motion_controller_ || motion_controller_->type() != "BSL") return;
+    ((BSLMotionController*)motion_controller_)->setScanaheadParams(worksize, angle, xOffset, yOffset);
+    qInfo() << "Machine::setScanaheadParams() - set" << worksize << angle << xOffset << yOffset;
+  };
+  if (isJobActive()) {
+    qInfo() << "Machine::setScanaheadParams() - Job running, held until it ends" << worksize << angle << xOffset << yOffset;
+    pending_scanahead_ = apply;
+    return;
+  }
+  pending_scanahead_ = nullptr;
+  apply();
 }

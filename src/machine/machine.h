@@ -9,6 +9,7 @@
 #include <QProgressDialog>
 #include <QPixmap>
 #include <QSerialPort>
+#include <functional>
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
 #include <executor/machine_job/machine_job.h>
@@ -83,6 +84,8 @@ private Q_SLOTS:
 
 private:
   void alert(QString title, QString msg);
+  bool isJobActive() const;
+  void applyPendingLens();
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
   QSerialPort *serial_port_ = nullptr;
@@ -108,6 +111,11 @@ private:
   qreal cached_z_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
 
   bool bsl_connected_ = false;
+
+  // Lens settings received while a job runs: the board takes them at once and the rest of the job
+  // would be converted with them, so they wait for the job to end (see setCorrection)
+  std::function<void()> pending_correction_;
+  std::function<void()> pending_scanahead_;
 
   std::tuple<qreal, qreal, qreal> custom_origin_; // store the custom origin set by user
 
