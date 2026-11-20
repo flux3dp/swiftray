@@ -154,6 +154,25 @@ bool applyScanaheadParams(Machine* machine, const QJsonObject& obj) {
   return machine->setScanaheadParams(obj["worksize"].toDouble(), obj["angle"].toDouble(),
                                      obj["xOffset"].toDouble(), obj["yOffset"].toDouble());
 }
+
+// The optional "lens" of the requests that start something ("start", "startFraming"):
+// { "scanahead": <setScanaheadParams params>, "correction": <setCorrection params> }.
+// It is applied in the request that starts the job, so no lens from another client can slip in
+// between the two; a lens sent on its own beforehand can be overwritten before the start arrives.
+// Returns the reason when the request must not start anything, an empty string otherwise (also when
+// there is no "lens": such a request behaves as it always has).
+QString applyStartLens(Machine* machine, const QJsonObject& params) {
+  if (!params["lens"].isObject()) return QString();
+  const QJsonObject lens = params["lens"].toObject();
+  // Neither applied nor started: the executor would refuse the start, and the lens must not land on
+  // whatever is still running (a red light preview takes lens settings)
+  if (machine->isJobActive()) return "JOB_RUNNING";
+  if ((lens["scanahead"].isObject() && !applyScanaheadParams(machine, lens["scanahead"].toObject())) ||
+      (lens["correction"].isObject() && !applyCorrection(machine, lens["correction"].toObject()))) {
+    return "LENS_REJECTED";
+  }
+  return QString();
+}
 }  // namespace
 
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
@@ -179,23 +198,8 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "start") {
     qInfo() << "Server::Starting job";
     const QJsonObject obj = params.toObject();
-    // Optional "lens": { "scanahead": <setScanaheadParams params>, "correction": <setCorrection params> }.
-    // Applied here, in the request that starts the job, so no lens from another client can slip in
-    // between the two; a lens sent on its own beforehand can be overwritten while the task uploads.
-    // Without "lens" the start behaves as it always has.
     const bool has_lens = obj["lens"].isObject();
-    QString start_error;
-    if (has_lens) {
-      const QJsonObject lens = obj["lens"].toObject();
-      if (getMachine()->isJobActive()) {
-        // Neither applied nor started: the executor would refuse the start, and the lens must not
-        // land on whatever is still running (a red light preview takes lens settings)
-        start_error = "JOB_RUNNING";
-      } else if ((lens["scanahead"].isObject() && !applyScanaheadParams(getMachine(), lens["scanahead"].toObject())) ||
-                 (lens["correction"].isObject() && !applyCorrection(getMachine(), lens["correction"].toObject()))) {
-        start_error = "LENS_REJECTED";
-      }
-    }
+    QString start_error = applyStartLens(getMachine(), obj);
     if (start_error.isEmpty()) {
       double taskTime = obj["taskTime"].toDouble();
       if (taskTime > 0) {
@@ -264,7 +268,15 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "startFraming") {
-    result["success"] = this->startFraming(params);
+    const QString lens_error = applyStartLens(getMachine(), params.toObject());
+    if (!lens_error.isEmpty()) {
+      qWarning() << "Server::Starting framing - refused:" << lens_error;
+      result["success"] = false;
+      result["error"] = lens_error;
+    } else {
+      // generating the framing path below runs in this same request, so the lens still cannot change
+      result["success"] = this->startFraming(params);
+    }
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
   } else if (action == "upload") {
