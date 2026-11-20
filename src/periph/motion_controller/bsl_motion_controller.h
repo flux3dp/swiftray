@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QElapsedTimer>
+#include <atomic>
 #include <mutex>
 #include <thread>
 #include <queue>
@@ -44,9 +45,13 @@ public:
     if (current_error_ != LCS_RES_NO_ERROR) return this->getErrorString(current_error_);
     return QString();
   }
-  // Both return false and change nothing while a laser job is running (see isLensLocked)
-  bool setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
-  bool setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
+  void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  // Lens settings (setCorrection / setScanaheadParams) must not change under a laser job; the caller
+  // asks before it sets them. job_active: the job executor is running or paused.
+  bool isLensLocked(bool job_active) const;
+  // Called when a job is accepted, before its first command is handled
+  void markJobStarting() { job_starting_ = true; }
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   void setTaskTime(double time) { total_task_time_ = time; }
   BoardRunStatus getBoardStatus();
@@ -66,9 +71,6 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
-  bool isLensLocked() const;
-  void applyCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
-  void applyScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   void handleGcode(const QString &cmd_packet);
   void startCommandRunner();
   void commandRunnerThread();
@@ -92,6 +94,9 @@ private:
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
   bool is_running_laser_ = false;
+  // A job was started and its M3 has not been handled yet, so is_running_laser_ / is_framing_ still
+  // describe the previous job. Set on the caller's thread, cleared by the command runner.
+  std::atomic<bool> job_starting_{false};
   bool is_framing_ = false;
   bool is_handling_high_speed_ = false;
   bool is_threading = false;

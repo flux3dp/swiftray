@@ -46,7 +46,7 @@ public:
   void syncPosition();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   void setSerialPort(QSerialPort &serial_port);
-  // false when the controller refused them (a laser job is running) or does not support them
+  // false when they were refused (a job is starting or a laser job is running) or are not supported
   bool setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
   bool setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   bool connectSerial(QString portName, int baudrate);
@@ -84,6 +84,7 @@ private Q_SLOTS:
 
 private:
   void alert(QString title, QString msg);
+  bool isJobActive() const;
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
   QSerialPort *serial_port_ = nullptr;

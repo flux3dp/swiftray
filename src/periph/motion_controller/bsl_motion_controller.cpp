@@ -556,6 +556,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_preparing_first_list_ = true;
       is_running_laser_ = true;
+      // From here is_running_laser_ and is_framing_ (M103 / M104 came before this M3) say what kind of
+      // job this is; set before the flag is dropped so a laser job is never unlocked in between
+      job_starting_ = false;
       completed_task_time_ = 0;
       estimated_time_ = 0;
       running_task_time_ = 0;
@@ -943,41 +946,27 @@ bool BSLMotionController::resetState() {
 /**
  * The board takes lens settings at once, and the rest of a running job would be converted with them
  * (Beam Studio sends the lens of a tab's document whenever that tab connects, e.g. a new tab with
- * another work area). From M3 until the job's M2 has finished or it is stopped, paused and
- * reconnecting included, requests are refused rather than held: whatever starts the next movement
- * sends the lens it needs itself, so nothing sent meanwhile may leak into it. Red light and axis
- * moves (M103) stay open, as callers stop them and send new settings back to back.
+ * another work area). They are refused, not held: whatever starts the next movement sends the lens
+ * it needs itself, so nothing sent meanwhile may leak into it.
+ * - From the moment a job is accepted until its M3 is handled: every job, since the command runner
+ *   has not reached the M103 / M104 that says what kind it is.
+ * - A laser job: from M3 until its M2 has finished or it is stopped, paused and reconnecting included.
+ * Red light and axis moves (M103) are open again once their M3 is handled, as callers stop them and
+ * send new settings back to back.
  */
-bool BSLMotionController::isLensLocked() const {
-  return is_running_laser_ && !is_framing_;
+bool BSLMotionController::isLensLocked(bool job_active) const {
+  if (is_running_laser_ && !is_framing_) return true;
+  return job_starting_ && job_active;
 }
 
-bool BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
-  if (isLensLocked()) {
-    qWarning() << "BSLM~::setCorrection() - Rejected, a laser job is running" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY << laser_source;
-    return false;
-  }
-  applyCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
-  return true;
-}
-
-bool BSLMotionController::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
-  if (isLensLocked()) {
-    qWarning() << "BSLM~::setScanaheadParams() - Rejected, a laser job is running" << worksize << angle << xOffset << yOffset;
-    return false;
-  }
-  applyScanaheadParams(worksize, angle, xOffset, yOffset);
-  return true;
-}
-
-void BSLMotionController::applyCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
+void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
   laser_type_ = laser_source.compare("UV", Qt::CaseInsensitive) == 0 ? LCS_UV : LCS_MOPA;
   correction_params = {scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY};
   LCS2Error ret = lcs_set_manual_correction_params(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY);
   qInfo() << "BSLM~::setCorrection() - Correction set result = " << getErrorString(ret);
 }
 
-void BSLMotionController::applyScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
+void BSLMotionController::setScanaheadParams(double worksize, double angle, double xOffset, double yOffset) {
   scanahead_params = {worksize, angle, xOffset, yOffset};
   LCS2Error ret = lcs_set_scanahead_params(worksize, false, false, false, angle, xOffset, yOffset);
   qInfo() << "BSLM~::setScanaheadParams() - Scanahead Params set result = " << getErrorString(ret);
@@ -1039,9 +1028,8 @@ bool BSLMotionController::isConnected() {
       } else {
         this->current_error_ = 0;
         this->current_custom_error_.clear();
-        // The board lost them with the connection: put back the ones in effect, job running or not
-        applyScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
-        applyCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY, laser_type_ == LCS_UV ? "UV" : "MOPA");
+        setScanaheadParams(scanahead_params.worksize, scanahead_params.angle, scanahead_params.xOffset, scanahead_params.yOffset);
+        setCorrection(correction_params.scaleX, correction_params.scaleY, correction_params.bucketX, correction_params.bucketY, correction_params.paralleX, correction_params.paralleY, correction_params.trapeX, correction_params.trapeY, laser_type_ == LCS_UV ? "UV" : "MOPA");
         if (lcs_paused_) {
           stop();
         }

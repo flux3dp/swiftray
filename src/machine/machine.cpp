@@ -438,6 +438,11 @@ bool Machine::startJob() {
       qWarning() << "Machine::startJob() - reset motion controller done";
     }
   }
+  // Lock the lens before the executor hands out the first command: the command runner only learns at
+  // M3 what kind of job this is. Not while another job still runs, which this start will not replace.
+  if (motion_controller_->type() == "BSL" && !isJobActive()) {
+    ((BSLMotionController*)motion_controller_)->markJobStarting();
+  }
   qInfo() << "Machine::startJob() - starting job executor";
   job_executor_->startJob();
   return true;
@@ -644,13 +649,24 @@ QString Machine::getConfig(QString key) {
   else return "";
 }
 
+bool Machine::isJobActive() const {
+  if (!job_executor_) return false;
+  const Executor::State state = job_executor_->getState();
+  return state == Executor::State::kRunning || state == Executor::State::kPaused;
+}
+
 bool Machine::setCorrection(double scaleX,double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
   if (!motion_controller_) return false;
   if (motion_controller_->type() != "BSL") {
     qWarning() << "Machine::setCorrection() - Not supported for this motion controller";
     return false;
   }
-  if (!((BSLMotionController*)motion_controller_)->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source)) return false;
+  BSLMotionController *controller = (BSLMotionController*)motion_controller_;
+  if (controller->isLensLocked(isJobActive())) {
+    qWarning() << "Machine::setCorrection() - Rejected, a job is running" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY << laser_source;
+    return false;
+  }
+  controller->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
   qInfo() << "Machine::setCorrection() - Correction set" << scaleX << scaleY << bucketX << bucketY << paralleX << paralleY << trapeX << trapeY;
   return true;
 }
@@ -661,7 +677,12 @@ bool Machine::setScanaheadParams(double worksize, double angle, double xOffset, 
     qWarning() << "Machine::setScanaheadParams() - Not supported for this motion controller";
     return false;
   }
-  if (!((BSLMotionController*)motion_controller_)->setScanaheadParams(worksize, angle, xOffset, yOffset)) return false;
+  BSLMotionController *controller = (BSLMotionController*)motion_controller_;
+  if (controller->isLensLocked(isJobActive())) {
+    qWarning() << "Machine::setScanaheadParams() - Rejected, a job is running" << worksize << angle << xOffset << yOffset;
+    return false;
+  }
+  controller->setScanaheadParams(worksize, angle, xOffset, yOffset);
   qInfo() << "Machine::setScanaheadParams() - set" << worksize << angle << xOffset << yOffset;
   return true;
 }
