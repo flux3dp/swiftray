@@ -268,14 +268,12 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "startFraming") {
-    const QString lens_error = applyStartLens(getMachine(), params.toObject());
-    if (!lens_error.isEmpty()) {
-      qWarning() << "Server::Starting framing - refused:" << lens_error;
+    QString start_error;
+    result["success"] = this->startFraming(params, &start_error);
+    if (!start_error.isEmpty()) {
+      qWarning() << "Server::Starting framing - refused:" << start_error;
       result["success"] = false;
-      result["error"] = lens_error;
-    } else {
-      // generating the framing path below runs in this same request, so the lens still cannot change
-      result["success"] = this->startFraming(params);
+      result["error"] = start_error;
     }
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
@@ -484,7 +482,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
 
 // TODO: split to 'generate task' and 'start job'
 // And move generation part to worker for AreaCheck framing
-bool SwiftrayServer::startFraming(const QJsonValue& params) {
+bool SwiftrayServer::startFraming(const QJsonValue& params, QString* error) {
   if (getMachine()->getJobExecutor()->getActiveJob()) {
     throw std::runtime_error("Job already running");
   }
@@ -542,9 +540,14 @@ bool SwiftrayServer::startFraming(const QJsonValue& params) {
   BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
   controller->setTaskTime(0);
   controller->setCheckDoor(false);
+  const QString lens_error = applyStartLens(getMachine(), params.toObject());
+  if (!lens_error.isEmpty()) {
+    if (error) *error = lens_error;
+    return false;
+  }
   if (getMachine()->createFramingJob(framing_code.split("\n"), !rotary_mode)) {
-    getMachine()->startJob();
-    return true;
+    if (getMachine()->startJob()) return true;
+    if (error) *error = "START_FAILED";
   }
   return false;
 }

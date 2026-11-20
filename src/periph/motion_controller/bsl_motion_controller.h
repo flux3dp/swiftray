@@ -52,6 +52,7 @@ public:
   bool isLensLocked(bool job_active) const;
   // Called when a job is accepted, before its first command is handled
   void markJobStarting() { job_starting_ = true; }
+  void clearJobStarting() { job_starting_ = false; }
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   void setTaskTime(double time) { total_task_time_ = time; }
   BoardRunStatus getBoardStatus();

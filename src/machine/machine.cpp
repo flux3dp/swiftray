@@ -440,12 +440,15 @@ bool Machine::startJob() {
   }
   // Lock the lens before the executor hands out the first command: the command runner only learns at
   // M3 what kind of job this is. Not while another job still runs, which this start will not replace.
+  BSLMotionController* bsl_controller = nullptr;
   if (motion_controller_->type() == "BSL" && !isJobActive()) {
-    ((BSLMotionController*)motion_controller_)->markJobStarting();
+    bsl_controller = (BSLMotionController*)motion_controller_;
+    bsl_controller->markJobStarting();
   }
   qInfo() << "Machine::startJob() - starting job executor";
-  job_executor_->startJob();
-  return true;
+  const bool started = job_executor_->startJob();
+  if (!started && bsl_controller) bsl_controller->clearJobStarting();
+  return started;
 }
 
 bool Machine::pauseJob() {
