@@ -139,6 +139,23 @@ void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, 
   }
 }
 
+namespace {
+// The lens settings as Beam Studio sends them: in "setCorrection" / "setScanaheadParams", and in the
+// optional "lens" of "start". false when the machine refused them (see Machine::setCorrection).
+bool applyCorrection(Machine* machine, const QJsonObject& obj) {
+  return machine->setCorrection(obj["scaleX"].toDouble(), obj["scaleY"].toDouble(),
+                                obj["bucketX"].toDouble(), obj["bucketY"].toDouble(),
+                                obj["paralleX"].toDouble(), obj["paralleY"].toDouble(),
+                                obj["trapeX"].toDouble(), obj["trapeY"].toDouble(),
+                                obj["laserSource"].toString("MOPA"));
+}
+
+bool applyScanaheadParams(Machine* machine, const QJsonObject& obj) {
+  return machine->setScanaheadParams(obj["worksize"].toDouble(), obj["angle"].toDouble(),
+                                     obj["xOffset"].toDouble(), obj["yOffset"].toDouble());
+}
+}  // namespace
+
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
   QJsonObject result;
   result["success"] = true;
@@ -161,12 +178,39 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     }
   } else if (action == "start") {
     qInfo() << "Server::Starting job";
-    double taskTime = params.toObject()["taskTime"].toDouble();
-    if (taskTime > 0) {
-      BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
-      controller->setTaskTime(taskTime * 1000);
+    const QJsonObject obj = params.toObject();
+    // Optional "lens": { "scanahead": <setScanaheadParams params>, "correction": <setCorrection params> }.
+    // Applied here, in the request that starts the job, so no lens from another client can slip in
+    // between the two; a lens sent on its own beforehand can be overwritten while the task uploads.
+    // Without "lens" the start behaves as it always has.
+    const bool has_lens = obj["lens"].isObject();
+    QString start_error;
+    if (has_lens) {
+      const QJsonObject lens = obj["lens"].toObject();
+      if (getMachine()->isJobActive()) {
+        // Neither applied nor started: the executor would refuse the start, and the lens must not
+        // land on whatever is still running (a red light preview takes lens settings)
+        start_error = "JOB_RUNNING";
+      } else if ((lens["scanahead"].isObject() && !applyScanaheadParams(getMachine(), lens["scanahead"].toObject())) ||
+                 (lens["correction"].isObject() && !applyCorrection(getMachine(), lens["correction"].toObject()))) {
+        start_error = "LENS_REJECTED";
+      }
     }
-    getMachine()->startJob();
+    if (start_error.isEmpty()) {
+      double taskTime = obj["taskTime"].toDouble();
+      if (taskTime > 0) {
+        BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+        controller->setTaskTime(taskTime * 1000);
+      }
+      // A caller that sent a lens also learns when the job could not start; without one the result is
+      // not reported, as before
+      if (!getMachine()->startJob() && has_lens) start_error = "START_FAILED";
+    }
+    if (!start_error.isEmpty()) {
+      qWarning() << "Server::Starting job - refused:" << start_error;
+      result["success"] = false;
+      result["error"] = start_error;
+    }
   } else if (action == "pause") {
     getMachine()->pauseJob();
   } else if (action == "resume") {
@@ -178,27 +222,12 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement get device parameter logic, probably laser speed, power, fan...etc
     result["value"] = 0; // Replace with actual value
   } else if (action == "setCorrection") {
-    QJsonObject obj = params.toObject();
-    double scaleX = obj["scaleX"].toDouble();
-    double scaleY = obj["scaleY"].toDouble();
-    double bucketX = obj["bucketX"].toDouble();
-    double bucketY = obj["bucketY"].toDouble();
-    double paralleX = obj["paralleX"].toDouble();
-    double paralleY = obj["paralleY"].toDouble();
-    double trapeX = obj["trapeX"].toDouble();
-    double trapeY = obj["trapeY"].toDouble();
-    QString laser_source = obj["laserSource"].toString("MOPA");
-    if (!getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source)) {
+    if (!applyCorrection(getMachine(), params.toObject())) {
       result["success"] = false;
       result["error"] = "LENS_REJECTED";
     }
   } else if (action == "setScanaheadParams") {
-    QJsonObject obj = params.toObject();
-    double worksize = obj["worksize"].toDouble();
-    double angle = obj["angle"].toDouble();
-    double xOffset = obj["xOffset"].toDouble();
-    double yOffset = obj["yOffset"].toDouble();
-    if (!getMachine()->setScanaheadParams(worksize, angle, xOffset, yOffset)) {
+    if (!applyScanaheadParams(getMachine(), params.toObject())) {
       result["success"] = false;
       result["error"] = "LENS_REJECTED";
     }
