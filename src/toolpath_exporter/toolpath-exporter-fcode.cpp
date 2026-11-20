@@ -739,9 +739,11 @@ void ToolpathExporterFcode::convertLayer() {
   is_laser_layer_ = !is_printing_layer_ && !is_uv_layer_;
   layer_is_galvo_ = is_galvo_machine_ && is_laser_layer_ &&
                     is_galvo_module(layer_module_);
+  layer_galvo_auto_ = layer_is_galvo_ && current_layer_->galvoTiling() ==
+                                             Layer::GalvoTiling::Auto;
   layer_galvo_by_object_ =
       layer_is_galvo_ &&
-      current_layer_->galvoTiling() == Layer::GalvoTiling::Object;
+      current_layer_->galvoTiling() != Layer::GalvoTiling::Grid;
   layer_pwm_scale_ = 1 - current_layer_->minPower() / current_layer_->power();
   if (layer_pwm_scale_ <= 0) {
     layer_pwm_scale_ = 1;
@@ -910,6 +912,7 @@ void ToolpathExporterFcode::convertLayer() {
     }
     // Their factories hold the layer's images; nothing after the repeats needs them.
     galvo_clusters_.clear();
+    galvo_stitched_.reset();
     proc.moveto(NamedArgs().rs(0));
     if (has_focus_adjust && focus_step > 0 && layer_repeat_ > 1) {
       float total_moved = (layer_repeat_ - 1) * focus_step;
@@ -1055,16 +1058,21 @@ void ToolpathExporterFcode::preprocessLaserLayer() {
   setTransform();
   laser_bitmaps_.clear();
   galvo_clusters_.clear();
+  galvo_stitched_.reset();
   if (layer_galvo_by_object_) {
     // Each stop gets factories of its own instead of sharing the layer's.
     const LayerPtr line_layer = current_layer_;
-    planGalvoObjectClusters(line_layer, current_layer_2_);
-    // Leave current_layer_ where the shared pass below would have.
-    if (current_layer_2_) {
-      current_layer_ = current_layer_2_;
+    if (planGalvoObjectClusters(line_layer, current_layer_2_)) {
+      // Leave current_layer_ where the shared pass below would have.
+      if (current_layer_2_) {
+        current_layer_ = current_layer_2_;
+      }
+      onProgressChanged(0.05, true);
+      return;
     }
-    onProgressChanged(0.05, true);
-    return;
+    // An Auto layer with nothing to keep whole is a grid layer, down to the
+    // order its shapes reach the factories: take the shared pass.
+    layer_galvo_by_object_ = false;
   }
   // First pass: Generate path list and bitmap list and draw filled path with
   // factory
@@ -1604,7 +1612,11 @@ void ToolpathExporterFcode::writeGalvoDebugImage(const QVector<GalvoBlock>& bloc
     painter.setPen(pen(QColor(230, 120, 0, 160), hairline));
     painter.drawRect(reach);
     // the slice of that reach this head is actually responsible for
-    painter.setPen(pen(QColor(0, 140, 70), hairline * 2));
+    // green: a stop or tile of the layer; purple: a lattice tile of an Auto
+    // layer's stitched batch
+    painter.setPen(pen(block.stitched ? QColor(130, 60, 190)
+                                      : QColor(0, 140, 70),
+                       hairline * 2));
     painter.drawRect(block.region.translated(lens));
     // how far the lens sits from the head that carries it
     painter.setPen(pen(QColor(150, 150, 150), hairline));
@@ -1738,7 +1750,7 @@ void ToolpathExporterFcode::createGalvoFactories() {
        current_layer_->fillHatch() ? 2 : 1});
 }
 
-void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
+bool ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
                                                     const LayerPtr& fill_layer) {
   // An object is a first-level element of the layer, which the loader recorded
   // on every shape it flattened out of one (Shape::itemKey). Its outline and
@@ -1791,7 +1803,7 @@ void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
   collect(line_layer, false);
   collect(fill_layer, true);
   if (items.isEmpty()) {
-    return;
+    return true;
   }
 
   const double field = config_.galvo_field_mm;
@@ -1814,10 +1826,31 @@ void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
     }
     return park;
   };
-  // Neither of these may be fixed by splitting the object -- not splitting it
-  // is the whole point of the setting -- so the conversion fails instead, with
-  // what Worker::handleAction hands back to the caller.
-  for (const Item& item : items) {
+  // Tiled by object, neither of these may be fixed by splitting the object --
+  // not splitting it is the whole point of the setting -- so the conversion
+  // fails instead, with what Worker::handleAction hands back to the caller.
+  // Auto splits it: such an object joins the batch tiled on the lattice.
+  QVector<bool> stitched(items.size(), false);
+  int stitched_count = 0;
+  int stitched_with_lines = 0;
+  for (int i = 0; i < items.size(); i++) {
+    const Item& item = items[i];
+    if (layer_galvo_auto_) {
+      if (!fits(item.bounds) || !park_for(item.bounds)) {
+        stitched[i] = true;
+        stitched_count++;
+        const auto is_line = [](const ShapePtr& shape) {
+          return shape->type() != Shape::Type::Bitmap;
+        };
+        if (std::any_of(item.line_shapes.begin(), item.line_shapes.end(),
+                        is_line) ||
+            std::any_of(item.fill_shapes.begin(), item.fill_shapes.end(),
+                        is_line)) {
+          stitched_with_lines++;
+        }
+      }
+      continue;
+    }
     if (!fits(item.bounds)) {
       throw std::runtime_error(
           QString("Galvo layer \"%1\" is tiled by object, but one of its objects "
@@ -1850,7 +1883,13 @@ void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
     const QRectF& rb = items[b].bounds;
     return ra.top() != rb.top() ? ra.top() < rb.top() : ra.left() < rb.left();
   });
-  QVector<bool> taken(items.size(), false);
+  if (stitched_count == items.size()) {
+    qInfo() << "[Export] Galvo layer" << layer_name
+            << "auto tiling: none of its" << items.size()
+            << "object(s) fits one" << field << "mm field -- tiled as a grid";
+    return false;
+  }
+  QVector<bool> taken = stitched;  // a stitched object joins no stop
   struct Plan {
     QRectF bounds;
     QPointF park;
@@ -1892,13 +1931,13 @@ void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
 
   // Fresh factories per stop, filled the way the shared pass fills the
   // layer's: outlines and fills first, then the images.
-  galvo_clusters_.reserve(plans.size());
-  for (const Plan& plan : plans) {
+  auto build = [&](const QVector<int>& members, const QRectF& bounds,
+                   const QPointF& park) {
     createGalvoFactories();
     laser_bitmaps_.clear();
     convert_target_ = ConvertTarget::NON_BITMAP;
     setTransform();
-    for (int member : plan.members) {
+    for (int member : members) {
       current_layer_ = line_layer;
       for (const ShapePtr& shape : items[member].line_shapes) {
         convertShape(shape);
@@ -1913,18 +1952,47 @@ void ToolpathExporterFcode::planGalvoObjectClusters(const LayerPtr& line_layer,
     current_layer_ = line_layer;
     prepareGalvoBitmaps();
     GalvoObjectCluster cluster;
-    cluster.bounds = plan.bounds;
-    cluster.park = plan.park;
+    cluster.bounds = bounds;
+    cluster.park = park;
     swapGalvoCluster(cluster);  // the factories just built move into it
-    galvo_clusters_.push_back(std::move(cluster));
+    return cluster;
+  };
+  galvo_clusters_.reserve(plans.size());
+  for (const Plan& plan : plans) {
+    galvo_clusters_.push_back(build(plan.members, plan.bounds, plan.park));
     if (this->cancelled_) {
       break;
     }
   }
+  if (stitched_count > 0 && !this->cancelled_) {
+    // One set of factories for everything that is tiled, built once like the
+    // stops' and so not re-filled on every repeat the way the grid's are.
+    QVector<int> members;
+    QRectF bounds;
+    for (int i = 0; i < items.size(); i++) {
+      if (stitched[i]) {
+        bounds = members.isEmpty() ? items[i].bounds
+                                   : unite(bounds, items[i].bounds);
+        members.append(i);
+      }
+    }
+    galvo_stitched_ = std::make_unique<GalvoObjectCluster>(
+        build(members, bounds, bounds.center()));
+    if (stitched_with_lines > 0) {
+      // Lines only butt up at a seam under the K-pass strategy, which shows
+      // any misregistration between two stops.
+      qWarning() << "[Export] Galvo layer" << layer_name << "auto tiling:"
+                 << stitched_with_lines
+                 << "object(s) with line content are stitched across stops";
+    }
+  }
   laser_bitmaps_.clear();
-  qInfo() << "[Export] Galvo layer" << layer_name << "tiled by object:"
+  qInfo() << "[Export] Galvo layer" << layer_name
+          << (layer_galvo_auto_ ? "auto tiling:" : "tiled by object:")
           << items.size() << "object(s) ->" << galvo_clusters_.size()
-          << "stop(s), field" << field << "mm";
+          << "stop(s)," << stitched_count << "stitched on the grid, field"
+          << field << "mm";
+  return true;
 }
 
 void ToolpathExporterFcode::swapGalvoCluster(GalvoObjectCluster& cluster) {
@@ -1967,6 +2035,34 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
     qWarning() << "[Export] galvo stops start at the left end of the travel"
                << travel << "-- they cannot be approached from the left";
   }
+  // The batch tiled on the lattice, planned now so the debug image shows both.
+  QVector<GalvoBlock> stitched_blocks;
+  bool stitched_hatch = false;
+  bool stitched_raster = false;
+  if (galvo_stitched_) {
+    swapGalvoCluster(*galvo_stitched_);
+    stitched_hatch = !laser_hatch_factory_->is_empty();
+    stitched_raster = !laser_raster_factory_->is_empty();
+    if (laser_path_factory_->get_size() > 0 || stitched_hatch ||
+        stitched_raster) {
+      QRectF tiled = laser_path_factory_->get_bounds_mm();
+      if (stitched_hatch) {
+        tiled = tiled.united(laser_hatch_factory_->get_bounds_mm());
+      }
+      if (stitched_raster) {
+        tiled = tiled.united(laser_raster_factory_->get_bounds_mm());
+      }
+      stitched_blocks = planGalvoBlocks(tiled);
+      for (GalvoBlock& block : stitched_blocks) {
+        block.stitched = true;
+      }
+      content = content.united(tiled);
+      qInfo() << "[Export] Galvo layer" << current_layer_->name()
+              << "stitched content" << tiled << "->" << stitched_blocks.size()
+              << "block(s), displacement" << config_.galvo_block_size;
+    }
+    swapGalvoCluster(*galvo_stitched_);
+  }
   QVector<GalvoBlock> blocks;
   blocks.reserve(galvo_clusters_.size());
   for (size_t i = 0; i < galvo_clusters_.size(); i++) {
@@ -1985,15 +2081,17 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
     blocks.append(block);
   }
   if (!config_.galvo_debug_image.isEmpty()) {
-    writeGalvoDebugImage(blocks, content);
+    writeGalvoDebugImage(blocks + stitched_blocks, content);
   }
 
   convert_target_ = ConvertTarget::NON_BITMAP;
-  const double n = galvo_clusters_.size();
+  const double n = galvo_clusters_.size() + (galvo_stitched_ ? 1 : 0);
   for (size_t i = 0; i < galvo_clusters_.size(); i++) {
     GalvoObjectCluster& cluster = galvo_clusters_[i];
     swapGalvoCluster(cluster);
-    const bool last = i + 1 == galvo_clusters_.size();
+    // The stitched batch runs after the stops, and the mirrors are parked by
+    // whatever runs last.
+    const bool last = i + 1 == galvo_clusters_.size() && !galvo_stitched_;
     const double from = 0.05 + 0.95 * i / n;
     const double to = 0.05 + 0.95 * (i + 1) / n;
     const bool has_depth = !galvo_depth_bitmaps_.isEmpty();
@@ -2020,6 +2118,37 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
       convertGalvoDepthBitmaps(&block, last, mid, to);
     }
     swapGalvoCluster(cluster);  // back where the next repeat finds them
+    if (this->cancelled_) {
+      return;
+    }
+  }
+
+  if (galvo_stitched_) {
+    // What a grid layer holding only these objects would emit: the lattice
+    // tiles with their clips and seam blending, each row approached from the
+    // left on its own (planGalvoBlocks), then the depth images tile by tile.
+    swapGalvoCluster(*galvo_stitched_);
+    const double from = 0.05 + 0.95 * (n - 1) / n;
+    const bool has_depth = !galvo_depth_bitmaps_.isEmpty();
+    const double mid = has_depth ? (from + 1.0) / 2 : 1.0;
+    if (!stitched_blocks.isEmpty()) {
+      emitGalvoBlocks(
+          stitched_blocks,
+          [&]() {
+            laser_path_factory_->generate_task_code(layer_path_speed_);
+            if (stitched_hatch) {
+              laser_hatch_factory_->generate_task_code(layer_speed_);
+            }
+            if (stitched_raster) {
+              laser_raster_factory_->generate_task_code(layer_speed_);
+            }
+          },
+          from, mid, !has_depth);
+    }
+    if (has_depth && !this->cancelled_) {
+      convertGalvoDepthBitmaps(nullptr, true, mid, 1.0);
+    }
+    swapGalvoCluster(*galvo_stitched_);
     if (this->cancelled_) {
       return;
     }

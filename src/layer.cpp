@@ -379,10 +379,12 @@ void Layer::setParameters(const MySVG::BeamLayerConfig &config) {
   this->fill_dwell_time_ = config.fill_dwell_time;
   this->fill_dwell_adaptive_ = config.fill_dwell_adaptive;
 
-  // Anything but "object" -- missing, or a value added after this build -- is
-  // the grid, which is what every layer did before the setting existed.
-  this->galvo_tiling_ = config.galvo_tiling == "object" ? GalvoTiling::Object
-                                                        : GalvoTiling::Grid;
+  // Anything but "object" or "grid" -- missing, or a value added after this
+  // build -- is Auto, the default the editor shows for a layer without one.
+  this->galvo_tiling_ = config.galvo_tiling == "object"
+                            ? GalvoTiling::Object
+                            : config.galvo_tiling == "grid" ? GalvoTiling::Grid
+                                                            : GalvoTiling::Auto;
   this->dotting_time_ = config.dotting_time;
   this->stl_dot_mode_ = config.stl_dot_mode;
   this->stl_point_spacing_ = config.stl_point_spacing;

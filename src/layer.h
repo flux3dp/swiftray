@@ -22,9 +22,12 @@ public:
   /**
    * How a galvo layer is split between gantry stops. Grid tiles the layer on
    * the machine lattice and stitches the seams; Object keeps every first-level
-   * object of the layer whole, in one field.
+   * object of the layer whole, in one field, and fails on one that does not
+   * fit. Auto keeps whole every object that fits and tiles the rest on the
+   * lattice.
    */
   enum class GalvoTiling {
+    Auto,
     Grid,
     Object
   };
@@ -258,7 +261,7 @@ private:
   int fill_dwell_time_ = 0;
   bool fill_dwell_adaptive_ = false;
 
-  GalvoTiling galvo_tiling_ = GalvoTiling::Grid;
+  GalvoTiling galvo_tiling_ = GalvoTiling::Auto;
   int dotting_time_ = 0;
   // inner engraving (3D objects), see ToolpathExporter::stlEngraveKind()
   bool stl_dot_mode_ = true;

@@ -318,6 +318,9 @@ class ToolpathExporterFcode : public QObject {
     // from the same side. Only a gantry move: no galvo list is opened there.
     QPointF approach;
     bool has_approach = false;
+    // A lattice tile of an Auto layer's stitched batch; only the debug image
+    // reads it, to tell these from the stops that engrave whole objects.
+    bool stitched = false;
   };
 
   // Where the head itself can stand, mm in the layer frame: the work area less
@@ -339,12 +342,26 @@ class ToolpathExporterFcode : public QObject {
   };
   /** What the galvo factories are built from, kept so each cluster gets the same. */
   FactoryKwargs laser_kwargs_;
-  /** The layer is a galvo layer tiled by object (Layer::GalvoTiling::Object). */
+  /**
+   * The layer is a galvo layer whose objects get stops of their own: tiled by
+   * object, or Auto with at least one object that fits a field.
+   */
   bool layer_galvo_by_object_ = false;
+  /** Layer::GalvoTiling::Auto: an object that fits no field is tiled, not refused. */
+  bool layer_galvo_auto_ = false;
   std::vector<GalvoObjectCluster> galvo_clusters_;
+  /**
+   * Auto only: the objects that fit no single field, in factories of their
+   * own, tiled on the lattice after the stops above. Its `park` is unused.
+   */
+  std::unique_ptr<GalvoObjectCluster> galvo_stitched_;
   QRectF galvoHeadTravel() const;
   void createGalvoFactories();
-  void planGalvoObjectClusters(const LayerPtr& line_layer,
+  /**
+   * @return false when nothing was planned because no object of an Auto layer
+   * fits a field: the layer is then the grid's, built the way the grid builds it.
+   */
+  bool planGalvoObjectClusters(const LayerPtr& line_layer,
                                const LayerPtr& fill_layer);
   void swapGalvoCluster(GalvoObjectCluster& cluster);
   void convertGalvoObjectLayer();
