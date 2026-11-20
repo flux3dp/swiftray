@@ -5,7 +5,10 @@
 #include <QRectF>
 #include <QVector>
 
+#include <memory>
+
 #include "base-factory.h"
+#include "galvo-kpass-seams.h"
 
 /**
  * Raster for a galvo head, cut as vectors.
@@ -170,6 +173,31 @@ class LaserRasterGalvoFactory : public BaseFactory {
       double laser_off_delay_us = qQNaN();
     };
     DotProcess dot_process;
+    /**
+     * The K-pass walk strategy, for dithered images: K passes per stop and
+     * seams that wander (GalvoKpassSeams) instead of a band the dots fade
+     * across. The passes are made even when the lattice is a single block and
+     * there is no seam to cut; `dot_overlap` and its friends are not read.
+     */
+    struct Kpass {
+      bool enabled = false;
+      GalvoKpassSeams::Params params;
+      /** Seconds between two passes of a stop, for the exhaust. */
+      double pass_pause = 0;
+      /** mm from a stop to the edge of its field. */
+      double half_field = 55;
+    };
+    Kpass kpass;
+    /**
+     * Before the beam jumps across a blank of the picture at least
+     * `blank_jump_min` mm long, it waits `blank_jump_wait` us on the dot it is
+     * leaving (GalvoListWriter::dwell). The blank is read off the image the
+     * dither was made from, never off the spacing of the dots: a light area's
+     * dots are far apart too, and waiting between those would darken it.
+     * Zero wait switches it off.
+     */
+    double blank_jump_wait = 0;
+    double blank_jump_min = 0.5;
   };
 
   explicit LaserRasterGalvoFactory(const FactoryKwargs& kwargs) noexcept;
@@ -190,11 +218,30 @@ class LaserRasterGalvoFactory : public BaseFactory {
    * The top-left is rounded to a whole pixel, so every image sits on the one
    * pixel grid and images can be merged without resampling (see
    * mergedEntries()).
+   *
+   * `source` is what a dithered image was dithered from -- same size, 255
+   * where the picture is blank. The K-pass seams and the wait before a jump
+   * across a blank both read it; without it neither has anything to go on.
    */
-  void add_bitmap(const QImage& gray, const QRectF& bbox_px, bool dots);
+  void add_bitmap(const QImage& gray, const QRectF& bbox_px, bool dots,
+                  const QImage& source = QImage());
+  /**
+   * The seams of the K-pass walk for the lattice of the blend last set, built
+   * on first use and kept: every block of a lattice reads the same ones. Null
+   * unless the strategy is on and there is a dithered image.
+   */
+  std::shared_ptr<const GalvoKpassSeams> kpassSeams();
+  /**
+   * The dithered images, darkest winning, `shrink` pixels to one: for the
+   * seams debug image. `range_px` is the part of the pixel grid wanted.
+   */
+  QImage renderDots(const QRect& range_px, int shrink) const;
   bool is_empty() const { return bitmaps_.isEmpty(); }
   int get_size() const { return bitmaps_.size(); }
-  void clear() { bitmaps_.clear(); }
+  void clear() {
+    bitmaps_.clear();
+    seams_.reset();
+  }
   /** Dwell for a dot, microseconds; the layer's dotting time. */
   void set_dotting_time(double us) { dotting_time_us_ = us; }
 
@@ -217,6 +264,8 @@ class LaserRasterGalvoFactory : public BaseFactory {
     QImage gray;
     QRectF bbox_px;
     bool dots = false;
+    /** What `gray` was dithered from; null when not given. */
+    QImage source;
   };
   /**
    * The images one block walks. Images of the same kind -- dots or runs --
@@ -308,7 +357,23 @@ class LaserRasterGalvoFactory : public BaseFactory {
    */
   double runTarget(double along, int line) const;
 
+  /**
+   * Whether the source of `entry` is blank for at least blank_jump_min mm on
+   * the straight line between two of its pixels (entry coordinates).
+   */
+  bool blankBetween(const Entry& entry, int x0, int y0, int x1, int y1) const;
+
   Blend blend_;
+  /** kpassSeams()'s result, and the lattice it was built for. */
+  std::shared_ptr<const GalvoKpassSeams> seams_;
+  int seams_lattice_[4] = {0, 0, 0, 0};
+  QSizeF seams_step_;
+  /** Set while a dithered image is being laid by the K-pass rule. */
+  const GalvoKpassSeams* active_seams_ = nullptr;
+  /** The last dot laid from the entry being walked, for the blank-jump wait. */
+  bool prev_dot_valid_ = false;
+  int prev_dot_x_ = 0;
+  int prev_dot_y_ = 0;
   /**
    * Whether the pass under way is laying dots. The two paths blend against
    * different bands, so every weight, band and progress has to know which one

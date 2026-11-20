@@ -65,6 +65,16 @@ void GalvoListWriter::endBlock() {
   on_block_start_ = nullptr;
 }
 
+void GalvoListWriter::dwell(double us) {
+  if (us <= 0 || !in_block_ || !list_open_ || !emitted_valid_ ||
+      split_pending_) {
+    return;
+  }
+  closeDotRecord();
+  emit(GalvoOp::LONG_DELAY, {us});
+  list_time_ms_ += us / 1000;
+}
+
 void GalvoListWriter::pause(double seconds) {
   if (!in_block_ || !block_started_ || seconds <= 0 || !gen_) {
     return;

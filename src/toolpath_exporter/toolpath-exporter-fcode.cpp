@@ -1,4 +1,5 @@
 #include "toolpath-exporter-fcode.h"
+#include "toolpath_exporter/factories/galvo-blue-noise.h"
 #include "toolpath_exporter/factories/laser.h"
 #include "toolpath_exporter/factories/printer-4c.h"
 #include "toolpath_exporter/factories/printer.h"
@@ -188,13 +189,21 @@ void apply_galvo_strategy(const QString& id,
     config->galvo_band_dots = true;
     return;
   }
+  // Not one of the simulator's: K passes per stop with wandering seams, proved
+  // out on the machine itself (GalvoKpassSeams). It has no answer for a run
+  // yet, so line rasters butt up at the tile, as the baseline does.
+  if (id == "dot-kpass-walk") {
+    config->galvo_kpass = true;
+    config->galvo_line_blend_overlap = 0;
+    return;
+  }
   qWarning() << "[Export] galvo_strategy" << id
              << "is not implemented here; the seam settings are left as they"
                 " were. Implemented:"
              << "line-baseline, line-report-optimized, line-overlap-pwm,"
                 " line-overlap-segments, line-overlap-scanlines,"
                 " line-overlap-checkerboard, dot-overlap-blend,"
-                " dot-blend-line-core";
+                " dot-blend-line-core, dot-kpass-walk";
 }
 
 }  // namespace
@@ -330,6 +339,40 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     config_.galvo_tone_max =
         qBound(config_.galvo_tone_min,
                param["galvo_tone_max"].toDouble(config_.galvo_tone_max), 1.0);
+    config_.galvo_threshold =
+        qBound(1, param["galvo_threshold"].toInt(config_.galvo_threshold), 255);
+    const QString dither = param["galvo_dither"].toString();
+    if (dither == "fs") {
+      config_.galvo_dither_blue_noise = false;
+    } else if (!dither.isEmpty() && dither != "blue-noise") {
+      qWarning() << "[Export] galvo_dither" << dither
+                 << "is not known; using blue-noise";
+    }
+    config_.galvo_blank_jump_wait = qMax(
+        0.0, param["galvo_blank_jump_wait"].toDouble(config_.galvo_blank_jump_wait));
+    config_.galvo_blank_jump_min = param["galvo_blank_jump_min"].toDouble(
+        config_.galvo_blank_jump_min);
+    if (config_.galvo_blank_jump_min <= 0) {
+      config_.galvo_blank_jump_min = 0.5;
+    }
+    // The K-pass walk's own knobs; read whether or not the strategy is on, as
+    // the others are, and only used when it is.
+    GalvoKpassSeams::Params& kpass = config_.galvo_kpass_params;
+    kpass.passes = qMax(1, param["galvo_passes"].toInt(kpass.passes));
+    kpass.directions = param["galvo_pass_directions"].toString(kpass.directions);
+    kpass.vseam_walk =
+        qMax(0.0, param["galvo_vseam_walk"].toDouble(kpass.vseam_walk));
+    kpass.vseam_spread =
+        qMax(0.0, param["galvo_vseam_spread"].toDouble(kpass.vseam_spread));
+    kpass.hseam_walk =
+        qMax(0.0, param["galvo_hseam_walk"].toDouble(kpass.hseam_walk));
+    kpass.hseam_spread =
+        qMax(0.0, param["galvo_hseam_spread"].toDouble(kpass.hseam_spread));
+    kpass.walk_length =
+        param["galvo_seam_walk_length"].toDouble(kpass.walk_length);
+    kpass.min_cost = param["galvo_seam_min_cost"].toBool(kpass.min_cost);
+    config_.galvo_pass_pause =
+        qMax(0.0, param["galvo_pass_pause"].toDouble(0));
     config_.galvo_line_blend_overlap = param["galvo_line_blend_overlap"].toDouble(
         config_.galvo_line_blend_overlap);
     config_.galvo_line_blend_profile =
@@ -1250,6 +1293,12 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       blend.line_emission = config_.galvo_line_blend_emission;
       blend.band_dots = config_.galvo_band_dots;
       blend.dot_process = config_.galvo_dot_process;
+      blend.kpass.enabled = config_.galvo_kpass;
+      blend.kpass.params = config_.galvo_kpass_params;
+      blend.kpass.pass_pause = config_.galvo_pass_pause;
+      blend.kpass.half_field = half_field;
+      blend.blank_jump_wait = config_.galvo_blank_jump_wait;
+      blend.blank_jump_min = config_.galvo_blank_jump_min;
       if (laser_raster_factory_) {
         laser_raster_factory_->set_blend(blend);
       }
@@ -2149,6 +2198,9 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
             }
           },
           from, mid, !has_depth);
+      if (!this->cancelled_) {
+        writeGalvoSeamsImage(stitched_blocks);
+      }
     }
     if (has_depth && !this->cancelled_) {
       convertGalvoDepthBitmaps(nullptr, true, mid, 1.0);
@@ -2238,6 +2290,7 @@ void ToolpathExporterFcode::convertGalvoLaserLayer() {
   if (this->cancelled_) {
     return;
   }
+  writeGalvoSeamsImage(blocks);
   convertGalvoDepthBitmaps();
 
   proc.set_travel_speed(config_.travel_speed);
@@ -2718,15 +2771,32 @@ void ToolpathExporterFcode::convertBitmap(const BitmapShape* bmp) {
     writeGalvoDebugBitmap(image, "1-source");
     if (bmp->gradient()) {
       // Tone becomes dot density, the way the gcode path does it: dither to one
-      // bit, then one dot per surviving pixel. The remap goes first so the
-      // dither spreads the remapped tone, not the drawn one.
+      // bit, then one dot per surviving pixel. Three steps, in this order:
+      // the threshold clears near-white speckle while it is still near white,
+      // the remap then moves what is left, and the dither spreads the result.
+      applyThreshold(&image, config_.galvo_threshold);
+      writeGalvoDebugBitmap(image, "2-threshold");
+      // What is blank in the picture, kept for the seams and for the wait
+      // before a jump across a blank. The remap leaves white white, so this
+      // is taken before it only to be the picture rather than its remap.
+      const QImage source = image.convertToFormat(QImage::Format_Grayscale8);
       remapTone(&image, config_.galvo_tone_min, config_.galvo_tone_max);
-      writeGalvoDebugBitmap(image, "2-remapped");
+      writeGalvoDebugBitmap(image, "3-remapped");
       texturizeLaserImage(&image, false);
-      image = image.convertToFormat(QImage::Format_Mono,
-                                    Qt::MonoOnly | Qt::DiffuseAlphaDither)
-                  .convertToFormat(QImage::Format_Grayscale8);
-      writeGalvoDebugBitmap(image, "3-dithered");
+      if (config_.galvo_dither_blue_noise) {
+        // On the pixel grid the raster factory will put it on (add_bitmap
+        // rounds the corner the same way), so neighbouring images and
+        // neighbouring tiles share one mask.
+        image = ditherBlueNoise(image, int(std::round(bbox_px.left())),
+                                int(std::round(bbox_px.top())));
+      } else {
+        image = image.convertToFormat(QImage::Format_Mono,
+                                      Qt::MonoOnly | Qt::DiffuseAlphaDither)
+                    .convertToFormat(QImage::Format_Grayscale8);
+      }
+      writeGalvoDebugBitmap(image, "4-dithered");
+      laser_raster_factory_->add_bitmap(image, bbox_px, true, source);
+      return;
     } else {
       image = imageBinarize(&image, bmp->thrsh_brightness());
       dilateBinaryBitmap(&image);
@@ -2883,6 +2953,212 @@ void ToolpathExporterFcode::remapTone(QImage* src, double lo, double hi) {
  * grays back to a binary image (for images that must stay binarized, e.g.
  * threshold bitmaps and filled paths).
  */
+void ToolpathExporterFcode::applyThreshold(QImage* src, int threshold) {
+  Q_ASSERT_X(src->format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
+             "Input image for applyThreshold() must be Format_ARGB32");
+  if (threshold >= 255) return;  // only pure white would go, and it is white
+  for (int y = 0; y < src->height(); ++y) {
+    QRgb* ptr = (QRgb*)src->scanLine(y);
+    for (int x = 0; x < src->width(); ++x) {
+      if (qGray(ptr[x]) >= threshold) {
+        ptr[x] = qRgba(255, 255, 255, 255);
+      }
+    }
+  }
+}
+
+QImage ToolpathExporterFcode::ditherBlueNoise(const QImage& src, int origin_x,
+                                              int origin_y) {
+  Q_ASSERT_X(src.format() == QImage::Format_ARGB32, "ToolpathExporterFcode",
+             "Input image for ditherBlueNoise() must be Format_ARGB32");
+  constexpr int n = kGalvoBlueNoiseSize;
+  QImage out(src.size(), QImage::Format_Grayscale8);
+  for (int y = 0; y < src.height(); ++y) {
+    const QRgb* in = (const QRgb*)src.constScanLine(y);
+    uchar* dst = out.scanLine(y);
+    const uint16_t* mask =
+        kGalvoBlueNoise + ((((origin_y + y) % n) + n) % n) * n;
+    const int mx = ((origin_x % n) + n) % n;
+    for (int x = 0; x < src.width(); ++x) {
+      // A dot where the darkness beats the mask's threshold for this site:
+      // (rank + 0.5) / n^2, so white never dots and black always does. In
+      // integers: (255 - gray) / 255 > (rank + 0.5) / n^2.
+      const int rank = mask[(mx + x) % n];
+      const long long dark = 255 - qGray(in[x]);
+      dst[x] = dark * 2 * n * n > (2LL * rank + 1) * 255 ? 0 : 255;
+    }
+  }
+  return out;
+}
+
+void ToolpathExporterFcode::writeGalvoSeamsImage(
+    const QVector<GalvoBlock>& blocks) {
+  if (config_.galvo_debug_image.isEmpty() || !config_.galvo_kpass ||
+      blocks.size() < 2 || !laser_raster_factory_) {
+    return;
+  }
+  const std::shared_ptr<const GalvoKpassSeams> seams =
+      laser_raster_factory_->kpassSeams();
+  if (!seams || seams->verticalSeams() + seams->horizontalSeams() == 0) {
+    return;
+  }
+  const QRect range = seams->pixelRange();
+  const double ppx = seams->lattice().px_per_mm_x;
+  const double ppy = seams->lattice().px_per_mm_y;
+  const QPointF grid_offset = seams->lattice().offset;
+  // The whole picture on the left, a few pixels to one; a 24 mm close-up of
+  // the middle crossing on the right, every pixel twice its size.
+  const int shrink = qMax(1, (range.width() + 1599) / 1600);
+  const QImage overview = laser_raster_factory_->renderDots(range, shrink);
+  const double zoom_mm = 24;
+  const int zoom_px = qRound(zoom_mm * ppx);
+  const int zoom_scale = 2;
+  const int title_height = 64;
+  const int gap = 24;
+  QImage image(overview.width() + gap + zoom_px * zoom_scale,
+               title_height + qMax(overview.height(), zoom_px * zoom_scale),
+               QImage::Format_ARGB32);
+  image.fill(Qt::white);
+  QPainter painter(&image);
+  const QColor pass_colour[4] = {QColor(214, 39, 40), QColor(31, 119, 180),
+                                 QColor(44, 160, 44), QColor(255, 127, 14)};
+  const int passes = seams->passes();
+  // mm (the frame dots are emitted in) -> pixel grid
+  auto grid_x = [&](double mm) { return (mm + grid_offset.x()) * ppx; };
+  auto grid_y = [&](double mm) { return (mm + grid_offset.y()) * ppy; };
+
+  // --- overview
+  painter.drawImage(0, title_height, overview);
+  painter.save();
+  painter.translate(0, title_height);
+  painter.setClipRect(0, 0, overview.width(), overview.height());
+  auto ox = [&](double mm) { return (grid_x(mm) - range.left()) / shrink; };
+  auto oy = [&](double mm) { return (grid_y(mm) - range.top()) / shrink; };
+  painter.setPen(QPen(QColor(90, 90, 90), 1, Qt::DotLine));
+  for (const GalvoBlock& block : blocks) {
+    painter.drawRect(QRectF(QPointF(ox(block.region.left()), oy(block.region.top())),
+                            QPointF(ox(block.region.right()), oy(block.region.bottom()))));
+  }
+  for (int p = 0; p < passes; p++) {
+    painter.setPen(QPen(pass_colour[p % 4], 1));
+    const int stride = passes * qMax(1, shrink * 2 / passes);
+    for (int s = 0; s < seams->verticalSeams(); s++) {
+      QPolygonF line;
+      for (int row = range.top(); row <= range.bottom(); row++) {
+        if (seams->passOf(row) != p || ((row - range.top()) / passes) % qMax(1, stride / passes) != 0) {
+          continue;
+        }
+        line << QPointF(ox(seams->verticalCut(s, row, p)),
+                        (row + 0.5 - range.top()) / shrink);
+      }
+      painter.drawPolyline(line);
+    }
+    for (int s = 0; s < seams->horizontalSeams(); s++) {
+      QPolygonF line;
+      for (int col = range.left(); col <= range.right(); col += qMax(1, shrink * 2)) {
+        line << QPointF((col + 0.5 - range.left()) / shrink,
+                        oy(seams->horizontalCut(s, col, p)));
+      }
+      painter.drawPolyline(line);
+    }
+  }
+  painter.restore();
+
+  // --- close-up, centred on the middle vertical seam and the middle
+  // horizontal one (or the middle of the picture along an axis with none)
+  const int vs = seams->verticalSeams() / 2;
+  const int hs = seams->horizontalSeams() / 2;
+  const int mid_row = range.top() + range.height() / 2;
+  const int mid_col = range.left() + range.width() / 2;
+  double cy_px = mid_row;
+  if (seams->horizontalSeams() > 0) {
+    cy_px = grid_y(seams->horizontalCut(hs, mid_col, 0));
+  }
+  double cx_px = mid_col;
+  if (seams->verticalSeams() > 0) {
+    cx_px = grid_x(seams->verticalCut(vs, int(cy_px), 0));
+  }
+  if (seams->horizontalSeams() > 0) {
+    cy_px = grid_y(seams->horizontalCut(hs, int(cx_px), 0));
+  }
+  const QRect zoom(int(cx_px) - zoom_px / 2, int(cy_px) - zoom_px / 2, zoom_px,
+                   zoom_px);
+  const QImage close = laser_raster_factory_->renderDots(zoom, 1);
+  const QPoint zoom_at(overview.width() + gap, title_height);
+  painter.drawImage(QRect(zoom_at, close.size() * zoom_scale), close);
+  painter.save();
+  painter.translate(zoom_at);
+  painter.setClipRect(0, 0, zoom_px * zoom_scale, zoom_px * zoom_scale);
+  painter.setPen(Qt::NoPen);
+  for (int row = zoom.top(); row <= zoom.bottom(); row++) {
+    const int p = seams->passOf(row);
+    painter.setBrush(pass_colour[p % 4]);
+    for (int s = 0; s < seams->verticalSeams(); s++) {
+      // each row is cut once, by its own pass
+      const double x = (grid_x(seams->verticalCut(s, row, p)) - zoom.left()) * zoom_scale;
+      painter.drawRect(QRectF(x - 1.5, (row - zoom.top()) * zoom_scale, 3, zoom_scale));
+    }
+  }
+  painter.setBrush(Qt::NoBrush);
+  for (int p = 0; p < passes; p++) {
+    painter.setPen(QPen(pass_colour[p % 4], 1.5));
+    for (int s = 0; s < seams->horizontalSeams(); s++) {
+      QPolygonF line;
+      for (int col = zoom.left(); col <= zoom.right(); col++) {
+        line << QPointF((col + 0.5 - zoom.left()) * zoom_scale,
+                        (grid_y(seams->horizontalCut(s, col, p)) - zoom.top()) * zoom_scale);
+      }
+      painter.drawPolyline(line);
+    }
+  }
+  painter.restore();
+  painter.setPen(QColor(120, 120, 120));
+  painter.drawRect(QRect(zoom_at, QSize(zoom_px * zoom_scale, zoom_px * zoom_scale)));
+
+  // --- title
+  painter.setFont(QFont(painter.font().family(), 11));
+  painter.setPen(QColor(40, 40, 40));
+  const GalvoKpassSeams::Params& asked = config_.galvo_kpass_params;
+  auto used = [](double value, double wanted) {
+    return value == wanted ? QString::number(value)
+                           : QString("%1 (asked %2: no room in the field)")
+                                 .arg(value)
+                                 .arg(wanted);
+  };
+  const QStringList title = {  // NOLINT
+      QString("K-pass walk: %1 block(s), tile %2 x %3 mm, K = %4 (%5); "
+              "rows cut beside a dot: %6; tiles handed to a neighbour: %7")
+          .arg(blocks.size())
+          .arg(config_.galvo_block_size.width())
+          .arg(config_.galvo_block_size.height())
+          .arg(passes)
+          .arg(asked.directions)
+          .arg(seams->inkedCutRows())
+          .arg(seams->handovers().size()),
+      QString("vertical seams: %1 +/- %2 mm, spread %3 mm;  horizontal "
+              "seams: walk +/- %4 mm, spread %5 mm;  one colour per pass")
+          .arg(seams->minCost() ? "cheapest path" : "walk")
+          .arg(used(seams->usedVWalk(), asked.vseam_walk))
+          .arg(used(seams->usedVSpread(), asked.vseam_spread))
+          .arg(used(seams->usedHWalk(), asked.hseam_walk))
+          .arg(used(seams->usedHSpread(), asked.hseam_spread)),
+      QString("right: %1 mm around the middle crossing, one mark per row "
+              "where its pass cuts the vertical seam")
+          .arg(zoom_mm),
+  };
+  for (int i = 0; i < title.size(); i++) {
+    painter.drawText(8, 18 + i * 19, title[i]);
+  }
+  painter.end();
+  const QString path =
+      galvoDebugPath(QString("-layer%1-seams").arg(current_layer_id_));
+  if (image.save(path)) {
+    qInfo() << "[Export] galvo seams ->" << path;
+  } else {
+    qWarning() << "[Export] could not write the galvo seams image to" << path;
+  }
+}
+
 void ToolpathExporterFcode::texturizeLaserImage(QImage* image, bool redither) {
   if (!layer_texture_enabled_ || !image || image->isNull()) {
     return;

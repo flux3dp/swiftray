@@ -137,6 +137,22 @@ struct Config {
   // alone.
   double galvo_tone_min = 0;
   double galvo_tone_max = 1;
+  // A gradient image's pixel at or above this (0 black .. 255 white) is cleared
+  // to white before the remap, so near-white speckle lays no dots -- the remap's
+  // floor would otherwise lift it into view. 255 only touches pure white.
+  int galvo_threshold = 255;
+  // How a gradient image becomes dots: a blue-noise mask tiled over the pixel
+  // grid (factories/galvo-blue-noise.h), or Qt's error diffusion.
+  bool galvo_dither_blue_noise = true;
+  // Before a jump across a blank of the picture at least _min mm long, the
+  // beam waits _wait us on the dot it leaves (LaserRasterGalvoFactory::Blend).
+  double galvo_blank_jump_wait = 300;
+  double galvo_blank_jump_min = 0.5;
+  // The K-pass walk seam strategy, "dot-kpass-walk" (GalvoKpassSeams).
+  bool galvo_kpass = false;
+  GalvoKpassSeams::Params galvo_kpass_params;
+  // Seconds between two passes of a stop under that strategy.
+  double galvo_pass_pause = 0;
   bool galvo_band_dots = false;
   /** The simulator's processDot block, for the hybrid's band dots. */
   LaserRasterGalvoFactory::Blend::DotProcess galvo_dot_process;
@@ -404,6 +420,16 @@ class ToolpathExporterFcode : public QObject {
   // Every bitmap of a galvo layer, as it was drawn, after the tone remap and
   // after the dither, beside the tiling image. Opt-in the same way.
   void writeGalvoDebugBitmap(const QImage& image, const QString& stage);
+  // Under the K-pass walk, where every pass cuts every seam, over the dithered
+  // image, with a close-up of the middle crossing. Opt-in like the others.
+  void writeGalvoSeamsImage(const QVector<GalvoBlock>& blocks);
+  /** A gradient image's first step: pixels at or above `threshold` to white. */
+  static void applyThreshold(QImage* src, int threshold);
+  /**
+   * Blue-noise dither of an ARGB32 grey image whose top-left pixel is
+   * (origin_x, origin_y) on the pixel grid: Grayscale8, 0 where a dot goes.
+   */
+  static QImage ditherBlueNoise(const QImage& src, int origin_x, int origin_y);
   int galvo_debug_bitmap_ = 0;
   void outputLayerPathFcode();
   void outputBitmapFcode();

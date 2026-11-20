@@ -227,6 +227,16 @@ class GalvoListWriter {
   void endList(bool closing_block = false);
 
   /**
+   * Hold the beam where it stands for `us` before whatever comes next, as a
+   * LONG_DELAY in the list. For a CO2 tube, whose output trails the gate: a
+   * jump made straight after a dot drags what is still coming out along the
+   * way. Closes the packed record being built, since the wait falls between
+   * two dots. Does nothing unless a list is open and the board has a position
+   * in it -- across a list boundary there is no jump to wait before.
+   */
+  void dwell(double us);
+
+  /**
    * A wait in the middle of a block, seconds: the laser is switched off, an
    * fcode sleep follows the list, and the next list switches the laser back on.
    * Longer than a LONG_DELAY is meant for, and the card is idle for it. Does

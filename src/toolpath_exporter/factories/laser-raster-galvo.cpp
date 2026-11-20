@@ -252,11 +252,18 @@ LaserRasterGalvoFactory::LaserRasterGalvoFactory(
 
 void LaserRasterGalvoFactory::add_bitmap(const QImage& gray,
                                          const QRectF& bbox_px,
-                                         bool dots) {
+                                         bool dots,
+                                         const QImage& source) {
   if (gray.isNull() || bbox_px.isEmpty()) {
     return;
   }
   Entry entry;
+  if (!source.isNull() && source.size() == gray.size()) {
+    entry.source = source.format() == QImage::Format_Grayscale8
+                       ? source
+                       : source.convertToFormat(QImage::Format_Grayscale8);
+  }
+  seams_.reset();  // built from the images; one more changes them
   entry.gray = gray.format() == QImage::Format_Grayscale8
                    ? gray
                    : gray.convertToFormat(QImage::Format_Grayscale8);
@@ -312,22 +319,38 @@ QVector<LaserRasterGalvoFactory::Entry> LaserRasterGalvoFactory::mergedEntries(
     }
     QImage gray(area.size(), QImage::Format_Grayscale8);
     gray.fill(255);
-    for (const Entry* entry : group) {
-      const QRect rect = rect_of(*entry);
+    // The sources go the same way, as long as every image brought one.
+    const bool has_source =
+        std::all_of(group.begin(), group.end(),
+                    [](const Entry* e) { return !e->source.isNull(); });
+    QImage source;
+    if (has_source) {
+      source = QImage(area.size(), QImage::Format_Grayscale8);
+      source.fill(255);
+    }
+    auto darkest = [&](const QImage& from, const QRect& rect, QImage* into) {
       const QRect overlap = rect.intersected(area);
       for (int y = overlap.top(); y <= overlap.bottom(); y++) {
-        const uchar* src = entry->gray.constScanLine(y - rect.top()) +
+        const uchar* src = from.constScanLine(y - rect.top()) +
                            (overlap.left() - rect.left());
-        uchar* dst = gray.scanLine(y - area.top()) + (overlap.left() - area.left());
+        uchar* dst =
+            into->scanLine(y - area.top()) + (overlap.left() - area.left());
         for (int x = 0; x < overlap.width(); x++) {
           dst[x] = qMin(dst[x], src[x]);
         }
+      }
+    };
+    for (const Entry* entry : group) {
+      darkest(entry->gray, rect_of(*entry), &gray);
+      if (has_source) {
+        darkest(entry->source, rect_of(*entry), &source);
       }
     }
     Entry entry;
     entry.gray = gray;
     entry.bbox_px = QRectF(area);
     entry.dots = dots;
+    entry.source = source;
     merged.append(entry);
   }
   return merged;
@@ -432,22 +455,44 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
         continue;
       }
       const double along = moving(at) + half_pixel;
-      if (blendActive()) {
+      // The machine's pixel grid, which every block walks identically, so all
+      // of them agree on who owns a site -- even when one block walks the
+      // image on its own and its neighbour walks it merged with another.
+      const int column = int(entry.bbox_px.left()) + (transposed ? index : at);
+      const int row = int(entry.bbox_px.top()) + (transposed ? at : index);
+      if (active_seams_) {
+        // K-pass walk: the seams say outright which cell lays this site.
+        if (blend_.active) {
+          int owner_col = 0;
+          int owner_row = 0;
+          active_seams_->owner(column, row, &owner_col, &owner_row);
+          if (owner_col != blend_.col || owner_row != blend_.row) {
+            continue;
+          }
+        }
+      } else if (blendActive()) {
         const double x = transposed ? fixed : along;
         const double y = transposed ? along : fixed;
         if (!blend_band().contains(x, y)) {
           continue;  // beyond what this block samples
         }
-        // The screen is indexed by the machine's pixel grid, which every
-        // block walks identically, so all of them draw the same target for a
-        // given site and agree on who owns it -- even when one block walks the
-        // image on its own and its neighbour walks it merged with another.
-        const int column =
-            int(entry.bbox_px.left()) + (transposed ? index : at);
-        const int row = int(entry.bbox_px.top()) + (transposed ? at : index);
+        // The screen is indexed by that same grid, so every block draws the
+        // same target for a given site.
         if (!ownsSite(x, y, dotTarget(x, y, column, row))) {
           continue;
         }
+      }
+      if (galvo && blend_.blank_jump_wait > 0 && !transposed &&
+          !entry.source.isNull()) {
+        // The beam is about to leave the dot before this one. If the way here
+        // crosses a blank of the picture, it waits there first.
+        if (prev_dot_valid_ &&
+            blankBetween(entry, prev_dot_x_, prev_dot_y_, at, index)) {
+          galvo->dwell(blend_.blank_jump_wait);
+        }
+        prev_dot_valid_ = true;
+        prev_dot_x_ = at;
+        prev_dot_y_ = index;
       }
       setPwm(100);
       if (galvo) {
@@ -553,6 +598,134 @@ void LaserRasterGalvoFactory::emitLine(const Entry& entry,
     previous_end = end;
   }
   setPower(base_power_pct_);
+}
+
+std::shared_ptr<const GalvoKpassSeams> LaserRasterGalvoFactory::kpassSeams() {
+  if (!blend_.kpass.enabled) {
+    return nullptr;
+  }
+  // One block is a lattice of one: no seams, but the passes are still made.
+  const int lattice[4] = {
+      blend_.active ? blend_.min_col : blend_.col,
+      blend_.active ? blend_.max_col : blend_.col,
+      blend_.active ? blend_.min_row : blend_.row,
+      blend_.active ? blend_.max_row : blend_.row,
+  };
+  if (seams_ && std::equal(lattice, lattice + 4, seams_lattice_) &&
+      seams_step_ == blend_.step) {
+    return seams_;
+  }
+  QVector<GalvoKpassSeams::Image> images;
+  for (const Entry& entry : bitmaps_) {
+    if (!entry.dots) {
+      continue;
+    }
+    images.append({QRect(int(entry.bbox_px.left()), int(entry.bbox_px.top()),
+                         entry.gray.width(), entry.gray.height()),
+                   &entry.gray,
+                   entry.source.isNull() ? nullptr : &entry.source});
+  }
+  if (images.isEmpty()) {
+    return nullptr;
+  }
+  GalvoKpassSeams::Lattice l;
+  l.step = blend_.step;
+  l.min_col = lattice[0];
+  l.max_col = lattice[1];
+  l.min_row = lattice[2];
+  l.max_row = lattice[3];
+  l.half_field = blend_.kpass.half_field;
+  l.px_per_mm_x = pixel_per_mm_x;
+  l.px_per_mm_y = pixel_per_mm;
+  l.offset = offset;
+  seams_ = GalvoKpassSeams::build(blend_.kpass.params, l, images);
+  std::copy(lattice, lattice + 4, seams_lattice_);
+  seams_step_ = blend_.step;
+  return seams_;
+}
+
+QImage LaserRasterGalvoFactory::renderDots(const QRect& range_px,
+                                           int shrink) const {
+  shrink = qMax(1, shrink);
+  const int w = qMax(1, range_px.width() / shrink);
+  const int h = qMax(1, range_px.height() / shrink);
+  QVector<int> count(w * h, 0);
+  for (const Entry& entry : bitmaps_) {
+    if (!entry.dots) {
+      continue;
+    }
+    const QRect rect(int(entry.bbox_px.left()), int(entry.bbox_px.top()),
+                     entry.gray.width(), entry.gray.height());
+    const QRect part = rect.intersected(range_px);
+    for (int y = part.top(); y <= part.bottom(); y++) {
+      const uchar* line = entry.gray.constScanLine(y - rect.top());
+      const int oy = (y - range_px.top()) / shrink;
+      if (oy >= h) {
+        break;
+      }
+      for (int x = part.left(); x <= part.right(); x++) {
+        const int ox = (x - range_px.left()) / shrink;
+        if (ox < w && line[x - rect.left()] != 255) {
+          count[oy * w + ox]++;
+        }
+      }
+    }
+  }
+  QImage out(w, h, QImage::Format_Grayscale8);
+  const double full = shrink * shrink;
+  for (int y = 0; y < h; y++) {
+    uchar* line = out.scanLine(y);
+    for (int x = 0; x < w; x++) {
+      line[x] = uchar(255 - qMin(255.0, 255.0 * count[y * w + x] / full));
+    }
+  }
+  return out;
+}
+
+bool LaserRasterGalvoFactory::blankBetween(const Entry& entry, int x0, int y0,
+                                           int x1, int y1) const {
+  const double pitch_x = 1 / pixel_per_mm_x;
+  const double pitch_y = 1 / pixel_per_mm;
+  const double min_mm = blend_.blank_jump_min;
+  const QImage& source = entry.source;
+  if (y0 == y1) {
+    // Along a row: the pixels strictly between the two dots.
+    const int lo = qMin(x0, x1);
+    const int hi = qMax(x0, x1);
+    if ((hi - lo) * pitch_x <= min_mm) {
+      return false;
+    }
+    const uchar* line = source.constScanLine(y0);
+    int run = 0;
+    for (int x = lo + 1; x < hi; x++) {
+      run = line[x] == 255 ? run + 1 : 0;
+      if (run * pitch_x >= min_mm - kEpsilon) {
+        return true;
+      }
+    }
+    return false;
+  }
+  // From the end of one row to the start of another: the straight line the
+  // jump takes, sampled twice per pixel.
+  const double length =
+      std::hypot((x1 - x0) * pitch_x, (y1 - y0) * pitch_y);
+  if (length <= min_mm) {
+    return false;
+  }
+  const int samples =
+      qMax(3, int(std::hypot(double(x1 - x0), double(y1 - y0)) * 2));
+  const double per_sample = length / (samples - 1);
+  int run = 0;
+  for (int k = 1; k < samples - 1; k++) {
+    const double t = double(k) / (samples - 1);
+    const int x = qBound(0, qRound(x0 + (x1 - x0) * t), source.width() - 1);
+    const int y = qBound(0, qRound(y0 + (y1 - y0) * t), source.height() - 1);
+    run = source.constScanLine(y)[x] == 255 ? run + 1 : 0;
+    if (run * per_sample >= min_mm - kEpsilon) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool LaserRasterGalvoFactory::sampleAt(const Entry& entry,
@@ -665,11 +838,33 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
   // Everything this block can sample: its clip, grown by the wider of the two
   // seam bands, and a pixel more for rounding. A block that is not clipped --
   // the whole layer fits one field -- takes every image whole.
+  // The K-pass walk, when the layer asks for it, is how dithered images are
+  // laid; a transposed pass is a depth one and has nothing to do with it.
+  const std::shared_ptr<const GalvoKpassSeams> seams =
+      blend_.kpass.enabled && !transposed ? kpassSeams() : nullptr;
+  // How far past its clip this block is handed dots, per axis. Under the
+  // K-pass walk that is the whole of its field: a seam strays no further than
+  // the field reaches (GalvoKpassSeams fits it), and a neighbour left with a
+  // handful of dots hands them over from anywhere this field covers.
+  const double dot_reach_x =
+      !blend_.active
+          ? 0
+          : seams ? qMax(seams->reachX(), blend_.kpass.half_field -
+                                              blend_.step.width() / 2)
+                  : blend_.dot_overlap / 2;
+  const double dot_reach_y =
+      !blend_.active
+          ? 0
+          : seams ? qMax(seams->reachY(), blend_.kpass.half_field -
+                                              blend_.step.height() / 2)
+                  : blend_.dot_overlap / 2;
   QRect region_px;
   if (!hard_clip.isEmpty()) {
-    const double reach =
-        blend_.active ? qMax(blend_.dot_overlap, blend_.line_overlap) / 2 : 0;
-    const QRectF region_mm = hard_clip.adjusted(-reach, -reach, reach, reach);
+    const double line_reach = blend_.active ? blend_.line_overlap / 2 : 0;
+    const double reach_x = qMax(dot_reach_x, line_reach);
+    const double reach_y = qMax(dot_reach_y, line_reach);
+    const QRectF region_mm =
+        hard_clip.adjusted(-reach_x, -reach_y, reach_x, reach_y);
     region_px = QRectF((region_mm.left() + offset.x()) * pixel_per_mm_x,
                        (region_mm.top() + offset.y()) * pixel_per_mm,
                        region_mm.width() * pixel_per_mm_x,
@@ -687,12 +882,19 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
     // pass works to follows from that, so the flag has to be set before
     // anything asks -- the clip below asks first.
     dot_pass_ = entry.dots;
+    const bool kpass = seams && entry.dots;
+    prev_dot_valid_ = false;  // the wait before a jump never spans two images
     // Both work past their cell into the seam when blending, so the clip has to
     // let the band through and the block's own hard edge goes back afterwards.
     if (proc->galvo()) {
       proc->galvo()->params().dotting_time_us =
           entry.dots ? dotting_time_us_ : 0;
-      if (blendActive()) {
+      if (kpass && blend_.active && !hard_clip.isEmpty()) {
+        // The seams decide who lays what; the clip only has to stay out of the
+        // way as far as they can hand this block a dot.
+        proc->galvo()->set_clip_rect(hard_clip.adjusted(
+            -dot_reach_x, -dot_reach_y, dot_reach_x, dot_reach_y));
+      } else if (blendActive()) {
         proc->galvo()->set_clip_rect(hard_clip.united(blend_band()));
       } else {
         proc->galvo()->set_clip_rect(hard_clip);
@@ -705,6 +907,37 @@ void LaserRasterGalvoFactory::generate_task_code(float speed, int threshold,
     // is what keeps the beam from flying back for every line.
     const int first_line =
         qRound(transposed ? entry.bbox_px.left() : entry.bbox_px.top());
+    if (kpass) {
+      // K passes over the stop, pass p laying the rows that are p modulo K on
+      // the machine grid, in the direction that pass is given; within a pass
+      // the rows still alternate left and right.
+      active_seams_ = seams.get();
+      const int passes = seams->passes();
+      for (int pass = 0; pass < passes; pass++) {
+        if (pass > 0 && blend_.kpass.pass_pause > 0 && proc->galvo()) {
+          setPwm(0);
+          proc->galvo()->pause(blend_.kpass.pass_pause);
+          current_pwm_ = 0;
+          prev_dot_valid_ = false;  // the beam has rested: no tail to wait out
+        }
+        const bool up = seams->passUp(pass);
+        for (int n = 0; n < lines; n++) {
+          if (cancelled) {
+            active_seams_ = nullptr;
+            return;
+          }
+          const int line = up ? lines - 1 - n : n;
+          const int grid_row = first_line + line;
+          if (seams->passOf(grid_row) != pass) {
+            continue;
+          }
+          const int turn = (grid_row - seams->passOf(grid_row)) / passes;
+          emitLine(entry, line, threshold, (turn & 1) != 0, transposed, speed);
+        }
+      }
+      active_seams_ = nullptr;
+      continue;
+    }
     for (int line = 0; line < lines; line++) {
       if (cancelled) {
         return;
