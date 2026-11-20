@@ -188,14 +188,20 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     double trapeX = obj["trapeX"].toDouble();
     double trapeY = obj["trapeY"].toDouble();
     QString laser_source = obj["laserSource"].toString("MOPA");
-    getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
+    if (!getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source)) {
+      result["success"] = false;
+      result["error"] = "LENS_REJECTED";
+    }
   } else if (action == "setScanaheadParams") {
     QJsonObject obj = params.toObject();
     double worksize = obj["worksize"].toDouble();
     double angle = obj["angle"].toDouble();
     double xOffset = obj["xOffset"].toDouble();
     double yOffset = obj["yOffset"].toDouble();
-    getMachine()->setScanaheadParams(worksize, angle, xOffset, yOffset);
+    if (!getMachine()->setScanaheadParams(worksize, angle, xOffset, yOffset)) {
+      result["success"] = false;
+      result["error"] = "LENS_REJECTED";
+    }
   } else if (action == "setParam") {
     QString paramName = params.toObject()["name"].toString();
     QJsonValue paramValue = params.toObject()["value"];

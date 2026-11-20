@@ -9,7 +9,6 @@
 #include <QProgressDialog>
 #include <QPixmap>
 #include <QSerialPort>
-#include <functional>
 #include <settings/machine-settings.h>
 #include <periph/motion_controller/motion_controller.h>
 #include <executor/machine_job/machine_job.h>
@@ -47,8 +46,9 @@ public:
   void syncPosition();
   void setCustomOrigin(std::tuple<qreal, qreal, qreal> new_origin);
   void setSerialPort(QSerialPort &serial_port);
-  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
-  void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  // false when the controller refused them (a laser job is running) or does not support them
+  bool setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
+  bool setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   bool connectSerial(QString portName, int baudrate);
   void disconnect();
   int getStatusId();
@@ -84,8 +84,6 @@ private Q_SLOTS:
 
 private:
   void alert(QString title, QString msg);
-  bool isJobActive() const;
-  void applyPendingLens();
   MachineSettings::MachineParam machine_param_; // Settings for software, NOT the grbl settings
   ConnectionState connect_state_ = ConnectionState::kDisconnected;
   QSerialPort *serial_port_ = nullptr;
@@ -111,11 +109,6 @@ private:
   qreal cached_z_pos_ = 0; // non-realtime, in canvas coord (independent of machine direction)
 
   bool bsl_connected_ = false;
-
-  // Lens settings received while a job runs: the board takes them at once and the rest of the job
-  // would be converted with them, so they wait for the job to end (see setCorrection)
-  std::function<void()> pending_correction_;
-  std::function<void()> pending_scanahead_;
 
   std::tuple<qreal, qreal, qreal> custom_origin_; // store the custom origin set by user
 

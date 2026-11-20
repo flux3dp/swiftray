@@ -44,8 +44,9 @@ public:
     if (current_error_ != LCS_RES_NO_ERROR) return this->getErrorString(current_error_);
     return QString();
   }
-  void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
-  void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  // Both return false and change nothing while a laser job is running (see isLensLocked)
+  bool setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
+  bool setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   void setTaskTime(double time) { total_task_time_ = time; }
   BoardRunStatus getBoardStatus();
@@ -65,6 +66,9 @@ public Q_SLOTS:
   void respReceived(QString resp) override;
 
 private:
+  bool isLensLocked() const;
+  void applyCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
+  void applyScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
   void handleGcode(const QString &cmd_packet);
   void startCommandRunner();
   void commandRunnerThread();
