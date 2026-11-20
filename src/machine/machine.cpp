@@ -37,7 +37,9 @@ Machine::Machine(MachineSettings::MachineParam mach, QObject *parent)
   });
   connect(machine_setup_executor_, &Executor::finished, this, &Machine::motionPortActivated);
   connect(job_executor_, &Executor::finished, this, &Machine::syncPosition); // Always sync the realtime position at the end of job
-  // Queued to this thread: the executor changes state on its own thread
+  // Queued to this thread: the executor changes state on its own thread. The state it carries can be
+  // stale by the time it is handled (the next job may have started meanwhile), so applyPendingLens()
+  // checks the current one; startJob() also applies what is held before a job starts.
   connect(job_executor_, &Executor::stateChanged, this, [this](Executor::State state) {
     if (state != Executor::State::kRunning && state != Executor::State::kPaused) applyPendingLens();
   });
@@ -442,6 +444,9 @@ bool Machine::startJob() {
       qWarning() << "Machine::startJob() - reset motion controller done";
     }
   }
+  // The lens held during the previous job is the one sent for this job: apply it before the job starts,
+  // in order, rather than waiting for the queued end-of-job notification
+  applyPendingLens();
   qInfo() << "Machine::startJob() - starting job executor";
   job_executor_->startJob();
   return true;
@@ -655,6 +660,12 @@ bool Machine::isJobActive() const {
 }
 
 void Machine::applyPendingLens() {
+  if (!pending_scanahead_ && !pending_correction_) return;
+  // A late notification of the previous job's end must not reach the job running now
+  if (isJobActive()) {
+    qInfo() << "Machine::applyPendingLens() - a job is running, keeping the held lens";
+    return;
+  }
   // the work area first: the correction is applied on top of it
   if (pending_scanahead_) {
     auto apply = std::move(pending_scanahead_);
