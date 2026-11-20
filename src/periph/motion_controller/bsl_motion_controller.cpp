@@ -281,7 +281,7 @@ void BSLMotionController::setUpTaskCtrl() {
   }
   error = lcs_set_laser_mode(laser_type_, is_framing_);
   if (error != LCS_RES_NO_ERROR) {
-    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << laser_type_ << is_framing_;
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << laser_type_ << is_framing_.load();
   }
 }
 
@@ -955,8 +955,10 @@ bool BSLMotionController::resetState() {
  * send new settings back to back.
  */
 bool BSLMotionController::isLensLocked(bool job_active) const {
-  if (is_running_laser_ && !is_framing_) return true;
-  return job_starting_ && job_active;
+  // job_starting_ first: the runner clears it only after it has set is_running_laser_ (and M103 / M104
+  // came before that), so a request that finds it cleared reads the flags of the job that cleared it
+  if (job_starting_.load() && job_active) return true;
+  return is_running_laser_.load() && !is_framing_.load();
 }
 
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
@@ -991,7 +993,7 @@ std::mutex reconnect_mutex_;
 bool BSLMotionController::isConnected() {
   is_board_connected_ = getBoardStatus().bConnected;
   if (!is_board_connected_) {
-    qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_ << "framing:" << is_framing_;
+    qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_.load() << "framing:" << is_framing_.load();
     if (!is_running_laser_) {
       // Handle running thread first
       QThread::msleep(1000);
@@ -1020,7 +1022,7 @@ bool BSLMotionController::isConnected() {
         is_board_connected_ = lcs_connect();
       }
       is_handling_reconnection_ = false;
-      qInfo() << "Try reconnecting to the board - done" << is_board_connected_ << is_running_laser_ << int(getState());
+      qInfo() << "Try reconnecting to the board - done" << is_board_connected_ << is_running_laser_.load() << int(getState());
       if (!is_board_connected_) {
         this->current_custom_error_ = "DISCONNECTED";
         stop();

@@ -93,11 +93,14 @@ private:
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
-  bool is_running_laser_ = false;
+  // The three flags below make up the lens lock (isLensLocked). The command runner writes them while
+  // it handles M3 / M2 / M103 / M104 and the server thread reads them when a lens request comes in,
+  // so they are atomic.
+  std::atomic<bool> is_running_laser_{false};
   // A job was started and its M3 has not been handled yet, so is_running_laser_ / is_framing_ still
   // describe the previous job. Set on the caller's thread, cleared by the command runner.
   std::atomic<bool> job_starting_{false};
-  bool is_framing_ = false;
+  std::atomic<bool> is_framing_{false};
   bool is_handling_high_speed_ = false;
   bool is_threading = false;
   bool should_flush_ = false;
