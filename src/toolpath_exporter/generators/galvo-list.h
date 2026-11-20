@@ -66,10 +66,10 @@ enum class GalvoWobbleMode : int {
  */
 struct GalvoParams {
   // --- written into the prologue -------------------------------------------
-  double jump_speed_mm_s = 4000;
+  double jump_speed_mm_s = 7000;
   double mark_speed_mm_s = 1000;
-  double laser_on_delay_us = -100;
-  double laser_off_delay_us = 100;
+  double laser_on_delay_us = -680;
+  double laser_off_delay_us = 200;
   double scanner_mark_delay_us = 100;
   double scanner_polygon_delay_us = 50;
   double power_pct = 0;
@@ -105,7 +105,7 @@ struct GalvoParams {
   // waits about this long before marking; a sleep before the list cured it as
   // well as a delay inside it, so it is the time since arriving that matters.
   // 0 = none.
-  double block_start_delay_us = 50000;
+  double block_start_delay_us = 150000;
   // Wobble is only emitted when the mode is not DISABLE.
   GalvoWobbleMode wobble_mode = GalvoWobbleMode::DISABLE;
   double wobble_transversal_mm = 0;
@@ -225,6 +225,15 @@ class GalvoListWriter {
    * list never received any geometry.
    */
   void endList(bool closing_block = false);
+
+  /**
+   * A wait in the middle of a block, seconds: the laser is switched off, an
+   * fcode sleep follows the list, and the next list switches the laser back on.
+   * Longer than a LONG_DELAY is meant for, and the card is idle for it. Does
+   * nothing in a block that has not written anything yet -- there is nothing
+   * to wait after. A list is left armed, as before the call.
+   */
+  void pause(double seconds);
 
   /**
    * Restrict emission to `rect` (machine mm). Segments are clipped against it,
@@ -351,6 +360,8 @@ class GalvoListWriter {
   bool list_open_ = false;
   // ENABLE_LASER has gone out in this block and DISABLE_LASER has not yet.
   bool block_laser_enabled_ = false;
+  // pause() switched the laser off mid-block; the next list switches it on.
+  bool enable_pending_ = false;
   // splitIfFull() found the list full; the split happens when the next command
   // needs the list, so a block never ends on an armed list that holds nothing.
   bool split_pending_ = false;

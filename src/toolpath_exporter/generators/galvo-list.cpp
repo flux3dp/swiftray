@@ -33,6 +33,7 @@ void GalvoListWriter::beginBlock(const QPointF& field_centre_mm,
   half_field_mm_ = half_field_mm;
   block_distance_mm_ = 0;
   block_laser_enabled_ = false;
+  enable_pending_ = false;
   split_pending_ = false;
   // The gantry move that parked the head is what put us here; the board itself
   // has no position yet, so the first emitted move has to be absolute (§19.4).
@@ -62,6 +63,30 @@ void GalvoListWriter::endBlock() {
   }
   in_block_ = false;
   on_block_start_ = nullptr;
+}
+
+void GalvoListWriter::pause(double seconds) {
+  if (!in_block_ || !block_started_ || seconds <= 0 || !gen_) {
+    return;
+  }
+  const bool armed = list_armed_ || list_open_;
+  split_pending_ = false;
+  endList(true);
+  if (block_laser_enabled_) {
+    // The armed list held nothing (a split had just closed the one before), so
+    // the laser is still on: a list of nothing but the epilogue switches it
+    // off, as endBlock() does.
+    list_armed_ = true;
+    list_open_ = true;
+    list_time_ms_ = 0;
+    list_command_count_ = 0;
+    endList(true);
+  }
+  gen_->sleep(seconds);
+  enable_pending_ = true;
+  if (armed) {
+    beginList();
+  }
 }
 
 void GalvoListWriter::ensureBlockStarted() {
@@ -114,6 +139,8 @@ void GalvoListWriter::openList() {
     return;
   }
   const bool first_of_block = !block_started_;
+  const bool enable_laser = first_of_block || enable_pending_;
+  enable_pending_ = false;
   ensureBlockStarted();
   list_open_ = true;
   if (params_.emit_standby) {
@@ -140,13 +167,15 @@ void GalvoListWriter::openList() {
                                params_.wobble_space_mm,
                                double(int(params_.wobble_mode))});
   }
-  if (first_of_block) {
+  if (enable_laser) {
     // Once per block, not per list: see GalvoParams::mo_delay_us. The MO stays
-    // on through every list of the block until endBlock() closes the last one.
+    // on through every list of the block until endBlock() closes the last one
+    // -- or pause() switches it off for a wait, and the list after it comes
+    // back through here.
     emit(GalvoOp::ENABLE_LASER, {qMax(0.0, params_.mo_delay_us)});
     list_time_ms_ += qMax(0.0, params_.mo_delay_us) / 1000;
     block_laser_enabled_ = true;
-    if (params_.block_start_delay_us > 0) {
+    if (first_of_block && params_.block_start_delay_us > 0) {
       // See GalvoParams::block_start_delay_us. Inside the list rather than an
       // fcode sleep before it, so the wait is the card's own and cannot be eaten
       // by the time the host spends handing the list over.

@@ -168,6 +168,15 @@ struct Config {
   // galvo-fix-backlash flag here; kept switchable until the mechanics are
   // measured.
   bool galvo_fix_backlash = true;
+  // mm. Before a park at (x, y) the gantry first goes to (x - bx, y - by), then
+  // takes up Y, then X, so every park is reached moving +Y and then +X. Zero
+  // leaves that axis out. Read from galvo_backlash_x / galvo_backlash_y; a
+  // caller that still sends only galvo_fix_backlash gets (5, 0) for true.
+  double galvo_backlash_x = 5;
+  double galvo_backlash_y = 0;
+  // Seconds. A sleep before every park of a layer that has work, but the
+  // first; for the exhaust to clear the smoke of the tile before.
+  double galvo_tile_pause = 0;
 };
 
 class ToolpathExporterFcode : public QObject {
@@ -311,11 +320,10 @@ class ToolpathExporterFcode : public QObject {
     bool has_right = false;
     bool has_top = false;
     bool has_bottom = false;
-    // Where the gantry goes before the first park of this block's row, so every
-    // park in the row is reached moving +X and the X backlash is always taken
-    // up the same way. It lies a column left of the leftmost block of the whole
-    // batch, not of this row, so a row that starts further right still arrives
-    // from the same side. Only a gantry move: no galvo list is opened there.
+    // Whether the gantry backs off before this park and comes at it +Y then +X
+    // (Config::galvo_backlash_x / _y), so the backlash is always taken up the
+    // same way. Cleared once made, where a park is used more than once.
+    // `approach` is unused since the approach became per park.
     QPointF approach;
     bool has_approach = false;
     // A lattice tile of an Auto layer's stitched batch; only the debug image
@@ -349,6 +357,8 @@ class ToolpathExporterFcode : public QObject {
   bool layer_galvo_by_object_ = false;
   /** Layer::GalvoTiling::Auto: an object that fits no field is tiled, not refused. */
   bool layer_galvo_auto_ = false;
+  /** A park of this layer has already been made (see Config::galvo_tile_pause). */
+  bool galvo_layer_parked_ = false;
   std::vector<GalvoObjectCluster> galvo_clusters_;
   /**
    * Auto only: the objects that fit no single field, in factories of their

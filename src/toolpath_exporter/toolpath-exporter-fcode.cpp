@@ -24,13 +24,13 @@
 // floating-point noise on a seam; GalvoListWriter drops anything this short.
 constexpr double kGalvoSeamEpsilonMm = 1e-6;
 
-// How far left of the batch's leftmost park the gantry goes before each row,
-// mm, so every park is reached moving +X. Measured on HEXA II (2026-11-02): a
-// few millimetres take up the backlash, while running all the way to the end
-// of the travel makes the gantry rebound off it and shifts the parks that
-// follow -- so the approach is a short fixed step, not a far point.
+// What galvo_fix_backlash alone stands for, mm in X: how far short of a park
+// the gantry goes first, so the park is reached moving +X. Measured on HEXA II
+// (2026-11-02): a few millimetres take up the backlash, while running all the
+// way to the end of the travel makes the gantry rebound off it and shifts the
+// parks that follow -- so the approach is a short fixed step, not a far point.
 constexpr double kGalvoBacklashOvershootMm = 5;
-// The approach never goes closer than this to the left end of the travel, for
+// The approach never goes closer than this to the low end of the travel, for
 // the same reason.
 constexpr double kGalvoBacklashTravelClearanceMm = 1;
 // How far an object tiled by object may overrun the field and still be taken
@@ -367,8 +367,20 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     dot.laser_off_delay_us =
         param["galvo_process_dot_laser_off_delay"].toDouble(qQNaN());
     config_.galvo_debug_image = param["galvo_debug_image"].toString();
-    config_.galvo_fix_backlash =
+    // The backlash approach, per axis. galvo_fix_backlash is what a caller from
+    // before the two distances sends: true stands for X alone.
+    const bool fix_backlash =
         param["galvo_fix_backlash"].toBool(config_.galvo_fix_backlash);
+    config_.galvo_backlash_x = qMax(
+        0.0, param["galvo_backlash_x"].toDouble(
+                 fix_backlash ? kGalvoBacklashOvershootMm : 0));
+    config_.galvo_backlash_y =
+        qMax(0.0, param["galvo_backlash_y"].toDouble(0));
+    // What is left of the flag: whether rows run one way or serpentine.
+    config_.galvo_fix_backlash =
+        config_.galvo_backlash_x > 0 || config_.galvo_backlash_y > 0;
+    config_.galvo_tile_pause =
+        qMax(0.0, param["galvo_tile_pause"].toDouble(0));
     if (param.contains("galvo_block")) {
       const QJsonArray block = param["galvo_block"].toArray();
       if (block.size() == 2) {
@@ -377,9 +389,12 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
       }
     }
     GalvoParams& g = config_.galvo_params;
-    g.jump_speed_mm_s = param["galvo_jump_speed"].toDouble(4000);
-    g.laser_on_delay_us = param["galvo_laser_on_delay"].toDouble(-100);
-    g.laser_off_delay_us = param["galvo_laser_off_delay"].toDouble(100);
+    // Defaults from the seam and streak tests on HEXA G (2026-11): at 4000 the
+    // tail a CO2 tube leaves behind a dot is dragged further into the blank it
+    // jumps across, and -680 / 200 are the delays every test ran with.
+    g.jump_speed_mm_s = param["galvo_jump_speed"].toDouble(7000);
+    g.laser_on_delay_us = param["galvo_laser_on_delay"].toDouble(-680);
+    g.laser_off_delay_us = param["galvo_laser_off_delay"].toDouble(200);
     g.scanner_mark_delay_us = param["galvo_scanner_mark_delay"].toDouble(100);
     g.scanner_polygon_delay_us =
         param["galvo_scanner_polygon_delay"].toDouble(50);
@@ -388,7 +403,7 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     g.standby_width_us = param["galvo_standby_width"].toDouble(1);
     // ms here, us inside the writer.
     g.block_start_delay_us =
-        qMax(0.0, param["galvo_block_start_delay"].toDouble(50)) * 1000;
+        qMax(0.0, param["galvo_block_start_delay"].toDouble(150)) * 1000;
     // ENABLE_LASER's MO delay, us, once per block (GalvoParams::mo_delay_us).
     g.mo_delay_us = qMax(0.0, param["galvo_mo_delay"].toDouble(8000));
     // The head's measured field distortion, pre-distorted away
@@ -406,7 +421,8 @@ void ToolpathExporterFcode::parseParam(const QJsonObject& param) {
     // opcode 12's second parameter on a Mopa head, where it is not derived
     // from power. 0 is what the execution end has used for this head.
     g.pulse_length_us = param["galvo_mopa_pulse_length"].toDouble(0);
-    config_.galvo_max_list_commands = param["galvo_max_list_commands"].toInt(0);
+    config_.galvo_max_list_commands =
+        param["galvo_max_list_commands"].toInt(10000);
   }
 
   if (param.contains("acc_override")) {
@@ -732,6 +748,7 @@ void ToolpathExporterFcode::convertLayer() {
   }
 
   current_layer_id_++;
+  galvo_layer_parked_ = false;
   layer_module_ = support_info.MODULES ? LayerModule(current_layer_->module())
                                        : LayerModule::UNIVERSAL_LASER;
   is_printing_layer_ = is_printing_module(layer_module_);
@@ -1156,11 +1173,8 @@ void ToolpathExporterFcode::emitGalvoBlocks(
       max_row = qMax(max_row, block.row);
     }
   }
-  // The row whose approach the gantry has already made. A row is approached
-  // once, before its first park that actually opens a list: a row the drawing
-  // never reaches costs no detour either.
-  bool approached = false;
-  int approached_row = 0;
+  // Where the gantry may stand, for the backlash approach below.
+  const QRectF travel = galvoHeadTravel();
   for (int i = 0; i < blocks.size(); i++) {
     const GalvoBlock& block = blocks[i];
     const bool last = i == blocks.size() - 1;
@@ -1170,18 +1184,38 @@ void ToolpathExporterFcode::emitGalvoBlocks(
     // completed move (§10 step 2). This runs on the block's first record, so a
     // tile the drawing never reaches costs no head travel -- most of them do
     // not, once a sparse drawing is tiled across the bed.
-    galvo->beginBlock(centre, half_field, [this, centre, block, &approached,
-                                           &approached_row]() {
-      if (block.has_approach && (!approached || approached_row != block.row)) {
-        // No sync here: the moves run in order, so the gantry reaches this
-        // point before it turns back, and only the park itself has to have
-        // landed before the galvo board starts.
-        proc.moveto(NamedArgs()
-                        .rx(block.approach.x())
-                        .ry(block.approach.y())
-                        .set_is_travel());
-        approached = true;
-        approached_row = block.row;
+    galvo->beginBlock(centre, half_field, [this, centre, block, travel]() {
+      if (config_.galvo_tile_pause > 0 && galvo_layer_parked_) {
+        // Between two tiles that both have work, for the exhaust.
+        proc.sleep(config_.galvo_tile_pause);
+      }
+      galvo_layer_parked_ = true;
+      if (block.has_approach) {
+        // Every park is reached moving +Y and then +X, whichever way the
+        // gantry came from: it backs off on both axes, takes up Y, then X. An
+        // axis whose distance is zero is left out, and so is one whose
+        // approach would sit against the low end of the travel, where the
+        // gantry rebounds. No sync here: the moves run in order, and only the
+        // park itself has to have landed before the galvo board starts.
+        const double ax =
+            qMax(travel.left() + kGalvoBacklashTravelClearanceMm,
+                 centre.x() - config_.galvo_backlash_x);
+        const double ay =
+            qMax(travel.top() + kGalvoBacklashTravelClearanceMm,
+                 centre.y() - config_.galvo_backlash_y);
+        const bool back_x = config_.galvo_backlash_x > 0 &&
+                            ax < centre.x() - kGalvoSeamEpsilonMm;
+        const bool back_y = config_.galvo_backlash_y > 0 &&
+                            ay < centre.y() - kGalvoSeamEpsilonMm;
+        if (back_y) {
+          proc.moveto(NamedArgs()
+                          .rx(back_x ? ax : centre.x())
+                          .ry(ay)
+                          .set_is_travel());
+        }
+        if (back_x) {
+          proc.moveto(NamedArgs().rx(ax).ry(centre.y()).set_is_travel());
+        }
       }
       proc.moveto(NamedArgs().rx(centre.x()).ry(centre.y()).set_is_travel());
       proc.sync_grbl_motion(0);
@@ -1500,22 +1534,9 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
                                   j_lo, j_hi));
   // The gantry has backlash, so a park reached moving -X stands somewhere else
   // than the same park reached moving +X, and the seam between two rows tears
-  // by that much. Every row therefore runs left to right, and before its first
-  // park the gantry goes a fixed step left of the leftmost park of the batch --
-  // taken over the whole batch, not the row, since a row whose first non-empty
-  // block is further right must still arrive from the same side. The lattice
-  // does not bind that point: nothing is marked there. It stays clear of the
-  // left end of the travel (kGalvoBacklashTravelClearanceMm), so a batch that
-  // starts within that much of it goes without an approach.
-  const double approach_x =
-      qMax(travel.left() + kGalvoBacklashTravelClearanceMm,
-           i0 * sx - kGalvoBacklashOvershootMm);
-  const bool has_approach =
-      config_.galvo_fix_backlash && approach_x < i0 * sx - kGalvoSeamEpsilonMm;
-  if (config_.galvo_fix_backlash && !has_approach) {
-    qWarning() << "[Export] galvo blocks start at the left end of the travel"
-               << travel << "-- rows cannot be approached from the left";
-  }
+  // by that much. Every row therefore runs left to right, and every park is
+  // approached from the same side on both axes (emitGalvoBlocks()).
+  const bool has_approach = config_.galvo_fix_backlash;
   blocks.reserve((i1 - i0 + 1) * (j1 - j0 + 1));
   for (int j = j0; j <= j1; j++) {
     for (int c = i0; c <= i1; c++) {
@@ -1542,7 +1563,7 @@ QVector<ToolpathExporterFcode::GalvoBlock> ToolpathExporterFcode::planGalvoBlock
                           has_top ? kGalvoSeamEpsilonMm : -kGalvoSeamEpsilonMm,
                           kGalvoSeamEpsilonMm, kGalvoSeamEpsilonMm);
       blocks.append({region, clip, park, i, j, has_left, has_right, has_top,
-                     has_bottom, QPointF(approach_x, j * sy), has_approach});
+                     has_bottom, park, has_approach});
     }
   }
   // The lattice is anchored at the machine origin and its cells span the whole
@@ -2016,24 +2037,11 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
   const int out_of_field_before = galvo->out_of_field_count();
   applyGalvoLayerParams();
 
-  // The same backlash rule as the grid: every stop is reached moving +X. A stop
-  // left of the one before goes by a point a fixed step left of the leftmost
-  // stop of the batch first, and so does the first stop of every pass.
-  const QRectF travel = galvoHeadTravel();
-  double min_park_x = galvo_clusters_.front().park.x();
+  // The same backlash rule as the grid: every stop is approached from the same
+  // side on both axes (emitGalvoBlocks()).
   QRectF content;
   for (const GalvoObjectCluster& cluster : galvo_clusters_) {
-    min_park_x = qMin(min_park_x, cluster.park.x());
     content = content.united(cluster.bounds);
-  }
-  const double approach_x =
-      qMax(travel.left() + kGalvoBacklashTravelClearanceMm,
-           min_park_x - kGalvoBacklashOvershootMm);
-  const bool can_approach = config_.galvo_fix_backlash &&
-                            approach_x < min_park_x - kGalvoSeamEpsilonMm;
-  if (config_.galvo_fix_backlash && !can_approach) {
-    qWarning() << "[Export] galvo stops start at the left end of the travel"
-               << travel << "-- they cannot be approached from the left";
   }
   // The batch tiled on the lattice, planned now so the debug image shows both.
   QVector<GalvoBlock> stitched_blocks;
@@ -2073,11 +2081,8 @@ void ToolpathExporterFcode::convertGalvoObjectLayer() {
     block.region = cluster.bounds;
     block.clip = cluster.bounds;
     block.park = cluster.park;
-    block.approach = QPointF(approach_x, cluster.park.y());
-    block.has_approach =
-        can_approach &&
-        (i == 0 || cluster.park.x() <
-                       galvo_clusters_[i - 1].park.x() - kGalvoSeamEpsilonMm);
+    block.approach = cluster.park;
+    block.has_approach = config_.galvo_fix_backlash;
     blocks.append(block);
   }
   if (!config_.galvo_debug_image.isEmpty()) {
