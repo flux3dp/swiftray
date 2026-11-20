@@ -139,6 +139,42 @@ void SwiftrayServer::handleDevicesAction(QWebSocket* socket, const QString& id, 
   }
 }
 
+namespace {
+// The lens settings as Beam Studio sends them: in "setCorrection" / "setScanaheadParams", and in the
+// optional "lens" of "start". false when the machine refused them (see Machine::setCorrection).
+bool applyCorrection(Machine* machine, const QJsonObject& obj) {
+  return machine->setCorrection(obj["scaleX"].toDouble(), obj["scaleY"].toDouble(),
+                                obj["bucketX"].toDouble(), obj["bucketY"].toDouble(),
+                                obj["paralleX"].toDouble(), obj["paralleY"].toDouble(),
+                                obj["trapeX"].toDouble(), obj["trapeY"].toDouble(),
+                                obj["laserSource"].toString("MOPA"));
+}
+
+bool applyScanaheadParams(Machine* machine, const QJsonObject& obj) {
+  return machine->setScanaheadParams(obj["worksize"].toDouble(), obj["angle"].toDouble(),
+                                     obj["xOffset"].toDouble(), obj["yOffset"].toDouble());
+}
+
+// The optional "lens" of the requests that start something ("start", "startFraming"):
+// { "scanahead": <setScanaheadParams params>, "correction": <setCorrection params> }.
+// It is applied in the request that starts the job, so no lens from another client can slip in
+// between the two; a lens sent on its own beforehand can be overwritten before the start arrives.
+// Returns the reason when the request must not start anything, an empty string otherwise (also when
+// there is no "lens": such a request behaves as it always has).
+QString applyStartLens(Machine* machine, const QJsonObject& params) {
+  if (!params["lens"].isObject()) return QString();
+  const QJsonObject lens = params["lens"].toObject();
+  // Neither applied nor started: the executor would refuse the start, and the lens must not land on
+  // whatever is still running (a red light preview takes lens settings)
+  if (machine->isJobActive()) return "JOB_RUNNING";
+  if ((lens["scanahead"].isObject() && !applyScanaheadParams(machine, lens["scanahead"].toObject())) ||
+      (lens["correction"].isObject() && !applyCorrection(machine, lens["correction"].toObject()))) {
+    return "LENS_REJECTED";
+  }
+  return QString();
+}
+}  // namespace
+
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
   QJsonObject result;
   result["success"] = true;
@@ -161,12 +197,24 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     }
   } else if (action == "start") {
     qInfo() << "Server::Starting job";
-    double taskTime = params.toObject()["taskTime"].toDouble();
-    if (taskTime > 0) {
-      BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
-      controller->setTaskTime(taskTime * 1000);
+    const QJsonObject obj = params.toObject();
+    const bool has_lens = obj["lens"].isObject();
+    QString start_error = applyStartLens(getMachine(), obj);
+    if (start_error.isEmpty()) {
+      double taskTime = obj["taskTime"].toDouble();
+      if (taskTime > 0) {
+        BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+        controller->setTaskTime(taskTime * 1000);
+      }
+      // A caller that sent a lens also learns when the job could not start; without one the result is
+      // not reported, as before
+      if (!getMachine()->startJob() && has_lens) start_error = "START_FAILED";
     }
-    getMachine()->startJob();
+    if (!start_error.isEmpty()) {
+      qWarning() << "Server::Starting job - refused:" << start_error;
+      result["success"] = false;
+      result["error"] = start_error;
+    }
   } else if (action == "pause") {
     getMachine()->pauseJob();
   } else if (action == "resume") {
@@ -178,24 +226,15 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
     // Implement get device parameter logic, probably laser speed, power, fan...etc
     result["value"] = 0; // Replace with actual value
   } else if (action == "setCorrection") {
-    QJsonObject obj = params.toObject();
-    double scaleX = obj["scaleX"].toDouble();
-    double scaleY = obj["scaleY"].toDouble();
-    double bucketX = obj["bucketX"].toDouble();
-    double bucketY = obj["bucketY"].toDouble();
-    double paralleX = obj["paralleX"].toDouble();
-    double paralleY = obj["paralleY"].toDouble();
-    double trapeX = obj["trapeX"].toDouble();
-    double trapeY = obj["trapeY"].toDouble();
-    QString laser_source = obj["laserSource"].toString("MOPA");
-    getMachine()->setCorrection(scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY, laser_source);
+    if (!applyCorrection(getMachine(), params.toObject())) {
+      result["success"] = false;
+      result["error"] = "LENS_REJECTED";
+    }
   } else if (action == "setScanaheadParams") {
-    QJsonObject obj = params.toObject();
-    double worksize = obj["worksize"].toDouble();
-    double angle = obj["angle"].toDouble();
-    double xOffset = obj["xOffset"].toDouble();
-    double yOffset = obj["yOffset"].toDouble();
-    getMachine()->setScanaheadParams(worksize, angle, xOffset, yOffset);
+    if (!applyScanaheadParams(getMachine(), params.toObject())) {
+      result["success"] = false;
+      result["error"] = "LENS_REJECTED";
+    }
   } else if (action == "setParam") {
     QString paramName = params.toObject()["name"].toString();
     QJsonValue paramValue = params.toObject()["value"];
@@ -229,7 +268,13 @@ void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QStrin
   } else if (action == "kick") {
     // Implement kick logic
   } else if (action == "startFraming") {
-    result["success"] = this->startFraming(params);
+    QString start_error;
+    result["success"] = this->startFraming(params, &start_error);
+    if (!start_error.isEmpty()) {
+      qWarning() << "Server::Starting framing - refused:" << start_error;
+      result["success"] = false;
+      result["error"] = start_error;
+    }
   } else if (action == "stopFraming") {
     getMachine()->stopJob();
   } else if (action == "upload") {
@@ -437,7 +482,7 @@ QJsonArray SwiftrayServer::getDeviceList() {
 
 // TODO: split to 'generate task' and 'start job'
 // And move generation part to worker for AreaCheck framing
-bool SwiftrayServer::startFraming(const QJsonValue& params) {
+bool SwiftrayServer::startFraming(const QJsonValue& params, QString* error) {
   if (getMachine()->getJobExecutor()->getActiveJob()) {
     throw std::runtime_error("Job already running");
   }
@@ -495,9 +540,14 @@ bool SwiftrayServer::startFraming(const QJsonValue& params) {
   BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
   controller->setTaskTime(0);
   controller->setCheckDoor(false);
+  const QString lens_error = applyStartLens(getMachine(), params.toObject());
+  if (!lens_error.isEmpty()) {
+    if (error) *error = lens_error;
+    return false;
+  }
   if (getMachine()->createFramingJob(framing_code.split("\n"), !rotary_mode)) {
-    getMachine()->startJob();
-    return true;
+    if (getMachine()->startJob()) return true;
+    if (error) *error = "START_FAILED";
   }
   return false;
 }
