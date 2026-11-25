@@ -201,8 +201,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   third_party_libs
   poppler
   ${SPARKLE_LIBRARIES}
-  ${ORT_LIBRARY}
 )
+# ONNX Runtime is not linked: src/segment/ort_loader.h dlopens the bundled dylib on first use,
+# so a dylib this macOS can't load disables segmentation instead of blocking app launch.
+get_filename_component(ORT_DYLIB_NAME "${ORT_RUNTIME_FILES}" NAME)
+target_compile_definitions(${PROJECT_NAME} PRIVATE ORT_DYLIB="@rpath/${ORT_DYLIB_NAME}")
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${ICONV_INCLUDE_DIR}

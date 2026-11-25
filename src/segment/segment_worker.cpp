@@ -74,6 +74,11 @@ bool SegmentWorker::ensureLoaded(QString* error) {
     if (error) *error = "Segmentation models not found in " + dir.absolutePath();
     return false;
   }
+  if (const std::string& ort_error = segment::initOrt(); !ort_error.empty()) {
+    qWarning() << "segment: ONNX Runtime unavailable:" << ort_error.c_str();
+    if (error) *error = QString("ONNX Runtime unavailable: ") + ort_error.c_str();
+    return false;
+  }
   try {
     qInfo() << "segment: loading models from" << dir.absolutePath();
     sam_ = std::make_unique<segment::Sam>(enc.toStdString(), dec.toStdString());
@@ -94,7 +99,7 @@ void SegmentWorker::unloadIfIdle() {
 QJsonObject SegmentWorker::info() const {
   QDir dir(modelsDir());
   bool available = QFileInfo::exists(dir.filePath("mobile_sam.encoder.onnx")) &&
-                   QFileInfo::exists(dir.filePath("mobile_sam.decoder.onnx"));
+                   QFileInfo::exists(dir.filePath("mobile_sam.decoder.onnx")) && segment::initOrt().empty();
   return QJsonObject{{"success", true}, {"available", available}, {"loaded", sam_ != nullptr}, {"ep", "cpu"}};
 }
 

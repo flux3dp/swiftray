@@ -1,7 +1,7 @@
 // sam.h - MobileSAM inference via ONNX Runtime (CPU). Ported from mini-sam/src/sam.h
 // (samexporter model contract). Only the C++ API header of ORT is used.
 #pragma once
-#include <onnxruntime_cxx_api.h>
+#include "ort_loader.h"
 
 #include <QDebug>
 
