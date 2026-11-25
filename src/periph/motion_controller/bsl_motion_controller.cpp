@@ -281,7 +281,7 @@ void BSLMotionController::setUpTaskCtrl() {
   }
   error = lcs_set_laser_mode(laser_type_, is_framing_);
   if (error != LCS_RES_NO_ERROR) {
-    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << laser_type_ << is_framing_;
+    qWarning() << "BSLM~::setUpTaskCtrl() - lcs_set_laser_mode " << getErrorString(error) << laser_type_ << is_framing_.load();
   }
 }
 
@@ -556,6 +556,9 @@ void BSLMotionController::handleGcode(const QString &gcode) {
       if (disconnect_count_ == -1) disconnect_count_ = 0;
       is_preparing_first_list_ = true;
       is_running_laser_ = true;
+      // From here is_running_laser_ and is_framing_ (M103 / M104 came before this M3) say what kind of
+      // job this is; set before the flag is dropped so a laser job is never unlocked in between
+      job_starting_ = false;
       completed_task_time_ = 0;
       estimated_time_ = 0;
       running_task_time_ = 0;
@@ -940,6 +943,24 @@ bool BSLMotionController::resetState() {
   }
 }
 
+/**
+ * The board takes lens settings at once, and the rest of a running job would be converted with them
+ * (Beam Studio sends the lens of a tab's document whenever that tab connects, e.g. a new tab with
+ * another work area). They are refused, not held: whatever starts the next movement sends the lens
+ * it needs itself, so nothing sent meanwhile may leak into it.
+ * - From the moment a job is accepted until its M3 is handled: every job, since the command runner
+ *   has not reached the M103 / M104 that says what kind it is.
+ * - A laser job: from M3 until its M2 has finished or it is stopped, paused and reconnecting included.
+ * Red light and axis moves (M103) are open again once their M3 is handled, as callers stop them and
+ * send new settings back to back.
+ */
+bool BSLMotionController::isLensLocked(bool job_active) const {
+  // job_starting_ first: the runner clears it only after it has set is_running_laser_ (and M103 / M104
+  // came before that), so a request that finds it cleared reads the flags of the job that cleared it
+  if (job_starting_.load() && job_active) return true;
+  return is_running_laser_.load() && !is_framing_.load();
+}
+
 void BSLMotionController::setCorrection(double scaleX, double scaleY,double bucketX,double bucketY,double paralleX,double paralleY,double trapeX,double trapeY, const QString &laser_source) {
   laser_type_ = laser_source.compare("UV", Qt::CaseInsensitive) == 0 ? LCS_UV : LCS_MOPA;
   correction_params = {scaleX, scaleY, bucketX, bucketY, paralleX, paralleY, trapeX, trapeY};
@@ -972,7 +993,7 @@ std::mutex reconnect_mutex_;
 bool BSLMotionController::isConnected() {
   is_board_connected_ = getBoardStatus().bConnected;
   if (!is_board_connected_) {
-    qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_ << "framing:" << is_framing_;
+    qInfo() << "BSLM~::isConnected() - Board disconnected, running:" << is_running_laser_.load() << "framing:" << is_framing_.load();
     if (!is_running_laser_) {
       // Handle running thread first
       QThread::msleep(1000);
@@ -1001,7 +1022,7 @@ bool BSLMotionController::isConnected() {
         is_board_connected_ = lcs_connect();
       }
       is_handling_reconnection_ = false;
-      qInfo() << "Try reconnecting to the board - done" << is_board_connected_ << is_running_laser_ << int(getState());
+      qInfo() << "Try reconnecting to the board - done" << is_board_connected_ << is_running_laser_.load() << int(getState());
       if (!is_board_connected_) {
         this->current_custom_error_ = "DISCONNECTED";
         stop();

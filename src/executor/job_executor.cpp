@@ -22,17 +22,17 @@ MachineJob const *JobExecutor::getActiveJob() const {
  *        Setup executor and start workhorse timer
  * 
  */
-void JobExecutor::startJob() {
+bool JobExecutor::startJob() {
   qInfo() << this << "::startJob() @" << getDebugTime();
   std::lock_guard<std::mutex> lock(exec_mutex_);
   if (state_ != State::kIdle && state_ != State::kCompleted && state_ != State::kStopped) {
     qInfo() << "Unable to start executor, already running";
-    return;
+    return false;
   }
 
   if (motion_controller_->getState() != MotionControllerState::kIdle) {
-    throw std::runtime_error("Motion controller must be idle before job start");
-    return;
+    qInfo() << "Unable to start executor, motion controller is not idle";
+    return false;
   }
 
   if (!pending_job_.isNull()) {
@@ -47,12 +47,13 @@ void JobExecutor::startJob() {
   } else {
     active_job_.reset();
     qInfo() << "JobExecutor has no job available";
-    return;
+    return false;
   }
   
   completed_cmd_cnt_ = 0;
   Q_EMIT progressChanged(0);
   changeState(State::kRunning);
+  return true;
 }
 
 /**

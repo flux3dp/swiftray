@@ -23,7 +23,7 @@ public:
   float getProgress() const;
   Timestamp getElapsedTime() const;
   void reset();
-  void startJob();
+  bool startJob();
   void handleCmdFinish(int result_code) override;
 
 private Q_SLOTS:

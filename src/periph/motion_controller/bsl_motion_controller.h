@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QRegularExpression>
 #include <QElapsedTimer>
+#include <atomic>
 #include <mutex>
 #include <thread>
 #include <queue>
@@ -46,6 +47,12 @@ public:
   }
   void setCorrection(double scaleX, double scaleY, double bucketX, double bucketY, double paralleX, double paralleY, double trapeX, double trapeY, const QString &laser_source);
   void setScanaheadParams(double worksize, double angle, double xOffset, double yOffset);
+  // Lens settings (setCorrection / setScanaheadParams) must not change under a laser job; the caller
+  // asks before it sets them. job_active: the job executor is running or paused.
+  bool isLensLocked(bool job_active) const;
+  // Called when a job is accepted, before its first command is handled
+  void markJobStarting() { job_starting_ = true; }
+  void clearJobStarting() { job_starting_ = false; }
   void setCheckDoor(bool check_door) { should_check_door_ = check_door; }
   void setTaskTime(double time) { total_task_time_ = time; }
   BoardRunStatus getBoardStatus();
@@ -87,8 +94,14 @@ private:
 
   std::queue<QString> pending_cmds_;
   std::mutex cmd_list_mutex_;
-  bool is_running_laser_ = false;
-  bool is_framing_ = false;
+  // The three flags below make up the lens lock (isLensLocked). The command runner writes them while
+  // it handles M3 / M2 / M103 / M104 and the server thread reads them when a lens request comes in,
+  // so they are atomic.
+  std::atomic<bool> is_running_laser_{false};
+  // A job was started and its M3 has not been handled yet, so is_running_laser_ / is_framing_ still
+  // describe the previous job. Set on the caller's thread, cleared by the command runner.
+  std::atomic<bool> job_starting_{false};
+  std::atomic<bool> is_framing_{false};
   bool is_handling_high_speed_ = false;
   bool is_threading = false;
   bool should_flush_ = false;

@@ -59,7 +59,7 @@ private:
   void sendData(QWebSocket* socket, const QString& id, const QJsonObject& result, const QString& type);
   void sendCallback(QWebSocket* socket, const QString& id, const QJsonObject& result);
   void sendEvent(QWebSocket* socket, const QString& event, const QJsonObject& data);
-  bool startFraming(const QJsonValue& params);
+  bool startFraming(const QJsonValue& params, QString* error = nullptr);
   void setupWorker();
   Machine* getMachine();
   QJsonArray getDeviceList();
