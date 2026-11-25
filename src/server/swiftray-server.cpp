@@ -537,15 +537,17 @@ bool SwiftrayServer::startFraming(const QJsonValue& params, QString* error) {
     framing_code = QString::fromStdString(outline_generator.toString());
   }
   // Create Framing Job and start
-  BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
-  controller->setTaskTime(0);
-  controller->setCheckDoor(false);
   const QString lens_error = applyStartLens(getMachine(), params.toObject());
   if (!lens_error.isEmpty()) {
     if (error) *error = lens_error;
     return false;
   }
   if (getMachine()->createFramingJob(framing_code.split("\n"), !rotary_mode)) {
+    // Only once the framing job is in: generating the outline above lets other requests through, and
+    // a job started meanwhile refuses this one -- its door check and task time are not ours to clear
+    BSLMotionController* controller = static_cast<BSLMotionController*>(getMachine()->getMotionController().data());
+    controller->setTaskTime(0);
+    controller->setCheckDoor(false);
     if (getMachine()->startJob()) return true;
     if (error) *error = "START_FAILED";
   }
