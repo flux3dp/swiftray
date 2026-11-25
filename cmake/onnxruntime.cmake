@@ -1,6 +1,6 @@
 # Prebuilt ONNX Runtime (CPU) for the /segment service (src/segment) and the
 # MobileSAM models. Both are gitignored and fetched at configure time by
-# scripts/fetch-onnxruntime.{sh,bat} when missing (one-off download per clone).
+# scripts/fetch-onnxruntime.{sh,bat} when missing or when the pinned version changes.
 if(WIN32)
   set(ORT_PLATFORM "windows")
 elseif(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
@@ -14,23 +14,16 @@ set(ORT_INCLUDE_DIR "${ORT_DIR}/include")
 set(SEGMENT_MODELS_DIR "${CMAKE_SOURCE_DIR}/resources/models")
 set(SEGMENT_MODEL_FILES "${SEGMENT_MODELS_DIR}/mobile_sam.encoder.onnx" "${SEGMENT_MODELS_DIR}/mobile_sam.decoder.onnx")
 
-set(_need_fetch FALSE)
-foreach(_f "${ORT_INCLUDE_DIR}/onnxruntime_cxx_api.h" ${SEGMENT_MODEL_FILES})
-  if(NOT EXISTS "${_f}")
-    set(_need_fetch TRUE)
-  endif()
-endforeach()
-if(_need_fetch)
-  message(STATUS "Fetching ONNX Runtime and segmentation models (first configure only)")
-  if(WIN32)
-    set(_fetch_cmd cmd /c "${CMAKE_SOURCE_DIR}/scripts/fetch-onnxruntime.bat")
-  else()
-    set(_fetch_cmd sh "${CMAKE_SOURCE_DIR}/scripts/fetch-onnxruntime.sh")
-  endif()
-  execute_process(COMMAND ${_fetch_cmd} WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE _fetch_result)
-  if(NOT _fetch_result EQUAL 0)
-    message(FATAL_ERROR "scripts/fetch-onnxruntime failed (exit ${_fetch_result}); check network access or run it by hand.")
-  endif()
+# Run the fetch script on every configure: it is idempotent (no download when the pinned version and
+# models are present), and it alone knows the pinned version, so a version bump re-downloads.
+if(WIN32)
+  set(_fetch_cmd cmd /c "${CMAKE_SOURCE_DIR}/scripts/fetch-onnxruntime.bat")
+else()
+  set(_fetch_cmd sh "${CMAKE_SOURCE_DIR}/scripts/fetch-onnxruntime.sh")
+endif()
+execute_process(COMMAND ${_fetch_cmd} WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" RESULT_VARIABLE _fetch_result)
+if(NOT _fetch_result EQUAL 0)
+  message(FATAL_ERROR "scripts/fetch-onnxruntime failed (exit ${_fetch_result}); check network access or run it by hand.")
 endif()
 if(NOT EXISTS "${ORT_INCLUDE_DIR}/onnxruntime_cxx_api.h")
   message(FATAL_ERROR "ONNX Runtime still not found at ${ORT_DIR} after fetching.")

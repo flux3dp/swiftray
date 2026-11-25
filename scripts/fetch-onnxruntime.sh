@@ -4,15 +4,19 @@
 set -e
 cd "$(dirname "$0")/.."
 
+# 1.19.2 is the newest release whose macOS dylibs load on macOS 13 (minos 11.0). 1.23.2 needs
+# 13.3+ libc++ symbols and 1.30.0 needs macOS 14 (std::pmr), so dyld rejects them on older systems.
+# Only the C API on CPU is used, so the older release is enough.
+ORT_VER=1.19.2
 if [ "$(uname -m)" = "arm64" ]; then
-  ORT_VER=1.30.0; ORT_PLATFORM=macos_arm64; ORT_PKG=onnxruntime-osx-arm64-$ORT_VER
+  ORT_PLATFORM=macos_arm64; ORT_PKG=onnxruntime-osx-arm64-$ORT_VER
 else
-  # Microsoft stopped shipping macOS x86_64 binaries after 1.23.2; only the C API is used, any release works.
-  ORT_VER=1.23.2; ORT_PLATFORM=macos; ORT_PKG=onnxruntime-osx-x86_64-$ORT_VER
+  ORT_PLATFORM=macos; ORT_PKG=onnxruntime-osx-x86_64-$ORT_VER
 fi
 ORT_DIR=third_party/onnxruntime/$ORT_PLATFORM
 
-if [ ! -f "$ORT_DIR/include/onnxruntime_cxx_api.h" ]; then
+# keyed on the versioned dylib so bumping ORT_VER replaces an older download
+if [ ! -f "$ORT_DIR/lib/libonnxruntime.$ORT_VER.dylib" ]; then
   echo "Downloading $ORT_PKG"
   mkdir -p third_party/onnxruntime
   curl -fL -o /tmp/$ORT_PKG.tgz "https://github.com/microsoft/onnxruntime/releases/download/v$ORT_VER/$ORT_PKG.tgz"
