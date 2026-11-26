@@ -7,7 +7,7 @@
 #undef ORT_API_MANUAL_INIT
 
 #include <string>
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(ORT_DYLIB)
 #include <dlfcn.h>
 #endif
 
@@ -16,9 +16,10 @@ namespace segment {
 // Empty on success, else why ONNX Runtime is unavailable. Must succeed before any Ort:: object is made.
 inline const std::string& initOrt() {
   static const std::string error = []() -> std::string {
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(ORT_DYLIB)
     // ORT_DYLIB is the bundled versioned dylib name (cmake/Qt6/unix/CMakeLists.txt), found via
-    // the app's @executable_path/../Frameworks rpath; tests may define it as a full path.
+    // the app's @executable_path/../Frameworks rpath. Builds that link ORT instead (Windows,
+    // qmake's swiftray.pro) leave it undefined and take the linked OrtGetApiBase below.
     void* lib = dlopen(ORT_DYLIB, RTLD_NOW | RTLD_LOCAL);
     auto get_base = lib ? reinterpret_cast<const OrtApiBase* (*)()>(dlsym(lib, "OrtGetApiBase")) : nullptr;
     if (!get_base) {
