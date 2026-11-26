@@ -4,16 +4,22 @@ rem src\segment. Idempotent. See cmake\onnxruntime.cmake.
 setlocal
 cd /d "%~dp0\.."
 set ORT_VER=1.30.0
-set ORT_PKG=onnxruntime-win-x64-%ORT_VER%
 set ORT_DIR=third_party\onnxruntime\windows
+set ORT_NUPKG=%TEMP%\microsoft.ml.onnxruntime.%ORT_VER%.nupkg
 
+rem GitHub no longer serves the microsoft/onnxruntime release zips (404), so use the official
+rem NuGet package and lay it out like the old zip: include\ and lib\ (onnxruntime.dll/.lib).
+rem lib\ is moved into place before include\, so the header check below implies a complete download.
 if not exist "%ORT_DIR%\include\onnxruntime_cxx_api.h" (
-  echo Downloading %ORT_PKG%
-  if not exist third_party\onnxruntime mkdir third_party\onnxruntime
-  curl.exe -fL -o "%TEMP%\%ORT_PKG%.zip" "https://github.com/microsoft/onnxruntime/releases/download/v%ORT_VER%/%ORT_PKG%.zip" || exit /b 1
-  tar -xf "%TEMP%\%ORT_PKG%.zip" -C third_party\onnxruntime || exit /b 1
+  echo Downloading ONNX Runtime %ORT_VER% win-x64 from NuGet
   if exist "%ORT_DIR%" rmdir /s /q "%ORT_DIR%"
-  move "third_party\onnxruntime\%ORT_PKG%" "%ORT_DIR%" >nul
+  mkdir "%ORT_DIR%" || exit /b 1
+  curl.exe -fL -o "%ORT_NUPKG%" "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/%ORT_VER%/microsoft.ml.onnxruntime.%ORT_VER%.nupkg" || exit /b 1
+  tar -xf "%ORT_NUPKG%" -C "%ORT_DIR%" build/native/include runtimes/win-x64/native || exit /b 1
+  del "%ORT_NUPKG%"
+  move "%ORT_DIR%\runtimes\win-x64\native" "%ORT_DIR%\lib" >nul || exit /b 1
+  move "%ORT_DIR%\build\native\include" "%ORT_DIR%\include" >nul || exit /b 1
+  rmdir /s /q "%ORT_DIR%\build" "%ORT_DIR%\runtimes"
 )
 
 set MODELS_URL=https://huggingface.co/nrl-ai/samexporter-onnx-models/resolve/main/mobile_sam

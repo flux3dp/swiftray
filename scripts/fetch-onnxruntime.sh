@@ -8,21 +8,27 @@ cd "$(dirname "$0")/.."
 # 13.3+ libc++ symbols and 1.30.0 needs macOS 14 (std::pmr), so dyld rejects them on older systems.
 # Only the C API on CPU is used, so the older release is enough.
 ORT_VER=1.19.2
+# GitHub no longer serves the microsoft/onnxruntime release tarballs (404), so use the official
+# NuGet package. It carries the same dylibs for both Mac architectures and the C/C++ headers.
 if [ "$(uname -m)" = "arm64" ]; then
-  ORT_PLATFORM=macos_arm64; ORT_PKG=onnxruntime-osx-arm64-$ORT_VER
+  ORT_PLATFORM=macos_arm64; ORT_RID=osx-arm64
 else
-  ORT_PLATFORM=macos; ORT_PKG=onnxruntime-osx-x86_64-$ORT_VER
+  ORT_PLATFORM=macos; ORT_RID=osx-x64
 fi
 ORT_DIR=third_party/onnxruntime/$ORT_PLATFORM
 
 # keyed on the versioned dylib so bumping ORT_VER replaces an older download
 if [ ! -f "$ORT_DIR/lib/libonnxruntime.$ORT_VER.dylib" ]; then
-  echo "Downloading $ORT_PKG"
+  echo "Downloading ONNX Runtime $ORT_VER ($ORT_RID) from NuGet"
+  TMP=$(mktemp -d) && trap 'rm -rf "$TMP"' EXIT
+  curl -fL -o "$TMP/ort.nupkg" "https://api.nuget.org/v3-flatcontainer/microsoft.ml.onnxruntime/$ORT_VER/microsoft.ml.onnxruntime.$ORT_VER.nupkg"
+  mkdir -p "$TMP/ort/include" "$TMP/ort/lib"
+  unzip -q -j "$TMP/ort.nupkg" 'build/native/include/*' -d "$TMP/ort/include"
+  # install name is @rpath/libonnxruntime.<ver>.dylib; the unversioned symlink is for qmake's -lonnxruntime
+  unzip -p "$TMP/ort.nupkg" "runtimes/$ORT_RID/native/libonnxruntime.dylib" > "$TMP/ort/lib/libonnxruntime.$ORT_VER.dylib"
+  ln -s "libonnxruntime.$ORT_VER.dylib" "$TMP/ort/lib/libonnxruntime.dylib"
   mkdir -p third_party/onnxruntime
-  curl -fL -o /tmp/$ORT_PKG.tgz "https://github.com/microsoft/onnxruntime/releases/download/v$ORT_VER/$ORT_PKG.tgz"
-  tar -xzf /tmp/$ORT_PKG.tgz -C third_party/onnxruntime
-  rm -rf "$ORT_DIR" && mv "third_party/onnxruntime/$ORT_PKG" "$ORT_DIR"
-  xattr -dr com.apple.quarantine "$ORT_DIR" 2>/dev/null || true
+  rm -rf "$ORT_DIR" && mv "$TMP/ort" "$ORT_DIR"
 fi
 
 MODELS_URL=https://huggingface.co/nrl-ai/samexporter-onnx-models/resolve/main/mobile_sam
