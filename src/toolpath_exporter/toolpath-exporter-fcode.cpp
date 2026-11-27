@@ -1144,12 +1144,33 @@ void ToolpathExporterFcode::convertPrintingLayer() {
 void ToolpathExporterFcode::outputPrintingTestFcode() {
   if (support_info.PRINTING_SCRIPTS) {
     if (has_printing_task_) {
-      // 0002: pure prespray task
-      if (!config_.skip_prespray && !config_.burst_refresh &&
-          hasattr(macros, MacroFunc::test_cartridge)) {
+      /*
+       * Before task starts:
+       * Case 1: Lid exist, need prespray:
+       * 0005 (extend table, remove lid) -> 0002 (prespray, [reset table], home)
+       * Case 2: Lid exist, skip prespray:
+       * 0005 (extend table, remove lid) -> 0002 ([reset table], home)
+       * Case 3: No lid, need prespray:
+       * 0007 (extend table) -> 0002 (prespray, [reset table], home)
+       * Case 4: No lid, skip prespray:
+       * 0007 (extend table) -> 0002 ([reset table], home)
+       *
+       * [reset table] runs only when should_retract_table (the drawing reaches the
+       * sliding table); otherwise the table stays extended for the whole task and
+       * 0006 (put back lid) relies on that.
+       * 0002 is always sent, even when prespray is skipped: without it the firmware
+       * falls back to 0008, which always retracts the table and breaks 0006.
+       */
+      // 0002: prepare printing head
+      if (hasattr(macros, MacroFunc::prepare_printing_head)) {
         proc.start_task_script_block("xMIN", "0002");
-        qInfo() << "Prespray" << config_.prespray_times << "times";
-        macros->test_cartridge(config_.prespray_times);
+        bool skip = config_.skip_prespray || config_.burst_refresh;
+        if (skip) {
+          qInfo() << "Skipping prespray";
+        } else {
+          qInfo() << "Prespray" << config_.prespray_times << "times";
+        }
+        macros->prepare_printing_head(config_.prespray_times, skip);
         proc.end_task_script_block();
       }
       // 0005: task before printing

@@ -11,7 +11,7 @@ enum MacroFunc {
   put_back_printer_lid,
   move_to_refresh_position,
   post_refresh_motion,
-  test_cartridge,
+  prepare_printing_head,
   reset_table
 };
 
@@ -42,7 +42,7 @@ class BaseMacros {
   virtual void put_back_printer_lid() {}
   virtual QPointF move_to_refresh_position() { return QPointF(); }
   virtual void post_refresh_motion() {}
-  virtual void test_cartridge(int prespray_times = 3) {}
+  virtual void prepare_printing_head(int prespray_times = 3, bool skip_prespray = false) {}
   virtual void reset_table(float feedrate = 4800,
                            bool should_avoid_magnet = true,
                            bool is_y_first = false) {}

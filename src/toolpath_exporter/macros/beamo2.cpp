@@ -12,7 +12,7 @@ Beamo2Macros::Beamo2Macros(ToolpathProcessor* proc, float travel_speed)
                        MacroFunc::put_back_printer_lid,
                        MacroFunc::move_to_refresh_position,
                        MacroFunc::post_refresh_motion,
-                       MacroFunc::test_cartridge,
+                       MacroFunc::prepare_printing_head,
                        MacroFunc::reset_table};
 }
 
@@ -274,8 +274,10 @@ void Beamo2Macros::post_refresh_motion() {
   proc->set_is_main_task(true);
 }
 
-void Beamo2Macros::test_cartridge(int prespray_times) {
-  prespray(7500, 900, true, prespray_times);
+void Beamo2Macros::prepare_printing_head(int prespray_times, bool skip_prespray) {
+  if (!skip_prespray) {
+    prespray(7500, 900, true, prespray_times);
+  }
   if (should_retract_table) {
     reset_table();
   }
