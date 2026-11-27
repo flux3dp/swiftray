@@ -5,7 +5,7 @@
 UV1Macros::UV1Macros(ToolpathProcessor* proc, float travel_speed)
     : BaseMacros(proc, travel_speed) {
   implemented_funcs = {MacroFunc::move_to_refresh_position,
-                       MacroFunc::test_cartridge};
+                       MacroFunc::prepare_printing_head};
 }
 
 void UV1Macros::prespray(float travel_speed,
@@ -50,7 +50,9 @@ QPointF UV1Macros::move_to_refresh_position() {
   return QPointF(x, y);
 }
 
-void UV1Macros::test_cartridge(int prespray_times) {
-  prespray();
+void UV1Macros::prepare_printing_head(int prespray_times, bool skip_prespray) {
+  if (!skip_prespray) {
+    prespray();
+  }
   back_to_home();
 }

@@ -46,7 +46,7 @@ class Beamo2Macros : public BaseMacros {
   void put_back_printer_lid() override;
   QPointF move_to_refresh_position() override;
   void post_refresh_motion() override;
-  void test_cartridge(int prespray_times = 3) override;
+  void prepare_printing_head(int prespray_times = 3, bool skip_prespray = false) override;
   void reset_table(float feedrate = 4800,
                    bool should_avoid_magnet = true,
                    bool is_y_first = false) override;
