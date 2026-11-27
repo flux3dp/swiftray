@@ -19,6 +19,7 @@
 
 SwiftrayServer::SwiftrayServer(quint16 port, QObject* parent)
   : QObject(parent) {
+  beamgo_manager_ = new beamgo::Manager(this);
   this->m_server = new QWebSocketServer("Swiftray Server", QWebSocketServer::NonSecureMode, this);
 
   m_machine = nullptr;
@@ -176,6 +177,22 @@ QString applyStartLens(Machine* machine, const QJsonObject& params) {
 }  // namespace
 
 void SwiftrayServer::handleDeviceSpecificAction(QWebSocket* socket, const QString& id, const QString& action, const QJsonValue& params, const QString& port) {
+  if (port.startsWith("beamgo/")) {
+    if ((action == "start" || action == "startFraming") && m_machine && m_machine->isJobActive()) {
+      sendCallback(socket, id, {{"success", false}, {"error", "JOB_RUNNING"}});
+      return;
+    }
+    QPointer<QWebSocket> guarded_socket = socket;
+    beamgo_manager_->action(port, action, params.toObject(), [this, guarded_socket, id](QJsonObject result, QString type) {
+      if (guarded_socket) sendData(guarded_socket, id, result, type);
+    });
+    return;
+  }
+  // A missing BeamGo entry must never fall through to the BSL singleton.
+  if (port.startsWith("beamgo") || ((action == "start" || action == "startFraming") && beamgo_manager_->hasActiveJob())) {
+    sendCallback(socket, id, {{"success", false}, {"error", port.startsWith("beamgo") ? "DISCONNECTED" : "JOB_RUNNING"}});
+    return;
+  }
   QJsonObject result;
   result["success"] = true;
   qInfo() << "Device Specific action" << action;
@@ -451,7 +468,7 @@ QString hashSerialNumber(const QString& serialNumber) {
 }
 
 QJsonArray SwiftrayServer::getDeviceList() {
-  QJsonArray devices;
+  QJsonArray devices = beamgo_manager_->devices();
   if (lcs_available()) {
     int st_id = 0;
     float st_prog = 0.0f;

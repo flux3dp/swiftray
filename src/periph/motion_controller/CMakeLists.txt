@@ -17,3 +17,5 @@ target_link_libraries(motion_controller PRIVATE Qt::SerialPort)
 
 # Link motion_controller library to Swiftray
 target_link_libraries(Swiftray PRIVATE motion_controller)
+add_subdirectory(beamgo)
+target_link_libraries(Swiftray PRIVATE beamgo)

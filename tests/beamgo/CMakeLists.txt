@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.16)
+project(BeamGoTests LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+enable_testing()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_executable(beamgo_protocol_driver
+  protocol_driver.cpp
+  ../../src/periph/motion_controller/beamgo/protocol.cpp
+  ../../src/periph/motion_controller/beamgo/compiler.cpp
+)
+target_include_directories(beamgo_protocol_driver PRIVATE ../../src/periph/motion_controller)
+if(WIN32)
+  target_link_libraries(beamgo_protocol_driver PRIVATE bcrypt)
+elseif(NOT APPLE)
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(beamgo_protocol_driver PRIVATE OpenSSL::Crypto)
+endif()
+add_test(NAME beamgo_protocol
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_protocol.py $<TARGET_FILE:beamgo_protocol_driver>)
+
+find_package(Qt6 QUIET COMPONENTS Core Gui Network SerialPort)
+if(Qt6_FOUND)
+  add_subdirectory(../../src/periph/motion_controller/beamgo beamgo)
+  add_executable(beamgo_controller_driver controller_driver.cpp)
+  target_link_libraries(beamgo_controller_driver PRIVATE beamgo Qt6::Network)
+  target_compile_definitions(beamgo_controller_driver PRIVATE QT_NO_KEYWORDS)
+  add_executable(beamgo_generator_test generator_test.cpp)
+  target_include_directories(beamgo_generator_test PRIVATE ../../src)
+  target_link_libraries(beamgo_generator_test PRIVATE beamgo Qt6::Gui)
+  target_compile_definitions(beamgo_generator_test PRIVATE QT_NO_KEYWORDS)
+  add_test(NAME beamgo_generator COMMAND beamgo_generator_test)
+  if(UNIX)
+    add_test(NAME beamgo_controller
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_controller.py $<TARGET_FILE:beamgo_controller_driver>)
+    set_tests_properties(beamgo_controller PROPERTIES TIMEOUT 90)
+  endif()
+else()
+  message(STATUS "Qt6 not found: protocol/compiler tests only; controller tests require Core/Network/SerialPort")
+endif()

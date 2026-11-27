@@ -11,6 +11,7 @@
 #include <canvas/canvas.h>
 #include <toolpath_exporter/generators/gcode-generator.h>
 #include <toolpath_exporter/stl-utils.h>
+#include <periph/motion_controller/beamgo/manager.h>
 
 class SwiftrayServer : public QObject {
   Q_OBJECT
@@ -30,6 +31,7 @@ Q_SIGNALS:
 
 private:
   QMap<QString, Machine*> machine_map_;
+  beamgo::Manager* beamgo_manager_;
   QWebSocketServer* m_server;
   Machine* m_machine;
   QString m_buffer;

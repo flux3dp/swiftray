@@ -129,6 +129,7 @@ bool Worker::handleAction(QWebSocket* socket,
     int travel_speed = fmax(params_obj["travelSpeed"].toInt(), 20);
     QString type = params_obj["type"].toString();
     bool is_promark = params_obj["isPromark"].toBool();
+    const bool is_beamgo = params_obj["model"].toString() == "fbg1";
     if (!is_promark) {
       qInfo() << "Generating Task Code... TYPE" << type;
       ToolpathExporterFcode exporter(&params_obj, &server_->m_thumbnail);
@@ -169,17 +170,17 @@ bool Worker::handleAction(QWebSocket* socket,
     } else {
       qInfo() << "Generating Promark GCode..." << "ROTARY" << server_->m_rotary_mode << "TRAVEL" << travel_speed;
       bool use_fast_gradient = params_obj["shouldUseFastGradient"].toBool();
-      bool enable_high_speed = (server_->m_machine == NULL || server_->m_machine->getMachineParam().is_high_speed_mode) && server_->m_canvas->hasBitmap() && use_fast_gradient;
+      bool enable_high_speed = (is_beamgo || server_->m_machine == NULL || server_->m_machine->getMachineParam().is_high_speed_mode) && server_->m_canvas->hasBitmap() && use_fast_gradient;
       // Generate GCode
-      GCodeGenerator gen(machine_param, server_->m_rotary_mode);
-      if (server_->m_rotary_mode) {
+      GCodeGenerator gen(machine_param, !is_beamgo && server_->m_rotary_mode);
+      if (!is_beamgo && server_->m_rotary_mode) {
         gen.setRotary(params_obj["spin"].toDouble(0) / 10, // spin in px
                       params_obj["rotary_y_ratio"].toDouble(1),
                       params_obj["rotary_split"].toDouble(0),
                       params_obj["rotary_overlap"].toDouble(0));
       }
       QTransform move_translate = QTransform();
-      auto origin = server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
+      auto origin = is_beamgo || server_->m_machine == nullptr ? std::make_tuple<qreal, qreal, qreal>(0, 0, 0) : server_->m_machine->getCustomOrigin();
       if (type == "hull") {
         ConvexHullExporter exporter((BaseGenerator*)&gen);
         exporter.setWorkAreaSize(QRectF(0, 0, server_->m_canvas->document().width() / 10, server_->m_canvas->document().height() / 10));
@@ -219,7 +220,7 @@ bool Worker::handleAction(QWebSocket* socket,
         onProgress(0);
         connect(this, &Worker::interruptAction, &exporter, &ToolpathExporter::handleCancel, Qt::QueuedConnection);
         connect(&exporter, &ToolpathExporter::progressChanged, onProgress);
-        if (true != exporter.convertStack(server_->m_canvas->document().layers(), enable_high_speed, true)) {
+        if (true != exporter.convertStack(server_->m_canvas->document().layers(), enable_high_speed, !is_beamgo)) {
           onCancel();
           return false; // canceled
         }
